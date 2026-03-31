@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getRoleHomePath } from "@/lib/role-home";
 import {
   validateEmail,
   validatePassword,
@@ -133,6 +134,42 @@ export async function signIn(formData: FormData) {
     }
 
     return { error: "Sign in failed - no user data returned" };
+  } catch (error) {
+    return { error: sanitizeError(error) };
+  }
+}
+
+/** After GIS `signInWithIdToken` (no Supabase OAuth redirect). Mirrors `/auth/callback`. */
+export async function getPostOAuthRedirectPath(): Promise<
+  { path: string } | { error: string }
+> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: "Not authenticated" };
+    }
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role, approved")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const hasChosenRole = user.user_metadata?.role != null;
+
+    if (!hasChosenRole && userData?.role === "student") {
+      return { path: "/auth/select-role" };
+    }
+
+    if (!userData?.approved) {
+      return { path: "/pending-approval" };
+    }
+
+    const role = userData?.role ?? user.user_metadata?.role;
+    return { path: getRoleHomePath(role) };
   } catch (error) {
     return { error: sanitizeError(error) };
   }

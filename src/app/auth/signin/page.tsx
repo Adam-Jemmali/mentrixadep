@@ -56,7 +56,7 @@ export default function SignInPage() {
         </Link>
       </p>
 
-      <GoogleSignInButton />
+      <GoogleSignInButton variant="signin" />
 
       <div className="flex items-center gap-3 my-5">
         <span className="flex-1 h-px bg-slate-200" />
