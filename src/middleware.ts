@@ -166,7 +166,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Exclude Sentry tunnel route, Next internals, static files
-    "/((?!monitoring|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Exclude Stripe webhooks (raw body + signature verification; no session cookies)
+    // Sentry tunnel route, Next internals, static files
+    "/((?!api/stripe/webhook|monitoring|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
