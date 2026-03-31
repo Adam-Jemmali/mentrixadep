@@ -191,16 +191,19 @@ export const securityHeaders = {
   "X-XSS-Protection": "1; mode=block",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   // Allow camera and microphone for same origin (required for video calling)
-  // Block geolocation for security
-  "Permissions-Policy": "camera=(self), microphone=(self), geolocation=()",
+  // identity-credentials-get: Google Identity Services / FedCM (Sign in with Google button)
+  "Permissions-Policy":
+    "camera=(self), microphone=(self), geolocation=(), identity-credentials-get=(self)",
   // Content Security Policy - strict but allows necessary resources
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-eval needed for Next.js, unsafe-inline for some libs
+    // Google Identity Services: https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com",
     "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co", // Supabase API and Realtime
+    "frame-src 'self' https://accounts.google.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com",
     "media-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

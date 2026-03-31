@@ -8,30 +8,57 @@ import { getPostOAuthRedirectPath } from "@/app/actions/auth";
 const buttonClassName =
   "w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none";
 
-function loadGsiScript(): Promise<void> {
+const GSI_SRC = "https://accounts.google.com/gsi/client";
+
+function gsiReady(): boolean {
+  return typeof window !== "undefined" && !!window.google?.accounts?.id;
+}
+
+/** Injects `gsi/client` if needed, then polls until `google.accounts.id` exists (fixes races + duplicate tags). */
+function loadGsiScript(signal?: { cancelled: boolean }): Promise<void> {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined") {
       reject(new Error("no window"));
       return;
     }
-    if (window.google?.accounts?.id) {
+    if (gsiReady()) {
       resolve();
       return;
     }
-    const src = "https://accounts.google.com/gsi/client";
-    const existing = document.querySelector(`script[src="${src}"]`);
-    if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("Google script failed")));
-      return;
+
+    if (!document.querySelector(`script[src="${GSI_SRC}"]`)) {
+      const script = document.createElement("script");
+      script.src = GSI_SRC;
+      script.async = true;
+      script.defer = true;
+      script.onerror = () => {
+        if (!signal?.cancelled) reject(new Error("Failed to load Google script"));
+      };
+      document.head.appendChild(script);
     }
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Google script failed"));
-    document.head.appendChild(script);
+
+    const start = Date.now();
+    const poll = window.setInterval(() => {
+      if (signal?.cancelled) {
+        window.clearInterval(poll);
+        return;
+      }
+      if (gsiReady()) {
+        window.clearInterval(poll);
+        resolve();
+        return;
+      }
+      if (Date.now() - start > 15000) {
+        window.clearInterval(poll);
+        if (!signal?.cancelled) {
+          reject(
+            new Error(
+              "Google Sign-In timed out. Often caused by Content-Security-Policy blocking accounts.google.com — redeploy with latest middleware headers."
+            )
+          );
+        }
+      }
+    }, 50);
   });
 }
 
@@ -71,7 +98,7 @@ export function GoogleSignInButton({ variant = "signin" }: { variant?: Variant }
   useEffect(() => {
     if (!clientId) return;
 
-    let cancelled = false;
+    const cancelledRef = { cancelled: false };
     let el: HTMLDivElement | null = null;
 
     async function onCredential(response: { credential?: string }) {
@@ -106,12 +133,12 @@ export function GoogleSignInButton({ variant = "signin" }: { variant?: Variant }
 
     const timer = window.setTimeout(() => {
       el = containerRef.current;
-      if (!el || cancelled) return;
+      if (!el || cancelledRef.cancelled) return;
 
       void (async () => {
         try {
-          await loadGsiScript();
-          if (cancelled || !containerRef.current || !window.google?.accounts?.id) {
+          await loadGsiScript(cancelledRef);
+          if (cancelledRef.cancelled || !containerRef.current || !window.google?.accounts?.id) {
             return;
           }
           const host = containerRef.current;
@@ -129,16 +156,19 @@ export function GoogleSignInButton({ variant = "signin" }: { variant?: Variant }
             text: variant === "signup" ? "signup_with" : "continue_with",
             locale: "en",
           });
-        } catch {
-          if (!cancelled) {
-            setGsiError("Google Sign-In could not load. Check your connection or try again.");
+        } catch (err) {
+          if (!cancelledRef.cancelled) {
+            console.error("[GoogleSignInButton] GSI init failed:", err);
+            setGsiError(
+              "Google Sign-In could not load. If this persists after refresh, contact support."
+            );
           }
         }
       })();
     }, 0);
 
     return () => {
-      cancelled = true;
+      cancelledRef.cancelled = true;
       window.clearTimeout(timer);
       if (el) el.innerHTML = "";
       else if (containerRef.current) containerRef.current.innerHTML = "";
