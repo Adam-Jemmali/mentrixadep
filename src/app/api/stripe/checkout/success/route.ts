@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeSecretKey } from "@/lib/env";
 import { bookSessionAsUser } from "@/app/actions/student";
+import { hasBookingSyncedForCheckout } from "@/lib/stripe-booking-sync";
 
 function redirectToStudent(req: NextRequest, booking: string, reason?: string) {
   const url = new URL(`/student?booking=${booking}`, req.url);
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
 
     const availabilityId = checkoutSession.metadata?.availabilityId;
     const studentId = checkoutSession.metadata?.studentId;
+    const tutorId = checkoutSession.metadata?.tutorId;
     if (!availabilityId || !studentId) {
       return redirectToStudent(req, "error", "missing_metadata");
     }
@@ -39,6 +41,12 @@ export async function GET(req: NextRequest) {
       if (
         err instanceof Error &&
         (msg.includes("pending request") || msg.includes("already have"))
+      ) {
+        return redirectToStudent(req, "success");
+      }
+      if (
+        err instanceof Error &&
+        (await hasBookingSyncedForCheckout(availabilityId, studentId, tutorId))
       ) {
         return redirectToStudent(req, "success");
       }
