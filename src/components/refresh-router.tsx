@@ -20,13 +20,17 @@ export function RefreshRouter({ pollMs }: { pollMs?: number }) {
     document.addEventListener("visibilitychange", onVisibility);
 
     let interval: ReturnType<typeof setInterval> | undefined;
-    if (pollMs != null && pollMs > 0) {
-      interval = setInterval(() => {
-        router.refresh();
-      }, pollMs);
-    }
+    /** Avoid calling `refresh()` during the first paint / hydration window. */
+    const pollStart = window.setTimeout(() => {
+      if (pollMs != null && pollMs > 0) {
+        interval = setInterval(() => {
+          router.refresh();
+        }, pollMs);
+      }
+    }, 4000);
 
     return () => {
+      window.clearTimeout(pollStart);
       document.removeEventListener("visibilitychange", onVisibility);
       if (interval) clearInterval(interval);
     };

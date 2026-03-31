@@ -22,6 +22,8 @@ export default async function TutorDashboardAdminPage({ params }: Props) {
 
   if (!data) notFound();
 
+  const dashboardClockIso = new Date().toISOString();
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-6 pt-4">
@@ -40,6 +42,7 @@ export default async function TutorDashboardAdminPage({ params }: Props) {
       </div>
       <AdminViewProvider userId={tutorId}>
         <TutorDashboardClient
+          dashboardClockIso={dashboardClockIso}
           availability={data.availability}
           upcomingSessions={data.upcomingSessions}
           pastSessions={data.pastSessions}

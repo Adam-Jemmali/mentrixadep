@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,8 @@ type TutorCourseItem = {
 };
 
 interface TutorDashboardClientProps {
+  /** From the server page — keeps “this month” revenue math identical on SSR and client (fixes hydration). */
+  dashboardClockIso: string;
   availability: AnyAvailability[];
   upcomingSessions: AnySession[];
   pastSessions: AnySession[];
@@ -69,6 +71,7 @@ interface TutorDashboardClientProps {
 }
 
 export function TutorDashboardClient({
+  dashboardClockIso,
   availability,
   upcomingSessions,
   pastSessions,
@@ -76,21 +79,30 @@ export function TutorDashboardClient({
   autoApprove,
   tutorCourses = [],
 }: TutorDashboardClientProps) {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   const { viewingAsUserId } = useAdminViewContext();
   const studioHref = viewingAsUserId
     ? `/tutor/sessions-ai?tutorId=${viewingAsUserId}`
     : "/tutor/sessions-ai";
   const pendingCount = sessionRequests.length;
 
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const { currentMonth, currentYear } = useMemo(() => {
+    const anchor = new Date(dashboardClockIso);
+    return {
+      currentMonth: anchor.getUTCMonth(),
+      currentYear: anchor.getUTCFullYear(),
+    };
+  }, [dashboardClockIso]);
 
   const monthSessions = useMemo(
     () =>
       pastSessions.filter((s) => {
         const d = new Date(s.start_time);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        return d.getUTCMonth() === currentMonth && d.getUTCFullYear() === currentYear;
       }),
     [pastSessions, currentMonth, currentYear],
   );
@@ -123,6 +135,8 @@ export function TutorDashboardClient({
   const requestsSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!hydrated) return;
+
     if (revenueRef.current) {
       const obj = { val: 0 };
       gsap.to(obj, {
@@ -170,7 +184,7 @@ export function TutorDashboardClient({
     if (pendingRef.current) {
       pendingRef.current.textContent = pendingCount.toString();
     }
-  }, [revenueThisMonth, sessionsTaught, avgRating, pendingCount]);
+  }, [hydrated, revenueThisMonth, sessionsTaught, avgRating, pendingCount]);
 
   const handleReviewNow = () => {
     if (requestsSectionRef.current) {
