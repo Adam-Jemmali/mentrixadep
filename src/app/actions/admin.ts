@@ -89,7 +89,6 @@ export async function approveRegistrationRequest(requestId: string) {
     }
 
     revalidatePath("/admin");
-    revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
     throw new Error(sanitizeError(error));
@@ -122,7 +121,6 @@ export async function rejectRegistrationRequest(requestId: string) {
     }
 
     revalidatePath("/admin");
-    revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
     throw new Error(sanitizeError(error));
@@ -176,7 +174,6 @@ export async function toggleAutoApproveRegistrations(): Promise<{ enabled: boole
   }
 
   revalidatePath("/admin");
-  revalidatePath("/", "layout");
   return { enabled: newValue };
 }
 
@@ -224,7 +221,6 @@ export async function approveAllPendingRegistrations(): Promise<{ count: number 
   }
 
   revalidatePath("/admin");
-  revalidatePath("/", "layout");
   return { count: approved };
 }
 
@@ -327,9 +323,6 @@ export async function verifyTutorCourse(courseId: string) {
   if (error) throw new Error(`Failed to verify course: ${sanitizeError(error)}`);
 
   revalidatePath("/admin");
-  revalidatePath("/student");
-  revalidatePath("/tutor");
-  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -346,9 +339,6 @@ export async function unverifyTutorCourse(courseId: string) {
   if (error) throw new Error(`Failed to unverify course: ${sanitizeError(error)}`);
 
   revalidatePath("/admin");
-  revalidatePath("/student");
-  revalidatePath("/tutor");
-  revalidatePath("/", "layout");
   return { success: true };
 }
 

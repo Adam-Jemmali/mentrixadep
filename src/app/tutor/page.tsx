@@ -12,9 +12,6 @@ import { TutorDashboardClient } from "./tutor-dashboard-client";
 export default async function TutorPage() {
   await requireRole(["tutor", "admin"]);
 
-  /** Single clock for “this month” stats so SSR + hydration match (avoids React #425). */
-  const dashboardClockIso = new Date().toISOString();
-
   const [availability, upcomingSessions, pastSessions, sessionRequests, autoApprove, tutorCourses] =
     await Promise.all([
       getTutorAvailability(),
@@ -28,7 +25,6 @@ export default async function TutorPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <TutorDashboardClient
-        dashboardClockIso={dashboardClockIso}
         availability={availability}
         upcomingSessions={upcomingSessions}
         pastSessions={pastSessions}

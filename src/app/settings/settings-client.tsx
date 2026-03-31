@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   updateUserSettings,
   updatePassword,
@@ -43,7 +42,6 @@ interface SettingsClientProps {
 }
 
 export function SettingsClient({ user, settings: initial }: SettingsClientProps) {
-  const router = useRouter();
   const [settings, setSettings] = useState<UserSettings>(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -71,7 +69,6 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
     setError(null);
     try {
       await updateUserSettings(settings);
-      router.refresh();
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -93,7 +90,6 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
     setPwSaving(true);
     try {
       await updatePassword(currentPw, newPw);
-      router.refresh();
       setPwMsg({ type: "ok", text: "Password updated" });
       setCurrentPw("");
       setNewPw("");
