@@ -2,19 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { signIn } from "@/app/actions/auth";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getRoleHomePath } from "@/lib/role-home";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { gsap } from "gsap";
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
@@ -28,20 +27,6 @@ export default function SignInPage() {
       { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
     );
   }, []);
-
-  async function handleGoogleSignIn() {
-    setOauthLoading(true);
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + "/auth/callback" },
-    });
-    if (error) {
-      setError(error.message);
-      setOauthLoading(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -71,14 +56,7 @@ export default function SignInPage() {
         </Link>
       </p>
 
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        disabled={oauthLoading}
-        className="w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
-      >
-        {oauthLoading ? "Redirecting…" : "Continue with Google"}
-      </button>
+      <GoogleSignInButton flow="signin" />
 
       <div className="flex items-center gap-3 my-5">
         <span className="flex-1 h-px bg-slate-200" />

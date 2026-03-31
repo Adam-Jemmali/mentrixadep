@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { gsap } from "gsap";
 
 type UserRole = "student" | "tutor";
@@ -23,7 +24,6 @@ export default function SignUpPage() {
   const [signedUpEmail, setSignedUpEmail] = useState<string | null>(null);
   const [signedUpWithSession, setSignedUpWithSession] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
   const [role, setRole] = useState<UserRole>("student");
   const [password, setPassword] = useState("");
 
@@ -37,20 +37,6 @@ export default function SignUpPage() {
       { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
     );
   }, []);
-
-  async function handleGoogleSignUp() {
-    setOauthLoading(true);
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + "/auth/callback" },
-    });
-    if (error) {
-      setError(error.message);
-      setOauthLoading(false);
-    }
-  }
 
   const strengthScore = useMemo(() => {
     let score = 0;
@@ -184,14 +170,7 @@ export default function SignUpPage() {
         </Link>
       </p>
 
-      <button
-        type="button"
-        onClick={handleGoogleSignUp}
-        disabled={oauthLoading}
-        className="w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
-      >
-        {oauthLoading ? "Redirecting…" : "Continue with Google"}
-      </button>
+      <GoogleSignInButton flow="signup" />
 
       <div className="flex items-center gap-3 my-5">
         <span className="flex-1 h-px bg-slate-200" />

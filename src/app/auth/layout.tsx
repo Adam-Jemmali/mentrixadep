@@ -3,9 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { gsap } from "gsap";
 import { countUp } from "@/lib/gsap";
 import { AuthIllustration } from "@/components/illustrations";
+
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? "";
 
 const PHRASES = [
   "Your grades are not your ceiling.",
@@ -50,7 +53,7 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
     return () => window.clearInterval(id);
   }, [showLeftPanel]);
 
-  return (
+  const shell = (
     <div className="min-h-screen grid lg:grid-cols-2 bg-[#FAFAFA]">
       {showLeftPanel && (
         <div className="hidden lg:flex flex-col justify-between p-12 bg-slate-900 text-white relative overflow-hidden">
@@ -101,6 +104,14 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
         </div>
       </div>
     </div>
+  );
+
+  if (!googleClientId) {
+    return shell;
+  }
+
+  return (
+    <GoogleOAuthProvider clientId={googleClientId}>{shell}</GoogleOAuthProvider>
   );
 }
 
