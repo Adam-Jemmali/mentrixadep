@@ -1,0 +1,12 @@
+export { HeroIllustration } from "./HeroIllustration";
+export { StepIllustration, type StepKey } from "./StepIllustrations";
+export { CTAIllustration } from "./CTAIllustration";
+export { AuthIllustration } from "./AuthIllustration";
+export { StudentDashboardIllustration } from "./StudentDashboardIllustration";
+export { QuestIllustration } from "./QuestIllustration";
+export { DivisionIllustration } from "./DivisionIllustration";
+export { TutorDashboardIllustration } from "./TutorDashboardIllustration";
+export { TutorStudioIllustration } from "./TutorStudioIllustration";
+export { VideoCallIllustration } from "./VideoCallIllustration";
+export { AdminIllustration } from "./AdminIllustration";
+export { ErrorIllustration } from "./ErrorIllustration";

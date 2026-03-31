@@ -1,254 +1,285 @@
 "use client";
 
-import { useState } from "react";
-import { signUp } from "@/app/actions/auth";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Mail, Lock, User, ArrowRight, GraduationCap, BookOpen } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { gsap } from "gsap";
 
 type UserRole = "student" | "tutor";
 
+const ROLES: { type: UserRole; title: string }[] = [
+  { type: "student", title: "I want to learn" },
+  { type: "tutor", title: "I want to teach" },
+];
+
 export default function SignUpPage() {
-  const searchParams = useSearchParams();
-  const roleParam = searchParams.get("role");
-  
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [signedUpEmail, setSignedUpEmail] = useState<string | null>(null);
+  const [signedUpWithSession, setSignedUpWithSession] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<UserRole>((roleParam === "tutor" ? "tutor" : "student") as UserRole);
-  const [email, setEmail] = useState("");
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const [role, setRole] = useState<UserRole>("student");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+
+  useEffect(() => {
+    const wrapper = document.getElementById("auth-form-wrapper");
+    if (!wrapper) return;
+    const children = Array.from(wrapper.children);
+    gsap.fromTo(
+      children,
+      { y: 16, opacity: 0 },
+      { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
+    );
+  }, []);
+
+  async function handleGoogleSignUp() {
+    setOauthLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/auth/callback" },
+    });
+    if (error) {
+      setError(error.message);
+      setOauthLoading(false);
+    }
+  }
+
+  const strengthScore = useMemo(() => {
+    let score = 0;
+    if (password.length > 7) score += 1;
+    if (/\d/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    return score;
+  }, [password]);
+
+  const strength = useMemo(() => {
+    switch (strengthScore) {
+      case 1:
+        return { label: "Weak", width: "25%", color: "bg-red-400" };
+      case 2:
+        return { label: "Fair", width: "50%", color: "bg-amber-400" };
+      case 3:
+        return { label: "Good", width: "75%", color: "bg-blue-400" };
+      case 4:
+        return { label: "Strong", width: "100%", color: "bg-green-500" };
+      default:
+        return { label: "", width: "0%", color: "bg-transparent" };
+    }
+  }, [strengthScore]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
+    const emailInput = form.elements.namedItem("email") as HTMLInputElement;
+    const passInput = form.elements.namedItem("password") as HTMLInputElement;
+    const confirmInput = form.elements.namedItem("confirmPassword") as HTMLInputElement;
+    const emailVal = emailInput?.value?.trim().toLowerCase() ?? "";
+    const passVal = passInput?.value ?? "";
+    const confirmVal = confirmInput?.value ?? "";
+
+    if (!emailVal.includes("@") || emailVal.length < 5) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (passVal.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (passVal !== confirmVal) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setSignedUpEmail(null);
+    setSignedUpWithSession(false);
 
-    const formData = new FormData(e.currentTarget);
-    formData.set("role", role);
+    try {
+      // Sign up in the browser so Supabase can set auth cookies reliably (server actions often fail here).
+      const supabase = createClient();
+      const origin = window.location.origin;
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: emailVal,
+        password: passVal,
+        options: {
+          data: { role },
+          emailRedirectTo: `${origin}/auth/callback`,
+        },
+      });
 
-    const result = await signUp(formData);
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
 
-    if (result?.error) {
-      setError(result.error);
-    } else if (result?.success) {
+      setSignedUpEmail(data.user?.email ?? emailVal);
+      setSignedUpWithSession(!!data.session);
       setSuccess(true);
+      if (data.session) {
+        router.refresh();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <div className="max-w-md w-full">
-          <div className="bg-card rounded-2xl border border-border p-8 space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-success-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Registration Request Submitted
-              </h2>
-              <p className="text-muted-foreground">
-                Your registration request has been submitted. Please check your email to verify your account.
-                You will be able to log in once an admin approves your request.
-              </p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/auth/signin">Go to Sign In</Link>
-            </Button>
-          </div>
+      <div className="space-y-6" role="status" aria-live="polite">
+        <div className="rounded-2xl border-2 border-mentrixa-300 bg-gradient-to-b from-mentrixa-50 to-white px-5 py-8 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-mentrixa-700 mb-2">
+            Next step
+          </p>
+          <h1 className="text-[26px] font-bold tracking-[-0.03em] text-slate-900 mb-4">
+            Please check your email
+          </h1>
+          <p className="text-base text-slate-800 leading-relaxed font-medium">
+            Look at your inbox for{" "}
+            <span className="text-slate-950 underline decoration-mentrixa-400 decoration-2 underline-offset-2 break-all">
+              {signedUpEmail ?? "the email you signed up with"}
+            </span>
+            . Open our message and tap the link to confirm your account.
+          </p>
+          <p className="text-sm text-slate-600 mt-4 leading-relaxed">
+            If you don’t see it in a minute, check your spam folder. After you confirm, an admin may
+            still need to approve your account before you can sign in.
+          </p>
         </div>
+
+        {signedUpWithSession && (
+          <Button type="button" className="w-full" onClick={() => router.replace("/pending-approval")}>
+            Continue (you’re signed in on this device)
+          </Button>
+        )}
+
+        <Button asChild variant="outline" className="w-full border-slate-300">
+          <Link href="/auth/signin">Back to sign in</Link>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Logo */}
-          <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">O</span>
-            </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">OTAMS</span>
-          </Link>
+    <>
+      <h1 className="text-[24px] font-bold tracking-[-0.03em] text-slate-900 mb-1">
+        Create your account
+      </h1>
+      <p className="text-sm text-slate-500 mb-5">
+        Already have an account?{" "}
+        <Link href="/auth/signin" className="text-mentrixa-600 hover:underline">
+          Sign in
+        </Link>
+      </p>
 
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Create your account
-            </h1>
-            <p className="text-muted-foreground">
-              Join the academic marketplace
-            </p>
-          </div>
+      <button
+        type="button"
+        onClick={handleGoogleSignUp}
+        disabled={oauthLoading}
+        className="w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+      >
+        {oauthLoading ? "Redirecting…" : "Continue with Google"}
+      </button>
 
-          {/* Role selector */}
-          <div className="mb-6">
-            <Label className="text-sm font-medium mb-3 block">I am a...</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setRole("student")}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  role === "student"
-                    ? "border-primary bg-accent"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <GraduationCap 
-                  size={24} 
-                  className={role === "student" ? "text-primary mx-auto mb-2" : "text-muted-foreground mx-auto mb-2"} 
-                />
-                <p className={`text-sm font-medium ${role === "student" ? "text-primary" : "text-foreground"}`}>
-                  Student
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">Looking for help</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole("tutor")}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  role === "tutor"
-                    ? "border-primary bg-accent"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <BookOpen 
-                  size={24} 
-                  className={role === "tutor" ? "text-primary mx-auto mb-2" : "text-muted-foreground mx-auto mb-2"} 
-                />
-                <p className={`text-sm font-medium ${role === "tutor" ? "text-primary" : "text-foreground"}`}>
-                  Provider
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">Offering services</p>
-              </button>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative mt-1">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10 h-12"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-12"
-                  required
-                  minLength={8}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                <p className="text-destructive text-sm font-medium">{error}</p>
-              </div>
-            )}
-
-            <Button type="submit" size="lg" className="w-full mt-6" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
-              <ArrowRight size={18} className="ml-2" />
-            </Button>
-          </form>
-
-          {/* Switch mode */}
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/auth/signin" className="text-primary font-medium hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </div>
+      <div className="flex items-center gap-3 my-5">
+        <span className="flex-1 h-px bg-slate-200" />
+        <span className="text-xs text-slate-400">or</span>
+        <span className="flex-1 h-px bg-slate-200" />
       </div>
 
-      {/* Right side - Visual */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: 'var(--gradient-dark)' }}>
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-primary/20 rounded-full blur-3xl" />
-        
-        <div className="relative z-10 flex flex-col items-center justify-center p-12">
-          <div className="max-w-md text-center">
-            <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-8">
-              <GraduationCap size={40} className="text-primary" />
-            </div>
-            <h2 className="text-3xl font-bold text-primary-foreground mb-4">
-              Academic excellence starts here
-            </h2>
-            <p className="text-primary-foreground/70 leading-relaxed">
-              Connect with verified experts, get personalized help, and achieve your academic goals with confidence.
-            </p>
-            
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-primary-foreground/10">
-              <div>
-                <p className="text-2xl font-bold text-primary-foreground">New</p>
-                <p className="text-xs text-primary-foreground/60">Platform</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-primary-foreground">100%</p>
-                <p className="text-xs text-primary-foreground/60">Free</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-primary-foreground">4.9★</p>
-                <p className="text-xs text-primary-foreground/60">Rating</p>
-              </div>
-            </div>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+            Email
+          </Label>
+          <Input id="email" name="email" type="email" placeholder="you@university.ca" required className="input-premium border-slate-200 transition-all duration-200" />
         </div>
-      </div>
-    </div>
+
+        <div>
+          <Label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
+            Password
+          </Label>
+          <Input
+            id="password"
+            name="password"
+            autoComplete="new-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            className="input-premium border-slate-200 transition-all duration-200"
+          />
+          <div className="mt-2 w-full h-[3px] bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${strength.color}`}
+              style={{ width: strength.width }}
+            />
+          </div>
+          {strength.label && (
+            <div className="mt-1 text-xs text-slate-400">
+              {strength.label}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1.5">
+            Confirm password
+          </Label>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            required
+            minLength={8}
+            className="input-premium border-slate-200 transition-all duration-200"
+          />
+        </div>
+
+        <div className="mt-5 space-y-2">
+          {ROLES.map((item) => (
+            <button
+              key={item.type}
+              type="button"
+              onClick={() => setRole(item.type)}
+              className={
+                role === item.type
+                  ? "w-full h-12 border-2 border-mentrixa-600 bg-mentrixa-50 text-mentrixa-700 font-semibold rounded-md text-[14px] transition-all duration-100"
+                  : "w-full h-12 border border-[#E2E8F0] bg-white text-[#64748B] font-medium rounded-md text-[14px] transition-all duration-100"
+              }
+            >
+              {item.title}
+            </button>
+          ))}
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <Button type="submit" className="w-full mt-4" disabled={loading}>
+          {loading ? "Creating account…" : "Sign up"}
+        </Button>
+
+        <p className="text-xs text-slate-400 text-center mt-2">
+          By signing up you agree to our Terms of Service.
+        </p>
+      </form>
+    </>
   );
 }

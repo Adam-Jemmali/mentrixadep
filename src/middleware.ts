@@ -1,15 +1,59 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { securityHeaders } from "@/lib/security";
+import { getRoleHomePath } from "@/lib/role-home";
 
-const publicRoutes = ["/", "/auth/signin", "/auth/signup", "/auth/callback"];
+const publicRoutes = [
+  "/",
+  "/api/health",
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/callback",
+  "/auth/select-role",
+  "/api/stripe/webhook",
+];
+
+// Route prefixes that are publicly accessible (no auth required)
+const publicPrefixes = ["/tutor/"];
+
 const authRoutes = ["/auth/signin", "/auth/signup"];
+
+/** Route access rules: which roles can access which route prefixes */
+const routeRoleMap: Record<string, string[]> = {
+  "/admin": ["admin"],
+  "/dashboard": ["admin"],
+  "/tutor": ["tutor", "admin"],
+  "/student": ["student", "admin"],
+};
+
+function checkRouteAccess(pathname: string, role: string): boolean {
+  for (const [prefix, allowedRoles] of Object.entries(routeRoleMap)) {
+    if (pathname.startsWith(prefix) && !allowedRoles.includes(role)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+
+  // Enforce request size limits
+  const contentLength = request.headers.get("content-length");
+  if (contentLength) {
+    const size = parseInt(contentLength, 10);
+    const MAX_REQUEST_SIZE = 550 * 1024 * 1024; // 550MB
+    if (size > MAX_REQUEST_SIZE) {
+      return new NextResponse(
+        JSON.stringify({ error: "Request too large. Maximum size is 500MB." }),
+        { status: 413, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,9 +67,7 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
@@ -39,67 +81,61 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isPublicRoute = publicRoutes.includes(pathname);
+  const isPublicPrefix = publicPrefixes.some(
+    (prefix) => pathname.startsWith(prefix) && pathname !== prefix.slice(0, -1)
+  );
   const isAuthRoute = authRoutes.includes(pathname);
 
-  if (!user && !isPublicRoute) {
+  // Redirect unauthenticated users to sign in (skip public prefixes like /tutor/[id])
+  if (!user && !isPublicRoute && !isPublicPrefix) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/signin";
     return NextResponse.redirect(url);
   }
 
+  // Redirect authenticated users away from auth pages
   if (user && isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+    let role = user.user_metadata?.role as string | undefined;
+    let approved =
+      user.user_metadata?.approved === true ||
+      user.user_metadata?.approved === "true";
 
-  if (user && !isPublicRoute) {
-    // Use JWT metadata instead of database query for better scalability
-    // This avoids hitting the database on every request (critical for 5k+ users)
-    const userRole = user.user_metadata?.role as string | undefined;
-    const approved = user.user_metadata?.approved === true || user.user_metadata?.approved === "true";
-
-    // Fallback to database query only if JWT metadata is missing (shouldn't happen in production)
-    if (!userRole || approved === undefined) {
+    if (!role || approved === undefined) {
       const { data: userData } = await supabase
         .from("users")
         .select("approved, role")
         .eq("id", user.id)
         .single();
 
-      if (!userData || !userData.approved) {
-        if (pathname !== "/pending-approval") {
-          const url = request.nextUrl.clone();
-          url.pathname = "/pending-approval";
-          return NextResponse.redirect(url);
-        }
-        return supabaseResponse;
-      }
-
-      const finalRole = userData.role;
-      if (pathname.startsWith("/admin") && finalRole !== "admin") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
-      }
-
-      if (pathname.startsWith("/tutor") && finalRole !== "tutor" && finalRole !== "admin") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
-      }
-
-      if (pathname.startsWith("/student") && finalRole !== "student" && finalRole !== "admin") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
-      }
-
-      supabaseResponse.headers.set("x-user-role", finalRole);
-      supabaseResponse.headers.set("x-user-id", user.id);
-      return supabaseResponse;
+      role = userData?.role;
+      approved = !!userData?.approved;
     }
 
+    const url = request.nextUrl.clone();
+    url.pathname = approved ? getRoleHomePath(role) : "/pending-approval";
+    return NextResponse.redirect(url);
+  }
+
+  // Role-based access control for authenticated users on protected routes
+  if (user && !isPublicRoute && !isPublicPrefix) {
+    // Resolve role and approval from JWT metadata, falling back to DB
+    let role = user.user_metadata?.role as string | undefined;
+    let approved =
+      user.user_metadata?.approved === true ||
+      user.user_metadata?.approved === "true";
+
+    if (!role || approved === undefined) {
+      const { data: userData } = await supabase
+        .from("users")
+        .select("approved, role")
+        .eq("id", user.id)
+        .single();
+
+      role = userData?.role;
+      approved = !!userData?.approved;
+    }
+
+    // Unapproved users go to pending-approval
     if (!approved) {
       if (pathname !== "/pending-approval") {
         const url = request.nextUrl.clone();
@@ -109,29 +145,18 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
-    if (pathname.startsWith("/admin") && userRole !== "admin") {
+    // Check route-level authorization
+    if (role && !checkRouteAccess(pathname, role)) {
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
+      url.pathname = getRoleHomePath(role);
       return NextResponse.redirect(url);
     }
 
-    if (pathname.startsWith("/tutor") && userRole !== "tutor" && userRole !== "admin") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
-
-    if (pathname.startsWith("/student") && userRole !== "student" && userRole !== "admin") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
-
-    supabaseResponse.headers.set("x-user-role", userRole);
+    if (role) supabaseResponse.headers.set("x-user-role", role);
     supabaseResponse.headers.set("x-user-id", user.id);
   }
 
-  // Add security headers
+  // Security headers
   Object.entries(securityHeaders).forEach(([key, value]) => {
     supabaseResponse.headers.set(key, value);
   });
@@ -141,7 +166,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Exclude Sentry tunnel route, Next internals, static files
+    "/((?!monitoring|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
-

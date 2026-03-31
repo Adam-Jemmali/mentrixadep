@@ -1,22 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { approveSessionRequest, rejectSessionRequest } from "@/app/actions/tutor";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { gsap } from "gsap";
+import { approveSessionRequest, rejectSessionRequest } from "@/app/actions/tutor";
+import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatDate, formatTimeRange } from "@/lib/time-format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle } from "lucide-react";
 
 interface SessionRequest {
   id: string;
   student_id: string;
+  student_email?: string | null;
   status: string;
   created_at: string;
   availability?: {
     course: string;
     start_time: string;
     end_time: string;
+    price_per_session?: number | null;
+    price?: number | null;
   };
 }
 
@@ -25,118 +28,178 @@ interface SessionRequestsListProps {
 }
 
 export function SessionRequestsList({ sessionRequests }: SessionRequestsListProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Pending Requests</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {sessionRequests.length === 0 ? (
-          <div className="py-12">
-            <p className="text-center text-muted-foreground">
-              No pending session requests
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {sessionRequests.map((request) => (
-              <SessionRequestCard key={request.id} request={request} />
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function SessionRequestCard({ request }: { request: SessionRequest }) {
-  const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [rows, setRows] = useState(sessionRequests);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const router = useRouter();
+  const { viewingAsUserId } = useAdminViewContext();
 
-  async function handleApprove() {
-    setLoading("approve");
-    setError(null);
-    try {
-      await approveSessionRequest(request.id);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to approve request");
-      setLoading(null);
-    }
-  }
+  useEffect(() => {
+    setRows(sessionRequests);
+  }, [sessionRequests]);
 
-  async function handleReject() {
-    setLoading("reject");
-    setError(null);
-    try {
-      await rejectSessionRequest(request.id);
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (!focusedId) return;
+      if (event.key === "a" || event.key === "A") {
+        event.preventDefault();
+        handleApprove(focusedId);
+      }
+      if (event.key === "r" || event.key === "R") {
+        event.preventDefault();
+        handleReject(focusedId);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [focusedId, rows]);
+
+  const handleApprove = async (id: string) => {
+    const rowEl = rowRefs.current[id];
+    if (!rowEl) {
+      await approveSessionRequest(id, viewingAsUserId ?? undefined);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reject request");
-      setLoading(null);
+      return;
     }
-  }
+    gsap.to(rowEl, {
+      height: 0,
+      opacity: 0,
+      paddingTop: 0,
+      paddingBottom: 0,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: () => {
+        setRows((current) => current.filter((r) => r.id !== id));
+        approveSessionRequest(id, viewingAsUserId ?? undefined).then(() => router.refresh());
+      },
+    });
+  };
+
+  const handleReject = async (id: string) => {
+    const rowEl = rowRefs.current[id];
+    if (!rowEl) {
+      await rejectSessionRequest(id, viewingAsUserId ?? undefined);
+      router.refresh();
+      return;
+    }
+    gsap.to(rowEl, {
+      height: 0,
+      opacity: 0,
+      paddingTop: 0,
+      paddingBottom: 0,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: () => {
+        setRows((current) => current.filter((r) => r.id !== id));
+        rejectSessionRequest(id, viewingAsUserId ?? undefined).then(() => router.refresh());
+      },
+    });
+  };
 
   return (
-    <div className="border border-border rounded-xl p-5 bg-card hover:border-primary/20 hover:shadow-md transition-all">
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-bold text-lg">
-              {(request.availability?.course || "?").charAt(0)}
-            </span>
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-lg text-foreground">
-              {request.availability?.course || "Unknown Course"}
-            </p>
-            {request.availability && (
-              <>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {formatDate(request.availability.start_time)}
-                </p>
-                <p className="text-sm font-medium text-primary mt-0.5">
-                  {formatTimeRange(
-                    request.availability.start_time,
-                    request.availability.end_time
-                  )}
-                </p>
-              </>
+    <div>
+      <div className="text-xs text-slate-400 text-right mb-2">
+        A = approve, R = reject
+      </div>
+
+      <div className="mentrixa-table overflow-x-auto border border-slate-200 rounded-md bg-white">
+        <table className="min-w-full text-xs">
+          <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
+            <tr>
+              <th className="py-2 px-3 text-left font-normal">Learner</th>
+              <th className="py-2 px-3 text-left font-normal">Course</th>
+              <th className="py-2 px-3 text-left font-normal">Requested time</th>
+              <th className="py-2 px-3 text-left font-normal">Price</th>
+              <th className="py-2 px-3 text-left font-normal">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="py-8 px-3 text-center text-xs text-slate-400"
+                >
+                  No pending session requests.
+                </td>
+              </tr>
+            ) : (
+              rows.map((request) => {
+                const availability = request.availability;
+                const priceCents =
+                  (availability as { price_per_session?: number; price?: number } | undefined)
+                    ?.price_per_session ??
+                  (availability as { price_per_session?: number; price?: number } | undefined)
+                    ?.price ??
+                  null;
+                const learnerName =
+                  request.student_email?.split("@")[0] ?? request.student_email ?? `Student ${request.student_id.slice(0, 8)}`;
+
+                return (
+                  <tr
+                    key={request.id}
+                    ref={(el) => {
+                      rowRefs.current[request.id] = el;
+                    }}
+                    tabIndex={0}
+                    onFocus={() => setFocusedId(request.id)}
+                    onBlur={() => setFocusedId((current) => (current === request.id ? null : current))}
+                    className={`border-b border-slate-100 text-sm transition-colors ${
+                      focusedId === request.id
+                        ? "bg-[#F8FAFC] outline outline-2 outline-[#BFDBFE]"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <td className="py-2.5 px-3 align-middle">
+                      <span className="text-sm font-medium text-slate-900">
+                        {learnerName}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 align-middle">
+                      <span className="font-mono text-xs text-slate-400">
+                        {availability?.course ?? "Unknown"}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 align-middle">
+                      {availability ? (
+                        <span className="text-sm text-slate-500">
+                          {formatDate(availability.start_time)} ·{" "}
+                          {formatTimeRange(availability.start_time, availability.end_time)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">–</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 align-middle">
+                      <span className="text-sm font-semibold text-slate-900">
+                        {priceCents != null ? `$${(priceCents / 100).toFixed(2)}` : "—"}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 align-middle">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(request.id)}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReject(request.id)}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
-            <p className="text-xs text-muted-foreground mt-2">
-              Student ID: {request.student_id.substring(0, 8)}...
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          {error && (
-            <p className="text-xs text-destructive max-w-[150px] text-right">
-              {error}
-            </p>
-          )}
-          <div className="flex gap-2">
-            <Button
-              onClick={handleApprove}
-              disabled={loading !== null}
-              size="sm"
-              className="bg-success hover:bg-success/90"
-            >
-              <CheckCircle size={16} className="mr-2" />
-              {loading === "approve" ? "Approving..." : "Approve"}
-            </Button>
-            <Button
-              onClick={handleReject}
-              disabled={loading !== null}
-              variant="destructive"
-              size="sm"
-            >
-              <XCircle size={16} className="mr-2" />
-              {loading === "reject" ? "Rejecting..." : "Reject"}
-            </Button>
-          </div>
-        </div>
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
+

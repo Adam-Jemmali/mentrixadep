@@ -2,14 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import {
   validateEmail,
   validatePassword,
   validateRole,
   sanitizeError,
+  enforceRateLimit,
+  RATE_LIMITS,
+  getRateLimitId,
 } from "@/lib/security";
-import { enforceRateLimit, RATE_LIMITS, getRateLimitId } from "@/lib/rate-limit";
 
 export async function signUp(formData: FormData) {
   try {
@@ -20,9 +21,20 @@ export async function signUp(formData: FormData) {
     // Rate limiting
     enforceRateLimit(identifier, RATE_LIMITS.signUp, "sign up");
 
-    // Validate inputs
-    const email = validateEmail(formData.get("email"));
-    const password = validatePassword(formData.get("password"));
+    // Validate inputs (FormData keys must match input name="" on the signup form)
+    const emailRaw = formData.get("email");
+    const passwordRaw = formData.get("password");
+    let email: string;
+    let password: string;
+    try {
+      email = validateEmail(emailRaw);
+      password = validatePassword(passwordRaw);
+    } catch {
+      return {
+        error:
+          "Please enter a valid email and a password of at least 8 characters. Make sure both password fields are filled in.",
+      };
+    }
     const role = validateRole(formData.get("role"));
 
     // Only allow student or tutor roles for signup
@@ -37,7 +49,7 @@ export async function signUp(formData: FormData) {
         data: {
           role,
         },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/callback`,
       },
     });
 
@@ -45,21 +57,17 @@ export async function signUp(formData: FormData) {
       return { error: sanitizeError(error) };
     }
 
-    if (data.user) {
-      const { error: regError } = await supabase
-        .from("registration_requests")
-        .insert({
-          email: data.user.email!,
-          role,
-          status: "pending",
-        });
+    // When email confirmation is off, Supabase returns a session immediately — client should redirect
+    // so middleware + layout don’t fight the signup success UI (page can appear “stuck”).
+    const sessionEstablished = !!data.session;
 
-      if (regError) {
-        return { error: "Failed to create registration request" };
-      }
-    }
-
-    return { success: true, message: "Registration request submitted. Please wait for admin approval." };
+    // DB trigger handle_new_user_with_jwt already inserts into registration_requests
+    return {
+      success: true,
+      sessionEstablished,
+      email,
+      message: "Registration request submitted. Please wait for admin approval.",
+    };
   } catch (error) {
     return { error: sanitizeError(error) };
   }
@@ -134,6 +142,49 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/");
+  // When called from a form or client component, callers should handle navigation.
+  // We deliberately avoid redirect() here to allow flexible client-side behavior.
+  return { success: true };
+}
+
+export async function setUserRole(role: "student" | "tutor") {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { error: "Not authenticated" };
+    }
+
+    if (role !== "student" && role !== "tutor") {
+      return { error: "Invalid role" };
+    }
+
+    // Update the users table row that the DB trigger already created
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ role, approved: false })
+      .eq("id", user.id);
+
+    if (updateError) {
+      return { error: "Failed to set role" };
+    }
+
+    // Update JWT metadata so middleware picks up the role
+    await supabase.auth.updateUser({ data: { role, approved: false } });
+
+    // Ensure a registration_requests row exists for admin review
+    await supabase
+      .from("registration_requests")
+      .upsert(
+        { email: user.email!, role, status: "pending" },
+        { onConflict: "email" }
+      );
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { error: "An unexpected error occurred" };
+  }
 }
 

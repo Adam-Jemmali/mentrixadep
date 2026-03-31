@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cancelSession } from "@/app/actions/student";
+import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 
 interface CancelSessionButtonProps {
@@ -13,6 +14,7 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { viewingAsUserId } = useAdminViewContext();
 
   const sessionStart = new Date(startTime);
   const now = new Date();
@@ -29,7 +31,7 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
     setError(null);
 
     try {
-      await cancelSession(sessionId);
+      await cancelSession(sessionId, viewingAsUserId ?? undefined);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to cancel session");

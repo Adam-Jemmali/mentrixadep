@@ -5,56 +5,33 @@ import {
   getPastSessions,
   getSessionRequests,
   getAutoApprove,
+  getTutorCourses,
 } from "@/app/actions/tutor";
-import { AvailabilityManager } from "./availability-manager";
-import { SessionsList } from "./sessions-list";
-import { SessionRequestsList } from "./session-requests-list";
-import { AutoApproveToggle } from "./auto-approve-toggle";
+import { TutorDashboardClient } from "./tutor-dashboard-client";
 
 export default async function TutorPage() {
-  const user = await requireRole(["tutor", "admin"]);
+  await requireRole(["tutor", "admin"]);
 
-  const [availability, upcomingSessions, pastSessions, sessionRequests, autoApprove] =
+  const [availability, upcomingSessions, pastSessions, sessionRequests, autoApprove, tutorCourses] =
     await Promise.all([
       getTutorAvailability(),
       getUpcomingSessions(),
       getPastSessions(),
       getSessionRequests(),
       getAutoApprove(),
+      getTutorCourses(),
     ]);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="section-container">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Provider Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Manage your services and orders</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="section-container py-6">
-        <div className="mb-6">
-          <AutoApproveToggle initialValue={autoApprove} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <AvailabilityManager availability={availability} />
-            <SessionsList
-              upcomingSessions={upcomingSessions}
-              pastSessions={pastSessions}
-            />
-          </div>
-          <div className="space-y-6">
-            <SessionRequestsList sessionRequests={sessionRequests} />
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-slate-50">
+      <TutorDashboardClient
+        availability={availability}
+        upcomingSessions={upcomingSessions}
+        pastSessions={pastSessions}
+        sessionRequests={sessionRequests}
+        autoApprove={autoApprove}
+        tutorCourses={tutorCourses}
+      />
     </div>
   );
 }

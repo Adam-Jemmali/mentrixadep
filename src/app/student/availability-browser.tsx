@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { BookSessionButton } from "./book-session-button";
-import { formatDate, formatTimeRange } from "@/lib/time-format";
+import { useMemo, useState } from "react";
+import { formatTime } from "@/lib/time-format";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Clock } from "lucide-react";
+import { BookSessionButton } from "./book-session-button";
+import { Badge } from "@/components/ui/badge";
+import { formatUsdFromCents } from "@/lib/duel-reward";
 
 interface Availability {
   id: string;
@@ -13,6 +23,7 @@ interface Availability {
   course: string;
   start_time: string;
   end_time: string;
+  price_per_session?: number | null;
   tutor?: {
     id: string;
     role: string;
@@ -21,204 +32,222 @@ interface Availability {
   };
 }
 
+type TutorExpertiseEntry = { course_name: string; proof_description: string; verified: boolean };
+
 interface AvailabilityBrowserProps {
   availability: Availability[];
   courses: string[];
-}
-
-interface TutorProfile {
-  id: string;
-  email: string;
-  courses: string[];
-  availability: Availability[];
+  studentCourseNames?: string[];
+  tutorExpertise?: Record<string, TutorExpertiseEntry[]>;
 }
 
 export function AvailabilityBrowser({
   availability,
   courses,
+  studentCourseNames = [],
+  tutorExpertise = {},
 }: AvailabilityBrowserProps) {
-  const [selectedCourse, setSelectedCourse] = useState<string>("all");
-
-  // Group availability by tutor
-  const tutorsMap = new Map<string, TutorProfile>();
-
-  availability.forEach((avail) => {
-    if (!avail.tutor || !avail.tutor.id) {
-      return;
-    }
-
-    const tutorId = avail.tutor.id;
-    if (!tutorsMap.has(tutorId)) {
-      tutorsMap.set(tutorId, {
-        id: tutorId,
-        email: avail.tutor.email || "Unknown",
-        courses: [],
-        availability: [],
-      });
-    }
-
-    const tutor = tutorsMap.get(tutorId)!;
-    const courseLower = avail.course.toLowerCase();
-    if (!tutor.courses.some((c) => c.toLowerCase() === courseLower)) {
-      tutor.courses.push(avail.course);
-    }
-    tutor.availability.push(avail);
-  });
-
-  // Sort availability by start time for each tutor
-  tutorsMap.forEach((tutor) => {
-    tutor.availability.sort(
-      (a, b) =>
-        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
-    );
-    tutor.courses.sort();
-  });
-
-  // Filter availability by course if selected, then filter out tutors with no availability
-  const filteredTutorsWithAvailability = Array.from(tutorsMap.values())
-    .map((tutor) => ({
-      ...tutor,
-      availability:
-        selectedCourse === "all"
-          ? tutor.availability
-          : tutor.availability.filter(
-              (a) => a.course.toLowerCase() === selectedCourse.toLowerCase()
-            ),
-    }))
-    .filter((tutor) => tutor.availability.length > 0);
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <CardTitle className="text-2xl">Tutor Marketplace</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Find the perfect tutor for your needs
-            </p>
-          </div>
-          <select
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="px-4 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
-          >
-            <option value="all">All Courses</option>
-            {courses.map((course) => (
-              <option key={course} value={course}>
-                {course}
-              </option>
-            ))}
-          </select>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {filteredTutorsWithAvailability.length === 0 ? (
-          <div className="py-12">
-            <p className="text-center text-muted-foreground">
-              {selectedCourse === "all"
-                ? "No tutors available"
-                : `No tutors available for ${selectedCourse}`}
-            </p>
-            {availability.length === 0 ? (
-              <p className="text-center text-xs text-muted-foreground mt-2">
-                No availability slots found in the database
-              </p>
-            ) : availability.length > 0 && selectedCourse !== "all" ? (
-              <p className="text-center text-xs text-muted-foreground mt-2">
-                Try selecting &quot;All Courses&quot; to see all available tutors
-              </p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredTutorsWithAvailability.map((tutor) => (
-              <TutorCard key={tutor.id} tutor={tutor} />
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+  const [query, setQuery] = useState("");
+  const [courseFilter, setCourseFilter] = useState<string>(
+    studentCourseNames.length > 0 ? (studentCourseNames[0] ?? "all") : "all",
   );
-}
+  const [selectedSlot, setSelectedSlot] = useState<Availability | null>(null);
 
-function TutorCard({ tutor }: { tutor: TutorProfile }) {
+  const guides = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        name: string;
+        priceCents: number;
+        rating: number;
+        sessions: number;
+        slots: Availability[];
+      }
+    >();
+
+    for (const slot of availability) {
+      const email = slot.tutor?.email ?? "unknown@example.com";
+      const name = email.split("@")[0] ?? "unknown";
+      const key = slot.tutor_id ?? email;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          name,
+          priceCents: slot.price_per_session ?? 2500,
+          rating: 4.8,
+          sessions: 24,
+          slots: [],
+        });
+      }
+
+      map.get(key)!.slots.push(slot);
+    }
+
+    let list = Array.from(map.values());
+
+    if (query) {
+      const q = query.toLowerCase();
+      list = list.filter(
+        (g) => g.name.toLowerCase().includes(q) || g.slots.some((s) => s.course.toLowerCase().includes(q)),
+      );
+    }
+
+    if (courseFilter !== "all") {
+      const cf = courseFilter.toLowerCase();
+      list = list.filter((g) => g.slots.some((s) => s.course.toLowerCase() === cf));
+    }
+
+    return list;
+  }, [availability, query, courseFilter]);
+
   return (
-    <div className="bg-card rounded-2xl border border-border p-6 hover:shadow-xl hover:border-primary/20 transition-all duration-300">
-      <div className="mb-5">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-              <span className="text-primary font-bold text-2xl">
-                {tutor.email.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-              <Shield size={12} className="text-primary-foreground" />
-            </div>
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg text-foreground mb-1">
-              {tutor.email.split("@")[0]}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {tutor.email}
-            </p>
-          </div>
-        </div>
-      </div>
+    <aside>
+      <h2 className="text-sm font-semibold text-slate-900 mb-3">Guides</h2>
 
-      <div className="mb-5">
-        <p className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-          Courses Offered
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {tutor.courses.map((course) => (
-            <span
-              key={course}
-              className="px-2 py-1 text-xs font-medium bg-muted rounded-md text-muted-foreground"
-            >
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search by name or course"
+        className="h-8 mb-3 text-xs bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
+      />
+
+      <Select value={courseFilter} onValueChange={setCourseFilter}>
+        <SelectTrigger className="h-8 mb-4 text-xs bg-white border-slate-200 text-slate-900">
+          <SelectValue placeholder="All courses" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All courses</SelectItem>
+          {courses.map((course) => (
+            <SelectItem key={course} value={course}>
               {course}
-            </span>
+            </SelectItem>
           ))}
-        </div>
-      </div>
+        </SelectContent>
+      </Select>
 
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-          Available Times
-        </p>
-        {tutor.availability.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">
-            No availability for selected course
-          </p>
+      <div className="divide-y divide-slate-200 border-y border-slate-200 bg-white rounded-lg">
+        {guides.length === 0 ? (
+          <div className="py-8 text-center text-xs font-medium text-slate-700">No guides available.</div>
         ) : (
-          <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-            {tutor.availability.map((slot) => (
-              <AvailabilitySlot key={slot.id} slot={slot} />
-            ))}
-          </div>
+          guides.map((guide, idx) => {
+            const tutorId = guide.slots[0]?.tutor_id ?? "";
+            const expertise = tutorId ? (tutorExpertise[tutorId] ?? []) : [];
+            const hasVerifiedCourse = expertise.some((e) => e.verified);
+
+            return (
+            <div
+              key={idx}
+              className="mentrixa-interactive cursor-pointer py-4 space-y-1.5 hover:bg-slate-50 px-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-semibold text-slate-900">{guide.name}</span>
+                  {hasVerifiedCourse && (
+                    <Badge variant="default" className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200 px-1.5 py-0">
+                      Verified
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-sm font-semibold text-slate-900 shrink-0 text-right">
+                  {formatUsdFromCents(guide.priceCents)}
+                </div>
+              </div>
+              <div className="text-xs text-slate-600 mt-0.5">
+                {guide.rating.toFixed(1)} rating · {guide.sessions} sessions
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {guide.slots.map((slot) => (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    onClick={() => setSelectedSlot(slot)}
+                    className="border border-slate-200 text-xs text-slate-700 px-2.5 py-1 rounded hover:border-mentrixa-300 hover:text-mentrixa-700 hover:bg-mentrixa-50 transition-all duration-150"
+                  >
+                    {slot.course} · {formatTime(slot.start_time)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+          })
         )}
       </div>
-    </div>
+
+      <BookingDialog
+        slot={selectedSlot}
+        onOpenChange={(open) => !open && setSelectedSlot(null)}
+        tutorExpertise={tutorExpertise}
+      />
+    </aside>
   );
 }
 
-function AvailabilitySlot({ slot }: { slot: Availability }) {
+function BookingDialog({
+  slot,
+  onOpenChange,
+  tutorExpertise = {},
+}: {
+  slot: Availability | null;
+  onOpenChange: (open: boolean) => void;
+  tutorExpertise?: Record<string, TutorExpertiseEntry[]>;
+}) {
+  if (!slot) return null;
+
+  const priceCents = slot.price_per_session ?? 2500;
+  const timeLabel = formatTime(slot.start_time);
+  const expertise = slot.tutor_id ? (tutorExpertise[slot.tutor_id] ?? []) : [];
+  const courseExpertise = expertise.find(
+    (e) => e.course_name.toLowerCase() === slot.course.toLowerCase(),
+  );
+
   return (
-    <div className="border border-border rounded-xl p-4 bg-muted/30 flex justify-between items-center hover:border-primary/50 hover:bg-muted/50 transition-all">
-      <div className="flex-1">
-        <p className="text-sm font-semibold text-foreground mb-1">
-          {slot.course}
-        </p>
-        <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-          <Clock size={12} />
-          {formatDate(slot.start_time)}
-        </p>
-        <p className="text-sm font-medium text-primary">
-          {formatTimeRange(slot.start_time, slot.end_time)}
-        </p>
-      </div>
-      <BookSessionButton availabilityId={slot.id} />
-    </div>
+    <Dialog open={!!slot} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Book a session</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-semibold text-slate-900">{slot.tutor?.email?.split("@")[0] ?? "Guide"}</p>
+              {courseExpertise?.verified && (
+                <Badge variant="default" className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                  Verified
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-slate-600 font-mono mt-1">
+              {slot.course} · {timeLabel}
+            </p>
+          </div>
+
+          {courseExpertise && (
+            <div className="rounded-md bg-slate-100 border border-slate-200 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-widest text-slate-600 font-semibold mb-1">Qualifications</p>
+              <p className="text-xs text-slate-800 leading-relaxed">{courseExpertise.proof_description}</p>
+            </div>
+          )}
+
+          <div className="h-px bg-slate-200 my-2" />
+          <div className="flex items-center justify-between text-sm gap-3">
+            <span className="text-slate-600">Session fee</span>
+            <span className="font-semibold text-slate-900 tabular-nums">
+              {formatUsdFromCents(priceCents)}
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+            Payment processed via Stripe. Cancel 60+ min before for full refund.
+          </p>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" size="sm">
+              Cancel
+            </Button>
+          </DialogClose>
+          <BookSessionButton availabilityId={slot.id} />
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

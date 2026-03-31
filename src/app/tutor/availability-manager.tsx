@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { deleteAvailability } from "@/app/actions/tutor";
+import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
-import { CreateAvailabilityForm } from "./create-availability-form";
-import { formatDate, formatTimeRange } from "@/lib/time-format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { formatTimeRange, formatDateShort } from "@/lib/time-format";
+import { Badge } from "@/components/ui/badge";
 
 interface Availability {
   id: string;
   course: string;
   start_time: string;
   end_time: string;
+  price_per_session?: number | null;
+  price?: number | null;
 }
 
 interface AvailabilityManagerProps {
@@ -23,11 +23,12 @@ interface AvailabilityManagerProps {
 export function AvailabilityManager({ availability }: AvailabilityManagerProps) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { viewingAsUserId } = useAdminViewContext();
 
   async function handleDelete(availabilityId: string) {
     setError(null);
     try {
-      await deleteAvailability(availabilityId);
+      await deleteAvailability(availabilityId, viewingAsUserId ?? undefined);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete availability");
@@ -35,48 +36,32 @@ export function AvailabilityManager({ availability }: AvailabilityManagerProps) 
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-2xl">My Availability</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage your tutoring schedule
-            </p>
-          </div>
-          <CreateAvailabilityForm />
+    <div>
+      {error && (
+        <div className="mb-3 text-xs text-red-600">
+          {error}
         </div>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mb-4">
-            <p className="text-destructive text-sm">{error}</p>
-          </div>
-        )}
-
-        {availability.length === 0 ? (
-          <div className="py-12">
-            <p className="text-center text-muted-foreground">
-              No availability slots created
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {availability.map((slot) => (
-              <AvailabilitySlot
-                key={slot.id}
-                slot={slot}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+      {availability.length === 0 ? (
+        <p className="text-xs text-slate-400 py-2.5">
+          No availability slots created.
+        </p>
+      ) : (
+        <div>
+          {availability.map((slot) => (
+            <AvailabilityRow
+              key={slot.id}
+              slot={slot}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-function AvailabilitySlot({
+function AvailabilityRow({
   slot,
   onDelete,
 }: {
@@ -93,33 +78,34 @@ function AvailabilitySlot({
     }
   }
 
+  const cents = slot.price_per_session ?? slot.price ?? 2500;
+  const priceInDollars = cents / 100;
+  const dateLabel = formatDateShort(slot.start_time);
+
   return (
-    <div className="border border-border rounded-xl p-5 bg-card flex justify-between items-center hover:border-primary/20 hover:shadow-md transition-all">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-          <span className="text-primary font-bold text-lg">
-            {slot.course.charAt(0)}
-          </span>
-        </div>
-        <div>
-          <p className="font-semibold text-lg text-foreground">{slot.course}</p>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {formatDate(slot.start_time)}
-          </p>
-          <p className="text-sm font-medium text-primary mt-0.5">
-            {formatTimeRange(slot.start_time, slot.end_time)}
-          </p>
-        </div>
+    <div className="flex items-center justify-between py-2.5 border-b border-[#F8FAFC]">
+      <div className="flex items-center">
+        <span className="font-mono text-xs text-slate-400">
+          {dateLabel} ·{" "}
+          {formatTimeRange(slot.start_time, slot.end_time)}
+        </span>
+        <Badge variant="outline" className="ml-2 text-[10px] font-normal">
+          {slot.course}
+        </Badge>
       </div>
-      <Button
-        onClick={handleDelete}
-        disabled={deleting}
-        variant="destructive"
-        size="sm"
-      >
-        <Trash2 size={16} className="mr-2" />
-        {deleting ? "Deleting..." : "Delete"}
-      </Button>
+      <div className="flex items-center">
+        <span className="text-xs text-slate-400">
+          ${priceInDollars.toFixed(2)}
+        </span>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="ml-3 text-xs text-slate-300 hover:text-red-500"
+        >
+          x
+        </button>
+      </div>
     </div>
   );
 }

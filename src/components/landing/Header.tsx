@@ -2,128 +2,144 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
+
+const PUBLIC_LINKS = [
+  { label: "Features", href: "#how-it-works" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "For Tutors", href: "/auth/signup?role=tutor" },
+  { label: "Pricing", href: "#how-it-works" },
+];
 
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinks = [
-    { name: "Services", href: "/student" },
-    { name: "How It Works", href: "#how-it-works" },
-    { name: "For Providers", href: "/auth/signup?role=tutor" },
-  ];
-
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-      isScrolled ? "bg-background/80 backdrop-blur-xl border-b border-border/50" : "bg-transparent"
-    }`}>
-      <div className="section-container">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">O</span>
-            </div>
-            <span className="text-xl font-bold text-foreground tracking-tight hidden sm:block">OTAMS</span>
+    <>
+      <header
+        className={cn(
+          "fixed top-4 left-1/2 -translate-x-1/2 z-50 h-14 px-4 flex items-center justify-between gap-4",
+          "max-w-5xl w-[calc(100%-2rem)] rounded-2xl transition-all duration-300",
+          "bg-white/80 backdrop-blur-xl border border-white/60 shadow-float",
+          scrolled && "bg-white/95"
+        )}
+      >
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <span className="font-display font-bold text-xl tracking-tight">
+            <span className="bg-gradient-brand bg-clip-text text-transparent">MEN</span>
+            <span className="text-text-primary">TRIXA</span>
+          </span>
+      
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-0.5">
+          {PUBLIC_LINKS.map((item) =>
+            item.href.startsWith("#") ? (
+              <a
+                key={item.label}
+                href={item.href}
+                className="text-text-secondary hover:text-text-primary px-3 py-1.5 rounded-lg hover:bg-surface-hover text-sm font-medium transition-colors"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="text-text-secondary hover:text-text-primary px-3 py-1.5 rounded-lg hover:bg-surface-hover text-sm font-medium transition-colors"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
+        </nav>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <Link href="/auth/signup" className="btn-primary hidden md:inline-flex">
+            Get Started
           </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-10">
-            {navLinks.map((link) => {
-              if (link.href.startsWith("#")) {
-                return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                );
-              }
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/auth/signin">Sign In</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href="/auth/signup">Get Started</Link>
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
+            type="button"
+            className="md:hidden p-2 rounded-lg text-text-secondary hover:bg-surface-hover"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <Menu size={22} />
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-background border-t border-border animate-fade-in">
-          <div className="section-container py-6 space-y-4">
-            {navLinks.map((link) => {
-              if (link.href.startsWith("#")) {
-                return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    className="block py-3 text-lg text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {link.name}
-                  </a>
-                );
-              }
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="block py-3 text-lg text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.name}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setDrawerOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: 288 }}
+              animate={{ x: 0 }}
+              exit={{ x: 288 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed right-0 top-0 h-full w-72 bg-white/95 backdrop-blur-xl shadow-float z-50 md:hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-surface-border flex justify-between items-center">
+                <Link href="/" className="flex items-center gap-2" onClick={() => setDrawerOpen(false)}>
+                  <MentrixaWordmark className="text-xl" />
                 </Link>
-              );
-            })}
-            <div className="pt-6 border-t border-border space-y-3">
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
-              </Button>
-              <Button className="w-full" asChild>
-                <Link href="/auth/signup" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </header>
+                <button type="button" onClick={() => setDrawerOpen(false)} className="p-2">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 py-6">
+                {PUBLIC_LINKS.map((item) =>
+                  item.href.startsWith("#") ? (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setDrawerOpen(false)}
+                      className="block px-6 py-3 text-text-primary hover:bg-surface-hover text-sm font-medium"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setDrawerOpen(false)}
+                      className="block px-6 py-3 text-text-primary hover:bg-surface-hover text-sm font-medium"
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                )}
+              </div>
+              <div className="p-6 border-t border-surface-border">
+                <Link
+                  href="/auth/signup"
+                  className="btn-primary w-full text-center block"
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
-

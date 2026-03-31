@@ -1,38 +1,32 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
-import { Navigation } from "@/components/navigation";
+import { AppNavOrNothing } from "@/components/app-nav-or-nothing";
 import { ErrorBoundary } from "@/components/error-boundary";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import { getCurrentUser } from "@/lib/auth";
+import { PageFade } from "@/components/page-fade";
 
 export const metadata: Metadata = {
-  title: "OTAMS - Online Tutoring and Management System",
-  description: "Online Tutoring and Management System",
+  title: "Mentrixa — Learning, leveled up",
+  description: "Mentrixa helps students and tutors work smarter with structured quests, sessions, and divisions.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-blue-50/30 via-white to-purple-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900`}
-      >
+      <body className="antialiased font-sans">
         <ErrorBoundary>
-          <Navigation />
-          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+          <AppNavOrNothing user={user} />
+          <main className="relative min-h-screen pt-14 bg-[#FAFAFA] bg-mesh-blue">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <PageFade>{children}</PageFade>
+            </div>
+          </main>
         </ErrorBoundary>
       </body>
     </html>

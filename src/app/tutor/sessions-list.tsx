@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { cancelSession } from "@/app/actions/tutor";
-import { useRouter } from "next/navigation";
-import { JoinVideoCallButton } from "@/components/join-video-call-button";
+import { useMemo } from "react";
 import { formatDate, formatTimeRange } from "@/lib/time-format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle } from "lucide-react";
+import { DeletePastSessionButton } from "@/components/delete-past-session-button";
+import { JoinVideoCallButton } from "@/components/join-video-call-button";
+import { TutorSessionActions } from "./tutor-session-actions";
+import { TutorPastAiGenerateButton } from "./tutor-past-ai-generate";
 
 interface Session {
   id: string;
@@ -16,139 +13,204 @@ interface Session {
   start_time: string;
   end_time: string;
   completed: boolean;
+  status?: string;
+  student_id?: string;
   student?: {
     id: string;
   };
+  student_email?: string | null;
+  auto_approved?: boolean | null;
+  rating?: number | null;
+  /** True when an AI package row exists for this session (tutor dashboard / past tab). */
+  hasAiPackage?: boolean;
 }
 
 interface SessionsListProps {
   upcomingSessions: Session[];
   pastSessions: Session[];
+  mode?: "all" | "past-only";
 }
 
-export function SessionsList({ upcomingSessions, pastSessions }: SessionsListProps) {
-  const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">My Sessions</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "upcoming" | "past")} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="upcoming">
-              Upcoming ({upcomingSessions.length})
-            </TabsTrigger>
-            <TabsTrigger value="past">
-              Past ({pastSessions.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="space-y-4">
-            {activeTab === "upcoming" ? (
-              upcomingSessions.length === 0 ? (
-                <div className="py-12">
-                  <p className="text-center text-muted-foreground">
-                    No upcoming sessions
-                  </p>
-                </div>
-              ) : (
-                upcomingSessions.map((session) => (
-                  <SessionCard key={session.id} session={session} type="upcoming" />
-                ))
-              )
-            ) : (
-              pastSessions.length === 0 ? (
-                <div className="py-12">
-                  <p className="text-center text-muted-foreground">
-                    No past sessions
-                  </p>
-                </div>
-              ) : (
-                pastSessions.map((session) => (
-                  <SessionCard key={session.id} session={session} type="past" />
-                ))
-              )
-            )}
-          </div>
-        </Tabs>
-      </CardContent>
-    </Card>
+export function SessionsList({
+  upcomingSessions,
+  pastSessions,
+  mode = "all",
+}: SessionsListProps) {
+  const filteredUpcoming = useMemo(
+    () => upcomingSessions.filter((s) => s.status !== "cancelled"),
+    [upcomingSessions],
   );
-}
 
-function SessionCard({
-  session,
-  type,
-}: {
-  session: Session;
-  type: "upcoming" | "past";
-}) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  async function handleCancel() {
-    if (!confirm("Are you sure you want to cancel this session?")) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await cancelSession(session.id);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to cancel session");
-      setLoading(false);
-    }
+  if (mode === "past-only") {
+    return (
+      <div className="mentrixa-table overflow-x-auto border border-slate-300 rounded-md bg-white shadow-sm">
+        <table className="min-w-full text-xs">
+          <thead className="border-b-2 border-slate-300 bg-slate-200 text-slate-900">
+            <tr>
+              <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+                Course
+              </th>
+              <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+                Learner
+              </th>
+              <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+                Date
+              </th>
+              <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+                Rating
+              </th>
+              <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+                AI Package
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {pastSessions.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="py-8 px-3 text-center text-xs text-slate-400"
+                >
+                  No past sessions.
+                </td>
+              </tr>
+            ) : (
+              pastSessions.map((session) => {
+                const learnerName =
+                  session.student_email?.split("@")[0] ??
+                  session.student_email ??
+                  (session.student_id ? `Student ${session.student_id.slice(0, 8)}` : "–");
+                return (
+                <tr
+                  key={session.id}
+                  className="border-b border-slate-200 text-sm bg-white hover:bg-slate-100/90"
+                >
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="font-mono text-xs font-medium text-slate-800">
+                      {session.course}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="text-sm font-medium text-slate-950">{learnerName}</span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="text-sm text-slate-900">{formatDate(session.start_time)}</span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="text-xs font-medium text-slate-800">
+                      {session.rating != null ? `${session.rating} / 5` : "–"}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <TutorPastAiGenerateButton
+                      sessionId={session.id}
+                      hasAiPackage={session.hasAiPackage === true}
+                    />
+                  </td>
+                  <td className="py-2.5 px-3 align-middle text-right">
+                    <DeletePastSessionButton
+                      sessionId={session.id}
+                      endTime={session.end_time}
+                      allowRemoveBeforeScheduledEnd={
+                        session.status === "completed" ||
+                        session.completed ||
+                        session.status === "cancelled"
+                      }
+                    />
+                  </td>
+                </tr>
+              );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
   }
 
   return (
-    <div className="border border-border rounded-xl p-5 bg-card hover:border-primary/20 hover:shadow-md transition-all">
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-bold text-lg">
-              {session.course.charAt(0)}
-            </span>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg text-foreground">{session.course}</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {formatDate(session.start_time)} • {formatTimeRange(session.start_time, session.end_time)}
-            </p>
-            {session.completed && (
-              <span className="inline-block mt-2 px-3 py-1 bg-success/10 text-success rounded-lg text-xs font-semibold">
-                <CheckCircle size={12} className="inline mr-1" />
-                Completed
-              </span>
-            )}
-          </div>
-        </div>
-        {type === "upcoming" && (
-          <div className="flex flex-col items-end gap-2">
-            {error && (
-              <p className="text-xs text-destructive max-w-[150px] text-right">{error}</p>
-            )}
-            <JoinVideoCallButton
-              sessionId={session.id}
-              startTime={session.start_time}
-              endTime={session.end_time}
-            />
-            <Button
-              onClick={handleCancel}
-              disabled={loading}
-              variant="destructive"
-              size="sm"
-            >
-              {loading ? "Cancelling..." : "Cancel"}
-            </Button>
-          </div>
-        )}
-      </div>
+    <div className="mentrixa-table overflow-x-auto border border-slate-300 rounded-md bg-white shadow-sm">
+      <table className="min-w-full text-xs">
+        <thead className="border-b-2 border-slate-300 bg-slate-200 text-slate-900">
+          <tr>
+            <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+              Course
+            </th>
+            <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+              Learner
+            </th>
+            <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+              Date
+            </th>
+            <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+              Time
+            </th>
+            <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+              Status
+            </th>
+            <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredUpcoming.length === 0 ? (
+            <tr>
+              <td
+                colSpan={6}
+                className="py-8 px-3 text-center text-xs text-slate-400"
+              >
+                No upcoming sessions.
+              </td>
+            </tr>
+          ) : (
+            filteredUpcoming.map((session) => {
+              const status = session.auto_approved ? "Auto" : "Manual";
+              const learnerName =
+                session.student_email?.split("@")[0] ??
+                session.student_email ??
+                (session.student_id ? `Student ${session.student_id.slice(0, 8)}` : "–");
+              return (
+                <tr
+                  key={session.id}
+                  className="border-b border-slate-200 text-sm bg-white hover:bg-slate-100/90"
+                >
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="font-mono text-xs font-medium text-slate-800">
+                      {session.course}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="text-sm font-medium text-slate-950">{learnerName}</span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="text-sm text-slate-900">{formatDate(session.start_time)}</span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="text-sm font-mono tabular-nums text-slate-900">
+                      {formatTimeRange(session.start_time, session.end_time)}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <span className="font-mono text-xs font-medium text-slate-800">{status}</span>
+                  </td>
+                  <td className="py-2.5 px-3 align-middle">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap sm:gap-3">
+                      <JoinVideoCallButton
+                        sessionId={session.id}
+                        startTime={session.start_time}
+                        endTime={session.end_time}
+                      />
+                      <TutorSessionActions sessionId={session.id} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
+

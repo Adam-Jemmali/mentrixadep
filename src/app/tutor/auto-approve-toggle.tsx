@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toggleAutoApprove } from "@/app/actions/tutor";
+import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 
 interface AutoApproveToggleProps {
@@ -13,6 +14,7 @@ export function AutoApproveToggle({ initialValue }: AutoApproveToggleProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { viewingAsUserId } = useAdminViewContext();
 
   async function handleToggle() {
     const newValue = !enabled;
@@ -20,7 +22,7 @@ export function AutoApproveToggle({ initialValue }: AutoApproveToggleProps) {
     setError(null);
 
     try {
-      await toggleAutoApprove(newValue);
+      await toggleAutoApprove(newValue, viewingAsUserId ?? undefined);
       setEnabled(newValue);
       router.refresh();
     } catch (err) {
@@ -30,32 +32,38 @@ export function AutoApproveToggle({ initialValue }: AutoApproveToggleProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Auto-Approve Session Requests</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Automatically approve session requests when enabled
-          </p>
-          {error && (
-            <p className="text-xs text-red-600 dark:text-red-400 mt-2 font-medium">{error}</p>
-          )}
-        </div>
-        <button
-          onClick={handleToggle}
-          disabled={loading}
-          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all ${
-            enabled ? "bg-gradient-to-r from-blue-600 to-purple-600" : "bg-gray-300 dark:bg-gray-600"
-          } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-        >
-          <span
-            className={`inline-block h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${
-              enabled ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
-        </button>
-      </div>
-    </div>
+    <>
+      <label
+        htmlFor="auto-approve"
+        className={`relative inline-block w-10 h-5 rounded-full transition-colors ${
+          enabled ? "bg-[#2563EB]" : "bg-[#E2E8F0]"
+        } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        onClick={(e) => {
+          e.preventDefault();
+          if (!loading) {
+            handleToggle();
+          }
+        }}
+      >
+        <span
+          className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${
+            enabled ? "translate-x-[20px]" : "translate-x-0"
+          }`}
+        />
+      </label>
+      <input
+        id="auto-approve"
+        type="checkbox"
+        checked={enabled}
+        readOnly
+        className="hidden"
+      />
+      {error && (
+        <p className="mt-1 text-[11px] text-red-600">
+          {error}
+        </p>
+      )}
+    </>
   );
 }
 

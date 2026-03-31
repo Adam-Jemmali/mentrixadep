@@ -32,6 +32,12 @@ export function validateUUID(id: unknown): string {
   return uuidSchema.parse(id);
 }
 
+/** Safe UUID parse for server actions that should return `{ success: false }` instead of throwing. */
+export function parseUUID(id: unknown): { ok: true; id: string } | { ok: false } {
+  const r = uuidSchema.safeParse(id);
+  return r.success ? { ok: true, id: r.data } : { ok: false };
+}
+
 export function validateRole(role: unknown): "student" | "tutor" | "admin" {
   return roleSchema.parse(role);
 }
@@ -139,6 +145,43 @@ if (typeof setInterval !== "undefined") {
 }
 
 // ============================================
+// RATE LIMIT CONFIGURATION & HELPERS
+// ============================================
+
+export const RATE_LIMITS = {
+  signIn: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
+  signUp: { maxRequests: 3, windowMs: 60 * 60 * 1000 },
+  bookSession: { maxRequests: 10, windowMs: 60 * 1000 },
+  createAvailability: { maxRequests: 20, windowMs: 60 * 1000 },
+  rateSession: { maxRequests: 5, windowMs: 60 * 1000 },
+  deletePastSession: { maxRequests: 30, windowMs: 60 * 1000 },
+  adminAction: { maxRequests: 30, windowMs: 60 * 1000 },
+  questAi: { maxRequests: 30, windowMs: 60 * 1000 },
+  duelCreate: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
+  duelSubmit: { maxRequests: 40, windowMs: 60 * 1000 },
+  duelQueueJoin: { maxRequests: 30, windowMs: 60 * 1000 },
+  clanCreate: { maxRequests: 5, windowMs: 60 * 60 * 1000 },
+  clanJoin: { maxRequests: 15, windowMs: 60 * 60 * 1000 },
+  clanRegenerateCode: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
+} as const;
+
+export function getRateLimitId(userId?: string, ip?: string): string {
+  return userId ? `user:${userId}` : `ip:${ip || "unknown"}`;
+}
+
+export function enforceRateLimit(
+  identifier: string,
+  limit: { maxRequests: number; windowMs: number },
+  action: string
+): void {
+  if (!checkRateLimit(identifier, limit.maxRequests, limit.windowMs)) {
+    throw new Error(
+      `Rate limit exceeded for ${action}. Please try again later.`
+    );
+  }
+}
+
+// ============================================
 // SECURITY HEADERS
 // ============================================
 
@@ -150,6 +193,23 @@ export const securityHeaders = {
   // Allow camera and microphone for same origin (required for video calling)
   // Block geolocation for security
   "Permissions-Policy": "camera=(self), microphone=(self), geolocation=()",
+  // Content Security Policy - strict but allows necessary resources
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-eval needed for Next.js, unsafe-inline for some libs
+    "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co", // Supabase API and Realtime
+    "media-src 'self' blob:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; "),
+  // Strict Transport Security (HSTS) - only in production
+  ...(process.env.NODE_ENV === "production" && {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  }),
 };
 
 // ============================================
@@ -160,27 +220,55 @@ export const securityHeaders = {
  * Sanitize error messages to prevent information leakage
  */
 export function sanitizeError(error: unknown): string {
-  if (error instanceof Error) {
-    // Don't expose internal error details
-    const message = error.message.toLowerCase();
-    
-    // Whitelist safe error messages
-    if (
-      message.includes("required") ||
-      message.includes("invalid") ||
-      message.includes("not found") ||
-      message.includes("permission") ||
-      message.includes("unauthorized") ||
-      message.includes("forbidden")
-    ) {
-      return error.message;
-    }
-    
-    // Generic error for everything else
-    return "An error occurred. Please try again.";
+  const rawMessage =
+    error instanceof Error
+      ? error.message
+      : error &&
+          typeof error === "object" &&
+          error !== null &&
+          "message" in error &&
+          typeof (error as { message: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : typeof error === "string"
+          ? error
+          : "";
+
+  if (!rawMessage) {
+    return "An unexpected error occurred.";
   }
-  
-  return "An unexpected error occurred.";
+
+  const message = rawMessage.toLowerCase();
+
+  // Safe, user-facing phrases (app validation + common DB/PostgREST hints)
+  if (
+    message.includes("required") ||
+    message.includes("invalid") ||
+    message.includes("not found") ||
+    message.includes("permission") ||
+    message.includes("unauthorized") ||
+    message.includes("forbidden") ||
+    message.includes("already have") ||
+    message.includes("already has") ||
+    message.includes("cannot") ||
+    message.includes("not approved") ||
+    message.includes("rate limit") ||
+    message.includes("failed to") ||
+    message.includes("duplicate") ||
+    message.includes("exists") ||
+    message.includes("overlap") ||
+    message.includes("not allowed") ||
+    message.includes("must") ||
+    message.includes("context") ||
+    message.includes("violates") ||
+    message.includes("column") ||
+    message.includes("null value") ||
+    message.includes("row-level") ||
+    message.includes("expected") // zod / validation hints
+  ) {
+    return rawMessage;
+  }
+
+  return "An error occurred. Please try again.";
 }
 
 // ============================================
@@ -202,16 +290,12 @@ export function validateFutureDate(date: Date | string): Date {
 }
 
 /**
- * Validate that time is at :00 or :30 minutes
+ * Validate slot start instant (any minute; sub-minute precision is not required).
  */
 export function validateTimeSlot(date: Date | string): Date {
   const parsed = typeof date === "string" ? new Date(date) : date;
   if (isNaN(parsed.getTime())) {
     throw new Error("Invalid date");
-  }
-  const minutes = parsed.getMinutes();
-  if (minutes !== 0 && minutes !== 30) {
-    throw new Error("Time must be at :00 or :30 minutes");
   }
   return parsed;
 }

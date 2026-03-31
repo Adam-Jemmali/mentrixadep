@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { bookSession } from "@/app/actions/student";
-import { useRouter } from "next/navigation";
 
 interface BookSessionButtonProps {
   availabilityId: string;
@@ -11,15 +9,30 @@ interface BookSessionButtonProps {
 export function BookSessionButton({ availabilityId }: BookSessionButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   async function handleBook() {
     setLoading(true);
     setError(null);
 
     try {
-      await bookSession(availabilityId);
-      router.refresh();
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ availabilityId }),
+      });
+
+      const data = (await res.json()) as {
+        url?: string;
+        error?: string;
+      };
+
+      if (!res.ok || !data.url) {
+        setError(data.error ?? "Failed to start checkout");
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to book session");
       setLoading(false);
@@ -38,9 +51,8 @@ export function BookSessionButton({ availabilityId }: BookSessionButtonProps) {
         disabled={loading}
         className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-blue-400 disabled:to-purple-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold whitespace-nowrap shadow-sm hover:shadow transition-all"
       >
-        {loading ? "Booking..." : "Book Session"}
+        {loading ? "Redirecting…" : "Book Session"}
       </button>
     </div>
   );
 }
-

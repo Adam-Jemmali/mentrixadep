@@ -8,14 +8,11 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 
 /**
- * Create a video room for a session
- * Only allowed during session time window: [start_time - 5min, end_time + 15min]
+ * Create a video room for a session (participants may join early; room expires after session end).
  */
 export async function createVideoRoom(sessionId: string) {
   const user = await requireAuth();
   const validatedSessionId = validateUUID(sessionId);
-
-  const supabase = await createClient();
   const adminClient = createAdminClient();
 
   // Fetch session details
@@ -49,30 +46,12 @@ export async function createVideoRoom(sessionId: string) {
     };
   }
 
-  // Validate time window: [start_time - 5min, end_time + 15min]
-  const now = new Date();
-  const sessionStart = new Date(session.start_time);
-  const sessionEnd = new Date(session.end_time);
-  const windowStart = new Date(sessionStart.getTime() - 5 * 60 * 1000); // 5 minutes before
-  const windowEnd = new Date(sessionEnd.getTime() + 15 * 60 * 1000); // 15 minutes after
-
-  if (now < windowStart) {
-    throw new Error(
-      `Session not yet available. Video calls open 5 minutes before session start.`
-    );
-  }
-
-  if (now > windowEnd) {
-    throw new Error(
-      `Session window expired. Video calls close 15 minutes after session end.`
-    );
-  }
-
   // Generate secure room token
   const roomToken = randomBytes(32).toString("base64");
 
-  // Calculate expiration (15 minutes after session end)
-  const expiresAt = new Date(windowEnd);
+  // Room expires 24 hours after session end to give plenty of time
+  const sessionEnd = new Date(session.end_time);
+  const expiresAt = new Date(sessionEnd.getTime() + 24 * 60 * 60 * 1000);
 
   // Create video room using admin client to bypass RLS
   const { data: room, error: roomError } = await adminClient
@@ -153,18 +132,7 @@ export async function validateJoinRequest(sessionId: string) {
     throw new Error("Video room is no longer active");
   }
 
-  // Validate time window
-  const now = new Date();
-  const sessionStart = new Date(session.start_time);
-  const sessionEnd = new Date(session.end_time);
-  const windowStart = new Date(sessionStart.getTime() - 5 * 60 * 1000);
-  const windowEnd = new Date(sessionEnd.getTime() + 15 * 60 * 1000);
-
-  if (now < windowStart || now > windowEnd) {
-    throw new Error("Session time window expired");
-  }
-
-  if (new Date(room.expires_at) < now) {
+  if (new Date(room.expires_at) < new Date()) {
     throw new Error("Video room has expired");
   }
 

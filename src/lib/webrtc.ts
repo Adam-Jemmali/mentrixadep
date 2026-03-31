@@ -29,7 +29,11 @@ export function getWebRTCConfig(): RTCConfiguration {
   const customTurn = process.env.NEXT_PUBLIC_TURN_SERVERS;
   if (customTurn) {
     customTurn.split(",").forEach((url) => {
-      const [server, username, credential] = url.trim().split("|");
+      const parts = url.trim().split("|");
+      const server = parts[0];
+      const username = parts[1];
+      const credential = parts[2];
+      if (!server) return;
       if (username && credential) {
         turnServers.push({
           urls: server,
@@ -44,7 +48,10 @@ export function getWebRTCConfig(): RTCConfiguration {
 
   return {
     iceServers: [...stunServers, ...turnServers],
-    iceCandidatePoolSize: 10,
+    iceCandidatePoolSize: 10, // Pre-gather ICE candidates for faster connection
+    iceTransportPolicy: "all", // Use both relay and direct connections
+    bundlePolicy: "max-bundle", // Bundle RTP and RTCP for efficiency
+    rtcpMuxPolicy: "require", // Require RTCP multiplexing
   };
 }
 

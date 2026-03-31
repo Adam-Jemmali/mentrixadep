@@ -1,158 +1,142 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, Lock, ArrowRight, GraduationCap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getRoleHomePath } from "@/lib/role-home";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { gsap } from "gsap";
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const wrapper = document.getElementById("auth-form-wrapper");
+    if (!wrapper) return;
+    const children = Array.from(wrapper.children);
+    gsap.fromTo(
+      children,
+      { y: 16, opacity: 0 },
+      { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
+    );
+  }, []);
+
+  async function handleGoogleSignIn() {
+    setOauthLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/auth/callback" },
+    });
+    if (error) {
+      setError(error.message);
+      setOauthLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     const formData = new FormData(e.currentTarget);
-
     const result = await signIn(formData);
 
     if (result?.error) {
       setError(result.error);
       setLoading(false);
     } else if (result?.success) {
-      const redirectPath = result.role === "admin" ? "/admin" : "/dashboard";
-      router.push(redirectPath);
+      router.push(getRoleHomePath(result.role));
       router.refresh();
     }
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Logo */}
-          <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">O</span>
-            </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">OTAMS</span>
+    <>
+      <h1 className="text-[24px] font-bold tracking-[-0.03em] text-slate-900 mb-1">
+        Sign in
+      </h1>
+      <p className="text-sm text-slate-500 mb-5">
+        New to Mentrixa?{" "}
+        <Link href="/auth/signup" className="text-mentrixa-600 hover:underline">
+          Create an account
+        </Link>
+      </p>
+
+      <button
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={oauthLoading}
+        className="w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+      >
+        {oauthLoading ? "Redirecting…" : "Continue with Google"}
+      </button>
+
+      <div className="flex items-center gap-3 my-5">
+        <span className="flex-1 h-px bg-slate-200" />
+        <span className="text-xs text-slate-400">or</span>
+        <span className="flex-1 h-px bg-slate-200" />
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+            Email
+          </Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@university.ca"
+            className="input-premium border-slate-200 transition-all duration-200"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
+            Password
+          </Label>
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              className="input-premium border-slate-200 transition-all duration-200"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((p) => !p)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          <Link
+            href="/auth/forgot-password"
+            className="block mt-1.5 text-xs text-slate-400 hover:text-slate-700 text-right"
+          >
+            Forgot password
           </Link>
-
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Welcome back
-            </h1>
-            <p className="text-muted-foreground">
-              Sign in to access your dashboard
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10 h-12"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="pl-10 h-12"
-                  required
-                  minLength={8}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                <p className="text-destructive text-sm font-medium">{error}</p>
-              </div>
-            )}
-
-            <Button type="submit" size="lg" className="w-full mt-6" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
-              <ArrowRight size={18} className="ml-2" />
-            </Button>
-          </form>
-
-          {/* Switch mode */}
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/auth/signup" className="text-primary font-medium hover:underline">
-              Sign up
-            </Link>
-          </p>
         </div>
-      </div>
 
-      {/* Right side - Visual */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: 'var(--gradient-dark)' }}>
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-primary/20 rounded-full blur-3xl" />
-        
-        <div className="relative z-10 flex flex-col items-center justify-center p-12">
-          <div className="max-w-md text-center">
-            <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-8">
-              <GraduationCap size={40} className="text-primary" />
-            </div>
-            <h2 className="text-3xl font-bold text-primary-foreground mb-4">
-              Academic excellence starts here
-            </h2>
-            <p className="text-primary-foreground/70 leading-relaxed">
-              Connect with verified experts, get personalized help, and achieve your academic goals with confidence.
-            </p>
-            
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-primary-foreground/10">
-              <div>
-                <p className="text-2xl font-bold text-primary-foreground">New</p>
-                <p className="text-xs text-primary-foreground/60">Platform</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-primary-foreground">100%</p>
-                <p className="text-xs text-primary-foreground/60">Free</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-primary-foreground">4.9★</p>
-                <p className="text-xs text-primary-foreground/60">Rating</p>
-              </div>
-            </div>
+        {error && (
+          <div className="text-sm text-red-600">
+            {error}
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+
+        <Button type="submit" className="w-full mt-5" disabled={loading}>
+          {loading ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+    </>
   );
 }

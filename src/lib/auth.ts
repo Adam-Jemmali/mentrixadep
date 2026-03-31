@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { UserRole } from "@/lib/database.types";
+import { getRoleHomePath } from "@/lib/role-home";
 
 export interface AuthUser {
   id: string;
@@ -58,7 +60,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 export async function requireAuth(): Promise<AuthUser> {
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("Unauthorized");
+    redirect("/auth/signin");
   }
   return user;
 }
@@ -67,7 +69,7 @@ export async function requireRole(role: UserRole | UserRole[]): Promise<AuthUser
   const user = await requireAuth();
   const allowedRoles = Array.isArray(role) ? role : [role];
   if (!allowedRoles.includes(user.role)) {
-    throw new Error("Forbidden");
+    redirect(getRoleHomePath(user.role));
   }
   return user;
 }

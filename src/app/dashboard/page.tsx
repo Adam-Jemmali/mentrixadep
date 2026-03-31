@@ -1,8 +1,22 @@
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+async function getDisplayName(userId: string, email?: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("user_settings")
+    .select("display_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (data?.display_name) return data.display_name;
+  if (email) return email.split("@")[0];
+  return "there";
+}
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -11,17 +25,26 @@ export default async function DashboardPage() {
     redirect("/auth/signin");
   }
 
+  if (user.role !== "admin") {
+    redirect(user.role === "tutor" ? "/tutor" : "/student");
+  }
+
+  const displayName = await getDisplayName(user.id, user.email);
+
+  const dashboardHref = "/admin";
+  const dashboardLabel = "Admin panel";
+
   return (
     <div className="min-h-screen bg-background">
       <div className="section-container py-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Welcome back, {user.email}
+            Welcome back, {displayName}
           </p>
         </div>
 
-        <Card className="mb-6">
+        <Card className="mb-6 border-slate-200/80 shadow-sm">
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
           </CardHeader>
@@ -53,34 +76,22 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {user.role === "admin" && (
-            <Card className="hover:border-primary/20 transition-all">
-              <CardContent className="p-6">
-                <Button asChild className="w-full" variant="default">
-                  <Link href="/admin">Admin Panel</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-          {(user.role === "tutor" || user.role === "admin") && (
-            <Card className="hover:border-primary/20 transition-all">
-              <CardContent className="p-6">
-                <Button asChild className="w-full" variant="default">
-                  <Link href="/tutor">Tutor Dashboard</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-          {(user.role === "student" || user.role === "admin") && (
-            <Card className="hover:border-primary/20 transition-all">
-              <CardContent className="p-6">
-                <Button asChild className="w-full" variant="default">
-                  <Link href="/student">Student Dashboard</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 stagger-children">
+          <Card className="card-lift border-slate-200/80 shadow-sm hover:border-mentrixa-200/60 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <Button asChild className="w-full" variant="default">
+                <Link href={dashboardHref}>{dashboardLabel}</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="card-lift border-slate-200/80 shadow-sm hover:border-mentrixa-200/60 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <Button asChild className="w-full" variant="outline">
+                <Link href="/settings">Settings</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

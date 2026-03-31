@@ -1,136 +1,194 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createAvailability } from "@/app/actions/tutor";
+import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toDatetimeLocalInputValue } from "@/lib/time-format";
 
-export function CreateAvailabilityForm() {
-  const [showForm, setShowForm] = useState(false);
+const DURATION_OPTIONS: { value: string; label: string }[] = [
+  { value: "15", label: "15 minutes" },
+  { value: "20", label: "20 minutes" },
+  { value: "30", label: "30 minutes" },
+  { value: "45", label: "45 minutes" },
+  { value: "60", label: "1 hour" },
+  { value: "75", label: "1 h 15 m" },
+  { value: "90", label: "1 h 30 m" },
+  { value: "120", label: "2 hours" },
+  { value: "180", label: "3 hours" },
+  { value: "240", label: "4 hours" },
+  { value: "480", label: "8 hours" },
+];
+
+interface CreateAvailabilityFormProps {
+  tutorCourseNames?: string[];
+}
+
+export function CreateAvailabilityForm({ tutorCourseNames }: CreateAvailabilityFormProps) {
   const [course, setCourse] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [startAt, setStartAt] = useState("");
+  const [durationMins, setDurationMins] = useState("30");
+  const [price, setPrice] = useState<string>("25");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { viewingAsUserId } = useAdminViewContext();
+
+  const minLocal = useMemo(() => toDatetimeLocalInputValue(new Date()), []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    if (!course || !date || !time) {
-      setError("All fields are required");
+    if (!course || !startAt) {
+      setError("Course and start time are required");
       setLoading(false);
       return;
     }
 
-    const startTime = new Date(`${date}T${time}:00`);
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      setError("Price must be a positive number");
+      setLoading(false);
+      return;
+    }
+
+    const duration = Number.parseInt(durationMins, 10);
+    if (!Number.isFinite(duration) || duration < 15 || duration > 480) {
+      setError("Choose a session length between 15 minutes and 8 hours");
+      setLoading(false);
+      return;
+    }
+
+    const startTime = new Date(startAt);
+    if (Number.isNaN(startTime.getTime())) {
+      setError("Invalid start time — use the date and time picker");
+      setLoading(false);
+      return;
+    }
+
+    if (startTime <= new Date()) {
+      setError("Start time must be in the future");
+      setLoading(false);
+      return;
+    }
 
     try {
-      await createAvailability(course, startTime.toISOString());
+      await createAvailability(
+        course,
+        startTime.toISOString(),
+        parsedPrice,
+        viewingAsUserId ?? undefined,
+        duration,
+      );
       setCourse("");
-      setDate("");
-      setTime("");
-      setShowForm(false);
+      setStartAt("");
+      setDurationMins("30");
+      setPrice("25");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create availability");
+    } finally {
       setLoading(false);
     }
   }
 
-  if (!showForm) {
-    return (
-      <button
-        onClick={() => setShowForm(true)}
-        className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-      >
-        + Add Availability
-      </button>
-    );
-  }
-
   return (
-    <div className="border-2 border-gray-200 dark:border-gray-700 rounded-xl p-5 bg-white dark:bg-gray-800 space-y-4 shadow-lg">
-      <div className="flex justify-between items-center">
-        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Create Availability Slot</h3>
-        <button
-          onClick={() => {
-            setShowForm(false);
-            setError(null);
-          }}
-          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl leading-none"
-        >
-          ×
-        </button>
+    <div className="border-t border-slate-200 pt-3 mt-3">
+      <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-[0.2em] mb-2">
+        Add slot
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="course" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-            Course
+      <p className="text-[11px] text-slate-600 leading-relaxed mb-3">
+        Pick any start date and time (minute precision, your device timezone). Length is how long this
+        opening stays bookable as one session.
+      </p>
+      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-2 text-xs">
+        <div className="col-span-2">
+          {tutorCourseNames && tutorCourseNames.length > 0 ? (
+            <Select value={course} onValueChange={setCourse}>
+              <SelectTrigger className="h-9 text-xs border-slate-200 text-slate-900">
+                <SelectValue placeholder="Select course" />
+              </SelectTrigger>
+              <SelectContent>
+                {tutorCourseNames.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-xs text-slate-600 py-1">
+              Add courses in &quot;My Courses&quot; above before creating slots.
+            </p>
+          )}
+        </div>
+
+        <div className="col-span-2">
+          <label htmlFor="avail-start" className="sr-only">
+            Start date and time
           </label>
-          <input
-            id="course"
-            type="text"
-            value={course}
-            onChange={(e) => setCourse(e.target.value)}
-            required
-            className="w-full px-4 py-2.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
-            placeholder="e.g., Mathematics, Physics"
+          <Input
+            id="avail-start"
+            type="datetime-local"
+            step={60}
+            className="h-9 text-xs border-slate-200 text-slate-900"
+            min={minLocal ?? undefined}
+            value={startAt}
+            onChange={(e) => setStartAt(e.target.value)}
           />
         </div>
+
         <div>
-          <label htmlFor="date" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-            Date
-          </label>
-          <input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-            className="w-full px-4 py-2.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
-          />
+          <Select value={durationMins} onValueChange={setDurationMins}>
+            <SelectTrigger className="h-9 text-xs border-slate-200 text-slate-900">
+              <SelectValue placeholder="Length" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {DURATION_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
         <div>
-          <label htmlFor="time" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-            Start Time (24-hour format)
-          </label>
-          <input
-            id="time"
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            required
-            className="w-full px-4 py-2.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
-          />
-        </div>
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-3">
-            <p className="text-red-800 dark:text-red-200 text-sm font-medium">{error}</p>
+          <div className="relative">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-600 pointer-events-none">
+              $
+            </span>
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              className="h-9 text-xs pl-5 border-slate-200 text-slate-900"
+              placeholder="25"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              aria-label="Price per session in dollars"
+            />
           </div>
-        )}
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-blue-400 disabled:to-purple-400 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold shadow-sm hover:shadow transition-all"
-          >
-            {loading ? "Creating..." : "Create"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShowForm(false);
-              setError(null);
-            }}
-            className="px-4 py-2.5 border-2 border-gray-300 dark:border-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-          >
-            Cancel
-          </button>
+        </div>
+
+        <div className="col-span-2">
+          {error && <div className="mb-2 text-xs font-medium text-red-600">{error}</div>}
+          <Button type="submit" size="sm" className="w-full" disabled={loading}>
+            {loading ? "Adding…" : "Add slot"}
+          </Button>
         </div>
       </form>
     </div>
   );
 }
-

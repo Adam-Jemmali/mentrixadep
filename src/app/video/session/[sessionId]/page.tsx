@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { validateJoinRequest } from "@/app/actions/video";
 import { getCurrentUser } from "@/lib/auth";
+import { getRoleHomePath } from "@/lib/role-home";
 import { VideoCall } from "@/components/video-call";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 interface VideoSessionPageProps {
   params: Promise<{ sessionId: string }>;
@@ -16,6 +18,8 @@ export default async function VideoSessionPage({
   if (!user) {
     redirect("/auth/signin");
   }
+
+  const homeHref = getRoleHomePath(user.role);
 
   // Validate join request and get room details
   let roomData;
@@ -47,10 +51,10 @@ export default async function VideoSessionPage({
                   : "An error occurred"}
               </p>
               <a
-                href="/dashboard"
+                href={homeHref}
                 className="text-blue-400 hover:text-blue-300 underline"
               >
-                Return to Dashboard
+                Back to home
               </a>
             </div>
           </div>
@@ -65,10 +69,10 @@ export default async function VideoSessionPage({
               {error instanceof Error ? error.message : "An error occurred"}
             </p>
             <a
-              href="/dashboard"
+              href={homeHref}
               className="text-blue-400 hover:text-blue-300 underline"
             >
-              Return to Dashboard
+              Back to home
             </a>
           </div>
         </div>
@@ -82,14 +86,37 @@ export default async function VideoSessionPage({
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Video Room Not Found</h1>
           <a
-            href="/dashboard"
+            href={homeHref}
             className="text-blue-400 hover:text-blue-300 underline"
           >
-            Return to Dashboard
+            Back to home
           </a>
         </div>
       </div>
     );
+  }
+
+  const adminClient = createAdminClient();
+  const { data: sessionRow } = await adminClient
+    .from("sessions")
+    .select("course, student_id, tutor_id")
+    .eq("id", sessionId)
+    .single();
+
+  let learnerLabel = "Learner";
+  let guideLabel = "Guide";
+  const courseLabel = sessionRow?.course ?? "Session";
+
+  if (sessionRow) {
+    const [studentUser, tutorUser] = await Promise.all([
+      adminClient.auth.admin.getUserById(sessionRow.student_id),
+      adminClient.auth.admin.getUserById(sessionRow.tutor_id),
+    ]);
+
+    const studentEmail = studentUser.data.user?.email;
+    const tutorEmail = tutorUser.data.user?.email;
+    learnerLabel = studentEmail?.split("@")[0]?.trim() || "Learner";
+    guideLabel = tutorEmail?.split("@")[0]?.trim() || "Guide";
   }
 
   return (
@@ -97,8 +124,11 @@ export default async function VideoSessionPage({
       sessionId={sessionId}
       roomId={roomData.room.id}
       roomToken={roomData.room.room_token}
-      userRole={roomData.role}
+      userRole={roomData.role as "student" | "tutor"}
       userId={user.id}
+      courseLabel={courseLabel}
+      learnerLabel={learnerLabel}
+      guideLabel={guideLabel}
     />
   );
 }

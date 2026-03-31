@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ErrorIllustration } from "@/components/illustrations";
 
 export default function Error({
   error,
@@ -16,6 +17,7 @@ export default function Error({
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
+        <ErrorIllustration />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
           Something went wrong
         </h2>
@@ -30,10 +32,10 @@ export default function Error({
             Try Again
           </button>
           <a
-            href="/dashboard"
+            href="/"
             className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            Go to Dashboard
+            Go home
           </a>
         </div>
       </div>
