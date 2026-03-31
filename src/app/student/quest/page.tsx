@@ -14,7 +14,6 @@ import {
   type QuestMode,
 } from "@/app/actions/quest";
 import { QuestIllustration } from "@/components/illustrations";
-import { RefreshRouter } from "@/components/refresh-router";
 
 const RECENT_KEY = "mentrixa_quests";
 const MAX_RECENT = 5;
@@ -393,7 +392,6 @@ export default function QuestWorkspacePage() {
 
   return (
     <div className="bg-slate-50 relative">
-      <RefreshRouter pollMs={60000} />
       <QuestIllustration />
       <div
         className="grid"

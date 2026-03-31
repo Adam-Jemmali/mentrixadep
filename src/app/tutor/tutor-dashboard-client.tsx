@@ -14,7 +14,6 @@ import { CourseManager } from "./course-manager";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatDate } from "@/lib/time-format";
 import { TutorDashboardIllustration } from "@/components/illustrations";
-import { RefreshRouter } from "@/components/refresh-router";
 
 type AnySession = {
   id: string;
@@ -199,7 +198,6 @@ export function TutorDashboardClient({
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 relative">
-      <RefreshRouter pollMs={45000} />
       <TutorDashboardIllustration />
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-[22px] font-bold tracking-[-0.03em] text-slate-900">

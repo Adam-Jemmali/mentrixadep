@@ -8,7 +8,6 @@ import {
   getStudentQuestHistory,
 } from "@/app/actions/quest";
 import { DivisionPageClient } from "./DivisionPageClient";
-import { RefreshRouter } from "@/components/refresh-router";
 import type { LevelInfo } from "@/lib/levels";
 
 export const metadata = { title: "Division · Mentrixa" };
@@ -46,7 +45,6 @@ export default async function DivisionPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <RefreshRouter pollMs={50000} />
       <DivisionPageClient
         divisionKey={primary?.divisionKey ?? null}
         divisionName={primary?.divisionName ?? null}

@@ -4,12 +4,10 @@ import { motion } from "framer-motion";
 import { signOut } from "@/app/actions/auth";
 import { Check, Clock, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RefreshRouter } from "@/components/refresh-router";
 
 export function PendingApprovalContent() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-surface-soft">
-      <RefreshRouter pollMs={20000} />
       <motion.div
         className="w-full max-w-md flex flex-col items-center"
         initial={{ opacity: 0, y: 20 }}
