@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminIllustration } from "@/components/illustrations";
+import { RefreshRouter } from "@/components/refresh-router";
 
 function relativeTime(iso: string): string {
   const delta = Date.now() - new Date(iso).getTime();
@@ -252,6 +253,7 @@ export function AdminClient({
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8 relative">
+      <RefreshRouter pollMs={35000} />
       <AdminIllustration />
 
       <div className="flex items-center justify-between mb-6 border-b border-[#E2E8F0] pb-6">

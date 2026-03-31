@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { rateSession } from "@/app/actions/student";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function RateSessionForm({
   canRate = true,
   onSuccess,
 }: RateSessionFormProps) {
+  const router = useRouter();
   const [rating, setRating] = useState(5);
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const [comment, setComment] = useState("");
@@ -57,6 +59,7 @@ export function RateSessionForm({
         setError(friendlyRatingError(result.error));
         return;
       }
+      router.refresh();
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit rating");

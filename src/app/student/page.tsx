@@ -16,6 +16,7 @@ import { AvailabilityBrowser } from "./availability-browser";
 import { CourseInterests } from "./course-interests";
 import { Button } from "@/components/ui/button";
 import { StudentDashboardIllustration } from "@/components/illustrations";
+import { RefreshRouter } from "@/components/refresh-router";
 
 interface StudentPageProps {
   searchParams?: {
@@ -60,6 +61,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <RefreshRouter pollMs={45000} />
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Header row */}
         <div className="relative flex items-center justify-between mb-8">

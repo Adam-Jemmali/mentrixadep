@@ -36,6 +36,7 @@ export default function SelectRolePage() {
       return;
     }
 
+    router.refresh();
     router.push("/pending-approval");
   }
 
