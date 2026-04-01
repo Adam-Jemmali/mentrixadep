@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface BookSessionButtonProps {
   availabilityId: string;
@@ -40,19 +41,20 @@ export function BookSessionButton({ availabilityId }: BookSessionButtonProps) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      {error && (
-        <p className="text-xs text-red-600 dark:text-red-400 max-w-[150px] text-right font-medium">
+    <div className="flex w-full flex-col items-stretch gap-2 sm:items-end sm:w-auto">
+      {error ? (
+        <p className="text-sm text-red-700 font-medium leading-snug sm:max-w-[220px] sm:text-right">
           {error}
         </p>
-      )}
-      <button
+      ) : null}
+      <Button
+        type="button"
         onClick={handleBook}
         disabled={loading}
-        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-blue-400 disabled:to-purple-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold whitespace-nowrap shadow-sm hover:shadow transition-all"
+        className="min-h-11 w-full min-w-[148px] bg-mentrixa-600 text-white shadow-md hover:bg-mentrixa-700 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-mentrixa-600 focus-visible:ring-offset-2 disabled:bg-slate-500 disabled:text-white disabled:opacity-100 sm:w-auto"
       >
-        {loading ? "Redirecting…" : "Book Session"}
-      </button>
+        {loading ? "Redirecting…" : "Pay & book"}
+      </Button>
     </div>
   );
 }

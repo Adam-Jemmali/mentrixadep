@@ -35,7 +35,9 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      await bookSessionAsUser(availabilityId, studentId);
+      await bookSessionAsUser(availabilityId, studentId, {
+        stripeCheckoutSessionId: checkoutSession.id,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message.toLowerCase() : "";
       if (

@@ -202,46 +202,54 @@ function BookingDialog({
 
   return (
     <Dialog open={!!slot} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="border-slate-300 shadow-2xl">
         <DialogHeader>
-          <DialogTitle>Book a session</DialogTitle>
+          <DialogTitle className="text-lg text-slate-950">Book a session</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-lg font-semibold text-slate-900">{slot.tutor?.email?.split("@")[0] ?? "Guide"}</p>
+              <p className="text-lg font-semibold text-slate-950">{slot.tutor?.email?.split("@")[0] ?? "Guide"}</p>
               {courseExpertise?.verified && (
-                <Badge variant="default" className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200">
+                <Badge variant="default" className="text-[9px] bg-emerald-600 text-white border-emerald-700">
                   Verified
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-slate-600 font-mono mt-1">
+            <p className="text-sm text-slate-800 font-mono mt-1">
               {slot.course} · {timeLabel}
             </p>
           </div>
 
           {courseExpertise && (
-            <div className="rounded-md bg-slate-100 border border-slate-200 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-widest text-slate-600 font-semibold mb-1">Qualifications</p>
-              <p className="text-xs text-slate-800 leading-relaxed">{courseExpertise.proof_description}</p>
+            <div className="rounded-md bg-slate-100 border border-slate-300 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-widest text-slate-800 font-semibold mb-1">
+                Qualifications
+              </p>
+              <p className="text-xs text-slate-900 leading-relaxed">{courseExpertise.proof_description}</p>
             </div>
           )}
 
-          <div className="h-px bg-slate-200 my-2" />
-          <div className="flex items-center justify-between text-sm gap-3">
-            <span className="text-slate-600">Session fee</span>
-            <span className="font-semibold text-slate-900 tabular-nums">
-              {formatUsdFromCents(priceCents)}
-            </span>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-slate-900">Session fee</span>
+              <span className="text-lg font-bold text-slate-950 tabular-nums">
+                {formatUsdFromCents(priceCents)}
+              </span>
+            </div>
+            <p className="text-xs text-slate-800 mt-2 leading-relaxed border-t border-slate-200/80 pt-2">
+              Payment via Stripe. If the tutor declines, you are refunded automatically. Cancel 60+ minutes
+              before the session for a full refund per policy.
+            </p>
           </div>
-          <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-            Payment processed via Stripe. Cancel 60+ min before for full refund.
-          </p>
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2 border-t border-slate-200 pt-4 sm:gap-3">
           <DialogClose asChild>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-300 text-slate-900 hover:bg-slate-100 hover:text-slate-950"
+            >
               Cancel
             </Button>
           </DialogClose>

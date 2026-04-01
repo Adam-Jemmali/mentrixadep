@@ -54,7 +54,9 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      await bookSessionAsUser(availabilityId, studentId);
+      await bookSessionAsUser(availabilityId, studentId, {
+        stripeCheckoutSessionId: session.id,
+      });
       console.log(
         `[stripe/webhook] booking created for availability ${availabilityId} / student ${studentId}`
       );

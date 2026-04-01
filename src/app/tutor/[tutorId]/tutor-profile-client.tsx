@@ -468,42 +468,51 @@ export function TutorProfileClient({
 
       {/* ── BOOKING DIALOG ────────────────────────────────────────────────── */}
       <Dialog open={!!dialogSlot} onOpenChange={(open) => { if (!open) setDialogSlot(null); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm border-slate-300 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Confirm your session</DialogTitle>
+            <DialogTitle className="text-lg text-slate-950">Confirm your session</DialogTitle>
           </DialogHeader>
 
           {dialogSlot && (
             <div>
-              <p className="text-lg font-semibold text-slate-900">{profile.name}</p>
-              <p className="text-sm text-slate-400 font-mono mt-1">
+              <p className="text-lg font-semibold text-slate-950">{profile.name}</p>
+              <p className="text-sm text-slate-800 font-mono mt-1">
                 {formatSlotDate(dialogSlot.start_time)} · {formatSlotTime(dialogSlot.start_time)}
               </p>
 
-              <hr className="my-4 border-[#E2E8F0]" />
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Session fee</span>
-                <span className="font-semibold text-slate-900">
-                  {formatPrice(dialogSlot.price_per_session)}
-                </span>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 my-4">
+                <div className="flex items-center justify-between text-sm gap-3">
+                  <span className="font-medium text-slate-900">Session fee</span>
+                  <span className="text-lg font-bold text-slate-950 tabular-nums">
+                    {formatPrice(dialogSlot.price_per_session)}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-800 mt-2 leading-relaxed border-t border-slate-200/80 pt-2">
+                  Payment via Stripe. If you decline this request, the student is refunded automatically.
+                  Cancellations 60+ min before follow your refund policy.
+                </p>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
-                Payment via Stripe. Cancel 60+ min before for full refund.
-              </p>
 
               {bookingError && (
-                <p className="text-xs text-red-600 mt-3">{bookingError}</p>
+                <p className="text-sm text-red-700 font-medium mt-2">{bookingError}</p>
               )}
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogSlot(null)}>
+          <DialogFooter className="gap-2 border-t border-slate-200 pt-4 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setDialogSlot(null)}
+              className="border-slate-300 text-slate-900 hover:bg-slate-100 hover:text-slate-950"
+            >
               Cancel
             </Button>
-            <Button onClick={handleBook} disabled={bookingLoading}>
-              {bookingLoading ? "Redirecting..." : "Pay and book"}
+            <Button
+              onClick={handleBook}
+              disabled={bookingLoading}
+              className="bg-mentrixa-600 text-white shadow-md hover:bg-mentrixa-700 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-mentrixa-600 focus-visible:ring-offset-2 disabled:bg-slate-500 disabled:text-white disabled:opacity-100"
+            >
+              {bookingLoading ? "Redirecting…" : "Pay & book"}
             </Button>
           </DialogFooter>
         </DialogContent>

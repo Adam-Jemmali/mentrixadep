@@ -8,6 +8,7 @@ import {
   sendSessionApprovedEmail,
   type SessionEmailDetails,
 } from "@/lib/email";
+import { createRefundForRejectedRequest } from "@/lib/stripe-session-booking";
 import {
   validateCourse,
   validateUUID,
@@ -536,7 +537,7 @@ export async function rejectSessionRequest(requestId: string, onBehalfOfUserId?:
 
   const { data: request, error: requestError } = await client
     .from("session_requests")
-    .select("tutor_id")
+    .select("tutor_id, status, stripe_payment_intent_id, stripe_refund_id")
     .eq("id", validRequestId)
     .single();
 
@@ -548,11 +549,33 @@ export async function rejectSessionRequest(requestId: string, onBehalfOfUserId?:
     throw new Error("You don't have permission to reject this request");
   }
 
+  if (request.status !== "pending") {
+    throw new Error("Request is not pending");
+  }
+
+  let refundId: string | null = (request as { stripe_refund_id?: string | null }).stripe_refund_id ?? null;
+  const paymentIntentId = (request as { stripe_payment_intent_id?: string | null })
+    .stripe_payment_intent_id;
+
+  if (paymentIntentId && !refundId) {
+    try {
+      const refund = await createRefundForRejectedRequest(paymentIntentId, validRequestId);
+      refundId = refund.id;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Refund failed";
+      console.error("[rejectSessionRequest] Stripe refund failed:", err);
+      throw new Error(
+        `Could not issue refund: ${msg}. Try again or contact support so the student is not charged for a rejected session.`
+      );
+    }
+  }
+
   const { error } = await client
     .from("session_requests")
     .update({
       status: "rejected",
       updated_at: new Date().toISOString(),
+      ...(refundId ? { stripe_refund_id: refundId } : {}),
     })
     .eq("id", validRequestId);
 
@@ -561,7 +584,8 @@ export async function rejectSessionRequest(requestId: string, onBehalfOfUserId?:
   }
 
   revalidatePath("/tutor");
-  return { success: true };
+  revalidatePath("/student");
+  return { success: true, refunded: Boolean(paymentIntentId && refundId) };
 }
 
 export async function completeSession(sessionId: string, onBehalfOfUserId?: string) {

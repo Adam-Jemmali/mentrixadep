@@ -20,6 +20,7 @@ import {
   sendSessionBookedEmail,
   type SessionEmailDetails,
 } from "@/lib/email";
+import { getVerifiedPaymentIntentForBooking } from "@/lib/stripe-session-booking";
 
 export async function getUpcomingSessions() {
   const user = await requireRole(["student", "admin"]);
@@ -322,11 +323,20 @@ export async function bookSession(availabilityId: string) {
   }
 }
 
+export type BookSessionAsUserOptions = {
+  /** When set, stores Stripe IDs on `session_requests` for automatic refund if tutor rejects. */
+  stripeCheckoutSessionId?: string;
+};
+
 /**
  * Internal version of bookSession that accepts a userId directly.
  * Used by the Stripe webhook handler (unauthenticated context).
  */
-export async function bookSessionAsUser(availabilityId: string, studentId: string) {
+export async function bookSessionAsUser(
+  availabilityId: string,
+  studentId: string,
+  options?: BookSessionAsUserOptions
+) {
   try {
     const adminClient = createAdminClient();
 
@@ -394,6 +404,20 @@ export async function bookSessionAsUser(availabilityId: string, studentId: strin
       throw new Error("You already have a pending request for this availability");
     }
 
+    let stripeCheckoutSessionId: string | null = null;
+    let stripePaymentIntentId: string | null = null;
+    if (options?.stripeCheckoutSessionId) {
+      const verified = await getVerifiedPaymentIntentForBooking(
+        options.stripeCheckoutSessionId,
+        {
+          availabilityId: validAvailabilityId,
+          studentId: validStudentId,
+        }
+      );
+      stripeCheckoutSessionId = verified.checkoutSessionId;
+      stripePaymentIntentId = verified.paymentIntentId;
+    }
+
     // Create session request
     const { data: request, error: requestError } = await adminClient
       .from("session_requests")
@@ -402,6 +426,8 @@ export async function bookSessionAsUser(availabilityId: string, studentId: strin
         tutor_id: availability.tutor_id,
         availability_id: validAvailabilityId,
         status: "pending",
+        stripe_checkout_session_id: stripeCheckoutSessionId,
+        stripe_payment_intent_id: stripePaymentIntentId,
       })
       .select()
       .single();

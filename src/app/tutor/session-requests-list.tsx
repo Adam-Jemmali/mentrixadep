@@ -98,8 +98,11 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
 
   return (
     <div>
-      <div className="text-xs text-slate-400 text-right mb-2">
-        A = approve, R = reject
+      <div className="text-xs text-slate-400 text-right mb-2 space-y-0.5">
+        <p>A = approve, R = reject</p>
+        <p className="text-slate-500">
+          Rejecting a paid request refunds the student automatically (Stripe).
+        </p>
       </div>
 
       <div className="mentrixa-table overflow-x-auto border border-slate-200 rounded-md bg-white">
