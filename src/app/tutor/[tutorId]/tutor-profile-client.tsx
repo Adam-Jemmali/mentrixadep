@@ -11,6 +11,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
+import { formatTime } from "@/lib/time-format";
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -468,49 +470,61 @@ export function TutorProfileClient({
 
       {/* ── BOOKING DIALOG ────────────────────────────────────────────────── */}
       <Dialog open={!!dialogSlot} onOpenChange={(open) => { if (!open) setDialogSlot(null); }}>
-        <DialogContent className="max-w-sm border-slate-300 shadow-2xl">
+        <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto border-2 border-neutral-900 bg-white p-5 text-neutral-950 shadow-2xl dark:border-neutral-900 dark:bg-white dark:text-neutral-950">
           <DialogHeader>
-            <DialogTitle className="text-lg text-slate-950">Confirm your session</DialogTitle>
+            <DialogTitle className="text-xl font-bold tracking-tight text-black dark:text-black">
+              Confirm your session
+            </DialogTitle>
           </DialogHeader>
 
           {dialogSlot && (
-            <div>
-              <p className="text-lg font-semibold text-slate-950">{profile.name}</p>
-              <p className="text-sm text-slate-800 font-mono mt-1">
-                {formatSlotDate(dialogSlot.start_time)} · {formatSlotTime(dialogSlot.start_time)}
-              </p>
+            <div className="space-y-4 text-base text-black dark:text-black">
+              <div>
+                <p className="text-xl font-bold text-black dark:text-black">{profile.name}</p>
+                <p className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-900">
+                  {dialogSlot.course}
+                </p>
+                <p className="mt-1 font-mono text-sm font-medium text-neutral-900 dark:text-neutral-900">
+                  {formatSlotDate(dialogSlot.start_time)} · {formatTime(dialogSlot.start_time)} –{" "}
+                  {formatTime(dialogSlot.end_time)} ·{" "}
+                  {formatDurationLabel(
+                    getSessionDurationMinutes(dialogSlot.start_time, dialogSlot.end_time),
+                  )}
+                </p>
+              </div>
 
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 my-4">
-                <div className="flex items-center justify-between text-sm gap-3">
-                  <span className="font-medium text-slate-900">Session fee</span>
-                  <span className="text-lg font-bold text-slate-950 tabular-nums">
+              <div className="rounded-lg border-2 border-mentrixa-600 bg-mentrixa-50 px-4 py-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="text-base font-bold text-neutral-950">Session fee</span>
+                  <span className="text-2xl font-black tabular-nums text-neutral-950">
                     {formatPrice(dialogSlot.price_per_session)}
                   </span>
                 </div>
-                <p className="text-xs text-slate-800 mt-2 leading-relaxed border-t border-slate-200/80 pt-2">
-                  Payment via Stripe. If you decline this request, the student is refunded automatically.
-                  Cancellations 60+ min before follow your refund policy.
+                <p className="mt-3 border-t-2 border-mentrixa-200 pt-3 text-sm font-medium leading-relaxed text-neutral-900">
+                  Stripe checkout lists the same date, start and end time, and session length. If you decline
+                  this request, the student is refunded automatically. Cancellations 60+ minutes before follow
+                  your refund policy.
                 </p>
               </div>
 
               {bookingError && (
-                <p className="text-sm text-red-700 font-medium mt-2">{bookingError}</p>
+                <p className="text-sm font-semibold text-red-800">{bookingError}</p>
               )}
             </div>
           )}
 
-          <DialogFooter className="gap-2 border-t border-slate-200 pt-4 sm:gap-3">
+          <DialogFooter className="flex-col gap-3 border-t-2 border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-200">
             <Button
               variant="outline"
               onClick={() => setDialogSlot(null)}
-              className="border-slate-300 text-slate-900 hover:bg-slate-100 hover:text-slate-950"
+              className="h-11 w-full border-2 border-neutral-800 bg-white text-base font-semibold text-black hover:bg-neutral-100 sm:w-auto dark:border-neutral-800 dark:bg-white dark:text-black"
             >
               Cancel
             </Button>
             <Button
               onClick={handleBook}
               disabled={bookingLoading}
-              className="bg-mentrixa-600 text-white shadow-md hover:bg-mentrixa-700 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-mentrixa-600 focus-visible:ring-offset-2 disabled:bg-slate-500 disabled:text-white disabled:opacity-100"
+              className="h-11 w-full bg-mentrixa-600 text-base font-semibold text-white shadow-md hover:bg-mentrixa-700 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-mentrixa-600 focus-visible:ring-offset-2 disabled:bg-slate-500 disabled:text-white disabled:opacity-100 sm:w-auto"
             >
               {bookingLoading ? "Redirecting…" : "Pay & book"}
             </Button>

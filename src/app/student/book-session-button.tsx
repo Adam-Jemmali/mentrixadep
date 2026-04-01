@@ -43,7 +43,7 @@ export function BookSessionButton({ availabilityId }: BookSessionButtonProps) {
   return (
     <div className="flex w-full flex-col items-stretch gap-2 sm:items-end sm:w-auto">
       {error ? (
-        <p className="text-sm text-red-700 font-medium leading-snug sm:max-w-[220px] sm:text-right">
+        <p className="text-sm font-semibold leading-snug text-red-900 sm:max-w-[260px] sm:text-right">
           {error}
         </p>
       ) : null}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatTime } from "@/lib/time-format";
+import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -194,7 +195,8 @@ function BookingDialog({
   if (!slot) return null;
 
   const priceCents = slot.price_per_session ?? 2500;
-  const timeLabel = formatTime(slot.start_time);
+  const durationMin = getSessionDurationMinutes(slot.start_time, slot.end_time);
+  const scheduleLine = `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)} · ${formatDurationLabel(durationMin)}`;
   const expertise = slot.tutor_id ? (tutorExpertise[slot.tutor_id] ?? []) : [];
   const courseExpertise = expertise.find(
     (e) => e.course_name.toLowerCase() === slot.course.toLowerCase(),
@@ -202,53 +204,60 @@ function BookingDialog({
 
   return (
     <Dialog open={!!slot} onOpenChange={onOpenChange}>
-      <DialogContent className="border-slate-300 shadow-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto border-2 border-neutral-900 bg-white p-5 text-neutral-950 shadow-2xl sm:max-w-md dark:border-neutral-900 dark:bg-white dark:text-neutral-950">
         <DialogHeader>
-          <DialogTitle className="text-lg text-slate-950">Book a session</DialogTitle>
+          <DialogTitle className="text-xl font-bold tracking-tight text-black dark:text-black">
+            Book a session
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 text-sm">
+        <div className="space-y-4 text-base text-black dark:text-black">
           <div>
-            <div className="flex items-center gap-2">
-              <p className="text-lg font-semibold text-slate-950">{slot.tutor?.email?.split("@")[0] ?? "Guide"}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xl font-bold text-black dark:text-black">
+                {slot.tutor?.email?.split("@")[0] ?? "Guide"}
+              </p>
               {courseExpertise?.verified && (
-                <Badge variant="default" className="text-[9px] bg-emerald-600 text-white border-emerald-700">
+                <Badge className="border border-emerald-800 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                   Verified
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-slate-800 font-mono mt-1">
-              {slot.course} · {timeLabel}
+            <p className="mt-2 text-base font-semibold leading-snug text-neutral-900 dark:text-neutral-900">
+              {slot.course}
+            </p>
+            <p className="mt-1 font-mono text-sm font-medium text-neutral-900 dark:text-neutral-900">
+              {scheduleLine}
             </p>
           </div>
 
           {courseExpertise && (
-            <div className="rounded-md bg-slate-100 border border-slate-300 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-widest text-slate-800 font-semibold mb-1">
+            <div className="rounded-lg border-2 border-neutral-400 bg-neutral-100 px-3 py-3">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-neutral-900">
                 Qualifications
               </p>
-              <p className="text-xs text-slate-900 leading-relaxed">{courseExpertise.proof_description}</p>
+              <p className="text-sm leading-relaxed text-neutral-950">{courseExpertise.proof_description}</p>
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-slate-900">Session fee</span>
-              <span className="text-lg font-bold text-slate-950 tabular-nums">
+          <div className="rounded-lg border-2 border-mentrixa-600 bg-mentrixa-50 px-4 py-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-base font-bold text-neutral-950">Session fee</span>
+              <span className="text-2xl font-black tabular-nums text-neutral-950">
                 {formatUsdFromCents(priceCents)}
               </span>
             </div>
-            <p className="text-xs text-slate-800 mt-2 leading-relaxed border-t border-slate-200/80 pt-2">
-              Payment via Stripe. If the tutor declines, you are refunded automatically. Cancel 60+ minutes
-              before the session for a full refund per policy.
+            <p className="mt-3 border-t-2 border-mentrixa-200 pt-3 text-sm font-medium leading-relaxed text-neutral-900">
+              Secure checkout on Stripe shows the same date, time window, and length. If the tutor declines,
+              you are refunded automatically. Cancel 60+ minutes before the session per policy.
             </p>
           </div>
         </div>
-        <DialogFooter className="gap-2 border-t border-slate-200 pt-4 sm:gap-3">
+        <DialogFooter className="flex-col gap-3 border-t-2 border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-200">
           <DialogClose asChild>
             <Button
               variant="outline"
-              size="sm"
-              className="border-slate-300 text-slate-900 hover:bg-slate-100 hover:text-slate-950"
+              size="default"
+              className="h-11 w-full border-2 border-neutral-800 bg-white text-base font-semibold text-black hover:bg-neutral-100 sm:w-auto dark:border-neutral-800 dark:bg-white dark:text-black"
             >
               Cancel
             </Button>

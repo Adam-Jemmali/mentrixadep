@@ -3,6 +3,10 @@ import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeSecretKey } from "@/lib/env";
 import { env } from "@/lib/env";
+import {
+  buildCheckoutLineItemCopy,
+  mentrixaCheckoutBrandingWithAssets,
+} from "@/lib/stripe-checkout-copy";
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,10 +70,13 @@ export async function POST(req: NextRequest) {
     const priceInCents: number = availability.price_per_session ?? 2500;
 
     const appUrl = env.public.appUrl;
-    const sessionDate = new Date(availability.start_time).toLocaleDateString(
-      "en-US",
-      { dateStyle: "medium" }
-    );
+    const lineCopy = buildCheckoutLineItemCopy({
+      course: availability.course,
+      start_time: availability.start_time,
+      end_time: availability.end_time,
+    });
+
+    const branding = mentrixaCheckoutBrandingWithAssets(appUrl ?? "http://localhost:3000");
 
     const stripe = new Stripe(getStripeSecretKey());
 
@@ -82,13 +89,20 @@ export async function POST(req: NextRequest) {
             currency: "usd",
             unit_amount: priceInCents,
             product_data: {
-              name: `${availability.course} tutoring session`,
-              description: `${sessionDate} · 30 min`,
+              name: lineCopy.name,
+              description: lineCopy.description,
             },
           },
           quantity: 1,
         },
       ],
+      branding_settings: branding,
+      custom_text: {
+        submit: {
+          message:
+            "Secure payment by Stripe. You will return to Mentrixa after paying. If the tutor declines, your payment is refunded automatically.",
+        },
+      },
       metadata: {
         availabilityId: availability.id,
         studentId: user.id,
