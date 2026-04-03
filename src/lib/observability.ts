@@ -1,20 +1,10 @@
 /**
- * Server-safe monitoring helpers (Sentry). No-op when DSN is unset.
+ * Server-safe monitoring helpers — logs only (no third-party APM).
  */
-import * as Sentry from "@sentry/nextjs";
-
-function sentryEnabled(): boolean {
-  return Boolean(process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN);
-}
 
 /** Gemini / Google GenAI returned a rate-limit style error (or our message match). */
 export function reportGeminiRateLimited(feature: string, message: string): void {
-  if (!sentryEnabled()) return;
-  Sentry.captureMessage(`Gemini rate limit: ${feature}`, {
-    level: "warning",
-    tags: { component: "gemini", feature },
-    extra: { message: message.slice(0, 500) },
-  });
+  console.warn(`[Gemini rate limit] ${feature}`, message.slice(0, 500));
 }
 
 export function captureStripeWebhookError(
@@ -22,28 +12,29 @@ export function captureStripeWebhookError(
   err: unknown,
   extra?: Record<string, unknown>
 ): void {
-  if (!sentryEnabled()) return;
-  Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-    tags: { component: "stripe-webhook", stage },
-    extra,
-  });
+  console.error("[stripe-webhook]", stage, err, extra);
 }
 
 export function reportStripeWebhookMissingMetadata(checkoutSessionId: string): void {
-  if (!sentryEnabled()) return;
-  Sentry.captureMessage("Stripe webhook: missing availabilityId or studentId in session metadata", {
-    level: "error",
-    tags: { component: "stripe-webhook", stage: "metadata" },
-    extra: { checkoutSessionId },
+  console.error("[stripe-webhook] missing availabilityId or studentId in metadata", {
+    checkoutSessionId,
   });
 }
 
 export function reportStripeWebhookMissingSignature(): void {
-  if (!sentryEnabled()) return;
-  Sentry.captureMessage("Stripe webhook: missing stripe-signature header", {
-    level: "warning",
-    tags: { component: "stripe-webhook", stage: "verify" },
-  });
+  console.warn("[stripe-webhook] missing stripe-signature header");
+}
+
+/** Wrap a Supabase query (pass-through; add timing here if needed). */
+export function withSupabaseQuerySpan<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  void name;
+  return fn();
+}
+
+/** Stripe API calls (checkout, refunds, Connect). */
+export function withStripeApiSpan<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  void name;
+  return fn();
 }
 
 export function captureUnexpectedError(
@@ -51,9 +42,18 @@ export function captureUnexpectedError(
   err: unknown,
   extra?: Record<string, unknown>
 ): void {
-  if (!sentryEnabled()) return;
-  Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
-    tags: { scope },
-    extra,
-  });
+  console.error(`[${scope}]`, err, extra);
+}
+
+/** Edge middleware: log client-visible HTTP errors (4xx/5xx) without PII. */
+export function reportMiddlewareHttpError(params: {
+  status: number;
+  pathname: string;
+  method: string;
+  userIdRedacted: string;
+}): void {
+  if (params.status < 400) return;
+  const msg = `HTTP ${params.status} ${params.method} ${params.pathname}`;
+  if (params.status >= 500) console.error(msg, { userIdRedacted: params.userIdRedacted });
+  else console.warn(msg, { userIdRedacted: params.userIdRedacted });
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { gsap } from "gsap";
 import type { AuthUser } from "@/lib/auth";
@@ -21,7 +22,9 @@ import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 
 const STUDENT_LINKS = [
   { href: "/student/quest", label: "Quest" },
+  { href: "/student/learning-path", label: "Path" },
   { href: "/student/division", label: "Division" },
+  { href: "/student/clan", label: "Clan" },
   { href: "/student/duel", label: "Duels" },
   { href: "/student", label: "Sessions" },
 ] as const;
@@ -43,7 +46,20 @@ function getNavItems(role: string | null | undefined) {
   return STUDENT_LINKS;
 }
 
-function getInitials(email?: string | null) {
+function getInitials(displayName: string | null | undefined, email?: string | null) {
+  const name = displayName?.trim();
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const first = parts[0];
+      const second = parts[1];
+      if (first && second) {
+        return (first.charAt(0) + second.charAt(0)).toUpperCase();
+      }
+    }
+    if (name.length >= 2) return name.slice(0, 2).toUpperCase();
+    return name.charAt(0).toUpperCase();
+  }
   if (!email) return "M";
   const part = email.split("@")[0];
   if (!part) return "M";
@@ -51,11 +67,55 @@ function getInitials(email?: string | null) {
   return part.charAt(0).toUpperCase();
 }
 
+function profilePageHref(role: string | undefined, userId: string): string | null {
+  if (role === "student") return `/student/${userId}`;
+  if (role === "tutor") return `/tutor/${userId}`;
+  return null;
+}
+
+function NavAvatarButton({
+  avatarUrl,
+  initials,
+}: {
+  avatarUrl: string | null | undefined;
+  initials: string;
+}) {
+  const [broken, setBroken] = useState(false);
+  useEffect(() => {
+    setBroken(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !broken) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        width={32}
+        height={32}
+        unoptimized
+        className="w-8 h-8 rounded-full object-cover border border-white/15 shrink-0"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-white/10 border border-white/15 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+      {initials}
+    </div>
+  );
+}
+
 interface NavigationProps {
   user: AuthUser | null;
 }
 
-export function Navigation({ user }: NavigationProps) {
+/**
+ * useSearchParams() must live inside <Suspense> — without it, Next.js 14 defers the
+ * entire component as a React.lazy boundary whose webpack chunk can race-fail in dev
+ * ("Cannot read properties of undefined (reading 'call')"). Wrapping in Suspense here
+ * keeps the lazy boundary isolated and prevents root hydration failures.
+ */
+function NavigationInner({ user }: NavigationProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const navRef = useRef<HTMLElement | null>(null);
@@ -63,7 +123,14 @@ export function Navigation({ user }: NavigationProps) {
   const mobileLinkRefs = useRef<HTMLAnchorElement[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = user ? getNavItems(user.role) : [];
+  const navItems = useMemo(() => (user ? getNavItems(user.role) : []), [user]);
+  const profileHref = user ? profilePageHref(user.role, user.id) : null;
+  const initials = user ? getInitials(user.displayName, user.email) : "M";
+  const primaryLabel =
+    user?.displayName?.trim() ||
+    user?.email?.split("@")[0] ||
+    "Account";
+
   const logoHref =
     user?.role === "admin"
       ? "/dashboard"
@@ -73,7 +140,7 @@ export function Navigation({ user }: NavigationProps) {
           ? "/student"
           : "/";
 
-  const isActive = (href: string) => {
+  const isActive = useCallback((href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
     if (href === "/student") return pathname === "/student";
     if (href === "/tutor") return pathname === "/tutor";
@@ -83,7 +150,7 @@ export function Navigation({ user }: NavigationProps) {
       return pathname === "/admin" && searchParams.get("tab") === "users";
     if (pathname === "/admin" && !searchParams.get("tab")) return href === "/admin?tab=pending";
     return pathname.startsWith(href);
-  };
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (!navRef.current) return;
@@ -104,7 +171,7 @@ export function Navigation({ user }: NavigationProps) {
         gsap.set(ref, { scaleX: 0 });
       }
     });
-  }, [pathname, navItems]);
+  }, [pathname, navItems, isActive]);
 
   useEffect(() => {
     if (mobileOpen && mobileLinkRefs.current.length > 0) {
@@ -168,18 +235,27 @@ export function Navigation({ user }: NavigationProps) {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 outline-none rounded-full focus-visible:ring-2 focus-visible:ring-sky-400/50">
-                <div className="w-8 h-8 rounded-full bg-white/10 border border-white/15 text-white text-xs font-semibold flex items-center justify-center">
-                  {getInitials(user.email)}
-                </div>
+                <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-56 bg-slate-900 border border-white/10 text-slate-100"
+                className="w-64 bg-slate-900 border border-white/10 text-slate-100"
               >
-                <DropdownMenuLabel className="text-xs text-slate-500 truncate">
-                  {user.email}
+                <DropdownMenuLabel className="font-normal space-y-0.5 px-2 py-1.5">
+                  <span className="block text-sm font-medium text-slate-100 truncate">
+                    {primaryLabel}
+                  </span>
+                  <span className="block text-xs text-slate-500 truncate">{user.email}</span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />
+                {profileHref ? (
+                  <DropdownMenuItem
+                    asChild
+                    className="text-slate-100 focus:bg-white/10 focus:text-white hover:bg-white/10 hover:text-white"
+                  >
+                    <Link href={profileHref}>Profile</Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem
                   asChild
                   className="text-slate-100 focus:bg-white/10 focus:text-white hover:bg-white/10 hover:text-white"
@@ -251,7 +327,21 @@ export function Navigation({ user }: NavigationProps) {
                   <MentrixaWordmark trixaClassName="text-white/95" />
                 </SheetTitle>
               </SheetHeader>
-              <div className="mt-8 flex flex-col divide-y divide-white/10">
+              {user ? (
+                <div className="mt-6 flex items-center gap-3">
+                  <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-white truncate">{primaryLabel}</p>
+                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+              ) : null}
+              <div
+                className={cn(
+                  "flex flex-col divide-y divide-white/10",
+                  user ? "mt-6" : "mt-8",
+                )}
+              >
                 {(user ? navItems : STUDENT_LINKS).map((item, index) => (
                   <Link
                     key={item.href}
@@ -268,6 +358,37 @@ export function Navigation({ user }: NavigationProps) {
                   </Link>
                 ))}
               </div>
+              {user ? (
+                <div className="mt-6 flex flex-col gap-0 border-t border-white/10 pt-4">
+                  {profileHref ? (
+                    <Link
+                      href={profileHref}
+                      onClick={() => setMobileOpen(false)}
+                      className="py-2.5 text-sm font-medium text-slate-200 hover:text-white"
+                    >
+                      Profile
+                    </Link>
+                  ) : null}
+                  <Link
+                    href="/settings"
+                    onClick={() => setMobileOpen(false)}
+                    className="py-2.5 text-sm font-medium text-slate-200 hover:text-white"
+                  >
+                    Settings
+                  </Link>
+                  <button
+                    type="button"
+                    className="py-2.5 text-left text-sm font-medium text-red-400 hover:text-red-300"
+                    onClick={async () => {
+                      setMobileOpen(false);
+                      await signOut();
+                      window.location.href = "/";
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : null}
               {!user && (
                 <div className="mt-6 flex flex-col gap-3">
                   <Link
@@ -291,6 +412,14 @@ export function Navigation({ user }: NavigationProps) {
         </div>
       </div>
     </nav>
+  );
+}
+
+export function Navigation({ user }: NavigationProps) {
+  return (
+    <Suspense fallback={null}>
+      <NavigationInner user={user} />
+    </Suspense>
   );
 }
 

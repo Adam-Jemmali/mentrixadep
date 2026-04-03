@@ -3,7 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth } from "@/lib/auth";
-import { validateUUID, sanitizeError } from "@/lib/security";
+import {
+  validateUUID,
+  sanitizeError,
+  sanitizeInput,
+  validateUploadedFile,
+} from "@/lib/security";
 import { revalidatePath } from "next/cache";
 import { VideoRecording } from "@/lib/database.types";
 
@@ -30,9 +35,18 @@ export async function saveRecording(
     const startedAt = formData.get("startedAt") as string;
     const endedAt = formData.get("endedAt") as string;
     const mimeType = formData.get("mimeType") as string;
+    const recordingConsentConfirmed = formData.get("recordingConsentConfirmed");
 
     if (!sessionId || !roomId || !file || !startedAt || !endedAt) {
       return { success: false, error: "Missing required recording data" };
+    }
+
+    if (!(recordingConsentConfirmed === "true" || recordingConsentConfirmed === "1")) {
+      return {
+        success: false,
+        error:
+          "Recording consent required: both parties must explicitly agree before recording.",
+      };
     }
 
     // SECURITY: Enforce file size limit (500MB max)
@@ -46,7 +60,7 @@ export async function saveRecording(
 
     // SECURITY: Validate MIME type
     const allowedMimeTypes = ['video/webm', 'video/mp4', 'video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm;codecs=vp9,opus'];
-    const fileMimeType = mimeType || file.type || '';
+    const fileMimeType = sanitizeInput(mimeType || file.type || "", "recording mimeType");
     if (fileMimeType && !allowedMimeTypes.some(allowed => fileMimeType.includes(allowed.split(';')[0] ?? allowed))) {
       return { 
         success: false, 
@@ -64,6 +78,16 @@ export async function saveRecording(
         type: expectedMimeType,
         lastModified: file.lastModified || Date.now(),
       });
+    }
+
+    // Additional server-side validation from file bytes.
+    // Keep webm allowed for current browser MediaRecorder compatibility.
+    const validated = await validateUploadedFile(correctedFile, {
+      allowedMimeTypes: ["video/mp4", "video/webm"],
+      maxBytes: MAX_FILE_SIZE,
+    });
+    if (!validated.ok) {
+      return { success: false, error: validated.error };
     }
 
     const supabase = await createClient();
@@ -149,6 +173,7 @@ export async function saveRecording(
         mime_type: contentType,
         started_at: startedAt,
         ended_at: endedAt,
+        recording_consent_confirmed: true,
       })
       .select()
       .single();

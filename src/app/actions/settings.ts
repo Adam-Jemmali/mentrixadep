@@ -7,6 +7,9 @@ import { revalidatePath } from "next/cache";
 
 export interface UserSettings {
   display_name: string | null;
+  bio: string | null;
+  profile_visible_to_tutors: boolean;
+  avatar_url: string | null;
   timezone: string;
   email_session_reminders: boolean;
   email_session_booked: boolean;
@@ -23,6 +26,9 @@ export interface UserSettings {
 
 const DEFAULT_SETTINGS: UserSettings = {
   display_name: null,
+  bio: null,
+  profile_visible_to_tutors: true,
+  avatar_url: null,
   timezone: "UTC",
   email_session_reminders: true,
   email_session_booked: true,
@@ -49,6 +55,13 @@ export async function getUserSettings(): Promise<UserSettings> {
 
   return {
     display_name: data.display_name ?? null,
+    bio: typeof (data as { bio?: unknown }).bio === "string" ? (data as { bio: string }).bio : null,
+    profile_visible_to_tutors:
+      (data as { profile_visible_to_tutors?: boolean }).profile_visible_to_tutors !== false,
+    avatar_url:
+      typeof (data as { avatar_url?: unknown }).avatar_url === "string"
+        ? (data as { avatar_url: string }).avatar_url
+        : null,
     timezone: data.timezone ?? "UTC",
     email_session_reminders: data.email_session_reminders ?? true,
     email_session_booked: data.email_session_booked ?? true,
@@ -74,6 +87,20 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
   if (settings.display_name !== undefined) {
     const name = (settings.display_name ?? "").trim().slice(0, 100);
     payload.display_name = name || null;
+  }
+
+  if (settings.bio !== undefined) {
+    const b = (settings.bio ?? "").trim().slice(0, 280);
+    payload.bio = b || null;
+  }
+
+  if (settings.profile_visible_to_tutors !== undefined) {
+    payload.profile_visible_to_tutors = !!settings.profile_visible_to_tutors;
+  }
+
+  if (settings.avatar_url !== undefined) {
+    const u = (settings.avatar_url ?? "").trim();
+    payload.avatar_url = u.length > 0 ? u.slice(0, 2048) : null;
   }
 
   if (settings.timezone !== undefined) {
@@ -132,6 +159,8 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
   revalidatePath("/settings");
   revalidatePath("/student/division");
   revalidatePath("/student/duel");
+  revalidatePath(`/student/${user.id}`);
+  revalidatePath("/", "layout");
   return { success: true };
 }
 

@@ -11,12 +11,14 @@ import {
   type QuestVariant,
   type EvaluateAnswerResponse,
 } from "@/lib/ai";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
+import { withSupabaseQuerySpan } from "@/lib/observability";
+import { trackEvent } from "@/lib/analytics";
 import type { UserXp } from "@/lib/database.types";
-import { getLevelFromXp } from "@/lib/levels";
-
-const XP_SUCCESS = 15;
-const XP_ATTEMPT = 5;
+import { getDivisionTierFromXp } from "@/lib/levels";
+import { XP } from "@/lib/xp-constants";
+import { applyXpAward } from "@/app/actions/xp";
+import { recordClanQuestCompletion } from "@/app/actions/clan-dashboard";
 
 export type QuestGoal = "exam" | "interview" | "assignment";
 export type QuestMode = "coach" | "exam";
@@ -65,71 +67,6 @@ export async function getDivisionKeyForCourse(
     return division?.key ?? null;
   } catch {
     return null; // best-effort — never block XP award
-  }
-}
-
-/**
- * Award XP to a user, updating both total_xp and (optionally) division_xp.
- * Also manages streak_days and last_activity_date.
- *
- * @param userId       - The user receiving XP
- * @param amount       - XP amount to award
- * @param divisionKey  - Optional divisions.key to credit division XP
- */
-export async function awardXp(
-  userId: string,
-  amount: number,
-  divisionKey?: string
-): Promise<void> {
-  const adminClient = createAdminClient();
-  const today = new Date().toISOString().slice(0, 10);
-
-  const { data: existing } = await adminClient
-    .from("user_xp")
-    .select("total_xp, streak_days, last_activity_date, division_xp")
-    .eq("user_id", userId)
-    .single();
-
-  const newTotal = (existing?.total_xp ?? 0) + amount;
-  let newStreak = existing?.streak_days ?? 0;
-  const lastDate = (existing?.last_activity_date as string | null) ?? null;
-
-  if (lastDate) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
-    if (lastDate === yesterdayStr) newStreak += 1;
-    else if (lastDate !== today) newStreak = 1;
-    // if lastDate === today, streak stays the same
-  } else {
-    newStreak = 1;
-  }
-
-  // Build updated division_xp
-  const currentDivXp = ((existing?.division_xp as Record<string, number>) ?? {});
-  const newDivXp: Record<string, number> = { ...currentDivXp };
-  if (divisionKey) {
-    newDivXp[divisionKey] = (newDivXp[divisionKey] ?? 0) + amount;
-  }
-
-  if (existing) {
-    await adminClient
-      .from("user_xp")
-      .update({
-        total_xp: newTotal,
-        streak_days: newStreak,
-        last_activity_date: today,
-        division_xp: newDivXp,
-      })
-      .eq("user_id", userId);
-  } else {
-    await adminClient.from("user_xp").insert({
-      user_id: userId,
-      total_xp: newTotal,
-      streak_days: newStreak,
-      last_activity_date: today,
-      division_xp: newDivXp,
-    });
   }
 }
 
@@ -199,6 +136,11 @@ export async function submitQuest(
       },
       { onConflict: "user_id,quest_id" }
     );
+
+    void trackEvent("quest_started", {
+      userId: user.id,
+      properties: { mode, subject: prompt.slice(0, 60) },
+    });
 
     revalidatePath("/student");
     return {
@@ -379,8 +321,16 @@ export async function recordQuestAttempt(
         ? (await getDivisionKeyForCourse(course)) ?? "general"
         : "general";
 
-      xpAwarded = success ? XP_SUCCESS : XP_ATTEMPT;
-      await awardXp(user.id, xpAwarded, divisionKey ?? undefined);
+      if (success) {
+        xpAwarded = XP.QUEST_COMPLETE;
+        await applyXpAward(
+          user.id,
+          XP.QUEST_COMPLETE,
+          `quest_complete:${questId}`,
+          divisionKey ?? undefined,
+        );
+        await recordClanQuestCompletion(user.id);
+      }
     }
 
     // Read back updated totals to return to client
@@ -389,6 +339,22 @@ export async function recordQuestAttempt(
       .select("total_xp, streak_days")
       .eq("user_id", user.id)
       .single();
+
+    if (success) {
+      void trackEvent("quest_completed", { userId: user.id });
+      // Track first quest completed
+      try {
+        const adminForCount = createAdminClient();
+        const { count } = await adminForCount
+          .from("user_quest_progress")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("status", "completed");
+        if ((count ?? 0) <= 1) {
+          void trackEvent("first_quest_completed", { userId: user.id });
+        }
+      } catch { /* non-critical */ }
+    }
 
     revalidatePath("/student");
     revalidatePath("/student/division");
@@ -418,7 +384,7 @@ export async function getUserXp(userId: string): Promise<UserXp | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("user_xp")
-    .select("user_id, total_xp, division_xp, streak_days, last_activity_date")
+    .select("user_id, total_xp, division_xp, streak_days, last_activity_date, last_activity_at")
     .eq("user_id", userId)
     .single();
   if (error || !data) return null;
@@ -428,7 +394,7 @@ export async function getUserXp(userId: string): Promise<UserXp | null> {
 // ============================================================
 // DIVISION LEADERBOARD & LEVELS
 // ============================================================
-// LEVEL_TIERS, LevelTier, LevelInfo, and getLevelFromXp are re-exported
+// Division tiers re-exported via getDivisionTierFromXp
 // from @/lib/levels (see import at top of file).
 
 export interface StudentDivisionResult {
@@ -437,7 +403,7 @@ export interface StudentDivisionResult {
   divisionDescription: string | null;
   rank: number;
   divisionXp: number;
-  level: ReturnType<typeof getLevelFromXp>;
+  level: ReturnType<typeof getDivisionTierFromXp>;
   streakDays: number;
 }
 
@@ -487,6 +453,13 @@ export async function setFocusedDivision(
       if (!div) {
         return { success: false, error: "Unknown division." };
       }
+      const { error: joinErr } = await adminClient.from("user_divisions").insert({
+        user_id: user.id,
+        division_key: key,
+      });
+      if (joinErr && joinErr.code !== "23505") {
+        return { success: false, error: joinErr.message };
+      }
       await adminClient.from("user_settings").upsert(
         {
           user_id: user.id,
@@ -506,7 +479,11 @@ export async function setFocusedDivision(
       );
     }
 
-    revalidatePath("/student/division");
+    revalidatePath("/student/division", "layout");
+    revalidatePath("/student/division/arena");
+    if (typeof divisionKey === "string" && divisionKey.trim() !== "") {
+      revalidatePath(`/student/division/${divisionKey.trim()}`);
+    }
     return { success: true };
   } catch (e) {
     return {
@@ -600,7 +577,7 @@ export async function getStudentDivision(
     divisionDescription: division.description ?? null,
     rank,
     divisionXp: xp,
-    level: getLevelFromXp(xp),
+    level: getDivisionTierFromXp(xp),
     streakDays: (xpRow?.streak_days as number) ?? 0,
   };
 }
@@ -611,34 +588,14 @@ export interface LeaderboardEntry {
   displayName: string;
   divisionXp: number;
   streakDays: number;
-  level: ReturnType<typeof getLevelFromXp>;
+  level: ReturnType<typeof getDivisionTierFromXp>;
   isCurrentUser: boolean;
 }
 
-/** Top 20 in a division. Display name from Settings (user_settings.display_name), then auth metadata / email. */
-export async function getDivisionLeaderboard(
-  divisionKey: string,
-  currentUserId: string
-): Promise<LeaderboardEntry[]> {
-  await requireRole(["student", "admin"]);
-  const adminClient = createAdminClient();
-
-  const { data: xpRows } = await adminClient
-    .from("user_xp")
-    .select("user_id, division_xp, streak_days");
-
-  const divXpList = (xpRows ?? [])
-    .map((r) => ({
-      user_id: r.user_id,
-      xp: (r.division_xp as Record<string, number>)?.[divisionKey] ?? 0,
-      streak_days: (r.streak_days as number) ?? 0,
-    }))
-    .filter((r) => r.xp > 0)
-    .sort((a, b) => b.xp - a.xp)
-    .slice(0, 20);
-
-  const userIds = divXpList.map((r) => r.user_id);
-
+async function resolveLeaderboardDisplayNames(
+  adminClient: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+): Promise<Record<string, string>> {
   const settingsNameByUser = new Map<string, string>();
   if (userIds.length > 0) {
     const { data: settingsRows } = await adminClient
@@ -681,8 +638,55 @@ export async function getDivisionLeaderboard(
       } catch {
         displayNames[uid] = "Anonymous";
       }
-    })
+    }),
   );
+  return displayNames;
+}
+
+/** Uses mv_division_leaderboard when present; falls back to scanning user_xp. */
+async function buildDivisionLeaderboard(
+  divisionKey: string,
+  currentUserId: string,
+  limit: number,
+): Promise<LeaderboardEntry[]> {
+  const adminClient = createAdminClient();
+
+  const { data: mvRows, error: mvErr } = await withSupabaseQuerySpan(
+    "mv_division_leaderboard.select",
+    async () =>
+      adminClient
+        .from("mv_division_leaderboard")
+        .select("user_id, division_xp, streak_days")
+        .eq("division_key", divisionKey)
+        .order("division_xp", { ascending: false })
+        .limit(limit),
+  );
+
+  let divXpList: { user_id: string; xp: number; streak_days: number }[];
+
+  if (mvErr) {
+    const { data: xpRows } = await adminClient
+      .from("user_xp")
+      .select("user_id, division_xp, streak_days");
+    divXpList = (xpRows ?? [])
+      .map((r) => ({
+        user_id: r.user_id as string,
+        xp: (r.division_xp as Record<string, number>)?.[divisionKey] ?? 0,
+        streak_days: (r.streak_days as number) ?? 0,
+      }))
+      .filter((r) => r.xp > 0)
+      .sort((a, b) => b.xp - a.xp)
+      .slice(0, limit);
+  } else {
+    divXpList = (mvRows ?? []).map((r: { user_id: string; division_xp: unknown; streak_days: unknown }) => ({
+      user_id: r.user_id as string,
+      xp: Number(r.division_xp) ?? 0,
+      streak_days: Number(r.streak_days) ?? 0,
+    }));
+  }
+
+  const userIds = divXpList.map((r) => r.user_id);
+  const displayNames = await resolveLeaderboardDisplayNames(adminClient, userIds);
 
   return divXpList.map((r, i) => ({
     rank: i + 1,
@@ -690,16 +694,33 @@ export async function getDivisionLeaderboard(
     displayName: displayNames[r.user_id] ?? "Anonymous",
     divisionXp: r.xp,
     streakDays: r.streak_days,
-    level: getLevelFromXp(r.xp),
+    level: getDivisionTierFromXp(r.xp),
     isCurrentUser: r.user_id === currentUserId,
   }));
+}
+
+const getDivisionLeaderboardCached = unstable_cache(
+  async (divisionKey: string, currentUserId: string, limit: number) =>
+    buildDivisionLeaderboard(divisionKey, currentUserId, limit),
+  ["division-leaderboard"],
+  { revalidate: 300 },
+);
+
+/** Top learners in a division (all-time division XP). Display name from Settings, then auth metadata / email. */
+export async function getDivisionLeaderboard(
+  divisionKey: string,
+  currentUserId: string,
+  limit = 20,
+): Promise<LeaderboardEntry[]> {
+  await requireRole(["student", "admin"]);
+  return getDivisionLeaderboardCached(divisionKey, currentUserId, limit);
 }
 
 export interface DivisionStat {
   divisionKey: string;
   divisionName: string;
   xp: number;
-  level: ReturnType<typeof getLevelFromXp>;
+  level: ReturnType<typeof getDivisionTierFromXp>;
   rank: number;
 }
 
@@ -730,27 +751,37 @@ export async function getStudentDivisionStats(
 
   const divMap = new Map((divisions ?? []).map((d) => [d.key, d.name]));
 
-  const result: DivisionStat[] = [];
-  for (const key of keys) {
-    const xp = divisionXp[key] ?? 0;
-    const { data: allRows } = await adminClient
-      .from("user_xp")
-      .select("user_id, division_xp");
-    const withXp = (allRows ?? [])
-      .map((r) => ((r.division_xp as Record<string, number>)?.[key] ?? 0))
-      .filter((v) => v > 0);
-    const rank = withXp.filter((v) => v > xp).length + 1;
+  const rankEntries = await Promise.all(
+    keys.map(async (key) => {
+      const xp = divisionXp[key] ?? 0;
+      const { count, error: cErr } = await adminClient
+        .from("mv_division_leaderboard")
+        .select("*", { count: "exact", head: true })
+        .eq("division_key", key)
+        .gt("division_xp", xp);
 
-    result.push({
-      divisionKey: key,
-      divisionName: divMap.get(key) ?? key,
-      xp,
-      level: getLevelFromXp(xp),
-      rank,
-    });
-  }
+      let rank: number;
+      if (!cErr) {
+        rank = (count ?? 0) + 1;
+      } else {
+        const { data: allRows } = await adminClient.from("user_xp").select("user_id, division_xp");
+        const withXp = (allRows ?? [])
+          .map((r) => (r.division_xp as Record<string, number>)?.[key] ?? 0)
+          .filter((v) => v > 0);
+        rank = withXp.filter((v) => v > xp).length + 1;
+      }
 
-  return result.sort((a, b) => b.xp - a.xp);
+      return {
+        divisionKey: key,
+        divisionName: divMap.get(key) ?? key,
+        xp,
+        level: getDivisionTierFromXp(xp),
+        rank,
+      };
+    }),
+  );
+
+  return rankEntries.sort((a, b) => b.xp - a.xp);
 }
 
 export interface QuestHistoryEntry {
@@ -841,11 +872,84 @@ export async function getStudentQuestHistory(limit = 40): Promise<QuestHistoryEn
       goal,
       divisionKey,
       divisionName,
-      xpAwarded: XP_SUCCESS,
+      xpAwarded: XP.QUEST_COMPLETE,
     });
   }
 
   return entries;
+}
+
+/** In-progress quest for learner dashboard "Continue" card. */
+export async function getInProgressQuestPreview(): Promise<{
+  questId: string;
+  promptPreview: string;
+  progressPercent: number;
+} | null> {
+  const user = await requireRole(["student", "admin"]);
+  const adminClient = createAdminClient();
+
+  const { data: progressRows } = await adminClient
+    .from("user_quest_progress")
+    .select("quest_id, num_attempts, last_attempt_at")
+    .eq("user_id", user.id)
+    .eq("status", "in_progress")
+    .order("last_attempt_at", { ascending: false })
+    .limit(20);
+
+  if (!progressRows?.length) return null;
+
+  const questIds = Array.from(
+    new Set(progressRows.map((row) => row.quest_id).filter((id): id is string => typeof id === "string" && id.length > 0)),
+  );
+  if (!questIds.length) return null;
+
+  const { data: questRows } = await adminClient
+    .from("quests")
+    .select("id, prompt, created_at, metadata")
+    .in("id", questIds);
+  if (!questRows?.length) return null;
+
+  const questById = new Map(questRows.map((q) => [q.id, q]));
+  const candidates = progressRows
+    .map((row) => {
+      const quest = questById.get(row.quest_id);
+      if (!quest) return null;
+      const metadata = (quest.metadata as Record<string, unknown> | null) ?? {};
+      const isCompletedPracticePack =
+        metadata.questKind === "practice_pack" &&
+        !!metadata.result &&
+        typeof metadata.result === "object";
+      if (metadata.questKind === "practice_pack" || isCompletedPracticePack) return null;
+      const activityIso =
+        (typeof row.last_attempt_at === "string" && row.last_attempt_at) ||
+        (typeof quest.created_at === "string" && quest.created_at) ||
+        "";
+      const activityAt = activityIso ? new Date(activityIso).getTime() : 0;
+      return {
+        questId: row.quest_id,
+        prompt: typeof quest.prompt === "string" ? quest.prompt : "",
+        numAttempts: typeof row.num_attempts === "number" ? row.num_attempts : 0,
+        activityAt,
+      };
+    })
+    .filter((row): row is { questId: string; prompt: string; numAttempts: number; activityAt: number } => !!row)
+    .sort((a, b) => b.activityAt - a.activityAt);
+
+  const selected = candidates[0];
+  if (!selected) return null;
+
+  const preview =
+    selected.prompt.length > 140
+      ? `${selected.prompt.slice(0, 140).trim()}…`
+      : selected.prompt || "Quest in progress";
+  const n = selected.numAttempts;
+  const progressPercent = Math.min(95, 20 + Math.min(n, 6) * 12);
+
+  return {
+    questId: selected.questId,
+    promptPreview: preview,
+    progressPercent,
+  };
 }
 
 /** Get current user XP and streak for the quest page footer. */

@@ -7,6 +7,14 @@ function getOptionalEnvVar(key: string, defaultValue?: string): string | undefin
   return process.env[key] ?? defaultValue;
 }
 
+function requireNonEmptyEnvVar(key: string): string {
+  const value = process.env[key];
+  if (!value || value.trim() === "") {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
 function getSupabaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) {
@@ -63,15 +71,6 @@ export function getResendApiKey(): string {
   return key;
 }
 
-/**
- * Optional Sentry runtime DSNs (`NEXT_PUBLIC_SENTRY_DSN` client, `SENTRY_DSN` server/edge).
- * For readable production stack traces, set build-time `SENTRY_AUTH_TOKEN` (and `SENTRY_ORG` / `SENTRY_PROJECT`
- * or the same values in `next.config` via `withSentryConfig`) — see Sentry project settings and auth tokens.
- */
-export function getOptionalSentryDsn(): string | undefined {
-  return getOptionalEnvVar("SENTRY_DSN") ?? getOptionalEnvVar("NEXT_PUBLIC_SENTRY_DSN");
-}
-
 export const env = {
   // Public environment variables (exposed to the browser)
   public: {
@@ -113,4 +112,37 @@ export const env = {
   },
 } as const;
 
+/**
+ * Validate critical secrets at startup in production.
+ * Keeps development flexible while failing fast in prod misconfiguration.
+ */
+export function validateEnvAtStartup(): void {
+  if (process.env.NODE_ENV !== "production") return;
+  if ((process.env.NEXT_PHASE ?? "").includes("phase-production-build")) return;
+  const required = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "GEMINI_API_KEY",
+    "RESEND_API_KEY",
+    "CRON_SECRET",
+  ];
+  required.forEach((k) => requireNonEmptyEnvVar(k));
+
+  const cronAllowlist = (process.env.CRON_ALLOWED_IPS ?? "").trim();
+  const requireCronSig = (process.env.CRON_REQUIRE_SIGNATURE ?? "false").toLowerCase() === "true";
+  if (!cronAllowlist && !requireCronSig) {
+    throw new Error(
+      "Cron hardening required: set CRON_ALLOWED_IPS or set CRON_REQUIRE_SIGNATURE=true.",
+    );
+  }
+}
+
+/**
+ * Production validation runs from `src/instrumentation.ts` (`register()`), not on every
+ * `import` of this module — otherwise public routes that only need a subset of secrets
+ * (e.g. `/` + admin client) would crash before env getters are used.
+ */
 

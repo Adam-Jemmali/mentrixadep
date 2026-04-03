@@ -35,6 +35,11 @@ jobs:
       - name: Install
         run: npm ci --legacy-peer-deps
 
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml
+
       - name: Lint
         run: npm run lint
 
@@ -43,8 +48,6 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

@@ -1,9 +1,12 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
+import { createAvailabilitySlotsSchema, setAvailabilityActiveSchema } from "@/lib/availability-schemas";
+import { buildSlotCandidates } from "@/lib/availability-slot-builder";
 import {
   sendSessionApprovedEmail,
   type SessionEmailDetails,
@@ -21,6 +24,266 @@ import {
   getRateLimitId,
 } from "@/lib/security";
 
+/** Monday 00:00:00 UTC for the week containing `d` (used for consistent server/client week bounds). */
+function utcStartOfWeekMonday(d: Date): Date {
+  const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = d.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setUTCDate(x.getUTCDate() + diff);
+  x.setUTCHours(0, 0, 0, 0);
+  return x;
+}
+
+const STRIPE_PAYOUT_CAPTION =
+  "Stripe pays out on your account's schedule (Balance → Payouts). US accounts typically see funds in the bank within 2 business days after charges are captured.";
+
+/** True when DB migration 024 (sessions.cancelled_*) is not applied yet. */
+function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
+  const m = (err.message ?? "").toLowerCase();
+  return (
+    m.includes("does not exist") &&
+    (m.includes("cancelled_at") || m.includes("cancelled_by_role"))
+  );
+}
+
+export type TutorCommandCenterEarningsDay = { date: string; cents: number };
+
+export type TutorCommandCenterPayload = {
+  metrics: {
+    earningsThisMonthCents: number;
+    stripePayoutCaption: string;
+    sessionsThisWeek: number;
+    avgRating: number | null;
+    responseRatePercent: number | null;
+    pendingRequestCount: number;
+  };
+  earningsLast30Days: TutorCommandCenterEarningsDay[];
+  lateCancellationAlerts: { id: string; course: string; start_time: string }[];
+  sessionRequests: Awaited<ReturnType<typeof getSessionRequests>>;
+  calendar: {
+    weekRange: { startIso: string; endIso: string };
+    availability: Array<{
+      id: string;
+      course: string;
+      start_time: string;
+      end_time: string;
+      price_per_session?: number | null;
+    }>;
+    sessions: Array<{
+      id: string;
+      course: string;
+      start_time: string;
+      end_time: string;
+      status: string;
+    }>;
+  };
+  availability: Awaited<ReturnType<typeof getTutorAvailability>>;
+  upcomingSessions: Awaited<ReturnType<typeof getUpcomingSessions>>;
+  pastSessions: Awaited<ReturnType<typeof getPastSessions>>;
+  tutorCourses: Awaited<ReturnType<typeof getTutorCourses>>;
+  autoApprove: boolean;
+  tutorTimezone: string;
+  /** Stripe Connect & payout data (null if loading fails gracefully) */
+  payoutData: import("@/app/actions/stripe-connect").PayoutDashboardData | null;
+};
+
+export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPayload> {
+  const user = await requireRole(["tutor", "admin"]);
+  const tutorId = user.id;
+  const supabase = await createClient();
+
+  const now = new Date();
+  const weekStart = utcStartOfWeekMonday(now);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekStart.getUTCDate() + 7);
+
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthEndExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const MS24 = 24 * 60 * 60 * 1000;
+
+  const [
+    sessionRequests,
+    availability,
+    upcomingSessions,
+    pastSessions,
+    tutorCourses,
+    autoApprove,
+    ratingsRes,
+    monthSessionsRes,
+    weekSessionsRes,
+    chartSessionsRes,
+    calAvailRes,
+    calSessionsRes,
+    availIdsRes,
+    settingsTzRes,
+  ] = await Promise.all([
+    getSessionRequests(),
+    getTutorAvailability(),
+    getUpcomingSessions(),
+    getPastSessions(),
+    getTutorCourses(),
+    getAutoApprove(),
+    supabase.from("ratings").select("rating").eq("tutor_id", tutorId),
+    supabase
+      .from("sessions")
+      .select("price_per_session")
+      .eq("tutor_id", tutorId)
+      .eq("status", "completed")
+      .gte("end_time", monthStart.toISOString())
+      .lt("end_time", monthEndExclusive.toISOString()),
+    supabase
+      .from("sessions")
+      .select("id")
+      .eq("tutor_id", tutorId)
+      .eq("status", "scheduled")
+      .gte("start_time", weekStart.toISOString())
+      .lt("start_time", weekEnd.toISOString()),
+    supabase
+      .from("sessions")
+      .select("end_time, price_per_session")
+      .eq("tutor_id", tutorId)
+      .eq("status", "completed")
+      .gte("end_time", thirtyDaysAgo.toISOString()),
+    supabase
+      .from("availability")
+      .select("id, course, start_time, end_time, price_per_session")
+      .eq("tutor_id", tutorId)
+      .gte("start_time", weekStart.toISOString())
+      .lt("start_time", weekEnd.toISOString()),
+    supabase
+      .from("sessions")
+      .select("id, course, start_time, end_time, status")
+      .eq("tutor_id", tutorId)
+      .gte("start_time", weekStart.toISOString())
+      .lt("start_time", weekEnd.toISOString()),
+    supabase.from("availability").select("id").eq("tutor_id", tutorId),
+    supabase.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
+  ]);
+
+  const err =
+    ratingsRes.error ||
+    monthSessionsRes.error ||
+    weekSessionsRes.error ||
+    chartSessionsRes.error ||
+    calAvailRes.error ||
+    calSessionsRes.error ||
+    availIdsRes.error ||
+    settingsTzRes.error;
+  if (err) {
+    throw new Error(`Failed to load command center: ${err.message}`);
+  }
+
+  const earningsThisMonthCents = (monthSessionsRes.data ?? []).reduce((sum, row) => {
+    const c = row.price_per_session ?? 0;
+    return sum + (typeof c === "number" ? c : 0);
+  }, 0);
+
+  const ratings = ratingsRes.data ?? [];
+  const avgRating =
+    ratings.length === 0
+      ? null
+      : Math.round((ratings.reduce((s, r) => s + r.rating, 0) / ratings.length) * 10) / 10;
+
+  const sessionsThisWeek = (weekSessionsRes.data ?? []).length;
+
+  const byDay = new Map<string, number>();
+  for (const row of chartSessionsRes.data ?? []) {
+    const end = new Date(row.end_time);
+    const key = `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, "0")}-${String(end.getUTCDate()).padStart(2, "0")}`;
+    const cents = typeof row.price_per_session === "number" ? row.price_per_session : 0;
+    byDay.set(key, (byDay.get(key) ?? 0) + cents);
+  }
+
+  const earningsLast30Days: TutorCommandCenterEarningsDay[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    earningsLast30Days.push({ date: key, cents: byDay.get(key) ?? 0 });
+  }
+
+  const availabilityIds = (availIdsRes.data ?? []).map((a) => a.id);
+  let responseRatePercent: number | null = null;
+  if (availabilityIds.length > 0) {
+    const { data: reqRows, error: reqErr } = await supabase
+      .from("session_requests")
+      .select("status, created_at, updated_at")
+      .in("availability_id", availabilityIds);
+    if (reqErr) {
+      throw new Error(`Failed to load response rate: ${reqErr.message}`);
+    }
+    const decided = (reqRows ?? []).filter((r) => r.status === "approved" || r.status === "rejected");
+    const inTime = decided.filter(
+      (r) => new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() <= MS24,
+    );
+    responseRatePercent =
+      decided.length === 0 ? null : Math.round((inTime.length / decided.length) * 1000) / 10;
+  }
+
+  let lateCancellationAlerts: Array<{ id: string; course: string; start_time: string }> = [];
+  const { data: lateRows, error: lateErr } = await supabase
+    .from("sessions")
+    .select("id, course, start_time, cancelled_at, cancelled_by_role")
+    .eq("tutor_id", tutorId)
+    .eq("status", "cancelled")
+    .eq("cancelled_by_role", "student")
+    .not("cancelled_at", "is", null);
+
+  if (lateErr) {
+    if (!isMissingCancelledSessionColumnsError(lateErr)) {
+      throw new Error(`Failed to load command center: ${lateErr.message}`);
+    }
+  } else {
+    lateCancellationAlerts = (lateRows ?? [])
+      .filter((s) => {
+        if (!s.cancelled_at) return false;
+        const start = new Date(s.start_time).getTime();
+        const ca = new Date(s.cancelled_at).getTime();
+        const msLeft = start - ca;
+        return msLeft > 0 && msLeft <= MS24;
+      })
+      .map((s) => ({ id: s.id, course: s.course, start_time: s.start_time }));
+  }
+
+  // Load payout dashboard data (non-critical — fail silently)
+  let payoutData: import("@/app/actions/stripe-connect").PayoutDashboardData | null = null;
+  try {
+    const { getPayoutDashboardData } = await import("@/app/actions/stripe-connect");
+    payoutData = await getPayoutDashboardData(tutorId);
+  } catch (e) {
+    console.warn("[tutor] payout data load failed (non-critical):", e);
+  }
+
+  return {
+    metrics: {
+      earningsThisMonthCents,
+      stripePayoutCaption: STRIPE_PAYOUT_CAPTION,
+      sessionsThisWeek,
+      avgRating,
+      responseRatePercent,
+      pendingRequestCount: sessionRequests.length,
+    },
+    earningsLast30Days,
+    lateCancellationAlerts,
+    sessionRequests,
+    calendar: {
+      weekRange: { startIso: weekStart.toISOString(), endIso: weekEnd.toISOString() },
+      availability: calAvailRes.data ?? [],
+      sessions: calSessionsRes.data ?? [],
+    },
+    availability,
+    upcomingSessions,
+    pastSessions,
+    tutorCourses,
+    autoApprove,
+    tutorTimezone:
+      typeof settingsTzRes.data?.timezone === "string" && settingsTzRes.data.timezone.length > 0
+        ? settingsTzRes.data.timezone
+        : "UTC",
+    payoutData,
+  };
+}
+
 export async function getTutorAvailability() {
   const user = await requireRole(["tutor", "admin"]);
   const supabase = await createClient();
@@ -36,7 +299,273 @@ export async function getTutorAvailability() {
     throw new Error(`Failed to fetch availability: ${error.message}`);
   }
 
-  return data || [];
+  const rows = data || [];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+  const { data: pendingRows, error: pendingErr } = await supabase
+    .from("session_requests")
+    .select("availability_id")
+    .in("availability_id", ids)
+    .eq("status", "pending");
+
+  if (pendingErr) {
+    throw new Error(`Failed to fetch booking counts: ${pendingErr.message}`);
+  }
+
+  const count = new Map<string, number>();
+  for (const p of pendingRows ?? []) {
+    const aid = p.availability_id as string;
+    count.set(aid, (count.get(aid) ?? 0) + 1);
+  }
+
+  return rows.map((r) => ({
+    ...r,
+    pending_booking_count: count.get(r.id) ?? 0,
+  }));
+}
+
+function windowsOverlap(
+  a0: number,
+  a1: number,
+  b0: number,
+  b1: number,
+): boolean {
+  return a0 < b1 && b0 < a1;
+}
+
+async function assertAvailabilityWindowAllowed(
+  adminClient: ReturnType<typeof createAdminClient>,
+  actingAsId: string,
+  course: string,
+  start: Date,
+  end: Date,
+): Promise<void> {
+  const { data: existing, error: checkError } = await adminClient
+    .from("availability")
+    .select("id")
+    .eq("tutor_id", actingAsId)
+    .eq("course", course)
+    .eq("start_time", start.toISOString())
+    .maybeSingle();
+
+  if (checkError) {
+    throw new Error(`Failed to check existing availability: ${checkError.message}`);
+  }
+
+  if (existing) {
+    throw new Error("Availability slot already exists");
+  }
+
+  const { data: allAvailability, error: fetchError } = await adminClient
+    .from("availability")
+    .select("start_time, end_time")
+    .eq("tutor_id", actingAsId)
+    .eq("course", course);
+
+  if (fetchError) {
+    throw new Error(`Failed to check overlapping availability: ${fetchError.message}`);
+  }
+
+  const ws = start.getTime();
+  const we = end.getTime();
+  const hasOverlap = (allAvailability || []).some((avail) => {
+    const availStart = new Date(avail.start_time).getTime();
+    const availEnd = new Date(avail.end_time).getTime();
+    return windowsOverlap(ws, we, availStart, availEnd);
+  });
+
+  if (hasOverlap) {
+    throw new Error("Overlapping availability slots are not allowed");
+  }
+
+  const nowIso = new Date().toISOString();
+  const { data: upcomingSessions, error: sessionCheckError } = await adminClient
+    .from("sessions")
+    .select("start_time, end_time")
+    .eq("tutor_id", actingAsId)
+    .eq("status", "scheduled")
+    .gte("end_time", nowIso);
+
+  if (sessionCheckError) {
+    throw new Error(`Failed to check existing sessions: ${sessionCheckError.message}`);
+  }
+
+  const hasSessionConflict = (upcomingSessions ?? []).some((s) => {
+    const s0 = new Date(s.start_time).getTime();
+    const s1 = new Date(s.end_time).getTime();
+    return windowsOverlap(ws, we, s0, s1);
+  });
+
+  if (hasSessionConflict) {
+    throw new Error("Tutor already has a session at this time");
+  }
+}
+
+export async function createAvailabilitySlots(
+  raw: Record<string, unknown>,
+  onBehalfOfUserId?: string,
+) {
+  try {
+    const user = await requireRole(["tutor", "admin"]);
+
+    if (user.role === "admin" && !onBehalfOfUserId) {
+      throw new Error(
+        "Invalid admin context: open a tutor from the HR panel first, then add slots.",
+      );
+    }
+
+    const actingAsId =
+      user.role === "admin" && onBehalfOfUserId ? onBehalfOfUserId : user.id;
+
+    const adminClient = createAdminClient();
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.createAvailability,
+      "create availability",
+    );
+
+    const parsed = createAvailabilitySlotsSchema.safeParse(raw);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join("; ");
+      throw new Error(msg || "Invalid availability payload");
+    }
+    const input = parsed.data;
+
+    const validCourse = sanitizeCourseName(validateCourse(input.course));
+
+    const { data: courseProof, error: courseErr } = await adminClient
+      .from("tutor_courses")
+      .select("id")
+      .eq("tutor_id", actingAsId)
+      .eq("course_name", validCourse)
+      .maybeSingle();
+
+    if (courseErr) {
+      throw new Error(`Failed to verify course: ${courseErr.message}`);
+    }
+    if (!courseProof) {
+      throw new Error("Add this subject under My expertise before creating open slots.");
+    }
+
+    const recurringWeeks = input.recurring ? (input.recurringWeeks ?? 12) : 1;
+    const weeks = Math.min(52, Math.max(1, recurringWeeks));
+
+    const candidates = buildSlotCandidates(
+      new Date(),
+      input.timezone,
+      input.weekdays,
+      input.startTime,
+      input.endTime,
+      weeks,
+    );
+
+    if (candidates.length === 0) {
+      throw new Error("No future slots matched your selections. Try different days or times.");
+    }
+
+    const pricePerSession = Math.max(1, Math.round(input.priceUsd * 100));
+    const seriesId = randomUUID();
+
+    const rows: Array<{
+      tutor_id: string;
+      course: string;
+      start_time: string;
+      end_time: string;
+      price_per_session: number;
+      active: boolean;
+      max_students: number;
+      series_id: string;
+    }> = [];
+
+    for (const c of candidates) {
+      await assertAvailabilityWindowAllowed(adminClient, actingAsId, validCourse, c.startUtc, c.endUtc);
+      rows.push({
+        tutor_id: actingAsId,
+        course: validCourse,
+        start_time: c.startUtc.toISOString(),
+        end_time: c.endUtc.toISOString(),
+        price_per_session: pricePerSession,
+        active: true,
+        max_students: input.maxStudents,
+        series_id: seriesId,
+      });
+    }
+
+    const { error: insertError } = await adminClient.from("availability").insert(rows);
+
+    if (insertError) {
+      throw new Error(`Failed to create availability: ${insertError.message}`);
+    }
+
+    revalidatePath("/tutor");
+    return { success: true, created: rows.length };
+  } catch (error) {
+    throw new Error(sanitizeError(error));
+  }
+}
+
+export async function setAvailabilityActive(
+  raw: Record<string, unknown>,
+  onBehalfOfUserId?: string,
+) {
+  try {
+    const user = await requireRole(["tutor", "admin"]);
+
+    if (user.role === "admin" && !onBehalfOfUserId) {
+      throw new Error(
+        "Invalid admin context: open a tutor from the HR panel first, then manage slots.",
+      );
+    }
+
+    const actingAsId =
+      user.role === "admin" && onBehalfOfUserId ? onBehalfOfUserId : user.id;
+
+    const parsed = setAvailabilityActiveSchema.safeParse(raw);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join("; ");
+      throw new Error(msg || "Invalid input");
+    }
+    const { availabilityId, active } = parsed.data;
+
+    const client =
+      user.role === "admin" && onBehalfOfUserId ? createAdminClient() : await createClient();
+
+    const { data: row, error: fetchErr } = await client
+      .from("availability")
+      .select("tutor_id")
+      .eq("id", availabilityId)
+      .single();
+
+    if (fetchErr || !row) {
+      throw new Error("Availability not found");
+    }
+    if (row.tutor_id !== actingAsId && user.role !== "admin") {
+      throw new Error("You don't have permission to update this slot");
+    }
+
+    const { error: updateErr } = await client
+      .from("availability")
+      .update({ active })
+      .eq("id", availabilityId)
+      .eq("tutor_id", actingAsId);
+
+    if (updateErr) {
+      if (
+        updateErr.message?.includes("active") ||
+        updateErr.message?.includes("schema cache")
+      ) {
+        throw new Error("Run database migration 025 (availability active column) in Supabase.");
+      }
+      throw new Error(`Failed to update slot: ${updateErr.message}`);
+    }
+
+    revalidatePath("/tutor");
+    return { success: true };
+  } catch (error) {
+    throw new Error(sanitizeError(error));
+  }
 }
 
 export async function createAvailability(
@@ -86,71 +615,7 @@ export async function createAvailability(
         ? Math.max(1, Math.round(priceDollars * 100))
         : 2500;
 
-    const { data: existing, error: checkError } = await adminClient
-      .from("availability")
-      .select("id")
-      .eq("tutor_id", actingAsId)
-      .eq("course", validCourse)
-      .eq("start_time", start.toISOString())
-      .maybeSingle();
-
-    if (checkError) {
-      throw new Error(`Failed to check existing availability: ${checkError.message}`);
-    }
-
-    if (existing) {
-      throw new Error("Availability slot already exists");
-    }
-
-    const { data: allAvailability, error: fetchError } = await adminClient
-      .from("availability")
-      .select("start_time, end_time")
-      .eq("tutor_id", actingAsId)
-      .eq("course", validCourse);
-
-    if (fetchError) {
-      throw new Error(`Failed to check overlapping availability: ${fetchError.message}`);
-    }
-
-    const hasOverlap = (allAvailability || []).some((avail) => {
-      const availStart = new Date(avail.start_time);
-      const availEnd = new Date(avail.end_time);
-      return (
-        (availStart <= start && availEnd > start) ||
-        (availStart < end && availEnd >= end) ||
-        (availStart >= start && availEnd <= end)
-      );
-    });
-
-    if (hasOverlap) {
-      throw new Error("Overlapping availability slots are not allowed");
-    }
-
-    // Only block if an *upcoming* scheduled session overlaps this availability window.
-    // Ignore cancelled/completed/past rows — they were incorrectly blocking new slots.
-    const nowIso = new Date().toISOString();
-    const { data: upcomingSessions, error: sessionCheckError } = await adminClient
-      .from("sessions")
-      .select("start_time, end_time")
-      .eq("tutor_id", actingAsId)
-      .eq("status", "scheduled")
-      .gte("end_time", nowIso);
-
-    if (sessionCheckError) {
-      throw new Error(`Failed to check existing sessions: ${sessionCheckError.message}`);
-    }
-
-    const windowStart = start.getTime();
-    const windowEnd = end.getTime();
-    const hasSessionConflict = (upcomingSessions ?? []).some((s) => {
-      const s0 = new Date(s.start_time).getTime();
-      const s1 = new Date(s.end_time).getTime();
-      return s0 < windowEnd && s1 > windowStart;
-    });
-
-    if (hasSessionConflict) {
-      throw new Error("Tutor already has a session at this time");
-    }
+    await assertAvailabilityWindowAllowed(adminClient, actingAsId, validCourse, start, end);
 
     const { data, error } = await adminClient
       .from("availability")
@@ -160,6 +625,8 @@ export async function createAvailability(
         start_time: start.toISOString(),
         end_time: end.toISOString(),
         price_per_session: pricePerSession,
+        active: true,
+        max_students: 1,
       })
       .select()
       .single();
@@ -203,6 +670,21 @@ export async function deleteAvailability(availabilityId: string, onBehalfOfUserI
 
     if (availability.tutor_id !== actingAsId && user.role !== "admin") {
       throw new Error("You don't have permission to delete this availability");
+    }
+
+    const { count: pendingCount, error: pendingErr } = await client
+      .from("session_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("availability_id", validAvailabilityId)
+      .eq("status", "pending");
+
+    if (pendingErr) {
+      throw new Error(`Failed to check pending bookings: ${pendingErr.message}`);
+    }
+    if (pendingCount && pendingCount > 0) {
+      throw new Error(
+        "This slot has pending learner requests. Decline them in Command center before deleting.",
+      );
     }
 
     const { error } = await client
@@ -381,9 +863,32 @@ export async function getSessionRequests() {
     })
   );
 
+  // Enrich with institution badge (non-critical, best-effort)
+  const institutionBadgeMap: Record<string, { institutionName: string; logoUrl: string | null } | null> = {};
+  await Promise.all(
+    studentIds.map(async (sid) => {
+      try {
+        const { data: membership } = await adminClient
+          .from("institution_members")
+          .select("institution_id, institutions(name, logo_url)")
+          .eq("user_id", sid)
+          .maybeSingle();
+        if (membership) {
+          const inst = (membership as unknown as { institutions: { name: string; logo_url: string | null } | null }).institutions;
+          institutionBadgeMap[sid] = inst ? { institutionName: inst.name, logoUrl: inst.logo_url } : null;
+        } else {
+          institutionBadgeMap[sid] = null;
+        }
+      } catch {
+        institutionBadgeMap[sid] = null;
+      }
+    })
+  );
+
   return requests.map((r) => ({
     ...r,
     student_email: emailMap[r.student_id] ?? null,
+    institution: institutionBadgeMap[r.student_id] ?? null,
   }));
 }
 
@@ -503,14 +1008,26 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
   // Fire-and-forget email to student
   try {
     const adminClient = createAdminClient();
-    const studentAuthData = await adminClient.auth.admin.getUserById(request.student_id);
+    const [studentAuthData, settingsResult] = await Promise.all([
+      adminClient.auth.admin.getUserById(request.student_id),
+      adminClient
+        .from("user_settings")
+        .select("user_id, display_name")
+        .in("user_id", [request.student_id, tutorId]),
+    ]);
     const studentEmail = studentAuthData.data?.user?.email;
+    const nameByUser = Object.fromEntries(
+      (settingsResult.data ?? []).map((r) => [r.user_id, r.display_name as string | null])
+    );
     if (studentEmail && session) {
       const sessionDetails: SessionEmailDetails = {
         sessionId: session.id,
         course: session.course,
         startTime: session.start_time,
         endTime: session.end_time,
+        studentDisplayName: nameByUser[request.student_id] ?? null,
+        tutorDisplayName: nameByUser[tutorId] ?? null,
+        priceCents: session.price_per_session ?? null,
       };
       void sendSessionApprovedEmail(studentEmail, sessionDetails);
     }
@@ -656,11 +1173,24 @@ export async function cancelSession(sessionId: string, onBehalfOfUserId?: string
     throw new Error("Session not found or you don't have permission");
   }
 
-  const { error: updateError } = await client
+  const cancelledAt = new Date().toISOString();
+  let { error: updateError } = await client
     .from("sessions")
-    .update({ status: "cancelled" })
+    .update({
+      status: "cancelled",
+      cancelled_at: cancelledAt,
+      cancelled_by_role: "tutor",
+    })
     .eq("id", validSessionId)
     .eq("tutor_id", actingAsId);
+
+  if (updateError && isMissingCancelledSessionColumnsError(updateError)) {
+    ({ error: updateError } = await client
+      .from("sessions")
+      .update({ status: "cancelled" })
+      .eq("id", validSessionId)
+      .eq("tutor_id", actingAsId));
+  }
 
   if (updateError) {
     throw new Error(`Failed to cancel session: ${updateError.message}`);
@@ -707,7 +1237,7 @@ export async function toggleAutoApprove(enabled: boolean, onBehalfOfUserId?: str
   return { success: true };
 }
 
-export async function getTutorPublicProfile(tutorId: string) {
+async function fetchTutorPublicProfileUncached(tutorId: string) {
   const adminClient = createAdminClient();
 
   // Validate tutorId is a UUID
@@ -736,12 +1266,17 @@ export async function getTutorPublicProfile(tutorId: string) {
     ?? authUser?.user?.user_metadata?.name
     ?? email.split("@")[0];
 
-  // Fetch available slots
+  const windowEnd = new Date();
+  windowEnd.setDate(windowEnd.getDate() + 14);
+
+  // Fetch available slots (next 14 days — matches learner booking window)
   const { data: slots } = await adminClient
     .from("availability")
     .select("id, course, start_time, end_time, price_per_session")
     .eq("tutor_id", tutorId)
+    .eq("active", true)
     .gte("start_time", new Date().toISOString())
+    .lte("start_time", windowEnd.toISOString())
     .order("start_time", { ascending: true });
 
   const availability = slots ?? [];
@@ -807,6 +1342,16 @@ export async function getTutorPublicProfile(tutorId: string) {
   };
 }
 
+const getTutorPublicProfileCached = unstable_cache(
+  async (tutorId: string) => fetchTutorPublicProfileUncached(tutorId),
+  ["tutor-public-profile"],
+  { revalidate: 60 },
+);
+
+export async function getTutorPublicProfile(tutorId: string) {
+  return getTutorPublicProfileCached(tutorId);
+}
+
 export async function getTutorDashboardForAdmin(tutorId: string) {
   await requireRole(["admin"]);
   const adminClient = createAdminClient();
@@ -825,38 +1370,60 @@ export async function getTutorDashboardForAdmin(tutorId: string) {
 
   const now = new Date().toISOString();
 
-  const [availResult, upcomingResult, pastResult, reqAvailResult, tutorCoursesResult] = await Promise.all([
-    adminClient
-      .from("availability")
-      .select("*")
-      .eq("tutor_id", tutorId)
-      .gte("start_time", now)
-      .order("start_time", { ascending: true }),
-    adminClient
-      .from("sessions")
-      .select("*")
-      .eq("tutor_id", tutorId)
-      .neq("status", "cancelled")
-      .gte("end_time", now)
-      .order("start_time", { ascending: true }),
-    adminClient
-      .from("sessions")
-      .select("*")
-      .eq("tutor_id", tutorId)
-      .lt("end_time", now)
-      .order("end_time", { ascending: false }),
-    adminClient
-      .from("availability")
-      .select("id")
-      .eq("tutor_id", tutorId),
-    adminClient
-      .from("tutor_courses")
-      .select("*")
-      .eq("tutor_id", tutorId)
-      .order("created_at", { ascending: true }),
-  ]);
+  const [availResult, upcomingResult, pastResult, reqAvailResult, tutorCoursesResult, tzResult] =
+    await Promise.all([
+      adminClient
+        .from("availability")
+        .select("*")
+        .eq("tutor_id", tutorId)
+        .gte("start_time", now)
+        .order("start_time", { ascending: true }),
+      adminClient
+        .from("sessions")
+        .select("*")
+        .eq("tutor_id", tutorId)
+        .neq("status", "cancelled")
+        .gte("end_time", now)
+        .order("start_time", { ascending: true }),
+      adminClient
+        .from("sessions")
+        .select("*")
+        .eq("tutor_id", tutorId)
+        .lt("end_time", now)
+        .order("end_time", { ascending: false }),
+      adminClient
+        .from("availability")
+        .select("id")
+        .eq("tutor_id", tutorId),
+      adminClient
+        .from("tutor_courses")
+        .select("*")
+        .eq("tutor_id", tutorId)
+        .order("created_at", { ascending: true }),
+      adminClient.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
+    ]);
 
-  const availability = availResult.data ?? [];
+  const availabilityRaw = availResult.data ?? [];
+  let availability = availabilityRaw;
+  const availIdsForCount = availabilityRaw.map((a) => a.id);
+  if (availIdsForCount.length > 0) {
+    const { data: pendingRows } = await adminClient
+      .from("session_requests")
+      .select("availability_id")
+      .in("availability_id", availIdsForCount)
+      .eq("status", "pending");
+    const count = new Map<string, number>();
+    for (const p of pendingRows ?? []) {
+      const aid = p.availability_id as string;
+      count.set(aid, (count.get(aid) ?? 0) + 1);
+    }
+    availability = availabilityRaw.map((a) => ({
+      ...a,
+      pending_booking_count: count.get(a.id) ?? 0,
+    }));
+  } else {
+    availability = [];
+  }
   const upcomingSessions = upcomingResult.data ?? [];
   const pastSessions = pastResult.data ?? [];
 
@@ -932,6 +1499,10 @@ export async function getTutorDashboardForAdmin(tutorId: string) {
     })),
     autoApprove: tutorUser.auto_approve ?? false,
     tutorCourses: tutorCoursesResult.data ?? [],
+    tutorTimezone:
+      typeof tzResult.data?.timezone === "string" && tzResult.data.timezone.length > 0
+        ? tzResult.data.timezone
+        : "UTC",
   };
 }
 

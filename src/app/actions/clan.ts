@@ -3,10 +3,12 @@
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { trackEvent } from "@/lib/analytics";
 import {
   enforceRateLimit,
   RATE_LIMITS,
   getRateLimitId,
+  parseUUID,
   sanitizeString,
 } from "@/lib/security";
 
@@ -14,7 +16,7 @@ const INVITE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 function randomInviteCode(): string {
   let s = "";
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 6; i++) {
     s += INVITE_CHARS[Math.floor(Math.random() * INVITE_CHARS.length)];
   }
   return s;
@@ -113,10 +115,19 @@ export async function getMyClan(): Promise<MyClanResult> {
   };
 }
 
+export type CreateClanOptions = {
+  description?: string;
+  focusDivisionKey?: string | null;
+  joinMode?: "open" | "approval";
+  isPublic?: boolean;
+  avatarPresetKey?: string;
+};
+
 export async function createClan(
   nameRaw: string,
-  tagRaw: string
-): Promise<{ success: true } | { success: false; error: string }> {
+  tagRaw: string,
+  options?: CreateClanOptions
+): Promise<{ success: true; clanId?: string } | { success: false; error: string }> {
   try {
     const user = await requireRole(["student", "admin"]);
     if (user.role !== "student") {
@@ -171,6 +182,34 @@ export async function createClan(
       invite = randomInviteCode();
     }
 
+    const desc = options?.description
+      ? sanitizeString(options.description).slice(0, 500)
+      : null;
+    const focus =
+      typeof options?.focusDivisionKey === "string" &&
+      options.focusDivisionKey.trim()
+        ? options.focusDivisionKey.trim()
+        : null;
+    const joinMode = options?.joinMode === "approval" ? "approval" : "open";
+    const isPublic = options?.isPublic !== false;
+    const preset =
+      typeof options?.avatarPresetKey === "string" &&
+      options.avatarPresetKey.trim()
+        ? options.avatarPresetKey.trim().slice(0, 32)
+        : "shield";
+
+    if (focus) {
+      const { data: divOk } = await admin
+        .from("divisions")
+        .select("key")
+        .eq("key", focus)
+        .eq("active", true)
+        .maybeSingle();
+      if (!divOk) {
+        return { success: false, error: "Pick a valid subject for clan focus." };
+      }
+    }
+
     const { data: clan, error: insClan } = await admin
       .from("clans")
       .insert({
@@ -178,14 +217,24 @@ export async function createClan(
         tag,
         invite_code: invite,
         leader_id: user.id,
+        description: desc,
+        focus_division_key: focus,
+        join_mode: joinMode,
+        is_public: isPublic,
+        avatar_kind: "preset",
+        avatar_preset_key: preset,
       })
       .select("id")
       .single();
 
     if (insClan || !clan) {
+      const msg = insClan?.message ?? "Could not create clan.";
+      if (msg.includes("clans_name_unique_ci") || msg.includes("duplicate")) {
+        return { success: false, error: "A clan with this name already exists." };
+      }
       return {
         success: false,
-        error: insClan?.message ?? "Could not create clan.",
+        error: msg,
       };
     }
 
@@ -200,8 +249,15 @@ export async function createClan(
       return { success: false, error: memErr.message };
     }
 
+    void trackEvent("clan_created", {
+      userId: user.id,
+      properties: { clan_id: clan.id, name },
+    });
+
     revalidatePath("/student/duel");
-    return { success: true };
+    revalidatePath("/student/clan");
+    revalidatePath(`/student/clan/${clan.id}`);
+    return { success: true, clanId: clan.id };
   } catch (e) {
     return {
       success: false,
@@ -244,7 +300,7 @@ export async function joinClanByCode(
 
     const { data: clan } = await admin
       .from("clans")
-      .select("id")
+      .select("id, join_mode")
       .eq("invite_code", code)
       .maybeSingle();
 
@@ -252,8 +308,51 @@ export async function joinClanByCode(
       return { success: false, error: "No clan found with that code." };
     }
 
+    const clanId = clan.id as string;
+    const joinMode = (clan as { join_mode?: string }).join_mode ?? "open";
+
+    const { count } = await admin
+      .from("clan_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("clan_id", clanId);
+
+    if ((count ?? 0) >= 20) {
+      return { success: false, error: "This clan is full (20 members)." };
+    }
+
+    if (joinMode === "approval") {
+      const { data: pend } = await admin
+        .from("clan_join_requests")
+        .select("id")
+        .eq("clan_id", clanId)
+        .eq("user_id", user.id)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (pend) {
+        return {
+          success: false,
+          error: "You already have a pending request for this clan.",
+        };
+      }
+
+      const { error: reqErr } = await admin.from("clan_join_requests").insert({
+        clan_id: clanId,
+        user_id: user.id,
+        status: "pending",
+      });
+
+      if (reqErr) {
+        return { success: false, error: reqErr.message };
+      }
+
+      revalidatePath("/student/duel");
+      revalidatePath(`/student/clan/${clanId}`);
+      return { success: true };
+    }
+
     const { error: memErr } = await admin.from("clan_members").insert({
-      clan_id: clan.id,
+      clan_id: clanId,
       user_id: user.id,
       role: "member",
     });
@@ -263,6 +362,7 @@ export async function joinClanByCode(
     }
 
     revalidatePath("/student/duel");
+    revalidatePath(`/student/clan/${clanId}`);
     return { success: true };
   } catch (e) {
     return {
@@ -328,6 +428,8 @@ export async function leaveClan(): Promise<
     }
 
     revalidatePath("/student/duel");
+    revalidatePath("/student/clan");
+    revalidatePath(`/student/clan/${clanId}`);
     return { success: true };
   } catch (e) {
     return {
@@ -387,6 +489,8 @@ export async function regenerateInviteCode(): Promise<
     }
 
     revalidatePath("/student/duel");
+    revalidatePath("/student/clan");
+    revalidatePath(`/student/clan/${membership.clan_id}`);
     return { success: true, invite_code: updated.invite_code };
   } catch (e) {
     return {
@@ -414,4 +518,246 @@ export async function areUsersInSameClan(
     .maybeSingle();
   if (!ma?.clan_id || !mb?.clan_id) return false;
   return ma.clan_id === mb.clan_id;
+}
+
+export async function requestJoinPublicClan(
+  clanId: string
+): Promise<
+  { success: true; joined: boolean } | { success: false; error: string }
+> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can join." };
+    }
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.clanJoin,
+      "join clan by id"
+    );
+
+    const cid = parseUUID(clanId);
+    if (!cid.ok) return { success: false, error: "Invalid clan." };
+
+    const admin = createAdminClient();
+
+    const { data: existing } = await admin
+      .from("clan_members")
+      .select("clan_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: false, error: "You are already in a clan. Leave it first." };
+    }
+
+    const { data: clan } = await admin
+      .from("clans")
+      .select("id, join_mode, is_public")
+      .eq("id", cid.id)
+      .maybeSingle();
+
+    if (!clan) {
+      return { success: false, error: "Clan not found." };
+    }
+    if ((clan as { is_public?: boolean }).is_public === false) {
+      return { success: false, error: "This clan is not open for discovery." };
+    }
+
+    const joinMode =
+      ((clan as { join_mode?: string }).join_mode as "open" | "approval") ??
+      "open";
+
+    const { count } = await admin
+      .from("clan_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("clan_id", cid.id);
+
+    if ((count ?? 0) >= 20) {
+      return { success: false, error: "This clan is full (20 members)." };
+    }
+
+    if (joinMode === "approval") {
+      const { error: reqErr } = await admin.from("clan_join_requests").insert({
+        clan_id: cid.id,
+        user_id: user.id,
+        status: "pending",
+      });
+      if (reqErr) {
+        if (reqErr.code === "23505") {
+          return {
+            success: false,
+            error: "You already have a pending request.",
+          };
+        }
+        return { success: false, error: reqErr.message };
+      }
+      revalidatePath("/student/clan");
+      revalidatePath(`/student/clan/${cid.id}`);
+      return { success: true, joined: false };
+    } else {
+      const { error: memErr } = await admin.from("clan_members").insert({
+        clan_id: cid.id,
+        user_id: user.id,
+        role: "member",
+      });
+      if (memErr) {
+        return { success: false, error: memErr.message };
+      }
+    }
+
+    revalidatePath("/student/clan");
+    revalidatePath(`/student/clan/${cid.id}`);
+    return { success: true, joined: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to join.",
+    };
+  }
+}
+
+export async function uploadClanAvatar(
+  clanId: string,
+  formData: FormData
+): Promise<{ success: true; url: string } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const cid = parseUUID(clanId);
+    if (!cid.ok) return { success: false, error: "Invalid clan." };
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.clanCreate,
+      "clan avatar"
+    );
+
+    const admin = createAdminClient();
+    const { data: mem } = await admin
+      .from("clan_members")
+      .select("role")
+      .eq("clan_id", cid.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (mem?.role !== "leader") {
+      return { success: false, error: "Only the leader can change the avatar." };
+    }
+
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size < 10) {
+      return { success: false, error: "Choose an image file." };
+    }
+    if (file.size > 900_000) {
+      return { success: false, error: "Image must be under 900 KB." };
+    }
+
+    const ext =
+      file.type === "image/png"
+        ? "png"
+        : file.type === "image/jpeg"
+          ? "jpg"
+          : file.type === "image/webp"
+            ? "webp"
+            : null;
+    if (!ext) {
+      return { success: false, error: "Use PNG, JPEG, or WebP." };
+    }
+
+    const path = `${cid.id}/${crypto.randomUUID()}.${ext}`;
+    const buf = Buffer.from(await file.arrayBuffer());
+
+    const { error: upErr } = await admin.storage
+      .from("clan-avatars")
+      .upload(path, buf, {
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (upErr) {
+      return {
+        success: false,
+        error:
+          upErr.message.includes("Bucket") || upErr.message.includes("not found")
+            ? "Avatar storage is not configured yet."
+            : upErr.message,
+      };
+    }
+
+    const { data: pub } = admin.storage.from("clan-avatars").getPublicUrl(path);
+    const url = pub.publicUrl;
+
+    await admin
+      .from("clans")
+      .update({
+        avatar_kind: "custom",
+        avatar_url: url,
+        avatar_preset_key: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", cid.id);
+
+    revalidatePath(`/student/clan/${cid.id}`);
+    return { success: true, url };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Upload failed.",
+    };
+  }
+}
+
+export async function setClanAvatarPreset(
+  clanId: string,
+  presetKey: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const cid = parseUUID(clanId);
+    if (!cid.ok) return { success: false, error: "Invalid clan." };
+
+    const admin = createAdminClient();
+    const { data: mem } = await admin
+      .from("clan_members")
+      .select("role")
+      .eq("clan_id", cid.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (mem?.role !== "leader") {
+      return { success: false, error: "Only the leader can change the avatar." };
+    }
+
+    const key = sanitizeString(presetKey).slice(0, 32);
+    if (!key) {
+      return { success: false, error: "Invalid preset." };
+    }
+
+    await admin
+      .from("clans")
+      .update({
+        avatar_kind: "preset",
+        avatar_preset_key: key,
+        avatar_url: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", cid.id);
+
+    revalidatePath(`/student/clan/${cid.id}`);
+    return { success: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed.",
+    };
+  }
 }

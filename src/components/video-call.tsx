@@ -19,6 +19,15 @@ import { leaveVideoRoom } from "@/app/actions/video";
 import { saveRecording } from "@/app/actions/recordings";
 import { useRouter } from "next/navigation";
 import { VideoCallIllustration } from "@/components/illustrations";
+import { MessageSquare, LayoutPanelLeft } from "lucide-react";
+import {
+  PreCallLobby,
+  type LobbySettings,
+} from "@/components/video/pre-call-lobby";
+import { Whiteboard } from "@/components/video/whiteboard";
+import { InSessionChat } from "@/components/video/in-session-chat";
+import { PostCallSummary } from "@/components/video/post-call-summary";
+import { ToolbarQualityBadge } from "@/components/video/connection-quality";
 
 /** Trigger a browser download so the user keeps a local copy of the recording. */
 function downloadBlobToDevice(blob: Blob, filename: string): void {
@@ -154,6 +163,8 @@ interface VideoCallProps {
   courseLabel: string;
   learnerLabel: string;
   guideLabel: string;
+  /** ISO datetime string — used to gate lobby join button ±5 min */
+  sessionStartTime?: string | null;
 }
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
@@ -167,9 +178,21 @@ export function VideoCall({
   courseLabel,
   learnerLabel,
   guideLabel,
+  sessionStartTime,
 }: VideoCallProps) {
   const router = useRouter();
   const afterCallPath = userRole === "tutor" ? "/tutor" : "/student";
+
+  // ─── Lobby / phase state ───────────────────────────────────────────────────
+  const [inLobby, setInLobby] = useState(true);
+  const [lobbySettings, setLobbySettings] = useState<LobbySettings | null>(null);
+
+  // ─── Panel state (chat / whiteboard) ─────────────────────────────────────
+  const [activePanel, setActivePanel] = useState<"none" | "chat" | "whiteboard">("none");
+
+  // ─── Post-call summary ────────────────────────────────────────────────────
+  const [showPostCall, setShowPostCall] = useState(false);
+  const [whiteboardSnapshot, setWhiteboardSnapshot] = useState<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -347,8 +370,8 @@ export function VideoCall({
         channelRef.current.unsubscribe();
       }
 
-      // Navigate away
-      router.push(afterCallPath);
+      // Show post-call summary instead of immediately navigating
+      setShowPostCall(true);
     } catch (err) {
       console.error("Error ending call:", err);
       router.push(afterCallPath);
@@ -433,13 +456,14 @@ export function VideoCall({
 
     document.addEventListener("mousemove", showControls);
     document.addEventListener("touchstart", showControls, { passive: true });
-    controlsRef.current.addEventListener("mouseenter", onMouseEnterControls);
+    const controlsEl = controlsRef.current;
+    controlsEl?.addEventListener("mouseenter", onMouseEnterControls);
     showControls();
 
     return () => {
       document.removeEventListener("mousemove", showControls);
       document.removeEventListener("touchstart", showControls);
-      controlsRef.current?.removeEventListener("mouseenter", onMouseEnterControls);
+      controlsEl?.removeEventListener("mouseenter", onMouseEnterControls);
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     };
   }, []);
@@ -531,9 +555,23 @@ export function VideoCall({
         console.log("Initializing call...");
         setConnectionStatus("connecting");
         
-        // Get user media (includes secure context check)
+        // Get user media — prefer devices chosen in pre-call lobby
         console.log("Requesting camera and microphone access...");
-        const stream = await getUserMedia(true, true);
+        let stream: MediaStream;
+        const lbs = lobbySettings;
+        if (lbs?.audioDeviceId || lbs?.videoDeviceId) {
+          const constraints: MediaStreamConstraints = {
+            audio: lbs.audioEnabled !== false
+              ? { deviceId: lbs.audioDeviceId ? { exact: lbs.audioDeviceId } : undefined, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+              : false,
+            video: lbs.videoEnabled !== false
+              ? { deviceId: lbs.videoDeviceId ? { exact: lbs.videoDeviceId } : undefined, width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
+              : false,
+          };
+          stream = await navigator.mediaDevices.getUserMedia(constraints).catch(() => getUserMedia(true, true));
+        } else {
+          stream = await getUserMedia(true, true);
+        }
         if (!mounted) {
           stopMediaStream(stream);
           return;
@@ -568,6 +606,17 @@ export function VideoCall({
         });
 
         localStreamRef.current = stream;
+
+        // Apply lobby mute/video state
+        if (lbs?.audioEnabled === false) {
+          stream.getAudioTracks().forEach((t) => { t.enabled = false; });
+          setIsMuted(true);
+        }
+        if (lbs?.videoEnabled === false) {
+          stream.getVideoTracks().forEach((t) => { t.enabled = false; });
+          setIsVideoOff(true);
+        }
+
         setLocalStreamReady(true);
 
         // Attach local video immediately if element is already in DOM (camera opens directly)
@@ -1287,6 +1336,7 @@ export function VideoCall({
         channelRef.current.unsubscribe();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- we intentionally initialize call once for identity/session tuple
   }, [sessionId, roomId, roomToken, userRole, userId]);
 
   const toggleMute = () => {
@@ -1334,6 +1384,16 @@ export function VideoCall({
 
     if (!displayVideoTrackRef.current && !remoteVideoRef.current) {
       setError("Connect with the other participant first, or share your screen to record.");
+      return;
+    }
+
+    const consentOk = window.confirm(
+      "Recording consent required: confirm that both parties explicitly agree to this recording."
+    );
+    if (!consentOk) {
+      setError(
+        "Recording not started. You must confirm both parties agreed to recording."
+      );
       return;
     }
 
@@ -1669,6 +1729,7 @@ export function VideoCall({
           uploadFormData.append("startedAt", startedAtIso);
           uploadFormData.append("endedAt", endedAt.toISOString());
           uploadFormData.append("mimeType", fileMimeForUpload);
+          uploadFormData.append("recordingConsentConfirmed", "true");
 
           const result = await saveRecording(uploadFormData);
 
@@ -2143,178 +2204,303 @@ export function VideoCall({
     if (el) el.releasePointerCapture(e.pointerId);
   };
 
+  // ─── Lobby phase ──────────────────────────────────────────────────────────
+  if (inLobby) {
+    const partnerLabel =
+      userRole === "student" ? guideLabel : learnerLabel;
+    return (
+      <PreCallLobby
+        courseLabel={courseLabel}
+        partnerLabel={partnerLabel}
+        userRole={userRole}
+        sessionStartTime={sessionStartTime}
+        onJoin={(settings) => {
+          setLobbySettings(settings);
+          setInLobby(false);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="fixed inset-0 bg-[#080C14] overflow-hidden text-white">
-      <div className="absolute top-0 left-0 right-0 h-12 z-10 px-6 flex items-center justify-between border-b border-white/10 backdrop-blur-md bg-[rgba(8,12,20,0.8)]">
-        <p className="text-sm font-semibold text-white/40">Mentrixa</p>
-        <p className="text-sm font-mono text-white/30">
-          {courseLabel} - {learnerLabel} with {guideLabel} (Tutor)
+    <div className="fixed inset-0 touch-manipulation bg-[#080C14] overflow-hidden text-white flex flex-col">
+      {/* Top bar */}
+      <div className="flex-none h-12 z-10 px-4 flex items-center justify-between border-b border-white/10 backdrop-blur-md bg-[rgba(8,12,20,0.8)]">
+        <p className="text-sm font-medium text-white/40">Mentrixa</p>
+        <p className="text-xs text-white/30 hidden sm:block">
+          {courseLabel} · {learnerLabel} &amp; {guideLabel}
         </p>
-        <p className="text-sm font-mono text-white/35">{formatTimer(sessionSeconds)}</p>
+        <div className="flex items-center gap-3">
+          {peerConnectionRef.current && (
+            <ToolbarQualityBadge peerConnection={peerConnectionRef.current} />
+          )}
+          <p className="text-xs font-mono text-white/35 tabular-nums">
+            {formatTimer(sessionSeconds)}
+          </p>
+        </div>
       </div>
 
-      {isRecording && (
-        <div
-          ref={recordingIndicatorRef}
-          className="absolute top-14 left-6 z-20 inline-block border-b border-red-500 text-xs font-mono text-red-300"
-        >
-          [REC - {formatTimer(recordingTime)}]
-        </div>
-      )}
-
-      <div className="absolute top-14 right-6 z-20 flex flex-col gap-2 items-end max-w-[min(100vw-3rem,24rem)]">
-        {notice && (
-          <div
-            className={`text-xs px-3 py-2 rounded border w-full ${
-              notice.kind === "success"
-                ? "bg-emerald-500/15 border-emerald-400/30 text-emerald-100"
-                : notice.kind === "info"
-                  ? "bg-sky-500/15 border-sky-400/30 text-sky-100"
-                  : "bg-amber-500/15 border-amber-400/30 text-amber-100"
+      {/* Main content area */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Video area */}
+        <div className="relative flex-1 bg-black overflow-hidden">
+          {/* Remote video */}
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            muted={false}
+            onLoadedMetadata={syncRemoteMainVideoFit}
+            onLoadedData={syncRemoteMainVideoFit}
+            className={`w-full h-full ${
+              isSharingScreen || remoteMainVideoFit === "contain"
+                ? "object-contain"
+                : "object-cover"
             }`}
+          />
+
+          {/* PiP self-view */}
+          <div
+            ref={pipRef}
+            className="absolute z-20 w-[180px] h-[112px] rounded-lg overflow-hidden border border-white/10 bg-black shadow-lg"
+            style={{
+              left: `${pipPosition?.left ?? 16}px`,
+              top: `${pipPosition?.top ?? 60}px`,
+              cursor: isPipDragging ? "grabbing" : "grab",
+            }}
+            onPointerDown={handlePipPointerDown}
+            onPointerMove={handlePipPointerMove}
+            onPointerUp={handlePipPointerUp}
           >
-            <span className="leading-snug">{notice.message}</span>
-            <button
-              type="button"
-              onClick={() => setNotice(null)}
-              className="ml-2 opacity-70 hover:opacity-100 underline"
-            >
-              Dismiss
-            </button>
+            <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+            <div className="absolute bottom-1 left-1 text-[9px] text-white/50 bg-black/40 px-1 py-0.5 rounded">
+              You
+            </div>
           </div>
-        )}
 
-        {waitingForOtherParticipant && (
-          <div className="text-xs px-3 py-2 rounded border w-full bg-violet-500/15 border-violet-400/30 text-violet-100">
-            <span className="leading-snug">
-              Waiting for the other participant to join the call.
-            </span>
-            <button
-              type="button"
-              onClick={() => setWaitingForOtherParticipant(false)}
-              className="ml-2 opacity-70 hover:opacity-100 underline"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
+          {/* Connecting overlay */}
+          {connectionStatus !== "connected" && (
+            <div className="absolute inset-0 bg-black/80 z-[15] flex items-center justify-center">
+              <VideoCallIllustration />
+              <div className="text-center absolute inset-0 flex flex-col items-center justify-center">
+                <p className="text-white text-sm font-mono">Connecting...</p>
+                <div className="w-[200px] border-b border-[#2563EB] mt-3" ref={connectingLineRef} />
+              </div>
+            </div>
+          )}
 
-        {error && (
-          <div className="bg-red-500/15 border border-red-400/30 text-red-200 text-xs px-3 py-2 rounded w-full">
-            <span className="leading-snug">{error}</span>
-            {isRequestingPermission ? " Requesting permission..." : ""}
-            <button
-              type="button"
-              onClick={() => setError(null)}
-              className="ml-2 opacity-70 hover:opacity-100 underline"
+          {/* Recording indicator */}
+          {isRecording && (
+            <div
+              ref={recordingIndicatorRef}
+              className="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded px-2 py-1 bg-black/60 border border-red-500/30"
             >
-              Dismiss
-            </button>
-            {!isRequestingPermission && error.toLowerCase().includes("permission") && (
-              <button
-                type="button"
-                onClick={retryPermissionRequest}
-                className="ml-2 underline text-red-100"
+              <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-mono text-red-300">
+                REC {formatTimer(recordingTime)}
+              </span>
+            </div>
+          )}
+
+          {/* Notifications overlay (top-right) */}
+          <div className="absolute top-3 right-3 z-20 flex flex-col gap-2 items-end max-w-[min(100vw-3rem,22rem)]">
+            {notice && (
+              <div
+                className={`text-xs px-3 py-2 rounded border ${
+                  notice.kind === "success"
+                    ? "bg-emerald-500/15 border-emerald-400/30 text-emerald-100"
+                    : notice.kind === "info"
+                      ? "bg-sky-500/15 border-sky-400/30 text-sky-100"
+                      : "bg-amber-500/15 border-amber-400/30 text-amber-100"
+                }`}
               >
-                Retry
-              </button>
+                <span className="leading-snug">{notice.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setNotice(null)}
+                  className="ml-2 opacity-70 hover:opacity-100 underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            {waitingForOtherParticipant && (
+              <div className="text-xs px-3 py-2 rounded border bg-violet-500/15 border-violet-400/30 text-violet-100">
+                <span className="leading-snug">
+                  Waiting for the other participant to join.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setWaitingForOtherParticipant(false)}
+                  className="ml-2 opacity-70 hover:opacity-100 underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            {error && (
+              <div className="bg-red-500/15 border border-red-400/30 text-red-200 text-xs px-3 py-2 rounded">
+                <span className="leading-snug">{error}</span>
+                {isRequestingPermission ? " Requesting permission..." : ""}
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="ml-2 opacity-70 hover:opacity-100 underline"
+                >
+                  Dismiss
+                </button>
+                {!isRequestingPermission && error.toLowerCase().includes("permission") && (
+                  <button
+                    type="button"
+                    onClick={retryPermissionRequest}
+                    className="ml-2 underline text-red-100"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      <div className="absolute inset-0 bg-black">
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          playsInline
-          muted={false}
-          onLoadedMetadata={syncRemoteMainVideoFit}
-          onLoadedData={syncRemoteMainVideoFit}
-          className={`w-full h-full ${
-            isSharingScreen || remoteMainVideoFit === "contain"
-              ? "object-contain"
-              : "object-cover"
-          }`}
-        />
-      </div>
+          {/* Bottom toolbar */}
+          <div
+            ref={controlsRef}
+            className="absolute bottom-0 left-0 right-0 h-16 z-20 pb-3 bg-gradient-to-t from-[rgba(8,12,20,0.92)] to-transparent flex items-end justify-center gap-2 px-4"
+          >
+            {/* Mute */}
+            <button
+              onClick={toggleMute}
+              disabled={isLeaving}
+              className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${
+                isMuted
+                  ? "border-amber-500/40 text-amber-300"
+                  : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+              }`}
+            >
+              {isMuted ? "Unmute" : "Mute"}
+            </button>
 
-      <div
-        ref={pipRef}
-        className="absolute z-20 w-[200px] h-[120px] rounded-lg overflow-hidden border border-white/10 bg-black"
-        style={{
-          left: `${pipPosition?.left ?? 24}px`,
-          top: `${pipPosition?.top ?? 90}px`,
-          cursor: isPipDragging ? "grabbing" : "grab",
-        }}
-        onPointerDown={handlePipPointerDown}
-        onPointerMove={handlePipPointerMove}
-        onPointerUp={handlePipPointerUp}
-      >
-        <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-      </div>
+            {/* Video */}
+            <button
+              onClick={toggleVideo}
+              disabled={isLeaving}
+              className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${
+                isVideoOff
+                  ? "border-amber-500/40 text-amber-300"
+                  : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+              }`}
+            >
+              {isVideoOff ? "Camera on" : "Camera off"}
+            </button>
 
-      {connectionStatus !== "connected" && (
-        <div className="absolute inset-0 bg-black/80 z-[15] flex items-center justify-center">
-          <VideoCallIllustration />
-          <div className="text-center absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-white text-sm font-mono">Connecting...</p>
-            <div className="w-[200px] border-b border-[#2563EB] mt-3" ref={connectingLineRef} />
+            {/* Screen share */}
+            <button
+              onClick={() => void handleShareScreen()}
+              disabled={isLeaving || isSharingScreen}
+              className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${
+                isSharingScreen
+                  ? "border-sky-500/40 text-sky-300"
+                  : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+              }`}
+            >
+              {isSharingScreen ? "Sharing" : "Share"}
+            </button>
+
+            {/* Chat toggle */}
+            <button
+              onClick={() =>
+                setActivePanel((p) => (p === "chat" ? "none" : "chat"))
+              }
+              disabled={isLeaving}
+              className={`h-9 w-9 flex items-center justify-center rounded-md border bg-transparent active:scale-95 transition-all duration-150 ${
+                activePanel === "chat"
+                  ? "border-white/30 text-white"
+                  : "border-white/15 text-white/50 hover:border-white/30 hover:text-white"
+              }`}
+              title="Chat"
+            >
+              <MessageSquare size={14} strokeWidth={2} />
+            </button>
+
+            {/* Whiteboard toggle */}
+            <button
+              onClick={() =>
+                setActivePanel((p) => (p === "whiteboard" ? "none" : "whiteboard"))
+              }
+              disabled={isLeaving}
+              className={`h-9 w-9 flex items-center justify-center rounded-md border bg-transparent active:scale-95 transition-all duration-150 ${
+                activePanel === "whiteboard"
+                  ? "border-white/30 text-white"
+                  : "border-white/15 text-white/50 hover:border-white/30 hover:text-white"
+              }`}
+              title="Whiteboard"
+            >
+              <LayoutPanelLeft size={14} strokeWidth={2} />
+            </button>
+
+            {/* Record (tutor only) */}
+            {userRole === "tutor" && (
+              <button
+                onClick={() => {
+                  if (isRecording) stopRecording();
+                  else void startRecording();
+                }}
+                disabled={isLeaving || connectionStatus !== "connected" || isProcessingRecording}
+                className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${
+                  isRecording
+                    ? "border-red-600/50 text-red-300 hover:border-red-400"
+                    : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                }`}
+              >
+                {isRecording ? "Stop rec" : "Record"}
+              </button>
+            )}
+
+            {/* End call */}
+            <button
+              onClick={() => void handleEndCall()}
+              disabled={isLeaving}
+              className="h-9 px-4 rounded-md text-[12px] font-medium border border-red-500/30 text-red-300 bg-transparent hover:bg-red-500/10 hover:border-red-500 active:scale-95 transition-all duration-150"
+            >
+              {isLeaving ? "Leaving…" : "Leave"}
+            </button>
           </div>
         </div>
-      )}
 
-      <div
-        ref={controlsRef}
-        className="absolute bottom-0 left-0 right-0 h-20 z-20 pb-4 bg-gradient-to-t from-[rgba(8,12,20,0.9)] to-transparent flex items-center justify-center gap-4"
-      >
-        <button
-          onClick={toggleMute}
-          disabled={isLeaving}
-          className="h-9 px-4 rounded-md text-[13px] font-medium border border-white/15 text-white/70 bg-transparent hover:border-white/40 hover:text-white active:scale-95 transition"
-        >
-          {isMuted ? "Unmute" : "Mute"}
-        </button>
-        <button
-          onClick={toggleVideo}
-          disabled={isLeaving}
-          className="h-9 px-4 rounded-md text-[13px] font-medium border border-white/15 text-white/70 bg-transparent hover:border-white/40 hover:text-white active:scale-95 transition"
-        >
-          {isVideoOff ? "Start video" : "Stop video"}
-        </button>
-        <button
-          onClick={() => {
-            void handleShareScreen();
-          }}
-          disabled={isLeaving || isSharingScreen}
-          className="h-9 px-4 rounded-md text-[13px] font-medium border border-white/15 text-white/70 bg-transparent hover:border-white/40 hover:text-white active:scale-95 transition"
-        >
-          {isSharingScreen ? "Sharing..." : "Share screen"}
-        </button>
-        {userRole === "tutor" && (
-          <button
-            onClick={() => {
-              if (isRecording) stopRecording();
-              else void startRecording();
-            }}
-            disabled={isLeaving || connectionStatus !== "connected" || isProcessingRecording}
-            className={`h-9 px-4 rounded-md text-[13px] font-medium border bg-transparent active:scale-95 transition ${
-              isRecording
-                ? "border-red-600/50 text-red-300 hover:border-red-400 hover:text-red-200"
-                : "border-white/15 text-white/70 hover:border-white/40 hover:text-white"
-            }`}
-          >
-            {isRecording ? "Stop recording" : "Record"}
-          </button>
+        {/* Side panel — Chat */}
+        {activePanel === "chat" && (
+          <div className="w-72 flex-none border-l border-white/8 overflow-hidden">
+            <InSessionChat
+              channel={channelRef.current}
+              userId={userId}
+              userLabel={userRole === "student" ? learnerLabel : guideLabel}
+            />
+          </div>
         )}
-        <button
-          onClick={handleEndCall}
-          disabled={isLeaving}
-          className="h-9 px-4 rounded-md text-[13px] font-medium border border-red-500/30 text-red-300 bg-transparent hover:bg-red-500/10 hover:border-red-500 active:scale-95 transition"
-        >
-          {isLeaving ? "Leaving..." : "Leave"}
-        </button>
+
+        {/* Side panel — Whiteboard */}
+        {activePanel === "whiteboard" && (
+          <div className="w-[480px] flex-none border-l border-white/8 overflow-hidden">
+            <Whiteboard
+              channel={channelRef.current}
+              userId={userId}
+              onSnapshot={(url) => setWhiteboardSnapshot(url)}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Post-call summary overlay */}
+      {showPostCall && (
+        <PostCallSummary
+          sessionId={sessionId}
+          userRole={userRole}
+          durationSeconds={sessionSeconds}
+          recordingSaved={isProcessingRecording || false}
+          whiteboardSnapshotUrl={whiteboardSnapshot}
+          onClose={() => setShowPostCall(false)}
+        />
+      )}
     </div>
   );
 }

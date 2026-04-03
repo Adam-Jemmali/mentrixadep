@@ -356,3 +356,203 @@ export async function getTutorCoursesForAdmin(tutorId: string) {
   if (error) throw new Error(`Failed to fetch tutor courses: ${sanitizeError(error)}`);
   return data ?? [];
 }
+
+// ============================================================
+// PLATFORM METRICS
+// ============================================================
+
+export interface PlatformMetrics {
+  totalUsers: number;
+  studentCount: number;
+  tutorCount: number;
+  sessionsToday: number;
+  sessionsWeek: number;
+  sessionsMonth: number;
+  revenueMonth: number;
+  activeQuests: number;
+  pendingApprovals: number;
+  activeDuels: number;
+  totalClans: number;
+}
+
+export async function getPlatformMetrics(): Promise<PlatformMetrics> {
+  await requireRole("admin");
+  const adminClient = createAdminClient();
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const [
+    usersRes,
+    sessionsTodayRes,
+    sessionsWeekRes,
+    sessionsMonthRes,
+    activeQuestsRes,
+    pendingApprovalsRes,
+    activeDuelsRes,
+    clansRes,
+  ] = await Promise.all([
+    adminClient.from("users").select("id, role", { count: "exact" }),
+    adminClient.from("sessions").select("id", { count: "exact" }).gte("created_at", todayStart),
+    adminClient.from("sessions").select("id", { count: "exact" }).gte("created_at", weekStart),
+    adminClient.from("sessions").select("id, price_per_session", { count: "exact" }).gte("created_at", monthStart).neq("status", "cancelled"),
+    adminClient.from("user_quest_progress").select("id", { count: "exact" }).eq("status", "in_progress"),
+    adminClient.from("registration_requests").select("id", { count: "exact" }).eq("status", "pending"),
+    adminClient.from("skill_duels").select("id", { count: "exact" }).eq("status", "active"),
+    adminClient.from("clans").select("id", { count: "exact" }),
+  ]);
+
+  const users = usersRes.data ?? [];
+  const studentCount = users.filter((u) => u.role === "student").length;
+  const tutorCount = users.filter((u) => u.role === "tutor").length;
+
+  const sessionsMonthData = sessionsMonthRes.data ?? [];
+  const revenueMonth = sessionsMonthData.reduce((acc, s) => acc + (s.price_per_session ?? 0), 0);
+
+  return {
+    totalUsers: usersRes.count ?? 0,
+    studentCount,
+    tutorCount,
+    sessionsToday: sessionsTodayRes.count ?? 0,
+    sessionsWeek: sessionsWeekRes.count ?? 0,
+    sessionsMonth: sessionsMonthRes.count ?? 0,
+    revenueMonth,
+    activeQuests: activeQuestsRes.count ?? 0,
+    pendingApprovals: pendingApprovalsRes.count ?? 0,
+    activeDuels: activeDuelsRes.count ?? 0,
+    totalClans: clansRes.count ?? 0,
+  };
+}
+
+// ============================================================
+// USER MANAGEMENT
+// ============================================================
+
+export async function suspendUser(userId: string) {
+  const admin = await requireRole("admin");
+  const adminClient = createAdminClient();
+
+  enforceRateLimit(getRateLimitId(admin.id), RATE_LIMITS.adminAction, "suspend user");
+  const validId = validateUUID(userId);
+
+  const { error } = await adminClient
+    .from("users")
+    .update({ approved: false })
+    .eq("id", validId);
+
+  if (error) throw new Error(sanitizeError(error));
+  revalidatePath("/admin/users");
+  return { success: true };
+}
+
+export async function unsuspendUser(userId: string) {
+  const admin = await requireRole("admin");
+  const adminClient = createAdminClient();
+
+  enforceRateLimit(getRateLimitId(admin.id), RATE_LIMITS.adminAction, "unsuspend user");
+  const validId = validateUUID(userId);
+
+  const { error } = await adminClient
+    .from("users")
+    .update({ approved: true })
+    .eq("id", validId);
+
+  if (error) throw new Error(sanitizeError(error));
+  revalidatePath("/admin/users");
+  return { success: true };
+}
+
+export async function promoteToAdmin(userId: string) {
+  const admin = await requireRole("admin");
+  const adminClient = createAdminClient();
+
+  enforceRateLimit(getRateLimitId(admin.id), RATE_LIMITS.adminAction, "promote to admin");
+  const validId = validateUUID(userId);
+
+  const { error } = await adminClient
+    .from("users")
+    .update({ role: "admin" as const })
+    .eq("id", validId);
+
+  if (error) throw new Error(sanitizeError(error));
+  revalidatePath("/admin/users");
+  return { success: true };
+}
+
+export async function getUserDetail(userId: string) {
+  await requireRole("admin");
+  const adminClient = createAdminClient();
+  const validId = validateUUID(userId);
+
+  const [userRes, xpRes, sessionsRes, ratingsRes] = await Promise.all([
+    adminClient.from("users").select("*").eq("id", validId).single(),
+    adminClient.from("user_xp").select("total_xp, streak_days").eq("user_id", validId).maybeSingle(),
+    adminClient.from("sessions").select("id, course, start_time, status").or(`student_id.eq.${validId},tutor_id.eq.${validId}`).order("start_time", { ascending: false }).limit(10),
+    adminClient.from("ratings").select("rating").eq("tutor_id", validId),
+  ]);
+
+  const authUser = await adminClient.auth.admin.getUserById(validId);
+
+  return {
+    user: userRes.data,
+    email: authUser.data?.user?.email ?? null,
+    xp: xpRes.data,
+    recentSessions: sessionsRes.data ?? [],
+    avgRating: ratingsRes.data?.length
+      ? ratingsRes.data.reduce((a, r) => a + r.rating, 0) / ratingsRes.data.length
+      : null,
+  };
+}
+
+// ============================================================
+// SYSTEM SETTINGS
+// ============================================================
+
+export interface SystemSettings {
+  autoApproveRegistrations: boolean;
+  maxQuestsPerDay: number;
+  platformFeePercent: number;
+  maintenanceMode: boolean;
+  duelsEnabled: boolean;
+  clansEnabled: boolean;
+  aiQuestsEnabled: boolean;
+}
+
+export async function getSystemSettings(): Promise<SystemSettings> {
+  await requireRole("admin");
+  const adminClient = createAdminClient();
+
+  const { data } = await adminClient
+    .from("system_settings")
+    .select("key, value");
+
+  const map: Record<string, Record<string, unknown>> = {};
+  for (const row of data ?? []) {
+    map[row.key] = row.value;
+  }
+
+  return {
+    autoApproveRegistrations: map["auto_approve_registrations"]?.enabled === true,
+    maxQuestsPerDay: (map["max_quests_per_day"]?.value as number) ?? 10,
+    platformFeePercent: (map["platform_fee_percent"]?.value as number) ?? 15,
+    maintenanceMode: map["maintenance_mode"]?.enabled === true,
+    duelsEnabled: map["feature_duels_enabled"]?.enabled !== false,
+    clansEnabled: map["feature_clans_enabled"]?.enabled !== false,
+    aiQuestsEnabled: map["feature_ai_quests_enabled"]?.enabled !== false,
+  };
+}
+
+export async function updateSystemSetting(key: string, value: Record<string, unknown>) {
+  await requireRole("admin");
+  const adminClient = createAdminClient();
+
+  const { error } = await adminClient
+    .from("system_settings")
+    .upsert({ key, value, updated_at: new Date().toISOString() });
+
+  if (error) throw new Error(sanitizeError(error));
+  revalidatePath("/admin/settings");
+  return { success: true };
+}

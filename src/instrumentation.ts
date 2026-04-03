@@ -1,14 +1,10 @@
-import * as Sentry from "@sentry/nextjs";
-
+/**
+ * Runs once per Node server process (dev + prod). Keep side effects out of `env.ts`
+ * module evaluation so imports do not throw before optional getters are used.
+ */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    await import("../sentry.server.config");
-  }
-
-  if (process.env.NEXT_RUNTIME === "edge") {
-    await import("../sentry.edge.config");
+    const { validateEnvAtStartup } = await import("@/lib/env");
+    validateEnvAtStartup();
   }
 }
-
-/** Requires @sentry/nextjs >= 8.28 — captures unhandled server-side request errors */
-export const onRequestError = Sentry.captureRequestError;

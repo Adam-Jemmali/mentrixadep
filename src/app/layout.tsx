@@ -1,33 +1,41 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
 import "./globals.css";
-import { AppNavOrNothing } from "@/components/app-nav-or-nothing";
-import { ErrorBoundary } from "@/components/error-boundary";
-import { getCurrentUser } from "@/lib/auth";
-import { PageFade } from "@/components/page-fade";
+
+export const viewport: Viewport = {
+  themeColor: "#1E3A5F",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "Mentrixa — Learning, leveled up",
-  description: "Mentrixa helps students and tutors work smarter with structured quests, sessions, and divisions.",
+  description:
+    "Mentrixa helps students and tutors work smarter with structured quests, sessions, and divisions.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Mentrixa",
+    statusBarStyle: "default",
+  },
+  /** Standard name; keeps `apple-mobile-web-app-capable` from Next while satisfying the newer meta warning. */
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
-export default async function RootLayout({
+/** Html/body only — no client app shell here (see `app/(app)/layout.tsx` and `app/(marketing)/layout.tsx`). */
+export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const user = await getCurrentUser();
-
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body className="antialiased font-sans">
-        <ErrorBoundary>
-          <AppNavOrNothing user={user} />
-          <main className="relative min-h-screen pt-14 bg-[#FAFAFA] bg-mesh-blue">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <PageFade>{children}</PageFade>
-            </div>
-          </main>
-        </ErrorBoundary>
+        <DevServiceWorkerGuard />
+        {children}
       </body>
     </html>
   );

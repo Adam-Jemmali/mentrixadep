@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type UserRole = "student" | "tutor" | "admin";
 export type RegistrationStatus = "pending" | "approved" | "rejected";
 export type SessionRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
@@ -6,6 +8,12 @@ export interface User {
   id: string;
   role: UserRole;
   approved: boolean;
+  /** Unique 8-character code; generated on insert if omitted */
+  referral_code: string;
+  /** FK to the referring user, when this account was referred */
+  referred_by: string | null;
+  referral_flagged?: boolean;
+  referral_last_ip_hash?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +34,10 @@ export interface Availability {
   start_time: string;
   end_time: string;
   created_at: string;
+  price_per_session?: number;
+  active?: boolean;
+  max_students?: number;
+  series_id?: string | null;
 }
 
 export interface SessionRequest {
@@ -51,6 +63,10 @@ export interface Session {
   completed: boolean;
   status?: "scheduled" | "cancelled" | "completed";
   created_at: string;
+  price_per_session?: number | null;
+  /** Set when status becomes cancelled */
+  cancelled_at?: string | null;
+  cancelled_by_role?: "student" | "tutor" | "admin" | null;
 }
 
 export interface Rating {
@@ -124,6 +140,27 @@ export interface UserXp {
   division_xp: Record<string, unknown>;
   streak_days: number;
   last_activity_date: string | null;
+  /** Last XP-eligible action (streak at-risk = 18h+) */
+  last_activity_at?: string | null;
+}
+
+export interface XpAwardLedgerRow {
+  id: string;
+  user_id: string;
+  award_key: string;
+  xp_amount: number;
+  created_at: string;
+}
+
+export interface UserAchievementRow {
+  id: string;
+  user_id: string;
+  achievement_type: string;
+  from_level: number | null;
+  to_level: number | null;
+  title: string | null;
+  meta: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface SessionAiPackage {
@@ -132,6 +169,17 @@ export interface SessionAiPackage {
   key_points: string[] | null;
   followup_quests: { prompt: string; difficulty: string }[];
   flashcards: { q: string; a: string }[];
+  /** Structured post-session practice (title + prompt + optional hint). */
+  practice_exercises?: {
+    title: string;
+    prompt: string;
+    hint?: string;
+  }[] | null;
+  follow_up_topics?: string[] | null;
+  /** Tutor-initiated regenerations (max 3 per session). */
+  studio_regenerate_count?: number;
+  /** Learner-visible only when set (tutor can draft until publish). */
+  package_published_at?: string | null;
   generated_by: string | null;
   created_at: string;
   updated_at: string;
@@ -168,6 +216,12 @@ export interface SystemSetting {
 export interface UserSettingsRow {
   user_id: string;
   display_name: string | null;
+  /** Short public bio for student profile */
+  bio: string | null;
+  /** When false, profile is hidden from tutors (owner and admin still see). */
+  profile_visible_to_tutors: boolean;
+  /** Public URL for avatar (Supabase Storage). */
+  avatar_url: string | null;
   timezone: string;
   email_session_reminders: boolean;
   email_session_booked: boolean;
@@ -195,7 +249,7 @@ export interface SkillDuelQuestion {
 export interface SkillDuel {
   id: string;
   student_id: string;
-  opponent_student_id: string;
+  opponent_student_id: string | null;
   /** Who created the pending challenge (opponent accepts). */
   initiator_id: string | null;
   division_key: string;
@@ -207,8 +261,10 @@ export interface SkillDuel {
   opponent_score: number | null;
   winner: "student" | "opponent" | "tie" | null;
   reward_amount_cents: number;
-  /** How the duel was started: queue, clan, direct, or legacy null */
-  match_source: "queue" | "clan" | "direct" | null;
+  /** How the duel was started */
+  match_source: "queue" | "clan" | "direct" | "ai_queue" | null;
+  /** Simulated opponent (no human peer row) */
+  is_ai_opponent: boolean;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -220,6 +276,14 @@ export interface Clan {
   tag: string;
   invite_code: string;
   leader_id: string;
+  description?: string | null;
+  focus_division_key?: string | null;
+  join_mode?: "open" | "approval";
+  is_public?: boolean;
+  avatar_kind?: "preset" | "custom";
+  avatar_preset_key?: string | null;
+  avatar_url?: string | null;
+  xp_total?: number;
   created_at: string;
   updated_at: string;
 }
@@ -235,6 +299,7 @@ export interface DuelQueueRow {
   user_id: string;
   division_key: string;
   queued_at: string;
+  queue_level: number;
 }
 
 export interface TutorCourse {
@@ -250,6 +315,412 @@ export interface StudentCourse {
   id: string;
   student_id: string;
   course_name: string;
+  created_at: string;
+}
+
+// ─── Referrals (public.users referral columns + referral_rewards) ───────────
+
+/**
+ * Referral identity and chain fields on `public.users` (no separate `referrals` table).
+ * Matches `users.id`, `users.referral_code`, `users.referred_by`.
+ */
+export interface Referral {
+  id: string;
+  referral_code: string;
+  referred_by: string | null;
+}
+
+/** Ledger row for XP rewards earned through referrals. */
+export interface UserDivisionRow {
+  user_id: string;
+  division_key: string;
+  joined_at: string;
+}
+
+export interface DivisionWeeklyXpRow {
+  user_id: string;
+  division_key: string;
+  week_start: string;
+  xp_earned: number;
+  updated_at: string;
+}
+
+export interface DivisionMessageRow {
+  id: string;
+  division_key: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+}
+
+export interface DivisionWinnerRow {
+  id: string;
+  week_start: string;
+  division_key: string;
+  rank: number;
+  user_id: string;
+  weekly_xp: number;
+  bonus_xp: number;
+  created_at: string;
+}
+
+/** Web Push subscription (VAPID) per device endpoint. */
+export interface PushSubscriptionRow {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth_secret: string;
+  user_agent: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReferralReward {
+  id: string;
+  referrer_id: string;
+  referred_id: string;
+  reward_xp: number;
+  reward_credited: boolean;
+  created_at: string;
+}
+
+/** Supabase `referral_rewards` row type (alias for `ReferralReward`). */
+export type ReferralRewardRow = ReferralReward;
+
+export type ReferralRewardInsert = Omit<ReferralReward, "id" | "created_at"> & {
+  id?: string;
+  created_at?: string;
+};
+
+export type ReferralRewardUpdate = Partial<ReferralReward>;
+
+/**
+ * A `users` row with the optional referring user joined via `referred_by`
+ * (shape returned by `referralWithUserQuery`).
+ */
+export interface ReferralWithUser extends User {
+  referrer: User | null;
+}
+
+/**
+ * A `referral_rewards` row with both FK `users` rows joined
+ * (shape returned by `referralRewardsWithUsersQuery`).
+ */
+export type ReferralRewardWithUsers = ReferralReward & {
+  referrer: User;
+  referred: User;
+};
+
+/** Subset of `users` columns repeated in referral join selects. */
+export const REFERRAL_USER_COLUMNS =
+  "id, role, approved, created_at, updated_at, referral_code, referred_by" as const;
+
+/** Select `referral_rewards` with `referrer` and `referred` `users` joined. */
+export const REFERRAL_REWARDS_WITH_USERS_SELECT = `
+  *,
+  referrer:users!referrer_id (${REFERRAL_USER_COLUMNS}),
+  referred:users!referred_id (${REFERRAL_USER_COLUMNS})
+` as const;
+
+/** Select `users` with the referring `users` row joined via `referred_by`. */
+export const USERS_WITH_REFERRER_SELECT = `
+  *,
+  referrer:users!referred_by (${REFERRAL_USER_COLUMNS})
+` as const;
+
+/**
+ * Typed query builder: `referral_rewards` with both related users.
+ * Narrow `data` with `ReferralRewardWithUsers[]` after the request resolves.
+ */
+export function referralRewardsWithUsersQuery(client: SupabaseClient<Database>) {
+  return client.from("referral_rewards").select(REFERRAL_REWARDS_WITH_USERS_SELECT);
+}
+
+/**
+ * Typed query builder: `users` with optional `referrer` (parent user in the referral chain).
+ * Narrow `data` with `ReferralWithUser[]` after the request resolves.
+ */
+export function referralWithUserQuery(client: SupabaseClient<Database>) {
+  return client.from("users").select(USERS_WITH_REFERRER_SELECT);
+}
+
+export type UserInsert = Omit<User, "created_at" | "updated_at" | "referral_code" | "referred_by"> & {
+  created_at?: string;
+  updated_at?: string;
+  referral_code?: string;
+  referred_by?: string | null;
+};
+
+export type UserUpdate = Partial<Omit<User, "id">>;
+
+// ─── Supabase Database (for `createClient<Database>()`) ────────────────────────
+
+export interface Database {
+  public: {
+    Tables: {
+      users: {
+        Row: User;
+        Insert: UserInsert;
+        Update: UserUpdate;
+      };
+      registration_requests: {
+        Row: RegistrationRequest;
+        Insert: Omit<RegistrationRequest, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<RegistrationRequest>;
+      };
+      availability: {
+        Row: Availability;
+        Insert: Omit<Availability, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<Availability>;
+      };
+      session_requests: {
+        Row: SessionRequest;
+        Insert: Omit<SessionRequest, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<SessionRequest>;
+      };
+      sessions: {
+        Row: Session;
+        Insert: Omit<Session, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<Session>;
+      };
+      ratings: {
+        Row: Rating;
+        Insert: Omit<Rating, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<Rating>;
+      };
+      video_rooms: {
+        Row: VideoRoom;
+        Insert: Omit<VideoRoom, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<VideoRoom>;
+      };
+      call_participants: {
+        Row: CallParticipant;
+        Insert: Omit<CallParticipant, "id" | "joined_at"> & { id?: string; joined_at?: string };
+        Update: Partial<CallParticipant>;
+      };
+      video_recordings: {
+        Row: VideoRecording;
+        Insert: Omit<VideoRecording, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<VideoRecording>;
+      };
+      quests: {
+        Row: Quest;
+        Insert: Omit<Quest, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<Quest>;
+      };
+      user_quest_progress: {
+        Row: UserQuestProgress;
+        Insert: Omit<UserQuestProgress, "id"> & { id?: string };
+        Update: Partial<UserQuestProgress>;
+      };
+      user_xp: {
+        Row: UserXp;
+        Insert: Omit<UserXp, "total_xp" | "division_xp" | "streak_days"> & {
+          total_xp?: number;
+          division_xp?: Record<string, unknown>;
+          streak_days?: number;
+          last_activity_at?: string | null;
+        };
+        Update: Partial<UserXp>;
+      };
+      xp_award_ledger: {
+        Row: XpAwardLedgerRow;
+        Insert: Omit<XpAwardLedgerRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<XpAwardLedgerRow>;
+      };
+      user_achievements: {
+        Row: UserAchievementRow;
+        Insert: Omit<UserAchievementRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<UserAchievementRow>;
+      };
+      session_ai_packages: {
+        Row: SessionAiPackage;
+        Insert: Omit<SessionAiPackage, "created_at" | "updated_at"> & {
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<SessionAiPackage>;
+      };
+      divisions: {
+        Row: Division;
+        Insert: Omit<Division, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<Division>;
+      };
+      course_division_map: {
+        Row: CourseDivisionMap;
+        Insert: CourseDivisionMap;
+        Update: Partial<CourseDivisionMap>;
+      };
+      system_settings: {
+        Row: SystemSetting;
+        Insert: Omit<SystemSetting, "updated_at"> & { updated_at?: string };
+        Update: Partial<SystemSetting>;
+      };
+      user_settings: {
+        Row: UserSettingsRow;
+        Insert: Omit<UserSettingsRow, "updated_at"> & { updated_at?: string };
+        Update: Partial<UserSettingsRow>;
+      };
+      skill_duels: {
+        Row: SkillDuel;
+        Insert: Omit<SkillDuel, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<SkillDuel>;
+      };
+      clans: {
+        Row: Clan;
+        Insert: Omit<Clan, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Clan>;
+      };
+      clan_members: {
+        Row: ClanMember;
+        Insert: ClanMember;
+        Update: Partial<ClanMember>;
+      };
+      duel_queue: {
+        Row: DuelQueueRow;
+        Insert: DuelQueueRow;
+        Update: Partial<DuelQueueRow>;
+      };
+      tutor_courses: {
+        Row: TutorCourse;
+        Insert: Omit<TutorCourse, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<TutorCourse>;
+      };
+      student_courses: {
+        Row: StudentCourse;
+        Insert: Omit<StudentCourse, "id" | "created_at"> & { id?: string; created_at?: string };
+        Update: Partial<StudentCourse>;
+      };
+      referral_rewards: {
+        Row: ReferralRewardRow;
+        Insert: ReferralRewardInsert;
+        Update: ReferralRewardUpdate;
+      };
+      user_divisions: {
+        Row: UserDivisionRow;
+        Insert: Omit<UserDivisionRow, "joined_at"> & { joined_at?: string };
+        Update: Partial<UserDivisionRow>;
+      };
+      division_weekly_xp: {
+        Row: DivisionWeeklyXpRow;
+        Insert: Omit<DivisionWeeklyXpRow, "updated_at"> & { updated_at?: string };
+        Update: Partial<DivisionWeeklyXpRow>;
+      };
+      division_messages: {
+        Row: DivisionMessageRow;
+        Insert: Omit<DivisionMessageRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<DivisionMessageRow>;
+      };
+      division_winners: {
+        Row: DivisionWinnerRow;
+        Insert: Omit<DivisionWinnerRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<DivisionWinnerRow>;
+      };
+      push_subscriptions: {
+        Row: PushSubscriptionRow;
+        Insert: Omit<PushSubscriptionRow, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<PushSubscriptionRow>;
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+  };
+}
+
+export type Tables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"];
+
+export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Insert"];
+
+export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"];
+
+// ─── Institution B2B ──────────────────────────────────────────────────────────
+
+export type InstitutionPlan = "free" | "basic" | "pro";
+
+export interface Institution {
+  id: string;
+  name: string;
+  domain: string;
+  admin_user_id: string | null;
+  plan: InstitutionPlan;
+  session_credits: number;
+  logo_url: string | null;
+  negotiated_rate_pct: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InstitutionMember {
+  institution_id: string;
+  user_id: string;
+  role: "student" | "admin";
+  added_at: string;
+}
+
+// ─── Resolve feature ───────────────────────────────────────────────────────────
+
+export type ResolveDifficulty =
+  | "no_idea"
+  | "concept_but_stuck"
+  | "minor_confusion";
+
+export interface ResolveProblem {
+  id: string;
+  user_id: string;
+  subject: string;
+  problem_text: string;
+  image_url: string | null;
+  difficulty: ResolveDifficulty;
+  ai_response: Record<string, unknown> | null;
+  was_helpful: boolean | null;
+  tutor_escalated: boolean;
+  created_at: string;
+}
+
+export interface ResolveStudyNote {
+  id: string;
+  user_id: string;
+  problem_id: string;
+  subject: string;
+  note_title: string;
+  note_body: string;
   created_at: string;
 }
 

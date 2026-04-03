@@ -1,0 +1,61 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { trackEvent, type AnalyticsEventName, type EventProperties } from "@/lib/analytics";
+import { z } from "zod";
+
+const ALLOWED_CLIENT_EVENTS: AnalyticsEventName[] = [
+  "page_view_landing",
+  "signup_started",
+  "quest_started",
+  "quest_completed",
+  "duel_challenged",
+  "checkout_started",
+  "checkout_abandoned",
+  "daily_login",
+  "referral_clicked",
+];
+
+const bodySchema = z.object({
+  eventName: z.string(),
+  sessionId: z.string().optional(),
+  properties: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .optional(),
+});
+
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  try {
+    const json = await req.json();
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+
+    const { eventName, sessionId, properties } = parsed.data;
+
+    // Validate event name is in the allowed client-side list
+    if (!ALLOWED_CLIENT_EVENTS.includes(eventName as AnalyticsEventName)) {
+      return NextResponse.json({ error: "Event not allowed" }, { status: 403 });
+    }
+
+    // Get user if authenticated (nullable — anon events are fine)
+    let userId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      // Anonymous event
+    }
+
+    await trackEvent(eventName as AnalyticsEventName, {
+      userId,
+      sessionId,
+      properties: properties as EventProperties | undefined,
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+}

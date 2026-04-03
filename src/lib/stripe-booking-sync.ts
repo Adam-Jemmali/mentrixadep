@@ -1,5 +1,17 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export async function getSessionRequestIdByStripeCheckout(
+  stripeCheckoutSessionId: string
+): Promise<string | null> {
+  const adminClient = createAdminClient();
+  const { data } = await adminClient
+    .from("session_requests")
+    .select("id")
+    .eq("stripe_checkout_session_id", stripeCheckoutSessionId)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 /**
  * After Stripe reports payment success, the webhook may finish before the
  * browser hits `/api/stripe/checkout/success`. If the tutor auto-approves,

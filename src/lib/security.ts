@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 
 // ============================================
 // VALIDATION SCHEMAS
@@ -70,6 +71,62 @@ export function sanitizeString(input: string): string {
     .replace(/on\w+=/gi, ""); // Remove event handlers
 }
 
+const SQL_INJECTION_PATTERNS: RegExp[] = [
+  /(\bunion\b\s+\bselect\b)/i,
+  /(\bselect\b.+\bfrom\b)/i,
+  /(\bdrop\b\s+\btable\b)/i,
+  /(\binsert\b\s+\binto\b)/i,
+  /(\bupdate\b.+\bset\b)/i,
+  /(\bdelete\b\s+\bfrom\b)/i,
+  /(--|\/\*|\*\/|;)/,
+  /(\bor\b\s+1\s*=\s*1)/i,
+  /(\bexec\b|\bxp_)/i,
+];
+
+function scrubSecrets(value: string): string {
+  return value
+    .replace(/(sk_(live|test)_[A-Za-z0-9]+)/g, "[REDACTED_STRIPE_KEY]")
+    .replace(/(rk_(live|test)_[A-Za-z0-9]+)/g, "[REDACTED_RESEND_KEY]")
+    .replace(/(AIza[0-9A-Za-z\-_]{20,})/g, "[REDACTED_GOOGLE_KEY]")
+    .replace(/(eyJ[A-Za-z0-9._-]{20,})/g, "[REDACTED_TOKEN]");
+}
+
+export function scrubLogValue(value: string): string {
+  return scrubSecrets(value);
+}
+
+export function hasSqlInjectionPattern(input: string): boolean {
+  const s = input.toLowerCase();
+  return SQL_INJECTION_PATTERNS.some((p) => p.test(s));
+}
+
+export function logSecurityEvent(event: string, metadata: Record<string, unknown>): void {
+  try {
+    const safe = JSON.stringify(metadata, (_k, v) =>
+      typeof v === "string" ? scrubSecrets(v) : v,
+    );
+    console.warn(`[security] ${event}`, safe);
+  } catch {
+    console.warn(`[security] ${event}`);
+  }
+}
+
+/**
+ * Canonical input sanitizer for user-provided values before DB writes.
+ * Detects obvious SQLi payloads and throws while logging the attempt.
+ */
+export function sanitizeInput(input: unknown, fieldName = "input"): string {
+  const s = sanitizeString(String(input ?? ""));
+  if (hasSqlInjectionPattern(s)) {
+    logSecurityEvent("sql_injection_pattern_rejected", {
+      field: fieldName,
+      sample: s.slice(0, 160),
+    });
+    throw new Error(`Unsafe ${fieldName} value detected.`);
+  }
+  return s;
+}
+
 /**
  * Sanitize course name
  */
@@ -82,6 +139,83 @@ export function sanitizeCourseName(course: string): string {
  */
 export function sanitizeComment(comment: string): string {
   return sanitizeString(comment).slice(0, 1000);
+}
+
+export const MAX_UPLOAD_BYTES_DEFAULT = 10 * 1024 * 1024; // 10MB
+export const ALLOWED_UPLOAD_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "application/pdf",
+  "video/mp4",
+] as const;
+
+function inferMimeFromMagicBytes(bytes: Uint8Array): string | null {
+  if (bytes.length >= 4) {
+    // JPG
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+    // PNG
+    if (
+      bytes[0] === 0x89 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x4e &&
+      bytes[3] === 0x47
+    )
+      return "image/png";
+    // PDF
+    if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)
+      return "application/pdf";
+    // WebM/Matroska EBML header
+    if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3)
+      return "video/webm";
+  }
+  if (bytes.length >= 12) {
+    // MP4: 'ftyp' in bytes 4..7
+    if (
+      bytes[4] === 0x66 &&
+      bytes[5] === 0x74 &&
+      bytes[6] === 0x79 &&
+      bytes[7] === 0x70
+    )
+      return "video/mp4";
+  }
+  return null;
+}
+
+export async function validateUploadedFile(
+  file: File,
+  options?: {
+    allowedMimeTypes?: readonly string[];
+    maxBytes?: number;
+  },
+): Promise<{ ok: true; mimeType: string } | { ok: false; error: string }> {
+  const allowed = options?.allowedMimeTypes ?? ALLOWED_UPLOAD_MIME_TYPES;
+  const maxBytes = options?.maxBytes ?? MAX_UPLOAD_BYTES_DEFAULT;
+  if (!(file instanceof File)) return { ok: false, error: "Invalid upload payload." };
+  if (file.size <= 0) return { ok: false, error: "Uploaded file is empty." };
+  if (file.size > maxBytes) {
+    return {
+      ok: false,
+      error: `File too large. Maximum ${(maxBytes / 1024 / 1024).toFixed(0)}MB allowed.`,
+    };
+  }
+
+  const head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
+  const inferred = inferMimeFromMagicBytes(head);
+  const declared = (file.type || "").toLowerCase();
+  const effective = inferred ?? declared;
+
+  if (!effective || !allowed.includes(effective)) {
+    return {
+      ok: false,
+      error: `Unsupported file type. Allowed: ${allowed.join(", ")}.`,
+    };
+  }
+  if (declared && inferred && declared !== inferred) {
+    logSecurityEvent("upload_mime_mismatch", { declared, inferred, fileName: file.name });
+    return { ok: false, error: "File content does not match declared MIME type." };
+  }
+
+  return { ok: true, mimeType: effective };
 }
 
 // ============================================
@@ -127,6 +261,36 @@ export function checkRateLimit(
 }
 
 /**
+ * Same store as {@link checkRateLimit}, but returns seconds until reset when blocked (for Retry-After).
+ */
+export function checkRateLimitWithRetryAfter(
+  identifier: string,
+  maxRequests: number,
+  windowMs: number
+): { allowed: boolean; retryAfterSeconds: number } {
+  const now = Date.now();
+  const entry = rateLimitStore.get(identifier);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitStore.set(identifier, {
+      count: 1,
+      resetAt: now + windowMs,
+    });
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  if (entry.count >= maxRequests) {
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)),
+    };
+  }
+
+  entry.count++;
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+/**
  * Clean up expired rate limit entries (call periodically)
  */
 export function cleanupRateLimit(): void {
@@ -149,6 +313,8 @@ if (typeof setInterval !== "undefined") {
 // ============================================
 
 export const RATE_LIMITS = {
+  /** Per-IP middleware guard for POST /auth/signin and /auth/signup (production only). */
+  authPage: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
   signIn: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
   signUp: { maxRequests: 3, windowMs: 60 * 60 * 1000 },
   bookSession: { maxRequests: 10, windowMs: 60 * 1000 },
@@ -156,7 +322,9 @@ export const RATE_LIMITS = {
   rateSession: { maxRequests: 5, windowMs: 60 * 1000 },
   deletePastSession: { maxRequests: 30, windowMs: 60 * 1000 },
   adminAction: { maxRequests: 30, windowMs: 60 * 1000 },
-  questAi: { maxRequests: 30, windowMs: 60 * 1000 },
+  questAi: { maxRequests: 20, windowMs: 60 * 60 * 1000 },
+  resolveAi: { maxRequests: 20, windowMs: 60 * 60 * 1000 },
+  stripeCheckout: { maxRequests: 5, windowMs: 60 * 1000 },
   duelCreate: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
   duelSubmit: { maxRequests: 40, windowMs: 60 * 1000 },
   duelQueueJoin: { maxRequests: 30, windowMs: 60 * 1000 },
@@ -165,8 +333,180 @@ export const RATE_LIMITS = {
   clanRegenerateCode: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
 } as const;
 
+/**
+ * Supabase-backed sliding window limiter.
+ * Uses `public.security_rate_limits` table when service role is available.
+ * Falls back to in-memory limiter if unavailable.
+ */
+export async function checkSlidingWindowRateLimit(
+  identifier: string,
+  maxRequests: number,
+  windowMs: number,
+): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+  const now = Date.now();
+  const bucketMs = windowMs;
+  const bucketStartMs = Math.floor(now / bucketMs) * bucketMs;
+  const prevBucketStartMs = bucketStartMs - bucketMs;
+  const elapsedMs = now - bucketStartMs;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRole) {
+    return checkRateLimitWithRetryAfter(identifier, maxRequests, windowMs);
+  }
+
+  const admin = createClient(supabaseUrl, serviceRole, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const key = identifier.slice(0, 240);
+  const bucketStartIso = new Date(bucketStartMs).toISOString();
+  const prevBucketStartIso = new Date(prevBucketStartMs).toISOString();
+
+  // increment current bucket
+  const { data: currentRow } = await admin
+    .from("security_rate_limits")
+    .select("hit_count")
+    .eq("rate_key", key)
+    .eq("bucket_start", bucketStartIso)
+    .maybeSingle();
+  const nextCount = (currentRow?.hit_count ?? 0) + 1;
+
+  await admin.from("security_rate_limits").upsert(
+    {
+      rate_key: key,
+      bucket_start: bucketStartIso,
+      hit_count: nextCount,
+      updated_at: new Date(now).toISOString(),
+    },
+    { onConflict: "rate_key,bucket_start" },
+  );
+
+  const { data: prevRow } = await admin
+    .from("security_rate_limits")
+    .select("hit_count")
+    .eq("rate_key", key)
+    .eq("bucket_start", prevBucketStartIso)
+    .maybeSingle();
+
+  const prevCount = prevRow?.hit_count ?? 0;
+  const weight = Math.max(0, 1 - elapsedMs / bucketMs);
+  const estimated = nextCount + prevCount * weight;
+
+  if (estimated > maxRequests) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((bucketMs - elapsedMs) / 1000));
+    return { allowed: false, retryAfterSeconds };
+  }
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+export async function enforceSlidingRateLimit(
+  identifier: string,
+  limit: { maxRequests: number; windowMs: number },
+  action: string,
+): Promise<void> {
+  const { allowed } = await checkSlidingWindowRateLimit(
+    identifier,
+    limit.maxRequests,
+    limit.windowMs,
+  );
+  if (!allowed) {
+    throw new Error(`Rate limit exceeded for ${action}. Please try again later.`);
+  }
+}
+
 export function getRateLimitId(userId?: string, ip?: string): string {
   return userId ? `user:${userId}` : `ip:${ip || "unknown"}`;
+}
+
+/** Client IP for edge middleware (Vercel / proxies). */
+export function getClientIpFromRequest(request: {
+  headers: Headers;
+}): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return request.headers.get("x-real-ip")?.trim() || "unknown";
+}
+
+/** Max JSON/body size for middleware Content-Length checks. */
+export const MAX_BODY_BYTES_DEFAULT = 1 * 1024 * 1024; // 1MB
+export const MAX_BODY_BYTES_VIDEO_UPLOAD = 10 * 1024 * 1024; // 10MB
+
+export function getMaxBodyBytesForPath(pathname: string): number {
+  if (pathname.startsWith("/api/video/upload")) {
+    return MAX_BODY_BYTES_VIDEO_UPLOAD;
+  }
+  return MAX_BODY_BYTES_DEFAULT;
+}
+
+/**
+ * CSRF protection for App Router API routes (POST/PUT/PATCH/DELETE).
+ * Server Actions use Next.js built-in protection; this targets /api/* only.
+ * Allows same-origin browser requests, matching csrf cookie + header, or Sec-Fetch-Site: same-origin.
+ */
+export function validateApiCsrf(request: {
+  method: string;
+  headers: Headers;
+  cookies: { get: (name: string) => { value: string } | undefined };
+}): boolean {
+  const host = request.headers.get("host");
+  if (!host) return false;
+
+  const headerToken =
+    request.headers.get("x-csrf-token") ??
+    request.headers.get("X-CSRF-Token") ??
+    "";
+
+  const cookieToken =
+    request.cookies.get("csrf-token")?.value ??
+    request.cookies.get("csrf_token")?.value ??
+    "";
+
+  if (headerToken && cookieToken && headerToken === cookieToken) {
+    return true;
+  }
+
+  const secFetchSite = request.headers.get("sec-fetch-site");
+  if (secFetchSite === "same-origin") {
+    return true;
+  }
+
+  const origin = request.headers.get("origin");
+  if (origin) {
+    try {
+      return new URL(origin).host === host;
+    } catch {
+      return false;
+    }
+  }
+
+  const referer = request.headers.get("referer");
+  if (referer) {
+    try {
+      return new URL(referer).host === host;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/** Paths where CSRF checks are skipped (webhooks, cron, health). */
+export function isCsrfExemptPath(pathname: string): boolean {
+  if (pathname.startsWith("/api/stripe/webhook")) return true;
+  if (pathname.startsWith("/api/cron/")) return true;
+  if (pathname === "/api/health") return true;
+  return false;
+}
+
+/** Short prefix for logs (never log full UUIDs in middleware). */
+export function redactUserIdForLogs(id: string | undefined | null): string {
+  if (!id) return "anon";
+  return `${id.slice(0, 4)}…`;
 }
 
 export function enforceRateLimit(
@@ -192,18 +532,20 @@ export const securityHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   // Allow camera and microphone for same origin (required for video calling)
   // identity-credentials-get: Google Identity Services / FedCM (Sign in with Google button)
-  "Permissions-Policy":
-    "camera=(self), microphone=(self), geolocation=(), identity-credentials-get=(self)",
+  "Permissions-Policy": "camera=(self), microphone=(self)",
   // Content Security Policy - strict but allows necessary resources
   "Content-Security-Policy": [
     "default-src 'self'",
     // Google Identity Services: https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com",
-    "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://js.stripe.com",
+    // Dev tooling / some libs create workers from blob: URLs; without worker-src, script-src blocks them
+    "worker-src 'self' blob:",
+    // Google Identity Services loads https://accounts.google.com/gsi/style (see google-sign-in-button)
+    "style-src 'self' 'unsafe-inline' https://accounts.google.com",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     "frame-src 'self' https://accounts.google.com",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://api.stripe.com",
     "media-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
@@ -211,7 +553,7 @@ export const securityHeaders = {
   ].join("; "),
   // Strict Transport Security (HSTS) - only in production
   ...(process.env.NODE_ENV === "production" && {
-    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "Strict-Transport-Security": "max-age=31536000",
   }),
 };
 
@@ -240,7 +582,8 @@ export function sanitizeError(error: unknown): string {
     return "An unexpected error occurred.";
   }
 
-  const message = rawMessage.toLowerCase();
+  const sanitizedRaw = scrubSecrets(rawMessage);
+  const message = sanitizedRaw.toLowerCase();
 
   // Safe, user-facing phrases (app validation + common DB/PostgREST hints)
   if (
@@ -268,7 +611,7 @@ export function sanitizeError(error: unknown): string {
     message.includes("row-level") ||
     message.includes("expected") // zod / validation hints
   ) {
-    return rawMessage;
+    return sanitizedRaw;
   }
 
   return "An error occurred. Please try again.";

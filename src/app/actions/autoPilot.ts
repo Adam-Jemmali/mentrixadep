@@ -4,13 +4,16 @@ import { requireRole, requireAuth } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateUUID } from "@/lib/security";
-import { summarizeSession, type SessionPackageResponse } from "@/lib/ai";
+import { generateStudioSessionPackage } from "@/lib/ai";
 import { revalidatePath } from "next/cache";
 import type { SessionAiPackage } from "@/lib/database.types";
+import type { NormalizedStudioPackage } from "@/lib/studio-package";
 import {
   sendAiPackageReadyEmail,
   type SessionEmailDetails,
 } from "@/lib/email";
+import { applyXpAward } from "@/app/actions/xp";
+import { XP } from "@/lib/xp-constants";
 
 export interface TutorSessionWithPackage {
   id: string;
@@ -20,6 +23,8 @@ export interface TutorSessionWithPackage {
   completed: boolean;
   status: string | null;
   student_email: string | null;
+  /** From user_settings when available */
+  student_display_name: string | null;
   student_id: string;
   aiPackage: SessionAiPackage | null;
 }
@@ -90,6 +95,16 @@ export async function getTutorSessionsWithPackages(onBehalfOfTutorId?: string): 
       })
     );
 
+    const { data: nameRows } = await adminClient
+      .from("user_settings")
+      .select("user_id, display_name")
+      .in("user_id", studentIds);
+    const nameByStudent = new Map<string, string | null>();
+    for (const row of nameRows ?? []) {
+      const dn = typeof row.display_name === "string" ? row.display_name.trim() : null;
+      nameByStudent.set(row.user_id, dn || null);
+    }
+
     return sessions.map((s) => ({
       id: s.id,
       course: s.course,
@@ -99,6 +114,7 @@ export async function getTutorSessionsWithPackages(onBehalfOfTutorId?: string): 
       status: s.status ?? null,
       student_id: s.student_id,
       student_email: emailMap[s.student_id] ?? null,
+      student_display_name: nameByStudent.get(s.student_id) ?? null,
       aiPackage: packageMap.get(s.id) ?? null,
     }));
   } catch (err) {
@@ -116,7 +132,7 @@ type SessionRowForPackage = {
   student_id: string;
 };
 
-async function buildSessionPackageRichContext(
+export async function buildSessionPackageRichContext(
   adminClient: ReturnType<typeof createAdminClient>,
   sessionId: string,
   session: SessionRowForPackage,
@@ -236,20 +252,96 @@ async function buildSessionPackageRichContext(
   };
 }
 
+function normalizedToDbRow(
+  sessionId: string,
+  norm: NormalizedStudioPackage,
+  generatedBy: string,
+  publishedAt: string | null,
+  studioRegenerateCount: number,
+) {
+  return {
+    session_id: sessionId,
+    summary: norm.summary,
+    key_points: norm.keyPoints,
+    flashcards: norm.flashcards,
+    practice_exercises: norm.practiceExercises,
+    follow_up_topics: norm.followUpTopics,
+    followup_quests: norm.followupQuestPrompts.map((prompt) => ({
+      prompt,
+      difficulty: "medium" as const,
+    })),
+    generated_by: generatedBy,
+    package_published_at: publishedAt,
+    studio_regenerate_count: studioRegenerateCount,
+  };
+}
+
+async function sendStudioPackageReadyEmail(
+  adminClient: ReturnType<typeof createAdminClient>,
+  validSessionId: string,
+  course: string,
+  inserted: SessionAiPackage,
+) {
+  try {
+    const sessionFull = await adminClient
+      .from("sessions")
+      .select("student_id, start_time, end_time")
+      .eq("id", validSessionId)
+      .single();
+    const studentId = sessionFull.data?.student_id;
+    const row = inserted;
+    const kp = Array.isArray(row.key_points) ? row.key_points.length : 0;
+    const fc = Array.isArray(row.flashcards) ? row.flashcards.length : 0;
+    const fq = Array.isArray(row.followup_quests) ? row.followup_quests.length : 0;
+    const pe = Array.isArray(row.practice_exercises) ? row.practice_exercises.length : 0;
+    const preview =
+      typeof row.summary === "string" && row.summary.trim() ? row.summary.trim() : null;
+
+    if (studentId && sessionFull.data) {
+      const [studentAuthData, settingsRow] = await Promise.all([
+        adminClient.auth.admin.getUserById(studentId),
+        adminClient
+          .from("user_settings")
+          .select("display_name")
+          .eq("user_id", studentId)
+          .maybeSingle(),
+      ]);
+      const studentEmail = studentAuthData.data?.user?.email;
+      if (studentEmail) {
+        const details: SessionEmailDetails = {
+          sessionId: validSessionId,
+          course,
+          startTime: sessionFull.data.start_time,
+          endTime: sessionFull.data.end_time,
+          studentDisplayName: settingsRow.data?.display_name ?? null,
+          packageSummaryPreview: preview,
+          keyPointsCount: kp,
+          flashcardsCount: fc,
+          followupQuestsCount: fq,
+          practiceExercisesCount: pe,
+        };
+        void sendAiPackageReadyEmail(studentEmail, details);
+      }
+    }
+  } catch (emailErr) {
+    console.error("[Studio] email notification failed:", emailErr);
+  }
+}
+
 /**
- * Generate AI package for a session (summary, key points, flashcards, follow-up quests).
- * Uses session timing, video recording metadata, learner quests, prior session summaries, and rating comments when available.
- * Idempotent: returns existing package if already generated.
+ * Generate AI Studio package (summary, flashcards, exercises, topics, quest prompts).
+ * Learner-initiated: published immediately + email. Guide-initiated: draft until publish.
+ * Idempotent: returns existing published or draft row when already present.
  */
 export async function generateSessionPackage(
   sessionId: string,
   onBehalfOfTutorId?: string,
+  tutorContext?: string,
 ): Promise<{ package: SessionAiPackage } | { error: string }> {
   try {
     const user = await requireAuth();
     const validSessionId = validateUUID(sessionId);
 
-    // Service-role read so past sessions always resolve for authorized tutors (RLS/user client edge cases).
     const adminClient = createAdminClient();
 
     const { data: session, error: sessionError } = await adminClient
@@ -272,6 +364,8 @@ export async function generateSessionPackage(
       return { error: "Unauthorized" };
     }
 
+    const isLearnerInitiated = session.student_id === user.id;
+
     const { data: existing, error: existingError } = await adminClient
       .from("session_ai_packages")
       .select("*")
@@ -283,6 +377,19 @@ export async function generateSessionPackage(
     }
 
     if (existing) {
+      const pub = existing.package_published_at;
+      if (pub) {
+        revalidatePath("/student");
+        revalidatePath("/tutor");
+        revalidatePath("/tutor/sessions-ai");
+        return { package: existing as SessionAiPackage };
+      }
+      if (isLearnerInitiated) {
+        return {
+          error:
+            "Your guide is preparing this Studio package. Check back soon or message them if you need it urgently.",
+        };
+      }
       revalidatePath("/student");
       revalidatePath("/tutor");
       revalidatePath("/tutor/sessions-ai");
@@ -295,7 +402,11 @@ export async function generateSessionPackage(
       session as SessionRowForPackage,
     );
 
-    const aiResult = await summarizeSession(richContext, user.id);
+    const aiResult = await generateStudioSessionPackage(
+      richContext,
+      tutorContext,
+      user.id,
+    );
 
     if ("error" in aiResult && aiResult.error) {
       const msg =
@@ -305,23 +416,19 @@ export async function generateSessionPackage(
       return { error: msg };
     }
 
-    const pkgAi = aiResult as SessionPackageResponse;
-
-    const followupQuests = (pkgAi.followupPrompts ?? []).map((prompt) => ({
-      prompt,
-      difficulty: "medium",
-    }));
+    const norm = aiResult as NormalizedStudioPackage;
+    const publishedAt = isLearnerInitiated ? new Date().toISOString() : null;
+    const rowPayload = normalizedToDbRow(
+      validSessionId,
+      norm,
+      user.id,
+      publishedAt,
+      0,
+    );
 
     const { data: inserted, error: insertError } = await adminClient
       .from("session_ai_packages")
-      .insert({
-        session_id: validSessionId,
-        summary: pkgAi.summary ?? null,
-        key_points: pkgAi.keyPoints ?? [],
-        followup_quests: followupQuests,
-        flashcards: pkgAi.flashcards ?? [],
-        generated_by: user.id,
-      })
+      .insert(rowPayload)
       .select()
       .single();
 
@@ -329,35 +436,15 @@ export async function generateSessionPackage(
       return { error: insertError.message };
     }
 
-    // Fire-and-forget: notify the student their AI package is ready
-    try {
-      const sessionFull = await adminClient
-        .from("sessions")
-        .select("student_id, start_time, end_time")
-        .eq("id", validSessionId)
-        .single();
-      const studentId = sessionFull.data?.student_id;
-      if (studentId) {
-        const studentAuthData = await adminClient.auth.admin.getUserById(studentId);
-        const studentEmail = studentAuthData.data?.user?.email;
-        if (studentEmail && sessionFull.data) {
-          const details: SessionEmailDetails = {
-            sessionId: validSessionId,
-            course: session.course,
-            startTime: sessionFull.data.start_time,
-            endTime: sessionFull.data.end_time,
-          };
-          void sendAiPackageReadyEmail(studentEmail, details);
-        }
-      }
-    } catch (emailErr) {
-      console.error("[generateSessionPackage] email notification failed:", emailErr);
+    const pkg = inserted as SessionAiPackage;
+    if (publishedAt) {
+      void sendStudioPackageReadyEmail(adminClient, validSessionId, session.course, pkg);
     }
 
     revalidatePath("/student");
     revalidatePath("/tutor");
     revalidatePath("/tutor/sessions-ai");
-    return { package: inserted as SessionAiPackage };
+    return { package: pkg };
   } catch (err) {
     if (err instanceof Error) {
       if (err.message === "Forbidden" || err.message === "Unauthorized") {
@@ -366,6 +453,250 @@ export async function generateSessionPackage(
       if (err.message.includes("Invalid") || err.message.includes("UUID")) {
         return { error: "Invalid session ID" };
       }
+      return { error: err.message };
+    }
+    return { error: "Something went wrong" };
+  }
+}
+
+/**
+ * Persist streamed or regenerated Studio output as a draft (email only after publish).
+ * - insert: no row yet
+ * - replace draft: unpublished row, overwrite without incrementing regenerate count
+ * - regenerate: increment count (max 3)
+ */
+export async function persistStudioDraftFromNormalized(
+  sessionId: string,
+  norm: NormalizedStudioPackage,
+  options: { isRegenerate: boolean; onBehalfOfTutorId?: string },
+): Promise<{ package: SessionAiPackage } | { error: string }> {
+  try {
+    const user = await requireRole(["tutor", "admin"]);
+    const validSessionId = validateUUID(sessionId);
+    const adminClient = createAdminClient();
+
+    const targetTutorId =
+      user.role === "admin" && options.onBehalfOfTutorId
+        ? options.onBehalfOfTutorId
+        : user.id;
+
+    const { data: session, error: sessionError } = await adminClient
+      .from("sessions")
+      .select("id, tutor_id, course")
+      .eq("id", validSessionId)
+      .maybeSingle();
+
+    if (sessionError || !session) {
+      return { error: "Session not found" };
+    }
+    if (session.tutor_id !== targetTutorId) {
+      return { error: "Unauthorized" };
+    }
+
+    const { data: existing, error: exErr } = await adminClient
+      .from("session_ai_packages")
+      .select("*")
+      .eq("session_id", validSessionId)
+      .maybeSingle();
+
+    if (exErr) {
+      return { error: exErr.message };
+    }
+
+    let nextRegenerateCount = existing?.studio_regenerate_count ?? 0;
+
+    if (options.isRegenerate) {
+      if (!existing) {
+        return { error: "Nothing to regenerate" };
+      }
+      if (nextRegenerateCount >= 3) {
+        return { error: "Regenerate limit reached (3 per session)." };
+      }
+      nextRegenerateCount += 1;
+    } else if (existing?.package_published_at) {
+      return { error: "A published package already exists for this session." };
+    }
+
+    const baseRow = normalizedToDbRow(
+      validSessionId,
+      norm,
+      user.id,
+      existing?.package_published_at ?? null,
+      nextRegenerateCount,
+    );
+
+    if (existing) {
+      const { data: updated, error: uErr } = await adminClient
+        .from("session_ai_packages")
+        .update({
+          summary: baseRow.summary,
+          key_points: baseRow.key_points,
+          flashcards: baseRow.flashcards,
+          practice_exercises: baseRow.practice_exercises,
+          follow_up_topics: baseRow.follow_up_topics,
+          followup_quests: baseRow.followup_quests,
+          generated_by: user.id,
+          studio_regenerate_count: nextRegenerateCount,
+        })
+        .eq("session_id", validSessionId)
+        .select()
+        .single();
+
+      if (uErr) {
+        return { error: uErr.message };
+      }
+      revalidatePath("/tutor/sessions-ai");
+      revalidatePath("/student");
+      return { package: updated as SessionAiPackage };
+    }
+
+    const { data: inserted, error: iErr } = await adminClient
+      .from("session_ai_packages")
+      .insert({
+        ...baseRow,
+        package_published_at: null,
+        studio_regenerate_count: 0,
+      })
+      .select()
+      .single();
+
+    if (iErr) {
+      return { error: iErr.message };
+    }
+    revalidatePath("/tutor/sessions-ai");
+    revalidatePath("/student");
+    return { package: inserted as SessionAiPackage };
+  } catch (err) {
+    if (err instanceof Error) {
+      return { error: err.message };
+    }
+    return { error: "Something went wrong" };
+  }
+}
+
+export async function saveStudioPackageDraft(
+  sessionId: string,
+  payload: {
+    summary: string | null;
+    key_points: string[] | null;
+    flashcards: SessionAiPackage["flashcards"];
+    practice_exercises: SessionAiPackage["practice_exercises"];
+    follow_up_topics: string[] | null;
+    followup_quests: SessionAiPackage["followup_quests"];
+  },
+  onBehalfOfTutorId?: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await requireRole(["tutor", "admin"]);
+    const validSessionId = validateUUID(sessionId);
+    const adminClient = createAdminClient();
+    const targetTutorId =
+      user.role === "admin" && onBehalfOfTutorId ? onBehalfOfTutorId : user.id;
+
+    const { data: session, error: sErr } = await adminClient
+      .from("sessions")
+      .select("tutor_id")
+      .eq("id", validSessionId)
+      .maybeSingle();
+    if (sErr || !session) {
+      return { error: "Session not found" };
+    }
+    if (session.tutor_id !== targetTutorId) {
+      return { error: "Unauthorized" };
+    }
+
+    const { error: uErr } = await adminClient
+      .from("session_ai_packages")
+      .update({
+        summary: payload.summary,
+        key_points: payload.key_points,
+        flashcards: payload.flashcards,
+        practice_exercises: payload.practice_exercises,
+        follow_up_topics: payload.follow_up_topics ?? [],
+        followup_quests: payload.followup_quests,
+      })
+      .eq("session_id", validSessionId);
+
+    if (uErr) {
+      return { error: uErr.message };
+    }
+    revalidatePath("/tutor/sessions-ai");
+    revalidatePath("/student");
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof Error) {
+      return { error: err.message };
+    }
+    return { error: "Something went wrong" };
+  }
+}
+
+export async function publishStudioPackage(
+  sessionId: string,
+  onBehalfOfTutorId?: string,
+): Promise<{ package: SessionAiPackage } | { error: string }> {
+  try {
+    const user = await requireRole(["tutor", "admin"]);
+    const validSessionId = validateUUID(sessionId);
+    const adminClient = createAdminClient();
+    const targetTutorId =
+      user.role === "admin" && onBehalfOfTutorId ? onBehalfOfTutorId : user.id;
+
+    const { data: session, error: sErr } = await adminClient
+      .from("sessions")
+      .select("id, tutor_id, course, start_time, end_time, student_id")
+      .eq("id", validSessionId)
+      .maybeSingle();
+    if (sErr || !session) {
+      return { error: "Session not found" };
+    }
+    if (session.tutor_id !== targetTutorId) {
+      return { error: "Unauthorized" };
+    }
+
+    const { data: existing, error: pErr } = await adminClient
+      .from("session_ai_packages")
+      .select("*")
+      .eq("session_id", validSessionId)
+      .maybeSingle();
+    if (pErr || !existing) {
+      return { error: pErr?.message || "No Studio package to publish" };
+    }
+    if (existing.package_published_at) {
+      return { error: "Already published" };
+    }
+
+    const now = new Date().toISOString();
+    const { data: updated, error: uErr } = await adminClient
+      .from("session_ai_packages")
+      .update({ package_published_at: now })
+      .eq("session_id", validSessionId)
+      .select()
+      .single();
+
+    if (uErr) {
+      return { error: uErr.message };
+    }
+
+    const pkg = updated as SessionAiPackage;
+    void sendStudioPackageReadyEmail(adminClient, validSessionId, session.course, pkg);
+
+    try {
+      await applyXpAward(
+        session.tutor_id,
+        XP.TUTOR_AI_PACKAGE_PUBLISH,
+        `tutor_ai_package:${validSessionId}`,
+        null,
+      );
+    } catch {
+      // best-effort XP
+    }
+
+    revalidatePath("/tutor/sessions-ai");
+    revalidatePath("/student");
+    return { package: pkg };
+  } catch (err) {
+    if (err instanceof Error) {
       return { error: err.message };
     }
     return { error: "Something went wrong" };

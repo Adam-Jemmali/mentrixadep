@@ -1,0 +1,46 @@
+{
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/video/**/route.ts": {
+      "maxDuration": 300,
+      "regions": ["iad1", "cdg1"]
+    },
+    "src/app/api/**/route.ts": {
+      "maxDuration": 10,
+      "regions": ["iad1", "cdg1"]
+    },
+    "src/app/actions/resolve.ts": {
+      "maxDuration": 60,
+      "regions": ["iad1", "cdg1"]
+    },
+    "src/app/actions/quest.ts": {
+      "maxDuration": 60,
+      "regions": ["iad1", "cdg1"]
+    },
+    "src/lib/ai.ts": {
+      "maxDuration": 60,
+      "regions": ["iad1", "cdg1"]
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self)" }
+      ]
+    }
+  ],
+  "crons": [
+    { "path": "/api/cron/refresh-division-leaderboard", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/unlock-expired-slots", "schedule": "*/10 * * * *" },
+    { "path": "/api/cron/complete-sessions", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/send-reminders", "schedule": "0 * * * *" },
+    { "path": "/api/cron/pre-session-brief", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/process-payouts", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/verification-overdue", "schedule": "0 * * * *" },
+    { "path": "/api/cron/division-weekly", "schedule": "15 0 * * 1" }
+  ]
+}

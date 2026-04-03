@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 
 interface BookSessionButtonPublicProps {
   availabilityId: string;
+  onBusyChange?: (busy: boolean) => void;
 }
 
-export function BookSessionButtonPublic({ availabilityId }: BookSessionButtonPublicProps) {
+export function BookSessionButtonPublic({ availabilityId, onBusyChange }: BookSessionButtonPublicProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleBook() {
     setLoading(true);
+    onBusyChange?.(true);
     setError(null);
 
     try {
@@ -23,6 +25,7 @@ export function BookSessionButtonPublic({ availabilityId }: BookSessionButtonPub
       });
 
       if (res.status === 401) {
+        onBusyChange?.(false);
         const returnUrl = encodeURIComponent(window.location.pathname);
         window.location.href = `/auth/signin?redirect=${returnUrl}`;
         return;
@@ -33,6 +36,7 @@ export function BookSessionButtonPublic({ availabilityId }: BookSessionButtonPub
       if (!res.ok || !data.url) {
         setError(data.error ?? "Failed to start checkout");
         setLoading(false);
+        onBusyChange?.(false);
         return;
       }
 
@@ -40,6 +44,7 @@ export function BookSessionButtonPublic({ availabilityId }: BookSessionButtonPub
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to book session");
       setLoading(false);
+      onBusyChange?.(false);
     }
   }
 

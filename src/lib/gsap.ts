@@ -3,6 +3,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+/** Single entry for GSAP + ScrollTrigger — import these instead of reaching into `gsap` / `gsap/ScrollTrigger` from multiple styles (default vs named) to avoid duplicate module instances in dev (Turbopack/HMR). */
+export { gsap, ScrollTrigger };
+
 export const revealUp = (targets: gsap.DOMTarget, stagger?: number) =>
   gsap.fromTo(
     targets,

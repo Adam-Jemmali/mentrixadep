@@ -177,3 +177,5 @@ npm start
 ```
 
 Ready for Vercel — add env variables and deploy.
+
+For production go-live steps, use `PRELAUNCH.md`.

@@ -15,8 +15,9 @@ export async function getVerifiedPaymentIntentForBooking(
     throw new Error("Checkout session is not paid");
   }
 
-  const aid = session.metadata?.availabilityId;
-  const sid = session.metadata?.studentId;
+  const aid =
+    session.metadata?.availability_id ?? session.metadata?.availabilityId;
+  const sid = session.metadata?.student_id ?? session.metadata?.studentId;
   if (aid !== expected.availabilityId || sid !== expected.studentId) {
     throw new Error("Checkout session does not match this booking");
   }

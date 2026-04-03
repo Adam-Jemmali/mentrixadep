@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getPostOAuthRedirectPath } from "@/app/actions/auth";
+import { setOAuthCookiesClient } from "@/lib/oauth-auth";
 
 const buttonClassName =
   "w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none";
@@ -72,7 +73,14 @@ type Variant = "signin" | "signup";
  *
  * Fallback: Supabase OAuth redirect (shows Supabase host on Google’s screen) if client ID is missing.
  */
-export function GoogleSignInButton({ variant = "signin" }: { variant?: Variant }) {
+export function GoogleSignInButton({
+  variant = "signin",
+  /** Selected role on signup before Google — persisted via OAuth cookies for callback / GIS. */
+  oauthRole,
+}: {
+  variant?: Variant;
+  oauthRole?: "student" | "tutor";
+}) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +92,14 @@ export function GoogleSignInButton({ variant = "signin" }: { variant?: Variant }
   async function signInWithSupabaseOAuth() {
     setBusy(true);
     setError(null);
+    if (variant === "signup") {
+      setOAuthCookiesClient({
+        intent: "signup",
+        signupRole: oauthRole ?? "student",
+      });
+    } else {
+      setOAuthCookiesClient({ intent: "signin" });
+    }
     const supabase = createClient();
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -106,6 +122,14 @@ export function GoogleSignInButton({ variant = "signin" }: { variant?: Variant }
       if (!token) {
         setError("Google did not return a sign-in token. Try again.");
         return;
+      }
+      if (variant === "signup") {
+        setOAuthCookiesClient({
+          intent: "signup",
+          signupRole: oauthRole ?? "student",
+        });
+      } else {
+        setOAuthCookiesClient({ intent: "signin" });
       }
       setBusy(true);
       setError(null);
@@ -167,11 +191,12 @@ export function GoogleSignInButton({ variant = "signin" }: { variant?: Variant }
       })();
     }, 0);
 
+    const containerAtSetup = containerRef.current;
     return () => {
       cancelledRef.cancelled = true;
       window.clearTimeout(timer);
       if (el) el.innerHTML = "";
-      else if (containerRef.current) containerRef.current.innerHTML = "";
+      else if (containerAtSetup) containerAtSetup.innerHTML = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- router.push stable; avoid re-running GSI init
   }, [clientId, variant]);

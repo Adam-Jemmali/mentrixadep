@@ -1,0 +1,12 @@
+title = "Mentrixa gitleaks baseline"
+
+[allowlist]
+description = "Allow CI placeholder secrets"
+regexes = [
+  '''sk_test_placeholder''',
+  '''whsec_placeholder''',
+  '''re_placeholder''',
+  '''placeholder-anon-key''',
+  '''ci-cron-secret-placeholder''',
+  '''ci-gemini-placeholder''',
+]

@@ -240,3 +240,84 @@ body { background:#FAFAFA; color:#0F172A; font-family:'Geist',system-ui,sans-ser
   100% { transform: translateX(-50%); }
 }
 .animate-scroll { animation: scroll-ticker 28s linear infinite; }
+
+/* Landing subject tape */
+@keyframes tape {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-tape { animation: tape 36s linear infinite; }
+
+/* Testimonial card entrance */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ Landing page — full-bleed dark design ═══ */
+
+/* Custom easing (avoids Tailwind ambiguous arbitrary `ease-[cubic-bezier(...)]` in dev) */
+.ease-landing {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* When .lp-root is present, neutralise the layout's light-bg container */
+.lp-root {
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Climb up and reset layout wrappers so landing goes edge-to-edge */
+main:has(.lp-root) {
+  padding-top: 0 !important;
+  background: #070D1A !important;
+  background-image: none !important;
+}
+main:has(.lp-root) > div {
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.lp-hero-bg {
+  background: linear-gradient(180deg, #070D1A 0%, #0B1120 40%, #0E1729 100%);
+}
+.lp-tape-bg {
+  background: linear-gradient(180deg, #0E1729 0%, #101D33 100%);
+  border-top: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.lp-section-dark {
+  background: #0B1120;
+}
+.lp-section-mid {
+  background: linear-gradient(180deg, #0D1526 0%, #0B1120 100%);
+}
+.lp-footer-bg {
+  background: #070D1A;
+}
+
+/* Landing orbs — CSS replaces GSAP yoyo float */
+@keyframes lpOrbFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
+}
+.lp-orb {
+  animation: lpOrbFloat 6s ease-in-out infinite;
+  will-change: transform;
+}
+.lp-orb:nth-child(1) {
+  animation-delay: 0s;
+}
+.lp-orb:nth-child(2) {
+  animation-delay: 1.5s;
+}
+.lp-orb:nth-child(3) {
+  animation-delay: 3s;
+}
+

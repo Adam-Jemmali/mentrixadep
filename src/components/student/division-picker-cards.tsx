@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { setFocusedDivision } from "@/app/actions/quest";
 import {
@@ -40,8 +40,10 @@ export function DivisionPickerCards(
 ) {
   const { divisions, compact, xpByKey = {} } = props;
   const router = useRouter();
+  const [isNavigating, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [pending, setPending] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,11 +58,22 @@ export function DivisionPickerCards(
 
   async function handleFocusClick(key: string | "auto") {
     if (props.mode !== "focus") return;
+    setActionError(null);
     setPending(key);
     const next = key === "auto" ? null : key;
-    await setFocusedDivision(next);
+    const result = await setFocusedDivision(next);
     setPending(null);
-    router.refresh();
+    if (!result.success) {
+      setActionError(result.error);
+      return;
+    }
+    // Defer refresh past this commit so dev Fast Refresh / router never updates
+    // during the same React pass as setPending(null).
+    queueMicrotask(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    });
   }
 
   function handleSelectClick(key: string) {
@@ -109,7 +122,7 @@ export function DivisionPickerCards(
         {showAuto && (
           <button
             type="button"
-            disabled={!!pending}
+            disabled={!!pending || isNavigating}
             onClick={() => void handleFocusClick("auto")}
             className={cn(
               "text-left rounded-xl border-2 p-3 sm:p-4 transition-all duration-200",
@@ -154,7 +167,7 @@ export function DivisionPickerCards(
             <button
               key={d.key}
               type="button"
-              disabled={!!pending}
+              disabled={!!pending || isNavigating}
               onClick={() => {
                 if (isFocus) void handleFocusClick(d.key);
                 else handleSelectClick(d.key);
@@ -206,6 +219,11 @@ export function DivisionPickerCards(
           No subjects match “{query}”.
         </p>
       )}
+      {actionError ? (
+        <p className="text-sm text-red-600 mt-2" role="alert">
+          {actionError}
+        </p>
+      ) : null}
     </div>
   );
 }

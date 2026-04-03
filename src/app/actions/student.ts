@@ -15,12 +15,96 @@ import {
   RATE_LIMITS,
   getRateLimitId,
 } from "@/lib/security";
-import { awardXp, getDivisionKeyForCourse } from "@/app/actions/quest";
+import { trackEvent } from "@/lib/analytics";
+import { getDivisionKeyForCourse } from "@/app/actions/quest";
+import { applyXpAward } from "@/app/actions/xp";
+import { XP } from "@/lib/xp-constants";
 import {
   sendSessionBookedEmail,
   type SessionEmailDetails,
 } from "@/lib/email";
 import { getVerifiedPaymentIntentForBooking } from "@/lib/stripe-session-booking";
+import { addDaysIso } from "@/lib/booking-pricing";
+import type { SessionAiPackage } from "@/lib/database.types";
+
+function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
+  const m = (err.message ?? "").toLowerCase();
+  return (
+    m.includes("does not exist") &&
+    (m.includes("cancelled_at") || m.includes("cancelled_by_role"))
+  );
+}
+
+/** Tutor display info for learner session lists (from user_settings + auth metadata). */
+export type StudentSessionTutorProfile = {
+  id: string;
+  role: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  email?: string;
+};
+
+async function enrichStudentSessionsWithTutorProfiles<T extends { tutor_id: string }>(
+  sessions: T[]
+): Promise<Array<T & { tutor: StudentSessionTutorProfile }>> {
+  if (sessions.length === 0) return [];
+
+  const adminClient = createAdminClient();
+  const tutorIds = Array.from(new Set(sessions.map((s) => s.tutor_id).filter(Boolean)));
+
+  const { data: settingsRows } = await adminClient
+    .from("user_settings")
+    .select("user_id, display_name")
+    .in("user_id", tutorIds);
+
+  const nameById = new Map(
+    (settingsRows ?? []).map((r) => [r.user_id, r.display_name as string | null])
+  );
+
+  const metaById = new Map<
+    string,
+    { display_name: string | null; avatar_url: string | null; email: string }
+  >();
+
+  await Promise.all(
+    tutorIds.map(async (id) => {
+      try {
+        const { data } = await adminClient.auth.admin.getUserById(id);
+        const u = data?.user;
+        const email = u?.email ?? "";
+        const meta = u?.user_metadata as Record<string, unknown> | undefined;
+        const avatarRaw = meta?.avatar_url ?? meta?.picture;
+        const avatar_url =
+          typeof avatarRaw === "string" && avatarRaw.length > 0 ? avatarRaw : null;
+        metaById.set(id, {
+          display_name: nameById.get(id) ?? null,
+          avatar_url,
+          email,
+        });
+      } catch {
+        metaById.set(id, {
+          display_name: nameById.get(id) ?? null,
+          avatar_url: null,
+          email: "",
+        });
+      }
+    })
+  );
+
+  return sessions.map((session) => {
+    const m = metaById.get(session.tutor_id);
+    return {
+      ...session,
+      tutor: {
+        id: session.tutor_id,
+        role: "tutor",
+        display_name: m?.display_name ?? null,
+        avatar_url: m?.avatar_url ?? null,
+        email: m?.email,
+      },
+    };
+  });
+}
 
 export async function getUpcomingSessions() {
   const user = await requireRole(["student", "admin"]);
@@ -39,10 +123,8 @@ export async function getUpcomingSessions() {
     throw new Error(`Failed to fetch upcoming sessions: ${error.message}`);
   }
 
-  return (data || []).map((session) => ({
-    ...session,
-    tutor: { id: session.tutor_id, role: "tutor" },
-  }));
+  const rows = data || [];
+  return enrichStudentSessionsWithTutorProfiles(rows);
 }
 
 export async function getPastSessions() {
@@ -84,17 +166,213 @@ export async function getPastSessions() {
   }
 
   const sessionIds = sessions.map((s) => s.id);
-  const { data: ratings } = await supabase
-    .from("ratings")
+  const [{ data: ratings }, withTutors] = await Promise.all([
+    supabase
+      .from("ratings")
+      .select("*")
+      .in("session_id", sessionIds)
+      .eq("student_id", user.id),
+    enrichStudentSessionsWithTutorProfiles(sessions),
+  ]);
+
+  const adminClient = createAdminClient();
+  const { data: pkgRows } = await adminClient
+    .from("session_ai_packages")
     .select("*")
     .in("session_id", sessionIds)
-    .eq("student_id", user.id);
+    .not("package_published_at", "is", null);
 
-  return sessions.map((session) => ({
+  const pkgBySession = new Map(
+    (pkgRows ?? []).map((p) => [p.session_id, p as SessionAiPackage])
+  );
+
+  return withTutors.map((session) => ({
     ...session,
-    tutor: { id: session.tutor_id, role: "tutor" },
     ratings: (ratings || []).filter((r) => r.session_id === session.id),
+    ai_package: pkgBySession.get(session.id) ?? null,
   }));
+}
+
+/**
+ * Single sessions fetch for the learner hub (replaces separate upcoming + past queries).
+ * Falls back to getUpcomingSessions + getPastSessions if the merged filter is rejected.
+ */
+export async function getStudentSessionsHubBundle(): Promise<{
+  upcomingSessions: Awaited<ReturnType<typeof getUpcomingSessions>>;
+  pastSessions: Awaited<ReturnType<typeof getPastSessions>>;
+}> {
+  const user = await requireRole(["student", "admin"]);
+  const supabase = await createClient();
+  const nowIso = new Date().toISOString();
+
+  const orFilter = `end_time.lt.${nowIso},and(status.in.(completed,cancelled),end_time.gte.${nowIso}),and(status.eq.scheduled,end_time.gte.${nowIso})`;
+
+  const { data: mergedRows, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("student_id", user.id)
+    .or(orFilter);
+
+  if (error) {
+    const [upcomingSessions, pastSessions] = await Promise.all([
+      getUpcomingSessions(),
+      getPastSessions(),
+    ]);
+    return { upcomingSessions, pastSessions };
+  }
+
+  const allRows = mergedRows ?? [];
+
+  const upcomingRaw = allRows
+    .filter((s) => s.status === "scheduled" && new Date(s.end_time) >= new Date(nowIso))
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+
+  const upcomingIds = new Set(upcomingRaw.map((s) => s.id));
+  const pastRaw = allRows.filter((s) => !upcomingIds.has(s.id));
+  const pastSorted = pastRaw.sort(
+    (a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime(),
+  );
+
+  const upcomingSessions = await enrichStudentSessionsWithTutorProfiles(upcomingRaw);
+
+  if (pastSorted.length === 0) {
+    return { upcomingSessions, pastSessions: [] };
+  }
+
+  const sessionIds = pastSorted.map((s) => s.id);
+  const [{ data: ratings }, withTutors] = await Promise.all([
+    supabase
+      .from("ratings")
+      .select("*")
+      .in("session_id", sessionIds)
+      .eq("student_id", user.id),
+    enrichStudentSessionsWithTutorProfiles(pastSorted),
+  ]);
+
+  const adminClient = createAdminClient();
+  const { data: pkgRows } = await adminClient
+    .from("session_ai_packages")
+    .select("*")
+    .in("session_id", sessionIds)
+    .not("package_published_at", "is", null);
+
+  const pkgBySession = new Map(
+    (pkgRows ?? []).map((p) => [p.session_id, p as SessionAiPackage])
+  );
+
+  const pastSessions = withTutors.map((session) => ({
+    ...session,
+    ratings: (ratings || []).filter((r) => r.session_id === session.id),
+    ai_package: pkgBySession.get(session.id) ?? null,
+  }));
+
+  return { upcomingSessions, pastSessions };
+}
+
+export type StudentHubSnapshot = {
+  user_xp: Record<string, unknown> | null;
+  user_settings: {
+    display_name?: string | null;
+    timezone?: string | null;
+    focused_division_key?: string | null;
+  } | null;
+  student_courses: Array<Record<string, unknown>>;
+  has_pending_requests: boolean;
+  tutor_expertise: Record<
+    string,
+    Array<{ course_name: string; proof_description: string; verified: boolean }>
+  >;
+  available_courses: string[];
+  in_progress_quest: {
+    quest_id: string;
+    prompt: string;
+    num_attempts: number | null;
+  } | null;
+};
+
+/** One RPC round-trip: profile, courses, expertise map, availability courses, quest card, pending flag. */
+export async function getStudentHubSnapshot(): Promise<StudentHubSnapshot> {
+  const user = await requireRole(["student", "admin"]);
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("student_hub_snapshot", {
+    p_user_id: user.id,
+  });
+
+  if (error) {
+    throw new Error(`Failed to load hub snapshot: ${error.message}`);
+  }
+
+  const raw = data as Record<string, unknown> | null;
+  if (!raw || typeof raw !== "object") {
+    return {
+      user_xp: null,
+      user_settings: null,
+      student_courses: [],
+      has_pending_requests: false,
+      tutor_expertise: {},
+      available_courses: [],
+      in_progress_quest: null,
+    };
+  }
+
+  const tutorExpertise: StudentHubSnapshot["tutor_expertise"] = {};
+  const te = raw["tutor_expertise"];
+  if (te && typeof te === "object" && !Array.isArray(te)) {
+    for (const [tid, rows] of Object.entries(te as Record<string, unknown>)) {
+      if (!Array.isArray(rows)) continue;
+      tutorExpertise[tid] = rows
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const o = row as Record<string, unknown>;
+          return {
+            course_name: String(o.course_name ?? ""),
+            proof_description: String(o.proof_description ?? ""),
+            verified: Boolean(o.verified),
+          };
+        })
+        .filter(Boolean) as StudentHubSnapshot["tutor_expertise"][string];
+    }
+  }
+
+  let availableCourses: string[] = [];
+  const ac = raw["available_courses"];
+  if (Array.isArray(ac)) {
+    availableCourses = ac.map((c) => String(c)).filter(Boolean);
+  }
+
+  let inProgress: StudentHubSnapshot["in_progress_quest"] = null;
+  const ip = raw["in_progress_quest"];
+  if (ip && typeof ip === "object" && !Array.isArray(ip)) {
+    const o = ip as Record<string, unknown>;
+    const qid = o.quest_id;
+    if (typeof qid === "string" && qid) {
+      inProgress = {
+        quest_id: qid,
+        prompt: typeof o.prompt === "string" ? o.prompt : "",
+        num_attempts: typeof o.num_attempts === "number" ? o.num_attempts : null,
+      };
+    }
+  }
+
+  const us = raw["user_settings"];
+  const userSettings =
+    us && typeof us === "object" && !Array.isArray(us)
+      ? (us as StudentHubSnapshot["user_settings"])
+      : null;
+
+  const sc = raw["student_courses"];
+  const studentCourses = Array.isArray(sc) ? (sc as Array<Record<string, unknown>>) : [];
+
+  return {
+    user_xp: raw["user_xp"] && typeof raw["user_xp"] === "object" ? (raw["user_xp"] as Record<string, unknown>) : null,
+    user_settings: userSettings,
+    student_courses: studentCourses,
+    has_pending_requests: Boolean(raw["has_pending_requests"]),
+    tutor_expertise: tutorExpertise,
+    available_courses: availableCourses,
+    in_progress_quest: inProgress,
+  };
 }
 
 export async function getHasPendingSessionRequests(): Promise<boolean> {
@@ -133,15 +411,28 @@ export async function cancelSession(sessionId: string, onBehalfOfUserId?: string
   const now = new Date();
   const minutesUntilStart = (sessionStart.getTime() - now.getTime()) / (1000 * 60);
 
-  if (minutesUntilStart <= 60) {
-    throw new Error("Cannot cancel session less than 60 minutes before start time");
+  if (minutesUntilStart <= 24 * 60) {
+    throw new Error("Cannot cancel session less than 24 hours before start time");
   }
 
-  const { error: updateError } = await client
+  const cancelledAt = new Date().toISOString();
+  let { error: updateError } = await client
     .from("sessions")
-    .update({ status: "cancelled" })
+    .update({
+      status: "cancelled",
+      cancelled_at: cancelledAt,
+      cancelled_by_role: "student",
+    })
     .eq("id", sessionId)
     .eq("student_id", actingAsId);
+
+  if (updateError && isMissingCancelledSessionColumnsError(updateError)) {
+    ({ error: updateError } = await client
+      .from("sessions")
+      .update({ status: "cancelled" })
+      .eq("id", sessionId)
+      .eq("student_id", actingAsId));
+  }
 
   if (updateError) {
     throw new Error(`Failed to cancel session: ${updateError.message}`);
@@ -155,7 +446,7 @@ export async function getTutorAvailability(course?: string) {
   await requireRole(["student", "admin"]);
 
   // Check cache first (1 minute TTL for availability data)
-  const cacheKey = `tutor-availability:${course || "all"}`;
+  const cacheKey = `tutor-availability-14d:${course || "all"}`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cached = (await import("@/lib/cache")).cache.get<any[]>(cacheKey);
   if (cached) {
@@ -165,10 +456,13 @@ export async function getTutorAvailability(course?: string) {
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
+  const windowEnd = addDaysIso(new Date(), 14);
   let query = supabase
     .from("availability")
     .select("*")
+    .eq("active", true)
     .gte("start_time", new Date().toISOString())
+    .lte("start_time", windowEnd)
     .order("start_time", { ascending: true });
 
   if (course) {
@@ -248,6 +542,112 @@ export async function getTutorAvailability(course?: string) {
   return result;
 }
 
+/** Keyset cursor for availability rows (tutor browse at scale — offset is O(n)). */
+export type TutorAvailabilityCursor = { start_time: string; id: string };
+
+/**
+ * Paginated open slots in the booking window. Uses (start_time, id) keyset — same filters as getTutorAvailability.
+ */
+export async function getTutorAvailabilityKeysetPage(opts: {
+  course?: string;
+  limit?: number;
+  cursor?: TutorAvailabilityCursor | null;
+}) {
+  await requireRole(["student", "admin"]);
+
+  const limit = Math.min(Math.max(opts.limit ?? 40, 1), 100);
+  const supabase = await createClient();
+  const adminClient = createAdminClient();
+  const windowEnd = addDaysIso(new Date(), 14);
+  const nowIso = new Date().toISOString();
+
+  let q = supabase
+    .from("availability")
+    .select("*")
+    .eq("active", true)
+    .gte("start_time", nowIso)
+    .lte("start_time", windowEnd)
+    .order("start_time", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(limit + 1);
+
+  if (opts.course) {
+    q = q.eq("course", opts.course);
+  }
+
+  if (opts.cursor) {
+    const c = opts.cursor;
+    q = q.or(`start_time.gt.${c.start_time},and(start_time.eq.${c.start_time},id.gt.${c.id})`);
+  }
+
+  const { data, error } = await q;
+
+  if (error) {
+    throw new Error(`Failed to fetch availability page: ${error.message}`);
+  }
+
+  const rows = data ?? [];
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor: TutorAvailabilityCursor | null =
+    hasMore && page.length > 0
+      ? {
+          start_time: page[page.length - 1]!.start_time,
+          id: page[page.length - 1]!.id,
+        }
+      : null;
+
+  if (page.length === 0) {
+    return { rows: [], nextCursor: null };
+  }
+
+  const tutorIds = Array.from(new Set(page.map((a) => a.tutor_id)));
+  const { data: tutors } = await adminClient
+    .from("users")
+    .select("id, role, approved")
+    .in("id", tutorIds)
+    .eq("approved", true);
+
+  const approvedTutorIds = new Set(tutors?.map((t) => t.id) || []);
+  const tutorIdArray = Array.from(approvedTutorIds);
+  const tutorEmails = new Map<string, string>();
+
+  if (tutorIdArray.length > 0) {
+    const { batchQueries } = await import("@/lib/performance");
+    const emailQueries = tutorIdArray.map((tutorId) => async () => {
+      try {
+        const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(tutorId);
+        if (!userError && userData?.user?.email) {
+          return [tutorId, userData.user.email] as [string, string];
+        }
+      } catch {
+        /* ignore */
+      }
+      return null;
+    });
+    const results = await batchQueries(emailQueries, 10);
+    results.forEach((result) => {
+      if (result) tutorEmails.set(result[0], result[1]);
+    });
+  }
+
+  const result = page
+    .filter((avail) => approvedTutorIds.has(avail.tutor_id))
+    .map((avail) => {
+      const tutor = tutors?.find((t) => t.id === avail.tutor_id);
+      const email = tutorEmails.get(avail.tutor_id) || "";
+      return {
+        ...avail,
+        tutor: tutor
+          ? { id: tutor.id, role: tutor.role, approved: tutor.approved, email }
+          : undefined,
+      };
+    })
+    .filter((avail) => avail.tutor !== undefined);
+
+  return { rows: result, nextCursor };
+}
+
 export async function getAvailableCourses() {
   await requireRole(["student", "admin"]);
   
@@ -264,6 +664,7 @@ export async function getAvailableCourses() {
   const { data, error } = await supabase
     .from("availability")
     .select("course")
+    .eq("active", true)
     .gte("start_time", new Date().toISOString())
     .order("course", { ascending: true });
 
@@ -343,6 +744,25 @@ export async function bookSessionAsUser(
     const validAvailabilityId = validateUUID(availabilityId);
     const validStudentId = validateUUID(studentId);
 
+    if (options?.stripeCheckoutSessionId) {
+      const { data: existingByStripe } = await adminClient
+        .from("session_requests")
+        .select("*")
+        .eq("stripe_checkout_session_id", options.stripeCheckoutSessionId)
+        .maybeSingle();
+      if (existingByStripe) {
+        if (
+          existingByStripe.student_id !== validStudentId ||
+          existingByStripe.availability_id !== validAvailabilityId
+        ) {
+          throw new Error("Checkout session does not match this booking");
+        }
+        revalidatePath("/student");
+        revalidatePath("/tutor");
+        return { success: true, request: existingByStripe };
+      }
+    }
+
     const { data: availability, error: availError } = await adminClient
       .from("availability")
       .select("*")
@@ -358,6 +778,10 @@ export async function bookSessionAsUser(
 
     if (!availability) {
       throw new Error("Availability not found");
+    }
+
+    if ((availability as { active?: boolean }).active === false) {
+      throw new Error("This open slot is not accepting bookings");
     }
 
     // Verify tutor is approved
@@ -433,6 +857,25 @@ export async function bookSessionAsUser(
       .single();
 
     if (requestError) {
+      if (
+        requestError.code === "23505" &&
+        options?.stripeCheckoutSessionId
+      ) {
+        const { data: raced } = await adminClient
+          .from("session_requests")
+          .select("*")
+          .eq("stripe_checkout_session_id", options.stripeCheckoutSessionId)
+          .maybeSingle();
+        if (
+          raced &&
+          raced.student_id === validStudentId &&
+          raced.availability_id === validAvailabilityId
+        ) {
+          revalidatePath("/student");
+          revalidatePath("/tutor");
+          return { success: true, request: raced };
+        }
+      }
       if (requestError.code === "23505") {
         throw new Error("You already have a pending request for this availability");
       }
@@ -448,24 +891,56 @@ export async function bookSessionAsUser(
 
     // Fire-and-forget email notifications
     try {
-      const [studentAuthData, tutorAuthData] = await Promise.all([
+      const [studentAuthData, tutorAuthData, settingsResult] = await Promise.all([
         adminClient.auth.admin.getUserById(validStudentId),
         adminClient.auth.admin.getUserById(availability.tutor_id),
+        adminClient
+          .from("user_settings")
+          .select("user_id, display_name")
+          .in("user_id", [validStudentId, availability.tutor_id]),
       ]);
       const studentEmail = studentAuthData.data?.user?.email;
       const tutorEmail = tutorAuthData.data?.user?.email;
+      const nameByUser = Object.fromEntries(
+        (settingsResult.data ?? []).map((r) => [r.user_id, r.display_name as string | null])
+      );
       if (studentEmail && tutorEmail) {
+        const priceCents =
+          (availability as { price_per_session?: number | null }).price_per_session ?? null;
         const sessionDetails: SessionEmailDetails = {
           sessionId: request.id,
           course: availability.course,
           startTime: availability.start_time,
           endTime: availability.end_time,
+          studentDisplayName: nameByUser[validStudentId] ?? null,
+          tutorDisplayName: nameByUser[availability.tutor_id] ?? null,
+          priceCents,
         };
         void sendSessionBookedEmail(studentEmail, tutorEmail, sessionDetails);
       }
     } catch (emailErr) {
       console.error("[bookSessionAsUser] email notification failed:", emailErr);
     }
+
+    // Track booking events
+    void trackEvent("session_booked", {
+      userId: studentId,
+      properties: {
+        course: String(availability.course ?? ""),
+        tutor_id: String(availability.tutor_id ?? ""),
+      },
+    });
+    // Check if this is the student's first booked session
+    try {
+      const { count } = await adminClient
+        .from("session_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("student_id", studentId)
+        .eq("status", "booked");
+      if ((count ?? 0) <= 1) {
+        void trackEvent("first_session_booked", { userId: studentId });
+      }
+    } catch { /* non-critical */ }
 
     revalidatePath("/student");
     revalidatePath("/tutor");
@@ -479,7 +954,8 @@ export async function bookSessionAsUser(
         message.includes("not approved") ||
         message.includes("not found") ||
         message.includes("rate limit") ||
-        message.includes("invalid")
+        message.includes("invalid") ||
+        message.includes("checkout")
       ) {
         throw error;
       }
@@ -592,12 +1068,16 @@ export async function rateSession(
         return { success: false, error: `Failed to create rating: ${insertError.message}` };
       }
 
-      const SESSION_COMPLETION_XP = 15;
       const divisionKey = session.course
         ? (await getDivisionKeyForCourse(session.course)) ?? "general"
         : "general";
       try {
-        await awardXp(actingAsId, SESSION_COMPLETION_XP, divisionKey);
+        await applyXpAward(
+          actingAsId,
+          XP.SESSION_RATE,
+          `session_rate:${validSessionId}`,
+          divisionKey,
+        );
       } catch {
         // XP award is best-effort
       }
@@ -692,19 +1172,16 @@ export async function getStudentDashboardForAdmin(studentId: string) {
     adminClient
       .from("availability")
       .select("*")
+      .eq("active", true)
       .gte("start_time", now)
       .order("start_time", { ascending: true }),
     adminClient
       .from("availability")
       .select("course")
+      .eq("active", true)
       .gte("start_time", now)
       .order("course", { ascending: true }),
   ]);
-
-  const upcomingSessions = (upcomingResult.data ?? []).map((s) => ({
-    ...s,
-    tutor: { id: s.tutor_id, role: "tutor" as const },
-  }));
 
   const pastById = new Map<string, NonNullable<typeof pastEndedResult.data>[number]>();
   for (const row of [
@@ -728,10 +1205,28 @@ export async function getStudentDashboardForAdmin(studentId: string) {
     ratings = ratingsData ?? [];
   }
 
-  const pastSessions = pastSessionsRaw.map((s) => ({
+  const [upcomingSessions, pastWithTutors] = await Promise.all([
+    enrichStudentSessionsWithTutorProfiles(upcomingResult.data ?? []),
+    enrichStudentSessionsWithTutorProfiles(pastSessionsRaw),
+  ]);
+
+  const { data: pkgRowsAdmin } =
+    sessionIds.length > 0
+      ? await adminClient
+          .from("session_ai_packages")
+          .select("*")
+          .in("session_id", sessionIds)
+          .not("package_published_at", "is", null)
+      : { data: [] as SessionAiPackage[] };
+
+  const pkgBySessionAdmin = new Map(
+    (pkgRowsAdmin ?? []).map((p) => [p.session_id, p as SessionAiPackage])
+  );
+
+  const pastSessions = pastWithTutors.map((s) => ({
     ...s,
-    tutor: { id: s.tutor_id, role: "tutor" as const },
     ratings: ratings.filter((r) => r.session_id === s.id),
+    ai_package: pkgBySessionAdmin.get(s.id) ?? null,
   }));
 
   const totalXp = xpResult.data?.total_xp ?? 0;
