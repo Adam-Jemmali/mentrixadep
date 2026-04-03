@@ -9,4 +9,5 @@ regexes = [
   '''placeholder-anon-key''',
   '''ci-cron-secret-placeholder''',
   '''ci-gemini-placeholder''',
+  '''ci-supabase-service-role-placeholder''',
 ]

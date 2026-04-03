@@ -15,8 +15,10 @@ jobs:
       # Placeholders so Next.js and env getters can resolve during `next build`
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-supabase-service-role-placeholder
       NEXT_PUBLIC_APP_URL: https://placeholder.example
       CRON_SECRET: ci-cron-secret-placeholder
+      CRON_ALLOWED_IPS: "127.0.0.1"
       GEMINI_API_KEY: ci-gemini-placeholder
       STRIPE_SECRET_KEY: sk_test_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_placeholder

@@ -119,6 +119,8 @@ export const env = {
 export function validateEnvAtStartup(): void {
   if (process.env.NODE_ENV !== "production") return;
   if ((process.env.NEXT_PHASE ?? "").includes("phase-production-build")) return;
+  // Instrumentation can run during `npm run build` before NEXT_PHASE is set — skip strict checks then.
+  if (process.env.npm_lifecycle_event === "build") return;
   const required = [
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
