@@ -1,24 +1,12 @@
 {
   "regions": ["iad1"],
   "functions": {
-    "src/app/api/video/**/route.ts": {
-      "maxDuration": 300,
+    "src/app/api/tutor/studio-stream/route.ts": {
+      "maxDuration": 60,
       "regions": ["iad1", "cdg1"]
     },
     "src/app/api/**/route.ts": {
       "maxDuration": 10,
-      "regions": ["iad1", "cdg1"]
-    },
-    "src/app/actions/resolve.ts": {
-      "maxDuration": 60,
-      "regions": ["iad1", "cdg1"]
-    },
-    "src/app/actions/quest.ts": {
-      "maxDuration": 60,
-      "regions": ["iad1", "cdg1"]
-    },
-    "src/lib/ai.ts": {
-      "maxDuration": 60,
       "regions": ["iad1", "cdg1"]
     }
   },

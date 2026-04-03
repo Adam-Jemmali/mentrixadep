@@ -8,10 +8,10 @@ This project is code-ready for launch. Use this checklist to close remaining dep
 
 - Primary region: `iad1` (US East)
 - Secondary function region for latency: `cdg1` (EU West)
-- Function durations:
-  - standard API routes: `10s`
-  - AI-heavy routes: `60s`
-  - video upload family: `300s`
+- Function durations (only real `app/api/**/route.ts` paths are valid in `vercel.json` `functions`):
+  - default API routes: `10s` (`src/app/api/**/route.ts`)
+  - tutor AI streaming: `60s` (`src/app/api/tutor/studio-stream/route.ts`)
+  - If you add `src/app/api/video/**/route.ts`, add a `300s` entry for uploads in `vercel.json` (pattern must match an actual route file).
 - Security headers via Vercel `headers` config
 - **Cron schedules (`vercel.json`)** — defaults are **Vercel Hobby–safe**: each job runs **at most once per day** (staggered UTC hours). Hobby rejects schedules that run more than once per day; that was breaking deployments.
 - **Vercel Pro** (or Enterprise): you can switch `crons` in `vercel.json` to higher-frequency expressions, for example:
