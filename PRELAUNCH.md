@@ -6,8 +6,7 @@ This project is code-ready for launch. Use this checklist to close remaining dep
 
 `vercel.json` is configured with:
 
-- Primary region: `iad1` (US East)
-- Secondary function region for latency: `cdg1` (EU West)
+- Region: `iad1` (US East) — **Hobby** allows a single function region only. Multi-region (`iad1` + `cdg1`) in `vercel.json` `functions.*.regions` requires **Pro**; removed to avoid deploy failures.
 - Function durations (only real `app/api/**/route.ts` paths are valid in `vercel.json` `functions`):
   - default API routes: `10s` (`src/app/api/**/route.ts`)
   - tutor AI streaming: `60s` (`src/app/api/tutor/studio-stream/route.ts`)

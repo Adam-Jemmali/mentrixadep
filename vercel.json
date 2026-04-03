@@ -2,12 +2,10 @@
   "regions": ["iad1"],
   "functions": {
     "src/app/api/tutor/studio-stream/route.ts": {
-      "maxDuration": 60,
-      "regions": ["iad1", "cdg1"]
+      "maxDuration": 60
     },
     "src/app/api/**/route.ts": {
-      "maxDuration": 10,
-      "regions": ["iad1", "cdg1"]
+      "maxDuration": 10
     }
   },
   "headers": [
