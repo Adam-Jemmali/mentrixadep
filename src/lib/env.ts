@@ -7,14 +7,6 @@ function getOptionalEnvVar(key: string, defaultValue?: string): string | undefin
   return process.env[key] ?? defaultValue;
 }
 
-function requireNonEmptyEnvVar(key: string): string {
-  const value = process.env[key];
-  if (!value || value.trim() === "") {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
-}
-
 function getSupabaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) {
@@ -113,8 +105,9 @@ export const env = {
 } as const;
 
 /**
- * Validate critical secrets at startup in production.
- * Keeps development flexible while failing fast in prod misconfiguration.
+ * Log missing production secrets at startup — does **not** throw.
+ * Throwing from `instrumentation.register()` caused opaque 500s on every route (auth, dashboard, APIs)
+ * until the process recovered; route handlers that need a secret still fail loudly via their own getters.
  */
 export function validateEnvAtStartup(): void {
   if (process.env.NODE_ENV !== "production") return;
@@ -131,13 +124,17 @@ export function validateEnvAtStartup(): void {
     "RESEND_API_KEY",
     "CRON_SECRET",
   ];
-  required.forEach((k) => requireNonEmptyEnvVar(k));
+  const missing = required.filter((k) => !process.env[k]?.trim());
+  if (missing.length > 0) {
+    console.error(
+      "[env] Production is missing required environment variables — add them in Vercel → Settings → Environment Variables (Production):",
+      missing.join(", "),
+    );
+  }
 
   const cronAllowlist = (process.env.CRON_ALLOWED_IPS ?? "").trim();
   const requireCronSig = (process.env.CRON_REQUIRE_SIGNATURE ?? "false").toLowerCase() === "true";
   if (!cronAllowlist && !requireCronSig) {
-    // Do not throw: Vercel Hobby/prod often omits this until configured; `/api/cron/*` still enforces
-    // authorization in `lib/cron.ts`. Throwing here caused 500 on every route (incl. `/auth/signup`).
     console.warn(
       "[env] Cron hardening not configured: set CRON_ALLOWED_IPS or CRON_REQUIRE_SIGNATURE=true (see PRELAUNCH.md).",
     );

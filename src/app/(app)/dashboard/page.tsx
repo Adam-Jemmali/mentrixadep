@@ -5,15 +5,21 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-async function getDisplayName(userId: string, email?: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("user_settings")
-    .select("display_name")
-    .eq("user_id", userId)
-    .maybeSingle();
+export const dynamic = "force-dynamic";
 
-  if (data?.display_name) return data.display_name;
+async function getDisplayName(userId: string, email?: string) {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("user_settings")
+      .select("display_name")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (data?.display_name) return data.display_name;
+  } catch (e) {
+    console.error("[dashboard] getDisplayName:", e);
+  }
   if (email) return email.split("@")[0];
   return "there";
 }

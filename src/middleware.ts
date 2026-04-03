@@ -231,28 +231,48 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!supabaseUrl || !supabaseAnon) {
+    console.error("[middleware] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+    const fallback = request.nextUrl.clone();
+    fallback.pathname = "/auth/signin";
+    return finalizeResponse(NextResponse.redirect(fallback), request, null);
+  }
+
+  try {
+    return await runSupabaseAuthGuard(request, supabaseUrl, supabaseAnon);
+  } catch (err) {
+    console.error("[middleware] auth guard failed:", err);
+    const fallback = request.nextUrl.clone();
+    fallback.pathname = "/auth/signin";
+    return finalizeResponse(NextResponse.redirect(fallback), request, null);
+  }
+}
+
+async function runSupabaseAuthGuard(
+  request: NextRequest,
+  supabaseUrl: string,
+  supabaseAnon: string
+): Promise<NextResponse> {
+  const { pathname } = request.nextUrl;
+
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnon, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
   const {
     data: { user },
@@ -311,7 +331,7 @@ export async function middleware(request: NextRequest) {
         .from("users")
         .select("is_blacklisted, verification_status")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       // Blacklisted users are always blocked
       if (userRow?.is_blacklisted) {

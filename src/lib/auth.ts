@@ -14,6 +14,15 @@ export interface AuthUser {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  try {
+    return await loadCurrentUser();
+  } catch (e) {
+    console.error("[auth] getCurrentUser failed:", e);
+    return null;
+  }
+}
+
+async function loadCurrentUser(): Promise<AuthUser | null> {
   const supabase = await createClient();
   const {
     data: { user },
