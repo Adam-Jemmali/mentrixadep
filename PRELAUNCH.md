@@ -13,9 +13,17 @@ This project is code-ready for launch. Use this checklist to close remaining dep
   - AI-heavy routes: `60s`
   - video upload family: `300s`
 - Security headers via Vercel `headers` config
-- Cron schedules including:
-  - `/api/cron/send-reminders`: hourly (`0 * * * *`)
-  - `/api/cron/complete-sessions`: every 15 minutes (`*/15 * * * *`)
+- **Cron schedules (`vercel.json`)** — defaults are **Vercel Hobby–safe**: each job runs **at most once per day** (staggered UTC hours). Hobby rejects schedules that run more than once per day; that was breaking deployments.
+- **Vercel Pro** (or Enterprise): you can switch `crons` in `vercel.json` to higher-frequency expressions, for example:
+  - `/api/cron/refresh-division-leaderboard`: `*/5 * * * *`
+  - `/api/cron/unlock-expired-slots`: `*/10 * * * *`
+  - `/api/cron/complete-sessions`: `*/15 * * * *`
+  - `/api/cron/send-reminders`: `0 * * * *`
+  - `/api/cron/pre-session-brief`: `*/15 * * * *`
+  - `/api/cron/process-payouts`: `0 */6 * * *`
+  - `/api/cron/verification-overdue`: `0 * * * *`
+  - `/api/cron/division-weekly`: `15 0 * * 1` (weekly; unchanged)
+- Alternatively on Hobby, keep daily Vercel crons and trigger high-frequency work via **Supabase `pg_cron`**, **GitHub Actions**, or another scheduler hitting the same routes with `CRON_SECRET`.
 
 ## 2) Production Environment Variables (with source)
 

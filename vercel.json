@@ -34,13 +34,37 @@
     }
   ],
   "crons": [
-    { "path": "/api/cron/refresh-division-leaderboard", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/unlock-expired-slots", "schedule": "*/10 * * * *" },
-    { "path": "/api/cron/complete-sessions", "schedule": "*/15 * * * *" },
-    { "path": "/api/cron/send-reminders", "schedule": "0 * * * *" },
-    { "path": "/api/cron/pre-session-brief", "schedule": "*/15 * * * *" },
-    { "path": "/api/cron/process-payouts", "schedule": "0 */6 * * *" },
-    { "path": "/api/cron/verification-overdue", "schedule": "0 * * * *" },
-    { "path": "/api/cron/division-weekly", "schedule": "15 0 * * 1" }
+    {
+      "path": "/api/cron/refresh-division-leaderboard",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/unlock-expired-slots",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/complete-sessions",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/send-reminders",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/pre-session-brief",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/process-payouts",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/verification-overdue",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/division-weekly",
+      "schedule": "15 0 * * 1"
+    }
   ]
 }
