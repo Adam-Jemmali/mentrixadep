@@ -33,19 +33,24 @@ export default function SignInPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const formData = new FormData(e.currentTarget);
-    const result = await signIn(formData);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await signIn(formData);
 
-    if (result?.error) {
-      setError(result.error);
-      setLoading(false);
-    } else if (result?.success) {
-      if (result.approved === false) {
-        router.push("/pending-approval");
-      } else {
-        router.push(getRoleHomePath(result.role));
+      if (result?.error) {
+        setError(result.error);
+        return;
       }
-      router.refresh();
+      if (result?.success) {
+        if (result.approved === false) {
+          router.push("/pending-approval");
+        } else {
+          router.push(getRoleHomePath(result.role));
+        }
+        router.refresh();
+      }
+    } finally {
+      setLoading(false);
     }
   }
 

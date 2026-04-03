@@ -133,26 +133,31 @@ export function GoogleSignInButton({
       }
       setBusy(true);
       setError(null);
-      const supabase = createClient();
-      const { error: signError } = await supabase.auth.signInWithIdToken({
-        provider: "google",
-        token,
-      });
-      if (signError) {
-        setError(signError.message);
+      try {
+        const supabase = createClient();
+        const { error: signError } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token,
+        });
+        if (signError) {
+          setError(signError.message);
+          return;
+        }
+        await supabase.auth.getSession();
+        const next = await getPostOAuthRedirectPath();
+        if ("error" in next) {
+          setError(next.error);
+          await supabase.auth.signOut();
+          return;
+        }
+        router.push(next.path);
+        router.refresh();
+      } catch (err) {
+        console.error("[GoogleSignInButton] sign-in failed:", err);
+        setError(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
+      } finally {
         setBusy(false);
-        return;
       }
-      await supabase.auth.getSession();
-      const next = await getPostOAuthRedirectPath();
-      if ("error" in next) {
-        setError(next.error);
-        await supabase.auth.signOut();
-        setBusy(false);
-        return;
-      }
-      router.push(next.path);
-      router.refresh();
     }
 
     const timer = window.setTimeout(() => {

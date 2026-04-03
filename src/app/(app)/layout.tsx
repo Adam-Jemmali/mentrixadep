@@ -10,6 +10,11 @@ export const dynamic = "force-dynamic";
 export default async function AppShellLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getCurrentUser();
+  let user: Awaited<ReturnType<typeof getCurrentUser>> = null;
+  try {
+    user = await getCurrentUser();
+  } catch (e) {
+    console.error("[AppShellLayout] getCurrentUser failed:", e);
+  }
   return <RootLayoutClient user={user}>{children}</RootLayoutClient>;
 }

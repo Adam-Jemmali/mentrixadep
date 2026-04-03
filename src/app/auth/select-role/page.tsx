@@ -37,27 +37,26 @@ export default function SelectRolePage() {
   async function choose(role: Role) {
     setLoading(true);
     setError(null);
+    try {
+      const result = await setUserRole(role);
 
-    const result = await setUserRole(role);
-
-    if (result && "error" in result) {
-      setError(result.error ?? "Something went wrong");
-      setLoading(false);
-      return;
-    }
-
-    if (result?.success) {
-      const r = (result.role ?? role) as UserRole;
-      if (result.approved) {
-        router.push(getRoleHomePath(r));
-      } else {
-        router.push("/pending-approval");
+      if (result && "error" in result) {
+        setError(result.error ?? "Something went wrong");
+        return;
       }
-      router.refresh();
-      return;
-    }
 
-    setLoading(false);
+      if (result?.success) {
+        const r = (result.role ?? role) as UserRole;
+        if (result.approved) {
+          router.push(getRoleHomePath(r));
+        } else {
+          router.push("/pending-approval");
+        }
+        router.refresh();
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

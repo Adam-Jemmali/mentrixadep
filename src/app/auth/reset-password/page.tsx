@@ -44,7 +44,6 @@ export default function ResetPasswordPage() {
 
       if (updateError) {
         setError(updateError.message);
-        setLoading(false);
         return;
       }
 
@@ -56,6 +55,7 @@ export default function ResetPasswordPage() {
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
       setLoading(false);
     }
   }
