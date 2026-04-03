@@ -48,7 +48,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       .from("users")
       .select("role, approved")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!userData?.role) {
       return null;

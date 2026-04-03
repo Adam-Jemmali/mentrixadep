@@ -130,7 +130,7 @@ export default function SelectRolePage() {
                 Guide
               </p>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                I want to teach
+                I want to be a Guide
               </h2>
             </div>
           </div>

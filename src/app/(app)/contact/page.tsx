@@ -1,21 +1,15 @@
-export const metadata = {
-  title: "Contact · Mentrixa",
+import type { Metadata } from "next";
+import { ContactPageClient } from "@/components/contact/contact-page-client";
+import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
+
+export const metadata: Metadata = {
+  title: "Contact & feedback · Mentrixa",
+  description:
+    "Reach the Mentrixa team — feedback, ideas, and support. We read every message from Mentrixers and Guides.",
 };
 
 export default function ContactPage() {
-  return (
-    <div className="max-w-3xl mx-auto py-10 space-y-3">
-      <h1 className="text-2xl font-bold tracking-[-0.03em] text-slate-900">
-        Contact
-      </h1>
-      <p className="text-sm text-slate-500">
-        This is a simple placeholder contact page. Hook it up to your real support email or
-        form when you are ready.
-      </p>
-      <p className="text-sm text-slate-500">
-        For now, all landing page links resolve and won’t 404.
-      </p>
-    </div>
-  );
+  const feedbackEmail =
+    process.env.NEXT_PUBLIC_FEEDBACK_EMAIL?.trim() || DEFAULT_PUBLIC_FEEDBACK_EMAIL;
+  return <ContactPageClient feedbackEmail={feedbackEmail} />;
 }
-

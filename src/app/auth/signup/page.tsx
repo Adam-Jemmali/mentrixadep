@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { gsap } from "gsap";
 import { universityEmailHint } from "@/lib/oauth-auth";
 import { useTrack } from "@/lib/use-track";
@@ -16,8 +17,8 @@ import { signUpClientSchema } from "@/lib/schemas";
 type UserRole = "student" | "tutor";
 
 const ROLES: { type: UserRole; title: string }[] = [
-  { type: "student", title: "I want to learn" },
-  { type: "tutor", title: "I want to teach" },
+  { type: "student", title: "Become a Mentrixer" },
+  { type: "tutor", title: "I want  to be a Guide" },
 ];
 
 export default function SignUpPage() {
@@ -33,6 +34,13 @@ export default function SignUpPage() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const track = useTrack();
   const trackedStart = useRef(false);
+
+  /** Landing CTAs use `/auth/signup?role=tutor` — pre-select Guide vs Mentrixer. */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const r = new URLSearchParams(window.location.search).get("role");
+    if (r === "tutor" || r === "student") setRole(r);
+  }, []);
 
   useEffect(() => {
     const wrapper = document.getElementById("auth-form-wrapper");
@@ -185,6 +193,15 @@ export default function SignUpPage() {
 
   return (
     <>
+      {loading ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 backdrop-blur-md"
+          aria-busy
+          aria-live="polite"
+        >
+          <MentrixaLogoLoader size="xl" label="Creating your account" />
+        </div>
+      ) : null}
       <h1 className="text-[24px] font-bold tracking-[-0.03em] text-slate-900 mb-1">
         Create your account
       </h1>

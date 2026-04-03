@@ -103,7 +103,7 @@ export default async function VideoSessionPage({
     .eq("id", sessionId)
     .single();
 
-  let learnerLabel = "Learner";
+  let learnerLabel = "Mentrixer";
   let guideLabel = "Guide";
   const courseLabel = sessionRow?.course ?? "Session";
 

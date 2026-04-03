@@ -38,12 +38,12 @@ Set in **Vercel -> Project Settings -> Environment Variables**:
 - `CRON_SECRET` -> generate with `openssl rand -hex 32`
 - `NEXT_PUBLIC_APP_URL` -> `https://mentrixa.com`
 
-Recommended hardening:
+Recommended hardening (also enforced on each `/api/cron/*` request in `lib/cron.ts`):
 
 - `CRON_ALLOWED_IPS` (comma-separated allowlist), or
 - `CRON_REQUIRE_SIGNATURE=true` for signed cron requests
 
-Runtime checks enforce required vars in production startup.
+Startup logs a **warning** if neither is set so deploys succeed; set one of these before relying on scheduled crons in production.
 
 ## 3) Supabase Production Setup Checklist
 

@@ -136,8 +136,10 @@ export function validateEnvAtStartup(): void {
   const cronAllowlist = (process.env.CRON_ALLOWED_IPS ?? "").trim();
   const requireCronSig = (process.env.CRON_REQUIRE_SIGNATURE ?? "false").toLowerCase() === "true";
   if (!cronAllowlist && !requireCronSig) {
-    throw new Error(
-      "Cron hardening required: set CRON_ALLOWED_IPS or set CRON_REQUIRE_SIGNATURE=true.",
+    // Do not throw: Vercel Hobby/prod often omits this until configured; `/api/cron/*` still enforces
+    // authorization in `lib/cron.ts`. Throwing here caused 500 on every route (incl. `/auth/signup`).
+    console.warn(
+      "[env] Cron hardening not configured: set CRON_ALLOWED_IPS or CRON_REQUIRE_SIGNATURE=true (see PRELAUNCH.md).",
     );
   }
 }

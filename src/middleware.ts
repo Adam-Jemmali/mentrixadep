@@ -34,6 +34,10 @@ const publicRoutes = new Set([
   "/sw.js",
   "/manifest.json",
   "/join",
+  /** Marketing / legal — no session required (same route group as landing links in footer). */
+  "/contact",
+  "/privacy",
+  "/terms",
 ]);
 
 /** Public tutor profile pages: /tutor/[tutorId] (and nested public paths under /tutor/). */

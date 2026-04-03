@@ -14,9 +14,10 @@
  */
 
 import { getResendApiKey } from "@/lib/env";
+import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
 
 const FROM_ADDRESS = "Mentrixa <updates@mentrixa.one>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000" || "https://mentrixa.one";
 const DEV_EMAIL_OVERRIDE: string | null = null;
 
 /** Session + optional person names + optional AI package stats for richer emails */
@@ -1317,4 +1318,66 @@ export async function sendTutorCancelledEmail(
     `Cancellation confirmed: ${data.course} session`,
     baseTemplate("Session cancelled by Guide", body)
   );
+}
+
+/** Public contact form → team inbox via Resend (`reply_to` = sender so you can reply in one click). */
+export async function sendContactFeedbackInbound(params: {
+  fromEmail: string;
+  fromName: string;
+  category: string;
+  message: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  /** Same inbox as mailto when possible: form submissions + “email us” land in one place. */
+  const inbox =
+    process.env.CONTACT_INBOX_EMAIL?.trim() ||
+    process.env.NEXT_PUBLIC_FEEDBACK_EMAIL?.trim() ||
+    DEFAULT_PUBLIC_FEEDBACK_EMAIL;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    console.error("[email] RESEND_API_KEY is not set");
+    return { ok: false, error: "Email is not configured on this server." };
+  }
+
+  const subject = `[Mentrixa Feedback] ${params.category} — ${params.fromName}`;
+  const body = `
+      <p style="color:#b4b4b4;font-size:14px;line-height:1.6;margin:0 0 10px;">
+        <strong style="color:#e5e5e5;">From:</strong> ${escapeHtml(params.fromName)}
+        &lt;${escapeHtml(params.fromEmail)}&gt;
+      </p>
+      <p style="color:#b4b4b4;font-size:14px;line-height:1.6;margin:0 0 18px;">
+        <strong style="color:#e5e5e5;">Topic:</strong> ${escapeHtml(params.category)}
+      </p>
+      <div style="color:#e5e5e5;font-size:15px;line-height:1.65;white-space:pre-wrap;border-left:3px solid #3b82f6;padding-left:16px;margin:0 0 20px;">
+        ${escapeHtml(params.message)}
+      </div>
+      <p style="color:#737373;font-size:12px;line-height:1.5;margin:0;">
+        Reply directly to the sender using Reply in your inbox — Resend sets Reply-To to their address.
+      </p>
+    `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_ADDRESS,
+        to: [inbox],
+        reply_to: params.fromEmail,
+        subject,
+        html: baseTemplate("Feedback from mentrixa.com", body),
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      console.error("[email] contact feedback failed:", t);
+      return { ok: false, error: "Could not send your message. Please try again in a moment." };
+    }
+  } catch (e) {
+    console.error("[email] contact feedback error:", e);
+    return { ok: false, error: "Could not send your message. Please try again in a moment." };
+  }
+  return { ok: true };
 }

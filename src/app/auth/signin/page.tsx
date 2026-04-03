@@ -9,6 +9,7 @@ import { getRoleHomePath } from "@/lib/role-home";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { gsap } from "gsap";
 
 export default function SignInPage() {
@@ -50,6 +51,15 @@ export default function SignInPage() {
 
   return (
     <>
+      {loading ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 backdrop-blur-md"
+          aria-busy
+          aria-live="polite"
+        >
+          <MentrixaLogoLoader size="xl" label="Signing you in" />
+        </div>
+      ) : null}
       <h1 className="text-[24px] font-bold tracking-[-0.03em] text-slate-900 mb-1">
         Sign in
       </h1>

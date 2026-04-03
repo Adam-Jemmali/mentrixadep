@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Mentrixa — Learning, leveled up",
+  title: "Mentrixa",
   description:
     "Mentrixa helps students and tutors work smarter with structured quests, sessions, and divisions.",
   manifest: "/manifest.json",
