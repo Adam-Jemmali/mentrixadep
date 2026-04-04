@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getDuelHistorySummary, listStudentDuels } from "@/app/actions/duel";
-import { getMyClan } from "@/app/actions/clan";
 import { getDivisionsCatalog } from "@/app/actions/quest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
@@ -26,10 +25,9 @@ export default async function StudentDuelsPage() {
   const user = await requireRole(["student", "admin"]);
   const myId = user.id;
 
-  const [rowsRaw, divisions, initialClan, history] = await Promise.all([
+  const [rowsRaw, divisions, history] = await Promise.all([
     listStudentDuels(),
     getDivisionsCatalog(),
-    getMyClan(),
     getDuelHistorySummary(),
   ]);
   const rows = sortDuels(rowsRaw);
@@ -87,8 +85,8 @@ export default async function StudentDuelsPage() {
               Skill duels
             </h1>
             <p className="text-sm text-slate-500 mt-1 max-w-xl">
-              Same timed questions, live scores, win streaks. Match by subject and level, or use
-              your clan. Enable duels in Settings to be challenged.
+              Same timed questions, live scores, win streaks. Match by subject and level.
+              Enable duels in Settings to be challenged.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
@@ -122,9 +120,7 @@ export default async function StudentDuelsPage() {
           <DuelHub
             divisions={divisions}
             preferredDivisionKey={preferredDuelDivision}
-            initialClan={initialClan}
             initialQueueDivision={initialQueueDivision}
-            myUserId={myId}
           />
         </div>
 
@@ -134,8 +130,7 @@ export default async function StudentDuelsPage() {
           </div>
           {rows.length === 0 ? (
             <p className="px-4 py-10 text-sm text-slate-400 text-center">
-              No duels yet. Find a match or challenge a clanmate above (your opponent must opt in
-              under Settings).
+              No duels yet. Find a match above (your opponent must opt in under Settings).
             </p>
           ) : (
             <ul className="divide-y divide-slate-100">
