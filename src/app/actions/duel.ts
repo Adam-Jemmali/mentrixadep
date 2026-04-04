@@ -15,7 +15,6 @@ import type { SkillDuelQuestion } from "@/lib/database.types";
 import { areUsersInSameClan } from "@/app/actions/clan";
 import { applyXpAward } from "@/app/actions/xp";
 import { XP } from "@/lib/xp-constants";
-import { getAccountLevelFromTotalXp } from "@/lib/levels";
 import { DUEL_QUESTION_COUNT } from "@/lib/duel-constants";
 import { applyDuelMetaRewards } from "@/lib/duel-reward";
 
@@ -35,18 +34,6 @@ function scoreAnswers(
     if (q && typeof a === "number" && a >= 0 && a === q.correctIndex) s += 1;
   }
   return s;
-}
-
-async function getQueueLevelForUser(
-  admin: ReturnType<typeof createAdminClient>,
-  userId: string
-): Promise<number> {
-  const { data } = await admin
-    .from("user_xp")
-    .select("total_xp")
-    .eq("user_id", userId)
-    .maybeSingle();
-  return getAccountLevelFromTotalXp(data?.total_xp ?? 0).level;
 }
 
 async function countDuelsThisMonth(
@@ -333,14 +320,10 @@ async function repairInvalidQueueMatch(
   divisionKey: string
 ): Promise<void> {
   await admin.from("skill_duels").delete().eq("id", duelId);
-  const [a, b] = await Promise.all([
-    getQueueLevelForUser(admin, joinerId),
-    getQueueLevelForUser(admin, opponentId),
-  ]);
   await admin.from("duel_queue").upsert(
     [
-      { user_id: joinerId, division_key: divisionKey, queue_level: a },
-      { user_id: opponentId, division_key: divisionKey, queue_level: b },
+      { user_id: joinerId, division_key: divisionKey },
+      { user_id: opponentId, division_key: divisionKey },
     ],
     { onConflict: "user_id" }
   );
@@ -417,14 +400,11 @@ export async function joinDuelQueue(
       };
     }
 
-    const level = await getQueueLevelForUser(admin, user.id);
-
     const { data: rpcData, error: rpcErr } = await admin.rpc(
       "duel_queue_join_and_match",
       {
         p_joiner: user.id,
         p_division_key: div.key,
-        p_level: level,
       }
     );
 
@@ -734,7 +714,6 @@ export async function createAiDuelFromQueue(
         {
           user_id: user.id,
           division_key: div.key,
-          queue_level: await getQueueLevelForUser(admin, user.id),
         },
         { onConflict: "user_id" }
       );

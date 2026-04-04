@@ -85,7 +85,7 @@ export default async function StudentDuelsPage() {
               Skill duels
             </h1>
             <p className="text-sm text-slate-500 mt-1 max-w-xl">
-              Same timed questions, live scores, win streaks. Match by subject and level.
+              Same timed questions, live scores, win streaks. Match by subject instantly.
               Enable duels in Settings to be challenged.
             </p>
           </div>

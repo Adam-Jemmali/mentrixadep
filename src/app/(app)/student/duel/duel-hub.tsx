@@ -154,7 +154,7 @@ export function DuelHub({
             <span className="text-slate-800">{activeDivisionLabel}</span>
             <span className="text-slate-500">
               {" "}
-              - we match by similar level (+/-1). If no one joins in about a
+              - we match instantly with anyone queued in this subject. If no one joins in about a
               minute, you will face a sparring AI with the same questions.
             </span>
           </div>
