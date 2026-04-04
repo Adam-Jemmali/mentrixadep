@@ -12,6 +12,7 @@ import {
   getRateLimitId,
 } from "@/lib/security";
 import type { SkillDuelQuestion } from "@/lib/database.types";
+import { areUsersInSameClan } from "@/app/actions/clan";
 import { applyXpAward } from "@/app/actions/xp";
 import { XP } from "@/lib/xp-constants";
 import { getAccountLevelFromTotalXp } from "@/lib/levels";
@@ -66,6 +67,105 @@ async function countDuelsThisMonth(
   const { count: b } = await admin
     .from("skill_duels")
     .select("id", { count: "exact", head: true })
+    .eq("opponent_student_id", userId)
+    .gte("created_at", iso);
+
+  return (a ?? 0) + (b ?? 0);
+}
+
+async function opponentEligibleForDuel(
+  admin: ReturnType<typeof createAdminClient>,
+  opponentId: string
+): Promise<boolean> {
+  const { data: opponentUser } = await admin
+    .from("users")
+    .select("id, role, approved")
+    .eq("id", opponentId)
+    .eq("role", "student")
+    .eq("approved", true)
+    .maybeSingle();
+
+  if (!opponentUser) return false;
+
+  const { data: opponentSettings } = await admin
+    .from("user_settings")
+    .select("duel_opt_in")
+    .eq("user_id", opponentId)
+    .maybeSingle();
+
+  if (!opponentSettings?.duel_opt_in) return false;
+  if ((await countDuelsThisMonth(admin, opponentId)) >= MAX_DUELS_PER_MONTH) {
+    return false;
+  }
+  return true;
+}
+
+async function insertPendingSkillDuel(
+  admin: ReturnType<typeof createAdminClient>,
+  challengerId: string,
+  opponentId: string,
+  divisionKey: string,
+  matchSource: MatchSource
+): Promise<{ ok: true; duelId: string } | { ok: false; message: string }> {
+  const { data: inserted, error: insErr } = await admin
+    .from("skill_duels")
+    .insert({
+      student_id: challengerId,
+      opponent_student_id: opponentId,
+      initiator_id: challengerId,
+      division_key: divisionKey,
+      status: "pending",
+      questions: [],
+      reward_amount_cents: 0,
+      match_source: matchSource,
+    })
+    .select("id")
+    .single();
+
+  if (insErr || !inserted) {
+    return { ok: false, message: insErr?.message ?? "Could not create duel." };
+  }
+  return { ok: true, duelId: inserted.id };
+}
+
+/**
+ * Challenger (current student) challenges another student by user id.
+ * Opponent must have duel_opt_in enabled in Settings.
+ */
+export async function createSkillDuel(
+  opponentStudentId: string,
+  divisionKey: string
+): Promise<{ success: true; duelId: string } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can start a duel." };
+    }
+
+    const oid = parseUUID(opponentStudentId);
+    if (!oid.ok) return { success: false, error: "Invalid opponent." };
+    if (oid.id === user.id) {
+      return { success: false, error: "You cannot duel yourself." };
+    }
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.duelCreate,
+      "create duel"
+    );
+
+    const admin = createAdminClient();
+
+    const { data: opponentUser } = await admin
+      .from("users")
+      .select("id, role, approved")
+      .eq("id", oid.id)
+      .eq("role", "student")
+      .eq("approved", true)
+      .maybeSingle();
+
+    if (!opponentUser) {
+      return { success: false, error: "Learner not found or not eligible." };
     }
 
     const { data: opponentSettings } = await admin
@@ -115,6 +215,105 @@ async function countDuelsThisMonth(
       userId: user.id,
       properties: { division_key: div.key, opponent_id: oid.id },
     });
+
+    revalidatePath("/student/duel");
+    return { success: true, duelId: ins.duelId };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to create duel.",
+    };
+  }
+}
+
+/**
+ * Challenge a clanmate (both must be in the same clan).
+ */
+export async function createClanSkillDuel(
+  opponentStudentId: string,
+  divisionKey: string
+): Promise<{ success: true; duelId: string } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can start a duel." };
+    }
+
+    const oid = parseUUID(opponentStudentId);
+    if (!oid.ok) return { success: false, error: "Invalid opponent." };
+    if (oid.id === user.id) {
+      return { success: false, error: "You cannot duel yourself." };
+    }
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.duelCreate,
+      "create duel"
+    );
+
+    const admin = createAdminClient();
+
+    if (!(await areUsersInSameClan(user.id, oid.id))) {
+      return {
+        success: false,
+        error: "You can only challenge learners in your clan.",
+      };
+    }
+
+    const { data: opponentUser } = await admin
+      .from("users")
+      .select("id, role, approved")
+      .eq("id", oid.id)
+      .eq("role", "student")
+      .eq("approved", true)
+      .maybeSingle();
+
+    if (!opponentUser) {
+      return { success: false, error: "Learner not found or not eligible." };
+    }
+
+    const { data: opponentSettings } = await admin
+      .from("user_settings")
+      .select("duel_opt_in")
+      .eq("user_id", oid.id)
+      .maybeSingle();
+
+    if (!opponentSettings?.duel_opt_in) {
+      return {
+        success: false,
+        error:
+          "This learner has not enabled skill duel challenges in Settings.",
+      };
+    }
+
+    const { data: div } = await admin
+      .from("divisions")
+      .select("key, name")
+      .eq("key", divisionKey.trim())
+      .eq("active", true)
+      .maybeSingle();
+
+    if (!div) {
+      return { success: false, error: "Invalid division." };
+    }
+
+    if ((await countDuelsThisMonth(admin, user.id)) >= MAX_DUELS_PER_MONTH) {
+      return {
+        success: false,
+        error: `You can start at most ${MAX_DUELS_PER_MONTH} duels per month.`,
+      };
+    }
+
+    const ins = await insertPendingSkillDuel(
+      admin,
+      user.id,
+      oid.id,
+      div.key,
+      "clan"
+    );
+    if (!ins.ok) {
+      return { success: false, error: ins.message };
+    }
 
     revalidatePath("/student/duel");
     return { success: true, duelId: ins.duelId };
