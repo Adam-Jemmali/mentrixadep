@@ -155,7 +155,7 @@ export function DuelHub({
             <span className="text-slate-500">
               {" "}
               - we match by similar level (+/-1). If no one joins in about a
-              minute, you'll face a sparring AI with the same questions.
+              minute, you will face a sparring AI with the same questions.
             </span>
           </div>
         ) : (
