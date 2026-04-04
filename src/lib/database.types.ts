@@ -253,7 +253,7 @@ export interface SkillDuel {
   /** Who created the pending challenge (opponent accepts). */
   initiator_id: string | null;
   division_key: string;
-  status: "pending" | "active" | "completed" | "declined";
+  status: "pending" | "active" | "completed" | "declined" | "cancelled";
   questions: SkillDuelQuestion[];
   student_answers: number[] | null;
   opponent_answers: number[] | null;
@@ -268,6 +268,8 @@ export interface SkillDuel {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  challenger_hidden_at: string | null;
+  opponent_hidden_at: string | null;
 }
 
 export interface Clan {

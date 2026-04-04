@@ -576,6 +576,15 @@ export async function activateSkillDuelSession(
       return { success: false, error: "Duel not found." };
     }
     if (duel.status !== "pending") {
+      if (duel.status === "active" || duel.status === "completed") {
+        return { success: true };
+      }
+      if (duel.status === "cancelled") {
+        return { success: false, error: "This duel was cancelled." };
+      }
+      if (duel.status === "declined") {
+        return { success: false, error: "This duel was declined." };
+      }
       return { success: true };
     }
 
@@ -819,6 +828,129 @@ export async function declineSkillDuel(
     return {
       success: false,
       error: e instanceof Error ? e.message : "Failed to decline.",
+    };
+  }
+}
+
+/**
+ * Challenger withdraws a pending challenge. Row stays visible to the invitee as cancelled
+ * (they are not left with a disappearing request).
+ */
+export async function withdrawPendingSkillDuel(
+  duelId: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can cancel a challenge." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    const admin = createAdminClient();
+    const { data: duel, error: fetchErr } = await admin
+      .from("skill_duels")
+      .select("id, student_id, status")
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (fetchErr || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+    if (duel.status !== "pending") {
+      return { success: false, error: "Only pending challenges can be withdrawn." };
+    }
+
+    if (duel.student_id !== user.id) {
+      return { success: false, error: "Only the challenger can withdraw this challenge." };
+    }
+
+    const { error } = await admin
+      .from("skill_duels")
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id.id)
+      .eq("status", "pending");
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/student/duel");
+    revalidatePath(`/student/duel/${id.id}`);
+    revalidatePath("/student/duel/history");
+    return { success: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to cancel challenge.",
+    };
+  }
+}
+
+/** Remove a finished duel from this learner’s list only; the other participant still sees it. */
+export async function hideSkillDuelFromList(
+  duelId: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    const admin = createAdminClient();
+    const { data: duel, error: fetchErr } = await admin
+      .from("skill_duels")
+      .select("id, student_id, opponent_student_id, status, is_ai_opponent")
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (fetchErr || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+
+    const isAi = (duel as { is_ai_opponent?: boolean }).is_ai_opponent === true;
+    const asChallenger = duel.student_id === user.id;
+    const asOpponent =
+      !isAi && duel.opponent_student_id != null && duel.opponent_student_id === user.id;
+
+    if (!asChallenger && !asOpponent) {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const terminal = new Set(["completed", "declined", "cancelled"]);
+    if (!terminal.has(duel.status ?? "")) {
+      return {
+        success: false,
+        error: "You can only remove finished duels from your list.",
+      };
+    }
+
+    const now = new Date().toISOString();
+    const patch = asChallenger
+      ? { challenger_hidden_at: now, updated_at: now }
+      : { opponent_hidden_at: now, updated_at: now };
+
+    const { error } = await admin.from("skill_duels").update(patch).eq("id", id.id);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/student/duel");
+    revalidatePath(`/student/duel/${id.id}`);
+    revalidatePath("/student/duel/history");
+    return { success: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to hide duel.",
     };
   }
 }
@@ -1280,13 +1412,39 @@ export async function listStudentDuels(): Promise<
   const { data } = await admin
     .from("skill_duels")
     .select(
-      "id, student_id, opponent_student_id, division_key, status, created_at, initiator_id, is_ai_opponent"
+      "id, student_id, opponent_student_id, division_key, status, created_at, initiator_id, is_ai_opponent, challenger_hidden_at, opponent_hidden_at"
     )
     .or(`student_id.eq.${user.id},opponent_student_id.eq.${user.id}`)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(80);
 
-  return (data ?? []) as {
+  type Row = {
+    id: string;
+    student_id: string;
+    opponent_student_id: string | null;
+    division_key: string;
+    status: string;
+    created_at: string;
+    initiator_id: string | null;
+    is_ai_opponent: boolean;
+    challenger_hidden_at: string | null;
+    opponent_hidden_at: string | null;
+  };
+
+  const raw = (data ?? []) as Row[];
+  const visible = raw.filter((r) => {
+    if (r.student_id === user.id && r.challenger_hidden_at) return false;
+    if (r.opponent_student_id === user.id && r.opponent_hidden_at) return false;
+    return true;
+  });
+
+  return visible.slice(0, 50).map(
+    ({
+      challenger_hidden_at: _c,
+      opponent_hidden_at: _o,
+      ...rest
+    }) => rest
+  ) as {
     id: string;
     student_id: string;
     opponent_student_id: string | null;

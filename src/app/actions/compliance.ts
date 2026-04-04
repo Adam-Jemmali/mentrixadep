@@ -42,9 +42,12 @@ async function deleteUserDataInternal(userId: string): Promise<void> {
     async () => admin.from("user_xp").delete().eq("user_id", uid),
     async () => admin.from("xp_award_ledger").delete().eq("user_id", uid),
     async () => admin.from("clan_members").delete().eq("user_id", uid),
-    async () => admin.from("duel_queue").delete().eq("student_id", uid),
-    async () => admin.from("skill_duels").delete().eq("challenger_id", uid),
-    async () => admin.from("skill_duels").delete().eq("invitee_id", uid),
+    async () => admin.from("duel_queue").delete().eq("user_id", uid),
+    async () =>
+      admin
+        .from("skill_duels")
+        .delete()
+        .or(`student_id.eq.${uid},opponent_student_id.eq.${uid}`),
     async () => admin.from("ai_rate_limits").delete().eq("user_id", uid),
   ];
   await Promise.allSettled(tasks.map((run) => run()));

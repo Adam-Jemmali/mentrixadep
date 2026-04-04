@@ -7,6 +7,8 @@ import {
   submitSkillDuelAnswers,
   submitSkillDuelQuestionAnswer,
   activateSkillDuelSession,
+  withdrawPendingSkillDuel,
+  hideSkillDuelFromList,
   type DuelPublicRow,
 } from "@/app/actions/duel";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,7 @@ function labelsForSide(duel: DuelPublicRow, side: Props["side"]) {
 export function DuelPlayClient({ duel, side }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [listActionLoading, setListActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(DUEL_SECONDS_PER_QUESTION);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -216,14 +219,40 @@ export function DuelPlayClient({ duel, side }: Props) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center"
+          className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center space-y-4"
         >
-          <p className="text-sm font-medium text-slate-800">
-            Waiting for your classmate
-          </p>
-          <p className="mt-2 text-xs text-slate-500">
-            They need to accept so both of you get the same timed questions.
-          </p>
+          <div>
+            <p className="text-sm font-medium text-slate-800">
+              Waiting for your classmate
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              They need to accept so both of you get the same timed questions.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={listActionLoading}
+            onClick={() => {
+              setListActionLoading(true);
+              setError(null);
+              void (async () => {
+                const r = await withdrawPendingSkillDuel(duel.id);
+                setListActionLoading(false);
+                if (!r.success) {
+                  setError(r.error);
+                  return;
+                }
+                router.refresh();
+              })();
+            }}
+          >
+            {listActionLoading ? "Cancelling…" : "Cancel challenge"}
+          </Button>
+          {error ? (
+            <p className="text-sm text-red-600">{error}</p>
+          ) : null}
         </motion.div>
       );
     }
@@ -232,8 +261,68 @@ export function DuelPlayClient({ duel, side }: Props) {
     );
   }
 
+  if (duel.status === "cancelled") {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-slate-600">
+          {youAreChallenger
+            ? "You cancelled this challenge before it started."
+            : "The challenger cancelled this request before it started."}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={listActionLoading}
+          onClick={() => {
+            setListActionLoading(true);
+            setError(null);
+            void (async () => {
+              const r = await hideSkillDuelFromList(duel.id);
+              setListActionLoading(false);
+              if (!r.success) {
+                setError(r.error);
+                return;
+              }
+              router.push("/student/duel");
+            })();
+          }}
+        >
+          {listActionLoading ? "Removing…" : "Remove from my list"}
+        </Button>
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      </div>
+    );
+  }
+
   if (duel.status === "declined") {
-    return <p className="text-sm text-slate-500">This duel was declined.</p>;
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-slate-500">This duel was declined.</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={listActionLoading}
+          onClick={() => {
+            setListActionLoading(true);
+            setError(null);
+            void (async () => {
+              const r = await hideSkillDuelFromList(duel.id);
+              setListActionLoading(false);
+              if (!r.success) {
+                setError(r.error);
+                return;
+              }
+              router.push("/student/duel");
+            })();
+          }}
+        >
+          {listActionLoading ? "Removing…" : "Remove from my list"}
+        </Button>
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      </div>
+    );
   }
 
   if (duel.status === "completed") {
@@ -314,6 +403,31 @@ export function DuelPlayClient({ duel, side }: Props) {
             );
           })}
         </ol>
+
+        <div className="flex flex-col items-center gap-2 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={listActionLoading}
+            onClick={() => {
+              setListActionLoading(true);
+              setError(null);
+              void (async () => {
+                const r = await hideSkillDuelFromList(duel.id);
+                setListActionLoading(false);
+                if (!r.success) {
+                  setError(r.error);
+                  return;
+                }
+                router.push("/student/duel");
+              })();
+            }}
+          >
+            {listActionLoading ? "Removing…" : "Remove from my list"}
+          </Button>
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        </div>
       </motion.div>
     );
   }

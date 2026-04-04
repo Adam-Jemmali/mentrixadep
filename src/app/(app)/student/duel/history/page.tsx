@@ -8,6 +8,7 @@ import { getDivisionsCatalog } from "@/app/actions/quest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getHeadToHeadSummary } from "@/lib/duel-reward";
 import { Button } from "@/components/ui/button";
+import { DuelRowActions } from "@/components/student/duel-row-actions";
 
 export const metadata = { title: "Duel history · Mentrixa" };
 
@@ -194,9 +195,18 @@ export default async function DuelHistoryPage() {
                           {divName(r.division_key)}
                         </p>
                       </div>
-                      <Button size="sm" variant="outline" asChild>
-                        <Link href={`/student/duel/${r.id}`}>Review</Link>
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <DuelRowActions
+                          duelId={r.id}
+                          status={r.status}
+                          myId={myId}
+                          studentId={r.student_id}
+                          opponentStudentId={r.opponent_student_id}
+                        />
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/student/duel/${r.id}`}>Review</Link>
+                        </Button>
+                      </div>
                     </li>
                   );
                 })}

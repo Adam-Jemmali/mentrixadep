@@ -6,6 +6,7 @@ import { getDivisionsCatalog } from "@/app/actions/quest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { DuelHub } from "./duel-hub";
+import { DuelRowActions } from "@/components/student/duel-row-actions";
 
 export const metadata = { title: "Skill duels · Mentrixa" };
 
@@ -152,8 +153,15 @@ export default async function StudentDuelsPage() {
                     <p className="text-sm font-medium text-slate-900">vs {label}</p>
                     <p className="text-xs text-slate-400 font-mono">{r.division_key}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
                     <span className="text-xs text-slate-500 capitalize">{r.status}</span>
+                    <DuelRowActions
+                      duelId={r.id}
+                      status={r.status}
+                      myId={myId}
+                      studentId={r.student_id}
+                      opponentStudentId={r.opponent_student_id}
+                    />
                     <Button size="sm" variant="outline" asChild>
                       <Link href={`/student/duel/${r.id}`}>Open</Link>
                     </Button>
