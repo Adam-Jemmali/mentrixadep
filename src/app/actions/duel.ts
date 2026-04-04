@@ -18,8 +18,6 @@ import { XP } from "@/lib/xp-constants";
 import { DUEL_QUESTION_COUNT } from "@/lib/duel-constants";
 import { applyDuelMetaRewards } from "@/lib/duel-reward";
 
-const MAX_DUELS_PER_MONTH = 5;
-
 type MatchSource = "direct" | "clan" | "queue";
 
 function scoreAnswers(
@@ -34,57 +32,6 @@ function scoreAnswers(
     if (q && typeof a === "number" && a >= 0 && a === q.correctIndex) s += 1;
   }
   return s;
-}
-
-async function countDuelsThisMonth(
-  admin: ReturnType<typeof createAdminClient>,
-  userId: string
-): Promise<number> {
-  const monthStart = new Date();
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
-  const iso = monthStart.toISOString();
-
-  const { count: a } = await admin
-    .from("skill_duels")
-    .select("id", { count: "exact", head: true })
-    .eq("student_id", userId)
-    .gte("created_at", iso);
-
-  const { count: b } = await admin
-    .from("skill_duels")
-    .select("id", { count: "exact", head: true })
-    .eq("opponent_student_id", userId)
-    .gte("created_at", iso);
-
-  return (a ?? 0) + (b ?? 0);
-}
-
-async function opponentEligibleForDuel(
-  admin: ReturnType<typeof createAdminClient>,
-  opponentId: string
-): Promise<boolean> {
-  const { data: opponentUser } = await admin
-    .from("users")
-    .select("id, role, approved")
-    .eq("id", opponentId)
-    .eq("role", "student")
-    .eq("approved", true)
-    .maybeSingle();
-
-  if (!opponentUser) return false;
-
-  const { data: opponentSettings } = await admin
-    .from("user_settings")
-    .select("duel_opt_in")
-    .eq("user_id", opponentId)
-    .maybeSingle();
-
-  if (!opponentSettings?.duel_opt_in) return false;
-  if ((await countDuelsThisMonth(admin, opponentId)) >= MAX_DUELS_PER_MONTH) {
-    return false;
-  }
-  return true;
 }
 
 async function insertPendingSkillDuel(
@@ -178,13 +125,6 @@ export async function createSkillDuel(
 
     if (!div) {
       return { success: false, error: "Invalid division." };
-    }
-
-    if ((await countDuelsThisMonth(admin, user.id)) >= MAX_DUELS_PER_MONTH) {
-      return {
-        success: false,
-        error: `You can start at most ${MAX_DUELS_PER_MONTH} duels per month.`,
-      };
     }
 
     const ins = await insertPendingSkillDuel(
@@ -284,13 +224,6 @@ export async function createClanSkillDuel(
       return { success: false, error: "Invalid division." };
     }
 
-    if ((await countDuelsThisMonth(admin, user.id)) >= MAX_DUELS_PER_MONTH) {
-      return {
-        success: false,
-        error: `You can start at most ${MAX_DUELS_PER_MONTH} duels per month.`,
-      };
-    }
-
     const ins = await insertPendingSkillDuel(
       admin,
       user.id,
@@ -310,23 +243,6 @@ export async function createClanSkillDuel(
       error: e instanceof Error ? e.message : "Failed to create duel.",
     };
   }
-}
-
-async function repairInvalidQueueMatch(
-  admin: ReturnType<typeof createAdminClient>,
-  duelId: string,
-  joinerId: string,
-  opponentId: string,
-  divisionKey: string
-): Promise<void> {
-  await admin.from("skill_duels").delete().eq("id", duelId);
-  await admin.from("duel_queue").upsert(
-    [
-      { user_id: joinerId, division_key: divisionKey },
-      { user_id: opponentId, division_key: divisionKey },
-    ],
-    { onConflict: "user_id" }
-  );
 }
 
 /** Normalize RPC row (array vs object; snake_case vs camelCase from PostgREST / clients). */
@@ -393,13 +309,6 @@ export async function joinDuelQueue(
       return { success: false, error: "Invalid division." };
     }
 
-    if ((await countDuelsThisMonth(admin, user.id)) >= MAX_DUELS_PER_MONTH) {
-      return {
-        success: false,
-        error: `You can start at most ${MAX_DUELS_PER_MONTH} duels per month.`,
-      };
-    }
-
     const { data: rpcData, error: rpcErr } = await admin.rpc(
       "duel_queue_join_and_match",
       {
@@ -416,25 +325,11 @@ export async function joinDuelQueue(
       return { success: false, error: msg || "Matchmaking failed." };
     }
 
-    const { matched, duelId, opponentId } = parseDuelQueueJoinRpc(rpcData);
+    const { matched, duelId } = parseDuelQueueJoinRpc(rpcData);
 
-    if (matched && duelId && opponentId) {
-      const ok = await opponentEligibleForDuel(admin, opponentId);
-      if (!ok) {
-        try {
-          await repairInvalidQueueMatch(
-            admin,
-            duelId,
-            user.id,
-            opponentId,
-            div.key
-          );
-        } catch {
-          /* still return a safe shape so the client never gets undefined */
-        }
-        revalidatePath("/student/duel");
-        return { success: true, state: "waiting" };
-      }
+    if (matched && duelId) {
+      // Queue matches should be immediately playable by both participants.
+      await activateSkillDuelSession(duelId);
 
       revalidatePath("/student/duel");
       return { success: true, state: "matched", duelId };
@@ -509,7 +404,7 @@ export async function pollDuelQueue(divisionKey: string): Promise<
       .from("skill_duels")
       .select("id")
       .eq("match_source", "queue")
-      .eq("status", "pending")
+      .in("status", ["pending", "active"])
       .eq("division_key", key)
       .gte("created_at", since)
       .or(`student_id.eq.${user.id},opponent_student_id.eq.${user.id}`)
@@ -518,6 +413,7 @@ export async function pollDuelQueue(divisionKey: string): Promise<
       .maybeSingle();
 
     if (duel?.id) {
+      await activateSkillDuelSession(duel.id);
       return { state: "matched", duelId: duel.id };
     }
 
@@ -681,13 +577,6 @@ export async function createAiDuelFromQueue(
 
     if (!div) {
       return { success: false, error: "Invalid division." };
-    }
-
-    if ((await countDuelsThisMonth(admin, user.id)) >= MAX_DUELS_PER_MONTH) {
-      return {
-        success: false,
-        error: `You can start at most ${MAX_DUELS_PER_MONTH} duels per month.`,
-      };
     }
 
     const { data: qrow } = await admin
