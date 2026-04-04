@@ -210,18 +210,11 @@ export function DivisionDetailClient({
           </ul>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">Upcoming duels</h2>
-          <ul className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
-            {initial.duels.length === 0 ? (
-              <li className="px-4 py-6 text-sm text-slate-500">
-                No pending or active duels in this division.{" "}
-                <Link href="/student/duel" className="text-mentrixa-600 hover:underline">
-                  Open duel hub
-                </Link>
-              </li>
-            ) : (
-              initial.duels.map((d) => (
+        {initial.duels.length > 0 ? (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold text-slate-900">Upcoming duels</h2>
+            <ul className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+              {initial.duels.map((d) => (
                 <li key={d.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                   <span className="text-sm text-slate-800">
                     <span className="font-medium">{d.studentName}</span>
@@ -232,10 +225,10 @@ export function DivisionDetailClient({
                     {d.status} · {formatWhen(d.createdAt)}
                   </span>
                 </li>
-              ))
-            )}
-          </ul>
-        </section>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-slate-900">Discussion</h2>

@@ -458,7 +458,7 @@ export async function loadDivisionDetailPage(divisionKey: string, userId: string
   const [weekly, allTime, activity, duels, messages, isMember, memberCountRes] = await Promise.all([
     getWeeklyDivisionLeaderboard(divisionKey, userId, 50),
     getDivisionLeaderboard(divisionKey, userId, 50),
-    getDivisionActivityFeed(divisionKey, 20),
+    getDivisionActivityFeed(divisionKey, 3),
     getUpcomingDuelsForDivision(divisionKey, 12),
     getDivisionMessages(divisionKey, 80),
     isUserDivisionMember(userId, divisionKey),

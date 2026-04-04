@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getDivisionHubCards } from "@/app/actions/divisions";
 import { DivisionHubClient } from "./division-hub-client";
@@ -25,12 +24,6 @@ export default async function DivisionsHubPage() {
               chat with peers. Set one division as your focus for navigation and duels.
             </p>
           </div>
-          <Link
-            href="/student/division/arena"
-            className="text-sm text-mentrixa-600 hover:underline shrink-0"
-          >
-            Classic arena view →
-          </Link>
         </div>
 
         <DivisionHubClient initialCards={cards} />
