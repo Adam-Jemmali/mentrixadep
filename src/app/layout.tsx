@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
+import "./globals.css";
 
 export const viewport: Viewport = {
   themeColor: "#1E3A5F",
