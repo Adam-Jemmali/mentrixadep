@@ -24,6 +24,7 @@ const Navigation = dynamic(
 );
 import { ErrorBoundary } from "@/components/error-boundary";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
+import { FeedbackWidget } from "@/components/feedback-widget";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -447,6 +448,7 @@ export function RootLayoutClient({
           <PushNotificationOptIn />
         </>
       ) : null}
+      {user ? <FeedbackWidget /> : null}
       <CookieConsentBanner />
       <main
         className={cn(

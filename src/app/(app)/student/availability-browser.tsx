@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { formatTime } from "@/lib/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
 import { Input } from "@/components/ui/input";
@@ -63,11 +64,15 @@ export function AvailabilityBrowser({
   tutorExpertise = {},
   syncCourseFilter,
 }: AvailabilityBrowserProps) {
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>(
     studentCourseNames.length > 0 ? (studentCourseNames[0] ?? "all") : "all",
   );
   const [selectedSlot, setSelectedSlot] = useState<Availability | null>(null);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistBusy, setWaitlistBusy] = useState(false);
+  const [waitlistMessage, setWaitlistMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (syncCourseFilter == null || syncCourseFilter === undefined) return;
@@ -126,6 +131,43 @@ export function AvailabilityBrowser({
       .filter((g) => g.slots.length > 0);
   }, [availability, query, courseFilter]);
 
+  const activeCourseName = courseFilter === "all" ? "" : courseFilter;
+
+  async function submitWaitlistRequest() {
+    const email = waitlistEmail.trim().toLowerCase();
+    if (!email) {
+      setWaitlistMessage("Enter your email so we can notify you.");
+      return;
+    }
+
+    setWaitlistBusy(true);
+    setWaitlistMessage(null);
+    try {
+      const response = await fetch("/api/waitlist/guides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          courseName: activeCourseName || undefined,
+          pagePath: pathname,
+        }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setWaitlistMessage(body.error ?? "Could not save your request right now.");
+        return;
+      }
+
+      setWaitlistMessage("You are on the notify list. We will email you when a guide joins.");
+      setWaitlistEmail("");
+    } catch {
+      setWaitlistMessage("Could not save your request right now.");
+    } finally {
+      setWaitlistBusy(false);
+    }
+  }
+
   return (
     <aside>
       <h2 className="mb-1 text-sm font-medium text-slate-900">Guides</h2>
@@ -154,7 +196,32 @@ export function AvailabilityBrowser({
 
       <div className="divide-y divide-slate-200 border-y border-slate-200 bg-white rounded-lg">
         {guides.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-600">No guides available.</div>
+          <div className="px-4 py-6 text-center">
+            <p className="text-sm font-medium text-slate-800">
+              No guides {activeCourseName ? `in ${activeCourseName}` : "available"} yet.
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              Join the waitlist and we will notify you as soon as a guide is available.
+            </p>
+            <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+              <Input
+                type="email"
+                value={waitlistEmail}
+                onChange={(e) => setWaitlistEmail(e.target.value)}
+                placeholder="you@school.edu"
+                className="h-8 w-full max-w-xs text-xs bg-white border-slate-200"
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={waitlistBusy || !waitlistEmail.trim()}
+                onClick={() => void submitWaitlistRequest()}
+              >
+                {waitlistBusy ? "Saving..." : "Notify me"}
+              </Button>
+            </div>
+            {waitlistMessage ? <p className="mt-2 text-xs text-slate-600">{waitlistMessage}</p> : null}
+          </div>
         ) : (
           guides.map((guide, idx) => {
             const tutorId = guide.slots[0]?.tutor_id ?? "";

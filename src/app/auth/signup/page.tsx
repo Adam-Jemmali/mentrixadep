@@ -13,6 +13,7 @@ import { gsap } from "gsap";
 import { universityEmailHint } from "@/lib/oauth-auth";
 import { useTrack } from "@/lib/use-track";
 import { signUpClientSchema } from "@/lib/schemas";
+import { toUserFacingAuthError } from "@/lib/user-facing-error";
 
 type UserRole = "student" | "tutor";
 
@@ -138,7 +139,7 @@ export default function SignUpPage() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        setError(toUserFacingAuthError(signUpError));
         return;
       }
 
@@ -149,7 +150,7 @@ export default function SignUpPage() {
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setError(toUserFacingAuthError(err));
     } finally {
       setLoading(false);
     }

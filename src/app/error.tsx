@@ -22,7 +22,8 @@ export default function Error({
           Something went wrong
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          {error.message || "An unexpected error occurred"}
+          We hit an unexpected issue. Please try again. If this keeps happening, contact support.
+          {error.digest ? <span className="block mt-2 text-xs">Reference: {error.digest}</span> : null}
         </p>
         <div className="flex gap-3 justify-center">
           <button

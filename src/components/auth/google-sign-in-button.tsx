@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getPostOAuthRedirectPath } from "@/app/actions/auth";
 import { setOAuthCookiesClient } from "@/lib/oauth-auth";
+import { toUserFacingAuthError } from "@/lib/user-facing-error";
 
 const buttonClassName =
   "w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none";
@@ -106,7 +107,7 @@ export function GoogleSignInButton({
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) {
-      setError(oauthError.message);
+      setError(toUserFacingAuthError(oauthError));
       setBusy(false);
     }
   }
@@ -140,7 +141,7 @@ export function GoogleSignInButton({
           token,
         });
         if (signError) {
-          setError(signError.message);
+          setError(toUserFacingAuthError(signError));
           return;
         }
         await supabase.auth.getSession();
@@ -154,7 +155,7 @@ export function GoogleSignInButton({
         router.refresh();
       } catch (err) {
         console.error("[GoogleSignInButton] sign-in failed:", err);
-        setError(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
+        setError(toUserFacingAuthError(err));
       } finally {
         setBusy(false);
       }

@@ -384,6 +384,26 @@ export interface PushSubscriptionRow {
   updated_at: string;
 }
 
+export interface FeedbackSubmissionRow {
+  id: string;
+  user_id: string;
+  user_role: UserRole | null;
+  message: string;
+  page_path: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
+export interface GuideWaitlistRequestRow {
+  id: string;
+  user_id: string;
+  email: string;
+  course_name: string | null;
+  page_path: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export interface ReferralReward {
   id: string;
   referrer_id: string;
@@ -661,6 +681,22 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<PushSubscriptionRow>;
+      };
+      feedback_submissions: {
+        Row: FeedbackSubmissionRow;
+        Insert: Omit<FeedbackSubmissionRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<FeedbackSubmissionRow>;
+      };
+      guide_waitlist_requests: {
+        Row: GuideWaitlistRequestRow;
+        Insert: Omit<GuideWaitlistRequestRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<GuideWaitlistRequestRow>;
       };
     };
     Views: Record<string, never>;

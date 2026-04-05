@@ -537,7 +537,7 @@ export const securityHeaders = {
   "Content-Security-Policy": [
     "default-src 'self'",
     // Google Identity Services: https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://js.stripe.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://js.stripe.com https://www.clarity.ms",
     // Dev tooling / some libs create workers from blob: URLs; without worker-src, script-src blocks them
     "worker-src 'self' blob:",
     // Google Identity Services loads https://accounts.google.com/gsi/style (see google-sign-in-button)
@@ -545,7 +545,7 @@ export const securityHeaders = {
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     "frame-src 'self' https://accounts.google.com",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://api.stripe.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://api.stripe.com https://www.clarity.ms https://c.clarity.ms",
     "media-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
