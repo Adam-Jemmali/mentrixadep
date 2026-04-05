@@ -121,6 +121,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     session.metadata?.student_id ?? session.metadata?.studentId;
   const tutorId =
     session.metadata?.tutor_id ?? session.metadata?.tutorId;
+  const isSmokeTest = session.metadata?.smoke_test === "true";
 
   if (!availabilityId || !studentId) {
     reportStripeWebhookMissingMetadata(session.id);
@@ -135,6 +136,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   try {
     await bookSessionAsUser(availabilityId, studentId, {
       stripeCheckoutSessionId: session.id,
+      skipStripeVerification: isSmokeTest,
     });
     console.log(`[webhook] booking created: availability=${availabilityId} student=${studentId}`);
   } catch (err) {

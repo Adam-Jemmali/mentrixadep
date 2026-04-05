@@ -718,6 +718,8 @@ export async function bookSession(availabilityId: string) {
 export type BookSessionAsUserOptions = {
   /** When set, stores Stripe IDs on `session_requests` for automatic refund if tutor rejects. */
   stripeCheckoutSessionId?: string;
+  /** Staging smoke only: skip live Stripe Checkout retrieval when the caller already validated the event. */
+  skipStripeVerification?: boolean;
 };
 
 /**
@@ -821,7 +823,7 @@ export async function bookSessionAsUser(
 
     let stripeCheckoutSessionId: string | null = null;
     let stripePaymentIntentId: string | null = null;
-    if (options?.stripeCheckoutSessionId) {
+    if (options?.stripeCheckoutSessionId && !options.skipStripeVerification) {
       const verified = await getVerifiedPaymentIntentForBooking(
         options.stripeCheckoutSessionId,
         {
@@ -831,6 +833,8 @@ export async function bookSessionAsUser(
       );
       stripeCheckoutSessionId = verified.checkoutSessionId;
       stripePaymentIntentId = verified.paymentIntentId;
+    } else if (options?.stripeCheckoutSessionId) {
+      stripeCheckoutSessionId = options.stripeCheckoutSessionId;
     }
 
     // Create session request

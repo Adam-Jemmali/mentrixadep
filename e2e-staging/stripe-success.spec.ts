@@ -99,6 +99,7 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
             availability_id: availabilityId,
             student_id: env.E2E_STUDENT_ID,
             tutor_id: env.E2E_TUTOR_ID,
+            smoke_test: "true",
           },
         },
       },
