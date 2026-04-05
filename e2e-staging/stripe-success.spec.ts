@@ -59,18 +59,21 @@ type BookingArtifacts = {
   } | null;
   session: {
     id: string;
-    availability_id: string | null;
     student_id: string;
     tutor_id: string;
+    start_time: string;
+    end_time: string;
+    status: string | null;
   } | null;
 };
 
 async function findBookingArtifacts(
   supabase: any,
   checkoutSessionId: string,
-  availabilityId: string,
   studentId: string,
   tutorId: string,
+  startIso: string,
+  endIso: string,
 ): Promise<BookingArtifacts> {
   const [{ data: sessionRequest }, { data: session }] = await Promise.all([
     supabase
@@ -80,10 +83,11 @@ async function findBookingArtifacts(
       .maybeSingle(),
     supabase
       .from("sessions")
-      .select("id, availability_id, student_id, tutor_id")
-      .eq("availability_id", availabilityId)
+      .select("id, student_id, tutor_id, start_time, end_time, status")
       .eq("student_id", studentId)
       .eq("tutor_id", tutorId)
+      .eq("start_time", startIso)
+      .eq("end_time", endIso)
       .maybeSingle(),
   ]);
 
@@ -194,9 +198,10 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
       const value = await findBookingArtifacts(
         supabase,
         checkoutSessionId,
-        availabilityId,
         env.E2E_STUDENT_ID,
         env.E2E_TUTOR_ID,
+        startTime.toISOString(),
+        endTime.toISOString(),
       );
       if (value.sessionRequest || value.session) {
         return value;
@@ -205,10 +210,10 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
     }, 60, 1000);
 
     if (!artifacts) {
-      const [availabilityDebug, webhookLogDebug] = await Promise.all([
+      const [availabilityDebug, webhookLogDebug, recentSessionsDebug] = await Promise.all([
         supabase
           .from("availability")
-          .select("id, booking_status, stripe_checkout_session_id, locked_by, locked_until")
+          .select("id, booking_status, stripe_checkout_session_id")
           .eq("id", availabilityId)
           .maybeSingle(),
         supabase
@@ -216,13 +221,22 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
           .select("event_id, event_type, created_at")
           .eq("event_id", stripeEvent.id)
           .maybeSingle(),
+        supabase
+          .from("sessions")
+          .select("id, student_id, tutor_id, start_time, end_time, status, created_at")
+          .eq("student_id", env.E2E_STUDENT_ID)
+          .eq("tutor_id", env.E2E_TUTOR_ID)
+          .gte("created_at", new Date(Date.now() - 10 * 60 * 1000).toISOString())
+          .order("created_at", { ascending: false })
+          .limit(3),
       ]);
 
       throw new Error(
         `No booking artifacts materialized for checkout ${checkoutSessionId}. ` +
           `webhookResponse=${JSON.stringify(webhookBody)} ` +
           `availability=${JSON.stringify(availabilityDebug.data ?? null)} ` +
-          `webhookLog=${JSON.stringify(webhookLogDebug.data ?? null)}`,
+          `webhookLog=${JSON.stringify(webhookLogDebug.data ?? null)} ` +
+          `recentSessions=${JSON.stringify(recentSessionsDebug.data ?? null)}`,
       );
     }
 
@@ -234,9 +248,10 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
     }
 
     if (artifacts.session) {
-      expect(artifacts.session.availability_id).toBe(availabilityId);
       expect(artifacts.session.student_id).toBe(env.E2E_STUDENT_ID);
       expect(artifacts.session.tutor_id).toBe(env.E2E_TUTOR_ID);
+      expect(artifacts.session.start_time).toBe(startTime.toISOString());
+      expect(artifacts.session.end_time).toBe(endTime.toISOString());
     }
 
     const { data: availabilityAfter } = await supabase
