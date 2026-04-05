@@ -12,6 +12,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Calendar, Swords, User, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import type { RealtimeSubscribeStatus } from "@supabase/supabase-js";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
 import { trackClientEvent } from "@/lib/use-track";
@@ -175,7 +176,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
           }
         },
       )
-      .subscribe((status) => {
+      .subscribe((status: RealtimeSubscribeStatus) => {
         if (status === "SUBSCRIBED") {
           trackClientEvent("realtime_reconnect", {
             channel: `user_achievements:${uid}`,

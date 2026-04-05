@@ -13,6 +13,7 @@ import {
 } from "@/app/actions/duel";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import type { RealtimeSubscribeStatus } from "@supabase/supabase-js";
 import { trackClientEvent } from "@/lib/use-track";
 import {
   DUEL_SECONDS_PER_QUESTION,
@@ -114,7 +115,7 @@ export function DuelPlayClient({ duel, side }: Props) {
           router.refresh();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: RealtimeSubscribeStatus) => {
         if (status === "SUBSCRIBED") {
           trackClientEvent("realtime_reconnect", {
             channel: `skill-duel-${duel.id}`,

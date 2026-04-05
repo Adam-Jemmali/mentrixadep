@@ -7,6 +7,7 @@ import { trackClientEvent } from "@/lib/use-track";
 import { postClanMessage, type ClanMessageRow } from "@/app/actions/clan-dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { RealtimeSubscribeStatus } from "@supabase/supabase-js";
 
 type Props = {
   clanId: string;
@@ -62,7 +63,7 @@ export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
           });
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: RealtimeSubscribeStatus) => {
         if (status === "SUBSCRIBED") {
           trackClientEvent("realtime_reconnect", {
             channel: `clan-chat-${clanId}`,
