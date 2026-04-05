@@ -621,16 +621,33 @@ export function VideoCall({
         console.log("Requesting camera and microphone access...");
         let stream: MediaStream;
         const lbs = lobbySettings;
-        if (lbs?.audioDeviceId || lbs?.videoDeviceId) {
+        if (lbs) {
+          if (lbs.audioEnabled === false || lbs.videoEnabled === false) {
+            throw new Error("Enable camera and microphone in the lobby before joining.");
+          }
+
           const constraints: MediaStreamConstraints = {
-            audio: lbs.audioEnabled !== false
+            audio: lbs.audioEnabled
               ? { deviceId: lbs.audioDeviceId ? { exact: lbs.audioDeviceId } : undefined, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
               : false,
-            video: lbs.videoEnabled !== false
+            video: lbs.videoEnabled
               ? { deviceId: lbs.videoDeviceId ? { exact: lbs.videoDeviceId } : undefined, width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
               : false,
           };
-          stream = await navigator.mediaDevices.getUserMedia(constraints).catch(() => getUserMedia(true, true));
+
+          try {
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+          } catch {
+            // Device IDs can go stale after unplugging; retry without explicit IDs but with same on/off policy.
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: lbs.audioEnabled
+                ? { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                : false,
+              video: lbs.videoEnabled
+                ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
+                : false,
+            });
+          }
         } else {
           stream = await getUserMedia(true, true);
         }
@@ -2539,16 +2556,20 @@ export function VideoCall({
           </div>
         </div>
 
-        {/* Side panel — Chat */}
-        {activePanel === "chat" && (
-          <div className="w-72 flex-none border-l border-white/8 overflow-hidden">
-            <InSessionChat
-              channel={channelRef.current}
-              userId={userId}
-              userLabel={userRole === "student" ? learnerLabel : guideLabel}
-            />
-          </div>
-        )}
+        {/* Side panel — Chat (kept mounted so realtime messages continue while toggled) */}
+        <div
+          className={
+            activePanel === "chat"
+              ? "w-72 flex-none border-l border-white/8 overflow-hidden"
+              : "hidden"
+          }
+        >
+          <InSessionChat
+            channel={channelRef.current}
+            userId={userId}
+            userLabel={userRole === "student" ? learnerLabel : guideLabel}
+          />
+        </div>
 
         {/* Side panel — Whiteboard */}
         {activePanel === "whiteboard" && (

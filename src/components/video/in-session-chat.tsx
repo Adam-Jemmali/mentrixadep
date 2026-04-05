@@ -60,7 +60,7 @@ export function InSessionChat({ channel, userId, userLabel }: InSessionChatProps
   // Subscribe to incoming messages
   useEffect(() => {
     if (!channel) return;
-    const sub = channel.on(
+    channel.on(
       "broadcast",
       { event: "chat" },
       ({ payload }: { payload: ChatPayload }) => {
@@ -76,9 +76,7 @@ export function InSessionChat({ channel, userId, userLabel }: InSessionChatProps
         setMessages((prev) => [...prev, msg]);
       }
     );
-    return () => {
-      void sub.unsubscribe();
-    };
+    // Do not unsubscribe the shared channel here. Video signaling uses the same channel.
   }, [channel, userId]);
 
   // Auto-scroll on new messages

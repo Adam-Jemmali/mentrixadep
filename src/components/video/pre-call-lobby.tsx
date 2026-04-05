@@ -207,6 +207,7 @@ export function PreCallLobby({
   const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>("checking");
   const [joinAllowed, setJoinAllowed] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
+  const [isJoining, setIsJoining] = useState(false);
 
   // Check join gate every 10 seconds
   useEffect(() => {
@@ -316,16 +317,6 @@ export function PreCallLobby({
     setVideoEnabled((v) => !v);
   }, []);
 
-  const handleJoin = useCallback(() => {
-    // Hand off stream ownership to the VideoCall component
-    onJoin({
-      audioEnabled,
-      videoEnabled,
-      audioDeviceId: audioDeviceId || undefined,
-      videoDeviceId: videoDeviceId || undefined,
-    });
-  }, [onJoin, audioEnabled, videoEnabled, audioDeviceId, videoDeviceId]);
-
   const partnerKind = userRole === "student" ? "Guide" : "Mentrixer";
   const cameraReady = streamReady && videoEnabled;
   const microphoneReady = streamReady && audioEnabled;
@@ -350,6 +341,26 @@ export function PreCallLobby({
           ? "Connection quality is too weak to join"
           : null;
 
+  const handleJoin = useCallback(() => {
+    if (isJoining) return;
+    if (!canJoinNow) return;
+    setIsJoining(true);
+
+    // Hand off stream ownership to the VideoCall component.
+    onJoin({
+      audioEnabled,
+      videoEnabled,
+      audioDeviceId: audioDeviceId || undefined,
+      videoDeviceId: videoDeviceId || undefined,
+    });
+  }, [onJoin, audioEnabled, videoEnabled, audioDeviceId, videoDeviceId, canJoinNow, isJoining]);
+
+  const handleBack = useCallback(() => {
+    stopMediaStream(streamRef.current);
+    streamRef.current = null;
+    onBack();
+  }, [onBack]);
+
   return (
     <div className="min-h-screen bg-[#0a0b0e] flex items-start justify-center px-4 py-6 overflow-y-auto">
       <div className="w-full max-w-4xl">
@@ -358,7 +369,7 @@ export function PreCallLobby({
         <div className="mb-6 text-center">
           <div className="mb-3 flex justify-start">
             <button
-              onClick={onBack}
+              onClick={handleBack}
               className="rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 hover:text-white transition-colors"
             >
               Back to dashboard
@@ -519,14 +530,14 @@ export function PreCallLobby({
               {joinHint ? <p className="text-center text-xs text-white/30 mb-2">{joinHint}</p> : null}
               <button
                 onClick={handleJoin}
-                disabled={!canJoinNow}
+                disabled={!canJoinNow || isJoining}
                 className={`w-full rounded-lg py-3 text-sm font-medium transition-all duration-200 ${
                   canJoinNow
                     ? "bg-white text-slate-900 hover:bg-white/90 active:scale-[0.98]"
                     : "bg-white/10 text-white/30 cursor-not-allowed"
                 }`}
               >
-                Join Session
+                {isJoining ? "Joining…" : "Join Session"}
               </button>
               {!permissionError && (
                 <p className="text-center text-[10px] text-white/20 mt-2">
