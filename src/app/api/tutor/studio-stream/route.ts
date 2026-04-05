@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { validateUUID } from "@/lib/security";
+import {
+  enforceSlidingRateLimit,
+  RATE_LIMITS,
+  getRateLimitId,
+  validateUUID,
+} from "@/lib/security";
 import { streamStudioSessionPackageText } from "@/lib/ai";
 import { parseStudioPackageFromModelText } from "@/lib/studio-package";
 import {
@@ -16,6 +21,12 @@ export async function POST(request: Request) {
   if (!user || (user.role !== "tutor" && user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  await enforceSlidingRateLimit(
+    getRateLimitId(user.id),
+    RATE_LIMITS.questAi,
+    "tutor.studio-stream"
+  );
 
   let body: {
     sessionId?: string;

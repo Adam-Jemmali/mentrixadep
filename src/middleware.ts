@@ -294,14 +294,14 @@ async function runSupabaseAuthGuard(
       .eq("id", user.id)
       .maybeSingle();
 
-    const role =
-      userData?.role ??
-      (user.user_metadata?.role as string | undefined);
-    const approved =
-      typeof userData?.approved === "boolean"
-        ? userData.approved
-        : user.user_metadata?.approved === true ||
-          user.user_metadata?.approved === "true";
+    const role = userData?.role;
+    const approved = userData?.approved === true;
+
+    if (!role) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/pending-approval";
+      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    }
 
     const url = request.nextUrl.clone();
     url.pathname = approved ? getRoleHomePath(role) : "/pending-approval";
@@ -316,14 +316,14 @@ async function runSupabaseAuthGuard(
       .eq("id", user.id)
       .maybeSingle();
 
-    const role =
-      userData?.role ??
-      (user.user_metadata?.role as string | undefined);
-    const approved =
-      typeof userData?.approved === "boolean"
-        ? userData.approved
-        : user.user_metadata?.approved === true ||
-          user.user_metadata?.approved === "true";
+    const role = userData?.role;
+    const approved = userData?.approved === true;
+
+    if (!role) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/pending-approval";
+      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    }
 
     if (!approved) {
       // Check if user is under active verification (has full access during window)

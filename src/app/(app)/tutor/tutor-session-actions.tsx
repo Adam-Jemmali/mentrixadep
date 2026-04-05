@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { completeSession, cancelSession } from "@/app/actions/tutor";
+import { completeSession } from "@/app/actions/tutor";
+import { tutorCancelSession } from "@/app/actions/cancellation";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 export function TutorSessionActions({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -24,10 +27,13 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
   }
 
   async function onCancel() {
-    if (!window.confirm("Cancel this session for the learner?")) return;
+    if (!window.confirm("Cancel this session for the learner? They will receive a full refund and 500 XP compensation.")) return;
     setLoading("cancel");
     try {
-      await cancelSession(sessionId, viewingAsUserId ?? undefined);
+      const result = await tutorCancelSession(sessionId, viewingAsUserId ?? undefined);
+      if (result.success) {
+        window.alert(`Session cancelled. Student refunded and awarded ${result.xpAwarded || 500} XP.`);
+      }
       router.refresh();
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Could not cancel session");
@@ -45,7 +51,14 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
         disabled={loading !== null}
         onClick={() => void onComplete()}
       >
-        {loading === "complete" ? "…" : "Mark complete"}
+        {loading === "complete" ? (
+          "…"
+        ) : (
+          <span className="inline-flex items-center gap-1.5">
+            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+            Mark complete
+          </span>
+        )}
       </Button>
       <Button
         type="button"
@@ -55,7 +68,14 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
         disabled={loading !== null}
         onClick={() => void onCancel()}
       >
-        {loading === "cancel" ? "…" : "Cancel"}
+        {loading === "cancel" ? (
+          "…"
+        ) : (
+          <span className="inline-flex items-center gap-1.5">
+            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+            Cancel
+          </span>
+        )}
       </Button>
     </div>
   );

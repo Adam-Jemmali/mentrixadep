@@ -50,8 +50,23 @@ export default function ResetPasswordPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      const role = user?.user_metadata?.role as string | undefined;
-      router.push(getRoleHomePath(role));
+      if (!user) {
+        setError("Your session expired. Please sign in again.");
+        return;
+      }
+
+      const { data: userRow } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!userRow?.role) {
+        setError("Could not determine your account role. Please sign in again.");
+        return;
+      }
+
+      router.push(getRoleHomePath(userRow.role));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

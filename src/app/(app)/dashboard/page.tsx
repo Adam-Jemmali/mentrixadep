@@ -94,7 +94,7 @@ export default async function DashboardPage() {
           <Card className="card-lift border-slate-200/80 shadow-sm hover:border-mentrixa-200/60 hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <Button asChild className="w-full" variant="outline">
-                <Link href="/settings">Settings</Link>
+                <Link href="/admin/settings">Settings</Link>
               </Button>
             </CardContent>
           </Card>

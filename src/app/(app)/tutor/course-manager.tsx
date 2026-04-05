@@ -6,6 +6,8 @@ import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 interface TutorCourseItem {
   id: string;
@@ -105,7 +107,14 @@ export function CourseManager({ courses }: CourseManagerProps) {
         />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <Button type="submit" size="sm" className="w-full" disabled={loading}>
-          {loading ? "Adding..." : "Add course"}
+          {loading ? (
+            "Adding..."
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              Add course
+            </span>
+          )}
         </Button>
       </form>
     </div>

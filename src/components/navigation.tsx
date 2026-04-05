@@ -139,6 +139,7 @@ function NavigationInner({ user }: NavigationProps) {
         : user
           ? "/student"
           : "/";
+  const showRoleLogo = user?.role === "student" || user?.role === "tutor";
 
   const isActive = useCallback((href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -196,7 +197,17 @@ function NavigationInner({ user }: NavigationProps) {
       className="fixed top-0 left-0 right-0 z-50 h-14 bg-slate-900/90 backdrop-blur-md border-b border-white/[0.06]"
     >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        <Link href={logoHref} className="flex items-center shrink-0">
+        <Link href={logoHref} className="flex items-center gap-2 shrink-0">
+          {showRoleLogo ? (
+            <Image
+              src="/mentrixalogo/logo.png"
+              alt="Mentrixa"
+              width={24}
+              height={24}
+              priority
+              className="h-6 w-6 object-contain"
+            />
+          ) : null}
           <MentrixaWordmark trixaClassName="text-white/95" />
         </Link>
 
@@ -234,8 +245,19 @@ function NavigationInner({ user }: NavigationProps) {
         <div className="flex items-center gap-3">
           {user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 outline-none rounded-full focus-visible:ring-2 focus-visible:ring-sky-400/50">
+              <DropdownMenuTrigger
+                className="flex items-center gap-2 rounded-full px-1.5 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+                aria-label="Open account menu"
+              >
                 <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
+                <span className="hidden sm:flex flex-col items-start leading-tight min-w-0">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                    Account
+                  </span>
+                  <span className="max-w-[11rem] truncate text-sm font-medium text-slate-100">
+                    {primaryLabel}
+                  </span>
+                </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
@@ -256,12 +278,6 @@ function NavigationInner({ user }: NavigationProps) {
                     <Link href={profileHref}>Profile</Link>
                   </DropdownMenuItem>
                 ) : null}
-                <DropdownMenuItem
-                  asChild
-                  className="text-slate-100 focus:bg-white/10 focus:text-white hover:bg-white/10 hover:text-white"
-                >
-                  <Link href="/settings">Settings</Link>
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-red-400 focus:text-red-300 focus:bg-red-950/40 cursor-pointer"
                   onSelect={async (e) => {
@@ -369,13 +385,6 @@ function NavigationInner({ user }: NavigationProps) {
                       Profile
                     </Link>
                   ) : null}
-                  <Link
-                    href="/settings"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-2.5 text-sm font-medium text-slate-200 hover:text-white"
-                  >
-                    Settings
-                  </Link>
                   <button
                     type="button"
                     className="py-2.5 text-left text-sm font-medium text-red-400 hover:text-red-300"

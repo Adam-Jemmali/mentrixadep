@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getTutorPublicProfile } from "@/app/actions/tutor";
 import { getCurrentUser } from "@/lib/auth";
@@ -29,11 +29,16 @@ export default async function TutorProfilePage({ params }: Props) {
   ]);
 
   if (!profile) notFound();
+  if (currentUser?.role === "student") {
+    redirect("/student#browse-guides");
+  }
 
   return (
     <TutorProfileClient
       profile={profile}
       isAuthenticated={!!currentUser}
+      isOwnProfile={currentUser?.id === tutorId}
+      viewerRole={currentUser?.role ?? null}
     />
   );
 }

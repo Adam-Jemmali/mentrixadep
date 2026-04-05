@@ -9,6 +9,7 @@ import { approveSessionRequest, rejectSessionRequest } from "@/app/actions/tutor
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatDate, formatTimeRange } from "@/lib/time-format";
 import { Button } from "@/components/ui/button";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 interface SessionRequest {
   id: string;
@@ -105,7 +106,7 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
       <div className="text-xs text-slate-400 text-right mb-2 space-y-0.5">
       
         <p className="text-slate-500">
-          Declining a paid request refunds the learner automatically.
+          Declining a paid request refunds the Mentrixer
         </p>
       </div>
 
@@ -207,14 +208,20 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
                           size="sm"
                           onClick={() => handleApprove(request.id)}
                         >
-                          Accept
+                          <span className="inline-flex items-center gap-1.5">
+                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                            Accept
+                          </span>
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleReject(request.id)}
                         >
-                          Decline
+                          <span className="inline-flex items-center gap-1.5">
+                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                            Decline
+                          </span>
                         </Button>
                       </div>
                     </td>

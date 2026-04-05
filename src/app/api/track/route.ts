@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { trackEvent, type AnalyticsEventName, type EventProperties } from "@/lib/analytics";
+import {
+  enforceSlidingRateLimit,
+  getClientIpFromRequest,
+  getRateLimitId,
+} from "@/lib/security";
 import { z } from "zod";
 
 const ALLOWED_CLIENT_EVENTS: AnalyticsEventName[] = [
@@ -13,6 +18,7 @@ const ALLOWED_CLIENT_EVENTS: AnalyticsEventName[] = [
   "checkout_abandoned",
   "daily_login",
   "referral_clicked",
+  "realtime_disconnect",
 ];
 
 const bodySchema = z.object({
@@ -25,6 +31,12 @@ const bodySchema = z.object({
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
+    await enforceSlidingRateLimit(
+      getRateLimitId(undefined, getClientIpFromRequest(req)),
+      { maxRequests: 60, windowMs: 60_000 },
+      "analytics.track"
+    );
+
     const json = await req.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {

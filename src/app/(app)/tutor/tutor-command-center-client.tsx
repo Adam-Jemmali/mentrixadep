@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import type { TutorCommandCenterPayload } from "@/app/actions/tutor";
 import { SessionRequestsList } from "./session-requests-list";
 import { TutorEarningsChart } from "./tutor-earnings-chart";
@@ -22,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/time-format";
 import { TutorPayoutDashboard } from "./payout-dashboard";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+
 
 function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -43,17 +46,46 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-lg font-medium tracking-tight text-slate-900">Command center</h1>
+          <h1 className="text-lg font-medium tracking-tight text-slate-900">Guide center</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Bookings, payouts, and your week at a glance.
+            Manage bookings, payouts, and your week.
           </p>
+          <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5">
+            {data.guideProfile.avatarUrl ? (
+              <Image
+                src={data.guideProfile.avatarUrl}
+                alt={data.guideProfile.displayName}
+                width={24}
+                height={24}
+                className="h-6 w-6 rounded-full object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[11px] font-semibold text-slate-700">
+                {data.guideProfile.displayName.slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <span className="text-xs font-medium text-slate-700">{data.guideProfile.displayName}</span>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-            <Link href={studioHref}>Studio output</Link>
+            <Link href="/settings" className="inline-flex items-center gap-1.5">
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              Settings
+            </Link>
           </Button>
-          <Button type="button" size="sm" className="h-8 text-xs" onClick={() => setAddOpen(true)}>
-            Add availability
+          <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
+            <Link href={studioHref} className="inline-flex items-center gap-1.5">
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              Studio output
+            </Link>
+          </Button>
+          <Button type="button" size="sm" className="h-8 text-xs  " onClick={() => setAddOpen(true)}>
+            <span className="inline-flex items-center gap-1.5">
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              Add availability
+            </span>
           </Button>
         </div>
       </header>
@@ -61,9 +93,9 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add availability</DialogTitle>
+            <DialogTitle className="text-white">Add availability</DialogTitle>
             <DialogDescription>
-              Learners only see slots that match courses on your profile.
+              Learners only see slots that match your listed courses.
             </DialogDescription>
           </DialogHeader>
           <CreateAvailabilityForm
@@ -92,7 +124,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
           <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
             {metrics.sessionsThisWeek}
           </div>
-          <p className="mt-2 text-[11px] text-slate-500">Upcoming, this calendar week (UTC).</p>
+      
         </div>
 
         <div className="rounded-md border border-slate-200 bg-white p-4">
@@ -102,7 +134,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
           <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
             {metrics.avgRating != null ? metrics.avgRating.toFixed(1) : "—"}
           </div>
-          <p className="mt-2 text-[11px] text-slate-500">All-time from learners.</p>
+      
         </div>
 
         <div className="rounded-md border border-slate-200 bg-white p-4">
@@ -112,9 +144,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
           <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
             {metrics.responseRatePercent != null ? `${metrics.responseRatePercent.toFixed(1)}%` : "—"}
           </div>
-          <p className="mt-2 text-[11px] leading-snug text-slate-500">
-            Session requests accepted or declined within 24 hours.
-          </p>
+        
         </div>
 
         <div
@@ -136,7 +166,6 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
           >
             {pending}
           </div>
-          <p className="mt-2 text-[11px] text-slate-500">Pending your response.</p>
         </div>
       </section>
 
@@ -147,8 +176,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
         >
           <p className="font-medium">Short-notice learner cancellation</p>
           <p className="mt-1 text-amber-900/90">
-            A learner cancelled within 24 hours of the scheduled start. Refunds follow Stripe and your
-            account settings—check the Stripe Dashboard for the final settlement.
+            A learner cancelled within 24 hours, so check Stripe for the final refund settlement.
           </p>
           <ul className="mt-2 list-inside list-disc text-xs text-amber-900/85">
             {lateCancellationAlerts.map((a) => (
@@ -182,10 +210,8 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
       <section className="mt-8 rounded-md border border-slate-200 bg-white p-4 sm:p-6">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-sm font-medium text-slate-900">This week</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Open slots (green), bookings (blue), past (gray). Click a future open slot to remove it.
-            </p>
+            <h2 className="text-sm font-medium text-slate-900">This + next week</h2>
+           
           </div>
           <Button
             type="button"
@@ -194,7 +220,10 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
             className="h-8 w-full text-xs sm:w-auto"
             onClick={() => setAddOpen(true)}
           >
-            Add availability
+            <span className="inline-flex items-center gap-1.5">
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              Add availability
+            </span>
           </Button>
         </div>
         <TutorWeekCalendar calendar={calendar} />

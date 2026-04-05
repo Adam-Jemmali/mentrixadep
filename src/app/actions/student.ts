@@ -445,14 +445,6 @@ export async function cancelSession(sessionId: string, onBehalfOfUserId?: string
 export async function getTutorAvailability(course?: string) {
   await requireRole(["student", "admin"]);
 
-  // Check cache first (1 minute TTL for availability data)
-  const cacheKey = `tutor-availability-14d:${course || "all"}`;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cached = (await import("@/lib/cache")).cache.get<any[]>(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
@@ -461,6 +453,7 @@ export async function getTutorAvailability(course?: string) {
     .from("availability")
     .select("*")
     .eq("active", true)
+    .or("booking_status.eq.available,booking_status.is.null")
     .gte("start_time", new Date().toISOString())
     .lte("start_time", windowEnd)
     .order("start_time", { ascending: true });
@@ -536,9 +529,6 @@ export async function getTutorAvailability(course?: string) {
     })
     .filter((avail) => avail.tutor !== undefined);
 
-  // Cache for 1 minute
-  (await import("@/lib/cache")).cache.set(cacheKey, result, 60 * 1000);
-
   return result;
 }
 
@@ -565,6 +555,7 @@ export async function getTutorAvailabilityKeysetPage(opts: {
     .from("availability")
     .select("*")
     .eq("active", true)
+    .or("booking_status.eq.available,booking_status.is.null")
     .gte("start_time", nowIso)
     .lte("start_time", windowEnd)
     .order("start_time", { ascending: true })
@@ -936,7 +927,7 @@ export async function bookSessionAsUser(
         .from("session_requests")
         .select("id", { count: "exact", head: true })
         .eq("student_id", studentId)
-        .eq("status", "booked");
+        .eq("status", "approved");
       if ((count ?? 0) <= 1) {
         void trackEvent("first_session_booked", { userId: studentId });
       }

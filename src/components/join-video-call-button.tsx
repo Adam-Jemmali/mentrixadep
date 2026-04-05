@@ -10,11 +10,11 @@ interface JoinVideoCallButtonProps {
   endTime: string;
 }
 
-/** Join opens 5 minutes before start; remains available through 24h after end (wrap-up). */
+/** Join is available immediately after booking; remains available through 24h after end (wrap-up). */
 export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideoCallButtonProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [phase, setPhase] = useState<"early" | "open" | "ended">("early");
+  const [phase, setPhase] = useState<"open" | "ended">("open");
   const router = useRouter();
 
   useEffect(() => {
@@ -22,15 +22,11 @@ export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideo
 
     const tick = () => {
       const now = Date.now();
-      const start = new Date(startTime).getTime();
       const sessionEnd = new Date(endTime).getTime();
-      const joinOpensAt = start - 5 * 60 * 1000;
       const windowEnd = sessionEnd + 24 * 60 * 60 * 1000;
 
       if (now > windowEnd) {
         setPhase("ended");
-      } else if (now < joinOpensAt) {
-        setPhase("early");
       } else {
         setPhase("open");
       }
@@ -41,9 +37,16 @@ export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideo
     return () => clearInterval(interval);
   }, [startTime, endTime]);
 
-  const handleJoin = async () => {
+  const handleJoin = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsChecking(true);
-    router.push(`/video/session/${sessionId}`);
+    try {
+      router.push(`/video/session/${sessionId}`);
+    } catch (error) {
+      console.error("Failed to join session:", error);
+      setIsChecking(false);
+    }
   };
 
   if (!isMounted) {
@@ -58,20 +61,6 @@ export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideo
     return (
       <Button size="sm" variant="outline" disabled className="min-w-[120px]">
         Session ended
-      </Button>
-    );
-  }
-
-  if (phase === "early") {
-    return (
-      <Button
-        size="sm"
-        variant="secondary"
-        disabled
-        className="min-w-[120px]"
-        title="Join opens 5 minutes before the scheduled start time."
-      >
-        Join session
       </Button>
     );
   }

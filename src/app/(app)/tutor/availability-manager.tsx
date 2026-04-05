@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { formatInTimeZone } from "date-fns-tz";
 import { deleteAvailability, setAvailabilityActive } from "@/app/actions/tutor";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatTimeRange } from "@/lib/time-format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -172,7 +174,10 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                                 className="h-8 text-xs text-slate-500 hover:text-red-600"
                                 onClick={() => setDeleteId(slot.id)}
                               >
-                                Delete
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                                  Delete
+                                </span>
                               </Button>
                             </div>
                           </li>
@@ -204,7 +209,10 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" size="sm" onClick={() => setDeleteId(null)}>
-              Cancel
+              <span className="inline-flex items-center gap-1.5">
+                <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                Cancel
+              </span>
             </Button>
             <Button
               type="button"
@@ -213,7 +221,10 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
               disabled={pendingDel > 0}
               onClick={() => void confirmDelete()}
             >
-              Delete slot
+              <span className="inline-flex items-center gap-1.5">
+                <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                Delete slot
+              </span>
             </Button>
           </DialogFooter>
         </DialogContent>

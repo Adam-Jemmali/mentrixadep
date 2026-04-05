@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { cancelSession } from "@/app/actions/student";
+import { studentCancelSession } from "@/app/actions/cancellation";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
+import { isStudentCancelRefundEligible } from "@/lib/refund-eligibility";
 
 interface CancelSessionButtonProps {
   sessionId: string;
@@ -13,6 +14,7 @@ interface CancelSessionButtonProps {
 export function CancelSessionButton({ sessionId, startTime }: CancelSessionButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
 
@@ -20,6 +22,7 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
   const now = new Date();
   const minutesUntilStart = (sessionStart.getTime() - now.getTime()) / (1000 * 60);
   const canCancel = minutesUntilStart > 24 * 60;
+  const willBeRefunded = isStudentCancelRefundEligible(startTime);
 
   async function handleCancel() {
     if (!canCancel) {
@@ -29,10 +32,15 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
 
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
-      await cancelSession(sessionId, viewingAsUserId ?? undefined);
-      router.refresh();
+      const result = await studentCancelSession(sessionId, viewingAsUserId ?? undefined);
+      if (result.success) {
+        const refundMsg = result.refunded ? ` You'll receive a refund of $${(result.refundCents || 0) / 100}.` : "";
+        setSuccessMessage(`Session cancelled.${refundMsg}`);
+        setTimeout(() => router.refresh(), 1500);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to cancel session");
       setLoading(false);
@@ -55,13 +63,23 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
       {error && (
         <p className="text-xs text-red-600 dark:text-red-400 font-medium max-w-[150px] text-right">{error}</p>
       )}
-      <button
-        onClick={handleCancel}
-        disabled={loading}
-        className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-red-400 disabled:to-red-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow transition-all"
-      >
-        {loading ? "Cancelling..." : "Cancel"}
-      </button>
+      {successMessage && (
+        <p className="text-xs text-green-600 dark:text-green-400 font-medium max-w-[150px] text-right">{successMessage}</p>
+      )}
+      <div className="flex flex-col items-end gap-1">
+        <button
+          onClick={handleCancel}
+          disabled={loading}
+          className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-red-400 disabled:to-red-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow transition-all"
+        >
+          {loading ? "Cancelling..." : "Cancel"}
+        </button>
+        {willBeRefunded && (
+          <span className="text-xs text-slate-500">
+            (100% refund eligible)
+          </span>
+        )}
+      </div>
     </div>
   );
 }

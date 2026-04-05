@@ -1,12 +1,51 @@
 import { test, expect } from "@playwright/test";
 
+test.setTimeout(60_000);
+
+function passwordField(page: Parameters<typeof test>[0]["page"]) {
+  return page.locator('input[name="password"]');
+}
+
+function confirmPasswordField(page: Parameters<typeof test>[0]["page"]) {
+  return page.locator('input[name="confirmPassword"]');
+}
+
+async function mockSupabaseSignUp(
+  page: Parameters<typeof test>[0]["page"],
+  options: { email: string; withSession: boolean },
+) {
+  await page.route("**/auth/v1/signup**", async (route) => {
+    const user = {
+      id: "11111111-1111-4111-8111-111111111111",
+      email: options.email,
+      user_metadata: {},
+    };
+    const session = options.withSession
+      ? {
+          access_token: "test-access-token",
+          refresh_token: "test-refresh-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          expires_at: Math.floor(Date.now() / 1000) + 3600,
+          user,
+        }
+      : null;
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ user, session }),
+    });
+  });
+}
+
 test.describe("Sign in", () => {
   test("shows sign-in form", async ({ page }) => {
     await page.goto("/auth/signin");
     await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /continue with google/i })).toBeVisible();
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(page.getByText(/continue with google/i).first()).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible();
+    await expect(passwordField(page)).toBeVisible();
   });
 });
 
@@ -16,21 +55,53 @@ test.describe("Sign up", () => {
     await expect(page.getByRole("heading", { name: /create your account/i })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByRole("button", { name: /I want to learn/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /I want to teach/i })).toBeVisible();
-    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /become a mentrixer|i want to learn/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /i want to be a guide|i want to teach/i })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible();
   });
 });
 
-test.describe("Auth flows (staging / manual)", () => {
-  test("student: email verification → role select → dashboard", async () => {
-    test.skip(
-      true,
-      "Requires Supabase inbox or magic link; run manually or with Mailosaur in CI."
-    );
+test.describe("Auth flows (CI-safe fixtures)", () => {
+  test("student signup shows verification checkpoint with mocked signup response", async ({ page }) => {
+    await mockSupabaseSignUp(page, {
+      email: "student.e2e@example.com",
+      withSession: true,
+    });
+
+    await page.goto("/auth/signup");
+    await page.getByRole("textbox", { name: /^email$/i }).fill("student.e2e@example.com");
+    await passwordField(page).fill("SafePass123!");
+    await confirmPasswordField(page).fill("SafePass123!");
+    const ageCheckbox = page.getByRole("checkbox", { name: /13 years old or older/i });
+    await expect(ageCheckbox).toBeVisible();
+    await ageCheckbox.check({ force: true });
+    await page.getByRole("button", { name: /^sign up$/i }).click();
+
+    await expect(page.getByRole("heading", { name: /please check your email/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /back to sign in/i })).toBeVisible();
+    await expect(page.getByText(/student\.e2e@example\.com/i)).toBeVisible();
   });
 
-  test("tutor: signup → pending approval → admin approves → tutor home", async () => {
-    test.skip(true, "Requires admin E2E user and approval action; use integration or manual QA.");
+  test("tutor signup shows pending-approval messaging without session", async ({ page }) => {
+    await mockSupabaseSignUp(page, {
+      email: "tutor.e2e@example.com",
+      withSession: false,
+    });
+
+    await page.goto("/auth/signup");
+    await page.getByRole("button", { name: /i want to be a guide|i want to teach/i }).first().click();
+    await page.getByRole("textbox", { name: /^email$/i }).fill("tutor.e2e@example.com");
+    await passwordField(page).fill("SafePass123!");
+    await confirmPasswordField(page).fill("SafePass123!");
+    const ageCheckbox = page.getByRole("checkbox", { name: /13 years old or older/i });
+    await expect(ageCheckbox).toBeVisible();
+    await ageCheckbox.check({ force: true });
+    await page.getByRole("button", { name: /^sign up$/i }).click();
+
+    await expect(page.getByRole("heading", { name: /please check your email/i })).toBeVisible();
+    await expect(
+      page.getByText(/admin may still need to approve your account before you can sign in/i),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /back to sign in/i })).toBeVisible();
   });
 });

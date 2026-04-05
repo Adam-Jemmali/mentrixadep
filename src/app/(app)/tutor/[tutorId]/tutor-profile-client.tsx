@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -50,6 +51,8 @@ interface Profile {
 interface TutorProfileClientProps {
   profile: Profile;
   isAuthenticated: boolean;
+  isOwnProfile?: boolean;
+  viewerRole?: "student" | "tutor" | "admin" | null;
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -75,6 +78,14 @@ function formatSlotDate(iso: string): string {
   });
 }
 
+function formatSlotDateRange(startIso: string, endIso: string): string {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const sameDay = start.toDateString() === end.toDateString();
+  if (sameDay) return formatSlotDate(startIso);
+  return `${formatSlotDate(startIso)} -> ${formatSlotDate(endIso)}`;
+}
+
 function formatPrice(cents: number | null): string {
   if (cents == null) return "$25.00";
   return `$${(cents / 100).toFixed(2)}`;
@@ -95,6 +106,8 @@ function relativeDate(iso: string): string {
 export function TutorProfileClient({
   profile,
   isAuthenticated,
+  isOwnProfile = false,
+  viewerRole = null,
 }: TutorProfileClientProps) {
   const nameRef = useRef<HTMLHeadingElement>(null);
   const statRefs = useRef<HTMLSpanElement[]>([]);
@@ -215,6 +228,11 @@ export function TutorProfileClient({
   // ── booking ────────────────────────────────────────────────────────────────
   async function handleBook() {
     if (!dialogSlot) return;
+    if (isOwnProfile || viewerRole === "tutor") {
+      setBookingError("Tutors cannot book their own sessions.");
+      setBookingLoading(false);
+      return;
+    }
     setBookingLoading(true);
     setBookingError(null);
     try {
@@ -321,12 +339,18 @@ export function TutorProfileClient({
       {/* ── BOOK A SESSION ────────────────────────────────────────────────── */}
       <section className="mt-10">
         <h2 className="text-[20px] font-bold text-slate-900 mb-1">Book a session</h2>
-        <p className="text-sm text-slate-400 mb-6">
-          Bookable times in the next 14 days.{" "}
-          {profile.autoApprove
-            ? "Instant confirmation — auto-approve is on."
-            : "Confirmation within a few hours."}
-        </p>
+        {isOwnProfile || viewerRole === "tutor" ? (
+          <p className="mb-6 text-sm text-slate-500">
+            This is your public booking page preview. Learners can book from here, but tutor accounts cannot book sessions.
+          </p>
+        ) : (
+          <p className="text-sm text-slate-400 mb-6">
+            Bookable times in the next 14 days. {" "}
+            {profile.autoApprove
+              ? "Instant confirmation — auto-approve is on."
+              : "Confirmation within a few hours."}
+          </p>
+        )}
 
         {/* Day selector */}
         <div className="flex gap-1 mb-5 flex-wrap">
@@ -385,8 +409,15 @@ export function TutorProfileClient({
                     className="avail-row border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
                   >
                     <td className="py-3 px-4 font-mono text-sm text-slate-700">
-                      <span className="block">{formatSlotTime(slot.start_time)}</span>
-                      <span className="block text-xs text-slate-400">{formatSlotDate(slot.start_time)}</span>
+                      <span className="block">
+                        {formatSlotTime(slot.start_time)} - {formatSlotTime(slot.end_time)}
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        {formatDurationLabel(getSessionDurationMinutes(slot.start_time, slot.end_time))}
+                      </span>
+                      <span className="block text-xs text-slate-400">
+                        {formatSlotDateRange(slot.start_time, slot.end_time)}
+                      </span>
                     </td>
                     <td className="py-3 px-4 font-mono text-xs text-slate-400">{slot.course}</td>
                     <td className="py-3 px-4 text-sm font-semibold text-slate-900">
@@ -400,7 +431,9 @@ export function TutorProfileClient({
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      {isAuthenticated ? (
+                      {isOwnProfile || viewerRole === "tutor" ? (
+                        <span className="text-xs text-slate-500">Preview only</span>
+                      ) : isAuthenticated ? (
                         <Button
                           size="sm"
                           onClick={() => {
@@ -493,6 +526,9 @@ export function TutorProfileClient({
             <DialogTitle className="text-xl font-bold tracking-tight text-black dark:text-black">
               Confirm your session
             </DialogTitle>
+            <DialogDescription className="text-sm text-slate-700">
+              Review session time and pricing before continuing to secure Stripe checkout.
+            </DialogDescription>
           </DialogHeader>
 
           {dialogSlot && (

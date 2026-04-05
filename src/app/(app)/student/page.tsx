@@ -227,8 +227,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 : "Your session is booked — see upcoming sessions below."}
             </p>
             <p className="mt-3 text-xs text-emerald-800/80">
-              <Link href="/settings" className="underline font-medium hover:text-emerald-950">
-                Account settings
+              <Link href={`/student/${user.id}`} className="underline font-medium hover:text-emerald-950">
+                Profile settings
               </Link>
             </p>
           </div>

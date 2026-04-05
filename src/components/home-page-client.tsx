@@ -649,7 +649,7 @@ export function HomePageClient() {
             You are why we ship
           </h2>
           <p className="mt-4 text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Questions, ideas, or a rant about your last session ? We read every message. Follow us below !
+            Questions, ideas, or a rant about your last session ? We read every message !
           </p>
           <div className="mt-8 flex justify-center">
             <ContactSocialLinks variant="dark" />
@@ -674,9 +674,7 @@ export function HomePageClient() {
                 <MentrixaLogoMark size="sm" className="opacity-90" />
                 <span className="text-[15px] font-bold text-white tracking-tight">Mentrixa</span>
               </Link>
-              <p className="text-[11px] text-indigo-200/40 mt-2 max-w-xs">
-                Ottawa · you show up as a Mentrixer or a Guide
-              </p>
+          
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-6 md:gap-10">
@@ -694,7 +692,7 @@ export function HomePageClient() {
                   Contact
                 </Link>
               </nav>
-              <ContactSocialLinks variant="footer" className="md:ml-auto" />
+      
             </div>
           </div>
 
@@ -712,10 +710,8 @@ export function HomePageClient() {
               >
                 {FEEDBACK_EMAIL}
               </a>
-              {" · "}
-              <Link href="/contact" className="hover:text-indigo-100">
-                full contact form →
-              </Link>
+            
+            
             </span>
           </div>
         </div>

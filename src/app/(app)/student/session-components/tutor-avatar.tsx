@@ -38,7 +38,7 @@ export function TutorAvatar({
         width={px}
         height={px}
         loading="lazy"
-        unoptimized={!avatarUrl.includes("/storage/v1/object/public/")}
+        unoptimized
         className={`${dim} shrink-0 rounded-full object-cover ring-1 ring-slate-200 bg-slate-100`}
         onError={() => setBroken(true)}
       />

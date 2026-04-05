@@ -337,7 +337,7 @@ export function PreCallLobby({
     });
   }, [onJoin, audioEnabled, videoEnabled, audioDeviceId, videoDeviceId]);
 
-  const partnerKind = userRole === "student" ? "Guide" : "Learner";
+  const partnerKind = userRole === "student" ? "Guide" : "Mentrixer";
 
   return (
     <div className="min-h-screen bg-[#0a0b0e] flex items-center justify-center px-4">
@@ -537,7 +537,7 @@ export function PreCallLobby({
             ))}
           </div>
           <p className="text-xs text-white/30">
-            Waiting for {partnerLabel} ({partnerKind.toLowerCase()}) to join
+            Waiting for {partnerLabel} ({partnerKind}) to join
           </p>
         </div>
       </div>

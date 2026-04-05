@@ -1,25 +1,15 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { applyXpAward } from "@/app/actions/xp";
-
-const bodySchema = z.object({
-  amount: z.number().int(),
-  awardKey: z.string().min(1).max(256),
-  divisionKey: z.string().nullable().optional(),
-});
 
 /**
- * Replays idempotent XP awards from the PWA offline queue (same keys as applyXpAward).
+ * Disabled security-sensitive endpoint.
+ *
+ * Client-controlled XP payloads can be abused to mint arbitrary XP by sending
+ * unique award keys. XP grants must be performed from trusted server actions
+ * where award keys and amounts are derived server-side.
  */
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
-    const json = await request.json();
-    const parsed = bodySchema.safeParse(json);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-    }
-
     const supabase = await createClient();
     const {
       data: { user },
@@ -28,9 +18,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { amount, awardKey, divisionKey } = parsed.data;
-    const result = await applyXpAward(user.id, amount, awardKey, divisionKey ?? null);
-    return NextResponse.json(result);
+    return NextResponse.json(
+      {
+        error:
+          "XP sync is temporarily disabled for security hardening. XP is still granted via trusted server actions.",
+      },
+      { status: 403 },
+    );
   } catch (e) {
     console.error("[api/pwa/xp-sync]", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

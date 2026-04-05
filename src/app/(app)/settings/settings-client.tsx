@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   updateUserSettings,
@@ -8,9 +8,13 @@ import {
   deleteAccount,
   type UserSettings,
 } from "@/app/actions/settings";
+import { createClient } from "@/lib/supabase/client";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import Image from "next/image";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
 const BUFFER_OPTIONS = [0, 5, 10, 15, 30, 60] as const;
@@ -28,10 +32,12 @@ interface SettingsClientProps {
 
 export function SettingsClient({ user, settings: initial }: SettingsClientProps) {
   const router = useRouter();
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [settings, setSettings] = useState<UserSettings>(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -98,6 +104,61 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
     }
   };
 
+  async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !file.type.startsWith("image/")) return;
+
+    setAvatarUploading(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      if (!authUser) {
+        throw new Error("Sign in again to update your profile picture");
+      }
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "") || "avatar";
+      const path = `${authUser.id}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("profile-pics")
+        .upload(path, file, { upsert: true, cacheControl: "3600" });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data: publicData } = supabase.storage.from("profile-pics").getPublicUrl(path);
+      await updateUserSettings({ avatar_url: publicData.publicUrl });
+
+      setSettings((prev) => ({ ...prev, avatar_url: publicData.publicUrl }));
+      router.refresh();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload profile picture");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    setError(null);
+    try {
+      await updateUserSettings({ avatar_url: null });
+      setSettings((prev) => ({ ...prev, avatar_url: null }));
+      router.refresh();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove profile picture");
+    }
+  }
+
   const isTutor = user.role === "tutor";
   const isStudent = user.role === "student";
   const isAdmin = user.role === "admin";
@@ -107,11 +168,73 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
       <main className="max-w-2xl mx-auto px-6 py-10">
         <h1 className="text-[22px] font-bold tracking-[-0.03em] mb-1">Settings</h1>
         <p className="text-sm text-slate-400 mb-8">
-          Manage your account, notifications, and preferences.
+          Manage your account, notifications, and tutor preferences.
         </p>
 
         {/* ── Profile ──────────────────────────────────────────────── */}
         <Section title="Profile" description="Your public identity on Mentrixa.">
+          <div className="flex items-start gap-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="relative h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-white">
+              {settings.avatar_url ? (
+                <Image
+                  src={settings.avatar_url}
+                  alt={settings.display_name ?? user.email}
+                  width={80}
+                  height={80}
+                  unoptimized
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-slate-500">
+                  {((settings.display_name ?? user.email).slice(0, 1) || "G").toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1 space-y-3">
+              <div>
+                <p className="text-sm font-medium text-slate-900">Profile picture</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Use a clear square image so learners recognize you everywhere.
+                </p>
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  disabled={avatarUploading}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                    {avatarUploading ? "Uploading…" : "Change photo"}
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs text-slate-600"
+                  disabled={avatarUploading || !settings.avatar_url}
+                  onClick={() => void handleRemoveAvatar()}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                    Remove
+                  </span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <Field label="Email">
             <Input value={user.email} disabled className="bg-slate-100 text-slate-500" />
             <p className="text-[11px] text-slate-400 mt-1">
@@ -128,6 +251,20 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             />
             <p className="text-[11px] text-slate-400 mt-1">
               Shown to {isTutor ? "students" : "tutors"} and on your profile.
+            </p>
+          </Field>
+
+          <Field label="Bio">
+            <Textarea
+              value={settings.bio ?? ""}
+              onChange={(e) => update("bio", e.target.value || null)}
+              placeholder={isTutor ? "What you teach, your style, and what learners should know." : "Tell tutors a little about your goals."}
+              maxLength={280}
+              rows={4}
+              className="resize-none"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Keep it short so your profile reads cleanly.
             </p>
           </Field>
 
@@ -163,6 +300,14 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
               Used for session times and email reminders.
             </p>
           </Field>
+
+          {isTutor && (
+            <Field label="Tutor profile note">
+              <p className="text-xs leading-relaxed text-slate-500">
+                This page controls your public guide identity, including your name, photo, bio, timezone, and booking defaults.
+              </p>
+            </Field>
+          )}
         </Section>
 
         {/* ── Notifications ────────────────────────────────────────── */}

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -190,7 +191,11 @@ export function AvailabilityBrowser({
                   <button
                     key={slot.id}
                     type="button"
-                    onClick={() => setSelectedSlot(slot)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedSlot(slot);
+                    }}
                     className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-slate-300 hover:bg-slate-50"
                   >
                     {slot.course} · {formatTime(slot.start_time)}
@@ -237,62 +242,71 @@ function BookingDialog({
 
   return (
     <Dialog open={!!slot} onOpenChange={onOpenChange}>
-      <DialogContent className="relative max-h-[90vh] overflow-y-auto border border-slate-200 bg-white p-5 sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-medium tracking-tight text-slate-900">
-            Book a session
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 text-sm text-slate-800">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-base font-medium text-slate-900">
-                {slot.tutor?.email?.split("@")[0] ?? "Guide"}
-              </p>
-              {courseExpertise?.verified && (
-                <Badge
-                  variant="outline"
-                  className="border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-700"
-                >
-                  Verified
-                </Badge>
-              )}
-            </div>
-            <p className="mt-2 font-medium leading-snug text-slate-900">{slot.course}</p>
-            <p className="mt-1 font-mono text-xs text-slate-600 tabular-nums">{scheduleLine}</p>
-          </div>
+      <DialogContent className="flex max-h-[calc(100vh-2rem)] w-[min(96vw,42rem)] flex-col overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl sm:max-w-none">
+        <div className="max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <div className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-medium tracking-tight text-slate-900">
+                Book a session
+              </DialogTitle>
+              <DialogDescription className="text-sm text-slate-600">
+                Confirm the session details, then continue to secure checkout.
+              </DialogDescription>
+            </DialogHeader>
 
-          {courseExpertise && (
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                Qualifications
-              </p>
-              <p className="text-sm leading-relaxed text-slate-800">{courseExpertise.proof_description}</p>
-            </div>
-          )}
-
-          <div className="relative rounded-md border border-slate-200 bg-white px-4 py-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Pricing</p>
-            <BookingPriceBreakdown sessionPriceCents={priceCents} />
-            <p className="mt-4 border-t border-slate-200 pt-3 text-xs leading-relaxed text-slate-600">
-              Stripe checkout lists the session and the 5% platform fee as separate line items. If the guide
-              declines, you are refunded automatically. Cancel 60+ minutes before the session per policy.
-            </p>
-            {checkoutBusy ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-white/90">
-                <p className="text-sm font-medium text-slate-800">Opening secure checkout…</p>
+            <div className="space-y-4 text-sm text-slate-800">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-base font-medium text-slate-900">
+                    {slot.tutor?.email?.split("@")[0] ?? "Guide"}
+                  </p>
+                  {courseExpertise?.verified && (
+                    <Badge
+                      variant="outline"
+                      className="border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-700"
+                    >
+                      Verified
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-2 font-medium leading-snug text-slate-900">{slot.course}</p>
+                <p className="mt-1 font-mono text-xs text-slate-600 tabular-nums">{scheduleLine}</p>
               </div>
-            ) : null}
+
+              {courseExpertise && (
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Qualifications
+                  </p>
+                  <p className="text-sm leading-relaxed text-slate-800">{courseExpertise.proof_description}</p>
+                </div>
+              )}
+
+              <div className="relative rounded-md border border-slate-200 bg-white px-4 py-4">
+                <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Pricing</p>
+                <BookingPriceBreakdown sessionPriceCents={priceCents} />
+                <p className="mt-4 border-t border-slate-200 pt-3 text-xs leading-relaxed text-slate-600">
+                  Stripe checkout lists the session and the 5% platform fee as separate line items. If the guide
+                  declines, you are refunded automatically. Cancel 60+ minutes before the session per policy.
+                </p>
+                {checkoutBusy ? (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-white/90">
+                    <p className="text-sm font-medium text-slate-800">Opening secure checkout…</p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
+
+          <DialogFooter className="sticky bottom-0 z-10 flex-col gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row sm:justify-end sm:px-5">
+            <DialogClose asChild>
+              <Button variant="outline" size="default" className="h-10 w-full border-slate-300 sm:w-auto">
+                Cancel
+              </Button>
+            </DialogClose>
+            <BookSessionButton availabilityId={slot.id} onBusyChange={setCheckoutBusy} />
+          </DialogFooter>
         </div>
-        <DialogFooter className="flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
-          <DialogClose asChild>
-            <Button variant="outline" size="default" className="h-10 w-full border-slate-300 sm:w-auto">
-              Cancel
-            </Button>
-          </DialogClose>
-          <BookSessionButton availabilityId={slot.id} onBusyChange={setCheckoutBusy} />
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

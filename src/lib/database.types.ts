@@ -57,6 +57,7 @@ export interface Session {
   id: string;
   student_id: string;
   tutor_id: string;
+  availability_id?: string | null;
   course: string;
   start_time: string;
   end_time: string;
@@ -64,6 +65,11 @@ export interface Session {
   status?: "scheduled" | "cancelled" | "completed";
   created_at: string;
   price_per_session?: number | null;
+  stripe_checkout_session_id?: string | null;
+  stripe_payment_intent_id?: string | null;
+  stripe_refund_id?: string | null;
+  stripe_refund_reason?: string | null;
+  platform_fee_cents?: number | null;
   /** Set when status becomes cancelled */
   cancelled_at?: string | null;
   cancelled_by_role?: "student" | "tutor" | "admin" | null;

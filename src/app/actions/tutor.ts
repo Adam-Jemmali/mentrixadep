@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath, unstable_cache } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { createAvailabilitySlotsSchema, setAvailabilityActiveSchema } from "@/lib/availability-schemas";
 import { buildSlotCandidates } from "@/lib/availability-slot-builder";
 import {
@@ -35,7 +35,7 @@ function utcStartOfWeekMonday(d: Date): Date {
 }
 
 const STRIPE_PAYOUT_CAPTION =
-  "Stripe pays out on your account's schedule (Balance → Payouts). US accounts typically see funds in the bank within 2 business days after charges are captured.";
+  "";
 
 /** True when DB migration 024 (sessions.cancelled_*) is not applied yet. */
 function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
@@ -49,6 +49,10 @@ function isMissingCancelledSessionColumnsError(err: { message?: string }): boole
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
 export type TutorCommandCenterPayload = {
+  guideProfile: {
+    displayName: string;
+    avatarUrl: string | null;
+  };
   metrics: {
     earningsThisMonthCents: number;
     stripePayoutCaption: string;
@@ -96,6 +100,8 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
   const weekStart = utcStartOfWeekMonday(now);
   const weekEnd = new Date(weekStart);
   weekEnd.setUTCDate(weekStart.getUTCDate() + 7);
+  const calendarEnd = new Date(weekStart);
+  calendarEnd.setUTCDate(weekStart.getUTCDate() + 14);
 
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const monthEndExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
@@ -150,13 +156,14 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       .select("id, course, start_time, end_time, price_per_session")
       .eq("tutor_id", tutorId)
       .gte("start_time", weekStart.toISOString())
-      .lt("start_time", weekEnd.toISOString()),
+      .lt("start_time", calendarEnd.toISOString()),
     supabase
       .from("sessions")
       .select("id, course, start_time, end_time, status")
       .eq("tutor_id", tutorId)
+      .eq("status", "scheduled")
       .gte("start_time", weekStart.toISOString())
-      .lt("start_time", weekEnd.toISOString()),
+      .lt("start_time", calendarEnd.toISOString()),
     supabase.from("availability").select("id").eq("tutor_id", tutorId),
     supabase.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
   ]);
@@ -255,6 +262,10 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
   }
 
   return {
+    guideProfile: {
+      displayName: user.displayName?.trim() || user.email?.split("@")[0] || "Guide",
+      avatarUrl: user.avatarUrl ?? null,
+    },
     metrics: {
       earningsThisMonthCents,
       stripePayoutCaption: STRIPE_PAYOUT_CAPTION,
@@ -267,7 +278,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     lateCancellationAlerts,
     sessionRequests,
     calendar: {
-      weekRange: { startIso: weekStart.toISOString(), endIso: weekEnd.toISOString() },
+      weekRange: { startIso: weekStart.toISOString(), endIso: calendarEnd.toISOString() },
       availability: calAvailRes.data ?? [],
       sessions: calSessionsRes.data ?? [],
     },
@@ -477,6 +488,9 @@ export async function createAvailabilitySlots(
       active: boolean;
       max_students: number;
       series_id: string;
+      booking_status: "available";
+      locked_until: null;
+      locked_by: null;
     }> = [];
 
     for (const c of candidates) {
@@ -490,6 +504,9 @@ export async function createAvailabilitySlots(
         active: true,
         max_students: input.maxStudents,
         series_id: seriesId,
+        booking_status: "available",
+        locked_until: null,
+        locked_by: null,
       });
     }
 
@@ -902,118 +919,64 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
   }
 
   const actingAsId = user.role === "admin" && onBehalfOfUserId ? onBehalfOfUserId : user.id;
-  const client = user.role === "admin" && onBehalfOfUserId ? createAdminClient() : await createClient();
+  const adminClient = createAdminClient();
 
-  const { data: request, error: requestError } = await client
-    .from("session_requests")
-    .select(`*, availability:availability(*)`)
-    .eq("id", validRequestId)
-    .single();
-
-  if (requestError || !request) {
-    throw new Error("Session request not found");
-  }
-
-  if (request.tutor_id !== actingAsId && user.role !== "admin") {
-    throw new Error("You don't have permission to approve this request");
-  }
-
-  if (request.status !== "pending") {
-    throw new Error("Request is not pending");
-  }
-
-  if (!request.availability) {
-    throw new Error("Availability not found");
-  }
-
-  const tutorId = request.tutor_id;
-
-  // Check for tutor double-booking
-  const { data: existingSession, error: checkError } = await client
-    .from("sessions")
-    .select("id")
-    .eq("tutor_id", tutorId)
-    .eq("start_time", request.availability.start_time)
-    .single();
-
-  if (checkError && checkError.code !== "PGRST116") {
-    throw new Error(`Failed to check existing sessions: ${checkError.message}`);
-  }
-
-  if (existingSession) {
-    throw new Error("Tutor already has a session at this time");
-  }
-
-  // Check for student double-booking
-  const { data: existingStudentSession, error: studentCheckError } = await client
-    .from("sessions")
-    .select("id")
-    .eq("student_id", request.student_id)
-    .eq("start_time", request.availability.start_time)
-    .single();
-
-  if (studentCheckError && studentCheckError.code !== "PGRST116") {
-    throw new Error(`Failed to check student sessions: ${studentCheckError.message}`);
-  }
-
-  if (existingStudentSession) {
-    throw new Error("Student already has a session at this time");
-  }
-
-  const priceCents =
-    (request.availability as { price_per_session?: number } | undefined)?.price_per_session ?? 2500;
-
-  // Create the session
-  const { data: session, error: sessionError } = await client
-    .from("sessions")
-    .insert({
-      student_id: request.student_id,
-      tutor_id: tutorId,
-      course: request.availability.course,
-      start_time: request.availability.start_time,
-      end_time: request.availability.end_time,
-      completed: false,
-      price_per_session: priceCents,
+  const { data: rpcRow, error: rpcError } = await adminClient
+    .rpc("approve_session_request_atomic", {
+      p_request_id: validRequestId,
+      p_actor_id: actingAsId,
     })
-    .select()
     .single();
 
-  if (sessionError) {
-    throw new Error(`Failed to create session: ${sessionError.message}`);
+  if (rpcError || !rpcRow) {
+    const code = (rpcError?.message ?? "").toLowerCase();
+    if (code.includes("request_not_found")) {
+      throw new Error("Session request not found");
+    }
+    if (code.includes("request_not_pending")) {
+      throw new Error("Request is not pending");
+    }
+    if (code.includes("request_forbidden")) {
+      throw new Error("You don't have permission to approve this request");
+    }
+    if (code.includes("availability_not_found")) {
+      throw new Error("Availability not found");
+    }
+    if (code.includes("tutor_double_booked")) {
+      throw new Error("Tutor already has a session at this time");
+    }
+    if (code.includes("student_double_booked")) {
+      throw new Error("Student already has a session at this time");
+    }
+    if (code.includes("session_conflict")) {
+      throw new Error("This request was already processed by another action");
+    }
+    throw new Error(`Failed to approve request: ${rpcError?.message ?? "Unknown error"}`);
   }
 
-  // Remove the consumed availability slot
-  const { error: deleteAvailError } = await client
-    .from("availability")
-    .delete()
-    .eq("id", request.availability_id);
-
-  if (deleteAvailError) {
-    console.error("Failed to delete availability after approval:", deleteAvailError);
+  const sessionId = (rpcRow as { session_id?: string | null }).session_id ?? null;
+  if (!sessionId) {
+    throw new Error("Failed to approve request: missing session id");
   }
 
-  // Mark request as approved
-  const { error: updateError } = await client
-    .from("session_requests")
-    .update({
-      status: "approved",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", validRequestId);
+  const { data: session, error: sessionError } = await adminClient
+    .from("sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .single();
 
-  if (updateError) {
-    throw new Error(`Failed to update request status: ${updateError.message}`);
+  if (sessionError || !session) {
+    throw new Error("Approved session was created but could not be loaded");
   }
 
   // Fire-and-forget email to student
   try {
-    const adminClient = createAdminClient();
     const [studentAuthData, settingsResult] = await Promise.all([
-      adminClient.auth.admin.getUserById(request.student_id),
+      adminClient.auth.admin.getUserById(session.student_id),
       adminClient
         .from("user_settings")
         .select("user_id, display_name")
-        .in("user_id", [request.student_id, tutorId]),
+        .in("user_id", [session.student_id, session.tutor_id]),
     ]);
     const studentEmail = studentAuthData.data?.user?.email;
     const nameByUser = Object.fromEntries(
@@ -1025,8 +988,8 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
         course: session.course,
         startTime: session.start_time,
         endTime: session.end_time,
-        studentDisplayName: nameByUser[request.student_id] ?? null,
-        tutorDisplayName: nameByUser[tutorId] ?? null,
+        studentDisplayName: nameByUser[session.student_id] ?? null,
+        tutorDisplayName: nameByUser[session.tutor_id] ?? null,
         priceCents: session.price_per_session ?? null,
       };
       void sendSessionApprovedEmail(studentEmail, sessionDetails);
@@ -1275,6 +1238,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     .select("id, course, start_time, end_time, price_per_session")
     .eq("tutor_id", tutorId)
     .eq("active", true)
+    .or("booking_status.eq.available,booking_status.is.null")
     .gte("start_time", new Date().toISOString())
     .lte("start_time", windowEnd.toISOString())
     .order("start_time", { ascending: true });
@@ -1342,14 +1306,8 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
   };
 }
 
-const getTutorPublicProfileCached = unstable_cache(
-  async (tutorId: string) => fetchTutorPublicProfileUncached(tutorId),
-  ["tutor-public-profile"],
-  { revalidate: 60 },
-);
-
 export async function getTutorPublicProfile(tutorId: string) {
-  return getTutorPublicProfileCached(tutorId);
+  return fetchTutorPublicProfileUncached(tutorId);
 }
 
 export async function getTutorDashboardForAdmin(tutorId: string) {

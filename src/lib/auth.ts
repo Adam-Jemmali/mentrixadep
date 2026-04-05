@@ -32,6 +32,16 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
     return null;
   }
 
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("role, approved")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!userRow?.role) {
+    return null;
+  }
+
   const { data: settingsRow } = await supabase
     .from("user_settings")
     .select("display_name, avatar_url")
@@ -47,36 +57,10 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
       ? settingsRow.avatar_url
       : null;
 
-  const role = user.user_metadata?.role as UserRole | undefined;
-  const approvedRaw = user.user_metadata?.approved;
-  const approved =
-    approvedRaw === true || approvedRaw === "true";
-
-  if (!role || approvedRaw === undefined) {
-    const { data: userData } = await supabase
-      .from("users")
-      .select("role, approved")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (!userData?.role) {
-      return null;
-    }
-
-    return {
-      id: user.id,
-      role: userData.role as UserRole,
-      approved: userData.approved,
-      email: user.email,
-      displayName,
-      avatarUrl,
-    };
-  }
-
   return {
     id: user.id,
-    role: role as UserRole,
-    approved,
+    role: userRow.role as UserRole,
+    approved: userRow.approved,
     email: user.email,
     displayName,
     avatarUrl,

@@ -161,12 +161,15 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!userData?.approved) {
+  if (!userData?.role) {
+    return "/auth/select-role";
+  }
+
+  if (!userData.approved) {
     return "/pending-approval";
   }
 
-  const role = userData?.role ?? (user.user_metadata?.role as string | undefined);
-  return getRoleHomePath(role);
+  return getRoleHomePath(userData.role);
 }
 
 /** After GIS `signInWithIdToken` (no Supabase OAuth redirect). */

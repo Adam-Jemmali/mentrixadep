@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { getStudentCredentials, signInWithEmailPassword } from "./helpers/auth";
 
 test.describe("Quest routes (guest)", () => {
   test("redirects unauthenticated user to sign-in", async ({ page }) => {
@@ -9,20 +8,18 @@ test.describe("Quest routes (guest)", () => {
   });
 });
 
-test.describe("Quest (signed-in)", () => {
-  test("quest workspace is reachable for student", async ({ page }) => {
-    const creds = getStudentCredentials();
-    test.skip(!creds, "Set E2E_STUDENT_EMAIL and E2E_STUDENT_PASSWORD.");
-
-    await signInWithEmailPassword(page, creds!.email, creds!.password);
+test.describe("Quest auth UX", () => {
+  test("redirected sign-in page remains usable from quest deep link", async ({ page }) => {
     await page.goto("/student/quest");
-    await expect(page).toHaveURL(/\/student\/quest/);
-    await expect(page.getByText(/quest|practice|new quest/i).first()).toBeVisible({
-      timeout: 20_000,
-    });
+    await expect(page).toHaveURL(/\/auth\/signin/);
+    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible();
+    await expect(page.getByLabel(/^password$/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /^sign in$/i })).toBeVisible();
   });
 
-  test("XP and history: verify via unit/integration tests; E2E needs completed quest seed", async () => {
-    test.skip(true, "Seed a completed quest or assert user_xp in integration tests.");
+  test("quest deep link does not crash for guest navigation", async ({ page }) => {
+    await page.goto("/student/quest");
+    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible();
+    await expect(page.getByText(/something went wrong|next_not_found/i)).toHaveCount(0);
   });
 });

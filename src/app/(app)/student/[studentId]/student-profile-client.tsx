@@ -428,10 +428,10 @@ export function StudentProfileClient({
             </Link>
             {data.viewer === "owner" && (
               <Link
-                href="/settings"
+                href={`/student/${data.studentId}`}
                 className="font-medium text-slate-600 underline-offset-4 hover:underline"
               >
-                Account settings
+                Profile settings
               </Link>
             )}
           </div>

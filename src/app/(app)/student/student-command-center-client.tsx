@@ -221,9 +221,8 @@ export function StudentCommandCenterClient({
           <p className="mt-1 text-xs text-slate-500">Based on courses you follow.</p>
           <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
             {recommendedGuides.map((g) => (
-              <Link
+              <div
                 key={g.tutorId}
-                href={`/tutor/${g.tutorId}`}
                 className="min-w-[160px] shrink-0 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-300 hover:bg-white"
               >
                 <p className="truncate font-medium text-slate-900">{g.displayName}</p>
@@ -235,7 +234,15 @@ export function StudentCommandCenterClient({
                     Has open slots
                   </span>
                 )}
-              </Link>
+                <div className="mt-3 flex items-center gap-2">
+                  <a
+                    href="#browse-guides"
+                    className="text-xs font-medium text-slate-900 underline-offset-4 hover:underline"
+                  >
+                    Book now
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         </section>

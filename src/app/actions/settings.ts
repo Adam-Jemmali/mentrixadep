@@ -81,6 +81,7 @@ export async function getUserSettings(): Promise<UserSettings> {
 export async function updateUserSettings(settings: Partial<UserSettings>) {
   const user = await requireAuth();
   const supabase = await createClient();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
 
   const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
@@ -100,6 +101,14 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
 
   if (settings.avatar_url !== undefined) {
     const u = (settings.avatar_url ?? "").trim();
+    if (
+      u.length > 0 &&
+      (!supabaseUrl ||
+        !u.startsWith(supabaseUrl) ||
+        !u.includes("/storage/v1/object/public/profile-pics/"))
+    ) {
+      throw new Error("Avatar must use the app's profile-pics storage bucket");
+    }
     payload.avatar_url = u.length > 0 ? u.slice(0, 2048) : null;
   }
 
