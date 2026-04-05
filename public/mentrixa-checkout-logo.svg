@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="240" height="52" viewBox="0 0 240 52" fill="none">
-  <text x="0" y="36" fill="#0F172A" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="34" font-weight="800" letter-spacing="-0.055em">Mentrixa</text>
-  <rect x="0" y="42" width="158" height="5" rx="2.5" fill="#2563EB"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="60" viewBox="0 0 280 60" fill="none">
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D9FF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Mentrixa text -->
+  <text x="0" y="42" fill="url(#textGrad)" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="38" font-weight="800" letter-spacing="-0.055em">Mentrixa</text>
+  
+  <!-- Accent underline -->
+  <path d="M 0 48 Q 70 50 140 48" stroke="url(#textGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
 </svg>

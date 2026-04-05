@@ -1,4 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
-  <rect width="512" height="512" rx="112" fill="#2563EB"/>
-  <path fill="#FFFFFF" d="M148 132h72l88 156V132h56v248h-72L204 224v156h-56V132Z"/>
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#0a0a0a" opacity="0.5"/>
+  
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="mentrixaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D9FF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Left arc -->
+  <path d="M 180 160 Q 140 200 140 270 Q 140 340 180 380" stroke="url(#mentrixaGrad)" stroke-width="32" fill="none" stroke-linecap="round"/>
+  
+  <!-- Right arc -->
+  <path d="M 332 160 Q 372 200 372 270 Q 372 340 332 380" stroke="url(#mentrixaGrad)" stroke-width="32" fill="none" stroke-linecap="round"/>
+  
+  <!-- Heart center -->
+  <line x1="200" y1="220" x2="256" y2="280" stroke="#7C3AED" stroke-width="14" stroke-linecap="round" opacity="0.7"/>
+  <line x1="312" y1="220" x2="256" y2="280" stroke="#7C3AED" stroke-width="14" stroke-linecap="round" opacity="0.7"/>
+  
+  <!-- Top circles -->
+  <circle cx="200" cy="140" r="22" fill="#00D9FF"/>
+  <circle cx="312" cy="140" r="22" fill="#EC4899"/>
 </svg>
