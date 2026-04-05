@@ -15,6 +15,12 @@ interface SessionRequest {
   id: string;
   student_id: string;
   student_email?: string | null;
+  student_profile?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    email: string | null;
+  };
   status: string;
   created_at: string;
   institution?: { institutionName: string; logoUrl: string | null } | null;
@@ -140,8 +146,13 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
                   (availability as { price_per_session?: number; price?: number } | undefined)
                     ?.price ??
                   null;
+                const fallbackEmail = request.student_email ?? request.student_profile?.email ?? null;
                 const learnerName =
-                  request.student_email?.split("@")[0] ?? request.student_email ?? `Student ${request.student_id.slice(0, 8)}`;
+                  request.student_profile?.display_name?.trim() ||
+                  fallbackEmail?.split("@")[0] ||
+                  `Student ${request.student_id.slice(0, 8)}`;
+                const learnerEmail = fallbackEmail;
+                const learnerAvatar = request.student_profile?.avatar_url ?? null;
 
                 return (
                   <tr
@@ -159,10 +170,27 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
                     }`}
                   >
                     <td className="py-2.5 px-3 align-middle">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-slate-900">
-                          {learnerName}
-                        </span>
+                      <div className="flex items-start gap-2.5">
+                        <div className="relative h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
+                          {learnerAvatar ? (
+                            <Image
+                              src={learnerAvatar}
+                              alt={learnerName}
+                              width={32}
+                              height={32}
+                              unoptimized
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-600">
+                              {learnerName.slice(0, 1).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex min-w-0 flex-col gap-0.5">
+                          <span className="truncate text-sm font-medium text-slate-900">{learnerName}</span>
+                          {learnerEmail ? <span className="truncate text-xs text-slate-500">{learnerEmail}</span> : null}
+                        </div>
                         {request.institution && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded w-fit">
                             {request.institution.logoUrl ? (

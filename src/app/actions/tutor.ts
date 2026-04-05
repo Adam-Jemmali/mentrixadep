@@ -46,6 +46,77 @@ function isMissingCancelledSessionColumnsError(err: { message?: string }): boole
   );
 }
 
+export type TutorSessionStudentProfile = {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  email: string | null;
+};
+
+async function enrichTutorRowsWithStudentProfiles<T extends { student_id: string }>(
+  rows: T[]
+): Promise<Array<T & { student: { id: string }; student_email: string | null; student_profile: TutorSessionStudentProfile }>> {
+  if (rows.length === 0) return [];
+
+  const adminClient = createAdminClient();
+  const studentIds = Array.from(new Set(rows.map((r) => r.student_id).filter(Boolean)));
+
+  const { data: settingsRows } = await adminClient
+    .from("user_settings")
+    .select("user_id, display_name, avatar_url")
+    .in("user_id", studentIds);
+
+  const settingsById = new Map(
+    (settingsRows ?? []).map((row) => [
+      row.user_id,
+      {
+        display_name: typeof row.display_name === "string" ? row.display_name.trim() || null : null,
+        avatar_url: typeof row.avatar_url === "string" && row.avatar_url.length > 0 ? row.avatar_url : null,
+      },
+    ])
+  );
+
+  const emailById = new Map<string, string>();
+  const metaAvatarById = new Map<string, string | null>();
+
+  await Promise.all(
+    studentIds.map(async (sid) => {
+      try {
+        const { data: authData } = await adminClient.auth.admin.getUserById(sid);
+        const email = authData?.user?.email ?? "";
+        if (email) emailById.set(sid, email);
+
+        const meta = authData?.user?.user_metadata as Record<string, unknown> | undefined;
+        const avatarRaw = meta?.avatar_url ?? meta?.picture;
+        metaAvatarById.set(
+          sid,
+          typeof avatarRaw === "string" && avatarRaw.length > 0 ? avatarRaw : null,
+        );
+      } catch {
+        // best-effort
+      }
+    })
+  );
+
+  return rows.map((row) => {
+    const email = emailById.get(row.student_id) ?? null;
+    const settings = settingsById.get(row.student_id);
+    const avatar = settings?.avatar_url ?? metaAvatarById.get(row.student_id) ?? null;
+
+    return {
+      ...row,
+      student: { id: row.student_id },
+      student_email: email,
+      student_profile: {
+        id: row.student_id,
+        email,
+        display_name: settings?.display_name ?? null,
+        avatar_url: avatar,
+      },
+    };
+  });
+}
+
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
 export type TutorCommandCenterPayload = {
@@ -738,27 +809,7 @@ export async function getUpcomingSessions() {
   }
 
   const sessions = data || [];
-  if (sessions.length === 0) return [];
-
-  const adminClient = createAdminClient();
-  const studentIds = Array.from(new Set(sessions.map((s) => s.student_id)));
-  const emailMap: Record<string, string> = {};
-  await Promise.all(
-    studentIds.map(async (sid) => {
-      try {
-        const { data: authData } = await adminClient.auth.admin.getUserById(sid);
-        if (authData?.user?.email) emailMap[sid] = authData.user.email;
-      } catch {
-        // best-effort
-      }
-    })
-  );
-
-  return sessions.map((session) => ({
-    ...session,
-    student: { id: session.student_id },
-    student_email: emailMap[session.student_id] ?? null,
-  }));
+  return enrichTutorRowsWithStudentProfiles(sessions);
 }
 
 export async function getPastSessions() {
@@ -811,23 +862,10 @@ export async function getPastSessions() {
   }
 
   const hasPackageBySession = new Set((packageRows ?? []).map((p) => p.session_id));
-  const studentIds = Array.from(new Set(sessions.map((s) => s.student_id)));
-  const emailMap: Record<string, string> = {};
-  await Promise.all(
-    studentIds.map(async (sid) => {
-      try {
-        const { data: authData } = await adminClient.auth.admin.getUserById(sid);
-        if (authData?.user?.email) emailMap[sid] = authData.user.email;
-      } catch {
-        // best-effort
-      }
-    })
-  );
+  const withProfiles = await enrichTutorRowsWithStudentProfiles(sessions);
 
-  return sessions.map((session) => ({
+  return withProfiles.map((session) => ({
     ...session,
-    student: { id: session.student_id },
-    student_email: emailMap[session.student_id] ?? null,
     rating: ratingBySession.get(session.id) ?? null,
     hasAiPackage: hasPackageBySession.has(session.id),
   }));
@@ -868,17 +906,7 @@ export async function getSessionRequests() {
 
   const adminClient = createAdminClient();
   const studentIds = Array.from(new Set(requests.map((r) => r.student_id)));
-  const emailMap: Record<string, string> = {};
-  await Promise.all(
-    studentIds.map(async (sid) => {
-      try {
-        const { data: authData } = await adminClient.auth.admin.getUserById(sid);
-        if (authData?.user?.email) emailMap[sid] = authData.user.email;
-      } catch {
-        // best-effort
-      }
-    })
-  );
+  const enrichedRequests = await enrichTutorRowsWithStudentProfiles(requests);
 
   // Enrich with institution badge (non-critical, best-effort)
   const institutionBadgeMap: Record<string, { institutionName: string; logoUrl: string | null } | null> = {};
@@ -902,9 +930,8 @@ export async function getSessionRequests() {
     })
   );
 
-  return requests.map((r) => ({
+  return enrichedRequests.map((r) => ({
     ...r,
-    student_email: emailMap[r.student_id] ?? null,
     institution: institutionBadgeMap[r.student_id] ?? null,
   }));
 }

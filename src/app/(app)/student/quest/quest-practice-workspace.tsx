@@ -256,10 +256,7 @@ export function QuestPracticeWorkspace({
         </p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">New quest</h1>
         <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-          Short drills built for where you are right now—so you close gaps before the next quiz or
-          session, not after. Questions match your level from your XP; you earn division XP like any
-          other quest. No extra purchase: this is included with your account. Max {10} new packs per
-          day so the habit stays sustainable.
+          Short drills built for where you are right now. Get instant feedback, track your progress, and earn XP as you go.
         </p>
 
         <div className="mt-8 space-y-6">

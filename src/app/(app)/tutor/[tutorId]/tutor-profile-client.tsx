@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -293,6 +294,17 @@ export function TutorProfileClient({
         <p className="text-slate-500 text-sm leading-relaxed mt-4 max-w-lg">
           {profile.email} · Mentrixa verified guide
         </p>
+
+        {isOwnProfile && (
+          <div className="mt-3">
+            <Link
+              href="/settings"
+              className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
+            >
+              Edit display name and profile picture
+            </Link>
+          </div>
+        )}
 
         {/* Stat bar */}
         <div className="mentrixa-stat-row mt-6">

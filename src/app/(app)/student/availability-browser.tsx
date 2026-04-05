@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { formatTime } from "@/lib/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,8 @@ interface Availability {
     role: string;
     approved: boolean;
     email?: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
   };
 }
 
@@ -84,6 +87,8 @@ export function AvailabilityBrowser({
       string,
       {
         name: string;
+        email: string;
+        avatarUrl: string | null;
         priceCents: number;
         rating: number;
         sessions: number;
@@ -93,12 +98,15 @@ export function AvailabilityBrowser({
 
     for (const slot of availability) {
       const email = slot.tutor?.email ?? "unknown@example.com";
-      const name = email.split("@")[0] ?? "unknown";
+      const name = slot.tutor?.display_name?.trim() || email.split("@")[0] || "Guide";
       const key = slot.tutor_id ?? email;
+      const avatarUrl = slot.tutor?.avatar_url ?? null;
 
       if (!map.has(key)) {
         map.set(key, {
           name,
+          email,
+          avatarUrl,
           priceCents: slot.price_per_session ?? 2500,
           rating: 4.8,
           sessions: 24,
@@ -235,7 +243,26 @@ export function AvailabilityBrowser({
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm font-medium text-slate-900">{guide.name}</span>
+                  <div className="relative h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
+                    {guide.avatarUrl ? (
+                      <Image
+                        src={guide.avatarUrl}
+                        alt={guide.name}
+                        width={32}
+                        height={32}
+                        unoptimized
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-600">
+                        {guide.name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-slate-900">{guide.name}</span>
+                    <span className="block truncate text-xs text-slate-500">{guide.email}</span>
+                  </div>
                   {hasVerifiedCourse && (
                     <Badge
                       variant="outline"
@@ -324,9 +351,30 @@ function BookingDialog({
             <div className="space-y-4 text-sm text-slate-800">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-base font-medium text-slate-900">
-                    {slot.tutor?.email?.split("@")[0] ?? "Guide"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="relative h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
+                      {slot.tutor?.avatar_url ? (
+                        <Image
+                          src={slot.tutor.avatar_url}
+                          alt={slot.tutor?.display_name ?? slot.tutor?.email ?? "Guide"}
+                          width={32}
+                          height={32}
+                          unoptimized
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-600">
+                          {((slot.tutor?.display_name ?? slot.tutor?.email ?? "Guide").slice(0, 1) || "G").toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-base font-medium text-slate-900">
+                        {slot.tutor?.display_name?.trim() ?? slot.tutor?.email?.split("@")[0] ?? "Guide"}
+                      </p>
+                      {slot.tutor?.email ? <p className="text-xs text-slate-500">{slot.tutor.email}</p> : null}
+                    </div>
+                  </div>
                   {courseExpertise?.verified && (
                     <Badge
                       variant="outline"

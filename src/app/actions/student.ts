@@ -487,8 +487,24 @@ export async function getTutorAvailability(course?: string) {
 
   const approvedTutorIds = new Set(tutors?.map((t) => t.id) || []);
 
+  const { data: tutorSettings } = await adminClient
+    .from("user_settings")
+    .select("user_id, display_name, avatar_url")
+    .in("user_id", tutorIds);
+
+  const settingsByTutorId = new Map(
+    (tutorSettings ?? []).map((row) => [
+      row.user_id,
+      {
+        display_name: typeof row.display_name === "string" ? row.display_name.trim() || null : null,
+        avatar_url: typeof row.avatar_url === "string" && row.avatar_url.length > 0 ? row.avatar_url : null,
+      },
+    ])
+  );
+
   // Fetch tutor emails in parallel batches using optimized batching
   const tutorEmails = new Map<string, string>();
+  const tutorMetaAvatar = new Map<string, string | null>();
 
   if (approvedTutorIds.size > 0) {
     const tutorIdArray = Array.from(approvedTutorIds);
@@ -498,7 +514,10 @@ export async function getTutorAvailability(course?: string) {
       try {
         const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(tutorId);
         if (!userError && userData?.user?.email) {
-          return [tutorId, userData.user.email] as [string, string];
+          const meta = userData.user.user_metadata as Record<string, unknown> | undefined;
+          const avatarRaw = meta?.avatar_url ?? meta?.picture;
+          const avatar = typeof avatarRaw === "string" && avatarRaw.length > 0 ? avatarRaw : null;
+          return [tutorId, userData.user.email, avatar] as [string, string, string | null];
         }
       } catch (err) {
         console.error(`Error fetching email for tutor ${tutorId}:`, err);
@@ -510,6 +529,7 @@ export async function getTutorAvailability(course?: string) {
     results.forEach((result) => {
       if (result) {
         tutorEmails.set(result[0], result[1]);
+        tutorMetaAvatar.set(result[0], result[2] ?? null);
       }
     });
   }
@@ -519,11 +539,21 @@ export async function getTutorAvailability(course?: string) {
     .map((avail) => {
       const tutor = tutors?.find((t) => t.id === avail.tutor_id);
       const email = tutorEmails.get(avail.tutor_id) || "";
+      const settings = settingsByTutorId.get(avail.tutor_id);
+      const avatar_url = settings?.avatar_url ?? tutorMetaAvatar.get(avail.tutor_id) ?? null;
+      const display_name = settings?.display_name ?? (email ? email.split("@")[0] : null);
 
       return {
         ...avail,
         tutor: tutor
-          ? { id: tutor.id, role: tutor.role, approved: tutor.approved, email }
+          ? {
+              id: tutor.id,
+              role: tutor.role,
+              approved: tutor.approved,
+              email,
+              display_name,
+              avatar_url,
+            }
           : undefined,
       };
     })
@@ -599,9 +629,25 @@ export async function getTutorAvailabilityKeysetPage(opts: {
     .in("id", tutorIds)
     .eq("approved", true);
 
+  const { data: tutorSettings } = await adminClient
+    .from("user_settings")
+    .select("user_id, display_name, avatar_url")
+    .in("user_id", tutorIds);
+
+  const settingsByTutorId = new Map(
+    (tutorSettings ?? []).map((row) => [
+      row.user_id,
+      {
+        display_name: typeof row.display_name === "string" ? row.display_name.trim() || null : null,
+        avatar_url: typeof row.avatar_url === "string" && row.avatar_url.length > 0 ? row.avatar_url : null,
+      },
+    ])
+  );
+
   const approvedTutorIds = new Set(tutors?.map((t) => t.id) || []);
   const tutorIdArray = Array.from(approvedTutorIds);
   const tutorEmails = new Map<string, string>();
+  const tutorMetaAvatar = new Map<string, string | null>();
 
   if (tutorIdArray.length > 0) {
     const { batchQueries } = await import("@/lib/performance");
@@ -609,7 +655,10 @@ export async function getTutorAvailabilityKeysetPage(opts: {
       try {
         const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(tutorId);
         if (!userError && userData?.user?.email) {
-          return [tutorId, userData.user.email] as [string, string];
+          const meta = userData.user.user_metadata as Record<string, unknown> | undefined;
+          const avatarRaw = meta?.avatar_url ?? meta?.picture;
+          const avatar = typeof avatarRaw === "string" && avatarRaw.length > 0 ? avatarRaw : null;
+          return [tutorId, userData.user.email, avatar] as [string, string, string | null];
         }
       } catch {
         /* ignore */
@@ -618,7 +667,10 @@ export async function getTutorAvailabilityKeysetPage(opts: {
     });
     const results = await batchQueries(emailQueries, 10);
     results.forEach((result) => {
-      if (result) tutorEmails.set(result[0], result[1]);
+      if (result) {
+        tutorEmails.set(result[0], result[1]);
+        tutorMetaAvatar.set(result[0], result[2] ?? null);
+      }
     });
   }
 
@@ -627,10 +679,20 @@ export async function getTutorAvailabilityKeysetPage(opts: {
     .map((avail) => {
       const tutor = tutors?.find((t) => t.id === avail.tutor_id);
       const email = tutorEmails.get(avail.tutor_id) || "";
+      const settings = settingsByTutorId.get(avail.tutor_id);
+      const avatar_url = settings?.avatar_url ?? tutorMetaAvatar.get(avail.tutor_id) ?? null;
+      const display_name = settings?.display_name ?? (email ? email.split("@")[0] : null);
       return {
         ...avail,
         tutor: tutor
-          ? { id: tutor.id, role: tutor.role, approved: tutor.approved, email }
+          ? {
+              id: tutor.id,
+              role: tutor.role,
+              approved: tutor.approved,
+              email,
+              display_name,
+              avatar_url,
+            }
           : undefined,
       };
     })

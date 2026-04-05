@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { formatDate, formatTimeRange } from "@/lib/time-format";
 import { DeletePastSessionButton } from "@/components/delete-past-session-button";
 import { JoinVideoCallButton } from "@/components/join-video-call-button";
@@ -19,6 +20,12 @@ interface Session {
     id: string;
   };
   student_email?: string | null;
+  student_profile?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    email: string | null;
+  };
   auto_approved?: boolean | null;
   rating?: number | null;
   /** True when an AI package row exists for this session (tutor dashboard / past tab). */
@@ -76,10 +83,12 @@ export function SessionsList({
               </tr>
             ) : (
               pastSessions.map((session) => {
+                const learnerEmail = session.student_profile?.email ?? session.student_email ?? null;
                 const learnerName =
-                  session.student_email?.split("@")[0] ??
-                  session.student_email ??
+                  session.student_profile?.display_name?.trim() ||
+                  learnerEmail?.split("@")[0] ||
                   (session.student_id ? `Student ${session.student_id.slice(0, 8)}` : "–");
+                const learnerAvatar = session.student_profile?.avatar_url ?? null;
                 return (
                 <tr
                   key={session.id}
@@ -91,7 +100,28 @@ export function SessionsList({
                     </span>
                   </td>
                   <td className="py-2.5 px-3 align-middle">
-                    <span className="text-sm font-medium text-slate-950">{learnerName}</span>
+                    <div className="flex items-start gap-2">
+                      <div className="relative h-7 w-7 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
+                        {learnerAvatar ? (
+                          <Image
+                            src={learnerAvatar}
+                            alt={learnerName}
+                            width={28}
+                            height={28}
+                            unoptimized
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-slate-600">
+                            {learnerName.slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-950">{learnerName}</p>
+                        {learnerEmail ? <p className="truncate text-xs text-slate-500">{learnerEmail}</p> : null}
+                      </div>
+                    </div>
                   </td>
                   <td className="py-2.5 px-3 align-middle">
                     <span className="text-sm text-slate-900">{formatDate(session.start_time)}</span>
@@ -166,10 +196,12 @@ export function SessionsList({
           ) : (
             filteredUpcoming.map((session) => {
               const status = session.auto_approved ? "Auto" : "Manual";
+              const learnerEmail = session.student_profile?.email ?? session.student_email ?? null;
               const learnerName =
-                session.student_email?.split("@")[0] ??
-                session.student_email ??
+                session.student_profile?.display_name?.trim() ||
+                learnerEmail?.split("@")[0] ||
                 (session.student_id ? `Student ${session.student_id.slice(0, 8)}` : "–");
+              const learnerAvatar = session.student_profile?.avatar_url ?? null;
               return (
                 <tr
                   key={session.id}
@@ -181,7 +213,28 @@ export function SessionsList({
                     </span>
                   </td>
                   <td className="py-2.5 px-3 align-middle">
-                    <span className="text-sm font-medium text-slate-950">{learnerName}</span>
+                    <div className="flex items-start gap-2">
+                      <div className="relative h-7 w-7 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
+                        {learnerAvatar ? (
+                          <Image
+                            src={learnerAvatar}
+                            alt={learnerName}
+                            width={28}
+                            height={28}
+                            unoptimized
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-slate-600">
+                            {learnerName.slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-950">{learnerName}</p>
+                        {learnerEmail ? <p className="truncate text-xs text-slate-500">{learnerEmail}</p> : null}
+                      </div>
+                    </div>
                   </td>
                   <td className="py-2.5 px-3 align-middle">
                     <span className="text-sm text-slate-900">{formatDate(session.start_time)}</span>
