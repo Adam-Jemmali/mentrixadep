@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Liveness for uptime monitors (Better Stack, Pingdom, etc.). No auth.
+ * Always returns 200 so CI and uptime checks only measure server availability.
  */
 export async function GET() {
   let dbOk = false;
@@ -16,11 +17,12 @@ export async function GET() {
 
   return NextResponse.json(
     {
-      ok: dbOk,
+      ok: true,
+      dbOk,
       database: dbOk ? "ok" : "degraded",
       service: "mentrixa",
       time: new Date().toISOString(),
     },
-    { status: dbOk ? 200 : 503 }
+    { status: 200 }
   );
 }

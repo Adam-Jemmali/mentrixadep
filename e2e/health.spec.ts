@@ -6,6 +6,7 @@ test.describe("Health", () => {
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
     expect(body).toMatchObject({ ok: true, service: "mentrixa" });
+    expect(typeof body.dbOk).toBe("boolean");
     expect(typeof body.time).toBe("string");
   });
 });
