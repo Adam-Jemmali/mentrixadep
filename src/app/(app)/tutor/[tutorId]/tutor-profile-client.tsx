@@ -57,8 +57,7 @@ interface TutorProfileClientProps {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
-type Day = (typeof DAYS)[number];
+type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 function getDayLabel(iso: string): Day {
   const d = new Date(iso).getDay(); // 0=Sun
