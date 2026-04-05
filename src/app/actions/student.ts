@@ -54,11 +54,17 @@ async function enrichStudentSessionsWithTutorProfiles<T extends { tutor_id: stri
 
   const { data: settingsRows } = await adminClient
     .from("user_settings")
-    .select("user_id, display_name")
+    .select("user_id, display_name, avatar_url")
     .in("user_id", tutorIds);
 
-  const nameById = new Map(
-    (settingsRows ?? []).map((r) => [r.user_id, r.display_name as string | null])
+  const settingsById = new Map(
+    (settingsRows ?? []).map((r) => [
+      r.user_id,
+      {
+        display_name: typeof r.display_name === "string" ? r.display_name.trim() || null : null,
+        avatar_url: typeof r.avatar_url === "string" && r.avatar_url.length > 0 ? r.avatar_url : null,
+      },
+    ])
   );
 
   const metaById = new Map<
@@ -77,13 +83,13 @@ async function enrichStudentSessionsWithTutorProfiles<T extends { tutor_id: stri
         const avatar_url =
           typeof avatarRaw === "string" && avatarRaw.length > 0 ? avatarRaw : null;
         metaById.set(id, {
-          display_name: nameById.get(id) ?? null,
+          display_name: settingsById.get(id)?.display_name ?? null,
           avatar_url,
           email,
         });
       } catch {
         metaById.set(id, {
-          display_name: nameById.get(id) ?? null,
+          display_name: settingsById.get(id)?.display_name ?? null,
           avatar_url: null,
           email: "",
         });
@@ -99,7 +105,7 @@ async function enrichStudentSessionsWithTutorProfiles<T extends { tutor_id: stri
         id: session.tutor_id,
         role: "tutor",
         display_name: m?.display_name ?? null,
-        avatar_url: m?.avatar_url ?? null,
+        avatar_url: settingsById.get(session.tutor_id)?.avatar_url ?? m?.avatar_url ?? null,
         email: m?.email,
       },
     };
