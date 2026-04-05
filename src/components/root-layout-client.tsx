@@ -12,12 +12,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Calendar, Swords, User, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { RealtimeSubscribeStatus } from "@supabase/supabase-js";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
 import { trackClientEvent } from "@/lib/use-track";
 import type { AuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+
+type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
 const Navigation = dynamic(
   () => import("@/components/navigation").then((m) => m.Navigation),

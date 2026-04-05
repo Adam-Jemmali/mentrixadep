@@ -7,7 +7,8 @@ import { trackClientEvent } from "@/lib/use-track";
 import { postClanMessage, type ClanMessageRow } from "@/app/actions/clan-dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { RealtimeSubscribeStatus } from "@supabase/supabase-js";
+
+type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
 type Props = {
   clanId: string;

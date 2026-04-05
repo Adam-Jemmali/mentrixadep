@@ -13,13 +13,14 @@ import {
 } from "@/app/actions/duel";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import type { RealtimeSubscribeStatus } from "@supabase/supabase-js";
 import { trackClientEvent } from "@/lib/use-track";
 import {
   DUEL_SECONDS_PER_QUESTION,
   DUEL_QUESTION_COUNT,
 } from "@/lib/duel-constants";
 import { XP } from "@/lib/xp-constants";
+
+type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
 interface Props {
   duel: DuelPublicRow;
