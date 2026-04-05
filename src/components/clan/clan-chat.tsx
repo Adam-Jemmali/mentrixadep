@@ -10,6 +10,15 @@ import { Input } from "@/components/ui/input";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
+type ClanMessageInsertPayload = {
+  new: {
+    id?: string;
+    user_id?: string;
+    body?: string;
+    created_at?: string;
+  };
+};
+
 type Props = {
   clanId: string;
   initialMessages: ClanMessageRow[];
@@ -43,7 +52,7 @@ export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
           table: "clan_messages",
           filter: `clan_id=eq.${clanId}`,
         },
-        (payload) => {
+        (payload: ClanMessageInsertPayload) => {
           const n = payload.new as {
             id?: string;
             user_id?: string;
