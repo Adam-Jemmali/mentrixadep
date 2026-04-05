@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { sendContactFeedbackInbound } from "@/lib/email";
 
 const feedbackSchema = z.object({
   message: z.string().trim().min(5).max(2000),
@@ -42,6 +43,24 @@ export async function POST(request: Request) {
     if (error) {
       console.error("[api/feedback] insert failed", error);
       return NextResponse.json({ error: "Could not send feedback right now. Please try again." }, { status: 500 });
+    }
+
+    // Best-effort inbox notification: do not fail the API if email delivery fails.
+    // Primary source of truth remains `feedback_submissions` in Supabase.
+    try {
+      const senderEmail = user.email?.trim() || "no-reply@mentrixa.one";
+      const senderLabel = user.email?.split("@")[0] || user.id.slice(0, 8);
+      const roleLabel = userRow?.role ?? "unknown";
+      const pageLabel = parsed.data.pagePath ?? "(unknown page)";
+
+      await sendContactFeedbackInbound({
+        fromEmail: senderEmail,
+        fromName: senderLabel,
+        category: `In-app feedback (${roleLabel})`,
+        message: `${parsed.data.message}\n\n---\nUser ID: ${user.id}\nRole: ${roleLabel}\nPage: ${pageLabel}`,
+      });
+    } catch (mailError) {
+      console.error("[api/feedback] email notify failed", mailError);
     }
 
     return NextResponse.json({ ok: true });
