@@ -19,7 +19,7 @@ import { leaveVideoRoom } from "@/app/actions/video";
 import { saveRecording } from "@/app/actions/recordings";
 import { useRouter } from "next/navigation";
 import { VideoCallIllustration } from "@/components/illustrations";
-import { MessageSquare, LayoutPanelLeft } from "lucide-react";
+import { MessageSquare, LayoutPanelLeft, ArrowLeft } from "lucide-react";
 import { trackClientEvent } from "@/lib/use-track";
 import {
   PreCallLobby,
@@ -404,6 +404,37 @@ export function VideoCall({
     }
   };
 
+  const handleBackToDashboard = async () => {
+    if (isLeaving) return;
+    isLeavingRef.current = true;
+    setIsLeaving(true);
+    setWaitingForOtherParticipant(false);
+
+    try {
+      stopMediaStream(localStreamRef.current);
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+      }
+      if (channelRef.current) {
+        trackClientEvent("realtime_disconnect", {
+          channel: channelRef.current.topic,
+          reason: "navigate_dashboard",
+        });
+        try {
+          await channelRef.current.untrack();
+        } catch {
+          // non-critical
+        }
+        channelRef.current.unsubscribe();
+      }
+      await leaveVideoRoom(sessionId);
+    } catch (err) {
+      console.warn("Back-to-dashboard cleanup failed:", err);
+    } finally {
+      router.push(afterCallPath);
+    }
+  };
+
   // Initialize Supabase client for Realtime
   useEffect(() => {
     supabaseRef.current = createClient(env.public.supabaseUrl, env.public.supabaseAnonKey);
@@ -415,13 +446,15 @@ export function VideoCall({
   }, []);
 
   useEffect(() => {
+    const prevBackground = document.body.style.background;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.background = "#000";
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = inLobby ? "" : "hidden";
     return () => {
-      document.body.style.background = "";
-      document.body.style.overflow = "";
+      document.body.style.background = prevBackground;
+      document.body.style.overflow = prevOverflow;
     };
-  }, []);
+  }, [inLobby]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -2243,6 +2276,9 @@ export function VideoCall({
         partnerLabel={partnerLabel}
         userRole={userRole}
         sessionStartTime={sessionStartTime}
+        onBack={() => {
+          router.push(afterCallPath);
+        }}
         onJoin={(settings) => {
           setLobbySettings(settings);
           setInLobby(false);
@@ -2255,7 +2291,14 @@ export function VideoCall({
     <div className="fixed inset-0 touch-manipulation bg-[#080C14] overflow-hidden text-white flex flex-col">
       {/* Top bar */}
       <div className="flex-none h-12 z-10 px-4 flex items-center justify-between border-b border-white/10 backdrop-blur-md bg-[rgba(8,12,20,0.8)]">
-        <p className="text-sm font-medium text-white/40">Mentrixa</p>
+        <button
+          onClick={() => void handleBackToDashboard()}
+          className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
+          aria-label="Back to dashboard"
+        >
+          <ArrowLeft size={14} />
+          <span>Dashboard</span>
+        </button>
         <p className="text-xs text-white/30 hidden sm:block">
           {courseLabel} · {learnerLabel} &amp; {guideLabel}
         </p>

@@ -39,6 +39,7 @@ interface PreCallLobbyProps {
   userRole: "student" | "tutor";
   sessionStartTime?: string | null;
   onJoin: (settings: LobbySettings) => void;
+  onBack: () => void;
 }
 
 type ConnectionQuality = "checking" | "excellent" | "good" | "poor" | "offline";
@@ -190,6 +191,7 @@ export function PreCallLobby({
   userRole,
   sessionStartTime,
   onJoin,
+  onBack,
 }: PreCallLobbyProps) {
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -325,13 +327,43 @@ export function PreCallLobby({
   }, [onJoin, audioEnabled, videoEnabled, audioDeviceId, videoDeviceId]);
 
   const partnerKind = userRole === "student" ? "Guide" : "Mentrixer";
+  const cameraReady = streamReady && videoEnabled;
+  const microphoneReady = streamReady && audioEnabled;
+  const connectionReady =
+    connectionQuality === "excellent" || connectionQuality === "good";
+  const canJoinNow =
+    joinAllowed &&
+    !permissionError &&
+    cameraReady &&
+    microphoneReady &&
+    connectionReady;
+
+  const joinHint = !joinAllowed
+    ? countdown
+      ? `Available in ${countdown}`
+      : "Join opens 5 minutes before the session starts"
+    : !cameraReady
+      ? "Turn your camera on to join"
+      : !microphoneReady
+        ? "Unmute your microphone to join"
+        : !connectionReady
+          ? "Connection quality is too weak to join"
+          : null;
 
   return (
-    <div className="min-h-screen bg-[#0a0b0e] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0a0b0e] flex items-start justify-center px-4 py-6 overflow-y-auto">
       <div className="w-full max-w-4xl">
 
         {/* Header */}
         <div className="mb-6 text-center">
+          <div className="mb-3 flex justify-start">
+            <button
+              onClick={onBack}
+              className="rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              Back to dashboard
+            </button>
+          </div>
           <p className="text-[11px] font-medium uppercase tracking-widest text-white/30 mb-1">
             Mentrixa · Session Room
           </p>
@@ -448,19 +480,19 @@ export function PreCallLobby({
               {[
                 {
                   label: "Camera ready",
-                  ok: streamReady && videoEnabled,
+                  ok: cameraReady,
                   warn: !videoEnabled,
                   warnMsg: "Camera off",
                 },
                 {
                   label: "Microphone ready",
-                  ok: streamReady && audioEnabled,
+                  ok: microphoneReady,
                   warn: !audioEnabled,
                   warnMsg: "Microphone muted",
                 },
                 {
                   label: "Connection",
-                  ok: connectionQuality === "excellent" || connectionQuality === "good",
+                  ok: connectionReady,
                   warn: connectionQuality === "poor",
                   warnMsg: "Poor signal",
                 },
@@ -484,16 +516,12 @@ export function PreCallLobby({
 
             {/* Join button */}
             <div>
-              {!joinAllowed && countdown && (
-                <p className="text-center text-xs text-white/30 mb-2">
-                  Available in {countdown}
-                </p>
-              )}
+              {joinHint ? <p className="text-center text-xs text-white/30 mb-2">{joinHint}</p> : null}
               <button
                 onClick={handleJoin}
-                disabled={!joinAllowed || !!permissionError}
+                disabled={!canJoinNow}
                 className={`w-full rounded-lg py-3 text-sm font-medium transition-all duration-200 ${
-                  joinAllowed && !permissionError
+                  canJoinNow
                     ? "bg-white text-slate-900 hover:bg-white/90 active:scale-[0.98]"
                     : "bg-white/10 text-white/30 cursor-not-allowed"
                 }`}

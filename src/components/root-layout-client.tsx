@@ -446,6 +446,7 @@ export function RootLayoutClient({
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isStudent = user?.role === "student";
+  const isVideoRoute = pathname.startsWith("/video/");
 
   return (
     <ErrorBoundary>
@@ -458,7 +459,7 @@ export function RootLayoutClient({
           <PushNotificationOptIn />
         </>
       ) : null}
-      {user ? <FeedbackWidget /> : null}
+      {user && !isVideoRoute ? <FeedbackWidget /> : null}
       <CookieConsentBanner />
       <main
         className={cn(
