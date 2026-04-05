@@ -20,6 +20,14 @@ import { cn } from "@/lib/utils";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
+type UserAchievementsPayload = {
+  new: {
+    achievement_type?: string;
+    to_level?: number | null;
+    title?: string | null;
+  };
+};
+
 const Navigation = dynamic(
   () => import("@/components/navigation").then((m) => m.Navigation),
   { loading: () => null },
@@ -164,7 +172,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
           table: "user_achievements",
           filter: `user_id=eq.${uid}`,
         },
-        (row) => {
+        (row: UserAchievementsPayload) => {
           const n = row.new as {
             achievement_type?: string;
             to_level?: number | null;
