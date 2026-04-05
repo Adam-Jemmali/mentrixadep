@@ -202,10 +202,10 @@ function NavigationInner({ user }: NavigationProps) {
             <Image
               src="/mentrixalogo/logo.png"
               alt="Mentrixa"
-              width={24}
-              height={24}
+              width={32}
+              height={32}
               priority
-              className="h-6 w-6 object-contain"
+              className="h-8 w-8 object-contain"
             />
           ) : null}
           <MentrixaWordmark trixaClassName="text-white/95" />

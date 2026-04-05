@@ -209,7 +209,7 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
                           onClick={() => handleApprove(request.id)}
                         >
                           <span className="inline-flex items-center gap-1.5">
-                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
                             Accept
                           </span>
                         </Button>
@@ -219,7 +219,7 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
                           onClick={() => handleReject(request.id)}
                         >
                           <span className="inline-flex items-center gap-1.5">
-                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
                             Decline
                           </span>
                         </Button>

@@ -55,7 +55,7 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
           "…"
         ) : (
           <span className="inline-flex items-center gap-1.5">
-            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+            <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
             Mark complete
           </span>
         )}
@@ -72,7 +72,7 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
           "…"
         ) : (
           <span className="inline-flex items-center gap-1.5">
-            <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+            <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
             Cancel
           </span>
         )}

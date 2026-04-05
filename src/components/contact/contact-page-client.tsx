@@ -167,9 +167,9 @@ export function ContactPageClient({ feedbackEmail }: Props) {
           </Button>
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-black/80">
             <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-black/5">
-              <Image src="/mentrixalogo/logo.png" alt="Mentrixa" width={16} height={16} />
+              <Image src="/mentrixalogo/logo.png" alt="Mentrixa" width={45} height={45} />
             </span>
-            ← Back to Mentrixa
+            
           </Link>
         </div>
       </form>

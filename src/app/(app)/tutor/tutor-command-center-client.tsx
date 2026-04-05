@@ -71,19 +71,19 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
             <Link href="/settings" className="inline-flex items-center gap-1.5">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
               Settings
             </Link>
           </Button>
           <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
             <Link href={studioHref} className="inline-flex items-center gap-1.5">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
               Studio output
             </Link>
           </Button>
           <Button type="button" size="sm" className="h-8 text-xs  " onClick={() => setAddOpen(true)}>
             <span className="inline-flex items-center gap-1.5">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
               Add availability
             </span>
           </Button>
@@ -221,7 +221,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
             onClick={() => setAddOpen(true)}
           >
             <span className="inline-flex items-center gap-1.5">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
               Add availability
             </span>
           </Button>

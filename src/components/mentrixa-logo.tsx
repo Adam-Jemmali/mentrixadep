@@ -4,7 +4,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
-const PX = { sm: 36, md: 52, lg: 72, xl: 96, hero: 160 } as const;
+const PX = { sm: 44, md: 60, lg: 80, xl: 104, hero: 160 } as const;
 
 type Size = keyof typeof PX;
 
