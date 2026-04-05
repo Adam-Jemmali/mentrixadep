@@ -33,6 +33,8 @@ const publicRoutes = new Set([
   "/offline",
   "/sw.js",
   "/manifest.json",
+  "/robots.txt",
+  "/sitemap.xml",
   "/join",
   /** Marketing / legal — no session required (same route group as landing links in footer). */
   "/contact",
