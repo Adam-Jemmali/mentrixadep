@@ -9,7 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
-  const feedbackEmail =
-    process.env.NEXT_PUBLIC_FEEDBACK_EMAIL?.trim() || DEFAULT_PUBLIC_FEEDBACK_EMAIL;
+  const feedbackEmail = DEFAULT_PUBLIC_FEEDBACK_EMAIL;
   return <ContactPageClient feedbackEmail={feedbackEmail} />;
 }

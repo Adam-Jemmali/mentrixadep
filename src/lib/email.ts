@@ -1329,9 +1329,7 @@ export async function sendContactFeedbackInbound(params: {
 }): Promise<{ ok: boolean; error?: string }> {
   /** Same inbox as mailto when possible: form submissions + “email us” land in one place. */
   const inbox =
-    process.env.CONTACT_INBOX_EMAIL?.trim() ||
-    process.env.NEXT_PUBLIC_FEEDBACK_EMAIL?.trim() ||
-    DEFAULT_PUBLIC_FEEDBACK_EMAIL;
+    process.env.CONTACT_INBOX_EMAIL?.trim() || DEFAULT_PUBLIC_FEEDBACK_EMAIL;
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     console.error("[email] RESEND_API_KEY is not set");

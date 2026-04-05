@@ -250,7 +250,7 @@ const PRICING_POINTS = [
   "Guides set $15–$60/hr — you always know the range up front",
 ];
 
-const FEEDBACK_EMAIL = process.env.NEXT_PUBLIC_FEEDBACK_EMAIL ?? DEFAULT_PUBLIC_FEEDBACK_EMAIL;
+const FEEDBACK_EMAIL = DEFAULT_PUBLIC_FEEDBACK_EMAIL;
 
 export function HomePageClient() {
   const [featRef, featVis] = useInViewOnce<HTMLElement>("0px 0px -14% 0px");
