@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createAccountLink } from "@/app/actions/stripe-connect";
 
 /**
@@ -13,6 +14,17 @@ export async function POST(_req: NextRequest) {
 
   if (error || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const admin = createAdminClient();
+  const { data: userRow } = await admin
+    .from("users")
+    .select("role, approved")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!userRow || !["tutor", "admin"].includes(userRow.role ?? "")) {
+    return NextResponse.json({ error: "Stripe Connect is only available to tutors." }, { status: 403 });
   }
 
   try {

@@ -1,5 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 
+let browserClient: ReturnType<typeof createBrowserClient> | null = null;
+
 /**
  * Browser Supabase client — must NOT import `@/lib/env` (that module is server-oriented and
  * runs `validateEnvAtStartup` + bundles getters that confuse the client webpack graph in dev).
@@ -10,6 +12,9 @@ export function createClient() {
   if (!url?.trim() || !key?.trim()) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
-  return createBrowserClient(url, key);
+  if (!browserClient) {
+    browserClient = createBrowserClient(url, key);
+  }
+  return browserClient;
 }
 

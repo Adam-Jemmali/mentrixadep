@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -46,13 +47,20 @@ function EarningsTooltip({
 }
 
 export function TutorEarningsChart({ data }: { data: DayPoint[] }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const chartData = data.map((d) => ({
     date: d.date,
     dollars: Math.round((d.cents / 100) * 100) / 100,
   }));
 
   return (
-    <div className="h-[220px] w-full">
+    <div className="h-[220px] w-full min-w-0">
+      {!isMounted ? null : (
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -81,6 +89,7 @@ export function TutorEarningsChart({ data }: { data: DayPoint[] }) {
           />
         </AreaChart>
       </ResponsiveContainer>
+      )}
     </div>
   );
 }

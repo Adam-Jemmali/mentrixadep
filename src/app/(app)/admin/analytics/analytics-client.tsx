@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   AreaChart,
@@ -208,6 +209,12 @@ export function AnalyticsDashboardClient({
   dailySignups,
   dailyQuests,
 }: Props) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const totalRevenue = revenue.reduce((s, r) => s + r.revenue, 0);
   const maxSubject = subjects[0]?.count ?? 1;
 
@@ -252,7 +259,8 @@ export function AnalyticsDashboardClient({
           title="Revenue"
           sub={`Daily completed-session revenue — last ${days} days`}
         />
-        <div className="h-48">
+        <div className="h-48 min-w-0">
+          {!isMounted ? null : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={revenue} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               <defs>
@@ -289,6 +297,7 @@ export function AnalyticsDashboardClient({
               />
             </AreaChart>
           </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -296,7 +305,8 @@ export function AnalyticsDashboardClient({
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white border border-[#E5E7EB] rounded-lg p-5">
           <SectionHeader title="Sign-ups" sub={`Last ${days} days`} />
-          <div className="h-40">
+          <div className="h-40 min-w-0">
+            {!isMounted ? null : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailySignups} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
@@ -319,12 +329,14 @@ export function AnalyticsDashboardClient({
                 <Bar dataKey="count" fill="#1e293b" radius={[2, 2, 0, 0]} maxBarSize={20} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         <div className="bg-white border border-[#E5E7EB] rounded-lg p-5">
           <SectionHeader title="Quest starts" sub={`Last ${days} days`} />
-          <div className="h-40">
+          <div className="h-40 min-w-0">
+            {!isMounted ? null : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyQuests} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
@@ -347,6 +359,7 @@ export function AnalyticsDashboardClient({
                 <Bar dataKey="count" fill="#334155" radius={[2, 2, 0, 0]} maxBarSize={20} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

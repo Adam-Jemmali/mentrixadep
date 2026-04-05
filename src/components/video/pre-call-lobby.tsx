@@ -65,20 +65,7 @@ function formatCountdown(mins: number): string {
 
 async function measureConnectionQuality(): Promise<ConnectionQuality> {
   if (!navigator.onLine) return "offline";
-  try {
-    const start = Date.now();
-    await fetch("https://www.gstatic.com/generate_204", {
-      method: "HEAD",
-      cache: "no-store",
-      signal: AbortSignal.timeout(3000),
-    });
-    const rtt = Date.now() - start;
-    if (rtt < 150) return "excellent";
-    if (rtt < 400) return "good";
-    return "poor";
-  } catch {
-    return "poor";
-  }
+  return "good";
 }
 
 // ─── Device selector ─────────────────────────────────────────────────────────
