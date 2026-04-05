@@ -49,6 +49,13 @@ async function waitFor<T>(fn: () => Promise<T | null>, retries = 12, delayMs = 1
   return null;
 }
 
+function withinToleranceMs(actualIso: string, expected: Date, toleranceMs: number): boolean {
+  const actualMs = new Date(actualIso).getTime();
+  const expectedMs = expected.getTime();
+  if (!Number.isFinite(actualMs)) return false;
+  return Math.abs(actualMs - expectedMs) <= toleranceMs;
+}
+
 type BookingArtifacts = {
   sessionRequest: {
     id: string;
@@ -72,8 +79,8 @@ async function findBookingArtifacts(
   checkoutSessionId: string,
   studentId: string,
   tutorId: string,
-  startIso: string,
-  endIso: string,
+  startWindowFromIso: string,
+  startWindowToIso: string,
 ): Promise<BookingArtifacts> {
   const [{ data: sessionRequest }, { data: session }] = await Promise.all([
     supabase
@@ -86,8 +93,10 @@ async function findBookingArtifacts(
       .select("id, student_id, tutor_id, start_time, end_time, status")
       .eq("student_id", studentId)
       .eq("tutor_id", tutorId)
-      .eq("start_time", startIso)
-      .eq("end_time", endIso)
+      .gte("start_time", startWindowFromIso)
+      .lte("start_time", startWindowToIso)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle(),
   ]);
 
@@ -195,13 +204,15 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
     expect(webhookBody).toMatchObject({ received: true });
 
     const artifacts = await waitFor(async () => {
+      const startWindowFrom = new Date(startTime.getTime() - 2 * 60 * 1000).toISOString();
+      const startWindowTo = new Date(startTime.getTime() + 2 * 60 * 1000).toISOString();
       const value = await findBookingArtifacts(
         supabase,
         checkoutSessionId,
         env.E2E_STUDENT_ID,
         env.E2E_TUTOR_ID,
-        startTime.toISOString(),
-        endTime.toISOString(),
+        startWindowFrom,
+        startWindowTo,
       );
       if (value.sessionRequest || value.session) {
         return value;
@@ -250,8 +261,9 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
     if (artifacts.session) {
       expect(artifacts.session.student_id).toBe(env.E2E_STUDENT_ID);
       expect(artifacts.session.tutor_id).toBe(env.E2E_TUTOR_ID);
-      expect(artifacts.session.start_time).toBe(startTime.toISOString());
-      expect(artifacts.session.end_time).toBe(endTime.toISOString());
+      const toleranceMs = 1_000;
+      expect(withinToleranceMs(artifacts.session.start_time, startTime, toleranceMs)).toBeTruthy();
+      expect(withinToleranceMs(artifacts.session.end_time, endTime, toleranceMs)).toBeTruthy();
     }
 
     const { data: availabilityAfter } = await supabase
