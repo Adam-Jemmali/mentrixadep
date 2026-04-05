@@ -61,7 +61,7 @@ export default function TermsPage() {
       <section className="space-y-2 text-sm text-slate-700">
         <h2 className="text-base font-semibold text-slate-900">Contact</h2>
         <p>
-          For legal notices and terms questions, contact <a className="underline" href="mailto:legal@mentrixa.com">legal@mentrixa.com</a>.
+          For legal notices and terms questions, contact <a className="underline" href="mailto:legal@mentrixa.one">legal@mentrixa.one</a>.
         </p>
       </section>
     </div>

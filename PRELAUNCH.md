@@ -36,7 +36,7 @@ Set in **Vercel -> Project Settings -> Environment Variables**:
 - `GEMINI_API_KEY` -> Google AI Studio
 - `RESEND_API_KEY` -> Resend dashboard
 - `CRON_SECRET` -> generate with `openssl rand -hex 32`
-- `NEXT_PUBLIC_APP_URL` -> `https://mentrixa.com`
+- `NEXT_PUBLIC_APP_URL` -> `https://mentrixa.one`
 
 Recommended hardening (also enforced on each `/api/cron/*` request in `lib/cron.ts`):
 
@@ -73,7 +73,7 @@ Then:
 ## 4) Stripe Production Checklist
 
 - Create live webhook endpoint:
-  - `https://mentrixa.com/api/stripe/webhook`
+  - `https://mentrixa.one/api/stripe/webhook`
 - Subscribe to events:
   - `checkout.session.completed`
   - `checkout.session.expired`

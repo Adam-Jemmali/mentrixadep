@@ -1082,7 +1082,7 @@ export async function sendVerificationStartedEmail(
       Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
     </p>
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 14px;">
-      Welcome to Mentrixa. Your account is being verified by our team — this typically completes within
+      Welcome to Mentrixa. Your account is being verified by our team , this typically completes within
       <strong style="color:#eee;">${hours} hours</strong>.
     </p>
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:18px 0 20px;border-collapse:collapse;">
@@ -1090,7 +1090,7 @@ export async function sendVerificationStartedEmail(
         <td style="padding:16px;background:#161616;border:1px solid #2a2a2a;border-radius:10px;border-left:3px solid #22c55e;">
           <p style="margin:0 0 10px;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">While we verify your account</p>
           <ul style="margin:0;padding-left:18px;">
-            <li style="margin:0 0 6px;color:#d1d5db;font-size:14px;line-height:1.55;">You have <strong style="color:#eee;">full access</strong> to Mentrixa — no restrictions during review</li>
+            <li style="margin:0 0 6px;color:#d1d5db;font-size:14px;line-height:1.55;">You have <strong style="color:#eee;">full access</strong> to Mentrixa , no restrictions during review</li>
             <li style="margin:0 0 6px;color:#d1d5db;font-size:14px;line-height:1.55;">We'll email you the moment your verification is complete</li>
             <li style="margin:0 0 0;color:#d1d5db;font-size:14px;line-height:1.55;">If we need anything from you, we'll reach out here at ${escapeHtml(data.email)}</li>
           </ul>
@@ -1143,7 +1143,7 @@ export async function sendVerificationApprovedEmail(
   await sendEmail(
     data.email,
     `${hi}, your Mentrixa account is verified ✓`,
-    baseTemplate("You're verified — welcome to Mentrixa", body)
+    baseTemplate("You're verified ! Welcome to Mentrixa", body)
   );
 }
 
@@ -1336,7 +1336,7 @@ export async function sendContactFeedbackInbound(params: {
     return { ok: false, error: "Email is not configured on this server." };
   }
 
-  const subject = `[Mentrixa Feedback] ${params.category} — ${params.fromName}`;
+  const subject = `Mentrixa Feedback ${params.category} from ${params.fromName}`;
   const body = `
       <p style="color:#b4b4b4;font-size:14px;line-height:1.6;margin:0 0 10px;">
         <strong style="color:#e5e5e5;">From:</strong> ${escapeHtml(params.fromName)}
@@ -1349,7 +1349,7 @@ export async function sendContactFeedbackInbound(params: {
         ${escapeHtml(params.message)}
       </div>
       <p style="color:#737373;font-size:12px;line-height:1.5;margin:0;">
-        Reply directly to the sender using Reply in your inbox — Resend sets Reply-To to their address.
+        Reply directly to the sender using Reply in your inbox 
       </p>
     `;
 
@@ -1365,7 +1365,7 @@ export async function sendContactFeedbackInbound(params: {
         to: [inbox],
         reply_to: params.fromEmail,
         subject,
-        html: baseTemplate("Feedback from mentrixa.com", body),
+        html: baseTemplate("Feedback from mentrixa.one", body),
       }),
     });
     if (!res.ok) {

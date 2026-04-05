@@ -156,7 +156,7 @@ export function BillingClient({
 
               {plan.cta && !isCurrent && !isLower ? (
                 <a
-                  href="mailto:enterprise@mentrixa.com?subject=Institution Plan Upgrade"
+                  href="mailto:enterprise@mentrixa.one?subject=Institution Plan Upgrade"
                   className={cn(
                     "block text-center text-[12px] font-semibold py-2 rounded-md transition-colors",
                     plan.highlight
@@ -185,8 +185,8 @@ export function BillingClient({
 
       <p className="text-[11px] text-slate-400">
         To upgrade, contact{" "}
-        <a href="mailto:enterprise@mentrixa.com" className="text-slate-600 underline underline-offset-2">
-          enterprise@mentrixa.com
+        <a href="mailto:enterprise@mentrixa.one" className="text-slate-600 underline underline-offset-2">
+          enterprise@mentrixa.one
         </a>
         . Custom contracts available for 100+ students.
       </p>

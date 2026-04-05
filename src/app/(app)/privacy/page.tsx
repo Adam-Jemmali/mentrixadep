@@ -64,7 +64,7 @@ export default function PrivacyPage() {
       <section className="space-y-2 text-sm text-slate-700">
         <h2 className="text-base font-semibold text-slate-900">Contact</h2>
         <p>
-          For privacy questions or deletion requests, contact <a className="underline" href="mailto:privacy@mentrixa.com">privacy@mentrixa.com</a>.
+          For privacy questions or deletion requests, contact <a className="underline" href="mailto:privacy@mentrixa.one">privacy@mentrixa.one</a>.
         </p>
       </section>
     </div>
