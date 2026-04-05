@@ -545,7 +545,7 @@ export const securityHeaders = {
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     "frame-src 'self' https://accounts.google.com",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://api.stripe.com https://*.clarity.ms https://c.clarity.ms https://clarity.ms",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://www.gstatic.com https://api.stripe.com https://*.clarity.ms https://c.clarity.ms https://clarity.ms",
     "media-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

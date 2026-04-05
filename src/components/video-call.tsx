@@ -569,6 +569,9 @@ export function VideoCall({
 
   // Initialize WebRTC and signaling
   useEffect(() => {
+    // Wait until the user leaves pre-call lobby so local/remote video elements are mounted.
+    if (inLobby) return;
+
     let mounted = true;
 
         async function initializeCall() {
@@ -664,9 +667,8 @@ export function VideoCall({
             attempts++;
           }
           
-          if (!localVideoRef.current) {
-            console.error("Video element not found after waiting");
-            setError("Video element not ready. Please refresh the page.");
+          if (!localVideoRef.current || !document.contains(localVideoRef.current)) {
+            console.warn("Local video element not ready yet; stream will attach on next render tick.");
             return;
           }
 
@@ -1364,7 +1366,7 @@ export function VideoCall({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- we intentionally initialize call once for identity/session tuple
-  }, [sessionId, roomId, roomToken, userRole, userId]);
+  }, [sessionId, roomId, roomToken, userRole, userId, inLobby]);
 
   const toggleMute = () => {
     runControlAction(() => {
