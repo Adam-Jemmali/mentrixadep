@@ -14,6 +14,7 @@ import { BookOpen, Calendar, Swords, User, UsersRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
+import { trackClientEvent } from "@/lib/use-track";
 import type { AuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -173,7 +174,22 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
           }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          trackClientEvent("realtime_reconnect", {
+            channel: `user_achievements:${uid}`,
+            reason: "subscribed",
+          });
+          return;
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          trackClientEvent("realtime_disconnect", {
+            channel: `user_achievements:${uid}`,
+            reason: status.toLowerCase(),
+          });
+        }
+      });
     return () => {
       void supabase.removeChannel(channel);
     };

@@ -13,6 +13,7 @@ import {
 } from "@/app/actions/duel";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { trackClientEvent } from "@/lib/use-track";
 import {
   DUEL_SECONDS_PER_QUESTION,
   DUEL_QUESTION_COUNT,
@@ -113,7 +114,22 @@ export function DuelPlayClient({ duel, side }: Props) {
           router.refresh();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          trackClientEvent("realtime_reconnect", {
+            channel: `skill-duel-${duel.id}`,
+            reason: "subscribed",
+          });
+          return;
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          trackClientEvent("realtime_disconnect", {
+            channel: `skill-duel-${duel.id}`,
+            reason: status.toLowerCase(),
+          });
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);

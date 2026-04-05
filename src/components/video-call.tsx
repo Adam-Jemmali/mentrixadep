@@ -20,6 +20,7 @@ import { saveRecording } from "@/app/actions/recordings";
 import { useRouter } from "next/navigation";
 import { VideoCallIllustration } from "@/components/illustrations";
 import { MessageSquare, LayoutPanelLeft } from "lucide-react";
+import { trackClientEvent } from "@/lib/use-track";
 import {
   PreCallLobby,
   type LobbySettings,
@@ -269,6 +270,27 @@ export function VideoCall({
   const peerLeftNoticeShownRef = useRef(false);
   /** After Supabase channel.track — safe to interpret presence as "in room". */
   const realtimeRoomJoinedRef = useRef(false);
+  const lastRealtimeStatusRef = useRef<string | null>(null);
+
+  function trackRealtimeStatus(status: string, channelName: string) {
+    if (lastRealtimeStatusRef.current === status) return;
+    lastRealtimeStatusRef.current = status;
+
+    if (status === "SUBSCRIBED") {
+      trackClientEvent("realtime_reconnect", {
+        channel: channelName,
+        reason: "subscribed",
+      });
+      return;
+    }
+
+    if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+      trackClientEvent("realtime_disconnect", {
+        channel: channelName,
+        reason: status.toLowerCase(),
+      });
+    }
+  }
 
   const runControlAction = (fn: () => void) => {
     if (controlActionLockRef.current) return;
@@ -362,6 +384,10 @@ export function VideoCall({
 
       // Untrack presence and unsubscribe from channel
       if (channelRef.current) {
+        trackClientEvent("realtime_disconnect", {
+          channel: channelRef.current.topic,
+          reason: "manual_end_call",
+        });
         try {
           await channelRef.current.untrack();
         } catch (err) {
@@ -1195,6 +1221,7 @@ export function VideoCall({
         // Subscribe to channel and set presence
         await channel.subscribe(async (status) => {
           console.log("Channel subscription status:", status);
+          trackRealtimeStatus(status, channel.topic);
           if (status === "SUBSCRIBED") {
             // Set presence to indicate we're in the room
             await channel.track({

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { trackClientEvent } from "@/lib/use-track";
 import { postClanMessage, type ClanMessageRow } from "@/app/actions/clan-dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +62,22 @@ export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          trackClientEvent("realtime_reconnect", {
+            channel: `clan-chat-${clanId}`,
+            reason: "subscribed",
+          });
+          return;
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          trackClientEvent("realtime_disconnect", {
+            channel: `clan-chat-${clanId}`,
+            reason: status.toLowerCase(),
+          });
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);

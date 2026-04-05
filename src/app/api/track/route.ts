@@ -19,6 +19,7 @@ const ALLOWED_CLIENT_EVENTS: AnalyticsEventName[] = [
   "daily_login",
   "referral_clicked",
   "realtime_disconnect",
+  "realtime_reconnect",
 ];
 
 const bodySchema = z.object({

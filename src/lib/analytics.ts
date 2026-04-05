@@ -39,7 +39,8 @@ export type AnalyticsEventName =
   // Misc
   | "referral_clicked"
   | "push_subscribed"
-  | "realtime_disconnect";
+  | "realtime_disconnect"
+  | "realtime_reconnect";
 
 export type EventProperties = Record<string, string | number | boolean | null | undefined>;
 

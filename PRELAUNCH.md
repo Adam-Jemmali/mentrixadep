@@ -48,21 +48,25 @@ Startup logs a **warning** if neither is set so deploys succeed; set one of thes
 ## 3) Supabase Production Setup Checklist
 
 ### Database & platform
+
 - Enable `pgvector` extension (for embeddings/search use cases).
 - Enable daily backups / PITR (project settings).
 - Enable connection pooling (PgBouncer) and use pooled connection string for concurrency-sensitive workloads.
 
 ### SQL launch audit
+
 Run in order in Supabase SQL editor:
 
 1. `supabase/044-fk-indexes-auto.sql`
 2. `supabase/045-rls-audit-and-policy-template.sql`
 
 Then:
+
 - Review missing-policy table output.
 - Apply reviewed per-table policies (do not apply blanket policies blindly).
 
 ### Edge Functions
+
 - Deploy/verify Supabase Edge Functions for push notification workflows.
 - Ensure required service keys/secrets are present in function env.
 
@@ -106,3 +110,58 @@ Run locally before promoting release:
 - `npm run analyze`
 
 All must pass with no launch-blocking errors.
+
+## 8) One-Shot Go-Live Sequence (First 50 Users)
+
+Run this sequence in order to complete production readiness in one pass.
+
+### A) Local release gate (single command)
+
+Run:
+
+- npm run release:verify
+
+This executes lint + unit tests + E2E CI suite + production build.
+
+### B) Apply production hardening migration
+
+In production Supabase SQL editor, run:
+
+- supabase/053-production-hardening-signup-and-search-path.sql
+
+### C) Verify migration 053 and live telemetry shape
+
+In production Supabase SQL editor, run:
+
+- scripts/sql/prod-readiness-verification.sql
+
+Pass criteria:
+
+- handle_new_user_with_jwt is SECURITY DEFINER with pinned search_path
+- listed legacy functions show pinned search_path in proconfig
+- checkout/webhook/realtime events are queryable and non-erroring
+
+### D) Ensure alert routes are live
+
+Configure according to docs/ALERTING-SETUP.md:
+
+- Critical alerts -> Pager + Slack
+- Warning alerts -> Slack only
+
+### E) Keep staging smoke scheduled
+
+Workflow already scheduled every 30 minutes:
+
+- .github/workflows/staging-smoke-stripe.yml
+
+### F) 24-hour soak gate
+
+Observe for 24 hours:
+
+- No critical alerts
+- Staging stripe smoke remains green
+- No sustained checkout/webhook error spikes
+
+### G) Marketing release decision
+
+If A-F are all green, proceed with first-50-user marketing rollout.
