@@ -1,5 +1,5 @@
 /* Mentrixa service worker — static cache-first, API network-first, offline navigation fallback. */
-const VERSION = "mentrixa-sw-v1";
+const VERSION = "mentrixa-sw-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const API_CACHE = `${VERSION}-api`;
 
