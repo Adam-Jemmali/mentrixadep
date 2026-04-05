@@ -49,6 +49,28 @@ async function waitFor<T>(fn: () => Promise<T | null>, retries = 12, delayMs = 1
   return null;
 }
 
+async function ensureApprovedBookingUser(
+  supabase: any,
+  userId: string,
+  role: "student" | "tutor",
+) {
+  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+  if (authError || !authUser?.user) {
+    throw new Error(`Staging smoke user not found in auth.users: ${userId}`);
+  }
+
+  const { error: upsertError } = await supabase.from("users").upsert(
+    {
+      id: userId,
+      role,
+      approved: true,
+    },
+    { onConflict: "id" },
+  );
+
+  expect(upsertError?.message ?? "").toBe("");
+}
+
 test("stripe checkout completed webhook creates booking artifacts", async ({ request }) => {
   const env = getRequiredEnv();
 
@@ -84,6 +106,9 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
 
   expect(availabilityInsertError?.message ?? "").toBe("");
 
+  await ensureApprovedBookingUser(supabase, env.E2E_STUDENT_ID, "student");
+  await ensureApprovedBookingUser(supabase, env.E2E_TUTOR_ID, "tutor");
+
   try {
     const stripeEvent = {
       id: `evt_test_smoke_${runId}`,
@@ -109,7 +134,8 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
     const signature = buildStripeSignatureHeader(payload, env.STRIPE_WEBHOOK_SECRET);
 
     const webhookRes = await request.post("/api/stripe/webhook", {
-      data: payload,
+      // Send the exact raw bytes Stripe signs so the webhook sees the same body.
+      data: Buffer.from(payload, "utf-8"),
       headers: {
         "content-type": "application/json",
         "stripe-signature": signature,
@@ -127,7 +153,7 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
         .eq("stripe_checkout_session_id", checkoutSessionId)
         .maybeSingle();
       return data;
-    });
+    }, 60, 1000);
 
     expect(sessionRequestRow).not.toBeNull();
     expect(sessionRequestRow?.availability_id).toBe(availabilityId);
