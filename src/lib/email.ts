@@ -117,9 +117,9 @@ function formatTimeOnly(iso: string): string {
 }
 
 const MENTRIXER_LINE =
-  'On Mentrixa, learners and tutors are <strong style="color:#e5e5e5;">Mentrixers</strong> — one community built for depth, not noise.';
+  'On Mentrixa, learners and tutors are <strong style="color:#e5e5e5;">Mentrixers</strong>  one community built for depth, not noise.';
 
-const HEADER_LOGO_SRC = `${APP_URL}/mentrixa-checkout-logo.svg`;
+const HEADER_LOGO_SRC = `${APP_URL}/icon.png`;
 
 function googleCalendarTemplateUrl(params: {
   title: string;
@@ -195,7 +195,7 @@ function baseTemplate(title: string, bodyContent: string): string {
             <td style="background:#0c0c0c;padding:24px 36px;border-bottom:1px solid #1f1f1f;">
               <img src="${HEADER_LOGO_SRC}" alt="Mentrixa" width="140" height="32" style="display:block;height:auto;max-width:140px;" />
               <p style="margin:12px 0 0;color:#a3a3a3;font-size:12px;line-height:1.5;">
-                Serious learning — learners &amp; guides together
+                Real tutors. Top Mentrixers. Live now. Book in 3 minutes.
               </p>
             </td>
           </tr>

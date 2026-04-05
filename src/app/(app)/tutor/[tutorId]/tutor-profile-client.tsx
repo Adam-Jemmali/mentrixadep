@@ -66,9 +66,7 @@ function getDayLabel(iso: string): Day {
   return (labels[d] ?? "Mon") as Day;
 }
 
-function formatSlotTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
+
 
 function formatSlotDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -78,13 +76,6 @@ function formatSlotDate(iso: string): string {
   });
 }
 
-function formatSlotDateRange(startIso: string, endIso: string): string {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const sameDay = start.toDateString() === end.toDateString();
-  if (sameDay) return formatSlotDate(startIso);
-  return `${formatSlotDate(startIso)} -> ${formatSlotDate(endIso)}`;
-}
 
 function formatPrice(cents: number | null): string {
   if (cents == null) return "$25.00";
@@ -105,7 +96,7 @@ function relativeDate(iso: string): string {
 
 export function TutorProfileClient({
   profile,
-  isAuthenticated,
+ 
   isOwnProfile = false,
   viewerRole = null,
 }: TutorProfileClientProps) {
@@ -123,8 +114,7 @@ export function TutorProfileClient({
   }, [profile.availability]);
 
   // Day filter (next 14 days only)
-  const daysWithSlots = new Set(bookableSlots.map((s) => getDayLabel(s.start_time)));
-  const [selectedDay, setSelectedDay] = useState<Day | "All">("All");
+  const [selectedDay] = useState<Day | "All">("All");
 
   const filteredSlots =
     selectedDay === "All"
