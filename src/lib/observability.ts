@@ -22,6 +22,7 @@ export function reportStripeWebhookMissingMetadata(checkoutSessionId: string): v
 }
 
 export function reportStripeWebhookMissingSignature(): void {
+  if (process.env.NODE_ENV !== "production") return;
   console.warn("[stripe-webhook] missing stripe-signature header");
 }
 
@@ -53,6 +54,14 @@ export function reportMiddlewareHttpError(params: {
   userIdRedacted: string;
 }): void {
   if (params.status < 400) return;
+  // In CI/dev E2E we intentionally probe guarded endpoints; keep logs clean there.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    params.status < 500 &&
+    ["/api/stripe/checkout", "/api/stripe/webhook"].includes(params.pathname)
+  ) {
+    return;
+  }
   const msg = `HTTP ${params.status} ${params.method} ${params.pathname}`;
   if (params.status >= 500) console.error(msg, { userIdRedacted: params.userIdRedacted });
   else console.warn(msg, { userIdRedacted: params.userIdRedacted });

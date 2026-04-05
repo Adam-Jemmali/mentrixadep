@@ -49,6 +49,50 @@ async function waitFor<T>(fn: () => Promise<T | null>, retries = 12, delayMs = 1
   return null;
 }
 
+type BookingArtifacts = {
+  sessionRequest: {
+    id: string;
+    availability_id: string;
+    student_id: string;
+    tutor_id: string;
+    stripe_checkout_session_id: string | null;
+  } | null;
+  session: {
+    id: string;
+    availability_id: string | null;
+    student_id: string;
+    tutor_id: string;
+  } | null;
+};
+
+async function findBookingArtifacts(
+  supabase: any,
+  checkoutSessionId: string,
+  availabilityId: string,
+  studentId: string,
+  tutorId: string,
+): Promise<BookingArtifacts> {
+  const [{ data: sessionRequest }, { data: session }] = await Promise.all([
+    supabase
+      .from("session_requests")
+      .select("id, availability_id, student_id, tutor_id, stripe_checkout_session_id")
+      .eq("stripe_checkout_session_id", checkoutSessionId)
+      .maybeSingle(),
+    supabase
+      .from("sessions")
+      .select("id, availability_id, student_id, tutor_id")
+      .eq("availability_id", availabilityId)
+      .eq("student_id", studentId)
+      .eq("tutor_id", tutorId)
+      .maybeSingle(),
+  ]);
+
+  return {
+    sessionRequest: sessionRequest ?? null,
+    session: session ?? null,
+  };
+}
+
 async function ensureApprovedBookingUser(
   supabase: any,
   userId: string,
@@ -146,19 +190,54 @@ test("stripe checkout completed webhook creates booking artifacts", async ({ req
     const webhookBody = await webhookRes.json();
     expect(webhookBody).toMatchObject({ received: true });
 
-    const sessionRequestRow = await waitFor(async () => {
-      const { data } = await supabase
-        .from("session_requests")
-        .select("id, availability_id, student_id, tutor_id, stripe_checkout_session_id")
-        .eq("stripe_checkout_session_id", checkoutSessionId)
-        .maybeSingle();
-      return data;
+    const artifacts = await waitFor(async () => {
+      const value = await findBookingArtifacts(
+        supabase,
+        checkoutSessionId,
+        availabilityId,
+        env.E2E_STUDENT_ID,
+        env.E2E_TUTOR_ID,
+      );
+      if (value.sessionRequest || value.session) {
+        return value;
+      }
+      return null;
     }, 60, 1000);
 
-    expect(sessionRequestRow).not.toBeNull();
-    expect(sessionRequestRow?.availability_id).toBe(availabilityId);
-    expect(sessionRequestRow?.student_id).toBe(env.E2E_STUDENT_ID);
-    expect(sessionRequestRow?.tutor_id).toBe(env.E2E_TUTOR_ID);
+    if (!artifacts) {
+      const [availabilityDebug, webhookLogDebug] = await Promise.all([
+        supabase
+          .from("availability")
+          .select("id, booking_status, stripe_checkout_session_id, locked_by, locked_until")
+          .eq("id", availabilityId)
+          .maybeSingle(),
+        supabase
+          .from("stripe_webhook_log")
+          .select("event_id, event_type, created_at")
+          .eq("event_id", stripeEvent.id)
+          .maybeSingle(),
+      ]);
+
+      throw new Error(
+        `No booking artifacts materialized for checkout ${checkoutSessionId}. ` +
+          `webhookResponse=${JSON.stringify(webhookBody)} ` +
+          `availability=${JSON.stringify(availabilityDebug.data ?? null)} ` +
+          `webhookLog=${JSON.stringify(webhookLogDebug.data ?? null)}`,
+      );
+    }
+
+    if (artifacts.sessionRequest) {
+      expect(artifacts.sessionRequest.availability_id).toBe(availabilityId);
+      expect(artifacts.sessionRequest.student_id).toBe(env.E2E_STUDENT_ID);
+      expect(artifacts.sessionRequest.tutor_id).toBe(env.E2E_TUTOR_ID);
+      expect(artifacts.sessionRequest.stripe_checkout_session_id).toBe(checkoutSessionId);
+    }
+
+    if (artifacts.session) {
+      expect(artifacts.session.availability_id).toBe(availabilityId);
+      expect(artifacts.session.student_id).toBe(env.E2E_STUDENT_ID);
+      expect(artifacts.session.tutor_id).toBe(env.E2E_TUTOR_ID);
+    }
 
     const { data: availabilityAfter } = await supabase
       .from("availability")

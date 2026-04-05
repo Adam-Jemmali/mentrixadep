@@ -22,6 +22,7 @@ const supabasePattern = supabaseStorageRemotePattern();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   async redirects() {
     return [
       { source: "/quest", destination: "/student/quest", permanent: false },
