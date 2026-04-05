@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
-import "./globals.css";
 
 export const viewport: Viewport = {
   themeColor: "#1E3A5F",
@@ -13,12 +12,6 @@ export const metadata: Metadata = {
   description:
     "Mentrixa helps students and tutors work smarter with structured quests, sessions, and divisions.",
   manifest: "/manifest.json",
-  scripts: [
-    {
-      src: "https://www.clarity.ms/tag/w7032mq4bu",
-      async: true,
-    },
-  ],
   icons: {
     icon: [
       { url: "/icon.png", type: "image/png" },
