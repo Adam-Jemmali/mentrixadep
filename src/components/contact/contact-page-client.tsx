@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { submitContactFeedback } from "@/app/actions/contact";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,49 +55,51 @@ export function ContactPageClient({ feedbackEmail }: Props) {
 
   if (done) {
     return (
-      <div className="max-w-lg mx-auto text-center py-6 space-y-4">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600">
-          <Mail className="h-7 w-7" aria-hidden />
-        </div>
-        <h2 className="text-xl font-bold tracking-[-0.03em] text-slate-900">Thanks — we read every message</h2>
-        <p className="text-sm text-slate-600 leading-relaxed">
-          If you asked for a reply, we&apos;ll get back as soon as we can. Your feedback helps Mentrixa serve Mentrixers
-          and Guides better.
-        </p>
-        <Button type="button" variant="outline" className="mt-2" onClick={() => setDone(false)}>
-          Send another message
-        </Button>
+      <div className="lp-root">
+        <section className="lp-band-contact py-12 md:py-16">
+          <div className="max-w-lg mx-auto text-center py-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600">
+              <Mail className="h-7 w-7" aria-hidden />
+            </div>
+            <h2 className="text-xl font-bold tracking-[-0.03em] text-slate-900">Thanks — we read every message</h2>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              If you asked for a reply, we&apos;ll get back as soon as we can. Your feedback helps Mentrixa serve Mentrixers
+              and Guides better.
+            </p>
+            <Button type="button" variant="outline" className="mt-2" onClick={() => setDone(false)}>
+              Send another message
+            </Button>
+          </div>
+        </section>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-10 pb-12">
-      <div className="space-y-3">
+    <div className="lp-root">
+      <section className="lp-band-contact py-12 md:py-16">
+        <div className="max-w-2xl mx-auto space-y-10 pb-12 px-4 sm:px-6">
+      <div className="space-y-3 text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">Contact</p>
-        <h1 className="text-3xl font-bold tracking-[-0.04em] text-slate-900 md:text-4xl">Talk to us</h1>
-        <p className="text-base text-slate-600 leading-relaxed max-w-xl">
-          You&apos;re the reason we ship. Mentrixers and Guides who speak up shape what we build next — tell us what&apos;s
-          working, what isn&apos;t, and what you wish existed.
+        <h1 className="text-3xl font-bold tracking-[-0.04em] text-white md:text-4xl">Talk to us</h1>
+        <p className="text-base text-slate-200 leading-relaxed max-w-xl">
+          You&apos;re the reason we ship. Mentrixers and Guides who speak up shape what we are building.
         </p>
-        <p className="text-sm font-medium text-slate-800">
+        <p className="text-sm font-medium text-slate-100">
           Prefer email?{" "}
           <a
             href={gmailWebComposeUrl(feedbackEmail)}
             target="_blank"
             rel="noopener noreferrer"
             title="Compose in Gmail (web)"
-            className="text-indigo-600 underline underline-offset-2 hover:text-indigo-800 break-all"
+            className="text-indigo-300 underline underline-offset-2 hover:text-indigo-200 break-all"
           >
             {feedbackEmail}
           </a>
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-6 shadow-sm md:p-8">
-        <h2 className="text-sm font-semibold text-slate-900 mb-4">Hang out with us</h2>
-        <ContactSocialLinks />
-      </div>
+      
 
       <form onSubmit={onSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8 space-y-5">
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
@@ -162,11 +165,22 @@ export function ContactPageClient({ feedbackEmail }: Props) {
           <Button type="submit" className="min-w-[160px]" disabled={pending}>
             {pending ? "Sending…" : "Send feedback"}
           </Button>
-          <Link href="/" className="text-sm text-slate-500 hover:text-slate-800">
-            ← Back to home
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-black/80">
+            <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-black/5">
+              <Image src="/mentrixalogo/logo.png" alt="Mentrixa" width={16} height={16} />
+            </span>
+            ← Back to Mentrixa
           </Link>
         </div>
       </form>
+
+
+      <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-6 shadow-sm md:p-8">
+        <h2 className="text-sm font-semibold text-slate-900 mb-4">Hang out with Mentrixa</h2>
+        <ContactSocialLinks />
+      </div>
+        </div>
+      </section>
     </div>
   );
 }

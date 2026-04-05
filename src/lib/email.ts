@@ -17,7 +17,10 @@ import { getResendApiKey } from "@/lib/env";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
 
 const FROM_ADDRESS = "Mentrixa <updates@mentrixa.one>";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000" || "https://mentrixa.one";
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+  "https://mentrixa.one";
 const DEV_EMAIL_OVERRIDE: string | null = null;
 
 /** Session + optional person names + optional AI package stats for richer emails */
@@ -117,9 +120,9 @@ function formatTimeOnly(iso: string): string {
 }
 
 const MENTRIXER_LINE =
-  'On Mentrixa, learners and tutors are <strong style="color:#e5e5e5;">Mentrixers</strong>  one community built for depth, not noise.';
+  'On Mentrixa, learners and tutors are <strong style="color:#e5e5e5;">Mentrixers & Guides</strong>  one community built for depth.';
 
-const HEADER_LOGO_SRC = `${APP_URL}/icon.png`;
+const HEADER_LOGO_SRC = `${APP_URL}/mentrixalogo/logo.png`;
 
 function googleCalendarTemplateUrl(params: {
   title: string;
@@ -193,7 +196,8 @@ function baseTemplate(title: string, bodyContent: string): string {
         <table width="600" cellpadding="0" cellspacing="0" style="background:#111;border:1px solid #262626;border-radius:12px;overflow:hidden;max-width:600px;width:100%;">
           <tr>
             <td style="background:#0c0c0c;padding:24px 36px;border-bottom:1px solid #1f1f1f;">
-              <img src="${HEADER_LOGO_SRC}" alt="Mentrixa" width="140" height="32" style="display:block;height:auto;max-width:140px;" />
+              <img src="${HEADER_LOGO_SRC}" alt="Mentrixa" width="140" height="32" style="display:inline-block;height:auto;max-width:140px;vertical-align:middle;" />
+              <span style="display:inline-block;margin-left:10px;vertical-align:middle;color:#f5f5f5;font-size:16px;font-weight:700;letter-spacing:0.08em;">MENTRIXA</span>
               <p style="margin:12px 0 0;color:#a3a3a3;font-size:12px;line-height:1.5;">
                 Real tutors. Top Mentrixers. Live now. Book in 3 minutes.
               </p>
@@ -1348,6 +1352,9 @@ export async function sendContactFeedbackInbound(params: {
       <div style="color:#e5e5e5;font-size:15px;line-height:1.65;white-space:pre-wrap;border-left:3px solid #3b82f6;padding-left:16px;margin:0 0 20px;">
         ${escapeHtml(params.message)}
       </div>
+      <p style="color:#9ca3af;font-size:12px;line-height:1.5;margin:0 0 12px;">
+        Open Mentrixa: <a href="${APP_URL}" style="color:#60a5fa;text-decoration:underline;">${escapeHtml(APP_URL)}</a>
+      </p>
       <p style="color:#737373;font-size:12px;line-height:1.5;margin:0;">
         Reply directly to the sender using Reply in your inbox 
       </p>

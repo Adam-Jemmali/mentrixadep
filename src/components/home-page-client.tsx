@@ -330,7 +330,7 @@ export function HomePageClient() {
               heroReady && "opacity-100",
             )}
           >
-            Real tutors. Live now. Book in 3 minutes.
+            Real tutors. Top Mentrixers. Live now. Book in 3 minutes.
           </p>
 
           <h1 className="font-extrabold tracking-[-0.05em] text-white">

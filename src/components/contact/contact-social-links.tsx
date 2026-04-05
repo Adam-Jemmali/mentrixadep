@@ -25,15 +25,25 @@ function IconInstagram({ className }: { className?: string }) {
 /** Reddit brand color + “r” — avoids ambiguous SVG paths at small sizes. */
 function IconReddit({ className }: { className?: string }) {
   return (
-    <span
-      className={cn(
-        "flex h-7 w-7 items-center justify-center rounded-full bg-[#FF4500] text-[13px] font-bold leading-none text-white",
-        className,
-      )}
-      aria-hidden
-    >
-      r
-    </span>
+    <svg className={cn("h-6 w-6", className)} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="12" fill="#FF4500" />
+      <circle cx="9.2" cy="12.4" r="1.35" fill="#fff" />
+      <circle cx="14.8" cy="12.4" r="1.35" fill="#fff" />
+      <path
+        d="M8.1 15.2c1 1 2.35 1.52 3.9 1.52 1.56 0 2.9-.52 3.9-1.52"
+        stroke="#fff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <circle cx="16.95" cy="8.2" r="1.45" fill="#fff" />
+      <path
+        d="M12.95 8.2l2.85.6"
+        stroke="#fff"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <circle cx="12.95" cy="8.2" r="0.9" fill="#fff" />
+    </svg>
   );
 }
 
