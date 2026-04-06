@@ -2,20 +2,26 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
 
-const OTP_TYPES = new Set([
+const OTP_TYPES = [
   "signup",
   "invite",
   "magiclink",
   "recovery",
   "email_change",
   "email",
-]);
+] as const;
+
+type SupportedOtpType = (typeof OTP_TYPES)[number];
+
+function isSupportedOtpType(value: string): value is SupportedOtpType {
+  return OTP_TYPES.includes(value as SupportedOtpType);
+}
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
-  const otpType = requestUrl.searchParams.get("type");
+  const otpTypeParam = requestUrl.searchParams.get("type");
 
   const supabase = await createClient();
 
@@ -36,10 +42,10 @@ export async function GET(request: Request) {
     }
   }
 
-  if (tokenHash && otpType && OTP_TYPES.has(otpType)) {
+  if (tokenHash && otpTypeParam && isSupportedOtpType(otpTypeParam)) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: otpType,
+      type: otpTypeParam,
     });
 
     if (error) {
