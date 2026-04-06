@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import type { UserSettings } from "@/app/actions/settings";
 import type { ReferralDashboardData } from "@/app/actions/referral";
 import { ReferralProgramSection } from "@/components/student/referral-program-section";
+import { AccountSecurityPanel } from "@/components/account-security-panel";
 
 const ACCOUNT_LEVEL_CHIP: Record<number, string> = {
   1: "border-slate-200 bg-slate-100 text-slate-800",
@@ -632,6 +633,8 @@ export function StudentProfileClient({
             }}
           />
         ) : null}
+
+        {data.viewer === "owner" ? <AccountSecurityPanel /> : null}
       </main>
       <SaveToast open={toast} onClose={() => setToast(false)} />
     </div>

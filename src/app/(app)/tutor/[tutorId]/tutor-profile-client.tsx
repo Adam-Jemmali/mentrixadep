@@ -17,6 +17,7 @@ import { BookingPriceBreakdown } from "@/components/booking-price-breakdown";
 import { splitSessionPriceCents } from "@/lib/booking-pricing";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
 import { formatTime } from "@/lib/time-format";
+import { AccountSecurityPanel } from "@/components/account-security-panel";
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -394,6 +395,8 @@ export function TutorProfileClient({
           </>
         )}
       </section>
+
+      {isOwnProfile && <AccountSecurityPanel className="mt-8" />}
 
       {/* ── BOOKING DIALOG ────────────────────────────────────────────────── */}
       <Dialog open={!!dialogSlot} onOpenChange={(open) => { if (!open) setDialogSlot(null); }}>
