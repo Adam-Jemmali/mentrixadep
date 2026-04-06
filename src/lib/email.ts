@@ -634,7 +634,7 @@ export async function sendWelcomeStudentEmail(
 
 export interface WelcomeTutorEmailProps {
   displayName?: string | null;
-  /** Stripe Connect onboarding URL */
+  /** Optional tutor payout setup URL */
   stripeConnectUrl?: string;
 }
 
@@ -644,7 +644,7 @@ export async function sendWelcomeTutorEmail(
   props: WelcomeTutorEmailProps = {}
 ): Promise<void> {
   const hi = greetingFirstName(props.displayName, tutorEmail);
-  const stripeUrl = props.stripeConnectUrl ?? `${APP_URL}/tutor`;
+  const payoutSetupUrl = props.stripeConnectUrl ?? `${APP_URL}/tutor`;
 
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Welcome to Mentrixa as a <strong style="color:#eee;">Guide</strong>. Learners book you for live sessions; you stay in control of your availability and your payouts.</p>
@@ -654,13 +654,13 @@ export async function sendWelcomeTutorEmail(
           <p style="margin:0 0 8px;color:#737373;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Onboarding checklist</p>
           <ul style="margin:0;padding-left:18px;color:#a3a3a3;font-size:14px;line-height:1.55;">
             <li style="margin:0 0 6px;">Set your subjects and weekly availability.</li>
-            <li style="margin:0 0 6px;">Connect Stripe so we can pay you after sessions.</li>
+            <li style="margin:0 0 6px;">Set your payout method (PayPal or bank transfer).</li>
             <li style="margin:0;">Respond to booking requests from your tutor home.</li>
           </ul>
         </td>
       </tr>
     </table>
-    ${ctaButton(stripeUrl, "Set up payouts with Stripe")}`;
+    ${ctaButton(payoutSetupUrl, "Set up payouts")}`;
 
   await sendEmail(
     tutorEmail,
@@ -871,8 +871,8 @@ export async function sendTutorApprovedEmail(
   const hi = greetingFirstName(props.displayName, tutorEmail);
 
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
-    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your tutor application was <strong style="color:#eee;">approved</strong>. You can publish availability, accept learners, and get paid through Stripe Connect.</p>
-    <p style="color:#737373;font-size:13px;line-height:1.55;margin:0 0 20px;">Finish onboarding in the tutor home if you haven’t already — availability and payouts are both required before learners can book.</p>
+    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your tutor application was <strong style="color:#eee;">approved</strong>. You can publish availability, accept learners, and configure payout details.</p>
+    <p style="color:#737373;font-size:13px;line-height:1.55;margin:0 0 20px;">Finish tutor setup in your dashboard if you haven’t already — availability and payout details are both required before learners can book.</p>
     ${ctaButton(`${APP_URL}/tutor`, "Go to tutor home")}`;
 
   await sendEmail(
@@ -896,9 +896,9 @@ export async function sendTutorPayoutEmail(tutorEmail: string, props: TutorPayou
   const arrival = props.arrivalEstimate?.trim();
 
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
-    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your payout of <strong style="color:#eee;">${escapeHtml(amt)}</strong> is on its way to your connected bank account.</p>
+    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your payout of <strong style="color:#eee;">${escapeHtml(amt)}</strong> is being sent to your selected payout method.</p>
     ${arrival ? `<table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px;border-collapse:collapse;">${detailRow("Estimated arrival", escapeHtml(arrival))}</table>` : ""}
-    <p style="color:#737373;font-size:13px;line-height:1.55;margin:0 0 20px;">Details appear in your Stripe payouts dashboard and in Mentrixa earnings.</p>
+    <p style="color:#737373;font-size:13px;line-height:1.55;margin:0 0 20px;">Details appear in Mentrixa earnings.</p>
     ${ctaButton(`${APP_URL}/tutor`, "View earnings")}`;
 
   await sendEmail(

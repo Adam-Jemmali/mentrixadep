@@ -9,7 +9,7 @@ import {
 // ─── Fee parity guard: ensure payout math uses same fee BPS as checkout ─────
 
 /**
- * Standalone functions matching stripe-connect.ts logic for payout ledger creation.
+ * Standalone functions mirroring payout split math used by tutor payout views.
  * Keep these in sync with the "real" implementations to ensure consistency.
  */
 function tutorNetCents(grossCents: number): number {

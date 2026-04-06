@@ -17,14 +17,11 @@ function readVercelConfig(): VercelConfig {
 }
 
 describe("vercel cron config", () => {
-  it("includes required payout pipeline crons", () => {
+  it("includes required session completion cron", () => {
     const cfg = readVercelConfig();
     const crons = cfg.crons ?? [];
 
-    const requiredPaths = [
-      "/api/cron/complete-sessions",
-      "/api/cron/process-payouts",
-    ];
+    const requiredPaths = ["/api/cron/complete-sessions"];
 
     for (const requiredPath of requiredPaths) {
       const cron = crons.find((c) => c.path === requiredPath);

@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 
 const REQUIRED_PATHS = [
   "/api/cron/complete-sessions",
-  "/api/cron/process-payouts",
 ];
 
 function loadVercelConfig() {
@@ -100,7 +99,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("Live cron checks passed for both required jobs.");
+  console.log("Live cron checks passed for required jobs.");
 }
 
 main().catch((err) => {

@@ -19,7 +19,6 @@ This project is code-ready for launch. Use this checklist to close remaining dep
   - `/api/cron/complete-sessions`: `*/15 * * * *`
   - `/api/cron/send-reminders`: `0 * * * *`
   - `/api/cron/pre-session-brief`: `*/15 * * * *`
-  - `/api/cron/process-payouts`: `0 */6 * * *`
   - `/api/cron/verification-overdue`: `0 * * * *`
   - `/api/cron/division-weekly`: `15 0 * * 1` (weekly; unchanged)
 - Alternatively on Hobby, keep daily Vercel crons and trigger high-frequency work via **Supabase `pg_cron`**, **GitHub Actions**, or another scheduler hitting the same routes with `CRON_SECRET`.
@@ -107,24 +106,19 @@ Create monitors in Better Stack / Pingdom / equivalent:
 - `GET /` (homepage)
 - Optional synthetic monitor for sign-in + booking flow in staging
 
-## 5.1) Required payout crons (must be present in production)
+## 5.1) Required session cron (must be present in production)
 
-These two jobs are required for tutor payouts to move from pending to transferred:
+This job is required to mark sessions as completed after they end:
 
 - `/api/cron/complete-sessions`
   - marks ended sessions complete
-  - creates payout ledger rows
-- `/api/cron/process-payouts`
-  - finds rows past hold window
-  - executes Stripe Transfer to tutor Connect account
 
 Quick checks:
 
-- Confirm both entries exist in `vercel.json` under `crons`.
+- Confirm the entry exists in `vercel.json` under `crons`.
 - Confirm `CRON_SECRET` is set in Vercel production env.
-- Manually test both routes once using your production URL:
+- Manually test the route once using your production URL:
   - `curl -i -H "Authorization: Bearer $CRON_SECRET" https://mentrixa.one/api/cron/complete-sessions`
-  - `curl -i -H "Authorization: Bearer $CRON_SECRET" https://mentrixa.one/api/cron/process-payouts`
 
 Automated check (recommended):
 

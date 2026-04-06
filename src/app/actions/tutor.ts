@@ -23,6 +23,7 @@ import {
   RATE_LIMITS,
   getRateLimitId,
 } from "@/lib/security";
+import type { PayoutDashboardData } from "@/app/actions/tutor-payouts";
 
 /** Monday 00:00:00 UTC for the week containing `d` (used for consistent server/client week bounds). */
 function utcStartOfWeekMonday(d: Date): Date {
@@ -34,8 +35,7 @@ function utcStartOfWeekMonday(d: Date): Date {
   return x;
 }
 
-const STRIPE_PAYOUT_CAPTION =
-  "";
+const PAYOUT_CAPTION = "Payouts via your selected method (PayPal or bank transfer).";
 
 /** True when DB migration 024 (sessions.cancelled_*) is not applied yet. */
 function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
@@ -126,7 +126,7 @@ export type TutorCommandCenterPayload = {
   };
   metrics: {
     earningsThisMonthCents: number;
-    stripePayoutCaption: string;
+    payoutCaption: string;
     sessionsThisWeek: number;
     avgRating: number | null;
     responseRatePercent: number | null;
@@ -158,8 +158,8 @@ export type TutorCommandCenterPayload = {
   tutorCourses: Awaited<ReturnType<typeof getTutorCourses>>;
   autoApprove: boolean;
   tutorTimezone: string;
-  /** Stripe Connect & payout data (null if loading fails gracefully) */
-  payoutData: import("@/app/actions/stripe-connect").PayoutDashboardData | null;
+  /** Tutor payout data (null if loading fails gracefully) */
+  payoutData: PayoutDashboardData | null;
 };
 
 export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPayload> {
@@ -324,9 +324,9 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
   }
 
   // Load payout dashboard data (non-critical — fail silently)
-  let payoutData: import("@/app/actions/stripe-connect").PayoutDashboardData | null = null;
+  let payoutData: PayoutDashboardData | null = null;
   try {
-    const { getPayoutDashboardData } = await import("@/app/actions/stripe-connect");
+    const { getPayoutDashboardData } = await import("@/app/actions/tutor-payouts");
     payoutData = await getPayoutDashboardData(tutorId);
   } catch (e) {
     console.warn("[tutor] payout data load failed (non-critical):", e);
@@ -339,7 +339,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     },
     metrics: {
       earningsThisMonthCents,
-      stripePayoutCaption: STRIPE_PAYOUT_CAPTION,
+      payoutCaption: PAYOUT_CAPTION,
       sessionsThisWeek,
       avgRating,
       responseRatePercent,
