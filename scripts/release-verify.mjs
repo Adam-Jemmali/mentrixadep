@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 const steps = [
   { label: "Lint", command: "npm", args: ["run", "lint"] },
   { label: "Unit tests", command: "npm", args: ["run", "test:ci"] },
+  { label: "Stripe setup", command: "npm", args: ["run", "stripe:verify"] },
   { label: "E2E CI suite", command: "npm", args: ["run", "test:e2e:ci"] },
   { label: "Production build", command: "npm", args: ["run", "build"] },
 ];

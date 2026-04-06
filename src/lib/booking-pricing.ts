@@ -1,12 +1,12 @@
-/** Platform fee: 5% of the Guide’s session price (basis points). */
-export const PLATFORM_FEE_BPS = 500;
+/** Platform fee retained by Mentrixa from tutor-side settlement (15% in bps). */
+export const PLATFORM_FEE_BPS = 1500;
 
 export type SessionPriceSplit = {
   /** Guide session price in cents (from availability.price_per_session). */
   sessionCents: number;
-  /** Mentrixa platform fee in cents (5% of session, rounded). */
+  /** Mentrixa platform fee in cents (15% of session, rounded). */
   platformFeeCents: number;
-  /** Total charged via Stripe (session + platform fee). */
+  /** Total charged to student via Stripe (Model A: base session only). */
   totalCents: number;
 };
 
@@ -16,7 +16,8 @@ export function splitSessionPriceCents(sessionCents: number): SessionPriceSplit 
   return {
     sessionCents: base,
     platformFeeCents,
-    totalCents: base + platformFeeCents,
+    // Model A: the learner is charged only the base session amount.
+    totalCents: base,
   };
 }
 

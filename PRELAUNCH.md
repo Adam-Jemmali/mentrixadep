@@ -83,6 +83,22 @@ Then:
 - Copy webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
 - Configure Stripe Radar rules as needed (for risk/region policy).
 
+Automated verification:
+
+- `npm run stripe:verify`
+
+This checks:
+
+- required env vars exist (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`, `CRON_SECRET`)
+- `STRIPE_WEBHOOK_SECRET` format looks valid (`whsec_...`)
+- Stripe has a webhook endpoint for `${NEXT_PUBLIC_APP_URL}/api/stripe/webhook`
+- endpoint includes required events:
+  - `checkout.session.completed`
+  - `checkout.session.expired`
+  - `payment_intent.payment_failed`
+  - `charge.refunded`
+  - `refund.updated`
+
 ## 5) Health + Monitoring
 
 Create monitors in Better Stack / Pingdom / equivalent:
@@ -90,6 +106,34 @@ Create monitors in Better Stack / Pingdom / equivalent:
 - `GET /api/health` (should return 200 with `ok: true`)
 - `GET /` (homepage)
 - Optional synthetic monitor for sign-in + booking flow in staging
+
+## 5.1) Required payout crons (must be present in production)
+
+These two jobs are required for tutor payouts to move from pending to transferred:
+
+- `/api/cron/complete-sessions`
+  - marks ended sessions complete
+  - creates payout ledger rows
+- `/api/cron/process-payouts`
+  - finds rows past hold window
+  - executes Stripe Transfer to tutor Connect account
+
+Quick checks:
+
+- Confirm both entries exist in `vercel.json` under `crons`.
+- Confirm `CRON_SECRET` is set in Vercel production env.
+- Manually test both routes once using your production URL:
+  - `curl -i -H "Authorization: Bearer $CRON_SECRET" https://mentrixa.one/api/cron/complete-sessions`
+  - `curl -i -H "Authorization: Bearer $CRON_SECRET" https://mentrixa.one/api/cron/process-payouts`
+
+Automated check (recommended):
+
+- Config-only check:
+  - `npm run cron:verify`
+- Config + live endpoint checks:
+  - `CRON_VERIFY_BASE_URL=https://mentrixa.one CRON_SECRET=<your-secret> npm run cron:verify`
+
+Expected result: HTTP `200` with JSON body containing `status: "ok"`.
 
 ## 6) Manual QA Matrix (Release Gate)
 

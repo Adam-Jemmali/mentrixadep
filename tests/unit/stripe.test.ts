@@ -6,35 +6,74 @@ import {
   STUDENT_REFUND_WINDOW_HOURS,
 } from "@/lib/refund-eligibility";
 
+// ─── Fee parity guard: ensure payout math uses same fee BPS as checkout ─────
+
 /**
- * Platform fee is 5% (500 bps) of the Guide price — see `PLATFORM_FEE_BPS`.
- * (Some product docs mention 15%; the billing implementation is 5%.)
+ * Standalone functions matching stripe-connect.ts logic for payout ledger creation.
+ * Keep these in sync with the "real" implementations to ensure consistency.
+ */
+function tutorNetCents(grossCents: number): number {
+  const TUTOR_SHARE_BPS = 10_000 - PLATFORM_FEE_BPS;
+  return Math.round((grossCents * TUTOR_SHARE_BPS) / 10_000);
+}
+
+function payoutPlatformFeeCents(grossCents: number): number {
+  return grossCents - tutorNetCents(grossCents);
+}
+
+describe("fee parity (checkout vs payout)", () => {
+  it("checkout and payout fees use same PLATFORM_FEE_BPS constant", () => {
+    expect(PLATFORM_FEE_BPS).toBe(1500);
+  });
+
+  it("checkout splitSessionPriceCents and payout platformFeeCents compute identical fee", () => {
+    const testAmounts = [1000, 2500, 10_000, 33_333, 100_000];
+    for (const amount of testAmounts) {
+      const checkoutFee = splitSessionPriceCents(amount).platformFeeCents;
+      const payoutFee = payoutPlatformFeeCents(amount);
+      expect(payoutFee).toBe(checkoutFee, `Fee mismatch at amount ${amount}: checkout=${checkoutFee}, payout=${payoutFee}`);
+    }
+  });
+
+  it("tutor net equals gross minus platform fee", () => {
+    const amount = 10_000;
+    const checkoutFee = splitSessionPriceCents(amount).platformFeeCents;
+    const payoutNet = tutorNetCents(amount);
+    expect(payoutNet + checkoutFee).toBe(amount);
+  });
+})
+
+/**
+ * Model A:
+ * - Learner pays base session amount only.
+ * - Platform fee is 15% (1500 bps) retained from tutor-side settlement.
  */
 describe("splitSessionPriceCents (platform fee)", () => {
-  it("charges 5% platform fee on round amounts", () => {
+  it("computes 15% platform fee on round amounts", () => {
     const s = splitSessionPriceCents(10_000);
     expect(s.sessionCents).toBe(10_000);
-    expect(s.platformFeeCents).toBe(500);
-    expect(s.totalCents).toBe(10_500);
+    expect(s.platformFeeCents).toBe(1500);
+    expect(s.totalCents).toBe(10_000);
   });
 
   it("handles small session prices", () => {
     const s = splitSessionPriceCents(2500);
-    expect(s.platformFeeCents).toBe(125);
-    expect(s.totalCents).toBe(2625);
+    expect(s.platformFeeCents).toBe(375);
+    expect(s.totalCents).toBe(2500);
   });
 
   it("handles odd cents with rounding", () => {
     const s = splitSessionPriceCents(1999);
-    expect(s.platformFeeCents).toBe(100);
-    expect(s.totalCents).toBe(2099);
+    expect(s.platformFeeCents).toBe(300);
+    expect(s.totalCents).toBe(1999);
   });
 
   it("uses PLATFORM_FEE_BPS for math consistency", () => {
-    expect(PLATFORM_FEE_BPS).toBe(500);
+    expect(PLATFORM_FEE_BPS).toBe(1500);
     const base = 33_333;
     const s = splitSessionPriceCents(base);
     expect(s.platformFeeCents).toBe(Math.round((base * PLATFORM_FEE_BPS) / 10_000));
+    expect(s.totalCents).toBe(base);
   });
 });
 

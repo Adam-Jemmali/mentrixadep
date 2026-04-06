@@ -20,13 +20,14 @@ import { getStripeSecretKey } from "@/lib/env";
 import { env } from "@/lib/env";
 import { revalidatePath } from "next/cache";
 import { captureUnexpectedError } from "@/lib/observability";
+import { PLATFORM_FEE_BPS } from "@/lib/booking-pricing";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 /** 7-day hold before releasing funds to tutor. */
 const HOLD_DAYS = 7;
-/** Tutor's share: 85% */
-const TUTOR_SHARE_BPS = 8500;
+/** Tutor's share in bps derived from shared platform fee config. */
+const TUTOR_SHARE_BPS = 10_000 - PLATFORM_FEE_BPS;
 
 function tutorNetCents(grossCents: number): number {
   return Math.round((grossCents * TUTOR_SHARE_BPS) / 10_000);
@@ -168,7 +169,7 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
 
   const { data: userRow } = await admin
     .from("users")
-    .select("stripe_account_id, stripe_payouts_enabled")
+    .select("stripe_account_id, stripe_payouts_enabled, stripe_onboarding_at")
     .eq("id", actingId)
     .single();
 
@@ -186,20 +187,34 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
   const chargesEnabled = account.charges_enabled === true;
   const fullyEnabled = payoutsEnabled && chargesEnabled;
 
-  if (fullyEnabled && !userRow.stripe_payouts_enabled) {
+  if (userRow.stripe_payouts_enabled !== fullyEnabled) {
+    const updatePayload: {
+      stripe_payouts_enabled: boolean;
+      stripe_onboarding_at?: string;
+    } = {
+      stripe_payouts_enabled: fullyEnabled,
+    };
+
+    if (fullyEnabled && !userRow.stripe_onboarding_at) {
+      updatePayload.stripe_onboarding_at = new Date().toISOString();
+    }
+
     await admin
       .from("users")
-      .update({
-        stripe_payouts_enabled: true,
-        stripe_onboarding_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", actingId);
   }
 
   let onboardingUrl: string | null = null;
   if (!fullyEnabled) {
     try {
-      const link = await createAccountLink();
+      const appUrl = env.public.appUrl ?? "http://localhost:3000";
+      const link = await stripe.accountLinks.create({
+        account: userRow.stripe_account_id,
+        refresh_url: `${appUrl}/api/stripe/connect/refresh`,
+        return_url: `${appUrl}/api/stripe/connect/return?accountId=${userRow.stripe_account_id}`,
+        type: "account_onboarding",
+      });
       onboardingUrl = link.url;
     } catch {
       // Non-critical
@@ -221,6 +236,7 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
   const user = await requireRole(["tutor", "admin"]);
   const tutorId = tutorIdOverride ?? user.id;
   const admin = createAdminClient();
+  const stripe = stripeClient();
 
   const { data: userRow } = await admin
     .from("users")
@@ -228,13 +244,49 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     .eq("id", tutorId)
     .single();
 
+  let payoutsEnabledSynced = userRow?.stripe_payouts_enabled ?? false;
+
   // Build connect status
   const connectStatus: ConnectStatus = {
     hasAccount: !!userRow?.stripe_account_id,
     accountId: userRow?.stripe_account_id ?? null,
-    payoutsEnabled: userRow?.stripe_payouts_enabled ?? false,
+    payoutsEnabled: payoutsEnabledSynced,
     onboardingUrl: null,
   };
+
+  // Keep local users.stripe_payouts_enabled in sync with Stripe on dashboard load.
+  if (connectStatus.accountId) {
+    try {
+      const account = await stripe.accounts.retrieve(connectStatus.accountId);
+      const fullyEnabled = account.payouts_enabled === true && account.charges_enabled === true;
+      if (fullyEnabled !== payoutsEnabledSynced) {
+        await admin
+          .from("users")
+          .update({ stripe_payouts_enabled: fullyEnabled })
+          .eq("id", tutorId);
+        payoutsEnabledSynced = fullyEnabled;
+      }
+      connectStatus.payoutsEnabled = payoutsEnabledSynced;
+    } catch {
+      // Non-critical: fall back to cached DB value.
+    }
+  }
+
+  // Provide a direct onboarding URL for the payout banner when Connect is incomplete.
+  if (connectStatus.accountId && !connectStatus.payoutsEnabled) {
+    try {
+      const appUrl = env.public.appUrl ?? "http://localhost:3000";
+      const link = await stripe.accountLinks.create({
+        account: connectStatus.accountId,
+        refresh_url: `${appUrl}/api/stripe/connect/refresh`,
+        return_url: `${appUrl}/api/stripe/connect/return?accountId=${connectStatus.accountId}`,
+        type: "account_onboarding",
+      });
+      connectStatus.onboardingUrl = link.url;
+    } catch {
+      // Non-critical: UI can still fall back to POST /api/stripe/connect/create
+    }
+  }
 
   // Fetch ledger rows
   const { data: ledgerRows } = await admin

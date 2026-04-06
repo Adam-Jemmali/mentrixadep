@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { splitSessionPriceCents } from "@/lib/booking-pricing";
 
 describe("splitSessionPriceCents", () => {
-  it("adds 5% platform fee and totals", () => {
+  it("computes 15% platform fee while charging learner base amount only", () => {
     const s = splitSessionPriceCents(2500);
     expect(s.sessionCents).toBe(2500);
-    expect(s.platformFeeCents).toBe(125);
-    expect(s.totalCents).toBe(2625);
+    expect(s.platformFeeCents).toBe(375);
+    expect(s.totalCents).toBe(2500);
   });
 
-  it("rounds fee to nearest cent", () => {
+  it("rounds 15% fee to nearest cent", () => {
     const s = splitSessionPriceCents(1999);
-    expect(s.platformFeeCents).toBe(100);
-    expect(s.totalCents).toBe(2099);
+    expect(s.platformFeeCents).toBe(300);
+    expect(s.totalCents).toBe(1999);
   });
 });

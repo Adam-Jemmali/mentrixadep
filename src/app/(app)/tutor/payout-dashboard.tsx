@@ -319,6 +319,8 @@ export function TutorPayoutDashboard({
     data;
 
   const [showSuccess] = useState(connectParam === "success");
+  const showError = connectParam === "error";
+  const showIncomplete = connectParam === "incomplete";
 
   return (
     <section className="rounded-md border border-slate-200 bg-white p-4 sm:p-6">
@@ -346,10 +348,28 @@ export function TutorPayoutDashboard({
         </div>
       )}
 
+      {showIncomplete && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <AlertCircle size={14} className="shrink-0 text-amber-600" />
+          <p className="text-xs text-amber-900 font-medium">
+            Stripe onboarding is not complete yet. Finish setup to receive tutor payouts.
+          </p>
+        </div>
+      )}
+
+      {showError && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5">
+          <AlertCircle size={14} className="shrink-0 text-red-600" />
+          <p className="text-xs text-red-800 font-medium">
+            We could not confirm your Stripe setup. Please try setup again.
+          </p>
+        </div>
+      )}
+
       <OnboardingBanner
         payoutsEnabled={connectStatus.payoutsEnabled}
         onboardingUrl={connectStatus.onboardingUrl}
-        incomplete={connectParam === "incomplete"}
+        incomplete={showIncomplete}
       />
 
       {/* Metric chips */}

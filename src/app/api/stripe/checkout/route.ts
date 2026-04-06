@@ -14,11 +14,6 @@ import {
 } from "@/lib/security";
 
 const SLOT_LOCK_MINUTES = 30;
-const PLATFORM_FEE_PERCENT = 15;
-
-function platformFeeCents(sessionCents: number): number {
-  return Math.round((sessionCents * PLATFORM_FEE_PERCENT) / 100);
-}
 
 function lockedUntilIso(): string {
   return new Date(Date.now() + SLOT_LOCK_MINUTES * 60_000).toISOString();
@@ -363,7 +358,7 @@ export async function POST(req: NextRequest) {
 
     const sessionPriceCents: number = availability.price_per_session ?? 2500;
     const split = splitSessionPriceCents(sessionPriceCents);
-    const appFeeAmount = platformFeeCents(sessionPriceCents);
+    const appFeeAmount = split.platformFeeCents;
 
     const appOrigin = resolveAppOrigin(req);
     const branding = mentrixaCheckoutBrandingWithAssets(appOrigin);
@@ -391,7 +386,8 @@ export async function POST(req: NextRequest) {
       {
         price_data: {
           currency: "usd",
-          unit_amount: sessionPriceCents,
+          // Model A: charge learner only the base session amount.
+          unit_amount: split.totalCents,
           product_data: {
             name: `${availability.course} tutoring session`,
             description: `${sessionDate} at ${sessionTime} with ${tutorName}`,
@@ -404,20 +400,6 @@ export async function POST(req: NextRequest) {
         quantity: 1,
       },
     ];
-
-    if (split.platformFeeCents > 0) {
-      lineItems.push({
-        price_data: {
-          currency: "usd",
-          unit_amount: split.platformFeeCents,
-          product_data: {
-            name: "Mentrixa platform fee",
-            description: `${PLATFORM_FEE_PERCENT}% service fee`,
-          },
-        },
-        quantity: 1,
-      });
-    }
 
     const checkoutMetadata = {
       tutor_id: availability.tutor_id,
