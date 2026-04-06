@@ -42,6 +42,7 @@ Recommended hardening (also enforced on each `/api/cron/*` request in `lib/cron.
 
 - `CRON_ALLOWED_IPS` (comma-separated allowlist), or
 - `CRON_REQUIRE_SIGNATURE=true` for signed cron requests
+- `CRON_REQUIRE_SIGNATURE=true` for signed cron requests
 
 Startup logs a **warning** if neither is set so deploys succeed; set one of these before relying on scheduled crons in production.
 
