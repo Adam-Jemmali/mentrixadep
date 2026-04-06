@@ -32,8 +32,19 @@ export async function POST(_req: NextRequest) {
     return NextResponse.json({ url });
   } catch (err) {
     console.error("[stripe/connect/create]", err);
+    const message = err instanceof Error ? err.message : "Failed to create onboarding link";
+    const extractedUrl = message.match(/https?:\/\/[^\s"')]+/i)?.[0] ?? null;
+
+    if (extractedUrl) {
+      return NextResponse.json({ url: extractedUrl });
+    }
+
+    if (/signed up for connect/i.test(message)) {
+      return NextResponse.json({ url: "https://dashboard.stripe.com/connect" });
+    }
+
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to create onboarding link" },
+      { error: message },
       { status: 500 }
     );
   }

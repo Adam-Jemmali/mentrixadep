@@ -52,6 +52,18 @@ export type ConnectStatus = {
   accountId: string | null;
   payoutsEnabled: boolean;
   onboardingUrl: string | null;
+  onboardingGuide: {
+    accountReady: boolean;
+    nextAction: string | null;
+    disabledReason: string | null;
+    currentlyDue: string[];
+    steps: Array<{
+      key: string;
+      label: string;
+      done: boolean;
+      details?: string;
+    }>;
+  };
 };
 
 export type PayoutLedgerRow = {
@@ -79,6 +91,78 @@ export type PayoutDashboardData = {
   lifetimeEarnedCents: number;
   ledger: PayoutLedgerRow[];
 };
+
+function hasAnyRequirement(requirements: string[], keys: string[]): boolean {
+  const lower = requirements.map((r) => r.toLowerCase());
+  return keys.some((k) => lower.some((r) => r.includes(k)));
+}
+
+function buildOnboardingGuide(account: Stripe.Account | null): ConnectStatus["onboardingGuide"] {
+  if (!account) {
+    return {
+      accountReady: false,
+      nextAction: "Start Stripe setup",
+      disabledReason: null,
+      currentlyDue: [],
+      steps: [
+        { key: "open", label: "Open Stripe setup", done: false, details: "Click Setup payments to begin." },
+        { key: "personal", label: "Add personal details", done: false },
+        { key: "business", label: "Choose Individual/Sole proprietor", done: false },
+        { key: "bank", label: "Add your bank account", done: false },
+        { key: "review", label: "Submit for verification", done: false },
+      ],
+    };
+  }
+
+  const payoutsEnabled = account.payouts_enabled === true;
+  const chargesEnabled = account.charges_enabled === true;
+  const fullyEnabled = payoutsEnabled && chargesEnabled;
+  const req = account.requirements;
+  const currentlyDue = req?.currently_due ?? [];
+  const pastDue = req?.past_due ?? [];
+  const pendingVerification = req?.pending_verification ?? [];
+  const allOpen = [...new Set([...currentlyDue, ...pastDue, ...pendingVerification])];
+
+  const hasPersonal = hasAnyRequirement(allOpen, ["individual", "person"]);
+  const hasBusiness = hasAnyRequirement(allOpen, ["business_profile", "company", "mcc", "product_description", "url"]);
+  const hasBank = hasAnyRequirement(allOpen, ["external_account", "bank_account"]);
+
+  const steps: ConnectStatus["onboardingGuide"]["steps"] = [
+    { key: "open", label: "Open Stripe setup", done: true },
+    {
+      key: "personal",
+      label: "Add personal details",
+      done: !hasPersonal,
+      details: hasPersonal ? "Use your real legal name, date of birth, and ID details." : undefined,
+    },
+    {
+      key: "business",
+      label: "Choose Individual/Sole proprietor",
+      done: !hasBusiness,
+      details: hasBusiness ? "You do not need a company. Pick Individual or Sole proprietor." : undefined,
+    },
+    {
+      key: "bank",
+      label: "Add your bank account",
+      done: !hasBank,
+      details: hasBank ? "Enter routing number and account number to receive payouts." : undefined,
+    },
+    {
+      key: "review",
+      label: "Submit for verification",
+      done: allOpen.length === 0,
+      details: allOpen.length > 0 ? `Still required: ${allOpen.slice(0, 3).join(", ")}${allOpen.length > 3 ? "..." : ""}` : undefined,
+    },
+  ];
+
+  return {
+    accountReady: fullyEnabled,
+    nextAction: fullyEnabled ? null : "Continue Stripe setup",
+    disabledReason: req?.disabled_reason ?? null,
+    currentlyDue,
+    steps,
+  };
+}
 
 // ─── 1. Create Connect account ────────────────────────────────────────────────
 
@@ -179,6 +263,7 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
       accountId: null,
       payoutsEnabled: false,
       onboardingUrl: null,
+      onboardingGuide: buildOnboardingGuide(null),
     };
   }
 
@@ -227,6 +312,7 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
     accountId: userRow.stripe_account_id,
     payoutsEnabled: fullyEnabled,
     onboardingUrl,
+    onboardingGuide: buildOnboardingGuide(account),
   };
 }
 
@@ -252,6 +338,7 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     accountId: userRow?.stripe_account_id ?? null,
     payoutsEnabled: payoutsEnabledSynced,
     onboardingUrl: null,
+    onboardingGuide: buildOnboardingGuide(null),
   };
 
   // Keep local users.stripe_payouts_enabled in sync with Stripe on dashboard load.
@@ -267,6 +354,7 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
         payoutsEnabledSynced = fullyEnabled;
       }
       connectStatus.payoutsEnabled = payoutsEnabledSynced;
+      connectStatus.onboardingGuide = buildOnboardingGuide(account);
     } catch {
       // Non-critical: fall back to cached DB value.
     }

@@ -125,13 +125,20 @@ function StatusBadge({ status }: { status: string }) {
 function OnboardingBanner({
   payoutsEnabled,
   onboardingUrl,
+  onboardingGuide,
   incomplete,
 }: {
   payoutsEnabled: boolean;
   onboardingUrl: string | null;
+  onboardingGuide: PayoutDashboardData["connectStatus"]["onboardingGuide"];
   incomplete?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
+
+  function extractFirstHttpUrl(text: string): string | null {
+    const m = text.match(/https?:\/\/[^\s"')]+/i);
+    return m?.[0] ?? null;
+  }
 
   const handleSetup = async () => {
     if (onboardingUrl) {
@@ -145,11 +152,17 @@ function OnboardingBanner({
       if (json.url) {
         window.location.href = json.url;
       } else {
-        throw new Error(json.error ?? "Failed to start setup");
+        const fromError = extractFirstHttpUrl(json.error ?? "");
+        if (fromError) {
+          window.location.href = fromError;
+          return;
+        }
+        // Last-resort fallback to avoid dead-end popup flows.
+        window.location.href = "https://dashboard.stripe.com/connect";
       }
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Setup failed. Please try again.");
-      setLoading(false);
+      const fromError = extractFirstHttpUrl(e instanceof Error ? e.message : "");
+      window.location.href = fromError ?? "https://dashboard.stripe.com/connect";
     }
   };
 
@@ -165,6 +178,33 @@ function OnboardingBanner({
         <p className="mt-0.5 text-xs text-amber-700">
           Connect your bank account via Stripe to receive 85% of each session fee automatically.
         </p>
+        <div className="mt-3 rounded border border-amber-200 bg-white/70 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Step-by-step checklist</p>
+          <ul className="mt-2 space-y-1.5 text-xs text-amber-900">
+            {onboardingGuide.steps.map((step) => (
+              <li key={step.key} className="flex items-start gap-2">
+                <span className={`mt-0.5 inline-block h-2 w-2 rounded-full ${step.done ? "bg-emerald-500" : "bg-amber-500"}`} />
+                <span>
+                  <span className="font-medium">{step.label}</span>
+                  {step.details ? <span className="text-amber-700"> - {step.details}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {!onboardingGuide.accountReady && onboardingGuide.nextAction ? (
+            <p className="mt-2 text-[11px] text-amber-800">
+              Next action: <span className="font-semibold">{onboardingGuide.nextAction}</span>
+            </p>
+          ) : null}
+          {onboardingGuide.disabledReason ? (
+            <p className="mt-1 text-[11px] text-amber-800">
+              Stripe status: {onboardingGuide.disabledReason}
+            </p>
+          ) : null}
+          <p className="mt-2 text-[11px] text-amber-700">
+            You do not need to create a company. Choose <span className="font-semibold">Individual</span> or <span className="font-semibold">Sole proprietor</span>.
+          </p>
+        </div>
       </div>
       <button
         onClick={() => void handleSetup()}
@@ -369,6 +409,7 @@ export function TutorPayoutDashboard({
       <OnboardingBanner
         payoutsEnabled={connectStatus.payoutsEnabled}
         onboardingUrl={connectStatus.onboardingUrl}
+        onboardingGuide={connectStatus.onboardingGuide}
         incomplete={showIncomplete}
       />
 
