@@ -35,6 +35,14 @@ function isMissingCancelledSessionColumnsError(err: { message?: string }): boole
   );
 }
 
+function isMissingAvailabilityColumnsError(err: { message?: string } | null | undefined): boolean {
+  const m = (err?.message ?? "").toLowerCase();
+  return (
+    m.includes("does not exist") &&
+    (m.includes("active") || m.includes("booking_status") || m.includes("max_students") || m.includes("series_id"))
+  );
+}
+
 function isMissingSessionHideColumnsError(err: { message?: string } | null | undefined): boolean {
   const m = (err?.message ?? "").toLowerCase();
   return m.includes("does not exist") && (m.includes("student_hidden_at") || m.includes("tutor_hidden_at"));
@@ -511,20 +519,33 @@ export async function getTutorAvailability(course?: string) {
   const adminClient = createAdminClient();
 
   const windowEnd = addDaysIso(new Date(), 14);
-  let query = supabase
-    .from("availability")
-    .select("*")
-    .eq("active", true)
-    .or("booking_status.eq.available,booking_status.is.null")
-    .gte("start_time", new Date().toISOString())
-    .lte("start_time", windowEnd)
-    .order("start_time", { ascending: true });
+  const nowIso = new Date().toISOString();
+  const runQuery = (withAvailabilityFilters: boolean) => {
+    let query = supabase
+      .from("availability")
+      .select("*")
+      .gte("start_time", nowIso)
+      .lte("start_time", windowEnd)
+      .order("start_time", { ascending: true });
 
-  if (course) {
-    query = query.eq("course", course);
+    if (withAvailabilityFilters) {
+      query = query.eq("active", true).or("booking_status.eq.available,booking_status.is.null");
+    }
+
+    if (course) {
+      query = query.eq("course", course);
+    }
+
+    return query;
+  };
+
+  let { data, error } = await runQuery(true);
+
+  if (error && isMissingAvailabilityColumnsError(error)) {
+    const fallback = await runQuery(false);
+    data = fallback.data;
+    error = fallback.error;
   }
-
-  const { data, error } = await query;
 
   if (error) {
     throw new Error(`Failed to fetch availability: ${error.message}`);
@@ -643,27 +664,39 @@ export async function getTutorAvailabilityKeysetPage(opts: {
   const windowEnd = addDaysIso(new Date(), 14);
   const nowIso = new Date().toISOString();
 
-  let q = supabase
-    .from("availability")
-    .select("*")
-    .eq("active", true)
-    .or("booking_status.eq.available,booking_status.is.null")
-    .gte("start_time", nowIso)
-    .lte("start_time", windowEnd)
-    .order("start_time", { ascending: true })
-    .order("id", { ascending: true })
-    .limit(limit + 1);
+  const runQuery = (withAvailabilityFilters: boolean) => {
+    let q = supabase
+      .from("availability")
+      .select("*")
+      .gte("start_time", nowIso)
+      .lte("start_time", windowEnd)
+      .order("start_time", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(limit + 1);
 
-  if (opts.course) {
-    q = q.eq("course", opts.course);
+    if (withAvailabilityFilters) {
+      q = q.eq("active", true).or("booking_status.eq.available,booking_status.is.null");
+    }
+
+    if (opts.course) {
+      q = q.eq("course", opts.course);
+    }
+
+    if (opts.cursor) {
+      const c = opts.cursor;
+      q = q.or(`start_time.gt.${c.start_time},and(start_time.eq.${c.start_time},id.gt.${c.id})`);
+    }
+
+    return q;
+  };
+
+  let { data, error } = await runQuery(true);
+
+  if (error && isMissingAvailabilityColumnsError(error)) {
+    const fallback = await runQuery(false);
+    data = fallback.data;
+    error = fallback.error;
   }
-
-  if (opts.cursor) {
-    const c = opts.cursor;
-    q = q.or(`start_time.gt.${c.start_time},and(start_time.eq.${c.start_time},id.gt.${c.id})`);
-  }
-
-  const { data, error } = await q;
 
   if (error) {
     throw new Error(`Failed to fetch availability page: ${error.message}`);

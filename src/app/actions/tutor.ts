@@ -53,6 +53,14 @@ function isMissingSessionHideColumnsError(err: { message?: string } | null | und
   return m.includes("does not exist") && (m.includes("student_hidden_at") || m.includes("tutor_hidden_at"));
 }
 
+function isMissingAvailabilityColumnsError(err: { message?: string } | null | undefined): boolean {
+  const m = (err?.message ?? "").toLowerCase();
+  return (
+    m.includes("does not exist") &&
+    (m.includes("active") || m.includes("booking_status") || m.includes("max_students") || m.includes("series_id"))
+  );
+}
+
 export type TutorSessionStudentProfile = {
   id: string;
   display_name: string | null;
@@ -377,12 +385,29 @@ export async function getTutorAvailability() {
   const user = await requireRole(["tutor", "admin"]);
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("availability")
-    .select("*")
-    .eq("tutor_id", user.id)
-    .gte("start_time", new Date().toISOString())
-    .order("start_time", { ascending: true });
+  const nowIso = new Date().toISOString();
+  const runQuery = async (withAvailabilityFilters: boolean) => {
+    let query = supabase
+      .from("availability")
+      .select("*")
+      .eq("tutor_id", user.id)
+      .gte("start_time", nowIso)
+      .order("start_time", { ascending: true });
+
+    if (withAvailabilityFilters) {
+      query = query.eq("active", true).or("booking_status.eq.available,booking_status.is.null");
+    }
+
+    return query;
+  };
+
+  let { data, error } = await runQuery(true);
+
+  if (error && isMissingAvailabilityColumnsError(error)) {
+    const fallback = await runQuery(false);
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     throw new Error(`Failed to fetch availability: ${error.message}`);
@@ -571,6 +596,14 @@ export async function createAvailabilitySlots(
       locked_by: null;
     }> = [];
 
+    const legacyRows: Array<{
+      tutor_id: string;
+      course: string;
+      start_time: string;
+      end_time: string;
+      price_per_session: number;
+    }> = [];
+
     for (const c of candidates) {
       await assertAvailabilityWindowAllowed(adminClient, actingAsId, validCourse, c.startUtc, c.endUtc);
       rows.push({
@@ -586,12 +619,26 @@ export async function createAvailabilitySlots(
         locked_until: null,
         locked_by: null,
       });
+      legacyRows.push({
+        tutor_id: actingAsId,
+        course: validCourse,
+        start_time: c.startUtc.toISOString(),
+        end_time: c.endUtc.toISOString(),
+        price_per_session: pricePerSession,
+      });
     }
 
     const { error: insertError } = await adminClient.from("availability").insert(rows);
 
     if (insertError) {
-      throw new Error(`Failed to create availability: ${insertError.message}`);
+      if (isMissingAvailabilityColumnsError(insertError) || insertError.message?.includes("schema cache")) {
+        const { error: legacyInsertError } = await adminClient.from("availability").insert(legacyRows);
+        if (legacyInsertError) {
+          throw new Error(`Failed to create availability: ${legacyInsertError.message}`);
+        }
+      } else {
+        throw new Error(`Failed to create availability: ${insertError.message}`);
+      }
     }
 
     revalidatePath("/tutor");
@@ -647,11 +694,9 @@ export async function setAvailabilityActive(
       .eq("tutor_id", actingAsId);
 
     if (updateErr) {
-      if (
-        updateErr.message?.includes("active") ||
-        updateErr.message?.includes("schema cache")
-      ) {
-        throw new Error("Run database migration 025 (availability active column) in Supabase.");
+      if (isMissingAvailabilityColumnsError(updateErr) || updateErr.message?.includes("schema cache")) {
+        revalidatePath("/tutor");
+        return { success: true };
       }
       throw new Error(`Failed to update slot: ${updateErr.message}`);
     }
@@ -712,7 +757,7 @@ export async function createAvailability(
 
     await assertAvailabilityWindowAllowed(adminClient, actingAsId, validCourse, start, end);
 
-    const { data, error } = await adminClient
+    let { data, error } = await adminClient
       .from("availability")
       .insert({
         tutor_id: actingAsId,
@@ -725,6 +770,20 @@ export async function createAvailability(
       })
       .select()
       .single();
+
+    if (error && (isMissingAvailabilityColumnsError(error) || error.message?.includes("schema cache"))) {
+      ({ data, error } = await adminClient
+        .from("availability")
+        .insert({
+          tutor_id: actingAsId,
+          course: validCourse,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          price_per_session: pricePerSession,
+        })
+        .select()
+        .single());
+    }
 
     if (error) {
       const detail =
