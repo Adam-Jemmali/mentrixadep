@@ -206,6 +206,33 @@ export async function createAccountLink(): Promise<{ url: string }> {
   return { url: link.url };
 }
 
+/**
+ * Use for "Setup payments" / "Open Stripe": sends the tutor to Stripe-hosted onboarding
+ * if requirements remain, otherwise to their **Express Dashboard** login URL for this
+ * connected account (balance, payouts — not the platform Stripe Dashboard).
+ */
+export async function openStripeConnectOrDashboard(): Promise<{ url: string }> {
+  await requireRole(["tutor", "admin"]);
+  const { accountId } = await createConnectAccount();
+  const stripe = stripeClient();
+  const account = await stripe.accounts.retrieve(accountId);
+  const ready = account.payouts_enabled === true && account.charges_enabled === true;
+
+  if (ready) {
+    const login = await stripe.accounts.createLoginLink(accountId);
+    return { url: login.url };
+  }
+
+  const appUrl = env.public.appUrl ?? "http://localhost:3000";
+  const link = await stripe.accountLinks.create({
+    account: accountId,
+    refresh_url: `${appUrl}/api/stripe/connect/refresh`,
+    return_url: `${appUrl}/api/stripe/connect/return?accountId=${accountId}`,
+    type: "account_onboarding",
+  });
+  return { url: link.url };
+}
+
 export async function refreshConnectStatus(tutorId?: string): Promise<ConnectStatus> {
   const user = await requireRole(["tutor", "admin"]);
   const actingId = tutorId ?? user.id;
@@ -433,17 +460,45 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
       studentIds
         .filter((id) => !nameMap.has(id))
         .map(async (id) => {
-          const { data: authUser } = await admin.auth.admin.getUserById(id);
-          const email = authUser?.user?.email;
-          if (email) nameMap.set(id, email.split("@")[0] ?? "Learner");
-        })
+          try {
+            const { data: authUser } = await admin.auth.admin.getUserById(id);
+            const email = authUser?.user?.email;
+            if (email) nameMap.set(id, email.split("@")[0] ?? "Learner");
+          } catch {
+            // Auth lookup must not fail the whole dashboard render
+          }
+        }),
     );
   }
 
-  const enrichedLedger: PayoutLedgerRow[] = rows.map((r) => ({
-    ...r,
-    student_name: r.student_id ? (nameMap.get(r.student_id) ?? null) : null,
-  }));
+  const cents = (v: unknown): number => {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string" && v.trim() !== "") return Number(v) || 0;
+    return 0;
+  };
+
+  const enrichedLedger: PayoutLedgerRow[] = rows.map((r) => {
+    const sid = r.student_id != null ? String(r.student_id) : null;
+    return {
+      id: String((r as { id: unknown }).id),
+      session_id: r.session_id != null ? String(r.session_id) : null,
+      session_date: typeof r.session_date === "string" ? r.session_date : null,
+      course: typeof r.course === "string" ? r.course : null,
+      gross_cents: cents((r as { gross_cents?: unknown }).gross_cents),
+      platform_fee_cents: cents((r as { platform_fee_cents?: unknown }).platform_fee_cents),
+      net_cents: cents((r as { net_cents?: unknown }).net_cents),
+      status: typeof (r as { status?: unknown }).status === "string" ? String((r as { status: string }).status) : "unknown",
+      transfer_id: (r as { transfer_id?: unknown }).transfer_id != null ? String((r as { transfer_id: unknown }).transfer_id) : null,
+      transferred_at: typeof (r as { transferred_at?: unknown }).transferred_at === "string" ? (r as { transferred_at: string }).transferred_at : null,
+      hold_until: typeof (r as { hold_until?: unknown }).hold_until === "string" ? (r as { hold_until: string }).hold_until : null,
+      created_at:
+        typeof (r as { created_at?: unknown }).created_at === "string"
+          ? (r as { created_at: string }).created_at
+          : new Date().toISOString(),
+      student_id: sid,
+      student_name: sid ? (nameMap.get(sid) ?? null) : null,
+    };
+  });
 
   let queuedCents = 0;
   let availableCents = 0;

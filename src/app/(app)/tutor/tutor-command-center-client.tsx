@@ -1,12 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { TutorCommandCenterPayload } from "@/app/actions/tutor";
 import { SessionRequestsList } from "./session-requests-list";
-import { TutorEarningsChart } from "./tutor-earnings-chart";
 import { TutorWeekCalendar } from "./tutor-week-calendar";
 import { AvailabilityManager } from "./availability-manager";
 import { AutoApproveToggle } from "./auto-approve-toggle";
@@ -25,6 +25,18 @@ import { formatDate } from "@/lib/time-format";
 import { TutorPayoutDashboard } from "./payout-dashboard";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
+const TutorEarningsChart = dynamic(
+  () => import("./tutor-earnings-chart").then((m) => m.TutorEarningsChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="h-[220px] w-full min-w-0 animate-pulse rounded bg-slate-100"
+        aria-hidden
+      />
+    ),
+  },
+);
 
 function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;

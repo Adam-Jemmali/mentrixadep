@@ -13,7 +13,7 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 import type { PayoutDashboardData, PayoutLedgerRow } from "@/app/actions/stripe-connect";
-import { createAccountLink, triggerManualPayout } from "@/app/actions/stripe-connect";
+import { openStripeConnectOrDashboard, triggerManualPayout } from "@/app/actions/stripe-connect";
 import { useRouter } from "next/navigation";
 
 function usd(cents: number): string {
@@ -94,14 +94,41 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function StripeExpressDashboardButton() {
+  const [loading, setLoading] = useState(false);
+  const open = async () => {
+    setLoading(true);
+    try {
+      const { url } = await openStripeConnectOrDashboard();
+      window.location.href = url;
+    } catch {
+      // Error surfaced via toast/console; keep UI minimal
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-3">
+      <button
+        type="button"
+        onClick={() => void open()}
+        disabled={loading}
+        className="flex w-full items-center gap-1.5 text-left text-xs text-slate-600 transition-colors hover:text-slate-900 disabled:opacity-60"
+      >
+        {loading ? <Loader2 size={11} className="animate-spin shrink-0" /> : <ExternalLink size={11} className="shrink-0" />}
+        <span className="flex-1">Open your Stripe dashboard (balance and payouts for your connected account)</span>
+        <ChevronRight size={11} className="shrink-0" />
+      </button>
+    </div>
+  );
+}
+
 function OnboardingBanner({
   payoutsEnabled,
-  onboardingUrl,
   onboardingGuide,
   incomplete,
 }: {
   payoutsEnabled: boolean;
-  onboardingUrl: string | null;
   onboardingGuide: PayoutDashboardData["connectStatus"]["onboardingGuide"];
   incomplete?: boolean;
 }) {
@@ -110,18 +137,12 @@ function OnboardingBanner({
 
   const handleSetup = async () => {
     setSetupError(null);
-    if (onboardingUrl) {
-      window.location.href = onboardingUrl;
-      return;
-    }
     setLoading(true);
     try {
-      // Use the Server Action instead of POST /api/... — middleware CSRF can block bare fetch()
-      // (403 "Invalid CSRF or origin"), which made this flow fall through to the public Stripe site.
-      const { url } = await createAccountLink();
+      const { url } = await openStripeConnectOrDashboard();
       window.location.href = url;
     } catch (e) {
-      setSetupError(e instanceof Error ? e.message : "Could not start Stripe setup. Try again.");
+      setSetupError(e instanceof Error ? e.message : "Could not open Stripe. Try again.");
     } finally {
       setLoading(false);
     }
@@ -324,7 +345,6 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
 
       <OnboardingBanner
         payoutsEnabled={connectStatus.payoutsEnabled}
-        onboardingUrl={connectStatus.onboardingUrl}
         onboardingGuide={connectStatus.onboardingGuide}
         incomplete={showIncomplete}
       />
@@ -354,18 +374,7 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
       </div>
 
       {connectStatus.payoutsEnabled && connectStatus.accountId && (
-        <div className="mt-4 border-t border-slate-100 pt-3">
-          <a
-            href="https://dashboard.stripe.com/express"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <ExternalLink size={11} />
-            Open Stripe Express Dashboard for full payout history
-            <ChevronRight size={11} className="ml-auto" />
-          </a>
-        </div>
+        <StripeExpressDashboardButton />
       )}
     </section>
   );

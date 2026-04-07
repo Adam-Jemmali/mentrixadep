@@ -40,6 +40,15 @@ function utcStartOfWeekMonday(d: Date): Date {
 const STRIPE_PAYOUT_CAPTION =
   "";
 
+async function loadTutorSection<T>(label: string, fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    console.error(`[tutor] ${label} failed:`, e);
+    return fallback;
+  }
+}
+
 /** True when DB migration 024 (sessions.cancelled_*) is not applied yet. */
 function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
   const m = (err.message ?? "").toLowerCase();
@@ -211,12 +220,12 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     availIdsRes,
     settingsTzRes,
   ] = await Promise.all([
-    getSessionRequests(),
-    getTutorAvailability(),
-    getUpcomingSessions(),
-    getPastSessions(),
-    getTutorCourses(),
-    getAutoApprove(),
+    loadTutorSection("sessionRequests", () => getSessionRequests(), []),
+    loadTutorSection("availability", () => getTutorAvailability(), []),
+    loadTutorSection("upcomingSessions", () => getUpcomingSessions(), []),
+    loadTutorSection("pastSessions", () => getPastSessions(), []),
+    loadTutorSection("tutorCourses", () => getTutorCourses(), []),
+    loadTutorSection("autoApprove", () => getAutoApprove(), false),
     supabase.from("ratings").select("rating").eq("tutor_id", tutorId),
     supabase
       .from("sessions")
@@ -255,17 +264,18 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     supabase.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
   ]);
 
-  const err =
-    ratingsRes.error ||
-    monthSessionsRes.error ||
-    weekSessionsRes.error ||
-    chartSessionsRes.error ||
-    calAvailRes.error ||
-    calSessionsRes.error ||
-    availIdsRes.error ||
-    settingsTzRes.error;
-  if (err) {
-    throw new Error(`Failed to load command center: ${err.message}`);
+  const supabaseErrors = [
+    ratingsRes.error,
+    monthSessionsRes.error,
+    weekSessionsRes.error,
+    chartSessionsRes.error,
+    calAvailRes.error,
+    calSessionsRes.error,
+    availIdsRes.error,
+    settingsTzRes.error,
+  ].filter(Boolean);
+  for (const e of supabaseErrors) {
+    console.warn("[tutor] command center partial query failed:", e?.message ?? e);
   }
 
   const earningsThisMonthCents = (monthSessionsRes.data ?? []).reduce((sum, row) => {
@@ -304,14 +314,15 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       .select("status, created_at, updated_at")
       .in("availability_id", availabilityIds);
     if (reqErr) {
-      throw new Error(`Failed to load response rate: ${reqErr.message}`);
+      console.warn("[tutor] response rate query failed:", reqErr.message);
+    } else {
+      const decided = (reqRows ?? []).filter((r) => r.status === "approved" || r.status === "rejected");
+      const inTime = decided.filter(
+        (r) => new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() <= MS24,
+      );
+      responseRatePercent =
+        decided.length === 0 ? null : Math.round((inTime.length / decided.length) * 1000) / 10;
     }
-    const decided = (reqRows ?? []).filter((r) => r.status === "approved" || r.status === "rejected");
-    const inTime = decided.filter(
-      (r) => new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() <= MS24,
-    );
-    responseRatePercent =
-      decided.length === 0 ? null : Math.round((inTime.length / decided.length) * 1000) / 10;
   }
 
   let lateCancellationAlerts: Array<{ id: string; course: string; start_time: string }> = [];
@@ -325,7 +336,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
 
   if (lateErr) {
     if (!isMissingCancelledSessionColumnsError(lateErr)) {
-      throw new Error(`Failed to load command center: ${lateErr.message}`);
+      console.warn("[tutor] late cancellation query failed:", lateErr.message);
     }
   } else {
     lateCancellationAlerts = (lateRows ?? [])
