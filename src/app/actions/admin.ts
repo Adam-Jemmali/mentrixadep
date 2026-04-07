@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { validateUUID, sanitizeError, enforceRateLimit, RATE_LIMITS, getRateLimitId } from "@/lib/security";
+import { sendWaitlistDecisionEmail } from "@/lib/email";
 
 export async function getRegistrationRequests() {
   await requireRole("admin");
@@ -60,20 +61,18 @@ export async function approveRegistrationRequest(requestId: string) {
 
     const authUser = authUsers.users.find((u) => u.email === request.email);
 
-    if (!authUser) {
-      throw new Error("User not found in authentication system");
-    }
+    if (authUser) {
+      const { error: updateError } = await adminClient
+        .from("users")
+        .update({
+          role: request.role,
+          approved: true,
+        })
+        .eq("id", authUser.id);
 
-    const { error: updateError } = await adminClient
-      .from("users")
-      .update({
-        role: request.role,
-        approved: true,
-      })
-      .eq("id", authUser.id);
-
-    if (updateError) {
-      throw new Error(`Failed to approve user: ${updateError.message}`);
+      if (updateError) {
+        throw new Error(`Failed to approve user: ${updateError.message}`);
+      }
     }
 
     const { error: requestUpdateError } = await adminClient
@@ -87,6 +86,8 @@ export async function approveRegistrationRequest(requestId: string) {
     if (requestUpdateError) {
       throw new Error(`Failed to update request status: ${sanitizeError(requestUpdateError)}`);
     }
+
+    void sendWaitlistDecisionEmail(request.email, request.role, "approved");
 
     revalidatePath("/admin");
     return { success: true };
@@ -108,6 +109,12 @@ export async function rejectRegistrationRequest(requestId: string) {
 
     const validRequestId = validateUUID(requestId);
 
+    const { data: request } = await adminClient
+      .from("registration_requests")
+      .select("email, role")
+      .eq("id", validRequestId)
+      .maybeSingle();
+
     const { error } = await adminClient
       .from("registration_requests")
       .update({
@@ -118,6 +125,10 @@ export async function rejectRegistrationRequest(requestId: string) {
 
     if (error) {
       throw new Error(`Failed to reject request: ${sanitizeError(error)}`);
+    }
+
+    if (request?.email && request?.role) {
+      void sendWaitlistDecisionEmail(request.email, request.role, "rejected");
     }
 
     revalidatePath("/admin");
@@ -203,20 +214,21 @@ export async function approveAllPendingRegistrations(): Promise<{ count: number 
 
   for (const request of pendingRequests) {
     const authUser = authUsers.users.find((u) => u.email === request.email);
-    if (!authUser) continue;
+    if (authUser) {
+      const { error: updateError } = await adminClient
+        .from("users")
+        .update({ role: request.role, approved: true })
+        .eq("id", authUser.id);
 
-    const { error: updateError } = await adminClient
-      .from("users")
-      .update({ role: request.role, approved: true })
-      .eq("id", authUser.id);
-
-    if (updateError) continue;
+      if (updateError) continue;
+    }
 
     await adminClient
       .from("registration_requests")
       .update({ status: "approved", updated_at: new Date().toISOString() })
       .eq("id", request.id);
 
+    void sendWaitlistDecisionEmail(request.email, request.role, "approved");
     approved++;
   }
 

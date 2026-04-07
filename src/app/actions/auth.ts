@@ -39,6 +39,22 @@ async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   }
 }
 
+async function getRegistrationRequestStatus(email: string | undefined): Promise<"pending" | "approved" | "rejected" | null> {
+  const normEmail = email?.trim().toLowerCase();
+  if (!normEmail) return null;
+  try {
+    const adminClient = createAdminClient();
+    const { data } = await adminClient
+      .from("registration_requests")
+      .select("status")
+      .eq("email", normEmail)
+      .maybeSingle();
+    return (data?.status as "pending" | "approved" | "rejected" | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Applies role + approval + JWT + registration_requests (admin upsert). */
 export async function applyRoleAndSyncProfile(
   userId: string,
@@ -47,7 +63,8 @@ export async function applyRoleAndSyncProfile(
 ): Promise<void> {
   const supabase = await createClient();
   const autoApprove = await fetchAutoApproveRegistrationsEnabled();
-  const approved = role === "student" && autoApprove;
+  const waitlistStatus = await getRegistrationRequestStatus(email);
+  const approved = waitlistStatus === "approved" || (role === "student" && autoApprove);
 
   const { error: uErr } = await supabase
     .from("users")
@@ -72,7 +89,12 @@ export async function applyRoleAndSyncProfile(
     console.error("[applyRoleAndSyncProfile] auth update:", authErr);
   }
 
-  const status = role === "student" && autoApprove ? "approved" : "pending";
+  const status =
+    waitlistStatus === "approved"
+      ? "approved"
+      : role === "student" && autoApprove
+        ? "approved"
+        : "pending";
   const normEmail = email?.trim().toLowerCase();
   if (normEmail) {
     const admin = createAdminClient();

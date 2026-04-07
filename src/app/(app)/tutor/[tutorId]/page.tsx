@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getTutorPublicProfile } from "@/app/actions/tutor";
 import { getCurrentUser } from "@/lib/auth";
+import { getSiteUrl } from "@/lib/site";
 import { TutorProfileClient } from "./tutor-profile-client";
 
 interface Props {
@@ -14,10 +15,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!profile) return { title: "Tutor not found — Mentrixa" };
   const title = `${profile.name} - Mentrixa Guide`;
   const description = `Book a session with ${profile.name} on Mentrixa.`;
+  const canonical = `${getSiteUrl()}/tutor/${tutorId}`;
   return {
     title,
     description,
-    openGraph: { title, description },
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 

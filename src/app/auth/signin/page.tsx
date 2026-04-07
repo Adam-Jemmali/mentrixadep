@@ -43,6 +43,16 @@ export default function SignInPage() {
         return;
       }
 
+      const wlRes = await fetch(`/api/waitlist/status?email=${encodeURIComponent(email)}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const wl = (await wlRes.json().catch(() => ({}))) as { approved?: boolean };
+      if (!wl.approved) {
+        setError("This email is not approved yet. Join the waitlist on the home page first.");
+        return;
+      }
+
       const supabase = createClient();
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
@@ -121,7 +131,7 @@ export default function SignInPage() {
             id="email"
             name="email"
             type="email"
-            placeholder="you@university.ca"
+            placeholder="you@university.ca or your personal email"
             className="input-premium border-slate-200 transition-all duration-200"
           />
         </div>

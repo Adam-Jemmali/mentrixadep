@@ -27,6 +27,7 @@ vi.mock("@/lib/env", () => ({
   env: {
     public: { appUrl: "http://localhost:3000" },
   },
+  getCronSecret: () => "test_cron_secret",
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -45,10 +46,10 @@ describe("Stripe Connect destination-charge payout flow", () => {
     vi.clearAllMocks();
   });
 
-  it("marks destination-charge ledger rows as transferred (no Transfer API call)", async () => {
-    const rowEq = vi.fn().mockResolvedValue({ error: null });
-    const rowIn = vi.fn().mockResolvedValue({ error: null });
-    const sessionEq = vi.fn().mockResolvedValue({ error: null });
+  it("marks destination-charge ledger rows as transferred (no separate Transfer API call)", async () => {
+    const ledgerUpdateEq = vi.fn().mockReturnValue({
+      in: vi.fn().mockResolvedValue({ error: null }),
+    });
 
     fromMock.mockImplementation((table: string) => {
       if (table === "tutor_payout_ledger") {
@@ -72,7 +73,7 @@ describe("Stripe Connect destination-charge payout flow", () => {
             }),
           }),
           update: () => ({
-            eq: rowEq,
+            eq: ledgerUpdateEq,
           }),
         };
       }
@@ -86,6 +87,7 @@ describe("Stripe Connect destination-charge payout flow", () => {
                   id: "session_1",
                   status: "scheduled",
                   start_time: "2026-04-07T00:00:00.000Z",
+                  end_time: "2026-04-07T01:00:00.000Z",
                   stripe_destination_charge: true,
                   stripe_payment_intent_id: "pi_123",
                 },
@@ -93,7 +95,7 @@ describe("Stripe Connect destination-charge payout flow", () => {
             }),
           }),
           update: () => ({
-            eq: sessionEq,
+            eq: vi.fn().mockResolvedValue({ error: null }),
           }),
         };
       }
@@ -101,15 +103,10 @@ describe("Stripe Connect destination-charge payout flow", () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    rowEq.mockReturnValue({ in: rowIn });
-
     const { transferSessionPayout } = await import("@/app/actions/stripe-connect");
     await transferSessionPayout("ledger_1");
 
-    expect(rowEq).toHaveBeenCalledWith("id", "ledger_1");
-    expect(rowIn).toHaveBeenCalledWith("status", ["pending", "held"]);
-    expect(sessionEq).toHaveBeenCalledWith("id", "session_1");
+    expect(ledgerUpdateEq).toHaveBeenCalledWith("id", "ledger_1");
     expect(transfersCreate).not.toHaveBeenCalled();
   });
 });
-

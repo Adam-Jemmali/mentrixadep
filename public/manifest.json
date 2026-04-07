@@ -1,7 +1,7 @@
 {
   "name": "Mentrixa",
   "short_name": "Mentrixa",
-  "description": "Live tutoring, quests, and divisions — learning leveled up.",
+  "description": "Mentrixa — live tutoring, quests, divisions, and skill progress for students and Guides.",
   "start_url": "/student",
   "scope": "/",
   "display": "standalone",

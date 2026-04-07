@@ -1,25 +1,26 @@
 import type { MetadataRoute } from "next";
+import { getSiteUrl } from "@/lib/site";
 
-const SITE_URL = "https://mentrixa.one";
-
+/** Public URLs that should be discoverable (no auth wall). `/tutor` is the Guide dashboard — not listed. */
 const publicPaths = [
   "/",
   "/contact",
-  "/signin",
-  "/signup",
-  "/select-role",
-  "/forgot-password",
-  "/reset-password",
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/select-role",
+  "/auth/forgot-password",
+  "/auth/reset-password",
   "/terms",
+  "/privacy",
   "/join",
-  "/tutor",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const siteUrl = getSiteUrl();
   const lastModified = new Date();
 
   return publicPaths.map((path) => ({
-    url: `${SITE_URL}${path === "/" ? "" : path}`,
+    url: `${siteUrl}${path === "/" ? "" : path}`,
     lastModified,
     changeFrequency: path === "/" ? "weekly" : "monthly",
     priority: path === "/" ? 1 : 0.7,

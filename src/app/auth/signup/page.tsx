@@ -110,6 +110,16 @@ export default function SignUpPage() {
     setSignedUpWithSession(false);
 
     try {
+      const wlRes = await fetch(`/api/waitlist/status?email=${encodeURIComponent(emailVal)}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const wl = (await wlRes.json().catch(() => ({}))) as { approved?: boolean };
+      if (!wl.approved) {
+        setError("This email is not approved yet. Join the waitlist on the home page first.");
+        return;
+      }
+
       // Sign up in the browser so Supabase can set auth cookies reliably (server actions often fail here).
       const supabase = createClient();
       const origin = window.location.origin;
@@ -230,7 +240,7 @@ export default function SignUpPage() {
             id="email"
             name="email"
             type="email"
-            placeholder="you@university.ca"
+            placeholder="you@university.ca or your personal email"
             required
             value={emailInput}
             onChange={(e) => {

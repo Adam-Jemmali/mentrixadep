@@ -302,7 +302,7 @@ export function TutorProfileClient({
               href="/settings"
               className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
             >
-              Edit display name and profile picture
+              Settings
             </Link>
           </div>
         )}

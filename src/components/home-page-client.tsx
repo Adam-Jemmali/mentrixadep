@@ -217,7 +217,7 @@ const OUTCOME_STRIP = [
   "Within 10 minutes of every session,  Quest drops your summary, flashcards, and practice problems.",
   "Your Quest practice drills are built from your session, not recycled problems.",
   "Sessions, quests, duels, and your division rank all live in one place. One login. One place to become the best Mentrixer.",
-  "Guides set their own rate. Stripe pays them automatically after every session. No invoicing. No chasing payment.",
+  "Guides set their rate ($15–$60 CAD per session). Stripe pays them automatically after every session.",
 ];
 
 const WITHOUT_SYSTEM = [
@@ -247,7 +247,22 @@ const GUIDE_PERKS = [
 const PRICING_POINTS = [
   "You join free — you only pay when you book a session",
   "You see one price — the 15% platform fee is already in what you pay",
-  "Guides set $15–$60/hr — you always know the range up front",
+  "Guides set $15–$60 CAD per session — you always know the range up front",
+];
+
+const WAITLIST_SLIDES = [
+  {
+    title: "Early access",
+    text: "Waitlisted Mentrixers and Guides are approved in batches by admin to keep session quality high.",
+  },
+  {
+    title: "Priority onboarding",
+    text: "Approved users get the cleanest first experience: no broken queues, no overloaded support.",
+  },
+  {
+    title: "Launch updates",
+    text: "You receive an email confirmation immediately after joining the waitlist.",
+  },
 ];
 
 const FEEDBACK_EMAIL = DEFAULT_PUBLIC_FEEDBACK_EMAIL;
@@ -261,11 +276,52 @@ export function HomePageClient() {
   const [ctaRef, ctaVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
   const [contactRef, contactVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
   const [heroReady] = useState(true);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistRole, setWaitlistRole] = useState<"student" | "tutor">("student");
+  const [waitlistMsg, setWaitlistMsg] = useState<string | null>(null);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [slideIdx, setSlideIdx] = useState(0);
   const track = useTrack();
 
   useEffect(() => {
     track("page_view_landing");
   }, [track]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setSlideIdx((n) => (n + 1) % WAITLIST_SLIDES.length);
+    }, 3500);
+    return () => window.clearInterval(id);
+  }, []);
+
+  async function submitWaitlist() {
+    setWaitlistMsg(null);
+    const email = waitlistEmail.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setWaitlistMsg("Enter a valid email.");
+      return;
+    }
+    setWaitlistLoading(true);
+    try {
+      const res = await fetch("/api/waitlist/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role: waitlistRole }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { approved?: boolean; error?: string };
+      if (!res.ok) {
+        setWaitlistMsg(json.error ?? "Could not join waitlist.");
+      } else if (json.approved) {
+        setWaitlistMsg("You are already approved. You can sign up now.");
+      } else {
+        setWaitlistMsg("You are on the waitlist. Check your email for confirmation.");
+      }
+    } catch {
+      setWaitlistMsg("Could not join waitlist.");
+    } finally {
+      setWaitlistLoading(false);
+    }
+  }
 
   return (
     <div className="lp-root">
@@ -352,6 +408,84 @@ export function HomePageClient() {
             Book a verified expert for your exact course. Meet live. Get session-backed study materials within minutes of
             your call. Watch the grade move.
           </p>
+
+          <div id="waitlist" className="mt-8 rounded-2xl border border-white/20 bg-white/[0.06] backdrop-blur-md p-4 sm:p-5 text-left max-w-2xl mx-auto shadow-xl shadow-indigo-950/30">
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-200 mb-2">Start here first</p>
+            <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Join the waitlist</h3>
+            <p className="mt-1 text-xs sm:text-sm text-indigo-100/80">
+              Admin approval is required before sign up/sign in.
+            </p>
+            <div className="mt-4 grid md:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-white/15 bg-black/20 p-3 min-h-[120px]">
+                {WAITLIST_SLIDES.map((s, i) => (
+                  <div
+                    key={s.title}
+                    className={cn(
+                      "transition-all duration-300",
+                      i === slideIdx ? "opacity-100 translate-x-0" : "hidden opacity-0 translate-x-2",
+                    )}
+                  >
+                    <p className="text-sm font-semibold text-white">{s.title}</p>
+                    <p className="mt-1 text-xs text-indigo-100/75 leading-relaxed">{s.text}</p>
+                  </div>
+                ))}
+                <div className="mt-3 flex gap-1.5">
+                  {WAITLIST_SLIDES.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSlideIdx(i)}
+                      className={cn(
+                        "h-1.5 rounded-full transition-all",
+                        i === slideIdx ? "w-7 bg-blue-300" : "w-3 bg-white/30",
+                      )}
+                      aria-label={`Waitlist slide ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/15 bg-black/20 p-3">
+                <input
+                  type="email"
+                  value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  placeholder="you@university.ca"
+                  className="w-full rounded-lg border border-white/30 bg-white/90 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWaitlistRole("student")}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-xs font-medium",
+                      waitlistRole === "student" ? "bg-white text-slate-900" : "bg-white/10 text-white",
+                    )}
+                  >
+                    Mentrixer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWaitlistRole("tutor")}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-xs font-medium",
+                      waitlistRole === "tutor" ? "bg-white text-slate-900" : "bg-white/10 text-white",
+                    )}
+                  >
+                    Guide
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void submitWaitlist()}
+                  disabled={waitlistLoading}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-60"
+                >
+                  {waitlistLoading ? "Submitting..." : "Join waitlist"}
+                </button>
+                {waitlistMsg ? <p className="mt-2 text-xs text-blue-100">{waitlistMsg}</p> : null}
+              </div>
+            </div>
+          </div>
 
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link
@@ -634,6 +768,8 @@ export function HomePageClient() {
           </div>
         </div>
       </section>
+
+      
 
       <section
         ref={contactRef}

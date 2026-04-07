@@ -130,6 +130,9 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
           <p className="text-[13px] text-slate-500 mt-1">
             {counts.pending} pending · {counts.approved} approved · {counts.rejected} rejected
           </p>
+          <p className="text-[12px] text-slate-400 mt-1">
+            This queue is also used for landing-page waitlist approvals.
+          </p>
         </div>
 
         {/* Auto-approve toggle */}

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { APP_TIMEZONES } from "@/lib/timezones";
+import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/lib/availability-schemas";
 
 const WEEKDAYS: { value: number; label: string }[] = [
   { value: 0, label: "Mon" },
@@ -91,8 +92,15 @@ export function CreateAvailabilityForm({
     }
 
     const parsedPrice = Number(price);
-    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-      setError("Price must be a positive number");
+    if (!Number.isFinite(parsedPrice)) {
+      setError("Enter a valid price");
+      setLoading(false);
+      return;
+    }
+    if (parsedPrice < SESSION_PRICE_CAD_MIN || parsedPrice > SESSION_PRICE_CAD_MAX) {
+      setError(
+        `Price must be between $${SESSION_PRICE_CAD_MIN} and $${SESSION_PRICE_CAD_MAX} CAD per session`,
+      );
       setLoading(false);
       return;
     }
@@ -111,7 +119,7 @@ export function CreateAvailabilityForm({
       endTime,
       recurring,
       recurringWeeks: recurring ? rw : undefined,
-      priceUsd: parsedPrice,
+      priceCad: parsedPrice,
       maxStudents: 1 as const,
       timezone,
     };
@@ -254,21 +262,25 @@ export function CreateAvailabilityForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-slate-900">Price (USD / session)</Label>
+            <Label className="text-slate-900">Price (CAD / session)</Label>
             <div className="relative mt-1.5">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700">$</span>
               <Input
                 type="number"
-                min={1}
+                min={SESSION_PRICE_CAD_MIN}
+                max={SESSION_PRICE_CAD_MAX}
                 step={1}
                 className="h-9 border-slate-300 bg-white pl-6 text-slate-950"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
             </div>
+            <p className="mt-1 text-[10px] text-slate-600">
+              ${SESSION_PRICE_CAD_MIN}–${SESSION_PRICE_CAD_MAX} CAD
+            </p>
           </div>
           <div>
-            <Label className="text-slate-900">Max learners</Label>
+            <Label className="text-slate-900">Max Mentrixers</Label>
             <Input
               type="number"
               disabled

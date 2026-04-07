@@ -36,7 +36,8 @@ Set in **Vercel -> Project Settings -> Environment Variables**:
 - `GEMINI_API_KEY` -> Google AI Studio
 - `RESEND_API_KEY` -> Resend dashboard
 - `CRON_SECRET` -> generate with `openssl rand -hex 32`
-- `NEXT_PUBLIC_APP_URL` -> `https://mentrixa.one`
+- `NEXT_PUBLIC_APP_URL` -> `https://mentrixa.one` (used for Stripe Connect return/refresh URLs)
+- Optional: `STRIPE_CONNECT_ACCOUNT_COUNTRY` -> ISO country for new Express accounts (default `CA`; must match your marketplace / currency strategy)
 
 Recommended hardening (also enforced on each `/api/cron/*` request in `lib/cron.ts`):
 
@@ -74,7 +75,9 @@ Then:
 ## 4) Stripe Production Checklist
 
 - Apply Supabase migration `supabase/060-stripe-connect-destination-settlement.sql` (Connect destination charges + `approve_session_request_atomic` copy of `stripe_destination_charge`).
-- **Connect (marketplace):** student Checkout uses **destination charges** with `application_fee_amount` (platform fee from `PLATFORM_FEE_BPS` in `src/lib/booking-pricing.ts`). Tutor net is settled on the **connected account** at charge time; `tutor_payout_ledger` records the split with `status: transferred` and **no** separate `stripe.transfers.create` for those sessions.
+- Apply Supabase migration `supabase/062-remove-paypal-tutor-columns.sql` if you previously applied `061-tutor-paypal-payouts.sql` — it drops legacy PayPal columns from `users`.
+- **Stripe Dashboard → Connect:** enable **Express** accounts (platform/marketplace). Tutors complete **Stripe Connect onboarding** (`/api/stripe/connect/refresh`); bookings require `users.stripe_account_id` + `stripe_payouts_enabled`.
+- **Connect (marketplace):** student Checkout uses **CAD** line items and **destination charges** with `payment_intent_data.application_fee_amount` + `transfer_data.destination` (platform fee from `PLATFORM_FEE_BPS` in `src/lib/booking-pricing.ts`). Tutor net settles on the **connected account** at charge time; `tutor_payout_ledger` records the split with `status: transferred` and **no** separate `stripe.transfers.create` for those sessions.
 - Create live webhook endpoint:
   - `https://mentrixa.one/api/stripe/webhook`
 - Subscribe to events:

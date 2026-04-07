@@ -14,6 +14,10 @@ export interface User {
   referred_by: string | null;
   referral_flagged?: boolean;
   referral_last_ip_hash?: string | null;
+  /** Stripe Connect Express connected account id (`acct_...`). */
+  stripe_account_id?: string | null;
+  stripe_payouts_enabled?: boolean;
+  stripe_onboarding_at?: string | null;
   created_at: string;
   updated_at: string;
 }

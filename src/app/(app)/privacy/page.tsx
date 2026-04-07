@@ -1,5 +1,13 @@
-export const metadata = {
-  title: "Privacy · Mentrixa",
+import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy · Mentrixa",
+  description:
+    "How Mentrixa collects, uses, and protects account data, learning activity, and payments — and your privacy choices.",
+  alternates: {
+    canonical: `${getSiteUrl()}/privacy`,
+  },
 };
 
 export default function PrivacyPage() {

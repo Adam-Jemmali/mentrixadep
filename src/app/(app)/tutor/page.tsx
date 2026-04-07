@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { getTutorCommandCenterData } from "@/app/actions/tutor";
 import { TutorCommandCenterClient } from "./tutor-command-center-client";
+
+export const metadata: Metadata = {
+  title: "Guide center · Mentrixa",
+  robots: { index: false, follow: true },
+};
 
 export const dynamic = "force-dynamic";
 

@@ -360,13 +360,13 @@ export async function POST(req: NextRequest) {
     const split = splitSessionPriceCents(sessionPriceCents);
     const appFeeAmount = split.platformFeeCents;
 
-    const { data: tutorStripe, error: tutorStripeErr } = await adminClient
+    const { data: tutorPayout, error: tutorPayoutErr } = await adminClient
       .from("users")
       .select("stripe_account_id, stripe_payouts_enabled")
       .eq("id", availability.tutor_id)
       .maybeSingle();
 
-    if (tutorStripeErr) {
+    if (tutorPayoutErr) {
       await clearPendingLock({ lockedBy: user.id });
       return NextResponse.json(
         { error: "Could not verify this guide's payout account. Try again later." },
@@ -374,12 +374,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!tutorStripe?.stripe_account_id || !tutorStripe.stripe_payouts_enabled) {
+    const tutorStripeAccountId = tutorPayout?.stripe_account_id?.trim() ?? "";
+    if (!tutorStripeAccountId || !tutorPayout?.stripe_payouts_enabled) {
       await clearPendingLock({ lockedBy: user.id });
       return NextResponse.json(
         {
           error:
-            "This guide has not finished Stripe payout setup yet. Bookings are unavailable until they complete Setup payments on their dashboard.",
+            "This guide has not finished Stripe Connect setup yet. Bookings are unavailable until they complete payouts onboarding on their dashboard.",
         },
         { status: 400 }
       );
@@ -410,7 +411,7 @@ export async function POST(req: NextRequest) {
     const lineItems: Stripe.Checkout.SessionCreateParams["line_items"] = [
       {
         price_data: {
-          currency: "usd",
+          currency: "cad",
           // Model A: charge learner only the base session amount.
           unit_amount: split.totalCents,
           product_data: {
@@ -436,7 +437,7 @@ export async function POST(req: NextRequest) {
       availabilityId: availability.id,
       studentId: user.id,
       tutorId: availability.tutor_id,
-      /** Reconciled in webhook + bookSessionAsUser for ledger (Connect destination charge). */
+      /** Connect destination charge: application fee to platform, remainder to connected account. */
       connect_destination: "true",
     };
 
@@ -462,7 +463,7 @@ export async function POST(req: NextRequest) {
             payment_intent_data: {
               application_fee_amount: appFeeAmount,
               transfer_data: {
-                destination: tutorStripe.stripe_account_id,
+                destination: tutorStripeAccountId,
               },
               metadata: checkoutMetadata,
             },

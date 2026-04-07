@@ -1,4 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { getSiteUrl } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Join Mentrixa",
+  description:
+    "Join Mentrixa with a referral link or create an account — live tutoring, quests, divisions, and progress tracking.",
+  alternates: {
+    canonical: `${getSiteUrl()}/join`,
+  },
+};
 
 /** Bare route when visiting /join without ?ref= (middleware redirects /join?ref= to /auth/signup). */
 export default function JoinPage() {

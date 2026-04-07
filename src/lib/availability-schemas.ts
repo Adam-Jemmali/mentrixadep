@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+/** Tutor-set session price (CAD dollars, stored as cents in DB). Must match landing page promise. */
+export const SESSION_PRICE_CAD_MIN = 15;
+export const SESSION_PRICE_CAD_MAX = 60;
+
 /** Monday = 0 … Sunday = 6 */
 export const weekdayMon0Schema = z.number().int().min(0).max(6);
 
@@ -16,7 +20,11 @@ export const createAvailabilitySlotsSchema = z
     recurring: z.boolean(),
     /** Used when recurring is true (default 12 on server). */
     recurringWeeks: z.number().int().min(1).max(52).optional(),
-    priceUsd: z.number().positive().max(100_000),
+    /** Whole or decimal CAD per session (e.g. 15–60). */
+    priceCad: z
+      .number()
+      .min(SESSION_PRICE_CAD_MIN, `Price must be at least $${SESSION_PRICE_CAD_MIN} CAD`)
+      .max(SESSION_PRICE_CAD_MAX, `Price cannot exceed $${SESSION_PRICE_CAD_MAX} CAD`),
     maxStudents: z.literal(1),
     timezone: z.string().min(1).max(120),
   })

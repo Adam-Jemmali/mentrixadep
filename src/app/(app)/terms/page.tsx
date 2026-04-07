@@ -1,5 +1,13 @@
-export const metadata = {
-  title: "Terms · Mentrixa",
+import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Terms of Service · Mentrixa",
+  description:
+    "Terms of Service for Mentrixa — roles, payments, acceptable use, and how we provide tutoring and learning features.",
+  alternates: {
+    canonical: `${getSiteUrl()}/terms`,
+  },
 };
 
 export default function TermsPage() {

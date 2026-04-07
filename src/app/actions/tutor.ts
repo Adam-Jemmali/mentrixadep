@@ -5,7 +5,12 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { createAvailabilitySlotsSchema, setAvailabilityActiveSchema } from "@/lib/availability-schemas";
+import {
+  createAvailabilitySlotsSchema,
+  setAvailabilityActiveSchema,
+  SESSION_PRICE_CAD_MAX,
+  SESSION_PRICE_CAD_MIN,
+} from "@/lib/availability-schemas";
 import { buildSlotCandidates } from "@/lib/availability-slot-builder";
 import {
   sendSessionApprovedEmail,
@@ -672,7 +677,7 @@ export async function createAvailabilitySlots(
       throw new Error("No future slots matched your selections. Try different days or times.");
     }
 
-    const pricePerSession = Math.max(1, Math.round(input.priceUsd * 100));
+    const pricePerSession = Math.round(input.priceCad * 100);
     const seriesId = randomUUID();
 
     const rows: Array<{
@@ -843,10 +848,13 @@ export async function createAvailability(
         : 30;
     const duration = Math.min(480, Math.max(15, rawDuration));
     const end = new Date(start.getTime() + duration * 60 * 1000);
-    const pricePerSession =
-      typeof priceDollars === "number" && Number.isFinite(priceDollars)
-        ? Math.max(1, Math.round(priceDollars * 100))
-        : 2500;
+    const rawDollars =
+      typeof priceDollars === "number" && Number.isFinite(priceDollars) ? priceDollars : 25;
+    const clampedDollars = Math.min(
+      SESSION_PRICE_CAD_MAX,
+      Math.max(SESSION_PRICE_CAD_MIN, rawDollars),
+    );
+    const pricePerSession = Math.round(clampedDollars * 100);
 
     await assertAvailabilityWindowAllowed(adminClient, actingAsId, validCourse, start, end);
 

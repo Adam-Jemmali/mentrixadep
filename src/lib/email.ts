@@ -17,6 +17,7 @@ import { getResendApiKey } from "@/lib/env";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
 
 const FROM_ADDRESS = "Mentrixa <updates@mentrixa.one>";
+const WAITLIST_FROM_ADDRESS = "Mentrixa <noreply@mentrixa.one>";
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL?.trim() ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
@@ -167,6 +168,34 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
       },
       body: JSON.stringify({
         from: FROM_ADDRESS,
+        to: recipient,
+        subject: subject + devNote,
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[email] Failed to send "${subject}" to ${recipient} (originally: ${to}):`, body);
+    }
+  } catch (err) {
+    console.error(`[email] Unexpected error sending "${subject}" to ${to}:`, err);
+  }
+}
+
+async function sendEmailFrom(from: string, to: string, subject: string, html: string): Promise<void> {
+  try {
+    const apiKey = getResendApiKey();
+    const recipient = DEV_EMAIL_OVERRIDE ?? to;
+    const devNote =
+      DEV_EMAIL_OVERRIDE && DEV_EMAIL_OVERRIDE !== to ? ` [DEV: originally to ${to}]` : "";
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
         to: recipient,
         subject: subject + devNote,
         html,
@@ -654,7 +683,7 @@ export async function sendWelcomeTutorEmail(
           <p style="margin:0 0 8px;color:#737373;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Onboarding checklist</p>
           <ul style="margin:0;padding-left:18px;color:#a3a3a3;font-size:14px;line-height:1.55;">
             <li style="margin:0 0 6px;">Set your subjects and weekly availability.</li>
-            <li style="margin:0 0 6px;">Set your payout method (PayPal or bank transfer).</li>
+            <li style="margin:0 0 6px;">Complete Stripe Connect onboarding to receive payouts.</li>
             <li style="margin:0;">Respond to booking requests from your tutor home.</li>
           </ul>
         </td>
@@ -905,6 +934,73 @@ export async function sendTutorPayoutEmail(tutorEmail: string, props: TutorPayou
     tutorEmail,
     `Payout of ${amt} is on the way · Mentrixa`,
     baseTemplate("Payout sent", body)
+  );
+}
+
+export async function sendWaitlistReceivedEmail(
+  email: string,
+  role: "student" | "tutor",
+): Promise<void> {
+  const hi = greetingFirstName(undefined, email);
+  const roleLabel = role === "tutor" ? "Guide" : "Mentrixer";
+  const body = `
+    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
+      Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
+    </p>
+    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
+      You are on the Mentrixa waitlist as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong>.
+      We will email you as soon as an admin approves your access.
+    </p>
+    <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0 0 20px;">
+      Until approval, sign in and sign up stay locked for this email.
+    </p>
+    ${ctaButton(`${APP_URL}/`, "Back to Mentrixa")}
+  `;
+  await sendEmailFrom(
+    WAITLIST_FROM_ADDRESS,
+    email,
+    `${hi}, you are on the Mentrixa waitlist`,
+    baseTemplate("Waitlist confirmed", body),
+  );
+}
+
+export async function sendWaitlistDecisionEmail(
+  email: string,
+  role: "student" | "tutor",
+  status: "approved" | "rejected",
+): Promise<void> {
+  const hi = greetingFirstName(undefined, email);
+  const roleLabel = role === "tutor" ? "Guide" : "Mentrixer";
+  const approved = status === "approved";
+  const body = approved
+    ? `
+      <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
+        Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
+      </p>
+      <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
+        Great news — your waitlist access as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> is approved.
+        You can now sign up / sign in to Mentrixa with this email.
+      </p>
+      ${ctaButton(`${APP_URL}/auth/signup${role === "tutor" ? "?role=tutor" : ""}`, "Continue to Mentrixa")}
+    `
+    : `
+      <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
+        Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
+      </p>
+      <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
+        Your current waitlist request as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> was not approved.
+        You can re-join the waitlist anytime with updated details.
+      </p>
+      ${ctaButton(`${APP_URL}/#waitlist`, "Re-join waitlist")}
+    `;
+
+  await sendEmailFrom(
+    WAITLIST_FROM_ADDRESS,
+    email,
+    approved
+      ? `${hi}, your Mentrixa waitlist access is approved`
+      : `${hi}, update on your Mentrixa waitlist request`,
+    baseTemplate(approved ? "Waitlist approved" : "Waitlist update", body),
   );
 }
 
