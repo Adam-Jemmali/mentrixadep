@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { TutorCommandCenterPayload } from "@/app/actions/tutor";
@@ -21,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/time-format";
-import { TutorPayoutDashboard } from "@/app/(app)/tutor/payout-dashboard";
+import { TutorPayoutDashboard } from "./payout-dashboard";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 
@@ -32,6 +33,8 @@ function formatUsd(cents: number): string {
 export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPayload }) {
   const { viewingAsUserId } = useAdminViewContext();
   const [addOpen, setAddOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const connectParam = searchParams.get("connect");
   const studioHref = viewingAsUserId
     ? `/tutor/sessions-ai?tutorId=${viewingAsUserId}`
     : "/tutor/sessions-ai";
@@ -111,7 +114,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
           <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
             {formatUsd(metrics.earningsThisMonthCents)}
           </div>
-          <p className="mt-2 text-[11px] leading-snug text-slate-500">{metrics.payoutCaption}</p>
+          <p className="mt-2 text-[11px] leading-snug text-slate-500">{metrics.stripePayoutCaption}</p>
         </div>
 
         <div className="rounded-md border border-slate-200 bg-white p-4">
@@ -253,6 +256,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
         <div className="mt-8">
           <TutorPayoutDashboard
             data={data.payoutData}
+            connectParam={connectParam}
           />
         </div>
       )}

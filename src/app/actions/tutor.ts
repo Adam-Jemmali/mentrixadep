@@ -23,7 +23,7 @@ import {
   RATE_LIMITS,
   getRateLimitId,
 } from "@/lib/security";
-import type { PayoutDashboardData } from "@/app/actions/tutor-payouts";
+import type { PayoutDashboardData } from "@/app/actions/stripe-connect";
 
 /** Monday 00:00:00 UTC for the week containing `d` (used for consistent server/client week bounds). */
 function utcStartOfWeekMonday(d: Date): Date {
@@ -35,7 +35,8 @@ function utcStartOfWeekMonday(d: Date): Date {
   return x;
 }
 
-const PAYOUT_CAPTION = "Payouts via your selected method (PayPal or bank transfer).";
+const STRIPE_PAYOUT_CAPTION =
+  "";
 
 /** True when DB migration 024 (sessions.cancelled_*) is not applied yet. */
 function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
@@ -126,7 +127,7 @@ export type TutorCommandCenterPayload = {
   };
   metrics: {
     earningsThisMonthCents: number;
-    payoutCaption: string;
+    stripePayoutCaption: string;
     sessionsThisWeek: number;
     avgRating: number | null;
     responseRatePercent: number | null;
@@ -158,7 +159,7 @@ export type TutorCommandCenterPayload = {
   tutorCourses: Awaited<ReturnType<typeof getTutorCourses>>;
   autoApprove: boolean;
   tutorTimezone: string;
-  /** Tutor payout data (null if loading fails gracefully) */
+  /** Stripe Connect & payout data (null if loading fails gracefully) */
   payoutData: PayoutDashboardData | null;
 };
 
@@ -326,7 +327,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
   // Load payout dashboard data (non-critical — fail silently)
   let payoutData: PayoutDashboardData | null = null;
   try {
-    const { getPayoutDashboardData } = await import("@/app/actions/tutor-payouts");
+    const { getPayoutDashboardData } = await import("@/app/actions/stripe-connect");
     payoutData = await getPayoutDashboardData(tutorId);
   } catch (e) {
     console.warn("[tutor] payout data load failed (non-critical):", e);
@@ -339,7 +340,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     },
     metrics: {
       earningsThisMonthCents,
-      payoutCaption: PAYOUT_CAPTION,
+      stripePayoutCaption: STRIPE_PAYOUT_CAPTION,
       sessionsThisWeek,
       avgRating,
       responseRatePercent,
@@ -819,11 +820,17 @@ export async function getPastSessions() {
 
   const [{ data: endedRows, error: endedErr }, { data: closedEarlyRows, error: earlyErr }] =
     await Promise.all([
-      supabase.from("sessions").select("*").eq("tutor_id", user.id).lt("end_time", nowIso),
       supabase
         .from("sessions")
         .select("*")
         .eq("tutor_id", user.id)
+        .is("tutor_hidden_at", null)
+        .lt("end_time", nowIso),
+      supabase
+        .from("sessions")
+        .select("*")
+        .eq("tutor_id", user.id)
+        .is("tutor_hidden_at", null)
         .in("status", ["completed", "cancelled"])
         .gte("end_time", nowIso),
     ]);

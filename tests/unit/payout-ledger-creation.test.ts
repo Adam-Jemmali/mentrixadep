@@ -10,8 +10,8 @@ import { describe, it, expect } from "vitest";
  */
 
 describe("payout ledger creation on session completion", () => {
-  it("verifies the tutor payout dashboard loader exists and exports", async () => {
-    const { getPayoutDashboardData } = await import("@/app/actions/tutor-payouts");
+  it("verifies the payout dashboard loader exists and exports", async () => {
+    const { getPayoutDashboardData } = await import("@/app/actions/stripe-connect");
     expect(typeof getPayoutDashboardData).toBe("function");
   });
 

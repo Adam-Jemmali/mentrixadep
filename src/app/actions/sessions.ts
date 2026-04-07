@@ -23,12 +23,12 @@ type SessionRow = {
 };
 
 /**
- * Remove a past session row. Cascades to ratings, video rooms, recordings, AI packages, etc.
- * Only the student or tutor on the session may delete; admins must pass onBehalfOfUserId.
+ * Hide a past session from the caller's history only.
+ * The session row and linked data remain intact for the other participant.
+ * Only the student or tutor on the session may hide; admins must pass onBehalfOfUserId.
  *
  * Loads the row with the user-scoped client first (same visibility as the dashboard), then
- * falls back to the service role so deletes still work if the service key is misconfigured
- * but RLS allows the operation.
+ * falls back to the service role for admin-on-behalf flows.
  */
 export async function deletePastSession(
   sessionId: string,
@@ -102,10 +102,15 @@ export async function deletePastSession(
       };
     }
 
-    const del = await deleteSessionRow(validId, userSb, adminSb, isAdminOnBehalf);
-    if (!del.ok) {
-      return { success: false, error: del.error };
-    }
+    const hide = await hideSessionForActor(
+      validId,
+      actingAsId,
+      session,
+      userSb,
+      adminSb,
+      isAdminOnBehalf
+    );
+    if (!hide.ok) return { success: false, error: hide.error };
 
     revalidatePath("/student");
     revalidatePath("/tutor");
@@ -171,41 +176,41 @@ async function loadSessionRow(
   };
 }
 
-async function deleteSessionRow(
+async function hideSessionForActor(
   validId: string,
+  actingAsId: string,
+  session: SessionRow,
   userSb: Awaited<ReturnType<typeof createClient>>,
   adminSb: ReturnType<typeof createAdminClient> | null,
   isAdminOnBehalf: boolean
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (isAdminOnBehalf && !adminSb) {
+  const isStudentActor = session.student_id === actingAsId;
+  const hidePatch = isStudentActor
+    ? { student_hidden_at: new Date().toISOString() }
+    : { tutor_hidden_at: new Date().toISOString() };
+
+  if (isAdminOnBehalf) {
+    if (!adminSb) {
+      return {
+        ok: false,
+        error:
+          "Hiding a session on behalf of a user requires SUPABASE_SERVICE_ROLE_KEY to be configured on the server.",
+      };
+    }
+
+    const { error } = await adminSb.from("sessions").update(hidePatch).eq("id", validId);
+    if (!error) return { ok: true };
     return {
       ok: false,
-      error:
-        "Removing a session on behalf of a user requires SUPABASE_SERVICE_ROLE_KEY to be configured on the server.",
+      error: `Could not hide session (admin): ${error.message}`,
     };
   }
 
-  if (adminSb) {
-    const { error } = await adminSb.from("sessions").delete().eq("id", validId);
-    if (!error) return { ok: true };
-    if (isAdminOnBehalf) {
-      return {
-        ok: false,
-        error: `Could not remove session (admin): ${error.message}`,
-      };
-    }
-  }
-
-  const { error: userErr } = await userSb.from("sessions").delete().eq("id", validId);
+  const { error: userErr } = await userSb.from("sessions").update(hidePatch).eq("id", validId);
   if (!userErr) return { ok: true };
-
-  const hint =
-    !adminSb && !isAdminOnBehalf
-      ? " Ensure SUPABASE_SERVICE_ROLE_KEY is set on the server, or that past-session delete RLS policies are applied."
-      : "";
 
   return {
     ok: false,
-    error: `Could not remove session: ${userErr.message}.${hint}`,
+    error: `Could not hide session: ${userErr.message}`,
   };
 }

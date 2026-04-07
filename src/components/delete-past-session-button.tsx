@@ -36,7 +36,7 @@ export function DeletePastSessionButton({
   async function handleDelete() {
     if (
       !window.confirm(
-        "Remove this session from your history? Ratings and linked data for this session will be deleted. This cannot be undone.",
+        "Remove this session from your history? This only hides it for you and does not delete tutor records or payouts.",
       )
     ) {
       return;

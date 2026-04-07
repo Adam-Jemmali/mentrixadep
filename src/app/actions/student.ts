@@ -144,11 +144,13 @@ export async function getPastSessions() {
         .from("sessions")
         .select("*")
         .eq("student_id", user.id)
+        .is("student_hidden_at", null)
         .lt("end_time", nowIso),
       supabase
         .from("sessions")
         .select("*")
         .eq("student_id", user.id)
+        .is("student_hidden_at", null)
         .in("status", ["completed", "cancelled"])
         .gte("end_time", nowIso),
     ]);
@@ -217,6 +219,7 @@ export async function getStudentSessionsHubBundle(): Promise<{
     .from("sessions")
     .select("*")
     .eq("student_id", user.id)
+    .is("student_hidden_at", null)
     .or(orFilter);
 
   if (error) {
