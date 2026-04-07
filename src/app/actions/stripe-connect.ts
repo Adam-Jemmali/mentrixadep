@@ -595,11 +595,26 @@ export async function transferSessionPayout(ledgerRowId: string): Promise<void> 
   if (ledger.session_id) {
     const { data: session } = await admin
       .from("sessions")
-      .select("status, completed, start_time, stripe_destination_charge")
+      .select("status, completed, start_time, stripe_destination_charge, stripe_payment_intent_id")
       .eq("id", ledger.session_id)
       .maybeSingle();
 
     if (session && (session as { stripe_destination_charge?: boolean }).stripe_destination_charge === true) {
+      const paymentIntentId =
+        (session as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id ?? null;
+      await admin
+        .from("tutor_payout_ledger")
+        .update({
+          status: "transferred",
+          transfer_id: paymentIntentId,
+          transferred_at: new Date().toISOString(),
+        })
+        .eq("id", ledgerRowId)
+        .in("status", ["pending", "held"]);
+      await admin
+        .from("sessions")
+        .update({ payout_status: "transferred" })
+        .eq("id", ledger.session_id);
       return;
     }
 
