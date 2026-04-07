@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 
 type Item = { href: string; label: string; color: string; children: ReactNode };
 
-const REDDIT_LOGO_URL = "https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-180x180.png";
-
 function IconDiscord({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -28,6 +26,19 @@ function IconTwitter({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function IconReddit({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="9.2" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="14.8" cy="12" r="1.2" fill="currentColor" />
+      <path d="M8.8 15.1c.9.8 1.9 1.2 3.2 1.2 1.2 0 2.3-.4 3.2-1.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M13.2 7.4l2.8.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16.9" cy="8.1" r="1" fill="currentColor" />
     </svg>
   );
 }
@@ -96,15 +107,7 @@ export function ContactSocialLinks({
         variant === "default"
           ? "hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-400/35"
           : "hover:border-orange-400/40 hover:text-orange-300",
-      children: (
-        <img
-          src={REDDIT_LOGO_URL}
-          alt=""
-          className={cn("rounded-full", variant === "footer" ? "h-4 w-4" : "h-6 w-6")}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-        />
-      ),
+      children: <IconReddit className={variant === "footer" ? "h-4 w-4" : "h-6 w-6"} />,
     });
   }
   if (isHttpUrl(env.twitter)) {

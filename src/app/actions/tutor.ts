@@ -12,6 +12,7 @@ import {
   type SessionEmailDetails,
 } from "@/lib/email";
 import { createRefundForRejectedRequest } from "@/lib/stripe-session-booking";
+import type { Session } from "@/lib/database.types";
 import {
   validateCourse,
   validateUUID,
@@ -823,8 +824,8 @@ export async function getPastSessions() {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
-  let endedRows: Array<Record<string, unknown>> | null = null;
-  let closedEarlyRows: Array<Record<string, unknown>> | null = null;
+  let endedRows: Session[] | null = null;
+  let closedEarlyRows: Session[] | null = null;
   let endedErr: { message?: string } | null = null;
   let earlyErr: { message?: string } | null = null;
 

@@ -25,7 +25,7 @@ import {
 } from "@/lib/email";
 import { getVerifiedPaymentIntentForBooking } from "@/lib/stripe-session-booking";
 import { addDaysIso } from "@/lib/booking-pricing";
-import type { SessionAiPackage } from "@/lib/database.types";
+import type { Session, SessionAiPackage } from "@/lib/database.types";
 
 function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
   const m = (err.message ?? "").toLowerCase();
@@ -143,8 +143,8 @@ export async function getPastSessions() {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
-  let endedRows: Awaited<ReturnType<typeof supabase.from>> extends never ? never : Array<Record<string, unknown>> | null = null;
-  let closedEarlyRows: Array<Record<string, unknown>> | null = null;
+  let endedRows: Session[] | null = null;
+  let closedEarlyRows: Session[] | null = null;
   let endedErr: { message?: string } | null = null;
   let earlyErr: { message?: string } | null = null;
 
@@ -251,7 +251,7 @@ export async function getStudentSessionsHubBundle(): Promise<{
 
   const orFilter = `end_time.lt.${nowIso},and(status.in.(completed,cancelled),end_time.gte.${nowIso}),and(status.eq.scheduled,end_time.gte.${nowIso})`;
 
-  let mergedRows: Array<Record<string, unknown>> | null = null;
+  let mergedRows: Session[] | null = null;
   let error: { message?: string } | null = null;
 
   {
