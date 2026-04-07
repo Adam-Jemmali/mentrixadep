@@ -35,6 +35,11 @@ function isMissingCancelledSessionColumnsError(err: { message?: string }): boole
   );
 }
 
+function isMissingSessionHideColumnsError(err: { message?: string } | null | undefined): boolean {
+  const m = (err?.message ?? "").toLowerCase();
+  return m.includes("does not exist") && (m.includes("student_hidden_at") || m.includes("tutor_hidden_at"));
+}
+
 /** Tutor display info for learner session lists (from user_settings + auth metadata). */
 export type StudentSessionTutorProfile = {
   id: string;
@@ -138,8 +143,13 @@ export async function getPastSessions() {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
-  const [{ data: endedRows, error: endedErr }, { data: closedEarlyRows, error: earlyErr }] =
-    await Promise.all([
+  let endedRows: Awaited<ReturnType<typeof supabase.from>> extends never ? never : Array<Record<string, unknown>> | null = null;
+  let closedEarlyRows: Array<Record<string, unknown>> | null = null;
+  let endedErr: { message?: string } | null = null;
+  let earlyErr: { message?: string } | null = null;
+
+  {
+    const [endedRes, earlyRes] = await Promise.all([
       supabase
         .from("sessions")
         .select("*")
@@ -154,6 +164,32 @@ export async function getPastSessions() {
         .in("status", ["completed", "cancelled"])
         .gte("end_time", nowIso),
     ]);
+    endedRows = endedRes.data;
+    closedEarlyRows = earlyRes.data;
+    endedErr = endedRes.error;
+    earlyErr = earlyRes.error;
+  }
+
+  // Backward compatibility: render safely before migration 057 is applied.
+  if (isMissingSessionHideColumnsError(endedErr) || isMissingSessionHideColumnsError(earlyErr)) {
+    const [endedRes, earlyRes] = await Promise.all([
+      supabase
+        .from("sessions")
+        .select("*")
+        .eq("student_id", user.id)
+        .lt("end_time", nowIso),
+      supabase
+        .from("sessions")
+        .select("*")
+        .eq("student_id", user.id)
+        .in("status", ["completed", "cancelled"])
+        .gte("end_time", nowIso),
+    ]);
+    endedRows = endedRes.data;
+    closedEarlyRows = earlyRes.data;
+    endedErr = endedRes.error;
+    earlyErr = earlyRes.error;
+  }
 
   if (endedErr || earlyErr) {
     throw new Error(
@@ -215,12 +251,29 @@ export async function getStudentSessionsHubBundle(): Promise<{
 
   const orFilter = `end_time.lt.${nowIso},and(status.in.(completed,cancelled),end_time.gte.${nowIso}),and(status.eq.scheduled,end_time.gte.${nowIso})`;
 
-  const { data: mergedRows, error } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("student_id", user.id)
-    .is("student_hidden_at", null)
-    .or(orFilter);
+  let mergedRows: Array<Record<string, unknown>> | null = null;
+  let error: { message?: string } | null = null;
+
+  {
+    const res = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("student_id", user.id)
+      .is("student_hidden_at", null)
+      .or(orFilter);
+    mergedRows = res.data;
+    error = res.error;
+  }
+
+  if (isMissingSessionHideColumnsError(error)) {
+    const res = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("student_id", user.id)
+      .or(orFilter);
+    mergedRows = res.data;
+    error = res.error;
+  }
 
   if (error) {
     const [upcomingSessions, pastSessions] = await Promise.all([

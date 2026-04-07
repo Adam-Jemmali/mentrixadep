@@ -47,6 +47,11 @@ function isMissingCancelledSessionColumnsError(err: { message?: string }): boole
   );
 }
 
+function isMissingSessionHideColumnsError(err: { message?: string } | null | undefined): boolean {
+  const m = (err?.message ?? "").toLowerCase();
+  return m.includes("does not exist") && (m.includes("student_hidden_at") || m.includes("tutor_hidden_at"));
+}
+
 export type TutorSessionStudentProfile = {
   id: string;
   display_name: string | null;
@@ -818,8 +823,13 @@ export async function getPastSessions() {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
-  const [{ data: endedRows, error: endedErr }, { data: closedEarlyRows, error: earlyErr }] =
-    await Promise.all([
+  let endedRows: Array<Record<string, unknown>> | null = null;
+  let closedEarlyRows: Array<Record<string, unknown>> | null = null;
+  let endedErr: { message?: string } | null = null;
+  let earlyErr: { message?: string } | null = null;
+
+  {
+    const [endedRes, earlyRes] = await Promise.all([
       supabase
         .from("sessions")
         .select("*")
@@ -834,6 +844,28 @@ export async function getPastSessions() {
         .in("status", ["completed", "cancelled"])
         .gte("end_time", nowIso),
     ]);
+    endedRows = endedRes.data;
+    closedEarlyRows = earlyRes.data;
+    endedErr = endedRes.error;
+    earlyErr = earlyRes.error;
+  }
+
+  // Backward compatibility: render safely before migration 057 is applied.
+  if (isMissingSessionHideColumnsError(endedErr) || isMissingSessionHideColumnsError(earlyErr)) {
+    const [endedRes, earlyRes] = await Promise.all([
+      supabase.from("sessions").select("*").eq("tutor_id", user.id).lt("end_time", nowIso),
+      supabase
+        .from("sessions")
+        .select("*")
+        .eq("tutor_id", user.id)
+        .in("status", ["completed", "cancelled"])
+        .gte("end_time", nowIso),
+    ]);
+    endedRows = endedRes.data;
+    closedEarlyRows = earlyRes.data;
+    endedErr = endedRes.error;
+    earlyErr = earlyRes.error;
+  }
 
   if (endedErr || earlyErr) {
     throw new Error(`Failed to fetch past sessions: ${endedErr?.message || earlyErr?.message}`);
