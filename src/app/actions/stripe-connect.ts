@@ -365,45 +365,66 @@ export async function applyStripeAccountWebhookUpdate(account: Stripe.Account): 
 }
 
 export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<PayoutDashboardData> {
+  const fallback: PayoutDashboardData = {
+    connectStatus: {
+      hasAccount: false,
+      accountId: null,
+      payoutsEnabled: false,
+      onboardingUrl: null,
+      onboardingGuide: buildOnboardingGuide(null),
+    },
+    pendingCents: 0,
+    queuedCents: 0,
+    availableCents: 0,
+    lifetimeEarnedCents: 0,
+    ledger: [],
+  };
+
   const user = await requireRole(["tutor", "admin"]);
   const tutorId = tutorIdOverride ?? user.id;
   const admin = createAdminClient();
   const stripe = stripeClient();
+  console.log("[connect:payout-loader] start", { tutorId });
 
-  const { data: userRow } = await admin
-    .from("users")
-    .select("stripe_account_id, stripe_payouts_enabled")
-    .eq("id", tutorId)
-    .single();
+  try {
+    const { data: userRow } = await admin
+      .from("users")
+      .select("stripe_account_id, stripe_payouts_enabled")
+      .eq("id", tutorId)
+      .single();
 
-  const payoutsEnabledBeforeSync = userRow?.stripe_payouts_enabled ?? false;
-  let payoutsEnabledSynced = payoutsEnabledBeforeSync;
+    const payoutsEnabledBeforeSync = userRow?.stripe_payouts_enabled ?? false;
+    let payoutsEnabledSynced = payoutsEnabledBeforeSync;
 
-  const connectStatus: ConnectStatus = {
-    hasAccount: !!userRow?.stripe_account_id,
-    accountId: userRow?.stripe_account_id ?? null,
-    payoutsEnabled: payoutsEnabledSynced,
-    onboardingUrl: null,
-    onboardingGuide: buildOnboardingGuide(null),
-  };
+    const connectStatus: ConnectStatus = {
+      hasAccount: !!userRow?.stripe_account_id,
+      accountId: userRow?.stripe_account_id ?? null,
+      payoutsEnabled: payoutsEnabledSynced,
+      onboardingUrl: null,
+      onboardingGuide: buildOnboardingGuide(null),
+    };
 
-  if (connectStatus.accountId) {
-    try {
-      const account = await stripe.accounts.retrieve(connectStatus.accountId);
-      const fullyEnabled = account.payouts_enabled === true && account.charges_enabled === true;
-      if (fullyEnabled !== payoutsEnabledSynced) {
-        await admin
-          .from("users")
-          .update({ stripe_payouts_enabled: fullyEnabled })
-          .eq("id", tutorId);
-        payoutsEnabledSynced = fullyEnabled;
+    if (connectStatus.accountId) {
+      try {
+        const account = await stripe.accounts.retrieve(connectStatus.accountId);
+        const fullyEnabled = account.payouts_enabled === true && account.charges_enabled === true;
+        if (fullyEnabled !== payoutsEnabledSynced) {
+          await admin
+            .from("users")
+            .update({ stripe_payouts_enabled: fullyEnabled })
+            .eq("id", tutorId);
+          payoutsEnabledSynced = fullyEnabled;
+        }
+        connectStatus.payoutsEnabled = payoutsEnabledSynced;
+        connectStatus.onboardingGuide = buildOnboardingGuide(account);
+      } catch (e) {
+        console.warn("[connect:payout-loader] account.retrieve failed", {
+          tutorId,
+          accountId: connectStatus.accountId,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
-      connectStatus.payoutsEnabled = payoutsEnabledSynced;
-      connectStatus.onboardingGuide = buildOnboardingGuide(account);
-    } catch {
-      // Non-critical
     }
-  }
 
   if (connectStatus.payoutsEnabled && connectStatus.accountId) {
     try {
@@ -421,20 +442,24 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     }
   }
 
-  if (connectStatus.accountId && !connectStatus.payoutsEnabled) {
-    try {
-      const appUrl = env.public.appUrl ?? "http://localhost:3000";
-      const link = await stripe.accountLinks.create({
-        account: connectStatus.accountId,
-        refresh_url: `${appUrl}/api/stripe/connect/refresh`,
-        return_url: `${appUrl}/api/stripe/connect/return?accountId=${connectStatus.accountId}`,
-        type: "account_onboarding",
-      });
-      connectStatus.onboardingUrl = link.url;
-    } catch {
-      // Non-critical
+    if (connectStatus.accountId && !connectStatus.payoutsEnabled) {
+      try {
+        const appUrl = env.public.appUrl ?? "http://localhost:3000";
+        const link = await stripe.accountLinks.create({
+          account: connectStatus.accountId,
+          refresh_url: `${appUrl}/api/stripe/connect/refresh`,
+          return_url: `${appUrl}/api/stripe/connect/return?accountId=${connectStatus.accountId}`,
+          type: "account_onboarding",
+        });
+        connectStatus.onboardingUrl = link.url;
+      } catch (e) {
+        console.warn("[connect:payout-loader] accountLinks.create failed", {
+          tutorId,
+          accountId: connectStatus.accountId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
     }
-  }
 
   const { data: ledgerRows } = await admin
     .from("tutor_payout_ledger")
@@ -514,24 +539,45 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     }
   }
 
-  if (connectStatus.accountId && connectStatus.payoutsEnabled) {
-    try {
-      const balance = await stripe.balance.retrieve({}, { stripeAccount: connectStatus.accountId });
-      const available = balance.available.reduce((sum, b) => sum + b.amount, 0);
-      availableCents = available;
-    } catch {
-      // non-fatal
+    if (connectStatus.accountId && connectStatus.payoutsEnabled) {
+      try {
+        const balance = await stripe.balance.retrieve({}, { stripeAccount: connectStatus.accountId });
+        const available = balance.available.reduce((sum, b) => sum + b.amount, 0);
+        availableCents = available;
+      } catch (e) {
+        console.warn("[connect:payout-loader] balance.retrieve failed", {
+          tutorId,
+          accountId: connectStatus.accountId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
     }
-  }
 
-  return {
-    connectStatus,
-    pendingCents: queuedCents,
-    queuedCents,
-    availableCents,
-    lifetimeEarnedCents,
-    ledger: enrichedLedger,
-  };
+    const payload = {
+      connectStatus,
+      pendingCents: queuedCents,
+      queuedCents,
+      availableCents,
+      lifetimeEarnedCents,
+      ledger: enrichedLedger,
+    };
+    console.log("[connect:payout-loader] success", {
+      tutorId,
+      hasAccount: payload.connectStatus.hasAccount,
+      payoutsEnabled: payload.connectStatus.payoutsEnabled,
+      ledgerRows: payload.ledger.length,
+      queuedCents: payload.queuedCents,
+      availableCents: payload.availableCents,
+    });
+    return payload;
+  } catch (e) {
+    console.error("[connect:payout-loader] failed", {
+      tutorId,
+      error: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    });
+    return fallback;
+  }
 }
 
 export async function triggerManualPayout(amountCents?: number): Promise<{ payoutId: string }> {

@@ -530,6 +530,8 @@ export const securityHeaders = {
   "X-Frame-Options": "DENY",
   "X-XSS-Protection": "1; mode=block",
   "Referrer-Policy": "strict-origin-when-cross-origin",
+  // Keep popups/postMessage flows (OAuth, browser integrations) functional.
+  "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
   // Allow camera and microphone for same origin (required for video calling)
   // identity-credentials-get: Google Identity Services / FedCM (Sign in with Google button)
   "Permissions-Policy": "camera=(self), microphone=(self)",

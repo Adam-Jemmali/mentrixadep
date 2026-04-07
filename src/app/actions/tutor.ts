@@ -41,6 +41,13 @@ function utcStartOfWeekMonday(d: Date): Date {
 const STRIPE_PAYOUT_CAPTION =
   "";
 
+const TUTOR_LOADER_DEBUG = true;
+function logTutorLoader(stage: string, details?: Record<string, unknown>): void {
+  if (!TUTOR_LOADER_DEBUG) return;
+  const payload = details ?? {};
+  console.log(`[tutor-loader] ${stage}`, payload);
+}
+
 async function loadTutorSection<T>(label: string, fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await fn();
@@ -231,79 +238,80 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
   const tutorId = user.id;
 
   try {
-  const supabase = await createClient();
+    logTutorLoader("start", { tutorId });
+    const supabase = await createClient();
 
-  const now = new Date();
-  const weekStart = utcStartOfWeekMonday(now);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setUTCDate(weekStart.getUTCDate() + 7);
-  const calendarEnd = new Date(weekStart);
-  calendarEnd.setUTCDate(weekStart.getUTCDate() + 14);
+    const now = new Date();
+    const weekStart = utcStartOfWeekMonday(now);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setUTCDate(weekStart.getUTCDate() + 7);
+    const calendarEnd = new Date(weekStart);
+    calendarEnd.setUTCDate(weekStart.getUTCDate() + 14);
 
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const monthEndExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const MS24 = 24 * 60 * 60 * 1000;
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const monthEndExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const MS24 = 24 * 60 * 60 * 1000;
 
-  const [
-    sessionRequests,
-    availability,
-    upcomingSessions,
-    pastSessions,
-    tutorCourses,
-    autoApprove,
-    ratingsRes,
-    monthSessionsRes,
-    weekSessionsRes,
-    chartSessionsRes,
-    calAvailRes,
-    calSessionsRes,
-    availIdsRes,
-    settingsTzRes,
-  ] = await Promise.all([
-    loadTutorSection("sessionRequests", () => getSessionRequests(), []),
-    loadTutorSection("availability", () => getTutorAvailability(), []),
-    loadTutorSection("upcomingSessions", () => getUpcomingSessions(), []),
-    loadTutorSection("pastSessions", () => getPastSessions(), []),
-    loadTutorSection("tutorCourses", () => getTutorCourses(), []),
-    loadTutorSection("autoApprove", () => getAutoApprove(), false),
-    supabase.from("ratings").select("rating").eq("tutor_id", tutorId),
-    supabase
-      .from("sessions")
-      .select("price_per_session")
-      .eq("tutor_id", tutorId)
-      .eq("status", "completed")
-      .gte("end_time", monthStart.toISOString())
-      .lt("end_time", monthEndExclusive.toISOString()),
-    supabase
-      .from("sessions")
-      .select("id")
-      .eq("tutor_id", tutorId)
-      .eq("status", "scheduled")
-      .gte("start_time", weekStart.toISOString())
-      .lt("start_time", weekEnd.toISOString()),
-    supabase
-      .from("sessions")
-      .select("end_time, price_per_session")
-      .eq("tutor_id", tutorId)
-      .eq("status", "completed")
-      .gte("end_time", thirtyDaysAgo.toISOString()),
-    supabase
-      .from("availability")
-      .select("id, course, start_time, end_time, price_per_session")
-      .eq("tutor_id", tutorId)
-      .gte("start_time", weekStart.toISOString())
-      .lt("start_time", calendarEnd.toISOString()),
-    supabase
-      .from("sessions")
-      .select("id, course, start_time, end_time, status")
-      .eq("tutor_id", tutorId)
-      .eq("status", "scheduled")
-      .gte("start_time", weekStart.toISOString())
-      .lt("start_time", calendarEnd.toISOString()),
-    supabase.from("availability").select("id").eq("tutor_id", tutorId),
-    supabase.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
-  ]);
+    const [
+      sessionRequests,
+      availability,
+      upcomingSessions,
+      pastSessions,
+      tutorCourses,
+      autoApprove,
+      ratingsRes,
+      monthSessionsRes,
+      weekSessionsRes,
+      chartSessionsRes,
+      calAvailRes,
+      calSessionsRes,
+      availIdsRes,
+      settingsTzRes,
+    ] = await Promise.all([
+      loadTutorSection("sessionRequests", () => getSessionRequests(), []),
+      loadTutorSection("availability", () => getTutorAvailability(), []),
+      loadTutorSection("upcomingSessions", () => getUpcomingSessions(), []),
+      loadTutorSection("pastSessions", () => getPastSessions(), []),
+      loadTutorSection("tutorCourses", () => getTutorCourses(), []),
+      loadTutorSection("autoApprove", () => getAutoApprove(), false),
+      supabase.from("ratings").select("rating").eq("tutor_id", tutorId),
+      supabase
+        .from("sessions")
+        .select("price_per_session")
+        .eq("tutor_id", tutorId)
+        .eq("status", "completed")
+        .gte("end_time", monthStart.toISOString())
+        .lt("end_time", monthEndExclusive.toISOString()),
+      supabase
+        .from("sessions")
+        .select("id")
+        .eq("tutor_id", tutorId)
+        .eq("status", "scheduled")
+        .gte("start_time", weekStart.toISOString())
+        .lt("start_time", weekEnd.toISOString()),
+      supabase
+        .from("sessions")
+        .select("end_time, price_per_session")
+        .eq("tutor_id", tutorId)
+        .eq("status", "completed")
+        .gte("end_time", thirtyDaysAgo.toISOString()),
+      supabase
+        .from("availability")
+        .select("id, course, start_time, end_time, price_per_session")
+        .eq("tutor_id", tutorId)
+        .gte("start_time", weekStart.toISOString())
+        .lt("start_time", calendarEnd.toISOString()),
+      supabase
+        .from("sessions")
+        .select("id, course, start_time, end_time, status")
+        .eq("tutor_id", tutorId)
+        .eq("status", "scheduled")
+        .gte("start_time", weekStart.toISOString())
+        .lt("start_time", calendarEnd.toISOString()),
+      supabase.from("availability").select("id").eq("tutor_id", tutorId),
+      supabase.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
+    ]);
 
   const supabaseErrors = [
     ratingsRes.error,
@@ -318,6 +326,14 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
   for (const e of supabaseErrors) {
     console.warn("[tutor] command center partial query failed:", e?.message ?? e);
   }
+  logTutorLoader("parallel-queries-finished", {
+    supabaseErrorCount: supabaseErrors.length,
+    sessionRequests: Array.isArray(sessionRequests) ? sessionRequests.length : null,
+    availability: Array.isArray(availability) ? availability.length : null,
+    upcomingSessions: Array.isArray(upcomingSessions) ? upcomingSessions.length : null,
+    pastSessions: Array.isArray(pastSessions) ? pastSessions.length : null,
+    tutorCourses: Array.isArray(tutorCourses) ? tutorCourses.length : null,
+  });
 
   const earningsThisMonthCents = (monthSessionsRes.data ?? []).reduce((sum, row) => {
     const c = row.price_per_session ?? 0;
@@ -365,6 +381,10 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         decided.length === 0 ? null : Math.round((inTime.length / decided.length) * 1000) / 10;
     }
   }
+  logTutorLoader("response-rate-finished", {
+    availabilityIds: availabilityIds.length,
+    responseRatePercent,
+  });
 
   let lateCancellationAlerts: Array<{ id: string; course: string; start_time: string }> = [];
   const { data: lateRows, error: lateErr } = await supabase
@@ -399,6 +419,10 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
   } catch (e) {
     console.warn("[tutor] payout data load failed (non-critical):", e);
   }
+  logTutorLoader("payout-data-finished", {
+    hasPayoutData: payoutData != null,
+    payoutsEnabled: payoutData?.connectStatus?.payoutsEnabled ?? null,
+  });
 
   const payload: TutorCommandCenterPayload = {
     guideProfile: {
@@ -433,9 +457,19 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     payoutData,
   };
 
+  logTutorLoader("payload-built", {
+    earningsDays: payload.earningsLast30Days.length,
+    lateCancellationAlerts: payload.lateCancellationAlerts.length,
+    pendingRequests: payload.metrics.pendingRequestCount,
+    tutorTimezone: payload.tutorTimezone,
+  });
   return sanitizeForRsc(payload);
   } catch (e) {
-    console.error("[tutor] command center failed — using fallback payload:", e);
+    console.error("[tutor] command center failed — using fallback payload:", {
+      tutorId,
+      error: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    });
     return sanitizeForRsc(fallbackTutorCommandCenterPayload(user));
   }
 }

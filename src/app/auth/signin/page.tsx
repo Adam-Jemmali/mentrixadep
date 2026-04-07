@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signIn } from "@/app/actions/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { gsap } from "gsap";
+import { createClient } from "@/lib/supabase/client";
+import { toUserFacingAuthError } from "@/lib/user-facing-error";
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
@@ -35,20 +36,48 @@ export default function SignInPage() {
     setError(null);
     try {
       const formData = new FormData(e.currentTarget);
-      const result = await signIn(formData);
-
-      if (result?.error) {
-        setError(result.error);
+      const email = String(formData.get("email") ?? "").trim().toLowerCase();
+      const password = String(formData.get("password") ?? "");
+      if (!email || !password) {
+        setError("Please enter email and password.");
         return;
       }
-      if (result?.success) {
-        if (result.approved === false) {
-          router.push("/pending-approval");
-        } else {
-          router.push(getRoleHomePath(result.role));
-        }
-        router.refresh();
+
+      const supabase = createClient();
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInError) {
+        setError(toUserFacingAuthError(signInError));
+        return;
       }
+
+      const userId = signInData.user?.id;
+      if (!userId) {
+        setError("Sign in failed. Please try again.");
+        return;
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("approved, role")
+        .eq("id", userId)
+        .single();
+
+      if (userError || !userData?.role) {
+        setError("Sign in succeeded but profile is incomplete. Contact support.");
+        return;
+      }
+
+      if (userData.approved === false) {
+        router.push("/pending-approval");
+      } else {
+        router.push(getRoleHomePath(userData.role));
+      }
+      router.refresh();
+    } catch (err) {
+      setError(toUserFacingAuthError(err));
     } finally {
       setLoading(false);
     }
