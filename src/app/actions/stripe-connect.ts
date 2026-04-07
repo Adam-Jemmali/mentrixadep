@@ -251,6 +251,15 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
       .eq("id", actingId);
   }
 
+  const becameFullyEnabled = fullyEnabled && userRow.stripe_payouts_enabled !== true;
+  if (becameFullyEnabled) {
+    try {
+      await retryPendingTransfersForTutor(actingId);
+    } catch (e) {
+      console.error("[connect] retry after onboarding failed:", e);
+    }
+  }
+
   let onboardingUrl: string | null = null;
   if (!fullyEnabled) {
     try {
@@ -289,7 +298,8 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     .eq("id", tutorId)
     .single();
 
-  let payoutsEnabledSynced = userRow?.stripe_payouts_enabled ?? false;
+  const payoutsEnabledBeforeSync = userRow?.stripe_payouts_enabled ?? false;
+  let payoutsEnabledSynced = payoutsEnabledBeforeSync;
 
   const connectStatus: ConnectStatus = {
     hasAccount: !!userRow?.stripe_account_id,
@@ -314,6 +324,21 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
       connectStatus.onboardingGuide = buildOnboardingGuide(account);
     } catch {
       // Non-critical
+    }
+  }
+
+  if (connectStatus.payoutsEnabled && connectStatus.accountId) {
+    const { count: pendingCount, error: pendingErr } = await admin
+      .from("tutor_payout_ledger")
+      .select("id", { count: "exact", head: true })
+      .eq("tutor_id", tutorId)
+      .in("status", ["pending", "held"]);
+    if (!pendingErr && (pendingCount ?? 0) > 0) {
+      try {
+        await retryPendingTransfersForTutor(tutorId);
+      } catch (e) {
+        console.error("[connect] retry pending transfers on dashboard failed:", e);
+      }
     }
   }
 
@@ -382,9 +407,9 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     }
   }
 
-  if (userRow?.stripe_account_id && userRow?.stripe_payouts_enabled) {
+  if (connectStatus.accountId && connectStatus.payoutsEnabled) {
     try {
-      const balance = await stripe.balance.retrieve({}, { stripeAccount: userRow.stripe_account_id });
+      const balance = await stripe.balance.retrieve({}, { stripeAccount: connectStatus.accountId });
       const available = balance.available.reduce((sum, b) => sum + b.amount, 0);
       availableCents = available;
     } catch {
@@ -530,6 +555,33 @@ export async function transferSessionPayout(ledgerRowId: string): Promise<void> 
       .eq("id", ledgerRowId);
     throw err;
   }
+}
+
+/**
+ * Re-run Connect transfers for ledger rows still `pending`/`held` (e.g. tutor finished
+ * onboarding after sessions paid — earlier attempts no-op'd while `stripe_payouts_enabled` was false).
+ */
+export async function retryPendingTransfersForTutor(tutorId: string): Promise<{
+  scanned: number;
+  errors: number;
+}> {
+  const admin = createAdminClient();
+  const { data: rows } = await admin
+    .from("tutor_payout_ledger")
+    .select("id")
+    .eq("tutor_id", tutorId)
+    .in("status", ["pending", "held"])
+    .order("created_at", { ascending: true });
+
+  let errors = 0;
+  for (const row of rows ?? []) {
+    try {
+      await transferSessionPayout(row.id);
+    } catch {
+      errors++;
+    }
+  }
+  return { scanned: rows?.length ?? 0, errors };
 }
 
 export async function createPayoutLedgerForSession(sessionId: string): Promise<void> {

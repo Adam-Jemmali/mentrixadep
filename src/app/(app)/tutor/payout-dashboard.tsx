@@ -13,7 +13,7 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 import type { PayoutDashboardData, PayoutLedgerRow } from "@/app/actions/stripe-connect";
-import { triggerManualPayout } from "@/app/actions/stripe-connect";
+import { createAccountLink, triggerManualPayout } from "@/app/actions/stripe-connect";
 import { useRouter } from "next/navigation";
 
 function usd(cents: number): string {
@@ -106,34 +106,24 @@ function OnboardingBanner({
   incomplete?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
-
-  function extractFirstHttpUrl(text: string): string | null {
-    const m = text.match(/https?:\/\/[^\s"')]+/i);
-    return m?.[0] ?? null;
-  }
+  const [setupError, setSetupError] = useState<string | null>(null);
 
   const handleSetup = async () => {
+    setSetupError(null);
     if (onboardingUrl) {
       window.location.href = onboardingUrl;
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/stripe/connect/create", { method: "POST" });
-      const json = (await res.json()) as { url?: string; error?: string };
-      if (json.url) {
-        window.location.href = json.url;
-      } else {
-        const fromError = extractFirstHttpUrl(json.error ?? "");
-        if (fromError) {
-          window.location.href = fromError;
-          return;
-        }
-        window.location.href = "https://dashboard.stripe.com/connect";
-      }
+      // Use the Server Action instead of POST /api/... — middleware CSRF can block bare fetch()
+      // (403 "Invalid CSRF or origin"), which made this flow fall through to the public Stripe site.
+      const { url } = await createAccountLink();
+      window.location.href = url;
     } catch (e) {
-      const fromError = extractFirstHttpUrl(e instanceof Error ? e.message : "");
-      window.location.href = fromError ?? "https://dashboard.stripe.com/connect";
+      setSetupError(e instanceof Error ? e.message : "Could not start Stripe setup. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -175,6 +165,11 @@ function OnboardingBanner({
           <p className="mt-2 text-[11px] text-amber-700">
             You do not need to create a company. Choose <span className="font-semibold">Individual</span> or <span className="font-semibold">Sole proprietor</span>.
           </p>
+          {setupError ? (
+            <p className="mt-2 text-xs text-red-700" role="alert">
+              {setupError}
+            </p>
+          ) : null}
         </div>
       </div>
       <button
