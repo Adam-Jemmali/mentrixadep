@@ -12,6 +12,7 @@ import {
   type SessionEmailDetails,
 } from "@/lib/email";
 import { createRefundForRejectedRequest } from "@/lib/stripe-session-booking";
+import { createPayoutLedgerForSession } from "@/app/actions/stripe-connect";
 import type { Session } from "@/lib/database.types";
 import {
   validateCourse,
@@ -1094,6 +1095,11 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
   if (sessionError || !session) {
     throw new Error("Approved session was created but could not be loaded");
   }
+
+  // Fire-and-forget: create payout ledger entry immediately when session is approved
+  void createPayoutLedgerForSession(sessionId).catch((err) =>
+    console.error("[approveSessionRequest] ledger creation failed:", err)
+  );
 
   // Fire-and-forget email to student
   try {
