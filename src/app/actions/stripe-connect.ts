@@ -253,11 +253,7 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
 
   const becameFullyEnabled = fullyEnabled && userRow.stripe_payouts_enabled !== true;
   if (becameFullyEnabled) {
-    try {
-      await retryPendingTransfersForTutor(actingId);
-    } catch (e) {
-      console.error("[connect] retry after onboarding failed:", e);
-    }
+    void scheduleConnectPayoutRetries(actingId, "[connect] retry after onboarding");
   }
 
   let onboardingUrl: string | null = null;
@@ -328,17 +324,18 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
   }
 
   if (connectStatus.payoutsEnabled && connectStatus.accountId) {
-    const { count: pendingCount, error: pendingErr } = await admin
-      .from("tutor_payout_ledger")
-      .select("id", { count: "exact", head: true })
-      .eq("tutor_id", tutorId)
-      .in("status", ["pending", "held"]);
-    if (!pendingErr && (pendingCount ?? 0) > 0) {
-      try {
-        await retryPendingTransfersForTutor(tutorId);
-      } catch (e) {
-        console.error("[connect] retry pending transfers on dashboard failed:", e);
+    try {
+      const { count: pendingCount, error: pendingErr } = await admin
+        .from("tutor_payout_ledger")
+        .select("id", { count: "exact", head: true })
+        .eq("tutor_id", tutorId)
+        .in("status", ["pending", "held"]);
+      if (!pendingErr && (pendingCount ?? 0) > 0) {
+        // Never await bulk Stripe work during RSC — it can exceed serverless limits and crash production renders.
+        void scheduleConnectPayoutRetries(tutorId, "[connect] retry on dashboard load");
       }
+    } catch (e) {
+      console.error("[connect] pending payout count / schedule retry failed:", e);
     }
   }
 
@@ -582,6 +579,22 @@ export async function retryPendingTransfersForTutor(tutorId: string): Promise<{
     }
   }
   return { scanned: rows?.length ?? 0, errors };
+}
+
+/**
+ * Run Connect retries in the background — never block RSC or short API routes on N Stripe calls.
+ */
+function scheduleConnectPayoutRetries(tutorId: string, logPrefix: string): void {
+  void (async () => {
+    try {
+      const r = await retryPendingTransfersForTutor(tutorId);
+      if (r.scanned > 0) {
+        revalidatePath("/tutor");
+      }
+    } catch (e) {
+      console.error(logPrefix, e);
+    }
+  })();
 }
 
 export async function createPayoutLedgerForSession(sessionId: string): Promise<void> {
