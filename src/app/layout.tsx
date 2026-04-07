@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
-import { ClarityAnalytics } from "@/components/clarity-analytics";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -48,7 +47,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         <DevServiceWorkerGuard />
-        <ClarityAnalytics />
+      
         {children}
       </body>
     </html>

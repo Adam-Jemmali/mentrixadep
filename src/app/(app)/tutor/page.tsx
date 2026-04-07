@@ -4,11 +4,25 @@ import { TutorCommandCenterClient } from "./tutor-command-center-client";
 export const dynamic = "force-dynamic";
 
 export default async function TutorPage() {
-  const data = await getTutorCommandCenterData();
+  try {
+    const data = await getTutorCommandCenterData();
 
-  return (
-    <div className="min-h-screen bg-neutral-50">
-      <TutorCommandCenterClient data={data} />
-    </div>
-  );
+    return (
+      <div className="min-h-screen bg-neutral-50">
+        <TutorCommandCenterClient data={data} />
+      </div>
+    );
+  } catch (e) {
+    console.error("[tutor/page] render failed:", e);
+    return (
+      <div className="min-h-screen bg-neutral-50 px-6 py-12">
+        <div className="mx-auto max-w-xl rounded-md border border-slate-200 bg-white p-6">
+          <h1 className="text-lg font-medium text-slate-900">Guide center unavailable</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            We could not load your dashboard right now. Please refresh in a few seconds.
+          </p>
+        </div>
+      </div>
+    );
+  }
 }
