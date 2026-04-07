@@ -19,7 +19,8 @@ function platformFeeCents(grossCents: number): number {
   return grossCents - tutorNetCents(grossCents);
 }
 
-function transferReadyAt(): string {
+function transferReadyAt(sessionStartIso?: string | null): string {
+  if (sessionStartIso) return sessionStartIso;
   return new Date().toISOString();
 }
 
@@ -459,6 +460,23 @@ export async function transferSessionPayout(ledgerRowId: string): Promise<void> 
   if (!ledger) throw new Error(`Ledger row not found: ${ledgerRowId}`);
   if (ledger.status !== "pending" && ledger.status !== "held") return;
 
+  if (ledger.session_id) {
+    const { data: session } = await admin
+      .from("sessions")
+      .select("status, completed, start_time")
+      .eq("id", ledger.session_id)
+      .maybeSingle();
+
+    const sessionStatus = session?.status ?? null;
+    const sessionStart = session?.start_time ? new Date(session.start_time) : null;
+    const hasStarted = !!sessionStart && sessionStart.getTime() <= Date.now();
+    const isCancellableState = sessionStatus === "cancelled";
+
+    if (isCancellableState || !hasStarted) {
+      return;
+    }
+  }
+
   const { data: tutor } = await admin
     .from("users")
     .select("stripe_account_id, stripe_payouts_enabled")
@@ -517,21 +535,69 @@ export async function transferSessionPayout(ledgerRowId: string): Promise<void> 
 export async function createPayoutLedgerForSession(sessionId: string): Promise<void> {
   const admin = createAdminClient();
 
-  const { data: session } = await admin
+  const { data: session, error: fetchError } = await admin
     .from("sessions")
-    .select("id, tutor_id, student_id, course, start_time, price_per_session")
+    .select("id, tutor_id, student_id, course, start_time, availability_id, price_per_session")
     .eq("id", sessionId)
     .single();
 
-  if (!session) return;
+  if (fetchError) {
+    console.error("[connect] failed to fetch session:", fetchError);
+    return;
+  }
 
-  const grossCents = session.price_per_session ?? 0;
+  if (!session) {
+    console.error("[connect] session not found:", sessionId);
+    return;
+  }
+
+  const { data: existingLedger, error: existingLedgerError } = await admin
+    .from("tutor_payout_ledger")
+    .select("id")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (existingLedgerError) {
+    console.error("[connect] failed to check existing payout ledger row:", existingLedgerError);
+    return;
+  }
+
+  if (existingLedger?.id) {
+    try {
+      await transferSessionPayout(existingLedger.id);
+    } catch (err) {
+      console.warn("[connect] immediate payout transfer failed; cron retry may pick it up later:", err);
+    }
+
+    await admin
+      .from("sessions")
+      .update({ payout_status: "pending" })
+      .eq("id", sessionId)
+      .is("payout_status", null);
+    return;
+  }
+
+  let grossCents =
+    typeof session.price_per_session === "number" ? session.price_per_session : null;
+
+  if (grossCents == null && session.availability_id) {
+    const { data: availability } = await admin
+      .from("availability")
+      .select("price_per_session")
+      .eq("id", session.availability_id)
+      .maybeSingle();
+    if (typeof availability?.price_per_session === "number") {
+      grossCents = availability.price_per_session;
+    }
+  }
+
+  if (grossCents == null) grossCents = 2500;
   const net = tutorNetCents(grossCents);
   const fee = platformFeeCents(grossCents);
 
-  const { error } = await admin
+  const { error, data } = await admin
     .from("tutor_payout_ledger")
-    .upsert(
+    .insert(
       {
         tutor_id: session.tutor_id,
         session_id: session.id,
@@ -542,35 +608,39 @@ export async function createPayoutLedgerForSession(sessionId: string): Promise<v
         platform_fee_cents: fee,
         net_cents: net,
         status: "pending",
-        hold_until: transferReadyAt(),
+        hold_until: transferReadyAt(session.start_time),
       },
-      { onConflict: "session_id", ignoreDuplicates: true }
-    );
+    )
+    .select("id")
+    .single();
 
   if (error && error.code !== "23505") {
-    console.error("[connect] createPayoutLedgerForSession error:", error);
+    console.error("[connect] createPayoutLedgerForSession insert error:", {
+      code: error.code,
+      message: error.message,
+    });
     return;
   }
 
-  const { data: ledger } = await admin
-    .from("tutor_payout_ledger")
-    .select("id")
-    .eq("session_id", sessionId)
-    .single();
+  const ledgerId = data?.id;
 
-  if (ledger?.id) {
+  if (ledgerId) {
     try {
-      await transferSessionPayout(ledger.id);
+      await transferSessionPayout(ledgerId);
     } catch (err) {
       console.warn("[connect] immediate payout transfer failed; cron retry may pick it up later:", err);
     }
   }
 
-  await admin
+  const { error: updateError } = await admin
     .from("sessions")
     .update({ payout_status: "pending" })
     .eq("id", sessionId)
     .is("payout_status", null);
+
+  if (updateError) {
+    console.error("[connect] failed to update session payout_status:", updateError);
+  }
 }
 
 export async function processQueuedPayouts(): Promise<{ processed: number; failed: number }> {

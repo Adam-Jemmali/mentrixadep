@@ -1096,10 +1096,10 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
     throw new Error("Approved session was created but could not be loaded");
   }
 
-  // Fire-and-forget: create payout ledger entry immediately when session is approved
-  void createPayoutLedgerForSession(sessionId).catch((err) =>
-    console.error("[approveSessionRequest] ledger creation failed:", err)
-  );
+  // Create payout ledger at approval so transfer can release when session start time is reached.
+  void createPayoutLedgerForSession(sessionId).catch((err) => {
+    console.error("[approveSessionRequest] ledger creation failed:", err);
+  });
 
   // Fire-and-forget email to student
   try {
@@ -1225,6 +1225,11 @@ export async function completeSession(sessionId: string, onBehalfOfUserId?: stri
   }
 
   if (session.completed || session.status === "completed") {
+    try {
+      await createPayoutLedgerForSession(validSessionId);
+    } catch (payoutError) {
+      console.error("[completeSession] payout trigger failed for already-completed session", validSessionId, payoutError);
+    }
     return { success: true };
   }
 
@@ -1236,6 +1241,12 @@ export async function completeSession(sessionId: string, onBehalfOfUserId?: stri
 
   if (updateError) {
     throw new Error(`Failed to complete session: ${updateError.message}`);
+  }
+
+  try {
+    await createPayoutLedgerForSession(validSessionId);
+  } catch (payoutError) {
+    console.error("[completeSession] payout trigger failed", validSessionId, payoutError);
   }
 
   revalidatePath("/tutor");

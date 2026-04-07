@@ -28,11 +28,10 @@ export async function GET(request: Request) {
     }
 
     const sessionIds = (sessionsToComplete ?? []).map((s) => s.id);
-    for (const sid of sessionIds) {
-      createPayoutLedgerForSession(sid).catch((e) =>
-        console.error(`[cron/complete-sessions] ledger creation failed for ${sid}:`, e)
-      );
-    }
+    const payoutResults = await Promise.allSettled(
+      sessionIds.map((sid) => createPayoutLedgerForSession(sid))
+    );
+    const payoutFailures = payoutResults.filter((r) => r.status === "rejected").length;
 
     const xpResult = await processPendingSessionXpAwards();
 
@@ -40,6 +39,7 @@ export async function GET(request: Request) {
       rows_scanned: sessionIds.length,
       rows_updated: sessionIds.length,
       rows_created: sessionIds.length,
+      rows_failed: payoutFailures,
       xpAwards: xpResult,
       payoutLedgerCreated: sessionIds.length,
     };
