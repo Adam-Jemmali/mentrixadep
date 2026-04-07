@@ -9,6 +9,7 @@ import {
   reportStripeWebhookMissingSignature,
   captureUnexpectedError,
 } from "@/lib/observability";
+import { applyStripeAccountWebhookUpdate } from "@/app/actions/stripe-connect";
 import {
   sendSessionBookedEmail,
   sendPaymentFailedEmail,
@@ -399,6 +400,11 @@ export async function POST(req: NextRequest) {
           charge = refund.charge as Stripe.Charge;
         }
         await handleRefund(charge, refund);
+        break;
+      }
+
+      case "account.updated": {
+        await applyStripeAccountWebhookUpdate(event.data.object as Stripe.Account);
         break;
       }
 

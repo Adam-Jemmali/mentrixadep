@@ -360,6 +360,31 @@ export async function POST(req: NextRequest) {
     const split = splitSessionPriceCents(sessionPriceCents);
     const appFeeAmount = split.platformFeeCents;
 
+    const { data: tutorStripe, error: tutorStripeErr } = await adminClient
+      .from("users")
+      .select("stripe_account_id, stripe_payouts_enabled")
+      .eq("id", availability.tutor_id)
+      .maybeSingle();
+
+    if (tutorStripeErr) {
+      await clearPendingLock({ lockedBy: user.id });
+      return NextResponse.json(
+        { error: "Could not verify this guide's payout account. Try again later." },
+        { status: 500 }
+      );
+    }
+
+    if (!tutorStripe?.stripe_account_id || !tutorStripe.stripe_payouts_enabled) {
+      await clearPendingLock({ lockedBy: user.id });
+      return NextResponse.json(
+        {
+          error:
+            "This guide has not finished Stripe payout setup yet. Bookings are unavailable until they complete Setup payments on their dashboard.",
+        },
+        { status: 400 }
+      );
+    }
+
     const appOrigin = resolveAppOrigin(req);
     const branding = mentrixaCheckoutBrandingWithAssets(appOrigin);
     const successUrl = `${appOrigin}/api/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
@@ -411,6 +436,8 @@ export async function POST(req: NextRequest) {
       availabilityId: availability.id,
       studentId: user.id,
       tutorId: availability.tutor_id,
+      /** Reconciled in webhook + bookSessionAsUser for ledger (Connect destination charge). */
+      connect_destination: "true",
     };
 
     const idempotencyKey = `checkout_${availability.id}_${user.id}`;
@@ -433,6 +460,10 @@ export async function POST(req: NextRequest) {
             },
             metadata: checkoutMetadata,
             payment_intent_data: {
+              application_fee_amount: appFeeAmount,
+              transfer_data: {
+                destination: tutorStripe.stripe_account_id,
+              },
               metadata: checkoutMetadata,
             },
             success_url: successUrl,

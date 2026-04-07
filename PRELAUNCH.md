@@ -31,6 +31,7 @@ Set in **Vercel -> Project Settings -> Environment Variables**:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` -> Supabase project settings
 - `SUPABASE_SERVICE_ROLE_KEY` -> Supabase project settings (**server-only**)
 - `STRIPE_SECRET_KEY` -> Stripe dashboard (**live** secret key)
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` -> Stripe **publishable** key (same mode as secret key; used for any client-side Stripe.js)
 - `STRIPE_WEBHOOK_SECRET` -> Stripe webhook endpoint signing secret
 - `GEMINI_API_KEY` -> Google AI Studio
 - `RESEND_API_KEY` -> Resend dashboard
@@ -72,15 +73,25 @@ Then:
 
 ## 4) Stripe Production Checklist
 
+- Apply Supabase migration `supabase/060-stripe-connect-destination-settlement.sql` (Connect destination charges + `approve_session_request_atomic` copy of `stripe_destination_charge`).
+- **Connect (marketplace):** student Checkout uses **destination charges** with `application_fee_amount` (platform fee from `PLATFORM_FEE_BPS` in `src/lib/booking-pricing.ts`). Tutor net is settled on the **connected account** at charge time; `tutor_payout_ledger` records the split with `status: transferred` and **no** separate `stripe.transfers.create` for those sessions.
 - Create live webhook endpoint:
   - `https://mentrixa.one/api/stripe/webhook`
 - Subscribe to events:
   - `checkout.session.completed`
   - `checkout.session.expired`
   - `payment_intent.payment_failed`
+  - `account.updated` (sync tutor `stripe_payouts_enabled` when Connect onboarding / verification completes)
+  - `charge.refunded`, `refund.updated`
   - `customer.subscription.*` (future-proofing)
 - Copy webhook signing secret into `STRIPE_WEBHOOK_SECRET`.
 - Configure Stripe Radar rules as needed (for risk/region policy).
+
+**Local webhook testing (Stripe CLI):**
+
+- Install [Stripe CLI](https://stripe.com/docs/stripe-cli), log in (`stripe login`), then forward events to the dev server:
+  - `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+- Copy the printed **webhook signing secret** (`whsec_...`) into `.env.local` as `STRIPE_WEBHOOK_SECRET` for local runs (test mode keys only).
 
 Automated verification:
 
@@ -97,6 +108,7 @@ This checks:
   - `payment_intent.payment_failed`
   - `charge.refunded`
   - `refund.updated`
+  - `account.updated`
 
 ## 5) Health + Monitoring
 

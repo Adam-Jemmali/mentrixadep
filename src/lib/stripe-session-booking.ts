@@ -7,7 +7,12 @@ import { getStripeSecretKey } from "@/lib/env";
 export async function getVerifiedPaymentIntentForBooking(
   checkoutSessionId: string,
   expected: { availabilityId: string; studentId: string }
-): Promise<{ checkoutSessionId: string; paymentIntentId: string | null }> {
+): Promise<{
+  checkoutSessionId: string;
+  paymentIntentId: string | null;
+  /** Connect destination charge: tutor net settled on charge (no separate Transfer). */
+  destinationCharge: boolean;
+}> {
   const stripe = new Stripe(getStripeSecretKey());
   const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
 
@@ -30,9 +35,12 @@ export async function getVerifiedPaymentIntentForBooking(
     paymentIntentId = (pi as { id: string }).id;
   }
 
+  const destinationCharge = session.metadata?.connect_destination === "true";
+
   return {
     checkoutSessionId: session.id,
     paymentIntentId,
+    destinationCharge,
   };
 }
 

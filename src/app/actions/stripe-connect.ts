@@ -282,6 +282,61 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
   };
 }
 
+/**
+ * Stripe `account.updated` — keep DB payout flags in sync when verification finishes
+ * async or the user never hits our return URL.
+ */
+export async function applyStripeAccountWebhookUpdate(account: Stripe.Account): Promise<void> {
+  const admin = createAdminClient();
+  const stripeAccountId = account.id;
+  let tutorId: string | null =
+    typeof account.metadata?.tutor_id === "string" ? account.metadata.tutor_id : null;
+
+  if (!tutorId) {
+    const { data } = await admin
+      .from("users")
+      .select("id")
+      .eq("stripe_account_id", stripeAccountId)
+      .maybeSingle();
+    tutorId = data?.id ?? null;
+  }
+
+  if (!tutorId) {
+    console.warn("[connect] account.updated: no user for Stripe account", stripeAccountId);
+    return;
+  }
+
+  const payoutsEnabled = account.payouts_enabled === true;
+  const chargesEnabled = account.charges_enabled === true;
+  const fullyEnabled = payoutsEnabled && chargesEnabled;
+
+  const { data: userRow } = await admin
+    .from("users")
+    .select("stripe_payouts_enabled, stripe_onboarding_at")
+    .eq("id", tutorId)
+    .single();
+
+  if (!userRow) return;
+
+  if (userRow.stripe_payouts_enabled !== fullyEnabled) {
+    const updatePayload: {
+      stripe_payouts_enabled: boolean;
+      stripe_onboarding_at?: string;
+    } = {
+      stripe_payouts_enabled: fullyEnabled,
+    };
+    if (fullyEnabled && !userRow.stripe_onboarding_at) {
+      updatePayload.stripe_onboarding_at = new Date().toISOString();
+    }
+    await admin.from("users").update(updatePayload).eq("id", tutorId);
+  }
+
+  const becameFullyEnabled = fullyEnabled && userRow.stripe_payouts_enabled !== true;
+  if (becameFullyEnabled) {
+    void scheduleConnectPayoutRetries(tutorId, "[connect] retry after account.updated webhook");
+  }
+}
+
 export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<PayoutDashboardData> {
   const user = await requireRole(["tutor", "admin"]);
   const tutorId = tutorIdOverride ?? user.id;
@@ -485,9 +540,13 @@ export async function transferSessionPayout(ledgerRowId: string): Promise<void> 
   if (ledger.session_id) {
     const { data: session } = await admin
       .from("sessions")
-      .select("status, completed, start_time")
+      .select("status, completed, start_time, stripe_destination_charge")
       .eq("id", ledger.session_id)
       .maybeSingle();
+
+    if (session && (session as { stripe_destination_charge?: boolean }).stripe_destination_charge === true) {
+      return;
+    }
 
     const sessionStatus = session?.status ?? null;
     const sessionStart = session?.start_time ? new Date(session.start_time) : null;
@@ -602,7 +661,9 @@ export async function createPayoutLedgerForSession(sessionId: string): Promise<v
 
   const { data: session, error: fetchError } = await admin
     .from("sessions")
-    .select("id, tutor_id, student_id, course, start_time, availability_id, price_per_session")
+    .select(
+      "id, tutor_id, student_id, course, start_time, availability_id, price_per_session, stripe_destination_charge, stripe_payment_intent_id",
+    )
     .eq("id", sessionId)
     .single();
 
@@ -627,7 +688,25 @@ export async function createPayoutLedgerForSession(sessionId: string): Promise<v
     return;
   }
 
+  const destination =
+    (session as { stripe_destination_charge?: boolean | null }).stripe_destination_charge === true;
+  const paymentIntentId =
+    (session as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id ?? null;
+
   if (existingLedger?.id) {
+    if (destination) {
+      await admin
+        .from("tutor_payout_ledger")
+        .update({
+          status: "transferred",
+          transfer_id: paymentIntentId,
+          transferred_at: new Date().toISOString(),
+        })
+        .eq("id", existingLedger.id)
+        .in("status", ["pending", "held"]);
+      await admin.from("sessions").update({ payout_status: "transferred" }).eq("id", sessionId);
+      return;
+    }
     try {
       await transferSessionPayout(existingLedger.id);
     } catch (err) {
@@ -659,6 +738,40 @@ export async function createPayoutLedgerForSession(sessionId: string): Promise<v
   if (grossCents == null) grossCents = 2500;
   const net = tutorNetCents(grossCents);
   const fee = platformFeeCents(grossCents);
+
+  if (destination) {
+    const { error: destErr } = await admin
+      .from("tutor_payout_ledger")
+      .insert({
+        tutor_id: session.tutor_id,
+        session_id: session.id,
+        session_date: session.start_time,
+        student_id: session.student_id,
+        course: session.course,
+        gross_cents: grossCents,
+        platform_fee_cents: fee,
+        net_cents: net,
+        status: "transferred",
+        hold_until: transferReadyAt(session.start_time),
+        transfer_id: paymentIntentId,
+        transferred_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (destErr && destErr.code !== "23505") {
+      console.error("[connect] destination ledger insert error:", destErr);
+      return;
+    }
+
+    if (destErr?.code === "23505") {
+      await admin.from("sessions").update({ payout_status: "transferred" }).eq("id", sessionId);
+      return;
+    }
+
+    await admin.from("sessions").update({ payout_status: "transferred" }).eq("id", sessionId);
+    return;
+  }
 
   const { error, data } = await admin
     .from("tutor_payout_ledger")

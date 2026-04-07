@@ -9,6 +9,7 @@ const REQUIRED_WEBHOOK_EVENTS = [
   "payment_intent.payment_failed",
   "charge.refunded",
   "refund.updated",
+  "account.updated",
 ];
 
 function normalizeBaseUrl(value) {

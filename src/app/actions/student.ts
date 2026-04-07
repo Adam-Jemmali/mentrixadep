@@ -980,6 +980,7 @@ export async function bookSessionAsUser(
 
     let stripeCheckoutSessionId: string | null = null;
     let stripePaymentIntentId: string | null = null;
+    let stripeDestinationCharge = false;
     if (options?.stripeCheckoutSessionId && !options.skipStripeVerification) {
       const verified = await getVerifiedPaymentIntentForBooking(
         options.stripeCheckoutSessionId,
@@ -990,6 +991,7 @@ export async function bookSessionAsUser(
       );
       stripeCheckoutSessionId = verified.checkoutSessionId;
       stripePaymentIntentId = verified.paymentIntentId;
+      stripeDestinationCharge = verified.destinationCharge;
     } else if (options?.stripeCheckoutSessionId) {
       stripeCheckoutSessionId = options.stripeCheckoutSessionId;
     }
@@ -1004,6 +1006,7 @@ export async function bookSessionAsUser(
         status: "pending",
         stripe_checkout_session_id: stripeCheckoutSessionId,
         stripe_payment_intent_id: stripePaymentIntentId,
+        stripe_destination_charge: stripeDestinationCharge,
       })
       .select()
       .single();

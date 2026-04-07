@@ -51,6 +51,8 @@ export interface SessionRequest {
   stripe_checkout_session_id?: string | null;
   stripe_payment_intent_id?: string | null;
   stripe_refund_id?: string | null;
+  /** Connect destination charge: net settled on connected account at charge time */
+  stripe_destination_charge?: boolean | null;
 }
 
 export interface Session {
@@ -70,6 +72,8 @@ export interface Session {
   stripe_refund_id?: string | null;
   stripe_refund_reason?: string | null;
   platform_fee_cents?: number | null;
+  /** Connect destination charge: funds split at PaymentIntent; no separate Transfer */
+  stripe_destination_charge?: boolean | null;
   /** Set when status becomes cancelled */
   cancelled_at?: string | null;
   cancelled_by_role?: "student" | "tutor" | "admin" | null;
