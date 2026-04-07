@@ -9,7 +9,6 @@ import { revalidatePath } from "next/cache";
 import { captureUnexpectedError } from "@/lib/observability";
 import { PLATFORM_FEE_BPS } from "@/lib/booking-pricing";
 
-const HOLD_DAYS = 7;
 const TUTOR_SHARE_BPS = 10_000 - PLATFORM_FEE_BPS;
 
 function tutorNetCents(grossCents: number): number {
@@ -20,8 +19,8 @@ function platformFeeCents(grossCents: number): number {
   return grossCents - tutorNetCents(grossCents);
 }
 
-function holdUntilDate(): string {
-  return new Date(Date.now() + HOLD_DAYS * 86_400_000).toISOString();
+function transferReadyAt(): string {
+  return new Date().toISOString();
 }
 
 function stripeClient(): Stripe {
@@ -67,7 +66,7 @@ export type PayoutLedgerRow = {
 export type PayoutDashboardData = {
   connectStatus: ConnectStatus;
   pendingCents: number;
-  heldCents: number;
+  queuedCents: number;
   availableCents: number;
   lifetimeEarnedCents: number;
   ledger: PayoutLedgerRow[];
@@ -368,24 +367,17 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     student_name: r.student_id ? (nameMap.get(r.student_id) ?? null) : null,
   }));
 
-  const now = Date.now();
-  let pendingCents = 0;
-  let heldCents = 0;
+  let queuedCents = 0;
   let availableCents = 0;
   let lifetimeEarnedCents = 0;
 
   for (const row of enrichedLedger) {
     if (row.status === "pending") {
-      const holdExpiry = row.hold_until ? new Date(row.hold_until).getTime() : 0;
-      if (holdExpiry > now) {
-        heldCents += row.net_cents;
-      } else {
-        pendingCents += row.net_cents;
-      }
+      queuedCents += row.net_cents;
     } else if (row.status === "transferred") {
       lifetimeEarnedCents += row.net_cents;
     } else if (row.status === "held") {
-      heldCents += row.net_cents;
+      queuedCents += row.net_cents;
     }
   }
 
@@ -401,8 +393,8 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
 
   return {
     connectStatus,
-    pendingCents,
-    heldCents,
+    pendingCents: queuedCents,
+    queuedCents,
     availableCents,
     lifetimeEarnedCents,
     ledger: enrichedLedger,
@@ -550,13 +542,28 @@ export async function createPayoutLedgerForSession(sessionId: string): Promise<v
         platform_fee_cents: fee,
         net_cents: net,
         status: "pending",
-        hold_until: holdUntilDate(),
+        hold_until: transferReadyAt(),
       },
       { onConflict: "session_id", ignoreDuplicates: true }
     );
 
   if (error && error.code !== "23505") {
     console.error("[connect] createPayoutLedgerForSession error:", error);
+    return;
+  }
+
+  const { data: ledger } = await admin
+    .from("tutor_payout_ledger")
+    .select("id")
+    .eq("session_id", sessionId)
+    .single();
+
+  if (ledger?.id) {
+    try {
+      await transferSessionPayout(ledger.id);
+    } catch (err) {
+      console.warn("[connect] immediate payout transfer failed; cron retry may pick it up later:", err);
+    }
   }
 
   await admin
@@ -566,7 +573,7 @@ export async function createPayoutLedgerForSession(sessionId: string): Promise<v
     .is("payout_status", null);
 }
 
-export async function processHeldPayouts(): Promise<{ processed: number; failed: number }> {
+export async function processQueuedPayouts(): Promise<{ processed: number; failed: number }> {
   const admin = createAdminClient();
 
   const { data: readyRows } = await admin

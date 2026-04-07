@@ -33,8 +33,8 @@ function fmtDate(iso: string | null): string {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
-  pending: { label: "Pending", color: "text-amber-600", dot: "bg-amber-400" },
-  held: { label: "On hold", color: "text-amber-600", dot: "bg-amber-400" },
+  pending: { label: "Queued", color: "text-amber-600", dot: "bg-amber-400" },
+  held: { label: "Queued", color: "text-amber-600", dot: "bg-amber-400" },
   transferred: { label: "Paid", color: "text-emerald-600", dot: "bg-emerald-400" },
   failed: { label: "Failed", color: "text-red-500", dot: "bg-red-400" },
   refunded: { label: "Refunded", color: "text-slate-500", dot: "bg-slate-300" },
@@ -286,7 +286,7 @@ interface TutorPayoutDashboardProps {
 }
 
 export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboardProps) {
-  const { connectStatus, pendingCents, heldCents, availableCents, lifetimeEarnedCents, ledger } = data;
+  const { connectStatus, pendingCents, queuedCents, availableCents, lifetimeEarnedCents, ledger } = data;
 
   const [showSuccess] = useState(connectParam === "success");
   const showError = connectParam === "error";
@@ -336,16 +336,16 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricCard label="Available to withdraw" value={usd(availableCents)} caption="Ready in your Stripe balance" highlight={availableCents > 0} />
-        <MetricCard label="Pending hold" value={usd(heldCents)} caption="7-day hold after session" />
-        <MetricCard label="Awaiting transfer" value={usd(pendingCents)} caption="Hold cleared, transfer queued" />
+        <MetricCard label="Queued payout" value={usd(queuedCents)} caption="Created right after session completion" />
+        <MetricCard label="Awaiting transfer" value={usd(pendingCents)} caption="Waiting for Stripe to finish the transfer" />
         <MetricCard label="Lifetime earned" value={usd(lifetimeEarnedCents)} caption="Total net paid to your account" />
       </div>
 
-      {(heldCents > 0 || pendingCents > 0) && (
+      {(queuedCents > 0 || pendingCents > 0) && (
         <div className="mb-4 flex items-start gap-2 rounded border border-slate-100 bg-slate-50 px-3 py-2">
           <Clock size={13} className="mt-0.5 shrink-0 text-slate-400" />
           <p className="text-[11px] text-slate-500 leading-relaxed">
-            Funds are held for 7 days after session completion to cover potential disputes. Transfers fire automatically once the hold clears.
+            Funds are transferred automatically after the session completes. If Stripe cannot finish immediately, the payout ledger keeps it queued for retry.
           </p>
         </div>
       )}

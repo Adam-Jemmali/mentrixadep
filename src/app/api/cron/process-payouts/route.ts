@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { processHeldPayouts } from "@/app/actions/stripe-connect";
+import { processQueuedPayouts } from "@/app/actions/stripe-connect";
 import { authorizeCronRequest, runCronJob } from "@/lib/cron";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) return auth.response;
 
   return runCronJob("process-payouts", async () => {
-    const result = await processHeldPayouts();
+    const result = await processQueuedPayouts();
     return {
       rows_updated: result.processed ?? 0,
       rows_failed: result.failed ?? 0,
