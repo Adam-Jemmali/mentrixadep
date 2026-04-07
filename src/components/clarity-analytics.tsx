@@ -11,11 +11,24 @@ const CLARITY_ID = "w7032mq4bu";
 export function ClarityAnalytics() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
-    if (document.querySelector(`script[src*="clarity.ms/tag/${CLARITY_ID}"]`)) return;
-    const s = document.createElement("script");
-    s.async = true;
-    s.src = `https://www.clarity.ms/tag/${CLARITY_ID}`;
-    document.head.appendChild(s);
+    if (process.env.NEXT_PUBLIC_CLARITY_ENABLED === "false") return;
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      if (document.querySelector(`script[src*="clarity.ms/tag/${CLARITY_ID}"]`)) return;
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = `https://www.clarity.ms/tag/${CLARITY_ID}`;
+      document.head.appendChild(s);
+    };
+    // Defer until after paint + hydration to reduce React #425 text mismatches with third-party DOM.
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(run);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
   }, []);
 
   return null;

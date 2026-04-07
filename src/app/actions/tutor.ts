@@ -26,6 +26,7 @@ import {
   getRateLimitId,
 } from "@/lib/security";
 import type { PayoutDashboardData } from "@/app/actions/stripe-connect";
+import { sanitizeForRsc } from "@/lib/rsc-serialize";
 
 /** Monday 00:00:00 UTC for the week containing `d` (used for consistent server/client week bounds). */
 function utcStartOfWeekMonday(d: Date): Date {
@@ -187,9 +188,49 @@ export type TutorCommandCenterPayload = {
   payoutData: PayoutDashboardData | null;
 };
 
+function fallbackTutorCommandCenterPayload(
+  user: Awaited<ReturnType<typeof requireRole>>,
+): TutorCommandCenterPayload {
+  const now = new Date();
+  const weekStart = utcStartOfWeekMonday(now);
+  const calendarEnd = new Date(weekStart);
+  calendarEnd.setUTCDate(weekStart.getUTCDate() + 14);
+  return {
+    guideProfile: {
+      displayName: user.displayName?.trim() || user.email?.split("@")[0] || "Guide",
+      avatarUrl: user.avatarUrl ?? null,
+    },
+    metrics: {
+      earningsThisMonthCents: 0,
+      stripePayoutCaption: STRIPE_PAYOUT_CAPTION,
+      sessionsThisWeek: 0,
+      avgRating: null,
+      responseRatePercent: null,
+      pendingRequestCount: 0,
+    },
+    earningsLast30Days: [],
+    lateCancellationAlerts: [],
+    sessionRequests: [],
+    calendar: {
+      weekRange: { startIso: weekStart.toISOString(), endIso: calendarEnd.toISOString() },
+      availability: [],
+      sessions: [],
+    },
+    availability: [],
+    upcomingSessions: [],
+    pastSessions: [],
+    tutorCourses: [],
+    autoApprove: false,
+    tutorTimezone: "UTC",
+    payoutData: null,
+  };
+}
+
 export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPayload> {
   const user = await requireRole(["tutor", "admin"]);
   const tutorId = user.id;
+
+  try {
   const supabase = await createClient();
 
   const now = new Date();
@@ -359,7 +400,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     console.warn("[tutor] payout data load failed (non-critical):", e);
   }
 
-  return {
+  const payload: TutorCommandCenterPayload = {
     guideProfile: {
       displayName: user.displayName?.trim() || user.email?.split("@")[0] || "Guide",
       avatarUrl: user.avatarUrl ?? null,
@@ -391,6 +432,12 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         : "UTC",
     payoutData,
   };
+
+  return sanitizeForRsc(payload);
+  } catch (e) {
+    console.error("[tutor] command center failed — using fallback payload:", e);
+    return sanitizeForRsc(fallbackTutorCommandCenterPayload(user));
+  }
 }
 
 export async function getTutorAvailability() {
