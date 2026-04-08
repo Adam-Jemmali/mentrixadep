@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDate, formatTime } from "@/lib/time-format";
+import { formatDateInZone, formatTimeInZone } from "@/lib/time-format";
 import { AvailabilityBrowser } from "./availability-browser";
 import { StudentCourseChips, type StudentCourseChip } from "./student-course-chips";
 import type { LeaderboardEntry } from "@/app/actions/quest";
@@ -48,6 +48,7 @@ export function StudentCommandCenterClient({
   myRank,
   leaderboardTop,
   recommendedGuides,
+  displayTimeZone = "UTC",
 }: {
   studentCourses: StudentCourseChip[];
   upcomingSessions: Upcoming[];
@@ -58,6 +59,8 @@ export function StudentCommandCenterClient({
   myRank: number | null;
   leaderboardTop: LeaderboardEntry[];
   recommendedGuides: RecommendedGuide[];
+  /** Profile timezone — slot instants are stored in UTC; we display in this zone. */
+  displayTimeZone?: string;
 }) {
   const searchParams = useSearchParams();
   const normalizedInitial = (searchParams.get("subject") ?? "").trim().toLowerCase();
@@ -128,7 +131,8 @@ export function StudentCommandCenterClient({
                       <td className="px-3 py-2.5 font-medium text-slate-900">{s.course}</td>
                       <td className="px-3 py-2.5 text-slate-700">{s.tutor_email_prefix}</td>
                       <td className="px-3 py-2.5 text-slate-600 tabular-nums">
-                        {formatDate(s.start_time)} · {formatTime(s.start_time)}
+                        {formatDateInZone(s.start_time, displayTimeZone)} ·{" "}
+                        {formatTimeInZone(s.start_time, displayTimeZone)}
                       </td>
                       <td className="px-3 py-2.5 text-right">
                         <Link
@@ -256,6 +260,7 @@ export function StudentCommandCenterClient({
           studentCourseNames={studentCourses.map((c) => c.course_name)}
           tutorExpertise={tutorExpertise}
           syncCourseFilter={syncFilter}
+          displayTimeZone={displayTimeZone}
         />
       </section>
     </div>

@@ -264,6 +264,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             myRank={myRank}
             leaderboardTop={leaderboardTop}
             recommendedGuides={recommendedGuides}
+            displayTimeZone={timeZone}
           />
 
           <div id="sessions-history" className="scroll-mt-24 pt-8 border-t border-slate-200">

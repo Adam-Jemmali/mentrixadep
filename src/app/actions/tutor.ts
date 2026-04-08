@@ -11,7 +11,7 @@ import {
   SESSION_PRICE_CAD_MAX,
   SESSION_PRICE_CAD_MIN,
 } from "@/lib/availability-schemas";
-import { buildSlotCandidates } from "@/lib/availability-slot-builder";
+import { buildSlotCandidates, type SlotCandidate } from "@/lib/availability-slot-builder";
 import {
   sendSessionApprovedEmail,
   type SessionEmailDetails,
@@ -553,21 +553,19 @@ async function assertAvailabilityWindowAllowed(
   start: Date,
   end: Date,
 ): Promise<void> {
-  const { data: existing, error: checkError } = await adminClient
-    .from("availability")
-    .select("id")
-    .eq("tutor_id", actingAsId)
-    .eq("course", course)
-    .eq("start_time", start.toISOString())
-    .maybeSingle();
+  await assertBatchAvailabilityWindows(adminClient, actingAsId, course, [
+    { startUtc: start, endUtc: end, ymd: "" },
+  ]);
+}
 
-  if (checkError) {
-    throw new Error(`Failed to check existing availability: ${checkError.message}`);
-  }
-
-  if (existing) {
-    throw new Error("Availability slot already exists");
-  }
+/** One DB read for existing rows + O(n) checks — avoids N round-trips when creating many recurring slots. */
+async function assertBatchAvailabilityWindows(
+  adminClient: ReturnType<typeof createAdminClient>,
+  actingAsId: string,
+  course: string,
+  candidates: SlotCandidate[],
+): Promise<void> {
+  if (candidates.length === 0) return;
 
   const { data: allAvailability, error: fetchError } = await adminClient
     .from("availability")
@@ -576,19 +574,7 @@ async function assertAvailabilityWindowAllowed(
     .eq("course", course);
 
   if (fetchError) {
-    throw new Error(`Failed to check overlapping availability: ${fetchError.message}`);
-  }
-
-  const ws = start.getTime();
-  const we = end.getTime();
-  const hasOverlap = (allAvailability || []).some((avail) => {
-    const availStart = new Date(avail.start_time).getTime();
-    const availEnd = new Date(avail.end_time).getTime();
-    return windowsOverlap(ws, we, availStart, availEnd);
-  });
-
-  if (hasOverlap) {
-    throw new Error("Overlapping availability slots are not allowed");
+    throw new Error(`Could not verify your calendar: ${fetchError.message}`);
   }
 
   const nowIso = new Date().toISOString();
@@ -600,18 +586,62 @@ async function assertAvailabilityWindowAllowed(
     .gte("end_time", nowIso);
 
   if (sessionCheckError) {
-    throw new Error(`Failed to check existing sessions: ${sessionCheckError.message}`);
+    throw new Error(`Could not verify booked sessions: ${sessionCheckError.message}`);
   }
 
-  const hasSessionConflict = (upcomingSessions ?? []).some((s) => {
-    const s0 = new Date(s.start_time).getTime();
-    const s1 = new Date(s.end_time).getTime();
-    return windowsOverlap(ws, we, s0, s1);
-  });
+  const existingWindows = (allAvailability ?? []).map((a) => ({
+    s: new Date(a.start_time).getTime(),
+    e: new Date(a.end_time).getTime(),
+  }));
+  const sessionWindows = (upcomingSessions ?? []).map((s) => ({
+    s: new Date(s.start_time).getTime(),
+    e: new Date(s.end_time).getTime(),
+  }));
 
-  if (hasSessionConflict) {
-    throw new Error("Tutor already has a session at this time");
+  const sorted = [...candidates].sort((a, b) => a.startUtc.getTime() - b.startUtc.getTime());
+  const batchAccepted: { s: number; e: number }[] = [];
+
+  for (const c of sorted) {
+    const ws = c.startUtc.getTime();
+    const we = c.endUtc.getTime();
+
+    for (const w of existingWindows) {
+      if (windowsOverlap(ws, we, w.s, w.e)) {
+        throw new Error(
+          "One or more slots overlap an existing opening for this subject. Refresh the page or pick different times.",
+        );
+      }
+    }
+    for (const w of sessionWindows) {
+      if (windowsOverlap(ws, we, w.s, w.e)) {
+        throw new Error(
+          "One or more slots overlap a session you already have booked. Remove the conflict or choose other times.",
+        );
+      }
+    }
+    for (const w of batchAccepted) {
+      if (windowsOverlap(ws, we, w.s, w.e)) {
+        throw new Error("The same batch includes overlapping slots — try a shorter repeat or different days.");
+      }
+    }
+    batchAccepted.push({ s: ws, e: we });
   }
+}
+
+function mapAvailabilityInsertError(err: { message?: string; code?: string } | null | undefined): string {
+  const msg = (err?.message ?? "").toLowerCase();
+  const code = err?.code ?? "";
+
+  if (code === "23505" || msg.includes("duplicate key") || msg.includes("unique constraint")) {
+    return "That time was already added (or just created). Refresh the page and skip duplicate times.";
+  }
+  if (msg.includes("overlapping availability") || msg.includes("overlap")) {
+    return "Those times overlap another opening or a booked session. Refresh and adjust.";
+  }
+  if (msg.includes("availability_tutor_course_unique")) {
+    return "A slot at exactly this time already exists.";
+  }
+  return err?.message ? `Could not save slots: ${err.message}` : "Could not save slots. Try again in a moment.";
 }
 
 export async function createAvailabilitySlots(
@@ -677,6 +707,13 @@ export async function createAvailabilitySlots(
       throw new Error("No future slots matched your selections. Try different days or times.");
     }
 
+    const MAX_SLOTS_PER_CREATE = 400;
+    if (candidates.length > MAX_SLOTS_PER_CREATE) {
+      throw new Error(`Too many slots at once (max ${MAX_SLOTS_PER_CREATE}). Reduce weeks or fewer days.`);
+    }
+
+    await assertBatchAvailabilityWindows(adminClient, actingAsId, validCourse, candidates);
+
     const pricePerSession = Math.round(input.priceCad * 100);
     const seriesId = randomUUID();
 
@@ -702,8 +739,11 @@ export async function createAvailabilitySlots(
       price_per_session: number;
     }> = [];
 
+    const seenStart = new Set<string>();
     for (const c of candidates) {
-      await assertAvailabilityWindowAllowed(adminClient, actingAsId, validCourse, c.startUtc, c.endUtc);
+      const startKey = c.startUtc.toISOString();
+      if (seenStart.has(startKey)) continue;
+      seenStart.add(startKey);
       rows.push({
         tutor_id: actingAsId,
         course: validCourse,
@@ -726,16 +766,20 @@ export async function createAvailabilitySlots(
       });
     }
 
+    if (rows.length === 0) {
+      throw new Error("No unique slots to create after removing duplicates.");
+    }
+
     const { error: insertError } = await adminClient.from("availability").insert(rows);
 
     if (insertError) {
       if (isMissingAvailabilityColumnsError(insertError) || insertError.message?.includes("schema cache")) {
         const { error: legacyInsertError } = await adminClient.from("availability").insert(legacyRows);
         if (legacyInsertError) {
-          throw new Error(`Failed to create availability: ${legacyInsertError.message}`);
+          throw new Error(mapAvailabilityInsertError(legacyInsertError));
         }
       } else {
-        throw new Error(`Failed to create availability: ${insertError.message}`);
+        throw new Error(mapAvailabilityInsertError(insertError));
       }
     }
 

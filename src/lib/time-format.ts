@@ -24,11 +24,58 @@ export function formatDateTime(date: Date | string): string {
  * @param date - Date object or ISO string
  * @returns Formatted string like "14:30"
  */
+/** Format clock time in **UTC** (legacy; prefer `formatTimeInZone` for user-facing copy). */
 export function formatTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const hours = String(d.getUTCHours()).padStart(2, "0");
   const minutes = String(d.getUTCMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
+}
+
+/**
+ * Format an instant in a specific IANA timezone (e.g. student profile timezone).
+ */
+export function formatTimeInZone(date: Date | string, timeZone: string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone,
+    }).format(d);
+  } catch {
+    return formatTime(d);
+  }
+}
+
+/**
+ * Short date (weekday, month, day, year) in a specific timezone — matches booking context.
+ */
+export function formatDateInZone(date: Date | string, timeZone: string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      timeZone,
+    }).format(d);
+  } catch {
+    return formatDateShort(d);
+  }
+}
+
+/** e.g. "Mon, Jan 15 · 14:30 – 15:00" in the viewer's timezone */
+export function formatSlotRangeInZone(
+  startIso: string,
+  endIso: string,
+  timeZone: string,
+): string {
+  return `${formatDateInZone(startIso, timeZone)} · ${formatTimeInZone(startIso, timeZone)} – ${formatTimeInZone(endIso, timeZone)}`;
 }
 
 /**

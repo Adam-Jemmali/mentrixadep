@@ -1424,6 +1424,17 @@ export async function getStudentDashboardForAdmin(studentId: string) {
     new Set((courseResult.data ?? []).map((a) => a.course)),
   ).sort();
 
+  const { data: userSettingsRow } = await adminClient
+    .from("user_settings")
+    .select("timezone")
+    .eq("user_id", studentId)
+    .maybeSingle();
+
+  const displayTimeZone =
+    typeof userSettingsRow?.timezone === "string" && userSettingsRow.timezone.trim().length > 0
+      ? userSettingsRow.timezone.trim()
+      : "UTC";
+
   return {
     studentId,
     email,
@@ -1433,6 +1444,7 @@ export async function getStudentDashboardForAdmin(studentId: string) {
     courses,
     totalXp,
     streak,
+    displayTimeZone,
   };
 }
 

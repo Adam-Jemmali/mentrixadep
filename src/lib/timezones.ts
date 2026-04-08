@@ -1,3 +1,14 @@
+/** Returns true if `tz` is a valid IANA timezone for `Intl` (used for slot math + display). */
+export function isValidIanaTimeZone(tz: string): boolean {
+  if (!tz || typeof tz !== "string") return false;
+  try {
+    Intl.DateTimeFormat("en-US", { timeZone: tz.trim() });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Common IANA timezones for selects (settings + student profile). */
 export const APP_TIMEZONES = [
   "UTC",

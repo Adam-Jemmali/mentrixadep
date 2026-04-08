@@ -403,7 +403,7 @@ export function HomePageClient() {
               className="lp-hero-line lp-hero-line-delay-2 block"
               style={{ fontSize: "clamp(38px, 9vw, 84px)", lineHeight: 0.95 }}
             >
-              Stop failing the same exam
+              Stop failing the same exam{" "}
             </span>
             <span
               className="lp-hero-line lp-hero-line-delay-3 block mt-1 bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent"

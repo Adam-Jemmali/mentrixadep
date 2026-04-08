@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidIanaTimeZone } from "@/lib/timezones";
 
 /** Tutor-set session price (CAD dollars, stored as cents in DB). Must match landing page promise. */
 export const SESSION_PRICE_CAD_MIN = 15;
@@ -54,6 +55,13 @@ export const createAvailabilitySlotsSchema = z
         code: z.ZodIssueCode.custom,
         message: "Duration must be in 30-minute steps",
         path: ["endTime"],
+      });
+    }
+    if (!isValidIanaTimeZone(data.timezone)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose a valid timezone from the list",
+        path: ["timezone"],
       });
     }
   });

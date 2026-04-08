@@ -69,7 +69,11 @@ export default async function AdminStudentDashboardPage({ params }: Props) {
             totalXp={data.totalXp}
             streak={data.streak}
           >
-            <AvailabilityBrowser availability={data.availability} courses={data.courses} />
+            <AvailabilityBrowser
+              availability={data.availability}
+              courses={data.courses}
+              displayTimeZone={data.displayTimeZone}
+            />
           </SessionsList>
         </AdminViewProvider>
       </main>

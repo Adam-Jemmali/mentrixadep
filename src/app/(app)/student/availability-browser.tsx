@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { formatTime } from "@/lib/time-format";
+import { formatSlotRangeInZone, formatTimeInZone } from "@/lib/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -58,6 +58,8 @@ interface AvailabilityBrowserProps {
   tutorExpertise?: Record<string, TutorExpertiseEntry[]>;
   /** When set, keeps the course filter in sync (e.g. “My courses” chips on the dashboard). */
   syncCourseFilter?: string | null;
+  /** IANA timezone for displaying slot instants (student profile or admin viewing student). */
+  displayTimeZone?: string;
 }
 
 export function AvailabilityBrowser({
@@ -66,6 +68,7 @@ export function AvailabilityBrowser({
   studentCourseNames = [],
   tutorExpertise = {},
   syncCourseFilter,
+  displayTimeZone = "UTC",
 }: AvailabilityBrowserProps) {
   const pathname = usePathname();
   const [query, setQuery] = useState("");
@@ -179,7 +182,10 @@ export function AvailabilityBrowser({
   return (
     <aside>
       <h2 className="mb-1 text-sm font-medium text-slate-900">Guides</h2>
-      <p className="mb-3 text-xs text-slate-500">Bookable slots in the next 14 days.</p>
+      <p className="mb-3 text-xs text-slate-500">
+        Bookable slots in the next 14 days. Times in{" "}
+        <span className="font-medium text-slate-700">{displayTimeZone}</span> — update in Profile if needed.
+      </p>
 
       <Input
         value={query}
@@ -292,7 +298,7 @@ export function AvailabilityBrowser({
                     }}
                     className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-slate-300 hover:bg-slate-50"
                   >
-                    {slot.course} · {formatTime(slot.start_time)}
+                    {slot.course} · {formatTimeInZone(slot.start_time, displayTimeZone)}
                   </button>
                 ))}
               </div>
@@ -306,6 +312,7 @@ export function AvailabilityBrowser({
         slot={selectedSlot}
         onOpenChange={(open) => !open && setSelectedSlot(null)}
         tutorExpertise={tutorExpertise}
+        displayTimeZone={displayTimeZone}
       />
     </aside>
   );
@@ -315,10 +322,12 @@ function BookingDialog({
   slot,
   onOpenChange,
   tutorExpertise = {},
+  displayTimeZone = "UTC",
 }: {
   slot: Availability | null;
   onOpenChange: (open: boolean) => void;
   tutorExpertise?: Record<string, TutorExpertiseEntry[]>;
+  displayTimeZone?: string;
 }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   useEffect(() => {
@@ -328,7 +337,7 @@ function BookingDialog({
 
   const priceCents = slot.price_per_session ?? 2500;
   const durationMin = getSessionDurationMinutes(slot.start_time, slot.end_time);
-  const scheduleLine = `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)} · ${formatDurationLabel(durationMin)}`;
+  const scheduleLine = `${formatSlotRangeInZone(slot.start_time, slot.end_time, displayTimeZone)} · ${formatDurationLabel(durationMin)}`;
   const expertise = slot.tutor_id ? (tutorExpertise[slot.tutor_id] ?? []) : [];
   const courseExpertise = expertise.find(
     (e) => e.course_name.toLowerCase() === slot.course.toLowerCase(),
