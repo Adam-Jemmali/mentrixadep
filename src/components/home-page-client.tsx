@@ -755,7 +755,7 @@ export function HomePageClient() {
       >
         <div className="max-w-lg mx-auto px-5 text-center">
           <h2 className="font-bold text-white text-[clamp(28px,5vw,44px)] tracking-[-0.04em] leading-[1.05]">
-          Your exam does not care that you haven't started yet. Your Guide is available today.
+          Your exam does not care that you haven&apos;t started yet. Your Guide is available today.
           </h2>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link
