@@ -216,7 +216,7 @@ export function AvailabilityBrowser({
                 type="email"
                 value={waitlistEmail}
                 onChange={(e) => setWaitlistEmail(e.target.value)}
-                placeholder="you@school.edu"
+                placeholder="you@school.edu or personal email"
                 className="h-8 w-full max-w-xs text-xs bg-white border-slate-200"
               />
               <Button

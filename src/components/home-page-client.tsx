@@ -207,10 +207,10 @@ const FEATURES: {
 ];
 
 const STEPS = [
-  { img: "/images/book.png", title: "Book", line: "You pick a Guide and a slot that fits your week." },
-  { img: "/images/live.png", title: "Meet", line: "You show up live — mic, camera, screen share when it helps." },
-  { img: "/images/package.png", title: "Unpack", line: "You get materials in your account — ready when you open them." },
-  { img: "/images/xp.png", title: "Climb", line: "You keep going with quests, duels, divisions — your loop." },
+  { img: "/images/book.png", title: "Book", line: "Book — Search your course. Pick a verified Guide. Choose a slot. Pay. 3 minutes from now you have a session scheduled." },
+  { img: "/images/live.png", title: "Meet", line: "Meet — Show up live. Screen share your problem. Your Guide works through it with you in real time. Not a lecture. A solution." },
+  { img: "/images/package.png", title: "Unpack", line: "Unpack — 1 second after you hang up, Quest drops your custom study pack. It is waiting in your account every time you come back to it." },
+  { img: "/images/xp.png", title: "Climb", line: "Climb — You drill with Quest, compete in duels, climb your division. Progress compounds. You are not the same student you were before the first session." },
 ];
 
 const OUTCOME_STRIP = [
@@ -233,21 +233,22 @@ const WHY_NOW = [
 ];
 
 const MENTRIXER_PERKS = [
-  "You pick Guides by subject and time — no guessing who’s free",
-  "You meet on live video with screen share — focus stays on the work",
-  "You climb through quests, duels, divisions & XP — progress you can see",
+  "Search your exact course. Every Guide you see is verified and available. No guessing. No waiting for a reply.",
+  "You meet live. Screen share the problem. Your Guide does not tell you the answer. They show you how to get there.",
+  "Quest, duels, and your division rank track every improvement. The Mentrixer who books consistently does not plateau. They compound.",
 ];
 
 const GUIDE_PERKS = [
-  "You own your calendar and your rates — sessions on your terms",
-  "You get paid after each session — without building your own checkout",
-  "You ship session packages from one studio — less manual wrap-up",
+  "You set your availability, your subjects, your rate. You accept only the sessions you want. Nothing runs without your approval.",
+  "tripe deposits your earnings after every session. You do not invoice anyone. You do not follow up. You teach and you get paid.",
+  "Quest generates your session package. You review, adjust, and send. What used to take 30 minutes of manual notes takes 3.",
 ];
 
 const PRICING_POINTS = [
-  "You join free — you only pay when you book a session",
-  "You see one price — the 15% platform fee is already in what you pay",
-  "Guides set $15–$60 CAD per session — you always know the range up front",
+  "Your account is free. Browse every Guide. Read every profile. Pay nothing until you click Book.",
+  "The price you see is the price you pay. The 15% platform fee is already inside it. No surprise charges at checkout.",
+  "Every Guide sets their own rate between $15 and $60 CAD per session. You see the price before you book. Always!",
+  "Checkout is Stripe. Your card data never touches our servers. If you are a Guide, your payout clears after every session you complete.",
 ];
 
 const WAITLIST_SLIDES = [
@@ -376,7 +377,14 @@ export function HomePageClient() {
         <FloatingOrbs />
         <LandingHeroChrome />
         <div className="lp-hero-logo-float pointer-events-none hidden sm:block">
-          <Image src={MENTRIXA_LOGO_PNG} alt="" width={160} height={160} className="object-contain opacity-[0.65]" priority />
+          <Image
+            src={MENTRIXA_LOGO_PNG}
+            alt="Mentrixa"
+            width={160}
+            height={160}
+            className="object-contain opacity-[0.65]"
+            priority
+          />
         </div>
 
         <div className="relative z-10 text-center px-5 max-w-3xl mx-auto">
@@ -386,10 +394,11 @@ export function HomePageClient() {
               heroReady && "opacity-100",
             )}
           >
-            Real tutors. Top Mentrixers. Live now. Book in 3 minutes.
+            Mentrixa · Real tutors. Top Mentrixers. Live now. Book in 3 minutes.
           </p>
 
           <h1 className="font-extrabold tracking-[-0.05em] text-white">
+            <span className="sr-only">Mentrixa — </span>
             <span
               className="lp-hero-line lp-hero-line-delay-2 block"
               style={{ fontSize: "clamp(38px, 9vw, 84px)", lineHeight: 0.95 }}
@@ -410,11 +419,9 @@ export function HomePageClient() {
           </p>
 
           <div id="waitlist" className="mt-8 rounded-2xl border border-white/20 bg-white/[0.06] backdrop-blur-md p-4 sm:p-5 text-left max-w-2xl mx-auto shadow-xl shadow-indigo-950/30">
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-200 mb-2">Start here first</p>
-            <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Join the waitlist</h3>
-            <p className="mt-1 text-xs sm:text-sm text-indigo-100/80">
-              Admin approval is required before sign up/sign in.
-            </p>
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-200 mb-2">Find my Guide now → </p>
+            <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Apply for early access →</h3>
+           
             <div className="mt-4 grid md:grid-cols-2 gap-4">
               <div className="rounded-xl border border-white/15 bg-black/20 p-3 min-h-[120px]">
                 {WAITLIST_SLIDES.map((s, i) => (
@@ -449,7 +456,7 @@ export function HomePageClient() {
                   type="email"
                   value={waitlistEmail}
                   onChange={(e) => setWaitlistEmail(e.target.value)}
-                  placeholder="you@university.ca"
+                  placeholder="you@university.ca or personal email"
                   className="w-full rounded-lg border border-white/30 bg-white/90 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
                 />
                 <div className="mt-2 flex gap-2">
@@ -624,7 +631,7 @@ export function HomePageClient() {
       <section ref={flowRef} id="flow" className="lp-band-flow relative overflow-hidden">
         <div className="max-w-5xl mx-auto px-5 lg:px-10 py-20 md:py-24">
           <h2 className="font-bold text-white text-[clamp(24px,3.5vw,36px)] tracking-[-0.03em] mb-12 md:mb-16">
-            Your flow
+          From confused to prepared. 4 steps.
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {STEPS.map((s, i) => (
@@ -651,7 +658,7 @@ export function HomePageClient() {
       <section className="lp-band-path">
         <div className="max-w-5xl mx-auto px-5 lg:px-10 py-20 md:py-24">
           <h2 className="text-center font-bold text-white text-[clamp(24px,3.5vw,36px)] tracking-[-0.03em] mb-12">
-            Choose your role
+          Which side of the session are you on?
           </h2>
           <div className="grid md:grid-cols-2 gap-4 md:gap-6">
             <div className="rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-950/50 via-slate-950/40 to-slate-900/50 p-8 md:p-10 relative overflow-hidden shadow-xl shadow-emerald-950/20">
@@ -659,7 +666,7 @@ export function HomePageClient() {
                 <Image src="/images/user.png" alt="" width={180} height={180} className="object-contain" />
               </div>
               <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-400">Mentrixer</span>
-              <h3 className="mt-3 text-xl font-bold text-white">Build skill with structure</h3>
+              <h3 className="mt-3 text-xl font-bold text-white">You came here to get better</h3>
               <ul className="mt-6 space-y-3 text-[14px] text-slate-300">
                 {MENTRIXER_PERKS.map((p) => (
                   <li key={p} className="flex gap-2.5">
@@ -672,7 +679,7 @@ export function HomePageClient() {
                 href="/auth/signup"
                 className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-[#0B1120] bg-white px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-transform"
               >
-                Start as Mentrixer <ArrowRight />
+                Claim my spot as a Mentrixer <ArrowRight />
               </Link>
             </div>
 
@@ -681,7 +688,7 @@ export function HomePageClient() {
                 <Image src="/images/money.png" alt="" width={160} height={160} className="object-contain" />
               </div>
               <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-400">Guide</span>
-              <h3 className="mt-3 text-xl font-bold text-white">Lead sessions your way</h3>
+              <h3 className="mt-3 text-xl font-bold text-white">Your knowledge is worth more than you are charging for it</h3>
               <ul className="mt-6 space-y-3 text-[14px] text-slate-300">
                 {GUIDE_PERKS.map((p) => (
                   <li key={p} className="flex gap-2.5">
@@ -694,7 +701,7 @@ export function HomePageClient() {
                 href="/auth/signup?role=tutor"
                 className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-[#0B1120] bg-white px-5 py-2.5 rounded-lg hover:-translate-y-0.5 transition-transform"
               >
-                Start as Guide <ArrowRight />
+                Apply to teach on Mentrixa<ArrowRight />
               </Link>
             </div>
           </div>
@@ -711,7 +718,7 @@ export function HomePageClient() {
       >
         <div className="max-w-lg mx-auto px-5 text-center">
           <h2 className="font-bold text-slate-900 text-[clamp(24px,3vw,34px)] tracking-[-0.03em]">
-            Free to join. You only pay when you book.
+          No subscription. You pay when you sit down with a Guide.
           </h2>
           <div className="mt-10 grid grid-cols-3 gap-4 text-center">
             <div>
@@ -735,9 +742,7 @@ export function HomePageClient() {
               </div>
             ))}
           </div>
-          <p className="mt-8 text-[11px] text-slate-500">
-            Checkout runs on Stripe · if you’re a Guide, you get paid after each session you run
-          </p>
+         
         </div>
       </section>
 
@@ -750,7 +755,7 @@ export function HomePageClient() {
       >
         <div className="max-w-lg mx-auto px-5 text-center">
           <h2 className="font-bold text-white text-[clamp(28px,5vw,44px)] tracking-[-0.04em] leading-[1.05]">
-          Your next exam is coming. Book your first session tonight.
+          Your exam does not care that you haven't started yet. Your Guide is available today.
           </h2>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link
@@ -785,7 +790,7 @@ export function HomePageClient() {
             You are why we ship
           </h2>
           <p className="mt-4 text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Questions, ideas, or a rant about your last session ? We read every message !
+            Questions, ideas, or a rant about your last session ? We read every message!
           </p>
           <div className="mt-8 flex justify-center">
             <ContactSocialLinks variant="dark" />
