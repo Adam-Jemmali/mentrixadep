@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -110,53 +109,32 @@ export default function SignUpPage() {
     setSignedUpWithSession(false);
 
     try {
-      const wlRes = await fetch(`/api/waitlist/status?email=${encodeURIComponent(emailVal)}`, {
-        method: "GET",
-        cache: "no-store",
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: emailVal,
+          password: passVal,
+          role,
+          ageConfirmed,
+        }),
       });
-      const wl = (await wlRes.json().catch(() => ({}))) as { approved?: boolean };
-      if (!wl.approved) {
-        setError("This email is not approved yet. Join the waitlist on the home page first.");
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        email?: string;
+        sessionEstablished?: boolean;
+      };
+      if (!res.ok || !body.ok) {
+        setError(toUserFacingAuthError(body.error));
         return;
       }
 
-      // Sign up in the browser so Supabase can set auth cookies reliably (server actions often fail here).
-      const supabase = createClient();
-      const origin = window.location.origin;
-      const refCookie = (() => {
-        const m = document.cookie.match(/(?:^|;\s*)mentrixa_ref=([^;]+)/);
-        const v = m
-          ? decodeURIComponent(m[1] ?? "")
-              .trim()
-              .toUpperCase()
-              .replace(/[^A-Z0-9]/g, "")
-              .slice(0, 8)
-          : "";
-        return v.length === 8 ? v : undefined;
-      })();
-
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: emailVal,
-        password: passVal,
-        options: {
-          data: {
-            role,
-            age_confirmed_13_or_older: true,
-            ...(refCookie ? { referral_code: refCookie } : {}),
-          },
-          emailRedirectTo: `${origin}/auth/callback`,
-        },
-      });
-
-      if (signUpError) {
-        setError(toUserFacingAuthError(signUpError));
-        return;
-      }
-
-      setSignedUpEmail(data.user?.email ?? emailVal);
-      setSignedUpWithSession(!!data.session);
+      setSignedUpEmail(body.email ?? emailVal);
+      setSignedUpWithSession(!!body.sessionEstablished);
       setSuccess(true);
-      if (data.session) {
+      if (body.sessionEstablished) {
         router.refresh();
       }
     } catch (err) {

@@ -13,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { solveResolveProblemWithGemini, type ResolveAiOutput } from "@/lib/resolve-ai";
 import { applyXpAward } from "@/app/actions/xp";
 import { resolveIntakeSchema } from "@/lib/schemas";
+import { toUserFacingAiError, toUserFacingApiError } from "@/lib/user-facing-error";
 
 type ResolveDifficulty = "no_idea" | "concept_but_stuck" | "minor_confusion";
 
@@ -126,10 +127,7 @@ export async function submitResolveProblem(formData: FormData): Promise<SubmitRe
         imageMimeType,
       });
     } catch (e) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : "AI is temporarily unavailable. Please try again in a moment.";
+      const msg = toUserFacingAiError(e);
       return { error: true, message: msg };
     }
 
@@ -153,7 +151,7 @@ export async function submitResolveProblem(formData: FormData): Promise<SubmitRe
   } catch (e) {
     return {
       error: true,
-      message: e instanceof Error ? e.message : "Could not start resolve.",
+      message: toUserFacingApiError(e),
     };
   }
 }
@@ -189,7 +187,7 @@ export async function setResolveHelpful(
     if (error) return { error: error.message };
     return { success: true };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not update feedback." };
+    return { error: toUserFacingApiError(e) };
   }
 }
 
@@ -207,7 +205,7 @@ export async function escalateResolveToTutor(
     if (error) return { error: error.message };
     return { success: true };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not escalate." };
+    return { error: toUserFacingApiError(e) };
   }
 }
 
@@ -266,6 +264,6 @@ export async function saveResolveToStudyNotes(
     if (error) return { error: error.message };
     return { success: true };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not save note." };
+    return { error: toUserFacingApiError(e) };
   }
 }

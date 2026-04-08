@@ -316,7 +316,12 @@ export const RATE_LIMITS = {
   /** Per-IP middleware guard for POST /auth/signin and /auth/signup (production only). */
   authPage: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
   signIn: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
+  signInIpBurst: { maxRequests: 20, windowMs: 5 * 60 * 1000 },
+  signInEmailBurst: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
+  signInIpEmailBurst: { maxRequests: 8, windowMs: 15 * 60 * 1000 },
   signUp: { maxRequests: 3, windowMs: 60 * 60 * 1000 },
+  signUpIpBurst: { maxRequests: 10, windowMs: 60 * 60 * 1000 },
+  signUpEmailBurst: { maxRequests: 4, windowMs: 60 * 60 * 1000 },
   bookSession: { maxRequests: 10, windowMs: 60 * 1000 },
   createAvailability: { maxRequests: 20, windowMs: 60 * 1000 },
   rateSession: { maxRequests: 5, windowMs: 60 * 1000 },

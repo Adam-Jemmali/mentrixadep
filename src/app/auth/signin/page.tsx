@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getRoleHomePath } from "@/lib/role-home";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { gsap } from "gsap";
-import { createClient } from "@/lib/supabase/client";
 import { toUserFacingAuthError } from "@/lib/user-facing-error";
 
 export default function SignInPage() {
@@ -43,48 +41,22 @@ export default function SignInPage() {
         return;
       }
 
-      const wlRes = await fetch(`/api/waitlist/status?email=${encodeURIComponent(email)}`, {
-        method: "GET",
-        cache: "no-store",
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
       });
-      const wl = (await wlRes.json().catch(() => ({}))) as { approved?: boolean };
-      if (!wl.approved) {
-        setError("This email is not approved yet. Join the waitlist on the home page first.");
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        redirectTo?: string;
+      };
+      if (!res.ok || !body.ok || !body.redirectTo) {
+        setError(toUserFacingAuthError(body.error ?? "Sign in failed. Please try again."));
         return;
       }
-
-      const supabase = createClient();
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (signInError) {
-        setError(toUserFacingAuthError(signInError));
-        return;
-      }
-
-      const userId = signInData.user?.id;
-      if (!userId) {
-        setError("Sign in failed. Please try again.");
-        return;
-      }
-
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("approved, role")
-        .eq("id", userId)
-        .single();
-
-      if (userError || !userData?.role) {
-        setError("Sign in succeeded but profile is incomplete. Contact support.");
-        return;
-      }
-
-      if (userData.approved === false) {
-        router.push("/pending-approval");
-      } else {
-        router.push(getRoleHomePath(userData.role));
-      }
+      router.push(body.redirectTo);
       router.refresh();
     } catch (err) {
       setError(toUserFacingAuthError(err));

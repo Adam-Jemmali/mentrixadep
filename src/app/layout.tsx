@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   manifest: "/manifest.json",
-  /** PNG / PWA icons — site favicon for Google is `public/favicon.ico`, linked explicitly in `<head>`. */
+  /** PNG / PWA icons — regenerate with `npm run pwa:icons` from `mentrixa-checkout-icon.svg`. */
   icons: {
     icon: [
       { url: "/icon.png", type: "image/png" },
@@ -82,7 +82,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="google-site-verification" content="7qMsPjvmHXjq4yWwD5z0HMpqJuyTBlhpDONtfRfh9dk" />
-        {/* Explicit favicon so crawlers (including Google) resolve the same URL as public/favicon.ico */}
+        {/* Favicons: PNG first (Google supports it); .ico for legacy + SERP crawlers */}
+        <link rel="icon" href={`${siteUrl}/icons/icon-192.png`} type="image/png" sizes="192x192" />
         <link rel="icon" href={`${siteUrl}/favicon.ico`} sizes="any" />
         <link rel="shortcut icon" href={`${siteUrl}/favicon.ico`} type="image/x-icon" />
       </head>

@@ -6,9 +6,8 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { getGeminiApiKey } from "@/lib/env";
+import { env, getGeminiApiKey } from "@/lib/env";
 import {
-  enforceRateLimit,
   enforceSlidingRateLimit,
   getRateLimitId,
   RATE_LIMITS,
@@ -18,6 +17,7 @@ import {
   reportGeminiRateLimited,
   captureUnexpectedError,
 } from "@/lib/observability";
+import { toUserFacingAiError } from "@/lib/user-facing-error";
 import {
   parseStudioPackageFromModelText,
   type NormalizedStudioPackage,
@@ -248,8 +248,8 @@ async function incrementDailyLimit(
 
   try {
     const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      env.public.supabaseUrl,
+      env.server.supabaseServiceRoleKey!
     );
 
     const today = new Date().toISOString().slice(0, 10);
@@ -263,8 +263,8 @@ async function incrementDailyLimit(
       .maybeSingle();
 
     if (error) {
-      // Fail open so a DB hiccup doesn't block learners
-      return { count: 0, allowed: true };
+      // Security-sensitive quota path: fail closed if limiter storage is unavailable.
+      return { count: 0, allowed: false };
     }
 
     const currentCount = (data?.count ?? 0) as number;
@@ -279,8 +279,16 @@ async function incrementDailyLimit(
 
     return { count: currentCount + 1, allowed: true };
   } catch {
-    return { count: 0, allowed: true };
+    return { count: 0, allowed: false };
   }
+}
+
+async function enforceAiRateLimit(userId: string, action: string): Promise<void> {
+  await enforceSlidingRateLimit(
+    getRateLimitId(userId),
+    RATE_LIMITS.questAi,
+    action,
+  );
 }
 
 // ============================================
@@ -317,8 +325,8 @@ async function getSessionPackageCache(
 ): Promise<NormalizedStudioPackage | null> {
   try {
     const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      env.public.supabaseUrl,
+      env.server.supabaseServiceRoleKey!
     );
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data, error } = await supabase
@@ -341,8 +349,8 @@ async function setSessionPackageCache(
 ): Promise<void> {
   try {
     const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      env.public.supabaseUrl,
+      env.server.supabaseServiceRoleKey!
     );
     await supabase.from("ai_package_cache").upsert(
       { cache_key: cacheKey, payload, created_at: new Date().toISOString() },
@@ -571,10 +579,10 @@ function handleAiError(
       return { error: true, message: "AI temporarily unavailable, try again soon." };
     }
     reportAiFailure(feature, err, sanitizedContext);
-    return { error: true, message: err.message };
+    return { error: true, message: toUserFacingAiError(err) };
   }
   reportAiFailure(feature, err, sanitizedContext);
-  return { error: true, message: "An unexpected error occurred." };
+  return { error: true, message: toUserFacingAiError(err) };
 }
 
 // ============================================
@@ -605,12 +613,7 @@ export async function generateExplanation(
   userId: string
 ): Promise<QuestExplanationResponse | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai");
-    await enforceSlidingRateLimit(
-      getRateLimitId(userId),
-      RATE_LIMITS.questAi,
-      "quest.ai",
-    );
+    await enforceAiRateLimit(userId, "quest.ai");
 
     const daily = await incrementDailyLimit(userId, "quest_gen");
     if (!daily.allowed) {
@@ -682,7 +685,7 @@ export function streamExplanation(
   return new ReadableStream<string>({
     async start(controller) {
       try {
-        enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai.stream");
+        await enforceAiRateLimit(userId, "quest.ai.stream");
 
         if (isCircuitOpen()) {
           controller.error(new Error(CIRCUIT_OPEN_ERROR));
@@ -757,12 +760,7 @@ export async function generateVariants(
   userId: string
 ): Promise<QuestVariant[] | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai");
-    await enforceSlidingRateLimit(
-      getRateLimitId(userId),
-      RATE_LIMITS.questAi,
-      "quest.ai",
-    );
+    await enforceAiRateLimit(userId, "quest.ai");
 
     const daily = await incrementDailyLimit(userId, "quest_gen");
     if (!daily.allowed) {
@@ -833,7 +831,7 @@ export async function evaluateAnswer(
   userId: string
 ): Promise<EvaluateAnswerResponse | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai");
+    await enforceAiRateLimit(userId, "quest.ai");
     const problem = sanitizeForPrompt(req.problem).slice(0, 2000);
     const correctAnswer = sanitizeForPrompt(req.correctAnswer).slice(0, 2000);
     const userAnswer = sanitizeForPrompt(req.userAnswer).slice(0, 2000);
@@ -884,7 +882,7 @@ export async function summarizeSession(
   userId: string
 ): Promise<SessionPackageResponse | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai");
+    await enforceAiRateLimit(userId, "quest.ai");
     const course = sanitizeForPrompt(context.course);
     const durationMinutes = Number(context.durationMinutes) || 0;
     const blocks = Array.isArray(context.contextBlocks)
@@ -1002,7 +1000,7 @@ export async function generateStudioSessionPackage(
   isRegen = false
 ): Promise<NormalizedStudioPackage | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai");
+    await enforceAiRateLimit(userId, "quest.ai");
 
     const action: DailyLimitAction = isRegen ? "session_package_regen" : "session_package_gen";
     const daily = await incrementDailyLimit(userId, action);
@@ -1051,7 +1049,7 @@ export async function* streamStudioSessionPackageText(
   tutorNotes: string | undefined,
   userId: string
 ): AsyncGenerator<string> {
-  enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai");
+  await enforceAiRateLimit(userId, "quest.ai");
 
   if (isCircuitOpen()) {
     throw new Error(CIRCUIT_OPEN_ERROR);
@@ -1133,7 +1131,7 @@ export async function generateDuelQuestions(
   count: number = 5
 ): Promise<{ questions: DuelQuestionPayload[] } | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "duel.questions");
+    await enforceAiRateLimit(userId, "duel.questions");
 
     const daily = await incrementDailyLimit(userId, "duel_questions");
     if (!daily.allowed) {
@@ -1244,12 +1242,7 @@ export async function generatePracticeQuestPack(
   userId: string
 ): Promise<{ questions: PracticeQuestion[] } | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai.practice");
-    await enforceSlidingRateLimit(
-      getRateLimitId(userId),
-      RATE_LIMITS.questAi,
-      "quest.ai.practice",
-    );
+    await enforceAiRateLimit(userId, "quest.ai.practice");
 
     const daily = await incrementDailyLimit(userId, "quest_gen");
     if (!daily.allowed) {
@@ -1370,7 +1363,7 @@ export async function gradePracticeWrittenAnswer(
   userId: string
 ): Promise<{ pass: boolean; feedback: string } | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai.gradePractice");
+    await enforceAiRateLimit(userId, "quest.ai.gradePractice");
     const prompt = sanitizeForPrompt(params.prompt).slice(0, 4000);
     const ref = sanitizeForPrompt(params.referenceAnswer).slice(0, 4000);
     const ans = sanitizeForPrompt(params.userAnswer).slice(0, 4000);
@@ -1409,7 +1402,7 @@ export async function generateMistakeReview(
   userId: string
 ): Promise<string | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai.mistake");
+    await enforceAiRateLimit(userId, "quest.ai.mistake");
 
     if (isCircuitOpen()) {
       return { error: true, message: CIRCUIT_OPEN_ERROR };
@@ -1487,7 +1480,7 @@ export async function generatePreSessionBrief(
   userId: string
 ): Promise<PreSessionBrief | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "ai.presession");
+    await enforceAiRateLimit(userId, "ai.presession");
 
     if (isCircuitOpen()) {
       return { error: true, message: CIRCUIT_OPEN_ERROR };
@@ -1623,12 +1616,7 @@ export async function generateAdaptiveQuestPack(
   userId: string
 ): Promise<{ questions: PracticeQuestion[] } | AiErrorResult> {
   try {
-    enforceRateLimit(getRateLimitId(userId), RATE_LIMITS.questAi, "quest.ai.adaptive");
-    await enforceSlidingRateLimit(
-      getRateLimitId(userId),
-      RATE_LIMITS.questAi,
-      "quest.ai.adaptive",
-    );
+    await enforceAiRateLimit(userId, "quest.ai.adaptive");
 
     const daily = await incrementDailyLimit(userId, "quest_gen");
     if (!daily.allowed) {

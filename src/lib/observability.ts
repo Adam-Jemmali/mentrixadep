@@ -66,3 +66,24 @@ export function reportMiddlewareHttpError(params: {
   if (params.status >= 500) console.error(msg, { userIdRedacted: params.userIdRedacted });
   else console.warn(msg, { userIdRedacted: params.userIdRedacted });
 }
+
+export function reportAuthLockout(params: {
+  keyType: "email";
+  retryAfterSeconds: number;
+}): void {
+  console.warn("[auth-lockout]", params);
+}
+
+export function reportAuthCaptchaFailure(params: {
+  reason: string;
+  hasToken: boolean;
+}): void {
+  console.warn("[auth-captcha-failure]", params);
+}
+
+export function reportSecurityRateLimitDenied(params: {
+  scope: string;
+  retryAfterSeconds: number;
+}): void {
+  console.warn("[security-rate-limit-denied]", params);
+}

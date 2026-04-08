@@ -9,6 +9,7 @@ import {
 } from "@/lib/security";
 import { streamStudioSessionPackageText } from "@/lib/ai";
 import { parseStudioPackageFromModelText } from "@/lib/studio-package";
+import { toUserFacingAiError } from "@/lib/user-facing-error";
 import {
   buildSessionPackageRichContext,
   persistStudioDraftFromNormalized,
@@ -152,7 +153,7 @@ export async function POST(request: Request) {
         );
         controller.close();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Generation failed";
+        const msg = toUserFacingAiError(e);
         controller.enqueue(encoder.encode(`${END_MARKER}${JSON.stringify({ ok: false, error: msg })}`));
         controller.close();
       }
