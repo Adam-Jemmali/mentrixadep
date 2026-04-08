@@ -358,33 +358,6 @@ export async function POST(req: NextRequest) {
 
     const sessionPriceCents: number = availability.price_per_session ?? 2500;
     const split = splitSessionPriceCents(sessionPriceCents);
-    const appFeeAmount = split.platformFeeCents;
-
-    const { data: tutorPayout, error: tutorPayoutErr } = await adminClient
-      .from("users")
-      .select("stripe_account_id, stripe_payouts_enabled")
-      .eq("id", availability.tutor_id)
-      .maybeSingle();
-
-    if (tutorPayoutErr) {
-      await clearPendingLock({ lockedBy: user.id });
-      return NextResponse.json(
-        { error: "Could not verify this guide's payout account. Try again later." },
-        { status: 500 }
-      );
-    }
-
-    const tutorStripeAccountId = tutorPayout?.stripe_account_id?.trim() ?? "";
-    if (!tutorStripeAccountId || !tutorPayout?.stripe_payouts_enabled) {
-      await clearPendingLock({ lockedBy: user.id });
-      return NextResponse.json(
-        {
-          error:
-            "This guide has not finished Stripe Connect setup yet. Bookings are unavailable until they complete payouts onboarding on their dashboard.",
-        },
-        { status: 400 }
-      );
-    }
 
     const appOrigin = resolveAppOrigin(req);
     const branding = mentrixaCheckoutBrandingWithAssets(appOrigin);
@@ -408,11 +381,12 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    // Student pays Mentrixa directly — no Stripe Connect destination charge.
+    // The full session price goes to the platform Stripe account.
     const lineItems: Stripe.Checkout.SessionCreateParams["line_items"] = [
       {
         price_data: {
           currency: "cad",
-          // Model A: charge learner only the base session amount.
           unit_amount: split.totalCents,
           product_data: {
             name: `${availability.course} tutoring session`,
@@ -433,12 +407,10 @@ export async function POST(req: NextRequest) {
       availability_id: availability.id,
       course: availability.course,
       session_date: availability.start_time,
-      platform_fee_cents: String(appFeeAmount),
+      platform_fee_cents: String(split.platformFeeCents),
       availabilityId: availability.id,
       studentId: user.id,
       tutorId: availability.tutor_id,
-      /** Connect destination charge: application fee to platform, remainder to connected account. */
-      connect_destination: "true",
     };
 
     const idempotencyKey = `checkout_${availability.id}_${user.id}`;
@@ -461,10 +433,7 @@ export async function POST(req: NextRequest) {
             },
             metadata: checkoutMetadata,
             payment_intent_data: {
-              application_fee_amount: appFeeAmount,
-              transfer_data: {
-                destination: tutorStripeAccountId,
-              },
+              // Direct charge to Mentrixa — no Connect transfer.
               metadata: checkoutMetadata,
             },
             success_url: successUrl,
