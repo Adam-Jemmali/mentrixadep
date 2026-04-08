@@ -87,7 +87,7 @@ export default function RootLayout({
         <link rel="icon" href={`${siteUrl}/favicon.ico`} sizes="any" />
         <link rel="shortcut icon" href={`${siteUrl}/favicon.ico`} type="image/x-icon" />
       </head>
-      <body className="antialiased font-sans" suppressHydrationWarning>
+      <body className="antialiased font-sans overflow-x-hidden" suppressHydrationWarning>
         <OrganizationJsonLd />
         <DevServiceWorkerGuard />
         {children}

@@ -328,35 +328,12 @@ async function runSupabaseAuthGuard(
     }
 
     if (!approved) {
-      // Check if user is under active verification (has full access during window)
-      const { data: userRow } = await supabase
-        .from("users")
-        .select("is_blacklisted, verification_status")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      // Blacklisted users are always blocked
-      if (userRow?.is_blacklisted) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/pending-approval";
-        return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      if (pathname === "/pending-approval" || pathname === "/auth/select-role") {
+        return finalizeResponse(supabaseResponse, request, user.id);
       }
-
-      // Users with active verification (pending/in_review/info_requested) get full access
-      const activeVerificationStatuses = ["pending", "in_review", "info_requested"];
-      const hasActiveVerification =
-        userRow?.verification_status &&
-        activeVerificationStatuses.includes(userRow.verification_status);
-
-      if (!hasActiveVerification) {
-        if (pathname === "/pending-approval" || pathname === "/auth/select-role") {
-          return finalizeResponse(supabaseResponse, request, user.id);
-        }
-        const url = request.nextUrl.clone();
-        url.pathname = "/pending-approval";
-        return finalizeResponse(NextResponse.redirect(url), request, user.id);
-      }
-      // Active verification: fall through to allow full access
+      const url = request.nextUrl.clone();
+      url.pathname = "/pending-approval";
+      return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
     if (role && !checkRouteAccess(pathname, role)) {
