@@ -28,6 +28,30 @@ const nextConfig = {
       { source: "/quest", destination: "/student/quest", permanent: false },
     ];
   },
+
+  async headers() {
+    return [
+      {
+        // Force browsers and Vercel CDN to always re-fetch favicon files
+        source: "/:file(favicon\\.ico|apple-icon\\.png|icon\\.png|manifest\\.json)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate",
+          },
+        ],
+      },
+      {
+        source: "/icons/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+    ];
+  },
   poweredByHeader: false,
 
   images: {
