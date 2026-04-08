@@ -125,7 +125,10 @@ export function CreateAvailabilityForm({
     };
 
     try {
-      await createAvailabilitySlots(payload, viewingAsUserId ?? undefined);
+      const res = await createAvailabilitySlots(payload, viewingAsUserId ?? undefined);
+      if (!res.success) {
+        throw new Error(res.error);
+      }
       setWeekdays(new Set());
       setPrice("25");
       router.refresh();

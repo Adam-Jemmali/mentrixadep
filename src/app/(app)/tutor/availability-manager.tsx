@@ -81,10 +81,13 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       list.map((r) => (r.id === id ? { ...r, active: next } : r)),
     );
     try {
-      await setAvailabilityActive(
+      const res = await setAvailabilityActive(
         { availabilityId: id, active: next },
         viewingAsUserId ?? undefined,
       );
+      if (!res.success) {
+        throw new Error(res.error);
+      }
       router.refresh();
     } catch (err) {
       setRows((list) =>
