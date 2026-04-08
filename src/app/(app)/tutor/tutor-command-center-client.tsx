@@ -238,7 +238,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
             </span>
           </Button>
         </div>
-        <TutorWeekCalendar calendar={calendar} />
+        <TutorWeekCalendar calendar={calendar} displayTimezone={data.tutorTimezone} />
       </section>
 
       {/* Expertise + availability controls */}

@@ -13,6 +13,26 @@ import type { SessionAiPackage } from "@/lib/database.types";
 
 import { countUp as gsapCountUp } from "@/lib/gsap";
 
+const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
+
+function loadRateFloatDismissedIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(RATE_FLOAT_DISMISSED_KEY);
+    const arr = raw ? (JSON.parse(raw) as unknown) : [];
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.filter((x): x is string => typeof x === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function persistRateFloatDismissedIds(ids: Set<string>) {
+  const arr = [...ids];
+  const trimmed = arr.length > 200 ? arr.slice(-200) : arr;
+  localStorage.setItem(RATE_FLOAT_DISMISSED_KEY, JSON.stringify(trimmed));
+}
+
 interface Session {
   id: string;
   course: string;
@@ -48,7 +68,21 @@ export function SessionsList({
   showHeroStats = true,
 }: SessionsListProps) {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
-  const [floatingDismissed, setFloatingDismissed] = useState(false);
+  /** null = not hydrated from localStorage yet (avoid flashing the prompt). */
+  const [rateFloatDismissedIds, setRateFloatDismissedIds] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    setRateFloatDismissedIds(loadRateFloatDismissedIds());
+  }, []);
+
+  const dismissRateFloatForSession = useCallback((sessionId: string) => {
+    setRateFloatDismissedIds((prev) => {
+      const next = new Set(prev ?? []);
+      next.add(sessionId);
+      persistRateFloatDismissedIds(next);
+      return next;
+    });
+  }, []);
 
   const filteredUpcoming = useMemo(
     () => upcomingSessions.filter((s) => s.status !== "cancelled"),
@@ -56,15 +90,16 @@ export function SessionsList({
   );
 
   const floatingSession = useMemo(() => {
-    if (floatingDismissed) return null;
+    if (rateFloatDismissedIds === null) return null;
     for (const s of pastSessions) {
+      if (rateFloatDismissedIds.has(s.id)) continue;
       const statusLower = (s.status ?? "").toLowerCase();
       const hasRating = !!(s.ratings && s.ratings.length > 0);
       const hasTutor = !!(s.tutor_id ?? s.tutor?.id);
       if (!hasRating && statusLower !== "cancelled" && hasTutor) return s;
     }
     return null;
-  }, [pastSessions, floatingDismissed]);
+  }, [pastSessions, rateFloatDismissedIds]);
 
   const totalXpRef = useRef<HTMLSpanElement | null>(null);
   const streakRef = useRef<HTMLSpanElement | null>(null);
@@ -262,7 +297,9 @@ export function SessionsList({
 
       <RateSessionFloating
         session={floatingSession}
-        onDismiss={() => setFloatingDismissed(true)}
+        onDismiss={
+          floatingSession ? () => dismissRateFloatForSession(floatingSession.id) : undefined
+        }
       />
     </>
   );

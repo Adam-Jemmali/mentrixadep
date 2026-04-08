@@ -15,7 +15,7 @@ export function QuestPageClient({
   const defaultTab = tab === "classic" ? "classic" : "practice";
 
   return (
-    <div className="bg-slate-50 min-h-[calc(100vh-56px)]">
+    <div className="bg-slate-50 min-h-0 md:min-h-[calc(100dvh-3.5rem)]">
       <Tabs defaultValue={defaultTab} className="w-full">
         <div className="border-b border-slate-200 bg-white px-4 sm:px-6 pt-4">
           <TabsList className="bg-slate-100/80">
@@ -26,7 +26,7 @@ export function QuestPageClient({
         <TabsContent value="practice" className="mt-0 focus-visible:outline-none">
           <QuestPracticeWorkspace subjectOptions={subjectOptions} />
         </TabsContent>
-        <TabsContent value="classic" className="mt-0 focus-visible:outline-none min-h-[calc(100vh-56px)]">
+        <TabsContent value="classic" className="mt-0 min-h-0 focus-visible:outline-none md:min-h-[calc(100dvh-3.5rem)]">
           <QuestClassicWorkspace />
         </TabsContent>
       </Tabs>

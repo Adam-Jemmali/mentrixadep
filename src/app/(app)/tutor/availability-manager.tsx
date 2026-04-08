@@ -6,7 +6,7 @@ import Image from "next/image";
 import { formatInTimeZone } from "date-fns-tz";
 import { deleteAvailability, setAvailabilityActive } from "@/app/actions/tutor";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { formatTimeRange } from "@/lib/time-format";
+import { formatTimeRangeInZone } from "@/lib/time-format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
@@ -140,7 +140,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                           >
                             <div className="min-w-0">
                               <p className="text-sm text-slate-900 tabular-nums">
-                                {formatTimeRange(slot.start_time, slot.end_time)}
+                                {formatTimeRangeInZone(slot.start_time, slot.end_time, displayTimezone)}
                               </p>
                               <div className="mt-1 flex flex-wrap items-center gap-2">
                                 <span className="text-xs text-slate-500">

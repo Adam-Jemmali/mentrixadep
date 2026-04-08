@@ -120,3 +120,12 @@ export function formatTimeRange(
   return `${formatTime(startDate)} - ${formatTime(endDate)}`;
 }
 
+/** Clock times only, in the given IANA zone (e.g. tutor or student profile). */
+export function formatTimeRangeInZone(
+  startDate: Date | string,
+  endDate: Date | string,
+  timeZone: string,
+): string {
+  return `${formatTimeInZone(startDate, timeZone)} - ${formatTimeInZone(endDate, timeZone)}`;
+}
+

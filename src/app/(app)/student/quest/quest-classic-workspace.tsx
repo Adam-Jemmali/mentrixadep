@@ -393,12 +393,9 @@ export function QuestClassicWorkspace() {
   return (
     <div className="bg-slate-50 relative">
       <QuestIllustration />
-      <div
-        className="grid"
-        style={{ height: "calc(100vh - 56px)", gridTemplateColumns: "320px 1fr" }}
-      >
+      <div className="grid min-h-0 grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] md:h-[calc(100dvh-3.5rem)] md:max-h-[calc(100dvh-3.5rem)]">
         {/* LEFT PANE */}
-        <aside className="relative h-full border-r border-slate-200 bg-slate-50 flex flex-col justify-between overflow-y-auto">
+        <aside className="relative min-h-0 border-b border-slate-200 bg-slate-50 md:h-full md:border-b-0 md:border-r flex flex-col justify-between overflow-y-auto">
           <div className="flex-1 px-5 pt-6 pb-4">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-2 block">
               Problem
@@ -544,11 +541,11 @@ export function QuestClassicWorkspace() {
         {/* RIGHT PANE */}
         <section
           ref={rightPaneRef}
-          className="relative flex-1 overflow-y-auto p-10 bg-white"
+          className="relative min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 bg-white md:min-h-0"
         >
           {/* Empty state */}
           {!currentQuest && !isLoading && (
-            <div className="h-full flex flex-col items-center justify-center text-center px-4">
+            <div className="flex min-h-[45vh] flex-col items-center justify-center text-center px-2 sm:px-4 md:h-full md:min-h-0">
               {submitError && (
                 <div
                   role="alert"
@@ -576,7 +573,7 @@ export function QuestClassicWorkspace() {
           )}
 
           {isLoading && (
-            <div className="h-full flex items-center justify-center text-sm text-slate-400">
+            <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400 md:h-full md:min-h-0">
               Generating hints…
             </div>
           )}

@@ -10,7 +10,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Calendar, Swords, User, UsersRound } from "lucide-react";
+import { BookOpen, Calendar, Swords, User, UsersRound, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
@@ -48,6 +48,13 @@ import {
 const XP_CACHE_KEY = "mentrixa-xp-cache";
 const PUSH_DISMISS_KEY = "mentrixa-push-prompt-dismissed";
 const PUSH_SUBSCRIBED_KEY = "mentrixa-push-subscribed";
+
+/** ms timestamp; banner hidden until this time (after user dismisses). */
+function streakRiskDismissedUntilKey(userId: string) {
+  return `mentrixa-streak-risk-dismissed-until:${userId}`;
+}
+
+const STREAK_RISK_DISMISS_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 function useReferralFinalizeOnce() {
   const ran = useRef(false);
@@ -143,6 +150,14 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
         hoursSinceAction: number | null;
       };
       if (s.atRisk && s.streakDays > 0) {
+        if (typeof window !== "undefined") {
+          const raw = localStorage.getItem(streakRiskDismissedUntilKey(uid));
+          const until = raw ? Number(raw) : NaN;
+          if (Number.isFinite(until) && Date.now() < until) {
+            setStreakBanner(null);
+            return;
+          }
+        }
         const hrs = s.hoursSinceAction != null ? Math.floor(s.hoursSinceAction) : 24;
         setStreakBanner(
           `Streak broken risk: ${hrs}h since your last activity. Your ${s.streakDays}-day streak is on the line — complete a quest or practice pack now.`,
@@ -206,13 +221,31 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
     };
   }, [uid]);
 
+  const dismissStreakBanner = useCallback(() => {
+    if (uid && typeof window !== "undefined") {
+      localStorage.setItem(
+        streakRiskDismissedUntilKey(uid),
+        String(Date.now() + STREAK_RISK_DISMISS_COOLDOWN_MS),
+      );
+    }
+    setStreakBanner(null);
+  }, [uid]);
+
   if (!user || !isStudent) return null;
 
   return (
     <>
       {streakBanner && showStreak ? (
-        <div className="fixed bottom-4 left-1/2 z-40 max-w-lg -translate-x-1/2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-xs text-amber-950 shadow-sm">
-          {streakBanner}
+        <div className="fixed bottom-4 left-1/2 z-40 flex max-w-lg -translate-x-1/2 items-start gap-2 rounded-md border border-amber-200 bg-amber-50 py-2.5 pl-4 pr-2 shadow-sm">
+          <p className="min-w-0 flex-1 text-center text-xs leading-snug text-amber-950">{streakBanner}</p>
+          <button
+            type="button"
+            onClick={dismissStreakBanner}
+            className="shrink-0 rounded p-1 text-amber-800 transition hover:bg-amber-100 hover:text-amber-950"
+            aria-label="Dismiss streak reminder"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
         </div>
       ) : null}
 

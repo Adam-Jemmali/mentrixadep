@@ -12,6 +12,7 @@ type Session = {
   status?: string;
   completed?: boolean;
   tutor_id?: string | null;
+  tutor?: { id?: string | null } | null;
   ratings?: { id: string; rating: number; comment: string | null }[];
 };
 
@@ -28,7 +29,7 @@ export function RateSessionFloating({
 
   const hasRating = !!(session.ratings && session.ratings.length > 0);
   const statusLower = (session.status ?? "").toLowerCase();
-  const hasTutor = !!(session.tutor_id);
+  const hasTutor = !!(session.tutor_id ?? session.tutor?.id);
   const canRate = !hasRating && statusLower !== "cancelled" && hasTutor;
 
   if (!canRate) return null;
@@ -55,6 +56,7 @@ export function RateSessionFloating({
           sessionId={session.id}
           canRate={canRate}
           onSuccess={() => {
+            onDismiss?.();
             router.refresh();
           }}
         />

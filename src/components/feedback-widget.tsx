@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import {
 
 export function FeedbackWidget() {
   const pathname = usePathname();
+  const studentShell = pathname.startsWith("/student");
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -69,14 +71,20 @@ export function FeedbackWidget() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-[70] inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition hover:bg-slate-800"
+        aria-label="Send feedback"
+        className={cn(
+          "fixed z-[70] inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-slate-800 md:px-4 md:py-2.5",
+          studentShell
+            ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] right-3 md:bottom-4 md:right-4"
+            : "bottom-4 right-4",
+        )}
       >
-        <MessageSquareText className="h-4 w-4" />
-        Feedback
+        <MessageSquareText className="h-5 w-5 shrink-0 md:h-4 md:w-4" aria-hidden />
+        <span className="hidden sm:inline">Feedback</span>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="flex max-h-[85dvh] w-[calc(100vw-1.5rem)] max-w-lg flex-col gap-0 overflow-y-auto overflow-x-hidden p-4 sm:w-full sm:p-6">
           <form onSubmit={submitFeedback} className="space-y-4">
             <DialogHeader>
               <DialogTitle>Send feedback</DialogTitle>

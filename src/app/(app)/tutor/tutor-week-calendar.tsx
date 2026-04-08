@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { JoinVideoCallButton } from "@/components/join-video-call-button";
-import { formatTimeRange } from "@/lib/time-format";
+import { formatTimeRangeInZone } from "@/lib/time-format";
 import { cn } from "@/lib/utils";
 
 type CalendarPayload = {
@@ -38,7 +38,13 @@ type Slot =
       status: string;
     };
 
-export function TutorWeekCalendar({ calendar }: { calendar: CalendarPayload }) {
+export function TutorWeekCalendar({
+  calendar,
+  displayTimezone,
+}: {
+  calendar: CalendarPayload;
+  displayTimezone: string;
+}) {
   const now = Date.now();
 
   const { dayKeys, labels, slotsByDay } = useMemo(() => {
@@ -136,7 +142,9 @@ export function TutorWeekCalendar({ calendar }: { calendar: CalendarPayload }) {
                   slot.status !== "cancelled";
                 const body = (
                   <>
-                    <div className="font-medium">{formatTimeRange(slot.start, slot.end)}</div>
+                    <div className="font-medium">
+                      {formatTimeRangeInZone(slot.start, slot.end, displayTimezone)}
+                    </div>
                     <div className="truncate opacity-90">{slot.course}</div>
                     <div className="mt-0.5 text-[10px] opacity-80">{label}</div>
                     {showJoin ? (
@@ -158,7 +166,7 @@ export function TutorWeekCalendar({ calendar }: { calendar: CalendarPayload }) {
                       "rounded border px-2 py-1.5 text-left text-[11px] leading-snug transition-colors duration-150",
                       className,
                     )}
-                    aria-label={`${label} ${slot.course} ${formatTimeRange(slot.start, slot.end)}`}
+                    aria-label={`${label} ${slot.course} ${formatTimeRangeInZone(slot.start, slot.end, displayTimezone)}`}
                   >
                     {body}
                   </div>

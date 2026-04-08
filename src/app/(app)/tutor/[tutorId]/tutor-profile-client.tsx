@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { BookingPriceBreakdown } from "@/components/booking-price-breakdown";
 import { splitSessionPriceCents } from "@/lib/booking-pricing";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
-import { formatTime } from "@/lib/time-format";
+import { formatSlotRangeInZone } from "@/lib/time-format";
 import { AccountSecurityPanel } from "@/components/account-security-panel";
 gsap.registerPlugin(ScrollTrigger);
 
@@ -48,6 +48,8 @@ interface Profile {
   courses: string[];
   availability: AvailabilitySlot[];
   autoApprove: boolean;
+  /** Same IANA zone as Guide settings — slot labels match times they chose when creating availability. */
+  tutorTimezone: string;
 }
 
 interface TutorProfileClientProps {
@@ -67,15 +69,6 @@ function getDayLabel(iso: string): Day {
   return (labels[d] ?? "Mon") as Day;
 }
 
-
-
-function formatSlotDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 
 function formatPrice(cents: number | null): string {
@@ -417,9 +410,13 @@ export function TutorProfileClient({
                 <p className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-900">
                   {dialogSlot.course}
                 </p>
-                <p className="mt-1 font-mono text-sm font-medium text-neutral-900 dark:text-neutral-900">
-                  {formatSlotDate(dialogSlot.start_time)} · {formatTime(dialogSlot.start_time)} –{" "}
-                  {formatTime(dialogSlot.end_time)} ·{" "}
+                <p className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-900">
+                  {formatSlotRangeInZone(
+                    dialogSlot.start_time,
+                    dialogSlot.end_time,
+                    profile.tutorTimezone,
+                  )}{" "}
+                  ·{" "}
                   {formatDurationLabel(
                     getSessionDurationMinutes(dialogSlot.start_time, dialogSlot.end_time),
                   )}

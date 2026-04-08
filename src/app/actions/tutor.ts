@@ -1578,6 +1578,17 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
 
   const autoApprove = (tutorMeta as { auto_approve?: boolean } | null)?.auto_approve ?? false;
 
+  const { data: tutorTzRow } = await adminClient
+    .from("user_settings")
+    .select("timezone")
+    .eq("user_id", tutorId)
+    .maybeSingle();
+
+  const tutorTimezone =
+    typeof tutorTzRow?.timezone === "string" && tutorTzRow.timezone.trim().length > 0
+      ? tutorTzRow.timezone.trim()
+      : "UTC";
+
   return {
     id: tutorId,
     email,
@@ -1590,6 +1601,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     courses,
     availability,
     autoApprove,
+    tutorTimezone,
   };
 }
 
