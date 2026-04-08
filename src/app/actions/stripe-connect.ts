@@ -3,7 +3,8 @@
 import Stripe from "stripe";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { env, getStripeSecretKey } from "@/lib/env";
+import { getStripeSecretKey } from "@/lib/env";
+import { getSiteUrl } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { PLATFORM_FEE_BPS } from "@/lib/booking-pricing";
 
@@ -203,7 +204,7 @@ export async function createAccountLink(): Promise<{ url: string }> {
   const user = await requireRole(["tutor", "admin"]);
   const accountId = await ensureTutorExpressAccountId(user.id);
   const stripe = getStripe();
-  const appUrl = env.public.appUrl ?? "http://localhost:3000";
+  const appUrl = getSiteUrl();
   const link = await stripe.accountLinks.create({
     account: accountId,
     refresh_url: `${appUrl}/api/stripe/connect/refresh`,

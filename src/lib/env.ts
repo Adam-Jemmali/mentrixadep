@@ -12,7 +12,7 @@ function getSupabaseUrl(): string {
   if (!url) {
     throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL");
   }
-  return url;
+  return url.trim();
 }
 
 function getSupabaseAnonKey(): string {
@@ -20,7 +20,7 @@ function getSupabaseAnonKey(): string {
   if (!key) {
     throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
-  return key;
+  return key.trim();
 }
 
 export function getCronSecret(): string {
@@ -28,7 +28,7 @@ export function getCronSecret(): string {
   if (!secret || secret.trim() === "") {
     throw new Error("Missing required environment variable: CRON_SECRET");
   }
-  return secret;
+  return secret.trim();
 }
 
 export function getGeminiApiKey(): string {
@@ -36,7 +36,7 @@ export function getGeminiApiKey(): string {
   if (!key || key.trim() === "") {
     throw new Error("Missing required environment variable: GEMINI_API_KEY");
   }
-  return key;
+  return key.trim();
 }
 
 export function getStripeSecretKey(): string {
@@ -44,7 +44,7 @@ export function getStripeSecretKey(): string {
   if (!key || key.trim() === "") {
     throw new Error("Missing required environment variable: STRIPE_SECRET_KEY");
   }
-  return key;
+  return key.trim();
 }
 
 export function getStripeWebhookSecret(): string {
@@ -52,7 +52,7 @@ export function getStripeWebhookSecret(): string {
   if (!secret || secret.trim() === "") {
     throw new Error("Missing required environment variable: STRIPE_WEBHOOK_SECRET");
   }
-  return secret;
+  return secret.trim();
 }
 
 export function getResendApiKey(): string {
@@ -60,7 +60,7 @@ export function getResendApiKey(): string {
   if (!key || key.trim() === "") {
     throw new Error("Missing required environment variable: RESEND_API_KEY");
   }
-  return key;
+  return key.trim();
 }
 
 export const env = {

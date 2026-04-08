@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "@/lib/env";
+import { getSiteUrl } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth";
 import { refreshConnectStatus } from "@/app/actions/stripe-connect";
@@ -7,7 +7,7 @@ import { refreshConnectStatus } from "@/app/actions/stripe-connect";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const appUrl = env.public.appUrl ?? "http://localhost:3000";
+  const appUrl = getSiteUrl();
   const accountId = req.nextUrl.searchParams.get("accountId")?.trim() ?? null;
 
   try {

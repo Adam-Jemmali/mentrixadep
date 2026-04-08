@@ -349,7 +349,7 @@ function BookingDialog({
         <div className="max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
             <DialogHeader>
-              <DialogTitle className="text-lg font-medium tracking-tight text-slate-900">
+              <DialogTitle className="text-lg font-medium tracking-tight text-white">
                 Book a session
               </DialogTitle>
               <DialogDescription className="text-sm text-slate-600">
@@ -372,7 +372,7 @@ function BookingDialog({
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-600">
+                        <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-white">
                           {((slot.tutor?.display_name ?? slot.tutor?.email ?? "Guide").slice(0, 1) || "G").toUpperCase()}
                         </div>
                       )}
