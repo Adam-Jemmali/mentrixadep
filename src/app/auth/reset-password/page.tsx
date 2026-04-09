@@ -12,6 +12,7 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { getRoleHomePath } from "@/lib/role-home";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 function isRecoveryType(value: string | null): value is "recovery" {
   return value === "recovery";
@@ -79,7 +80,7 @@ export default function ResetPasswordPage() {
 
     void bootstrap();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
         setSessionReady(true);
         setSessionChecking(false);
