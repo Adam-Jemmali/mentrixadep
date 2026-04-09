@@ -89,8 +89,17 @@ export async function POST(req: Request) {
       return jsonError("Sign in failed. Please contact support.", 403);
     }
 
+    // Block suspended / unapproved users — they must not receive a session
+    if (userData.approved === false) {
+      await supabase.auth.signOut();
+      return jsonError(
+        "Your account is not approved or has been suspended. Contact support@mentrixa.one for help.",
+        403
+      );
+    }
+
     await clearAuthFailures(lockKey);
-    const redirectTo = userData.approved === false ? "/pending-approval" : getRoleHomePath(userData.role);
+    const redirectTo = getRoleHomePath(userData.role);
     return NextResponse.json({ ok: true, redirectTo });
   } catch (error) {
     return jsonError(sanitizeError(error), 400);

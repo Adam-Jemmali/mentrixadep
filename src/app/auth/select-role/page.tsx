@@ -34,6 +34,8 @@ export default function SelectRolePage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
   async function choose(role: Role) {
     setLoading(true);
     setError(null);
@@ -49,10 +51,17 @@ export default function SelectRolePage() {
         const r = (result.role ?? role) as UserRole;
         if (result.approved) {
           router.push(getRoleHomePath(r));
+          router.refresh();
         } else {
-          router.push("/pending-approval");
+          // Not approved — inform the user and sign them out
+          setPendingMessage(
+            "Your application is under review. You'll receive an email when it's approved. Signing you out now…"
+          );
+          setTimeout(() => {
+            router.push("/auth/signin");
+            router.refresh();
+          }, 3000);
         }
-        router.refresh();
       }
     } finally {
       setLoading(false);
@@ -156,6 +165,12 @@ export default function SelectRolePage() {
       {error && (
         <div className="mt-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800 text-center">
           {error}
+        </div>
+      )}
+
+      {pendingMessage && (
+        <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 text-center">
+          {pendingMessage}
         </div>
       )}
 

@@ -299,14 +299,16 @@ async function runSupabaseAuthGuard(
     const role = userData?.role;
     const approved = userData?.approved === true;
 
-    if (!role) {
+    // Suspended / unapproved users — sign them out and send to sign-in
+    if (!approved) {
+      await supabase.auth.signOut();
       const url = request.nextUrl.clone();
-      url.pathname = "/pending-approval";
+      url.pathname = "/auth/signin";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
     const url = request.nextUrl.clone();
-    url.pathname = approved ? getRoleHomePath(role) : "/pending-approval";
+    url.pathname = getRoleHomePath(role!);
     return finalizeResponse(NextResponse.redirect(url), request, user.id);
   }
 
@@ -321,28 +323,31 @@ async function runSupabaseAuthGuard(
     const role = userData?.role;
     const approved = userData?.approved === true;
 
+    // No role yet (new account awaiting role selection) — let them pick a role
     if (!role) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/pending-approval";
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
-    }
-
-    if (!approved) {
-      if (pathname === "/pending-approval" || pathname === "/auth/select-role") {
+      if (pathname === "/auth/select-role") {
         return finalizeResponse(supabaseResponse, request, user.id);
       }
       const url = request.nextUrl.clone();
-      url.pathname = "/pending-approval";
+      url.pathname = "/auth/select-role";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
-    if (role && !checkRouteAccess(pathname, role)) {
+    // Suspended / unapproved — sign out immediately, no app access
+    if (!approved) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/signin";
+      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    }
+
+    if (!checkRouteAccess(pathname, role)) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
-    if (role) supabaseResponse.headers.set("x-user-role", role);
+    supabaseResponse.headers.set("x-user-role", role);
     supabaseResponse.headers.set("x-user-id", user.id);
   }
 
