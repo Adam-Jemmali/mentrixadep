@@ -12,7 +12,6 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { getRoleHomePath } from "@/lib/role-home";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 function isRecoveryType(value: string | null): value is "recovery" {
   return value === "recovery";
@@ -43,13 +42,20 @@ export default function ResetPasswordPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activating, setActivating] = useState(false);
+  const [gatePrimed, setGatePrimed] = useState(false);
+  const [activationPayload, setActivationPayload] = useState<
+    | { kind: "code"; value: string }
+    | { kind: "token_hash"; value: string }
+    | { kind: "hash_session"; accessToken: string; refreshToken: string }
+    | null
+  >(null);
   // true = waiting for the recovery session to be established from URL hash tokens
   const [sessionReady, setSessionReady] = useState(false);
   const [sessionChecking, setSessionChecking] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const supabase = createClient();
     const url = new URL(window.location.href);
     const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
     const queryType = url.searchParams.get("type");
@@ -64,6 +70,8 @@ export default function ResetPasswordPage() {
     const hashErrorCode = hashParams.get("error_code");
     const hashErrorDescription = hashParams.get("error_description");
     const hashError = hashParams.get("error");
+    const hashAccessToken = hashParams.get("access_token");
+    const hashRefreshToken = hashParams.get("refresh_token");
 
     const normalizedError = normalizeResetError({
       errorCode: queryErrorCode ?? hashErrorCode,
@@ -76,81 +84,112 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    const bootstrap = async () => {
-      // Support recovery links opened directly on /auth/reset-password
-      // (code flow and token_hash flow).
-      const candidateCode = queryCode ?? hashCode;
-      const candidateType = queryType ?? hashType;
-      const candidateTokenHash = queryTokenHash ?? hashTokenHash;
+    const candidateCode = queryCode ?? hashCode;
+    const candidateType = queryType ?? hashType;
+    const candidateTokenHash = queryTokenHash ?? hashTokenHash;
+    if (candidateCode) {
+      setActivationPayload({ kind: "code", value: candidateCode });
+      setSessionChecking(false);
+      return;
+    }
+    if (candidateTokenHash && isRecoveryType(candidateType)) {
+      setActivationPayload({ kind: "token_hash", value: candidateTokenHash });
+      setSessionChecking(false);
+      return;
+    }
+    if (hashAccessToken && hashRefreshToken && isRecoveryType(candidateType)) {
+      setActivationPayload({
+        kind: "hash_session",
+        accessToken: hashAccessToken,
+        refreshToken: hashRefreshToken,
+      });
+      setSessionChecking(false);
+      return;
+    }
 
-      if (candidateCode) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(candidateCode);
-        if (exchangeError) {
-          setError("Your reset link is invalid or expired. Please request a new one.");
-          setSessionChecking(false);
-          return;
-        }
-      } else if (candidateTokenHash && isRecoveryType(candidateType)) {
-        const { error: otpError } = await supabase.auth.verifyOtp({
-          token_hash: candidateTokenHash,
-          type: "recovery",
-        });
-        if (otpError) {
-          setError("Your reset link is invalid or expired. Please request a new one.");
-          setSessionChecking(false);
-          return;
-        }
-      }
-
+    // If URL has no recovery payload, allow users who already have a valid recovery session.
+    const bootstrapExistingSession = async () => {
+      const supabase = createClient();
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
         setSessionReady(true);
-        setSessionChecking(false);
+      } else {
+        setError("No reset token was found. Please request a new reset email.");
+      }
+      setSessionChecking(false);
+    };
+    void bootstrapExistingSession();
+  }, []);
+
+  async function activateResetLink() {
+    if (!activationPayload) return;
+    const gateAtRaw = sessionStorage.getItem("mx_reset_human_gate_at");
+    const gateAt = gateAtRaw ? Number(gateAtRaw) : 0;
+    const gateFresh = Number.isFinite(gateAt) && gateAt > 0 && Date.now() - gateAt <= 10 * 60 * 1000;
+    if (!gateFresh && !gatePrimed) {
+      sessionStorage.setItem("mx_reset_human_gate_at", String(Date.now()));
+      setGatePrimed(true);
+      setError(null);
+      return;
+    }
+
+    setActivating(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      if (activationPayload.kind === "code") {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(activationPayload.value);
+        if (exchangeError) {
+          setError("Your reset link is invalid or expired. Please request a new one.");
+          return;
+        }
+      } else if (activationPayload.kind === "token_hash") {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          token_hash: activationPayload.value,
+          type: "recovery",
+        });
+        if (otpError) {
+          setError("Your reset link is invalid or expired. Please request a new one.");
+          return;
+        }
+      } else {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: activationPayload.accessToken,
+          refresh_token: activationPayload.refreshToken,
+        });
+        if (sessionError) {
+          setError("Your reset link is invalid or expired. Please request a new one.");
+          return;
+        }
+      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setError("Could not establish a reset session. Please request a new link.");
         return;
       }
-      // No session yet — wait for PASSWORD_RECOVERY event from hash tokens.
-    };
 
-    void bootstrap();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
-        setSessionReady(true);
-        setSessionChecking(false);
+      // Latest-link-only guard: reject if user metadata indicates a newer reset request.
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const latestRid = String(user?.user_metadata?.password_reset_rid ?? "");
+      const incomingRid = new URL(window.location.href).searchParams.get("rid") ?? "";
+      if (incomingRid && latestRid && incomingRid !== latestRid) {
+        await supabase.auth.signOut();
+        setSessionReady(false);
+        setError("This reset link is no longer current. Please use the latest reset email.");
+        return;
       }
-    });
-
-    // Session can appear shortly after route hydration; poll briefly to avoid false expiry errors.
-    const poll = window.setInterval(async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        setSessionReady(true);
-        setSessionChecking(false);
-        window.clearInterval(poll);
-      }
-    }, 700);
-
-    // Timeout — if no session after 12s, show resilient guidance
-    const timeout = setTimeout(() => {
-      setSessionChecking((prev) => {
-        if (prev) {
-          setError(
-            "Could not establish a reset session. This can happen if an older link was clicked or a mail scanner opened the link first. Request a new reset email and open only the latest link."
-          );
-          return false;
-        }
-        return prev;
-      });
-    }, 12000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearInterval(poll);
-      clearTimeout(timeout);
-    };
-  }, []);
+      setSessionReady(true);
+      setActivationPayload(null);
+    } finally {
+      setActivating(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -223,6 +262,25 @@ export default function ResetPasswordPage() {
             <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600 mb-3" />
             <p className="text-sm text-text-muted">Verifying your reset link…</p>
           </div>
+        ) : activationPayload && !sessionReady ? (
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">
+              For security, click below to activate your reset link, then set your new password.
+            </p>
+            {error && (
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3">
+                <p className="text-destructive text-sm font-medium">{error}</p>
+              </div>
+            )}
+            <Button
+              type="button"
+              className="btn-primary w-full py-3 text-base"
+              onClick={activateResetLink}
+              disabled={activating}
+            >
+              {activating ? "Activating…" : gatePrimed ? "Click once more to confirm" : "Continue to reset password"}
+            </Button>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -282,7 +340,7 @@ export default function ResetPasswordPage() {
             {error && (
               <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3">
                 <p className="text-destructive text-sm font-medium">{error}</p>
-                {error.includes("expired") && (
+                {(error.includes("expired") || error.includes("invalid")) && (
                   <Link
                     href="/auth/forgot-password"
                     className="mt-2 inline-block text-sm text-brand-600 hover:underline font-medium"

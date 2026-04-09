@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -51,18 +50,18 @@ export default function ForgotPasswordPage() {
     setSuccess(false);
 
     try {
-      const supabase = createClient();
-      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/reset-password` : "";
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
-
-      if (resetError) {
-        const isRateLimited =
-          resetError.message?.includes("429") ||
-          resetError.message?.toLowerCase().includes("too many");
+      const res = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        const isRateLimited = msg.includes("429") || msg.toLowerCase().includes("too many");
         setError(
           isRateLimited
             ? "Too many reset attempts. Please wait a few minutes and try again."
-            : resetError.message
+            : "Could not send reset email right now. Please try again."
         );
         setLoading(false);
         return;
@@ -85,17 +84,18 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/reset-password` : "";
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
-      if (resetError) {
-        const isRateLimited =
-          resetError.message?.includes("429") ||
-          resetError.message?.toLowerCase().includes("too many");
+      const res = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        const isRateLimited = msg.includes("429") || msg.toLowerCase().includes("too many");
         setError(
           isRateLimited
             ? "Too many reset attempts. Please wait a few minutes and try again."
-            : resetError.message
+            : "Could not send reset email right now. Please try again."
         );
       } else {
         setSecondsLeft(20 * 60);

@@ -28,6 +28,7 @@ const publicRoutes = new Set([
   "/auth/signin",
   "/auth/signup",
   "/auth/forgot-password",
+  "/auth/confirm-reset",
   "/auth/reset-password",
   "/auth/callback",
   "/offline",
