@@ -173,12 +173,16 @@ export function GoogleSignInButton({
           }
           const host = containerRef.current;
           host.innerHTML = "";
-          window.google.accounts.id.initialize({
-            client_id: clientId,
-            callback: (r) => {
-              void onCredential(r);
-            },
-          });
+          const g = window as typeof window & { __mxGsiInitialized?: boolean };
+          if (!g.__mxGsiInitialized) {
+            window.google.accounts.id.initialize({
+              client_id: clientId,
+              callback: (r) => {
+                void onCredential(r);
+              },
+            });
+            g.__mxGsiInitialized = true;
+          }
           window.google.accounts.id.renderButton(host, {
             theme: "outline",
             size: "large",

@@ -25,6 +25,9 @@ const publicRoutes = new Set([
   "/api/health",
   /** Optional-auth: handler uses getCurrentUser(); avoids redirect for guests with ?ref cookie */
   "/api/referral/finalize",
+  "/api/auth/signin",
+  "/api/auth/signup",
+  "/api/auth/request-password-reset",
   "/auth/signin",
   "/auth/signup",
   "/auth/forgot-password",
