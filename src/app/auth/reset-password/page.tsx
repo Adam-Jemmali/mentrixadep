@@ -18,6 +18,24 @@ function isRecoveryType(value: string | null): value is "recovery" {
   return value === "recovery";
 }
 
+function normalizeResetError(params: {
+  errorCode: string | null;
+  errorDescription: string | null;
+  error: string | null;
+}): string | null {
+  const code = (params.errorCode ?? "").toLowerCase();
+  const description = (params.errorDescription ?? "").toLowerCase();
+  const err = (params.error ?? "").toLowerCase();
+
+  if (code === "otp_expired" || description.includes("expired")) {
+    return "Your reset link has expired or was already used. Request a new reset email and open only the newest link.";
+  }
+  if (err === "access_denied") {
+    return "This reset link is invalid. Request a new reset email and try again from the latest message.";
+  }
+  return null;
+}
+
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,14 +51,27 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
     const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
     const queryType = url.searchParams.get("type");
     const queryCode = url.searchParams.get("code");
     const queryTokenHash = url.searchParams.get("token_hash");
     const queryErrorCode = url.searchParams.get("error_code");
+    const queryErrorDescription = url.searchParams.get("error_description");
+    const queryError = url.searchParams.get("error");
+    const hashType = hashParams.get("type");
+    const hashCode = hashParams.get("code");
+    const hashTokenHash = hashParams.get("token_hash");
+    const hashErrorCode = hashParams.get("error_code");
+    const hashErrorDescription = hashParams.get("error_description");
+    const hashError = hashParams.get("error");
 
-    // Handle explicit Supabase callback errors early.
-    if (queryErrorCode === "otp_expired") {
-      setError("Your reset link has expired. Please request a new password reset link.");
+    const normalizedError = normalizeResetError({
+      errorCode: queryErrorCode ?? hashErrorCode,
+      errorDescription: queryErrorDescription ?? hashErrorDescription,
+      error: queryError ?? hashError,
+    });
+    if (normalizedError) {
+      setError(normalizedError);
       setSessionChecking(false);
       return;
     }
@@ -48,16 +79,20 @@ export default function ResetPasswordPage() {
     const bootstrap = async () => {
       // Support recovery links opened directly on /auth/reset-password
       // (code flow and token_hash flow).
-      if (queryCode) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(queryCode);
+      const candidateCode = queryCode ?? hashCode;
+      const candidateType = queryType ?? hashType;
+      const candidateTokenHash = queryTokenHash ?? hashTokenHash;
+
+      if (candidateCode) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(candidateCode);
         if (exchangeError) {
           setError("Your reset link is invalid or expired. Please request a new one.");
           setSessionChecking(false);
           return;
         }
-      } else if (queryTokenHash && isRecoveryType(queryType)) {
+      } else if (candidateTokenHash && isRecoveryType(candidateType)) {
         const { error: otpError } = await supabase.auth.verifyOtp({
-          token_hash: queryTokenHash,
+          token_hash: candidateTokenHash,
           type: "recovery",
         });
         if (otpError) {
@@ -87,21 +122,32 @@ export default function ResetPasswordPage() {
       }
     });
 
-    // Timeout — if no session after 7s, show error
+    // Session can appear shortly after route hydration; poll briefly to avoid false expiry errors.
+    const poll = window.setInterval(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setSessionReady(true);
+        setSessionChecking(false);
+        window.clearInterval(poll);
+      }
+    }, 700);
+
+    // Timeout — if no session after 12s, show resilient guidance
     const timeout = setTimeout(() => {
       setSessionChecking((prev) => {
         if (prev) {
           setError(
-            "Could not establish a reset session. Your link may have expired. Please request a new password reset."
+            "Could not establish a reset session. This can happen if an older link was clicked or a mail scanner opened the link first. Request a new reset email and open only the latest link."
           );
           return false;
         }
         return prev;
       });
-    }, 7000);
+    }, 12000);
 
     return () => {
       subscription.unsubscribe();
+      clearInterval(poll);
       clearTimeout(timeout);
     };
   }, []);

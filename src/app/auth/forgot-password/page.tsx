@@ -16,6 +16,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(20 * 60);
 
   useEffect(() => {
     const err = new URL(window.location.href).searchParams.get("error");
@@ -23,6 +24,25 @@ export default function ForgotPasswordPage() {
       setError("That reset link has expired. Please request a new password reset email.");
     }
   }, []);
+
+  useEffect(() => {
+    if (!success) return;
+    setSecondsLeft(20 * 60);
+    const id = window.setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(id);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [success]);
+
+  const timerLabel = `${Math.floor(secondsLeft / 60)
+    .toString()
+    .padStart(2, "0")}:${(secondsLeft % 60).toString().padStart(2, "0")}`;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,6 +80,39 @@ export default function ForgotPasswordPage() {
     setLoading(false);
   }
 
+  async function handleResend() {
+    if (!email.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/reset-password` : "";
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (resetError) {
+        const isRateLimited =
+          resetError.message?.includes("429") ||
+          resetError.message?.toLowerCase().includes("too many");
+        setError(
+          isRateLimited
+            ? "Too many reset attempts. Please wait a few minutes and try again."
+            : resetError.message
+        );
+      } else {
+        setSecondsLeft(20 * 60);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isRateLimited = msg.includes("429") || msg.toLowerCase().includes("too many");
+      setError(
+        isRateLimited
+          ? "Too many reset attempts. Please wait a few minutes and try again."
+          : msg || "Something went wrong"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (success) {
     return (
       <AuthLayout>
@@ -74,6 +127,26 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-text-muted text-center">
               We sent a password reset link to <strong className="text-text-primary">{email}</strong>. Click the link to set a new password.
             </p>
+            <p className="text-xs text-text-muted text-center">
+              Reset link target validity window: 20 minutes (countdown: {timerLabel})
+            </p>
+            <p className="text-xs text-text-muted text-center">
+              Use only the newest reset email. Requesting a new one invalidates previous links.
+            </p>
+            {error && (
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3">
+                <p className="text-destructive text-sm font-medium text-center">{error}</p>
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full py-3"
+              onClick={handleResend}
+              disabled={loading}
+            >
+              {loading ? "Resending…" : "Resend reset email"}
+            </Button>
             <Button asChild className="w-full btn-primary py-3">
               <Link href="/auth/signin">
                 Back to Sign in
