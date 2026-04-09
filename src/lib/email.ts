@@ -988,10 +988,11 @@ export async function sendWaitlistDecisionEmail(
         Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
       </p>
       <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
-        Your current waitlist request as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> was not approved.
-        You can re-join the waitlist anytime with updated details.
+        Your waitlist request as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> was not approved.
       </p>
-      ${ctaButton(`${APP_URL}/#waitlist`, "Re-join waitlist")}
+      <p style="color:#737373;font-size:13px;line-height:1.55;margin:0 0 20px;">
+        If you believe this is a mistake, please contact us at <a href="mailto:support@mentrixa.one" style="color:#60a5fa;">support@mentrixa.one</a>.
+      </p>
     `;
 
   await sendEmailFrom(

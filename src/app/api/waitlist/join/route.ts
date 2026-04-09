@@ -28,6 +28,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, approved: true });
     }
 
+    if (existing?.status === "rejected") {
+      return NextResponse.json(
+        { error: "Your application has been rejected. Please contact support@mentrixa.one if you believe this is a mistake." },
+        { status: 403 }
+      );
+    }
+
     const now = new Date().toISOString();
     if (existing?.id) {
       await admin

@@ -127,6 +127,24 @@ export async function rejectRegistrationRequest(requestId: string) {
       throw new Error(`Failed to reject request: ${sanitizeError(error)}`);
     }
 
+    // Remove the user entirely so they cannot access the app.
+    // We find their auth account by email, delete from users table, then from auth.users.
+    if (request?.email) {
+      try {
+        const { data: authUsers } = await adminClient.auth.admin.listUsers();
+        const authUser = authUsers?.users.find((u) => u.email === request.email);
+        if (authUser) {
+          // Delete from users table first (FK may cascade, but be explicit)
+          await adminClient.from("users").delete().eq("id", authUser.id);
+          // Delete from Supabase auth entirely
+          await adminClient.auth.admin.deleteUser(authUser.id);
+        }
+      } catch (deleteErr) {
+        // Best-effort: log but don't fail the rejection
+        console.error("[rejectRegistrationRequest] failed to delete user account:", deleteErr);
+      }
+    }
+
     if (request?.email && request?.role) {
       void sendWaitlistDecisionEmail(request.email, request.role, "rejected");
     }

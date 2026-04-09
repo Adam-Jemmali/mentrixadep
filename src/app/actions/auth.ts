@@ -64,6 +64,18 @@ export async function applyRoleAndSyncProfile(
   const supabase = await createClient();
   const autoApprove = await fetchAutoApproveRegistrationsEnabled();
   const waitlistStatus = await getRegistrationRequestStatus(email);
+
+  // Rejected emails cannot re-register — delete the newly created auth account and block
+  if (waitlistStatus === "rejected") {
+    const admin = createAdminClient();
+    try {
+      await admin.auth.admin.deleteUser(userId);
+    } catch (e) {
+      console.error("[applyRoleAndSyncProfile] failed to delete rejected user from auth:", e);
+    }
+    throw new Error("Your application was not approved. Contact support@mentrixa.one for assistance.");
+  }
+
   const approved = waitlistStatus === "approved" || (role === "student" && autoApprove);
 
   const { error: uErr } = await supabase
@@ -129,6 +141,7 @@ export async function applyRoleAndSyncProfile(
 
   revalidatePath("/", "layout");
 }
+
 
 async function clearOAuthCookies(): Promise<void> {
   const store = await cookies();
@@ -365,7 +378,7 @@ export async function setUserRole(role: "student" | "tutor") {
       approved: row?.approved ?? false,
       role: row?.role ?? role,
     };
-  } catch {
-    return { error: "An unexpected error occurred" };
+  } catch (err) {
+    return { error: sanitizeError(err) };
   }
 }
