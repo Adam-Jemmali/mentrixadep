@@ -5,11 +5,6 @@ import { sendPasswordResetEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
-function jsonOk() {
-  // Generic response avoids account enumeration.
-  return NextResponse.json({ ok: true, emailQueued: false as boolean });
-}
-
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => ({}))) as { email?: string };
