@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 function jsonOk() {
   // Generic response avoids account enumeration.
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, emailQueued: false as boolean });
 }
 
 export async function POST(req: Request) {
@@ -16,23 +16,9 @@ export async function POST(req: Request) {
     const email = validateEmail(body.email);
     const admin = createAdminClient();
 
-    const { data: userRow } = await admin
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-
-    // Always return OK to caller, regardless of user existence.
-    if (!userRow?.id) return jsonOk();
-
     const rid = String(Date.now());
     const origin = new URL(req.url).origin;
     const redirectTo = `${origin}/auth/confirm-reset?rid=${encodeURIComponent(rid)}`;
-
-    // Store latest reset request marker in auth user metadata.
-    await admin.auth.admin.updateUserById(userRow.id, {
-      user_metadata: { password_reset_rid: rid },
-    });
 
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: "recovery",
@@ -40,14 +26,22 @@ export async function POST(req: Request) {
       options: { redirectTo },
     });
     if (linkError || !linkData?.properties?.action_link) {
-      return jsonOk();
+      return NextResponse.json({ ok: true, emailQueued: false });
+    }
+
+    // Best effort: attach latest-link marker for stale-link rejection.
+    const userId = linkData.user?.id;
+    if (userId) {
+      await admin.auth.admin.updateUserById(userId, {
+        user_metadata: { password_reset_rid: rid },
+      });
     }
 
     await sendPasswordResetEmail(email, { resetLink: linkData.properties.action_link });
-    return jsonOk();
+    return NextResponse.json({ ok: true, emailQueued: true });
   } catch (error) {
     console.error("[auth/request-password-reset] failed:", sanitizeError(error));
-    return jsonOk();
+    return NextResponse.json({ ok: true, emailQueued: false });
   }
 }
 

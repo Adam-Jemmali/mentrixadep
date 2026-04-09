@@ -55,14 +55,19 @@ export default function ForgotPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
       });
+      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; emailQueued?: boolean };
       if (!res.ok) {
-        const msg = await res.text();
-        const isRateLimited = msg.includes("429") || msg.toLowerCase().includes("too many");
+        const isRateLimited = res.status === 429;
         setError(
           isRateLimited
             ? "Too many reset attempts. Please wait a few minutes and try again."
             : "Could not send reset email right now. Please try again."
         );
+        setLoading(false);
+        return;
+      }
+      if (body.emailQueued === false) {
+        setError("Could not send reset email right now. Please try again.");
         setLoading(false);
         return;
       }
@@ -89,14 +94,16 @@ export default function ForgotPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
       });
+      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; emailQueued?: boolean };
       if (!res.ok) {
-        const msg = await res.text();
-        const isRateLimited = msg.includes("429") || msg.toLowerCase().includes("too many");
+        const isRateLimited = res.status === 429;
         setError(
           isRateLimited
             ? "Too many reset attempts. Please wait a few minutes and try again."
             : "Could not send reset email right now. Please try again."
         );
+      } else if (body.emailQueued === false) {
+        setError("Could not send reset email right now. Please try again.");
       } else {
         setSecondsLeft(20 * 60);
       }
