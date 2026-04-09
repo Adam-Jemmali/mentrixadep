@@ -18,11 +18,16 @@ export async function POST(req: Request) {
     }
 
     const admin = createAdminClient();
-    const { data: existing } = await admin
+    const { data: existing, error: fetchError } = await admin
       .from("registration_requests")
       .select("id, status")
       .eq("email", email)
       .maybeSingle();
+
+    if (fetchError) {
+      console.error("[waitlist/join] fetch error:", fetchError.message, fetchError.details);
+      return NextResponse.json({ error: "Could not check waitlist status. Please try again." }, { status: 500 });
+    }
 
     if (existing?.status === "approved") {
       return NextResponse.json({ ok: true, approved: true });
@@ -35,26 +40,31 @@ export async function POST(req: Request) {
       );
     }
 
-    const now = new Date().toISOString();
     if (existing?.id) {
-      await admin
+      const { error: updateError } = await admin
         .from("registration_requests")
-        .update({ role, status: "pending", updated_at: now })
+        .update({ role, status: "pending" })
         .eq("id", existing.id);
+      if (updateError) {
+        console.error("[waitlist/join] update error:", updateError.message, updateError.details);
+        return NextResponse.json({ error: "Could not update waitlist entry. Please try again." }, { status: 500 });
+      }
     } else {
-      await admin.from("registration_requests").insert({
+      const { error: insertError } = await admin.from("registration_requests").insert({
         email,
         role,
         status: "pending",
-        created_at: now,
-        updated_at: now,
       });
+      if (insertError) {
+        console.error("[waitlist/join] insert error:", insertError.message, insertError.details, insertError.code);
+        return NextResponse.json({ error: "Could not add to waitlist. Please try again." }, { status: 500 });
+      }
     }
 
     void sendWaitlistReceivedEmail(email, role);
     return NextResponse.json({ ok: true, approved: false });
   } catch (e) {
-    console.error("[waitlist/join] failed:", e);
-    return NextResponse.json({ error: "Failed to join waitlist." }, { status: 500 });
+    console.error("[waitlist/join] unexpected error:", e);
+    return NextResponse.json({ error: "An unexpected error occurred. Please try again." }, { status: 500 });
   }
 }

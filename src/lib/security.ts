@@ -500,11 +500,13 @@ export function validateApiCsrf(request: {
   return false;
 }
 
-/** Paths where CSRF checks are skipped (webhooks, cron, health). */
+/** Paths where CSRF checks are skipped (webhooks, cron, health, public waitlist). */
 export function isCsrfExemptPath(pathname: string): boolean {
   if (pathname.startsWith("/api/stripe/webhook")) return true;
   if (pathname.startsWith("/api/cron/")) return true;
   if (pathname === "/api/health") return true;
+  // Public unauthenticated endpoints — no session involved, admin service-role client used server-side
+  if (pathname.startsWith("/api/waitlist/")) return true;
   return false;
 }
 
