@@ -134,7 +134,9 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
 
   const uid = user?.id;
   const isStudent = user?.role === "student";
-  const showStreak = Boolean(user && isStudent && pathname.startsWith("/student"));
+  const showStreak = Boolean(
+    user && user.approved && isStudent && pathname.startsWith("/student"),
+  );
 
   const refreshStreak = useCallback(async () => {
     if (!uid || !showStreak) return;
@@ -175,7 +177,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
   }, [refreshStreak]);
 
   useEffect(() => {
-    if (!uid) return;
+    if (!uid || !user?.approved) return;
     const supabase = createClient();
     const channel = supabase
       .channel(`user_achievements:${uid}`)
@@ -219,7 +221,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [uid]);
+  }, [uid, user?.approved]);
 
   const dismissStreakBanner = useCallback(() => {
     if (uid && typeof window !== "undefined") {
@@ -231,7 +233,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
     setStreakBanner(null);
   }, [uid]);
 
-  if (!user || !isStudent) return null;
+  if (!user || !isStudent || !user.approved) return null;
 
   return (
     <>
@@ -478,7 +480,7 @@ export function RootLayoutClient({
 }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const isStudent = user?.role === "student";
+  const isApprovedStudent = user?.role === "student" && user.approved === true;
   const isVideoRoute = pathname.startsWith("/video/");
 
   return (
@@ -486,20 +488,23 @@ export function RootLayoutClient({
       <ShellEffects />
       <AppNavOrNothing user={user} />
       <LevelUpExperience user={user} />
-      {isStudent && user ? (
+      {isApprovedStudent && user ? (
         <>
           <StudentMobileBottomNav userId={user.id} />
           <PushNotificationOptIn />
         </>
       ) : null}
-      {user && !isVideoRoute ? <FeedbackWidget /> : null}
+      {user && user.approved && !isVideoRoute ? <FeedbackWidget /> : null}
       <CookieConsentBanner />
       <main
         className={cn(
           "relative min-h-screen",
           isHome
             ? "bg-[#0B1120]"
-            : cn("pt-14 bg-[#FAFAFA] bg-mesh-blue", isStudent && "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"),
+            : cn(
+                "pt-14 bg-[#FAFAFA] bg-mesh-blue",
+                isApprovedStudent && "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
+              ),
         )}
       >
         {isHome ? (

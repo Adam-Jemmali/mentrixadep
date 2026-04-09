@@ -123,23 +123,32 @@ function NavigationInner({ user }: NavigationProps) {
   const mobileLinkRefs = useRef<HTMLAnchorElement[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = useMemo(() => (user ? getNavItems(user.role) : []), [user]);
-  const profileHref = user ? profilePageHref(user.role, user.id) : null;
+  /** Waitlist / admin not approved yet — show logo + sign out only (matches middleware: no app routes). */
+  const appShellLocked = Boolean(user && !user.approved && user.role !== "admin");
+
+  const navItems = useMemo(() => {
+    if (!user || appShellLocked) return [];
+    return getNavItems(user.role);
+  }, [user, appShellLocked]);
+  const profileHref = user && !appShellLocked ? profilePageHref(user.role, user.id) : null;
   const initials = user ? getInitials(user.displayName, user.email) : "M";
   const primaryLabel =
     user?.displayName?.trim() ||
     user?.email?.split("@")[0] ||
     "Account";
 
-  const logoHref =
-    user?.role === "admin"
+  const logoHref = appShellLocked
+    ? "/"
+    : user?.role === "admin"
       ? "/dashboard"
       : user?.role === "tutor"
         ? "/tutor"
         : user
           ? "/student"
           : "/";
-  const showRoleLogo = user?.role === "student" || user?.role === "tutor";
+  const showRoleLogo = Boolean(
+    user && (user.role === "student" || user.role === "tutor") && !appShellLocked,
+  );
 
   const isActive = useCallback((href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
