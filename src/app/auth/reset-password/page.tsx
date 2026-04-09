@@ -57,12 +57,16 @@ export default function ResetPasswordPage() {
 
       const { data: userRow } = await supabase
         .from("users")
-        .select("role")
+        .select("role, approved")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (!userRow?.role) {
-        setError("Could not determine your account role. Please sign in again.");
+      // Sign out after reset regardless — clean state
+      await supabase.auth.signOut();
+
+      if (!userRow?.role || userRow.approved === false) {
+        // Unapproved or no role — send to sign-in with success message
+        router.push("/auth/signin?reset=1");
         return;
       }
 

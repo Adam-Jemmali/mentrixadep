@@ -33,6 +33,12 @@ export async function GET(request: Request) {
       redirect("/auth/signin?error=oauth");
     }
 
+    // Password reset — go directly to reset page to preserve the recovery session.
+    // Do NOT call resolveOAuthSessionRedirect which would sign out unapproved users.
+    if (otpTypeParam === "recovery") {
+      redirect("/auth/reset-password");
+    }
+
     try {
       const path = await resolveOAuthSessionRedirect();
       redirect(path);
@@ -53,6 +59,11 @@ export async function GET(request: Request) {
       redirect("/auth/signin?error=confirm");
     }
 
+    // Password reset via token_hash — go directly to reset page
+    if (otpTypeParam === "recovery") {
+      redirect("/auth/reset-password");
+    }
+
     try {
       const path = await resolveOAuthSessionRedirect();
       redirect(path);
@@ -64,3 +75,4 @@ export async function GET(request: Request) {
 
   redirect("/auth/signin?error=callback");
 }
+

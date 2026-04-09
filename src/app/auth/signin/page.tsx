@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,8 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const passwordReset = searchParams.get("reset") === "1";
 
   useEffect(() => {
     const wrapper = document.getElementById("auth-form-wrapper");
@@ -87,6 +89,12 @@ export default function SignInPage() {
       </p>
 
       <GoogleSignInButton variant="signin" />
+
+      {passwordReset && (
+        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 text-center">
+          ✓ Password updated successfully. Please sign in with your new password.
+        </div>
+      )}
 
       <div className="flex items-center gap-3 my-5">
         <span className="flex-1 h-px bg-slate-200" />
