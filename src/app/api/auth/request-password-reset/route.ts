@@ -32,7 +32,21 @@ export async function POST(req: Request) {
       });
     }
 
-    await sendPasswordResetEmail(email, { resetLink: linkData.properties.action_link });
+    const tokenHashFromProps = (linkData.properties as { hashed_token?: string } | undefined)?.hashed_token;
+    const tokenHashFromActionLink = (() => {
+      try {
+        const actionUrl = new URL(linkData.properties.action_link);
+        return actionUrl.searchParams.get("token") ?? undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+    const tokenHash = tokenHashFromProps ?? tokenHashFromActionLink;
+    const appResetLink = tokenHash
+      ? `${origin}/auth/confirm-reset?rid=${encodeURIComponent(rid)}&type=recovery&token_hash=${encodeURIComponent(tokenHash)}`
+      : linkData.properties.action_link;
+
+    await sendPasswordResetEmail(email, { resetLink: appResetLink });
     return NextResponse.json({ ok: true, emailQueued: true });
   } catch (error) {
     console.error("[auth/request-password-reset] failed:", sanitizeError(error));
