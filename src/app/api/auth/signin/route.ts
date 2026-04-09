@@ -89,6 +89,21 @@ export async function POST(req: Request) {
       return jsonError("Sign in failed. Please contact support.", 403);
     }
 
+    // Enforce waitlist decision gates even if a stale auth account still exists.
+    const { data: waitlistRow } = await supabase
+      .from("registration_requests")
+      .select("status")
+      .eq("email", email)
+      .maybeSingle();
+    if (waitlistRow?.status === "rejected") {
+      await registerAuthFailure(lockKey);
+      await supabase.auth.signOut();
+      return jsonError(
+        "Your waitlist application was rejected. Please contact support@mentrixa.one if you believe this is a mistake.",
+        403
+      );
+    }
+
     // Unapproved users can only access pending-approval flow.
     if (userData.approved === false) {
       await clearAuthFailures(lockKey);

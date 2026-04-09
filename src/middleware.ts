@@ -23,6 +23,8 @@ import { REFERRAL_COOKIE_NAME, REFERRAL_COOKIE_MAX_AGE_SEC } from "@/lib/referra
 const publicRoutes = new Set([
   "/",
   "/api/health",
+  "/api/waitlist/join",
+  "/api/waitlist/status",
   /** Optional-auth: handler uses getCurrentUser(); avoids redirect for guests with ?ref cookie */
   "/api/referral/finalize",
   "/api/auth/signin",

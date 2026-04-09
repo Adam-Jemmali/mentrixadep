@@ -344,13 +344,24 @@ export function HomePageClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role: waitlistRole }),
       });
-      const json = (await res.json().catch(() => ({}))) as { approved?: boolean; error?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        approved?: boolean;
+        error?: string;
+        message?: string;
+        status?: "pending" | "approved" | "rejected";
+      };
       if (!res.ok) {
-        setWaitlistMsg(json.error ?? "Could not join waitlist.");
+        if (json.status === "pending") {
+          setWaitlistMsg("You have already applied to the waitlist. Please wait for an admin decision.");
+        } else if (json.status === "rejected") {
+          setWaitlistMsg("Your waitlist application was rejected. Contact support@mentrixa.one if you believe this is a mistake.");
+        } else {
+          setWaitlistMsg(json.error ?? "Could not join waitlist.");
+        }
       } else if (json.approved) {
-        setWaitlistMsg("You are already approved. You can sign up now.");
+        setWaitlistMsg(json.message ?? "You already applied and are approved. You can sign up now.");
       } else {
-        setWaitlistMsg("You are on the waitlist. Check your email for confirmation.");
+        setWaitlistMsg(json.message ?? "You are on the waitlist. Check your email for confirmation.");
       }
     } catch {
       setWaitlistMsg("Could not join waitlist.");

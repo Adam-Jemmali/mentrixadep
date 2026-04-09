@@ -48,14 +48,35 @@ export async function POST(req: Request) {
     }
 
     const admin = createAdminClient();
-    const { data: reqRow } = await admin
+    const { data: reqRow, error: reqErr } = await admin
       .from("registration_requests")
       .select("status")
       .eq("email", email)
       .maybeSingle();
-    if (reqRow?.status !== "approved") {
-      // Generic message reduces waitlist-state enumeration.
-      return jsonError("Your account is not ready for signup yet. Check your invitation approval status.", 403);
+    if (reqErr) {
+      console.error("[auth/signup] registration status lookup failed:", reqErr.message, reqErr.details);
+      return jsonError("Could not verify your waitlist status right now. Please try again.", 500);
+    }
+    if (reqRow?.status === "rejected") {
+      return jsonError(
+        "Your waitlist application was rejected. Please contact support@mentrixa.one if this seems incorrect.",
+        403,
+        { waitlistStatus: "rejected" }
+      );
+    }
+    if (reqRow?.status === "pending") {
+      return jsonError(
+        "You have already applied to the waitlist. Please wait for admin approval before signing up.",
+        403,
+        { waitlistStatus: "pending" }
+      );
+    }
+    if (!reqRow || reqRow.status !== "approved") {
+      return jsonError(
+        "Join the waitlist first using your email, then complete signup after approval.",
+        403,
+        { waitlistStatus: "missing" }
+      );
     }
 
     const store = await cookies();

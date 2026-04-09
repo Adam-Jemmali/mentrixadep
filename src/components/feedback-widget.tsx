@@ -87,7 +87,7 @@ export function FeedbackWidget() {
         <DialogContent className="flex max-h-[85dvh] w-[calc(100vw-1.5rem)] max-w-lg flex-col gap-0 overflow-y-auto overflow-x-hidden p-4 sm:w-full sm:p-6">
           <form onSubmit={submitFeedback} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>Send feedback</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-white">Send feedback</DialogTitle>
               <DialogDescription>
                 Tell us what was confusing, broken, or missing. We read every submission.
               </DialogDescription>
@@ -108,8 +108,8 @@ export function FeedbackWidget() {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
-                Cancel
+              <Button type="button" className="text-white" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+                Cancel  
               </Button>
               <Button type="submit" disabled={busy || !message.trim()}>
                 {busy ? "Sending..." : "Send feedback"}

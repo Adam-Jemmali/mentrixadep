@@ -16,8 +16,8 @@ export function PendingApprovalContent({ role }: Props) {
     : "Almost there";
 
   const subtext = isGuide
-    ? "Thanks for applying to teach on Mentrixa. Our team usually reviews Guide profiles within 24 hours. Learners with a university email are often auto-approved when open enrollment is on—your Guide application gets a manual check so we keep quality high."
-    : "Your Learner account is ready as soon as registration is approved. If open enrollment is enabled, you may already have access—try refreshing or signing in again in a moment.";
+    ? "Thanks for applying to teach on Mentrixa. Our team usually reviews Guide profiles within 24 hours. While your request is pending, app access stays locked."
+    : "Your account is waiting for admin approval. While your request is pending, app access stays locked.";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-surface-soft">
