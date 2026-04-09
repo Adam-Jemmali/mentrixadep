@@ -53,7 +53,7 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
         <div className="hidden lg:flex flex-col justify-between p-12 bg-slate-900 text-white relative overflow-hidden">
           <div className="relative z-10 flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3 group">
-              <MentrixaLogoMark size="md" priority className="opacity-95 group-hover:opacity-100 transition-opacity" />
+              <MentrixaLogoMark size="md" className="opacity-95 group-hover:opacity-100 transition-opacity" />
               <span className="text-[15px] font-bold tracking-[-0.04em] text-white">Mentrixa</span>
             </Link>
           </div>
@@ -123,7 +123,7 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
               href="/"
               className="rounded-xl outline-none ring-offset-2 ring-offset-[#FAFAFA] focus-visible:ring-2 focus-visible:ring-blue-500/40"
             >
-              <MentrixaLogoMark size={isSelectRole ? "md" : "lg"} priority />
+              <MentrixaLogoMark size={isSelectRole ? "md" : "lg"} />
             </Link>
           </div>
           {children}

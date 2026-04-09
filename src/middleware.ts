@@ -48,6 +48,7 @@ const publicPrefixes = ["/tutor/"];
 const authRoutesForRateLimit = ["/auth/signin", "/auth/signup"];
 
 const authRoutes = ["/auth/signin", "/auth/signup"];
+const pendingApprovalRoute = "/pending-approval";
 
 const routeRoleMap: Record<string, string[]> = {
   "/admin": ["admin"],
@@ -114,8 +115,34 @@ function finalizeResponse(
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
   const method = request.method;
+
+  // Supabase can fallback recovery links to SITE_URL (/). Normalize here server-side.
+  if (pathname === "/" && method === "GET") {
+    const errorCode = searchParams.get("error_code");
+    if (errorCode === "otp_expired") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/forgot-password";
+      url.search = "?error=expired";
+      return finalizeResponse(NextResponse.redirect(url), request, null);
+    }
+
+    const type = searchParams.get("type");
+    const code = searchParams.get("code");
+    const tokenHash = searchParams.get("token_hash");
+    if (type === "recovery" && (code || tokenHash)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/reset-password";
+      url.search = "";
+      if (code) url.searchParams.set("code", code);
+      if (tokenHash) {
+        url.searchParams.set("token_hash", tokenHash);
+        url.searchParams.set("type", "recovery");
+      }
+      return finalizeResponse(NextResponse.redirect(url), request, null);
+    }
+  }
 
   if (method === "OPTIONS") {
     return applySecurityHeaders(NextResponse.next({ request }));
@@ -299,11 +326,10 @@ async function runSupabaseAuthGuard(
     const role = userData?.role;
     const approved = userData?.approved === true;
 
-    // Suspended / unapproved users — sign them out and send to sign-in
+    // Unapproved users are restricted to the pending-approval flow.
     if (!approved) {
-      await supabase.auth.signOut();
       const url = request.nextUrl.clone();
-      url.pathname = "/auth/signin";
+      url.pathname = pendingApprovalRoute;
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
@@ -333,11 +359,13 @@ async function runSupabaseAuthGuard(
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
-    // Suspended / unapproved — sign out immediately, no app access
+    // Unapproved users are allowed only on /pending-approval and auth public routes.
     if (!approved) {
-      await supabase.auth.signOut();
+      if (pathname === pendingApprovalRoute) {
+        return finalizeResponse(supabaseResponse, request, user.id);
+      }
       const url = request.nextUrl.clone();
-      url.pathname = "/auth/signin";
+      url.pathname = pendingApprovalRoute;
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 

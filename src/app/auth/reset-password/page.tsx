@@ -13,6 +13,10 @@ import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { getRoleHomePath } from "@/lib/role-home";
 
+function isRecoveryType(value: string | null): value is "recovery" {
+  return value === "recovery";
+}
+
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,17 +31,53 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
+    const url = new URL(window.location.href);
+    const queryType = url.searchParams.get("type");
+    const queryCode = url.searchParams.get("code");
+    const queryTokenHash = url.searchParams.get("token_hash");
+    const queryErrorCode = url.searchParams.get("error_code");
 
-    // Check if there is already a valid session (came via /auth/callback redirect)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Handle explicit Supabase callback errors early.
+    if (queryErrorCode === "otp_expired") {
+      setError("Your reset link has expired. Please request a new password reset link.");
+      setSessionChecking(false);
+      return;
+    }
+
+    const bootstrap = async () => {
+      // Support recovery links opened directly on /auth/reset-password
+      // (code flow and token_hash flow).
+      if (queryCode) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(queryCode);
+        if (exchangeError) {
+          setError("Your reset link is invalid or expired. Please request a new one.");
+          setSessionChecking(false);
+          return;
+        }
+      } else if (queryTokenHash && isRecoveryType(queryType)) {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          token_hash: queryTokenHash,
+          type: "recovery",
+        });
+        if (otpError) {
+          setError("Your reset link is invalid or expired. Please request a new one.");
+          setSessionChecking(false);
+          return;
+        }
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
         setSessionReady(true);
         setSessionChecking(false);
         return;
       }
-      // No session yet — wait for PASSWORD_RECOVERY event from hash tokens
-      // Supabase JS client automatically detects #access_token=...&type=recovery in the URL
-    });
+      // No session yet — wait for PASSWORD_RECOVERY event from hash tokens.
+    };
+
+    void bootstrap();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
@@ -46,7 +86,7 @@ export default function ResetPasswordPage() {
       }
     });
 
-    // Timeout — if no session after 5s, show error
+    // Timeout — if no session after 7s, show error
     const timeout = setTimeout(() => {
       setSessionChecking((prev) => {
         if (prev) {
@@ -57,7 +97,7 @@ export default function ResetPasswordPage() {
         }
         return prev;
       });
-    }, 5000);
+    }, 7000);
 
     return () => {
       subscription.unsubscribe();

@@ -89,13 +89,10 @@ export async function POST(req: Request) {
       return jsonError("Sign in failed. Please contact support.", 403);
     }
 
-    // Block suspended / unapproved users — they must not receive a session
+    // Unapproved users can only access pending-approval flow.
     if (userData.approved === false) {
-      await supabase.auth.signOut();
-      return jsonError(
-        "Your account is not approved or has been suspended. Contact support@mentrixa.one for help.",
-        403
-      );
+      await clearAuthFailures(lockKey);
+      return NextResponse.json({ ok: true, redirectTo: "/pending-approval" });
     }
 
     await clearAuthFailures(lockKey);

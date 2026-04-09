@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { RATE_LIMITS, checkSlidingWindowRateLimit, getClientIpFromRequest, sanitizeError, validateEmail, validatePassword } from "@/lib/security";
 import { compositeRateKey, emailRateKey, ipRateKey } from "@/lib/security/auth-abuse";
 import { reportSecurityRateLimitDenied } from "@/lib/observability";
+import { isDisposableEmail } from "@/lib/disposable-email";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     const body = (await req.json().catch(() => ({}))) as SignUpBody;
     const email = validateEmail(body.email);
     const password = validatePassword(body.password);
+    if (isDisposableEmail(email)) return jsonError("Temporary email addresses are not allowed. Please use a real email.", 400);
     const role: Role = body.role === "tutor" ? "tutor" : "student";
     if (!body.ageConfirmed) return jsonError("Please confirm you are 13 years old or older.");
 

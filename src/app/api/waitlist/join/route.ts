@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWaitlistReceivedEmail } from "@/lib/email";
+import { isDisposableEmail } from "@/lib/disposable-email";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,12 @@ export async function POST(req: Request) {
     const role = body.role === "tutor" ? "tutor" : "student";
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Valid email is required." }, { status: 400 });
+    }
+    if (isDisposableEmail(email)) {
+      return NextResponse.json(
+        { error: "Temporary email addresses are not allowed. Please use a real email you can access." },
+        { status: 400 },
+      );
     }
 
     const admin = createAdminClient();

@@ -289,6 +289,41 @@ export function HomePageClient() {
   }, [track]);
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    const query = url.searchParams;
+    const hashRaw = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
+    const hash = new URLSearchParams(hashRaw);
+
+    // Supabase recovery links can occasionally land on SITE_URL (/) with hash tokens.
+    // Forward to reset-password while preserving tokens so session bootstrap can complete.
+    if (
+      hash.get("type") === "recovery" &&
+      (hash.get("access_token") || hash.get("refresh_token") || hash.get("token_hash"))
+    ) {
+      window.location.replace(`/auth/reset-password#${hash.toString()}`);
+      return;
+    }
+
+    // Support query-based recovery links that hit "/" unexpectedly.
+    const queryType = query.get("type");
+    const queryCode = query.get("code");
+    const queryTokenHash = query.get("token_hash");
+    if (queryType === "recovery" && (queryCode || queryTokenHash)) {
+      const next = new URLSearchParams();
+      next.set("type", "recovery");
+      if (queryCode) next.set("code", queryCode);
+      if (queryTokenHash) next.set("token_hash", queryTokenHash);
+      window.location.replace(`/auth/reset-password?${next.toString()}`);
+      return;
+    }
+
+    // Expired recovery links should send user to request a fresh email.
+    if (query.get("error_code") === "otp_expired" || hash.get("error_code") === "otp_expired") {
+      window.location.replace("/auth/forgot-password?error=expired");
+    }
+  }, []);
+
+  useEffect(() => {
     const id = window.setInterval(() => {
       setSlideIdx((n) => (n + 1) % WAITLIST_SLIDES.length);
     }, 3500);
@@ -383,7 +418,6 @@ export function HomePageClient() {
             width={160}
             height={160}
             className="object-contain opacity-[0.65]"
-            priority
           />
         </div>
 

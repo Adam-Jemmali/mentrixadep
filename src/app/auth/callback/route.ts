@@ -22,6 +22,9 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const otpTypeParam = requestUrl.searchParams.get("type");
+  const nextParam = requestUrl.searchParams.get("next");
+  const nextPath =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
 
   const supabase = await createClient();
 
@@ -30,13 +33,20 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("[auth/callback] exchangeCodeForSession:", error.message);
+      if (otpTypeParam === "recovery") {
+        redirect("/auth/forgot-password?error=expired");
+      }
       redirect("/auth/signin?error=oauth");
     }
 
     // Password reset — go directly to reset page to preserve the recovery session.
     // Do NOT call resolveOAuthSessionRedirect which would sign out unapproved users.
     if (otpTypeParam === "recovery") {
-      redirect("/auth/reset-password");
+      redirect(nextPath ?? "/auth/reset-password");
+    }
+
+    if (nextPath) {
+      redirect(nextPath);
     }
 
     try {
@@ -56,12 +66,19 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("[auth/callback] verifyOtp:", error.message);
+      if (otpTypeParam === "recovery") {
+        redirect("/auth/forgot-password?error=expired");
+      }
       redirect("/auth/signin?error=confirm");
     }
 
     // Password reset via token_hash — go directly to reset page
     if (otpTypeParam === "recovery") {
-      redirect("/auth/reset-password");
+      redirect(nextPath ?? "/auth/reset-password");
+    }
+
+    if (nextPath) {
+      redirect(nextPath);
     }
 
     try {
