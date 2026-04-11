@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripeSecretKey, env } from "@/lib/env";
+import { getSiteUrl } from "@/lib/site";
 import { mentrixaCheckoutBrandingWithAssets } from "@/lib/stripe-checkout-copy";
 import { splitSessionPriceCents } from "@/lib/booking-pricing";
 import { captureUnexpectedError, withStripeApiSpan } from "@/lib/observability";
@@ -49,12 +50,16 @@ function resolveAppOrigin(req: NextRequest): string {
     return fromEnv;
   }
 
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Missing required environment variable: NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_SITE_URL");
+  }
+
   const fromRequest = normalizeHttpOrigin(req.nextUrl.origin);
   if (fromRequest) {
     return fromRequest;
   }
 
-  return "http://localhost:3000";
+  return normalizeHttpOrigin(getSiteUrl()) ?? req.nextUrl.origin;
 }
 
 type SlotLockState =

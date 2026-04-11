@@ -292,7 +292,6 @@ function NavigationInner({ user }: NavigationProps) {
                   onSelect={async (e) => {
                     e.preventDefault();
                     await signOut();
-                    window.location.href = "/";
                   }}
                 >
                   Sign out
@@ -400,7 +399,6 @@ function NavigationInner({ user }: NavigationProps) {
                     onClick={async () => {
                       setMobileOpen(false);
                       await signOut();
-                      window.location.href = "/";
                     }}
                   >
                     Sign out

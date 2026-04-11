@@ -1,14 +1,9 @@
-/**
- * Environment variables with type safety
- * Access environment variables through this module for type safety
- */
-
-function getOptionalEnvVar(key: string, defaultValue?: string): string | undefined {
+function getDevPreferredEnvVar(key: string, defaultValue?: string): string | undefined {
   return process.env[key] ?? defaultValue;
 }
 
 function getSupabaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = getDevPreferredEnvVar("NEXT_PUBLIC_SUPABASE_URL");
   if (!url) {
     throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL");
   }
@@ -16,7 +11,7 @@ function getSupabaseUrl(): string {
 }
 
 function getSupabaseAnonKey(): string {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = getDevPreferredEnvVar("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   if (!key) {
     throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
@@ -24,7 +19,7 @@ function getSupabaseAnonKey(): string {
 }
 
 export function getCronSecret(): string {
-  const secret = process.env.CRON_SECRET;
+  const secret = getDevPreferredEnvVar("CRON_SECRET");
   if (!secret || secret.trim() === "") {
     throw new Error("Missing required environment variable: CRON_SECRET");
   }
@@ -32,7 +27,7 @@ export function getCronSecret(): string {
 }
 
 export function getGeminiApiKey(): string {
-  const key = process.env.GEMINI_API_KEY;
+  const key = getDevPreferredEnvVar("GEMINI_API_KEY");
   if (!key || key.trim() === "") {
     throw new Error("Missing required environment variable: GEMINI_API_KEY");
   }
@@ -40,7 +35,7 @@ export function getGeminiApiKey(): string {
 }
 
 export function getStripeSecretKey(): string {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = getDevPreferredEnvVar("STRIPE_SECRET_KEY");
   if (!key || key.trim() === "") {
     throw new Error("Missing required environment variable: STRIPE_SECRET_KEY");
   }
@@ -48,7 +43,7 @@ export function getStripeSecretKey(): string {
 }
 
 export function getStripeWebhookSecret(): string {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = getDevPreferredEnvVar("STRIPE_WEBHOOK_SECRET");
   if (!secret || secret.trim() === "") {
     throw new Error("Missing required environment variable: STRIPE_WEBHOOK_SECRET");
   }
@@ -56,7 +51,7 @@ export function getStripeWebhookSecret(): string {
 }
 
 export function getResendApiKey(): string {
-  const key = process.env.RESEND_API_KEY;
+  const key = getDevPreferredEnvVar("RESEND_API_KEY");
   if (!key || key.trim() === "") {
     throw new Error("Missing required environment variable: RESEND_API_KEY");
   }
@@ -64,10 +59,9 @@ export function getResendApiKey(): string {
 }
 
 export const env = {
-  // Public environment variables (exposed to the browser)
   public: {
-    appUrl: getOptionalEnvVar("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
-    stripePublishableKey: getOptionalEnvVar("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
+    appUrl: getDevPreferredEnvVar("NEXT_PUBLIC_APP_URL"),
+    stripePublishableKey: getDevPreferredEnvVar("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
     get supabaseUrl() {
       return getSupabaseUrl();
     },
@@ -75,9 +69,8 @@ export const env = {
       return getSupabaseAnonKey();
     },
   },
-  // Server-only environment variables
   server: {
-    supabaseServiceRoleKey: getOptionalEnvVar("SUPABASE_SERVICE_ROLE_KEY"),
+    supabaseServiceRoleKey: getDevPreferredEnvVar("SUPABASE_SERVICE_ROLE_KEY"),
     get cronSecret() {
       return getCronSecret();
     },
@@ -94,25 +87,21 @@ export const env = {
       return getResendApiKey();
     },
   },
-  // WebRTC configuration (optional - uses public STUN servers if not provided)
   webrtc: {
-    stunServers: getOptionalEnvVar("NEXT_PUBLIC_STUN_SERVERS")?.split(",") || [
+    stunServers: getDevPreferredEnvVar("NEXT_PUBLIC_STUN_SERVERS")?.split(",") || [
       "stun:stun.l.google.com:19302",
       "stun:stun1.l.google.com:19302",
     ],
-    turnServers: getOptionalEnvVar("NEXT_PUBLIC_TURN_SERVERS")?.split(",") || [],
+    turnServers: getDevPreferredEnvVar("NEXT_PUBLIC_TURN_SERVERS")?.split(",") || [],
   },
 } as const;
 
 /**
  * Log missing production secrets at startup — does **not** throw.
- * Throwing from `instrumentation.register()` caused opaque 500s on every route (auth, dashboard, APIs)
- * until the process recovered; route handlers that need a secret still fail loudly via their own getters.
  */
 export function validateEnvAtStartup(): void {
   if (process.env.NODE_ENV !== "production") return;
   if ((process.env.NEXT_PHASE ?? "").includes("phase-production-build")) return;
-  // Instrumentation can run during `npm run build` before NEXT_PHASE is set — skip strict checks then.
   if (process.env.npm_lifecycle_event === "build") return;
   const required = [
     "NEXT_PUBLIC_SUPABASE_URL",
@@ -141,9 +130,4 @@ export function validateEnvAtStartup(): void {
   }
 }
 
-/**
- * Production validation runs from `src/instrumentation.ts` (`register()`), not on every
- * `import` of this module — otherwise public routes that only need a subset of secrets
- * (e.g. `/` + admin client) would crash before env getters are used.
- */
 

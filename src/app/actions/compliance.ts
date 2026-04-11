@@ -20,6 +20,14 @@ export function assertApprovedStudentDataProcessor(processor: string): asserts p
 async function deleteUserDataInternal(userId: string): Promise<void> {
   const admin = createAdminClient();
   const uid = validateUUID(userId);
+  let authEmail: string | null = null;
+
+  try {
+    const { data } = await admin.auth.admin.getUserById(uid);
+    authEmail = data.user?.email?.trim().toLowerCase() ?? null;
+  } catch {
+    authEmail = null;
+  }
 
   // Best-effort deletion order across user-linked tables.
   // Keep failures isolated so one table does not block full data deletion.
@@ -52,8 +60,15 @@ async function deleteUserDataInternal(userId: string): Promise<void> {
   ];
   await Promise.allSettled(tasks.map((run) => run()));
 
+  if (authEmail) {
+    await admin.from("registration_requests").delete().eq("email", authEmail);
+  }
+
+  // Ensure public profile row is removed even if auth cascade did not fire yet.
+  await admin.from("users").delete().eq("id", uid);
+
   // Remove auth user last (cascades `public.users` through FK where configured)
-  await admin.auth.admin.deleteUser(uid, true);
+  await admin.auth.admin.deleteUser(uid, false);
 }
 
 /**

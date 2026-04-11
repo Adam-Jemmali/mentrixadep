@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const admin = createAdminClient();
     const { data: reqRow, error: reqErr } = await admin
       .from("registration_requests")
-      .select("status")
+      .select("status, role")
       .eq("email", email)
       .maybeSingle();
     if (reqErr) {
@@ -65,6 +65,13 @@ export async function POST(req: Request) {
       );
     }
     if (reqRow?.status === "pending") {
+      if (reqRow.role && reqRow.role !== role) {
+        return jsonError(
+          `This email is already on the waitlist as a ${reqRow.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot sign up as a different role until that waitlist request is approved.`,
+          403,
+          { waitlistStatus: "pending" }
+        );
+      }
       return jsonError(
         "You have already applied to the waitlist. Please wait for admin approval before signing up.",
         403,
@@ -76,6 +83,13 @@ export async function POST(req: Request) {
         "Join the waitlist first using your email, then complete signup after approval.",
         403,
         { waitlistStatus: "missing" }
+      );
+    }
+    if (reqRow.role && reqRow.role !== role) {
+      return jsonError(
+        `This email is already approved on the waitlist as a ${reqRow.role === "tutor" ? "Guide" : "Mentrixer"}. You must sign up with the same role or contact support@mentrixa.one if this is incorrect.`,
+        403,
+        { waitlistStatus: "approved" }
       );
     }
 

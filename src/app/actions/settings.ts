@@ -207,11 +207,18 @@ export async function deleteAccount() {
   const user = await requireAuth();
   const adminClient = createAdminClient();
 
-  await adminClient.from("user_settings").delete().eq("user_id", user.id);
-  await adminClient.from("user_xp").delete().eq("user_id", user.id);
+  // Best-effort clean-up for waitlist trace by email.
+  if (user.email) {
+    await adminClient
+      .from("registration_requests")
+      .delete()
+      .eq("email", user.email.trim().toLowerCase());
+  }
 
-  const { error } = await adminClient.auth.admin.deleteUser(user.id);
+  // Ensure app profile row is removed.
+  await adminClient.from("users").delete().eq("id", user.id);
 
+  const { error } = await adminClient.auth.admin.deleteUser(user.id, false);
   if (error) {
     throw new Error("Failed to delete account");
   }

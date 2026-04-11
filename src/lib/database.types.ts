@@ -14,8 +14,12 @@ export interface User {
   referred_by: string | null;
   referral_flagged?: boolean;
   referral_last_ip_hash?: string | null;
-  /** Stripe Connect Express connected account id (`acct_...`). */
+  /** Legacy Stripe Connect Express connected account id (`acct_...`). */
   stripe_account_id?: string | null;
+  /** Stripe Connect Express connected account id for test mode (`acct_...`). */
+  stripe_account_id_test?: string | null;
+  /** Stripe Connect Express connected account id for live mode (`acct_...`). */
+  stripe_account_id_live?: string | null;
   stripe_payouts_enabled?: boolean;
   stripe_onboarding_at?: string | null;
   created_at: string;

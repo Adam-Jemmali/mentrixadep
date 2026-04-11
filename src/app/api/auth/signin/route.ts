@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError, validateEmail, validatePassword, RATE_LIMITS, checkSlidingWindowRateLimit, getClientIpFromRequest } from "@/lib/security";
 import { clearAuthFailures, compositeRateKey, emailLockKey, emailRateKey, getAuthLockState, ipRateKey, registerAuthFailure } from "@/lib/security/auth-abuse";
 import { isCaptchaConfigured, verifyTurnstileToken } from "@/lib/security/captcha";
@@ -67,6 +68,33 @@ export async function POST(req: Request) {
       }
     }
 
+    const admin = createAdminClient();
+    const { data: waitlistRow, error: waitlistError } = await admin
+      .from("registration_requests")
+      .select("status, role")
+      .eq("email", email)
+      .maybeSingle();
+    if (waitlistError) {
+      console.error("[auth/signin] waitlist lookup failed:", waitlistError.message, waitlistError.details);
+      return jsonError("Could not verify your waitlist status. Please try again.", 500);
+    }
+    if (waitlistRow?.status === "rejected") {
+      await registerAuthFailure(lockKey);
+      return jsonError(
+        "This email was rejected from the waitlist and cannot sign in. Please contact support@mentrixa.one if you believe this is a mistake.",
+        403,
+        { waitlistStatus: "rejected" }
+      );
+    }
+    if (waitlistRow?.status === "pending") {
+      await registerAuthFailure(lockKey);
+      return jsonError(
+        `This email is still on the waitlist as a ${waitlistRow.role === "tutor" ? "Guide" : "Mentrixer"}. Please wait for approval before signing in.`,
+        403,
+        { waitlistStatus: "pending" }
+      );
+    }
+
     const supabase = await createClient();
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -74,6 +102,23 @@ export async function POST(req: Request) {
     });
     if (signInError || !signInData.user?.id) {
       await registerAuthFailure(lockKey);
+      
+      // Check if the error indicates user doesn't exist (versus wrong password)
+      const errorMsg = signInError?.message?.toLowerCase() ?? "";
+      const isUserNotFound = 
+        errorMsg.includes("invalid login credentials") || 
+        errorMsg.includes("user not found") ||
+        errorMsg.includes("400");
+
+      // Provide a more helpful message if email is not registered
+      if (isUserNotFound) {
+        return jsonError(
+          "Email not registered. Please join the waitlist to get access.",
+          401
+        );
+      }
+
+      // Generic error for other cases
       return jsonError("Incorrect email or password. Please try again.", 401);
     }
 
@@ -87,21 +132,6 @@ export async function POST(req: Request) {
       await registerAuthFailure(lockKey);
       await supabase.auth.signOut();
       return jsonError("Sign in failed. Please contact support.", 403);
-    }
-
-    // Enforce waitlist decision gates even if a stale auth account still exists.
-    const { data: waitlistRow } = await supabase
-      .from("registration_requests")
-      .select("status")
-      .eq("email", email)
-      .maybeSingle();
-    if (waitlistRow?.status === "rejected") {
-      await registerAuthFailure(lockKey);
-      await supabase.auth.signOut();
-      return jsonError(
-        "Your waitlist application was rejected. Please contact support@mentrixa.one if you believe this is a mistake.",
-        403
-      );
     }
 
     // Unapproved users can only access pending-approval flow.

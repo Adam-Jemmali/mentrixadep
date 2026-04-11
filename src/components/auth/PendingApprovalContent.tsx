@@ -154,7 +154,6 @@ export function PendingApprovalContent({ role, registrationStatus }: Props) {
             className="btn-ghost mt-auto"
             onClick={async () => {
               await signOut();
-              window.location.href = "/";
             }}
           >
             Sign out

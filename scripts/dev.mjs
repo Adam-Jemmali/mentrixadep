@@ -8,11 +8,14 @@ import { execFileSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import process from "node:process";
+import { applyLocalEnvOverrides } from "./load-local-env.mjs";
 
 const PORT = 3000;
 // import.meta.url is .../scripts/dev.mjs — one dirname = scripts/, two = repo root
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const turbo = process.argv.includes("--turbo");
+
+applyLocalEnvOverrides(root);
 
 function freePortWindows() {
   try {

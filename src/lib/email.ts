@@ -15,13 +15,11 @@
 
 import { getResendApiKey } from "@/lib/env";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
+import { getSiteUrl } from "@/lib/site";
 
 const FROM_ADDRESS = "Mentrixa <updates@mentrixa.one>";
 const WAITLIST_FROM_ADDRESS = "Mentrixa <noreply@mentrixa.one>";
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-  "https://mentrixa.one";
+const APP_URL = getSiteUrl();
 const DEV_EMAIL_OVERRIDE: string | null = null;
 
 /** Session + optional person names + optional AI package stats for richer emails */

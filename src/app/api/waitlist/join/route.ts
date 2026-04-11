@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const admin = createAdminClient();
     const { data: existing, error: fetchError } = await admin
       .from("registration_requests")
-      .select("id, status")
+      .select("id, status, role")
       .eq("email", email)
       .maybeSingle();
 
@@ -37,6 +37,16 @@ export async function POST(req: Request) {
     }
 
     if (existing?.status === "approved") {
+      if (existing.role && existing.role !== role) {
+        return NextResponse.json(
+          {
+            error:
+              `This email is already registered on the waitlist as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. Please use the same role or contact support@mentrixa.one if this is incorrect.`,
+            status: "approved",
+          },
+          { status: 409 }
+        );
+      }
       return NextResponse.json({
         ok: true,
         approved: true,
@@ -46,6 +56,16 @@ export async function POST(req: Request) {
     }
 
     if (existing?.status === "rejected") {
+      if (existing.role && existing.role !== role) {
+        return NextResponse.json(
+          {
+            error:
+              `This email was rejected from the waitlist as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot rejoin with the same email. Please contact support@mentrixa.one if you believe this is a mistake.`,
+            status: "rejected",
+          },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
         {
           error: "Sorry, you have been rejected and cannot join the waitlist again with this email. Please contact support@mentrixa.one if you believe this is a mistake.",
@@ -56,6 +76,16 @@ export async function POST(req: Request) {
     }
 
     if (existing?.status === "pending") {
+      if (existing.role && existing.role !== role) {
+        return NextResponse.json(
+          {
+            error:
+              `This email is already on the waitlist as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot apply again as a different role. Please wait for an admin decision.`,
+            status: "pending",
+          },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         {
           error: "You have already applied to the waitlist. Please wait for an admin decision.",
@@ -75,10 +105,20 @@ export async function POST(req: Request) {
       if (insertError.code === "23505") {
         const { data: raced } = await admin
           .from("registration_requests")
-          .select("status")
+          .select("status, role")
           .eq("email", email)
           .maybeSingle();
         if (raced?.status === "approved") {
+          if (raced.role && raced.role !== role) {
+            return NextResponse.json(
+              {
+                error:
+                  `This email is already registered on the waitlist as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. Please use the same role or contact support@mentrixa.one if this is incorrect.`,
+                status: "approved",
+              },
+              { status: 409 }
+            );
+          }
           return NextResponse.json({
             ok: true,
             approved: true,
@@ -87,12 +127,32 @@ export async function POST(req: Request) {
           });
         }
         if (raced?.status === "rejected") {
+          if (raced.role && raced.role !== role) {
+            return NextResponse.json(
+              {
+                error:
+                  `This email was rejected from the waitlist as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot rejoin with the same email. Please contact support@mentrixa.one if you believe this is a mistake.`,
+                status: "rejected",
+              },
+              { status: 403 }
+            );
+          }
           return NextResponse.json(
             {
               error: "Sorry, you have been rejected and cannot join the waitlist again with this email. Please contact support@mentrixa.one if you believe this is a mistake.",
               status: "rejected",
             },
             { status: 403 }
+          );
+        }
+        if (raced?.status === "pending" && raced.role && raced.role !== role) {
+          return NextResponse.json(
+            {
+              error:
+                `This email is already on the waitlist as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot apply again as a different role. Please wait for an admin decision.`,
+              status: "pending",
+            },
+            { status: 409 }
           );
         }
         return NextResponse.json(

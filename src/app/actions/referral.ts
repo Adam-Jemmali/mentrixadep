@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { applyXpAward } from "@/app/actions/xp";
 import { XP } from "@/lib/xp-constants";
 import { REFERRAL_COOKIE_NAME } from "@/lib/referral-constants";
-import { env } from "@/lib/env";
+import { getSiteUrl } from "@/lib/site";
 
 function emailDomain(email: string): string {
   const at = email.lastIndexOf("@");
@@ -29,7 +29,7 @@ export async function getReferralInviteUrl(): Promise<string | null> {
   const { data } = await admin.from("users").select("referral_code").eq("id", user.id).maybeSingle();
   const code = data?.referral_code;
   if (!code || typeof code !== "string") return null;
-  const base = (env.public.appUrl ?? "").replace(/\/$/, "") || "http://localhost:3000";
+  const base = getSiteUrl();
   return `${base}/join?ref=${encodeURIComponent(code)}`;
 }
 

@@ -177,7 +177,7 @@ function OnboardingBanner({
       <div className="flex shrink-0 flex-col gap-2 sm:items-end">
         {!payoutsEnabled ? (
           <a
-            href="/api/stripe/connect/refresh"
+            href="/tutor/stripe/refresh"
             className="inline-flex items-center justify-center gap-1.5 rounded border border-[#635bff] bg-[#635bff] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-[#4b44c9]"
           >
             <ExternalLink size={12} />

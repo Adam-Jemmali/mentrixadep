@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSiteUrl } from "@/lib/site";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth";
-import { refreshConnectStatus } from "@/app/actions/stripe-connect";
+import { refreshConnectStatus, resolveStoredStripeAccountId } from "@/app/actions/stripe-connect";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +11,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const user = await requireRole(["tutor", "admin"]);
-    const admin = createAdminClient();
-
-    const { data: userRow } = await admin
-      .from("users")
-      .select("stripe_account_id")
-      .eq("id", user.id)
-      .single();
-
-    const storedAccountId = userRow?.stripe_account_id?.trim() ?? null;
+    const storedAccountId = await resolveStoredStripeAccountId(user.id, true);
     if (accountId && storedAccountId && accountId !== storedAccountId) {
       console.error("[stripe/connect/return] account mismatch", {
         expected: storedAccountId,

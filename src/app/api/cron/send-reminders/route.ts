@@ -5,6 +5,7 @@ import {
   type SessionEmailDetails,
 } from "@/lib/email";
 import { authorizeCronRequest, runCronJob } from "@/lib/cron";
+import { getSiteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +95,7 @@ export async function GET(request: Request) {
             tasks.push(
               sendSessionReminderStudentEmail(studentEmail, {
                 ...details,
-                preSessionBriefUrl: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/student`,
+                preSessionBriefUrl: `${getSiteUrl()}/student`,
               })
             );
           }

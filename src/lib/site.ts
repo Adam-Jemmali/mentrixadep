@@ -1,13 +1,16 @@
+import { env } from "@/lib/env";
+
 /**
  * Canonical site origin for metadata, sitemap, JSON-LD, and absolute URLs.
  * Set `NEXT_PUBLIC_SITE_URL` in production if the default should differ.
  */
 export function getSiteUrl(): string {
-  const fromEnv =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() || process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const fromEnv = env.public.appUrl?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
-  return "https://mentrixa.one";
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Missing required environment variable: NEXT_PUBLIC_SITE_URL or NEXT_PUBLIC_APP_URL");
+  }
+  return "http://localhost:3000";
 }
 
 export const SITE_NAME = "Mentrixa";

@@ -9,9 +9,96 @@ import { revalidatePath } from "next/cache";
 import { PLATFORM_FEE_BPS } from "@/lib/booking-pricing";
 
 const TUTOR_SHARE_BPS = 10_000 - PLATFORM_FEE_BPS;
+const STRIPE_ACCOUNT_ID_TEST_COLUMN = "stripe_account_id_test" as const;
+const STRIPE_ACCOUNT_ID_LIVE_COLUMN = "stripe_account_id_live" as const;
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+type StripeAccountRow = {
+  stripe_account_id?: string | null;
+  stripe_account_id_test?: string | null;
+  stripe_account_id_live?: string | null;
+  stripe_payouts_enabled?: boolean | null;
+  stripe_onboarding_at?: string | null;
+};
+
+type StripeAccountMode = "test" | "live";
 
 function getStripe(): Stripe {
   return new Stripe(getStripeSecretKey());
+}
+
+function isLiveStripeMode(): boolean {
+  return getStripeSecretKey().startsWith("sk_live");
+}
+
+function getStripeAccountMode(): StripeAccountMode {
+  return isLiveStripeMode() ? "live" : "test";
+}
+
+function getStripeAccountColumnForMode(): typeof STRIPE_ACCOUNT_ID_TEST_COLUMN | typeof STRIPE_ACCOUNT_ID_LIVE_COLUMN {
+  return isLiveStripeMode() ? STRIPE_ACCOUNT_ID_LIVE_COLUMN : STRIPE_ACCOUNT_ID_TEST_COLUMN;
+}
+
+function getModeStripeAccountId(row: StripeAccountRow | null | undefined): string | null {
+  const value = getStripeAccountMode() === "live" ? row?.stripe_account_id_live : row?.stripe_account_id_test;
+  return value?.trim() ?? null;
+}
+
+function getLegacyStripeAccountId(row: StripeAccountRow | null | undefined): string | null {
+  return row?.stripe_account_id?.trim() ?? null;
+}
+
+async function loadStripeAccountRow(admin: AdminClient, userId: string): Promise<StripeAccountRow | null> {
+  const { data } = await admin
+    .from("users")
+    .select("stripe_account_id, stripe_account_id_test, stripe_account_id_live, stripe_payouts_enabled, stripe_onboarding_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return data as StripeAccountRow | null;
+}
+
+async function setStripeAccountIdForCurrentMode(admin: AdminClient, userId: string, accountId: string | null): Promise<void> {
+  const column = getStripeAccountColumnForMode();
+  await admin.from("users").update({ [column]: accountId } as Record<string, string | null>).eq("id", userId);
+}
+
+export async function resolveStoredStripeAccountId(userId: string, adoptLegacy = true): Promise<string | null> {
+  const admin = createAdminClient();
+  const row = await loadStripeAccountRow(admin, userId);
+  const stripe = getStripe();
+
+  const selectedAccountId = getModeStripeAccountId(row);
+  if (selectedAccountId) {
+    try {
+      await stripe.accounts.retrieve(selectedAccountId);
+      return selectedAccountId;
+    } catch (err) {
+      if (!isStripeInvalidAccountReferenceError(err)) {
+        throw err;
+      }
+      await setStripeAccountIdForCurrentMode(admin, userId, null);
+      return null;
+    }
+  }
+
+  if (adoptLegacy) {
+    const legacyAccountId = getLegacyStripeAccountId(row);
+    if (legacyAccountId) {
+      try {
+        await stripe.accounts.retrieve(legacyAccountId);
+        await setStripeAccountIdForCurrentMode(admin, userId, legacyAccountId);
+        return legacyAccountId;
+      } catch (err) {
+        if (!isStripeInvalidAccountReferenceError(err)) {
+          throw err;
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 /** ISO 3166-1 alpha-2 for Express Connect accounts (default Canada per product). */
@@ -43,14 +130,24 @@ function isStripeConnectNotEnabledError(err: unknown): boolean {
   );
 }
 
+function isStripeInvalidAccountReferenceError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes("No such account") ||
+    msg.includes("resource_missing") ||
+    msg.includes("does not have access to account")
+  );
+}
+
 /**
  * Ensure the tutor has a Stripe Express connected account id (lazy-create on first onboarding).
  */
 async function ensureTutorExpressAccountId(userId: string): Promise<string> {
   const admin = createAdminClient();
-  const { data: row } = await admin.from("users").select("stripe_account_id").eq("id", userId).maybeSingle();
-  const existing = row?.stripe_account_id?.trim();
-  if (existing) return existing;
+  const existing = await resolveStoredStripeAccountId(userId, true);
+  if (existing) {
+    return existing;
+  }
 
   const stripe = getStripe();
   const { data: authUser } = await admin.auth.admin.getUserById(userId);
@@ -78,7 +175,7 @@ async function ensureTutorExpressAccountId(userId: string): Promise<string> {
     throw e;
   }
 
-  await admin.from("users").update({ stripe_account_id: account.id }).eq("id", userId);
+  await setStripeAccountIdForCurrentMode(admin, userId, account.id);
   return account.id;
 }
 
@@ -203,12 +300,13 @@ function buildOnboardingGuide(account: Stripe.Account | null): ConnectStatus["on
 export async function createAccountLink(): Promise<{ url: string }> {
   const user = await requireRole(["tutor", "admin"]);
   const accountId = await ensureTutorExpressAccountId(user.id);
-  const stripe = getStripe();
   const appUrl = getSiteUrl();
+
+  const stripe = getStripe();
   const link = await stripe.accountLinks.create({
     account: accountId,
-    refresh_url: `${appUrl}/api/stripe/connect/refresh`,
-    return_url: `${appUrl}/api/stripe/connect/return`,
+    refresh_url: `${appUrl}/tutor/stripe/refresh`,
+    return_url: `${appUrl}/tutor/stripe/success`,
     type: "account_onboarding",
   });
   return { url: link.url };
@@ -222,16 +320,23 @@ export async function openStripeConnectOrDashboard(): Promise<{ url: string }> {
   const admin = createAdminClient();
   const { data: userRow } = await admin
     .from("users")
-    .select("stripe_account_id, stripe_payouts_enabled")
+    .select("stripe_account_id, stripe_account_id_test, stripe_account_id_live, stripe_payouts_enabled")
     .eq("id", user.id)
     .maybeSingle();
 
   const stripe = getStripe();
-  const accountId = userRow?.stripe_account_id?.trim() ?? null;
+  const accountId = await resolveStoredStripeAccountId(user.id, true);
 
   if (accountId && userRow?.stripe_payouts_enabled) {
-    const login = await stripe.accounts.createLoginLink(accountId);
-    return { url: login.url };
+    try {
+      await stripe.accounts.retrieve(accountId);
+      const login = await stripe.accounts.createLoginLink(accountId);
+      return { url: login.url };
+    } catch (err) {
+      if (!isStripeInvalidAccountReferenceError(err)) {
+        throw err;
+      }
+    }
   }
 
   return createAccountLink();
@@ -245,16 +350,21 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
 
   const { data: userRow } = await admin
     .from("users")
-    .select("stripe_account_id, stripe_payouts_enabled, stripe_onboarding_at")
+    .select("stripe_account_id, stripe_account_id_test, stripe_account_id_live, stripe_payouts_enabled, stripe_onboarding_at")
     .eq("id", actingId)
     .maybeSingle();
 
   let account: Stripe.Account | null = null;
-  if (userRow?.stripe_account_id) {
+  const accountId = await resolveStoredStripeAccountId(actingId, true);
+  if (accountId) {
     try {
-      account = await stripe.accounts.retrieve(userRow.stripe_account_id);
+      account = await stripe.accounts.retrieve(accountId);
     } catch (e) {
-      console.warn("[connect] retrieve account failed:", e);
+      if (isStripeInvalidAccountReferenceError(e)) {
+        await setStripeAccountIdForCurrentMode(admin, actingId, null);
+      } else {
+        console.warn("[connect] retrieve account failed:", e);
+      }
     }
   }
 
@@ -287,12 +397,14 @@ export async function refreshConnectStatus(tutorId?: string): Promise<ConnectSta
   }
 
   const payoutsEnabled =
-    account != null ? account.payouts_enabled === true && account.charges_enabled === true : Boolean(userRow?.stripe_payouts_enabled);
+    account != null
+      ? account.payouts_enabled === true && account.charges_enabled === true
+      : Boolean(accountId && userRow?.stripe_payouts_enabled);
 
   revalidatePath("/tutor");
   return {
-    hasAccount: Boolean(userRow?.stripe_account_id),
-    accountId: userRow?.stripe_account_id ?? null,
+    hasAccount: Boolean(accountId),
+    accountId,
     payoutsEnabled,
     onboardingUrl: null,
     onboardingGuide: buildOnboardingGuide(account),
@@ -306,7 +418,13 @@ export async function applyStripeAccountWebhookUpdate(account: Stripe.Account): 
     typeof account.metadata?.tutor_id === "string" ? account.metadata.tutor_id : null;
 
   if (!tutorId) {
-    const { data } = await admin.from("users").select("id").eq("stripe_account_id", stripeAccountId).maybeSingle();
+    const { data } = await admin
+      .from("users")
+      .select("id")
+      .or(
+        `stripe_account_id.eq.${stripeAccountId},stripe_account_id_test.eq.${stripeAccountId},stripe_account_id_live.eq.${stripeAccountId}`,
+      )
+      .maybeSingle();
     tutorId = data?.id ?? null;
   }
 
@@ -370,14 +488,15 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
   try {
     const { data: userRow } = await admin
       .from("users")
-      .select("stripe_account_id, stripe_payouts_enabled")
+      .select("stripe_account_id, stripe_account_id_test, stripe_account_id_live, stripe_payouts_enabled")
       .eq("id", tutorId)
       .single();
 
     let account: Stripe.Account | null = null;
-    if (userRow?.stripe_account_id) {
+    const accountId = await resolveStoredStripeAccountId(tutorId, true);
+    if (accountId) {
       try {
-        account = await stripe.accounts.retrieve(userRow.stripe_account_id);
+        account = await stripe.accounts.retrieve(accountId);
       } catch {
         account = null;
       }
@@ -386,20 +505,20 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     const payoutsEnabled =
       account != null
         ? account.payouts_enabled === true && account.charges_enabled === true
-        : Boolean(userRow?.stripe_payouts_enabled);
+        : Boolean(accountId && userRow?.stripe_payouts_enabled);
 
     const connectStatus: ConnectStatus = {
-      hasAccount: Boolean(userRow?.stripe_account_id),
-      accountId: userRow?.stripe_account_id ?? null,
+      hasAccount: Boolean(accountId),
+      accountId,
       payoutsEnabled,
       onboardingUrl: null,
       onboardingGuide: buildOnboardingGuide(account),
     };
 
     let availableCents = 0;
-    if (userRow?.stripe_account_id && payoutsEnabled) {
+    if (accountId && payoutsEnabled) {
       try {
-        const bal = await stripe.balance.retrieve({ stripeAccount: userRow.stripe_account_id });
+        const bal = await stripe.balance.retrieve({ stripeAccount: accountId });
         const cad = bal.available.find((b) => b.currency === "cad");
         const usd = bal.available.find((b) => b.currency === "usd");
         const pick = cad ?? usd ?? bal.available[0];
@@ -409,7 +528,7 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
       }
     }
 
-    if (connectStatus.payoutsEnabled && userRow?.stripe_account_id) {
+    if (connectStatus.payoutsEnabled && accountId) {
       try {
         const { count: pendingCount, error: pendingErr } = await admin
           .from("tutor_payout_ledger")

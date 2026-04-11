@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getRoleHomePath } from "@/lib/role-home";
 import {
   OAUTH_INTENT_COOKIE,
@@ -24,6 +25,7 @@ import { createVerificationForUser } from "@/app/actions/verification";
 import { trackEvent } from "@/lib/analytics";
 import { tryAutoAssociateInstitution } from "@/app/actions/institution";
 import { signUpServerSchema } from "@/lib/schemas";
+import { getSiteUrl } from "@/lib/site";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -39,19 +41,25 @@ async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   }
 }
 
-async function getRegistrationRequestStatus(email: string | undefined): Promise<"pending" | "approved" | "rejected" | null> {
+async function getRegistrationRequestStatus(email: string | undefined): Promise<{
+  status: "pending" | "approved" | "rejected" | null;
+  role: "student" | "tutor" | null;
+}> {
   const normEmail = email?.trim().toLowerCase();
-  if (!normEmail) return null;
+  if (!normEmail) return { status: null, role: null };
   try {
     const adminClient = createAdminClient();
     const { data } = await adminClient
       .from("registration_requests")
-      .select("status")
+      .select("status, role")
       .eq("email", normEmail)
       .maybeSingle();
-    return (data?.status as "pending" | "approved" | "rejected" | undefined) ?? null;
+    return {
+      status: (data?.status as "pending" | "approved" | "rejected" | undefined) ?? null,
+      role: (data?.role as "student" | "tutor" | undefined) ?? null,
+    };
   } catch {
-    return null;
+    return { status: null, role: null };
   }
 }
 
@@ -63,7 +71,21 @@ export async function applyRoleAndSyncProfile(
 ): Promise<void> {
   const supabase = await createClient();
   const autoApprove = await fetchAutoApproveRegistrationsEnabled();
-  const waitlistStatus = await getRegistrationRequestStatus(email);
+  const waitlist = await getRegistrationRequestStatus(email);
+  const waitlistStatus = waitlist.status;
+  const waitlistRole = waitlist.role;
+
+  if (waitlistRole && waitlistRole !== role) {
+    const admin = createAdminClient();
+    try {
+      await admin.auth.admin.deleteUser(userId);
+    } catch (e) {
+      console.error("[applyRoleAndSyncProfile] failed to delete mismatched-role user from auth:", e);
+    }
+    throw new Error(
+      `This email is already registered on the waitlist as a ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"}. Please use the same role or contact support@mentrixa.one if this is incorrect.`
+    );
+  }
 
   // Rejected emails cannot re-register — delete the newly created auth account and block
   if (waitlistStatus === "rejected") {
@@ -149,6 +171,22 @@ async function clearOAuthCookies(): Promise<void> {
   store.delete(OAUTH_ROLE_COOKIE);
 }
 
+async function getWaitlistStatusByEmail(email: string | undefined): Promise<"pending" | "approved" | "rejected" | null> {
+  const normEmail = email?.trim().toLowerCase();
+  if (!normEmail) return null;
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("registration_requests")
+      .select("status")
+      .eq("email", normEmail)
+      .maybeSingle();
+    return (data?.status as "pending" | "approved" | "rejected" | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Reads OAuth bridge cookies and applies signup role, then returns the next path.
  * Used after Google Identity Services and after email callback (via getPostOAuthRedirectPath).
@@ -172,6 +210,27 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
     .maybeSingle();
   const existingRole = existingUserRow?.role ?? null;
   const existingApproved = existingUserRow?.approved === true;
+  const waitlistStatus = await getWaitlistStatusByEmail(user.email);
+
+  if (waitlistStatus === "rejected") {
+    await clearOAuthCookies();
+    await supabase.auth.signOut();
+    return "/auth/signin?error=waitlist_rejected";
+  }
+
+  if (!existingRole) {
+    await clearOAuthCookies();
+    await supabase.auth.signOut();
+    return "/join";
+  }
+
+  if (!existingApproved) {
+    if (waitlistStatus !== "approved") {
+      await clearOAuthCookies();
+      await supabase.auth.signOut();
+      return "/join";
+    }
+  }
 
   if (intent === "signup" && (roleCookie === "student" || roleCookie === "tutor")) {
     // Guard against stale signup cookies accidentally downgrading existing accounts.
@@ -261,7 +320,7 @@ export async function signUp(formData: FormData) {
           role,
           age_confirmed_13_or_older: true,
         },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/callback`,
+        emailRedirectTo: `${getSiteUrl()}/auth/callback`,
       },
     });
 
@@ -346,7 +405,7 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  return { success: true };
+  redirect("/");
 }
 
 export async function setUserRole(role: "student" | "tutor") {

@@ -298,13 +298,15 @@ export async function getAllUsers(): Promise<AdminUser[]> {
     }
   }
 
-  return users.map((u) => ({
-    id: u.id,
-    email: emailById.get(u.id) ?? null,
-    role: u.role,
-    approved: u.approved,
-    created_at: u.created_at,
-  }));
+  return users
+    .map((u) => ({
+      id: u.id,
+      email: emailById.get(u.id) ?? null,
+      role: u.role,
+      approved: u.approved,
+      created_at: u.created_at,
+    }))
+    .filter((u) => Boolean(u.email));
 }
 
 // ============================================================

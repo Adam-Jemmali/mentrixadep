@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeSecretKey, getStripeWebhookSecret } from "@/lib/env";
+import { getSiteUrl } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bookSessionAsUser } from "@/app/actions/student";
 import {
@@ -206,7 +207,7 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
         course: avail.course,
         startTime: avail.start_time,
         reason: "checkout_expired",
-        retryUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/student`,
+        retryUrl: `${getSiteUrl()}/student`,
       });
     }
   } catch (notifyErr) {
@@ -245,7 +246,7 @@ async function handlePaymentFailed(pi: Stripe.PaymentIntent) {
         course: avail?.course ?? "your session",
         startTime: avail?.start_time ?? "",
         reason: pi.last_payment_error?.message ?? "payment_failed",
-        retryUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/student`,
+        retryUrl: `${getSiteUrl()}/student`,
       });
     }
   } catch (emailErr) {

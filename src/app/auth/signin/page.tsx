@@ -18,6 +18,7 @@ export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const passwordReset = searchParams.get("reset") === "1";
+  const authError = searchParams.get("error");
 
   useEffect(() => {
     const wrapper = document.getElementById("auth-form-wrapper");
@@ -29,6 +30,14 @@ export default function SignInPage() {
       { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
     );
   }, []);
+
+  useEffect(() => {
+    if (authError === "waitlist_rejected") {
+      setError(
+        "Your waitlist application was rejected. You cannot sign in with this email. Please contact support@mentrixa.one if you believe this is a mistake."
+      );
+    }
+  }, [authError]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -83,8 +92,8 @@ export default function SignInPage() {
       </h1>
       <p className="text-sm text-slate-500 mb-5">
         New to Mentrixa?{" "}
-        <Link href="/auth/signup" className="text-mentrixa-600 hover:underline">
-          Create an account
+        <Link href="/join" className="text-mentrixa-600 hover:underline">
+          Join the waitlist
         </Link>
       </p>
 

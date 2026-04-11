@@ -42,6 +42,8 @@ const publicRoutes = new Set([
   "/robots.txt",
   "/sitemap.xml",
   "/join",
+  "/tutor/stripe/refresh",
+  "/tutor/stripe/success",
   /** Marketing / legal — no session required (same route group as landing links in footer). */
   "/contact",
   "/privacy",

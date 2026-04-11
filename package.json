@@ -7,7 +7,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:turbo": "node scripts/dev.mjs --turbo",
     "dev:clean": "npm run clean && node scripts/dev.mjs",
-    "build": "next build",
+    "build": "node scripts/build.mjs",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",

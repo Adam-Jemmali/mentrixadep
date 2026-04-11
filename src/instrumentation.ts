@@ -1,7 +1,3 @@
-/**
- * Runs once per Node server process (dev + prod). Keep side effects out of `env.ts`
- * module evaluation so imports do not throw before optional getters are used.
- */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   try {
