@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     if (existing?.status === "rejected") {
       return NextResponse.json(
         {
-          error: "Your waitlist application was rejected. Please contact support@mentrixa.one if you believe this is a mistake.",
+          error: "Sorry, you have been rejected and cannot join the waitlist again with this email. Please contact support@mentrixa.one if you believe this is a mistake.",
           status: "rejected",
         },
         { status: 403 }
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
         if (raced?.status === "rejected") {
           return NextResponse.json(
             {
-              error: "Your waitlist application was rejected. Please contact support@mentrixa.one if you believe this is a mistake.",
+              error: "Sorry, you have been rejected and cannot join the waitlist again with this email. Please contact support@mentrixa.one if you believe this is a mistake.",
               status: "rejected",
             },
             { status: 403 }

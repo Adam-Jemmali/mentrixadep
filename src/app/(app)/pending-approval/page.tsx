@@ -23,9 +23,25 @@ export default async function PendingApprovalPage() {
     redirect(getRoleHomePath(userData.role));
   }
 
+  const email = user.email?.trim().toLowerCase() ?? "";
+  let registrationStatus: "pending" | "rejected" = "pending";
+  if (email) {
+    const { data: regRow, error: regErr } = await supabase
+      .from("registration_requests")
+      .select("status")
+      .eq("email", email)
+      .maybeSingle();
+    if (regErr) {
+      console.error("[pending-approval] registration_requests:", regErr.message);
+    } else if (regRow?.status === "rejected") {
+      registrationStatus = "rejected";
+    }
+  }
+
   return (
     <PendingApprovalContent
       role={(userData?.role as "student" | "tutor" | "admin" | null) ?? null}
+      registrationStatus={registrationStatus}
     />
   );
 }

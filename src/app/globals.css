@@ -1,13 +1,46 @@
+/* Mobile-optimized navbar - disable expensive effects on small screens */
+@media (max-width: 768px) {
+  .lp-nav {
+    backdrop-filter: none !important;
+  }
+  .lp-nav > div:nth-child(1) {
+    filter: none !important;
+  }
+}
+
+/* Disable animations on small viewport or slow connections */
+@media (max-width: 640px) and (prefers-reduced-motion: no-preference) {
+  .lp-orb, .lp-img-float, .lp-cta-pulse {
+    animation: none !important;
+  }
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+
 :root { --radius: 0.5rem; }
 
 .section-container { max-width: 80rem; margin-left: auto; margin-right: auto; width: 100%; }
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { background:#FAFAFA; color:#0F172A; font-family:'Geist',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+* { box-sizing: border-box; touch-action: pan-y; }
+html { scroll-behavior: auto; }
+body { background:#FAFAFA; color:#0F172A; font-family:'Geist',system-ui,sans-serif; -webkit-font-smoothing:antialiased; -webkit-touch-callout:none; }
+
+/* Disable expensive animations on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Optimize button clicks on mobile */
+button, [role="button"], a { -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
+@media (hover: none) {
+  button:active, [role="button"]:active, a:active { opacity: 0.7; }
+}
 ::selection { background:#BFDBFE; color:#1E3A8A; }
 
 .mentrixa-surface { background:#fff; border:1px solid #E2E8F0; border-radius:var(--radius); }
@@ -362,14 +395,14 @@ main:has(.lp-root) > div {
   background: linear-gradient(180deg, #152536 0%, #132232 100%);
 }
 
-/* Landing orbs — CSS replaces GSAP yoyo float */
+/* Landing orbs — simplified for low-end devices */
 @keyframes lpOrbFloat {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-30px);
+    transform: translateY(-20px);
   }
 }
 .lp-orb {
@@ -417,32 +450,33 @@ main:has(.lp-root) > div {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
 }
 .lp-img-float {
   animation: lpFloatSlow 5s ease-in-out infinite;
 }
 
+/* Optimized pulse ring - uses opacity instead of box-shadow */
 @keyframes lpPulseRing {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.12);
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(96, 165, 250, 0);
+    opacity: 0.6;
   }
 }
 .lp-cta-pulse {
   animation: lpPulseRing 2.8s ease-in-out infinite;
 }
 
-/* ─── Mentrixa logo — 3D marks & loaders ─── */
+/* ─── Mentrixa logo — optimized for performance ─── */
 .mx-perspective {
-  perspective: 1000px;
+  perspective: none;
 }
 .mx-logo-mark-wrap {
-  perspective: 880px;
+  perspective: none;
 }
 .mx-logo-mark-inner {
   transform-style: preserve-3d;
@@ -451,10 +485,10 @@ main:has(.lp-root) > div {
 @keyframes mxMarkFloat {
   0%,
   100% {
-    transform: rotateX(6deg) rotateY(-14deg) translateZ(0);
+    transform: translateY(0) scale(1);
   }
   50% {
-    transform: rotateX(10deg) rotateY(10deg) translateZ(14px);
+    transform: translateY(-8px) scale(1.02);
   }
 }
 

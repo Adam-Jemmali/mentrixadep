@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="480" viewBox="0 0 400 480">
+
+<g transform="translate(200,20)">
+
+  <!-- platform -->
+  <ellipse cx="0" cy="418" rx="64" ry="10" fill="#3E2000"/>
+  <ellipse cx="0" cy="414" rx="64" ry="10" fill="#5D3A00"/>
+
+  <!-- legs -->
+  <rect x="-24" y="312" width="20" height="76" rx="7" fill="#4E342E"/>
+  <rect x="4" y="312" width="20" height="76" rx="7" fill="#4E342E"/>
+  <line x1="-14" y1="314" x2="-14" y2="386" stroke="#3E2723" stroke-width="1" opacity="0.5"/>
+  <line x1="14" y1="314" x2="14" y2="386" stroke="#3E2723" stroke-width="1" opacity="0.5"/>
+  <!-- shoes -->
+  <rect x="-30" y="378" width="30" height="16" rx="6" fill="#3E2723"/>
+  <rect x="2" y="378" width="30" height="16" rx="6" fill="#3E2723"/>
+  <ellipse cx="-20" cy="381" rx="6" ry="2" fill="#6D4C41" opacity="0.6"/>
+  <ellipse cx="18" cy="381" rx="6" ry="2" fill="#6D4C41" opacity="0.6"/>
+
+  <!-- shirt -->
+  <rect x="-42" y="182" width="84" height="140" rx="18" fill="#FFF9C4"/>
+
+  <!-- tie -->
+  <polygon points="0,192 -6,210 0,310 6,210" fill="#FF8F00"/>
+  <polygon points="-6,210 6,210 4,218 -4,218" fill="#E65100"/>
+  <rect x="-4" y="218" width="8" height="85" rx="2" fill="#FF8F00"/>
+
+  <!-- blazer panels -->
+  <path d="M-42 182 Q-42 322 -16 322 L-16 182Z" fill="#4E342E"/>
+  <path d="M42 182 Q42 322 16 322 L16 182Z" fill="#4E342E"/>
+  <!-- lapels -->
+  <path d="M-16 182 L-42 218 L-16 248 Z" fill="#3E2723"/>
+  <path d="M16 182 L42 218 L16 248 Z" fill="#3E2723"/>
+  <!-- button -->
+  <circle cx="0" cy="290" r="4" fill="#3E2723"/>
+  <circle cx="0" cy="290" r="2" fill="#6D4C41"/>
+  <!-- pocket square -->
+  <rect x="22" y="200" width="14" height="10" rx="2" fill="#FFF9C4" opacity="0.8"/>
+  <path d="M24 200 L29 195 L34 200" stroke="#FF8F00" stroke-width="1" fill="none"/>
+
+  <!-- left arm + clipboard -->
+  <rect x="-68" y="190" width="28" height="92" rx="12" fill="#4E342E"/>
+  <rect x="-70" y="272" width="24" height="18" rx="7" fill="#3E2723"/>
+  <rect x="-92" y="244" width="36" height="52" rx="5" fill="#F5F5F5"/>
+  <rect x="-92" y="244" width="36" height="52" rx="5" fill="none" stroke="#E0E0E0" stroke-width="1"/>
+  <rect x="-82" y="238" width="16" height="10" rx="3" fill="#BDBDBD"/>
+  <rect x="-80" y="236" width="12" height="6" rx="2" fill="#9E9E9E"/>
+  <rect x="-86" y="258" width="28" height="2" rx="1" fill="#BDBDBD"/>
+  <rect x="-86" y="265" width="22" height="2" rx="1" fill="#BDBDBD"/>
+  <rect x="-86" y="272" width="28" height="2" rx="1" fill="#FF8F00"/>
+  <rect x="-86" y="279" width="18" height="2" rx="1" fill="#BDBDBD"/>
+  <rect x="-86" y="286" width="24" height="2" rx="1" fill="#BDBDBD"/>
+  <path d="M-86 258 L-82 262 L-76 254" stroke="#4CAF50" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- right arm pointing -->
+  <g transform="rotate(24,50,212)">
+    <rect x="40" y="190" width="28" height="70" rx="12" fill="#4E342E"/>
+    <rect x="38" y="250" width="24" height="16" rx="7" fill="#3E2723"/>
+  </g>
+
+  <!-- neck -->
+  <rect x="-12" y="158" width="24" height="30" rx="7" fill="#F4A99A"/>
+
+  <!-- head -->
+  <rect x="-40" y="88" width="80" height="76" rx="28" fill="#F4A99A"/>
+  <rect x="22" y="100" width="14" height="50" rx="7" fill="#E8907A" opacity="0.25"/>
+
+  <!-- ears -->
+  <ellipse cx="-40" cy="126" rx="8" ry="10" fill="#F4A99A"/>
+  <ellipse cx="40" cy="126" rx="8" ry="10" fill="#F4A99A"/>
+  <ellipse cx="-40" cy="126" rx="4" ry="6" fill="#E8907A" opacity="0.4"/>
+  <ellipse cx="40" cy="126" rx="4" ry="6" fill="#E8907A" opacity="0.4"/>
+
+  <!-- hair -->
+  <path d="M-40 112 Q-40 82 -20 72 Q0 66 20 72 Q40 82 40 112 Q22 96 0 98 Q-20 96 -40 112Z" fill="#1A0A00"/>
+  <path d="M-8 68 Q-4 72 0 74" stroke="#2C1A00" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <rect x="-44" y="100" width="10" height="28" rx="5" fill="#1A0A00"/>
+  <rect x="34" y="100" width="10" height="28" rx="5" fill="#1A0A00"/>
+
+  <!-- glasses -->
+  <rect x="-26" y="114" width="20" height="14" rx="5" fill="none" stroke="#FF8F00" stroke-width="2"/>
+  <rect x="6" y="114" width="20" height="14" rx="5" fill="none" stroke="#FF8F00" stroke-width="2"/>
+  <rect x="-26" y="114" width="20" height="14" rx="5" fill="#FF8F00" opacity="0.08"/>
+  <rect x="6" y="114" width="20" height="14" rx="5" fill="#FF8F00" opacity="0.08"/>
+  <line x1="-6" y1="121" x2="6" y2="121" stroke="#FF8F00" stroke-width="2"/>
+  <line x1="-40" y1="121" x2="-26" y2="121" stroke="#FF8F00" stroke-width="1.8"/>
+  <line x1="26" y1="121" x2="40" y2="121" stroke="#FF8F00" stroke-width="1.8"/>
+
+  <!-- eyes -->
+  <circle cx="-16" cy="121" r="5" fill="#0D1B2A"/>
+  <circle cx="16" cy="121" r="5" fill="#0D1B2A"/>
+  <circle cx="-16" cy="121" r="3" fill="#4E342E"/>
+  <circle cx="16" cy="121" r="3" fill="#4E342E"/>
+  <circle cx="-13" cy="119" r="1.5" fill="white"/>
+  <circle cx="19" cy="119" r="1.5" fill="white"/>
+
+  <!-- brows -->
+  <path d="M-24 110 Q-16 107 -8 110" stroke="#1A0A00" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M8 110 Q16 107 24 110" stroke="#1A0A00" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- smile -->
+  <path d="M-10 140 Q0 150 10 140" stroke="#C0705A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M-6 142 Q0 147 6 142" stroke="#FFF9C4" stroke-width="1" fill="none" stroke-linecap="round"/>
+
+  <!-- floating lantern -->
+  <g transform="translate(56,74)">
+    <rect x="-12" y="-20" width="24" height="30" rx="5" fill="#FF8F00"/>
+    <rect x="-12" y="-20" width="24" height="30" rx="5" fill="none" stroke="#E65100" stroke-width="1.5"/>
+    <rect x="-8" y="-26" width="16" height="8" rx="3" fill="#E65100"/>
+    <rect x="-3" y="-30" width="6" height="6" rx="2" fill="#BF360C"/>
+    <line x1="-8" y1="-8" x2="-8" y2="8" stroke="#E65100" stroke-width="1.2"/>
+    <line x1="0" y1="-8" x2="0" y2="8" stroke="#E65100" stroke-width="1.2"/>
+    <line x1="8" y1="-8" x2="8" y2="8" stroke="#E65100" stroke-width="1.2"/>
+    <ellipse cx="0" cy="14" rx="8" ry="4" fill="#FFD600" opacity="0.5"/>
+    <ellipse cx="0" cy="14" rx="5" ry="3" fill="#FFEB3B" opacity="0.4"/>
+  </g>
+
+  <!-- guide badge (star shape only, no text) -->
+  <g transform="translate(-56,72)">
+    <rect x="-20" y="-14" width="40" height="26" rx="6" fill="#1565C0"/>
+    <rect x="-20" y="-14" width="40" height="26" rx="6" fill="none" stroke="#42A5F5" stroke-width="1.5"/>
+    <polygon points="0,-8 2.5,-2 8,-2 3.5,2 5.5,8 0,4 -5.5,8 -3.5,2 -8,-2 -2.5,-2" fill="#E3F2FD"/>
+  </g>
+
+  <!-- progress node map -->
+  <g transform="translate(0,48)" opacity="0.85">
+    <circle cx="-24" cy="0" r="5" fill="#4CAF50"/>
+    <circle cx="0" cy="0" r="5" fill="#4CAF50"/>
+    <circle cx="24" cy="0" r="4" fill="#FF8F00"/>
+    <circle cx="44" cy="0" r="3" fill="#546E7A"/>
+    <line x1="-19" y1="0" x2="-5" y2="0" stroke="#4CAF50" stroke-width="1.5"/>
+    <line x1="5" y1="0" x2="20" y2="0" stroke="#FF8F00" stroke-width="1.5" stroke-dasharray="3,2"/>
+    <line x1="28" y1="0" x2="41" y2="0" stroke="#546E7A" stroke-width="1" stroke-dasharray="2,2"/>
+  </g>
+
+</g>
+</svg>
