@@ -6,6 +6,29 @@ import { revalidatePath } from "next/cache";
 import { validateUUID, sanitizeError, enforceRateLimit, RATE_LIMITS, getRateLimitId } from "@/lib/security";
 import { sendWaitlistDecisionEmail } from "@/lib/email";
 
+async function findAuthUserByEmail(email: string) {
+  const adminClient = createAdminClient();
+  const target = email.trim().toLowerCase();
+  let page = 1;
+  const perPage = 1000;
+
+  while (page <= 20) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error("[admin] listUsers failed while searching by email:", error.message);
+      return null;
+    }
+
+    const found = data.users.find((u) => (u.email ?? "").trim().toLowerCase() === target);
+    if (found) return found;
+
+    if (data.users.length < perPage) break;
+    page += 1;
+  }
+
+  return null;
+}
+
 export async function getRegistrationRequests() {
   await requireRole("admin");
   const adminClient = createAdminClient();
@@ -53,13 +76,7 @@ export async function approveRegistrationRequest(requestId: string) {
     // Note: Supabase JS SDK doesn't support email-based user lookup directly,
     // so we list users with pagination. For high-volume apps, consider a
     // server-side function (RPC) that queries auth.users by email.
-    const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
-
-    if (authError) {
-      throw new Error("Failed to fetch users");
-    }
-
-    const authUser = authUsers.users.find((u) => u.email === request.email);
+    const authUser = await findAuthUserByEmail(request.email);
 
     if (authUser) {
       const { error: updateError } = await adminClient
@@ -132,8 +149,7 @@ export async function rejectRegistrationRequest(requestId: string) {
     // We find their auth account by email, delete from users table, then from auth.users.
     if (request?.email) {
       try {
-        const { data: authUsers } = await adminClient.auth.admin.listUsers();
-        const authUser = authUsers?.users.find((u) => u.email === request.email);
+        const authUser = await findAuthUserByEmail(request.email);
         if (authUser) {
           // Delete from users table first (FK may cascade, but be explicit)
           await adminClient.from("users").delete().eq("id", authUser.id);
@@ -162,6 +178,7 @@ export type AdminUser = {
   email: string | null;
   role: string;
   approved: boolean;
+  status?: "pending" | "approved" | "suspended" | null;
   created_at: string;
 };
 
@@ -226,13 +243,10 @@ export async function approveAllPendingRegistrations(): Promise<{ count: number 
     return { count: 0 };
   }
 
-  const { data: authUsers } = await adminClient.auth.admin.listUsers();
-  if (!authUsers) return { count: 0 };
-
   let approved = 0;
 
   for (const request of pendingRequests) {
-    const authUser = authUsers.users.find((u) => u.email === request.email);
+    const authUser = await findAuthUserByEmail(request.email);
     if (authUser) {
       const { error: updateError } = await adminClient
         .from("users")
@@ -261,7 +275,7 @@ export async function getAllUsers(): Promise<AdminUser[]> {
 
   const { data: users, error } = await adminClient
     .from("users")
-    .select("id, role, approved, created_at")
+    .select("id, role, approved, status, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -305,6 +319,7 @@ export async function getAllUsers(): Promise<AdminUser[]> {
       email: emailById.get(u.id) ?? null,
       role: u.role,
       approved: u.approved,
+      status: (u as { status?: "pending" | "approved" | "suspended" | null }).status ?? null,
       created_at: u.created_at,
     }))
     .filter((u) => Boolean(u.email));

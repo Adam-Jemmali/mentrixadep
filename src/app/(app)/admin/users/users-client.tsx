@@ -55,8 +55,8 @@ export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initi
   const filtered = useMemo(() => {
     let result = users;
     if (roleFilter !== "all") result = result.filter((u) => u.role === roleFilter);
-    if (statusFilter === "active") result = result.filter((u) => u.approved);
-    if (statusFilter === "suspended") result = result.filter((u) => !u.approved);
+    if (statusFilter === "active") result = result.filter((u) => (u.status ?? (u.approved ? "approved" : "pending")) === "approved");
+    if (statusFilter === "suspended") result = result.filter((u) => (u.status ?? (u.approved ? "approved" : "pending")) === "suspended");
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -236,12 +236,18 @@ export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initi
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${u.approved ? "bg-emerald-400" : "bg-amber-400"}`} />
-                          <span className={`text-[12px] ${u.approved ? "text-emerald-700" : "text-amber-600"}`}>
-                            {u.approved ? "Active" : "Suspended"}
-                          </span>
-                        </div>
+                        {(() => {
+                          const status = u.status ?? (u.approved ? "approved" : "pending");
+                          const dot = status === "approved" ? "bg-emerald-400" : status === "suspended" ? "bg-red-400" : "bg-amber-400";
+                          const text = status === "approved" ? "text-emerald-700" : status === "suspended" ? "text-red-600" : "text-amber-600";
+                          const label = status === "approved" ? "Approved" : status === "suspended" ? "Suspended" : "Pending";
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                              <span className={`text-[12px] ${text}`}>{label}</span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4 text-[12px] text-slate-500">{relativeTime(u.created_at)}</td>
                       <td className="py-3 px-4">
@@ -334,7 +340,7 @@ export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initi
               Promote to admin
             </button>
           )}
-          {activeUser.approved ? (
+          {(activeUser.status ?? (activeUser.approved ? "approved" : "pending")) !== "suspended" ? (
             <button
               onClick={() => handleSuspend(activeUser.id, true)}
               className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[12px] text-red-600 hover:bg-red-50 transition-colors text-left"

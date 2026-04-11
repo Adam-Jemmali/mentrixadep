@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
@@ -21,6 +22,7 @@ function isSupportedOtpType(value: string): value is SupportedOtpType {
 
 async function resolvePostAuthDestination(): Promise<string> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -35,13 +37,45 @@ async function resolvePostAuthDestination(): Promise<string> {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!userRow?.role) {
+  const email = user.email?.trim().toLowerCase();
+  let effectiveUserRow = userRow;
+
+  // If waitlist already approved this email, promote to approved on first confirmation callback.
+  if (email) {
+    const { data: requestRow } = await admin
+      .from("registration_requests")
+      .select("status, role")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (requestRow?.status === "approved") {
+      const nextRole =
+        effectiveUserRow?.role ?? (requestRow.role === "tutor" ? "tutor" : "student");
+      await admin
+        .from("users")
+        .update({
+          approved: true,
+          status: "approved",
+          role: nextRole,
+        })
+        .eq("id", user.id);
+
+      const { data: refreshedRow } = await supabase
+        .from("users")
+        .select("role, status, approved, is_blacklisted")
+        .eq("id", user.id)
+        .maybeSingle();
+      effectiveUserRow = refreshedRow ?? effectiveUserRow;
+    }
+  }
+
+  if (!effectiveUserRow?.role) {
     return "/auth/select-role";
   }
 
-  const accessStatus = normalizeAccessStatus(userRow);
+  const accessStatus = normalizeAccessStatus(effectiveUserRow);
   if (accessStatus === "approved") {
-    return getRoleHomePath(userRow.role);
+    return getRoleHomePath(effectiveUserRow.role);
   }
   if (accessStatus === "suspended") {
     return "/suspended";
