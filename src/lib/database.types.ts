@@ -7,6 +7,7 @@ export type SessionRequestStatus = "pending" | "approved" | "rejected" | "cancel
 export interface User {
   id: string;
   role: UserRole;
+  status?: "pending" | "approved" | "suspended";
   approved: boolean;
   /** Unique 8-character code; generated on insert if omitted */
   referral_code: string;

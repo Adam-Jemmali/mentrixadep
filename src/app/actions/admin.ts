@@ -67,6 +67,7 @@ export async function approveRegistrationRequest(requestId: string) {
         .update({
           role: request.role,
           approved: true,
+          status: "approved",
         })
         .eq("id", authUser.id);
 
@@ -235,7 +236,7 @@ export async function approveAllPendingRegistrations(): Promise<{ count: number 
     if (authUser) {
       const { error: updateError } = await adminClient
         .from("users")
-        .update({ role: request.role, approved: true })
+        .update({ role: request.role, approved: true, status: "approved" })
         .eq("id", authUser.id);
 
       if (updateError) continue;
@@ -471,7 +472,7 @@ export async function suspendUser(userId: string) {
 
   const { error } = await adminClient
     .from("users")
-    .update({ approved: false })
+    .update({ approved: false, status: "suspended" })
     .eq("id", validId);
 
   if (error) throw new Error(sanitizeError(error));
@@ -488,7 +489,7 @@ export async function unsuspendUser(userId: string) {
 
   const { error } = await adminClient
     .from("users")
-    .update({ approved: true })
+    .update({ approved: true, status: "approved" })
     .eq("id", validId);
 
   if (error) throw new Error(sanitizeError(error));

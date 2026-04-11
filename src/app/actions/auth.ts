@@ -27,6 +27,7 @@ import { tryAutoAssociateInstitution } from "@/app/actions/institution";
 import { signUpServerSchema } from "@/lib/schemas";
 import { getSiteUrl } from "@/lib/site";
 import { isWaitlistEnabled } from "@/lib/flags";
+import { normalizeAccessStatus } from "@/lib/user-access-status";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -107,6 +108,7 @@ export async function applyRoleAndSyncProfile(
     .update({
       role,
       approved,
+      status: approved ? "approved" : "pending",
       age_confirmed_13_or_older: true,
       age_confirmed_at: new Date().toISOString(),
     })
@@ -209,11 +211,12 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
   const roleCookie = store.get(OAUTH_ROLE_COOKIE)?.value;
   const { data: existingUserRow } = await supabase
     .from("users")
-    .select("role, approved")
+    .select("role, approved, status, is_blacklisted")
     .eq("id", user.id)
     .maybeSingle();
   const existingRole = existingUserRow?.role ?? null;
-  const existingApproved = existingUserRow?.approved === true;
+  const existingStatus = normalizeAccessStatus(existingUserRow);
+  const existingApproved = existingStatus === "approved";
   const waitlistStatus = await getWaitlistStatusByEmail(user.email);
   const signupRoleFromCookie = roleCookie === "student" || roleCookie === "tutor" ? roleCookie : null;
 
@@ -263,7 +266,7 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
 
   const { data: userData } = await supabase
     .from("users")
-    .select("role, approved")
+    .select("role, approved, status, is_blacklisted")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -271,7 +274,11 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
     return "/auth/select-role";
   }
 
-  if (!userData.approved) {
+  const accessStatus = normalizeAccessStatus(userData);
+  if (accessStatus === "suspended") {
+    return "/suspended";
+  }
+  if (accessStatus !== "approved") {
     return "/pending-approval";
   }
 

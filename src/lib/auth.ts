@@ -2,10 +2,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { UserRole } from "@/lib/database.types";
 import { getRoleHomePath } from "@/lib/role-home";
+import { normalizeAccessStatus, type AccessStatus } from "@/lib/user-access-status";
 
 export interface AuthUser {
   id: string;
   role: UserRole;
+  status: AccessStatus;
   approved: boolean;
   email?: string;
   /** From `user_settings`; drives navbar name + avatar */
@@ -34,7 +36,7 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
 
   const { data: userRow } = await supabase
     .from("users")
-    .select("role, approved")
+    .select("role, approved, status, is_blacklisted")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -60,6 +62,7 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
   return {
     id: user.id,
     role: userRow.role as UserRole,
+    status: normalizeAccessStatus(userRow),
     approved: userRow.approved,
     email: user.email,
     displayName,
@@ -87,7 +90,7 @@ export async function requireRole(role: UserRole | UserRole[]): Promise<AuthUser
     return user;
   }
 
-  if (!user.approved) {
+  if (user.status !== "approved") {
     // Check if user has an active verification (full access during window)
     const supabase = await createClient();
     const { data: userRow } = await supabase
@@ -102,7 +105,10 @@ export async function requireRole(role: UserRole | UserRole[]): Promise<AuthUser
       activeStatuses.includes(userRow.verification_status as string);
     const isBlacklisted = userRow?.is_blacklisted === true;
 
-    if (isBlacklisted || !hasActiveVerification) {
+    if (isBlacklisted) {
+      redirect("/suspended");
+    }
+    if (!hasActiveVerification) {
       redirect("/pending-approval");
     }
     // Active verification: allow through (full access)

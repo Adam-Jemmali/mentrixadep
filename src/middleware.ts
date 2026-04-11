@@ -14,6 +14,7 @@ import {
 import { reportMiddlewareHttpError } from "@/lib/observability";
 import { getRoleHomePath } from "@/lib/role-home";
 import { REFERRAL_COOKIE_NAME, REFERRAL_COOKIE_MAX_AGE_SEC } from "@/lib/referral-constants";
+import { normalizeAccessStatus } from "@/lib/user-access-status";
 
 /**
  * Exact paths that do not require a session (plus publicPrefixes below).
@@ -328,15 +329,20 @@ async function runSupabaseAuthGuard(
     // Always prefer DB role/approval over auth metadata to avoid stale redirects.
     const { data: userData } = await supabase
       .from("users")
-      .select("approved, role")
+      .select("status, approved, role, is_blacklisted")
       .eq("id", user.id)
       .maybeSingle();
 
     const role = userData?.role;
-    const approved = userData?.approved === true;
+    const accessStatus = normalizeAccessStatus(userData);
 
-    // Unapproved users are restricted to the pending-approval flow.
-    if (!approved) {
+    if (accessStatus === "suspended") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/suspended";
+      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    }
+
+    if (accessStatus !== "approved") {
       const url = request.nextUrl.clone();
       url.pathname = pendingApprovalRoute;
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
@@ -351,12 +357,12 @@ async function runSupabaseAuthGuard(
     // Always prefer DB role/approval over auth metadata to avoid stale route guards.
     const { data: userData } = await supabase
       .from("users")
-      .select("approved, role")
+      .select("status, approved, role, is_blacklisted")
       .eq("id", user.id)
       .maybeSingle();
 
     const role = userData?.role;
-    const approved = userData?.approved === true;
+    const accessStatus = normalizeAccessStatus(userData);
 
     // No role yet (new account awaiting role selection) — let them pick a role
     if (!role) {
@@ -368,8 +374,16 @@ async function runSupabaseAuthGuard(
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
-    // Unapproved users are allowed only on /pending-approval and auth public routes.
-    if (!approved) {
+    if (accessStatus === "suspended") {
+      if (pathname === "/suspended") {
+        return finalizeResponse(supabaseResponse, request, user.id);
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/suspended";
+      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    }
+
+    if (accessStatus !== "approved") {
       if (pathname === pendingApprovalRoute) {
         return finalizeResponse(supabaseResponse, request, user.id);
       }

@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
+import { normalizeAccessStatus } from "@/lib/user-access-status";
+import { getRoleHomePath } from "@/lib/role-home";
 
 const OTP_TYPES = [
   "signup",
@@ -15,6 +17,36 @@ type SupportedOtpType = (typeof OTP_TYPES)[number];
 
 function isSupportedOtpType(value: string): value is SupportedOtpType {
   return OTP_TYPES.includes(value as SupportedOtpType);
+}
+
+async function resolvePostAuthDestination(): Promise<string> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return "/auth/signin";
+  }
+
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("role, status, approved, is_blacklisted")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!userRow?.role) {
+    return "/auth/select-role";
+  }
+
+  const accessStatus = normalizeAccessStatus(userRow);
+  if (accessStatus === "approved") {
+    return getRoleHomePath(userRow.role);
+  }
+  if (accessStatus === "suspended") {
+    return "/suspended";
+  }
+  return "/pending-approval";
 }
 
 export async function GET(request: Request) {
@@ -33,6 +65,10 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("[auth/callback] exchangeCodeForSession:", error.message);
+      if (error.message.toLowerCase().includes("otp_expired")) {
+        const fallback = await resolvePostAuthDestination();
+        redirect(fallback);
+      }
       if (otpTypeParam === "recovery") {
         redirect("/auth/forgot-password?error=expired");
       }
@@ -47,6 +83,11 @@ export async function GET(request: Request) {
 
     if (nextPath) {
       redirect(nextPath);
+    }
+
+    if (otpTypeParam === "signup" || otpTypeParam === "email") {
+      const path = await resolvePostAuthDestination();
+      redirect(path);
     }
 
     try {
@@ -66,6 +107,10 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("[auth/callback] verifyOtp:", error.message);
+      if (error.message.toLowerCase().includes("otp_expired")) {
+        const fallback = await resolvePostAuthDestination();
+        redirect(fallback);
+      }
       if (otpTypeParam === "recovery") {
         redirect("/auth/forgot-password?error=expired");
       }
@@ -81,6 +126,11 @@ export async function GET(request: Request) {
       redirect(nextPath);
     }
 
+    if (otpTypeParam === "signup" || otpTypeParam === "email") {
+      const path = await resolvePostAuthDestination();
+      redirect(path);
+    }
+
     try {
       const path = await resolveOAuthSessionRedirect();
       redirect(path);
@@ -90,6 +140,7 @@ export async function GET(request: Request) {
     }
   }
 
-  redirect("/auth/signin?error=callback");
+  const fallback = await resolvePostAuthDestination();
+  redirect(fallback);
 }
 

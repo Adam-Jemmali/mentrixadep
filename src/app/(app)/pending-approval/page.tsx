@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PendingApprovalContent } from "@/components/auth/PendingApprovalContent";
 import { getRoleHomePath } from "@/lib/role-home";
+import { normalizeAccessStatus } from "@/lib/user-access-status";
 
 export default async function PendingApprovalPage() {
   const supabase = await createClient();
@@ -15,12 +16,16 @@ export default async function PendingApprovalPage() {
 
   const { data: userData } = await supabase
     .from("users")
-    .select("approved, role")
+    .select("status, approved, role, is_blacklisted")
     .eq("id", user.id)
     .single();
 
-  if (userData?.approved) {
+  const accessStatus = normalizeAccessStatus(userData);
+  if (accessStatus === "approved") {
     redirect(getRoleHomePath(userData.role));
+  }
+  if (accessStatus === "suspended") {
+    redirect("/suspended");
   }
 
   const email = user.email?.trim().toLowerCase() ?? "";

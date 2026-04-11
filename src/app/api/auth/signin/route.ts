@@ -7,6 +7,7 @@ import { isCaptchaConfigured, verifyTurnstileToken } from "@/lib/security/captch
 import { getRoleHomePath } from "@/lib/role-home";
 import { reportAuthCaptchaFailure, reportAuthLockout, reportSecurityRateLimitDenied } from "@/lib/observability";
 import { isWaitlistEnabled } from "@/lib/flags";
+import { normalizeAccessStatus } from "@/lib/user-access-status";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,7 @@ export async function POST(req: Request) {
 
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("approved, role")
+      .select("approved, role, status, is_blacklisted")
       .eq("id", signInData.user.id)
       .single();
 
@@ -137,8 +138,13 @@ export async function POST(req: Request) {
       return jsonError("Sign in failed. Please contact support.", 403);
     }
 
-    // Unapproved users can only access pending-approval flow.
-    if (userData.approved === false) {
+    const accessStatus = normalizeAccessStatus(userData);
+    if (accessStatus === "suspended") {
+      await clearAuthFailures(lockKey);
+      return NextResponse.json({ ok: true, redirectTo: "/suspended" });
+    }
+
+    if (accessStatus !== "approved") {
       await clearAuthFailures(lockKey);
       return NextResponse.json({ ok: true, redirectTo: "/pending-approval" });
     }
