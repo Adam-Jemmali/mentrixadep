@@ -84,7 +84,7 @@ export function ThirdStaticFeaturesContent() {
           sizes="100vw"
           priority
         />
-        <div className="absolute inset-0 bg-black/30" aria-hidden />
+        <div className="absolute inset-0 bg-black/50" aria-hidden />
 
         <div className="relative z-10 h-full w-full px-5 py-12 md:px-8 md:py-14">
           <div
@@ -102,7 +102,7 @@ export function ThirdStaticFeaturesContent() {
                 <article
                   key={item.title}
                   className={cn(
-                    "rounded-2xl border border-white/20 bg-slate-950/55 p-3.5 backdrop-blur-sm",
+                    "rounded-2xl border border-white/10 bg-slate-950/82 p-3.5 text-white shadow-xl shadow-black/30 backdrop-blur-md",
                     "transform-gpu transition-all duration-500 ease-out hover:-rotate-1 hover:scale-[1.03] hover:shadow-2xl",
                     item.hoverColor
                   )}
@@ -112,7 +112,7 @@ export function ThirdStaticFeaturesContent() {
                     <Image src={item.icon} alt="" width={20} height={20} className="object-contain brightness-0 invert" />
                   </div>
                   <h3 className="text-[15px] font-semibold text-white">{item.title}</h3>
-                  <p className="mt-1.5 text-[12px] leading-snug text-slate-200/90">{item.body}</p>
+                  <p className="mt-1.5 text-[12px] leading-snug text-slate-100/95">{item.body}</p>
                 </article>
               ))}
             </div>
@@ -124,7 +124,7 @@ export function ThirdStaticFeaturesContent() {
                 <article
                   key={item.title}
                   className={cn(
-                    "rounded-2xl border border-cyan-300/25 bg-slate-950/55 p-3.5 backdrop-blur-sm",
+                    "rounded-2xl border border-cyan-200/15 bg-slate-950/82 p-3.5 text-white shadow-xl shadow-black/30 backdrop-blur-md",
                     "transform-gpu transition-all duration-500 ease-out hover:-rotate-1 hover:scale-[1.03] hover:shadow-2xl",
                     item.hoverColor
                   )}
@@ -134,7 +134,7 @@ export function ThirdStaticFeaturesContent() {
                     <Image src={item.icon} alt="" width={20} height={20} className="object-contain brightness-0 invert" />
                   </div>
                   <h3 className="text-[15px] font-semibold text-white">{item.title}</h3>
-                  <p className="mt-1.5 text-[12px] leading-snug text-slate-200/90">{item.body}</p>
+                  <p className="mt-1.5 text-[12px] leading-snug text-slate-100/95">{item.body}</p>
                 </article>
               ))}
             </div>

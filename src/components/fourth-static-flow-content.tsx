@@ -68,7 +68,7 @@ export function FourthStaticFlowContent() {
 
   return (
     <section id="flow" className="relative flex min-h-screen items-center justify-center px-5 py-10 md:px-8 md:py-12">
-      <div className="absolute inset-0 bg-slate-950/40" aria-hidden />
+      <div className="absolute inset-0 bg-slate-950/55" aria-hidden />
 
       <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col">
         <div
@@ -87,7 +87,7 @@ export function FourthStaticFlowContent() {
               title={step.title}
               hoverColor={step.hoverColor}
               className={cn(
-                "h-full rounded-2xl border border-white/20 bg-slate-950/55 p-3.5 text-left backdrop-blur-sm",
+                "h-full rounded-2xl border border-white/10 bg-slate-950/82 p-3.5 text-left shadow-xl shadow-black/30 backdrop-blur-md",
                 "transform-gpu transition-all duration-500 ease-out hover:-rotate-1 hover:scale-[1.03] hover:shadow-2xl",
                 cardsOpacity < 0.2 ? "pointer-events-none" : ""
               )}
@@ -100,9 +100,9 @@ export function FourthStaticFlowContent() {
               <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/25 bg-slate-900/80">
                 <Image src={step.icon} alt="" width={20} height={20} className="object-contain brightness-0 invert" />
               </div>
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-cyan-200/75">{step.number}</p>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-cyan-200">{step.number}</p>
               <h3 className="text-[15px] font-semibold text-white">{step.title}</h3>
-              <p className="mt-1.5 text-[12px] leading-snug text-slate-200/90 md:text-[13px]">{step.line}</p>
+              <p className="mt-1.5 text-[12px] leading-snug text-slate-100/95 md:text-[13px]">{step.line}</p>
             </TiltCard>
           ))}
         </div>

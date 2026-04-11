@@ -418,7 +418,7 @@ export function FirstSequenceHeroContent() {
             className="lg:pt-8 xl:pt-12"
             style={{ opacity: revealRight, transform: `translateY(${(1 - revealRight) * 16}px)` }}
           >
-            <div id="waitlist" className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/[0.06] backdrop-blur-md p-4 sm:p-5 text-left shadow-xl shadow-indigo-950/30 lg:max-w-xl lg:ml-auto">
+            <div id="waitlist" className="relative overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 backdrop-blur-md p-4 sm:p-5 text-left shadow-xl shadow-indigo-950/45 lg:max-w-xl lg:ml-auto">
               <div className="pointer-events-none absolute -right-6 -top-2 hidden opacity-20 lg:block">
                 <WatermarkRoleIcon role="guide" />
               </div>
@@ -428,7 +428,7 @@ export function FirstSequenceHeroContent() {
               <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Apply for early access →</h3>
 
               <div className="mt-4 grid md:grid-cols-2 gap-4">
-                <div className="rounded-xl border border-white/15 bg-black/20 p-3 min-h-[120px]">
+                <div className="rounded-xl border border-white/10 bg-black/55 p-3 min-h-[120px]">
                   {WAITLIST_SLIDES.map((s, i) => (
                     <div
                       key={s.title}
@@ -438,7 +438,7 @@ export function FirstSequenceHeroContent() {
                       )}
                     >
                       <p className="text-sm font-semibold text-white">{s.title}</p>
-                      <p className="mt-1 text-xs text-indigo-100/75 leading-relaxed">{s.text}</p>
+                      <p className="mt-1 text-xs text-slate-100/90 leading-relaxed">{s.text}</p>
                     </div>
                   ))}
                   <div className="mt-3 flex gap-1.5">
@@ -456,13 +456,13 @@ export function FirstSequenceHeroContent() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/15 bg-black/20 p-3">
+                <div className="rounded-xl border border-white/10 bg-black/55 p-3">
                   <input
                     type="email"
                     value={waitlistEmail}
                     onChange={(e) => setWaitlistEmail(e.target.value)}
                     placeholder="you@university.ca or personal email"
-                    className="w-full rounded-lg border border-white/30 bg-white/90 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500"
                   />
                   <div className="mt-2 flex gap-2">
                     <button

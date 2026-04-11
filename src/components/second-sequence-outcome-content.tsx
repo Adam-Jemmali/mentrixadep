@@ -48,7 +48,7 @@ export function SecondSequenceOutcomeContent() {
           className="mx-auto max-w-6xl text-center"
           style={{ opacity: headingOpacity, transform: `translateY(${(1 - headingOpacity) * 16}px)` }}
         >
-          <p className="mb-5 text-[10px] font-bold tracking-[0.2em] uppercase text-violet-300/80 md:mb-6">
+          <p className="mb-5 text-[10px] font-bold tracking-[0.2em] uppercase text-violet-200 md:mb-6">
             Here is exactly what you get.
           </p>
         </div>
@@ -62,12 +62,12 @@ export function SecondSequenceOutcomeContent() {
               <div
                 key={line}
                 className={cn(
-                  "rounded-2xl border border-violet-300/25 bg-black/35 p-3.5 text-left backdrop-blur-sm",
+                  "rounded-2xl border border-violet-200/25 bg-slate-950/78 p-3.5 text-left shadow-lg shadow-black/20 backdrop-blur-sm",
                   "transition-all duration-500"
                 )}
                 style={{ transitionDelay: `${i * 80}ms` }}
               >
-                <p className="text-[12px] md:text-[13px] text-slate-100/95 leading-snug">{line}</p>
+                <p className="text-[12px] md:text-[13px] text-white leading-snug">{line}</p>
               </div>
             ))}
           </div>
@@ -82,12 +82,12 @@ export function SecondSequenceOutcomeContent() {
               <div
                 key={line}
                 className={cn(
-                  "rounded-2xl border border-cyan-300/25 bg-black/35 p-3.5 text-left backdrop-blur-sm",
+                  "rounded-2xl border border-cyan-200/25 bg-slate-950/78 p-3.5 text-left shadow-lg shadow-black/20 backdrop-blur-sm",
                   "transition-all duration-500"
                 )}
                 style={{ transitionDelay: `${i * 80}ms` }}
               >
-                <p className="text-[12px] md:text-[13px] text-slate-100/95 leading-snug">{line}</p>
+                <p className="text-[12px] md:text-[13px] text-white leading-snug">{line}</p>
               </div>
             ))}
           </div>
