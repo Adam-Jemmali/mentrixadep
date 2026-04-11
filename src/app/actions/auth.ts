@@ -26,6 +26,7 @@ import { trackEvent } from "@/lib/analytics";
 import { tryAutoAssociateInstitution } from "@/app/actions/institution";
 import { signUpServerSchema } from "@/lib/schemas";
 import { getSiteUrl } from "@/lib/site";
+import { isWaitlistEnabled } from "@/lib/flags";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -71,11 +72,12 @@ export async function applyRoleAndSyncProfile(
 ): Promise<void> {
   const supabase = await createClient();
   const autoApprove = await fetchAutoApproveRegistrationsEnabled();
+  const waitlistEnabled = isWaitlistEnabled();
   const waitlist = await getRegistrationRequestStatus(email);
   const waitlistStatus = waitlist.status;
   const waitlistRole = waitlist.role;
 
-  if (waitlistRole && waitlistRole !== role) {
+  if (waitlistEnabled && waitlistRole && waitlistRole !== role) {
     const admin = createAdminClient();
     try {
       await admin.auth.admin.deleteUser(userId);
@@ -88,7 +90,7 @@ export async function applyRoleAndSyncProfile(
   }
 
   // Rejected emails cannot re-register — delete the newly created auth account and block
-  if (waitlistStatus === "rejected") {
+  if (waitlistEnabled && waitlistStatus === "rejected") {
     const admin = createAdminClient();
     try {
       await admin.auth.admin.deleteUser(userId);
@@ -98,7 +100,7 @@ export async function applyRoleAndSyncProfile(
     throw new Error("Your application was not approved. Contact support@mentrixa.one for assistance.");
   }
 
-  const approved = waitlistStatus === "approved" || (role === "student" && autoApprove);
+  const approved = !waitlistEnabled || waitlistStatus === "approved" || (role === "student" && autoApprove);
 
   const { error: uErr } = await supabase
     .from("users")
@@ -123,8 +125,9 @@ export async function applyRoleAndSyncProfile(
     console.error("[applyRoleAndSyncProfile] auth update:", authErr);
   }
 
-  const status =
-    waitlistStatus === "approved"
+  const status = !waitlistEnabled
+    ? "approved"
+    : waitlistStatus === "approved"
       ? "approved"
       : role === "student" && autoApprove
         ? "approved"
@@ -193,6 +196,7 @@ async function getWaitlistStatusByEmail(email: string | undefined): Promise<"pen
  */
 export async function resolveOAuthSessionRedirect(): Promise<string> {
   const supabase = await createClient();
+  const waitlistEnabled = isWaitlistEnabled();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -211,32 +215,40 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
   const existingRole = existingUserRow?.role ?? null;
   const existingApproved = existingUserRow?.approved === true;
   const waitlistStatus = await getWaitlistStatusByEmail(user.email);
+  const signupRoleFromCookie = roleCookie === "student" || roleCookie === "tutor" ? roleCookie : null;
 
-  if (waitlistStatus === "rejected") {
+  if (waitlistEnabled && waitlistStatus === "rejected") {
     await clearOAuthCookies();
     await supabase.auth.signOut();
     return "/auth/signin?error=waitlist_rejected";
   }
 
   if (!existingRole) {
-    await clearOAuthCookies();
-    await supabase.auth.signOut();
-    return "/join";
-  }
-
-  if (!existingApproved) {
-    if (waitlistStatus !== "approved") {
+    if (intent === "signup" && signupRoleFromCookie) {
+      await applyRoleAndSyncProfile(user.id, user.email ?? undefined, signupRoleFromCookie);
+      await clearOAuthCookies();
+    } else {
       await clearOAuthCookies();
       await supabase.auth.signOut();
-      return "/join";
+      return waitlistEnabled
+        ? `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`
+        : "/auth/select-role";
     }
   }
 
-  if (intent === "signup" && (roleCookie === "student" || roleCookie === "tutor")) {
+  if (!existingApproved) {
+    if (waitlistEnabled && waitlistStatus !== "approved") {
+      await clearOAuthCookies();
+      await supabase.auth.signOut();
+      return `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`;
+    }
+  }
+
+  if (intent === "signup" && signupRoleFromCookie) {
     // Guard against stale signup cookies accidentally downgrading existing accounts.
     // Existing approved users (especially admins) should never be role-overwritten by cookie state.
     if (!existingRole || !existingApproved) {
-      await applyRoleAndSyncProfile(user.id, user.email ?? undefined, roleCookie);
+      await applyRoleAndSyncProfile(user.id, user.email ?? undefined, signupRoleFromCookie);
     }
     await clearOAuthCookies();
   } else if (intent === "signup") {

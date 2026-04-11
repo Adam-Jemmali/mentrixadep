@@ -32,6 +32,7 @@ const publicRoutes = new Set([
   "/api/auth/request-password-reset",
   "/auth/signin",
   "/auth/signup",
+  "/auth/activate",
   "/auth/forgot-password",
   "/auth/confirm-reset",
   "/auth/reset-password",

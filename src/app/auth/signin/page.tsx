@@ -19,6 +19,7 @@ export default function SignInPage() {
   const searchParams = useSearchParams();
   const passwordReset = searchParams.get("reset") === "1";
   const authError = searchParams.get("error");
+  const emailPrefill = searchParams.get("email")?.trim().toLowerCase() ?? "";
 
   useEffect(() => {
     const wrapper = document.getElementById("auth-form-wrapper");
@@ -121,6 +122,7 @@ export default function SignInPage() {
             name="email"
             type="email"
             placeholder="you@university.ca or your personal email"
+            defaultValue={emailPrefill}
             className="input-premium border-slate-200 transition-all duration-200"
           />
         </div>

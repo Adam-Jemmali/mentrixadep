@@ -6,6 +6,7 @@ import { clearAuthFailures, compositeRateKey, emailLockKey, emailRateKey, getAut
 import { isCaptchaConfigured, verifyTurnstileToken } from "@/lib/security/captcha";
 import { getRoleHomePath } from "@/lib/role-home";
 import { reportAuthCaptchaFailure, reportAuthLockout, reportSecurityRateLimitDenied } from "@/lib/observability";
+import { isWaitlistEnabled } from "@/lib/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -68,31 +69,33 @@ export async function POST(req: Request) {
       }
     }
 
-    const admin = createAdminClient();
-    const { data: waitlistRow, error: waitlistError } = await admin
-      .from("registration_requests")
-      .select("status, role")
-      .eq("email", email)
-      .maybeSingle();
-    if (waitlistError) {
-      console.error("[auth/signin] waitlist lookup failed:", waitlistError.message, waitlistError.details);
-      return jsonError("Could not verify your waitlist status. Please try again.", 500);
-    }
-    if (waitlistRow?.status === "rejected") {
-      await registerAuthFailure(lockKey);
-      return jsonError(
-        "This email was rejected from the waitlist and cannot sign in. Please contact support@mentrixa.one if you believe this is a mistake.",
-        403,
-        { waitlistStatus: "rejected" }
-      );
-    }
-    if (waitlistRow?.status === "pending") {
-      await registerAuthFailure(lockKey);
-      return jsonError(
-        `This email is still on the waitlist as a ${waitlistRow.role === "tutor" ? "Guide" : "Mentrixer"}. Please wait for approval before signing in.`,
-        403,
-        { waitlistStatus: "pending" }
-      );
+    if (isWaitlistEnabled()) {
+      const admin = createAdminClient();
+      const { data: waitlistRow, error: waitlistError } = await admin
+        .from("registration_requests")
+        .select("status, role")
+        .eq("email", email)
+        .maybeSingle();
+      if (waitlistError) {
+        console.error("[auth/signin] waitlist lookup failed:", waitlistError.message, waitlistError.details);
+        return jsonError("Could not verify your waitlist status. Please try again.", 500);
+      }
+      if (waitlistRow?.status === "rejected") {
+        await registerAuthFailure(lockKey);
+        return jsonError(
+          "This email was rejected from the waitlist and cannot sign in. Please contact support@mentrixa.one if you believe this is a mistake.",
+          403,
+          { waitlistStatus: "rejected" }
+        );
+      }
+      if (waitlistRow?.status === "pending") {
+        await registerAuthFailure(lockKey);
+        return jsonError(
+          `This email is still on the waitlist as a ${waitlistRow.role === "tutor" ? "Guide" : "Mentrixer"}. Please wait for approval before signing in.`,
+          403,
+          { waitlistStatus: "pending" }
+        );
+      }
     }
 
     const supabase = await createClient();

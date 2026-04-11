@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 
 type WaitlistRole = "student" | "tutor";
 
-export function WaitlistJoinForm() {
-  const [email, setEmail] = useState("");
+export function WaitlistJoinForm({ initialEmail = "" }: { initialEmail?: string }) {
+  const [email, setEmail] = useState(initialEmail);
   const [role, setRole] = useState<WaitlistRole>("student");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

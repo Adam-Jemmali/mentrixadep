@@ -996,7 +996,7 @@ export async function sendWaitlistDecisionEmail(
         Great news — your waitlist access as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> is approved.
         You can now sign up / sign in to Mentrixa with this email.
       </p>
-      ${ctaButton(`${APP_URL}/auth/signup${role === "tutor" ? "?role=tutor" : ""}`, "Continue to Mentrixa")}
+      ${ctaButton(`${APP_URL}/auth/activate?email=${encodeURIComponent(email)}`, "Continue to Mentrixa")}
     `
     : `
       <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">

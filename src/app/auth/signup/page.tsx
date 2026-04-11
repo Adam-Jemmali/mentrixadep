@@ -2,15 +2,22 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { isWaitlistEnabledClient } from "@/lib/flags";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Redirect to waitlist join page
-    router.push("/join");
-  }, [router]);
+    const email = searchParams.get("email")?.trim().toLowerCase();
+    if (email) {
+      router.push(`/auth/activate?email=${encodeURIComponent(email)}`);
+      return;
+    }
+
+    router.push(isWaitlistEnabledClient() ? "/join" : "/auth/signin");
+  }, [router, searchParams]);
 
   return (
     <div className="space-y-6 text-center">
