@@ -21,7 +21,7 @@ export default async function PendingApprovalPage() {
     .single();
 
   const accessStatus = normalizeAccessStatus(userData);
-  if (accessStatus === "approved") {
+  if (accessStatus === "approved" && userData?.role) {
     redirect(getRoleHomePath(userData.role));
   }
   if (accessStatus === "suspended") {
