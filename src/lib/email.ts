@@ -220,14 +220,10 @@ async function sendWaitlistEmailWithFallback(to: string, subject: string, html: 
     return true;
   }
 
-  if (WAITLIST_FROM_ADDRESS !== FROM_ADDRESS) {
-    console.warn(
-      `[email] Waitlist sender failed; retrying from default sender for ${to}`,
-    );
-    return sendEmail(to, subject, html);
-  }
-
-  return false;
+  console.warn(
+    `[email] Waitlist sender failed; retrying from default sender for ${to}`,
+  );
+  return sendEmail(to, subject, html);
 }
 
 function baseTemplate(title: string, bodyContent: string): string {
