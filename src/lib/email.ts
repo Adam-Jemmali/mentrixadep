@@ -152,7 +152,7 @@ function starRatingLinks(sessionId: string, tutorDisplayName: string): string {
   return `<p style="margin:0 0 8px;color:#9ca3af;font-size:13px;">How was your session with <strong style="color:#e5e5e5;">${escapeHtml(tutorDisplayName)}</strong>?</p><p style="margin:0;">${stars.join("")}</p>`;
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   try {
     const apiKey = getResendApiKey();
     const recipient = DEV_EMAIL_OVERRIDE ?? to;
@@ -174,13 +174,16 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
     if (!res.ok) {
       const body = await res.text();
       console.error(`[email] Failed to send "${subject}" to ${recipient} (originally: ${to}):`, body);
+      return false;
     }
+    return true;
   } catch (err) {
     console.error(`[email] Unexpected error sending "${subject}" to ${to}:`, err);
+    return false;
   }
 }
 
-async function sendEmailFrom(from: string, to: string, subject: string, html: string): Promise<void> {
+async function sendEmailFrom(from: string, to: string, subject: string, html: string): Promise<boolean> {
   try {
     const apiKey = getResendApiKey();
     const recipient = DEV_EMAIL_OVERRIDE ?? to;
@@ -202,10 +205,29 @@ async function sendEmailFrom(from: string, to: string, subject: string, html: st
     if (!res.ok) {
       const body = await res.text();
       console.error(`[email] Failed to send "${subject}" to ${recipient} (originally: ${to}):`, body);
+      return false;
     }
+    return true;
   } catch (err) {
     console.error(`[email] Unexpected error sending "${subject}" to ${to}:`, err);
+    return false;
   }
+}
+
+async function sendWaitlistEmailWithFallback(to: string, subject: string, html: string): Promise<boolean> {
+  const sentFromWaitlistAddress = await sendEmailFrom(WAITLIST_FROM_ADDRESS, to, subject, html);
+  if (sentFromWaitlistAddress) {
+    return true;
+  }
+
+  if (WAITLIST_FROM_ADDRESS !== FROM_ADDRESS) {
+    console.warn(
+      `[email] Waitlist sender failed; retrying from default sender for ${to}`,
+    );
+    return sendEmail(to, subject, html);
+  }
+
+  return false;
 }
 
 function baseTemplate(title: string, bodyContent: string): string {
@@ -938,7 +960,7 @@ export async function sendTutorPayoutEmail(tutorEmail: string, props: TutorPayou
 export async function sendWaitlistReceivedEmail(
   email: string,
   role: "student" | "tutor",
-): Promise<void> {
+): Promise<boolean> {
   const hi = greetingFirstName(undefined, email);
   const roleLabel = role === "tutor" ? "Guide" : "Mentrixer";
   const body = `
@@ -954,8 +976,7 @@ export async function sendWaitlistReceivedEmail(
     </p>
     ${ctaButton(`${APP_URL}/`, "Back to Mentrixa")}
   `;
-  await sendEmailFrom(
-    WAITLIST_FROM_ADDRESS,
+  return sendWaitlistEmailWithFallback(
     email,
     `${hi}, you are on the Mentrixa waitlist`,
     baseTemplate("Waitlist confirmed", body),
@@ -966,7 +987,7 @@ export async function sendWaitlistDecisionEmail(
   email: string,
   role: "student" | "tutor",
   status: "approved" | "rejected",
-): Promise<void> {
+): Promise<boolean> {
   const hi = greetingFirstName(undefined, email);
   const roleLabel = role === "tutor" ? "Guide" : "Mentrixer";
   const approved = status === "approved";
@@ -993,8 +1014,7 @@ export async function sendWaitlistDecisionEmail(
       </p>
     `;
 
-  await sendEmailFrom(
-    WAITLIST_FROM_ADDRESS,
+  return sendWaitlistEmailWithFallback(
     email,
     approved
       ? `${hi}, your Mentrixa waitlist access is approved`

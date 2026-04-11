@@ -167,12 +167,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Could not add to waitlist. Please try again." }, { status: 500 });
     }
 
-    void sendWaitlistReceivedEmail(email, role);
+    const emailed = await sendWaitlistReceivedEmail(email, role);
+    if (!emailed) {
+      console.error("[waitlist/join] confirmation email failed after fallback", { email, role });
+    }
+
     return NextResponse.json({
       ok: true,
       approved: false,
       status: "pending",
-      message: "You are on the waitlist. Check your email for confirmation.",
+      message: emailed
+        ? "You are on the waitlist. Check your email for confirmation."
+        : "You are on the waitlist. Confirmation email is delayed; please check back shortly.",
     });
   } catch (e) {
     console.error("[waitlist/join] unexpected error:", e);
