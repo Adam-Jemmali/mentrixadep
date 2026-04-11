@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 
 /**
@@ -9,6 +9,8 @@ import { CookieConsentBanner } from "@/components/cookie-consent-banner";
  * (avoids `options.factory` / undefined module factory errors + white screen).
  */
 export function MarketingShellClient({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+
   useLayoutEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
@@ -32,8 +34,13 @@ export function MarketingShellClient({ children }: { children: ReactNode }) {
     const onPageShow = () => forceTop();
     window.addEventListener("pageshow", onPageShow);
 
+    const reveal = window.requestAnimationFrame(() => {
+      setReady(true);
+    });
+
     return () => {
       window.cancelAnimationFrame(rafOne);
+      window.cancelAnimationFrame(reveal);
       window.removeEventListener("pageshow", onPageShow);
       if ("scrollRestoration" in window.history) {
         window.history.scrollRestoration = "auto";
@@ -44,7 +51,12 @@ export function MarketingShellClient({ children }: { children: ReactNode }) {
   return (
     <>
       <CookieConsentBanner />
-      <main className="relative min-h-screen bg-[#0B1120]">{children}</main>
+      <main
+        className="relative min-h-screen bg-[#0B1120]"
+        style={{ opacity: ready ? 1 : 0, transition: "opacity 1ms linear" }}
+      >
+        {children}
+      </main>
     </>
   );
 }
