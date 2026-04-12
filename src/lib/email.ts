@@ -281,7 +281,7 @@ function detailRow(label: string, value: string): string {
 }
 
 function ctaButton(href: string, text: string): string {
-  return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:22px;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(text)}</a>`;
+  return `<a href="${href}" style="display:inline-block;margin-top:22px;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(text)}</a>`;
 }
 
 function sessionFactsTable(s: SessionEmailDetails, opts: { includePrice?: boolean; includePartner?: "tutor" | "student" | "both" }): string {
@@ -997,10 +997,6 @@ export async function sendWaitlistDecisionEmail(
         You can now sign up / sign in to Mentrixa with this email.
       </p>
       ${ctaButton(`${APP_URL}/auth/activate?email=${encodeURIComponent(email)}`, "Continue to Mentrixa")}
-      <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:14px 0 0;word-break:break-all;">
-        If the button is blocked in your mail app, open this link directly in your browser:<br />
-        <a href="${APP_URL}/auth/activate?email=${encodeURIComponent(email)}" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:underline;">${APP_URL}/auth/activate?email=${encodeURIComponent(email)}</a>
-      </p>
     `
     : `
       <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
