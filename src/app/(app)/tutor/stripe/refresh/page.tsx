@@ -43,7 +43,9 @@ export default function StripeRefreshPage() {
       <p className="mt-3 text-sm text-slate-600">
         Preparing your Stripe onboarding session. You will be redirected automatically.
       </p>
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="mt-4 max-w-lg text-left text-sm text-red-600 whitespace-pre-wrap">{error}</p>
+      ) : null}
       <button
         type="button"
         className="mt-6 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"

@@ -7,6 +7,7 @@ import { getStripeSecretKey } from "@/lib/env";
 import { getSiteUrl } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { PLATFORM_FEE_BPS } from "@/lib/booking-pricing";
+import { formatStripeConnectError } from "@/lib/stripe-connect-errors";
 
 const TUTOR_SHARE_BPS = 10_000 - PLATFORM_FEE_BPS;
 const STRIPE_ACCOUNT_ID_TEST_COLUMN = "stripe_account_id_test" as const;
@@ -303,13 +304,17 @@ export async function createAccountLink(): Promise<{ url: string }> {
   const appUrl = getSiteUrl();
 
   const stripe = getStripe();
-  const link = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${appUrl}/tutor/stripe/refresh`,
-    return_url: `${appUrl}/tutor/stripe/success`,
-    type: "account_onboarding",
-  });
-  return { url: link.url };
+  try {
+    const link = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${appUrl}/tutor/stripe/refresh`,
+      return_url: `${appUrl}/tutor/stripe/success`,
+      type: "account_onboarding",
+    });
+    return { url: link.url };
+  } catch (e) {
+    throw new Error(formatStripeConnectError(e));
+  }
 }
 
 /**
