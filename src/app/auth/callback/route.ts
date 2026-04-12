@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { getRoleHomePath } from "@/lib/role-home";
+import { OAUTH_INTENT_COOKIE } from "@/lib/oauth-auth";
 
 const OTP_TYPES = [
   "signup",
@@ -93,6 +95,9 @@ export async function GET(request: Request) {
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
 
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const oauthIntent = cookieStore.get(OAUTH_INTENT_COOKIE)?.value;
+  const hasOAuthIntent = oauthIntent === "signup" || oauthIntent === "signin";
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -119,7 +124,7 @@ export async function GET(request: Request) {
       redirect(nextPath);
     }
 
-    if (otpTypeParam === "signup" || otpTypeParam === "email") {
+    if (otpTypeParam === "signup" || otpTypeParam === "email" || !hasOAuthIntent) {
       const path = await resolvePostAuthDestination();
       redirect(path);
     }
@@ -160,7 +165,7 @@ export async function GET(request: Request) {
       redirect(nextPath);
     }
 
-    if (otpTypeParam === "signup" || otpTypeParam === "email") {
+    if (otpTypeParam === "signup" || otpTypeParam === "email" || !hasOAuthIntent) {
       const path = await resolvePostAuthDestination();
       redirect(path);
     }
