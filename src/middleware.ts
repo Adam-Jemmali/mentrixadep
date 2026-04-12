@@ -62,6 +62,17 @@ const authRoutesForRateLimit = ["/auth/signin", "/auth/signup"];
 const authRoutes = ["/auth/signin", "/auth/signup"];
 const pendingApprovalRoute = "/pending-approval";
 
+/** App Router pages do not handle OPTIONS; extensions / probes get 405. Reply 204 early for public auth entry paths. */
+const publicAuthPageOptions204 = new Set([
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/confirm-reset",
+  "/auth/activate",
+  "/join",
+]);
+
 const routeRoleMap: Record<string, string[]> = {
   "/admin": ["admin"],
   "/dashboard": ["admin"],
@@ -174,6 +185,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (method === "OPTIONS") {
+    if (publicAuthPageOptions204.has(pathname)) {
+      return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
+    }
     return applySecurityHeaders(NextResponse.next({ request }), pathname);
   }
 

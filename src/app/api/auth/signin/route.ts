@@ -13,6 +13,21 @@ import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 export const dynamic = "force-dynamic";
 
+/** Browsers, tools, or prefetch that GET this API URL get 405 by default — send them to the sign-in page. */
+export async function GET(req: Request) {
+  const u = new URL(req.url);
+  u.pathname = "/auth/signin";
+  u.search = "";
+  return NextResponse.redirect(u);
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: { Allow: "POST, GET, OPTIONS" },
+  });
+}
+
 type SignInBody = {
   email?: string;
   password?: string;
