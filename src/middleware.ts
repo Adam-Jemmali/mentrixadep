@@ -99,13 +99,17 @@ function isPublicPrefixPath(pathname: string): boolean {
 
 function applySecurityHeaders(res: NextResponse, pathname?: string): NextResponse {
   const isDev = process.env.NODE_ENV === "development";
-  const isAuthActivationPath = pathname === "/auth/activate" || pathname === "/auth/callback";
+  /** Email clients / in-app browsers load links in iframes; skip DENY + relax CSP frame-ancestors (avoids ERR_BLOCKED_BY_RESPONSE). */
+  const allowFramedAuthEntryPaths =
+    pathname === "/auth/activate" ||
+    pathname === "/auth/callback" ||
+    pathname === "/auth/signup";
 
   Object.entries(securityHeaders).forEach(([key, value]) => {
-    if (isAuthActivationPath && key === "X-Frame-Options") return;
+    if (allowFramedAuthEntryPaths && key === "X-Frame-Options") return;
     if (isDev && key === "Content-Security-Policy") return;
 
-    if (isAuthActivationPath && key === "Content-Security-Policy") {
+    if (allowFramedAuthEntryPaths && key === "Content-Security-Policy") {
       res.headers.set(
         key,
         value.replace("frame-ancestors 'none'", "frame-ancestors *"),
