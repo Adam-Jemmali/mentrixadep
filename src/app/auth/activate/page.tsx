@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isWaitlistEnabled } from "@/lib/flags";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
+import { identityEmailKey } from "@/lib/email-identity";
 import { ActivateAuthClient } from "@/components/auth/activate-auth-client";
 
 function normalizeEmail(value: string | undefined): string {
@@ -22,7 +24,11 @@ async function authUserExistsByEmail(email: string): Promise<boolean> {
     }
 
     const users = data?.users ?? [];
-    if (users.some((u) => (u.email ?? "").trim().toLowerCase() === email)) {
+    if (
+      users.some(
+        (u) => identityEmailKey((u.email ?? "").trim()) === identityEmailKey(email),
+      )
+    ) {
       return true;
     }
 
@@ -52,11 +58,7 @@ export default async function ActivatePage({
   }
 
   const admin = createAdminClient();
-  const { data: waitlistRow } = await admin
-    .from("registration_requests")
-    .select("status, role")
-    .eq("email", email)
-    .maybeSingle();
+  const waitlistRow = await fetchRegistrationRequestRow(admin, email);
 
   if (!waitlistRow || waitlistRow.status !== "approved") {
     redirect(`/join?email=${encodeURIComponent(email)}`);

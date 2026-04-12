@@ -101,9 +101,13 @@ BEGIN
 END;
 $$;
 
--- Idempotent repair (same logic as 059-fix-approved-users-status-sync.sql)
+-- Idempotent repair: approved + status + role from waitlist (059 originally missed role).
 UPDATE users u
 SET
+  role = CASE
+    WHEN u.role = 'tutor' AND rr.role = 'student' THEN u.role
+    ELSE rr.role
+  END,
   approved = true,
   status = 'approved',
   updated_at = NOW()
@@ -113,7 +117,9 @@ JOIN registration_requests rr
 WHERE
   u.id = au.id
   AND rr.status = 'approved'
+  AND rr.role IN ('student', 'tutor')
   AND (
-    u.approved IS DISTINCT FROM true
+    u.role IS DISTINCT FROM rr.role
+    OR u.approved IS DISTINCT FROM true
     OR COALESCE(u.status, 'pending') <> 'approved'
   );

@@ -29,6 +29,7 @@ import { getSiteUrl } from "@/lib/site";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -52,11 +53,7 @@ async function getRegistrationRequestStatus(email: string | undefined): Promise<
   if (!normEmail) return { status: null, role: null };
   try {
     const adminClient = createAdminClient();
-    const { data } = await adminClient
-      .from("registration_requests")
-      .select("status, role")
-      .eq("email", normEmail)
-      .maybeSingle();
+    const data = await fetchRegistrationRequestRow(adminClient, normEmail);
     return {
       status: (data?.status as "pending" | "approved" | "rejected" | undefined) ?? null,
       role: (data?.role as "student" | "tutor" | undefined) ?? null,
@@ -182,11 +179,7 @@ async function getWaitlistStatusByEmail(email: string | undefined): Promise<"pen
   if (!normEmail) return null;
   try {
     const admin = createAdminClient();
-    const { data } = await admin
-      .from("registration_requests")
-      .select("status")
-      .eq("email", normEmail)
-      .maybeSingle();
+    const data = await fetchRegistrationRequestRow(admin, normEmail);
     return (data?.status as "pending" | "approved" | "rejected" | undefined) ?? null;
   } catch {
     return null;

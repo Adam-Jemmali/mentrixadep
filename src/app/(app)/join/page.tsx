@@ -4,6 +4,7 @@ import { getSiteUrl } from "@/lib/site";
 import { WaitlistJoinForm } from "@/components/waitlist-join-form";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isWaitlistEnabled } from "@/lib/flags";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 export const metadata: Metadata = {
   title: "Join Mentrixa Waitlist",
@@ -27,11 +28,7 @@ export default async function JoinPage({
   const email = (searchParams?.email ?? "").trim().toLowerCase();
   if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const admin = createAdminClient();
-    const { data: waitlistRow } = await admin
-      .from("registration_requests")
-      .select("status")
-      .eq("email", email)
-      .maybeSingle();
+    const waitlistRow = await fetchRegistrationRequestRow(admin, email);
 
     if (waitlistRow?.status === "approved") {
       redirect(`/auth/activate?email=${encodeURIComponent(email)}`);

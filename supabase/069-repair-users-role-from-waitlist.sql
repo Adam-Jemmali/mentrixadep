@@ -1,8 +1,7 @@
--- Repair users where waitlist is approved but public.users was wrong (approved/status/role).
--- Originally only fixed approved + status; role sync added so Guides are not stuck as student.
+-- 069: Align public.users with approved registration_requests (approval + role when safe).
 --
--- Trigger-side fix (new signups): 068-waitlist-approved-signup-users-status.sql.
--- If this already ran without role: apply 069-repair-users-role-from-waitlist.sql on production DBs.
+-- Never set users.role = 'student' when the account is already 'tutor' but RR still says
+-- 'student' (legacy guides or bad RR row). That mismatch made Google sign-in overwrite tutors.
 
 UPDATE users u
 SET

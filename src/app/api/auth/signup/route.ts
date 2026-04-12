@@ -7,6 +7,7 @@ import { compositeRateKey, emailRateKey, ipRateKey } from "@/lib/security/auth-a
 import { reportSecurityRateLimitDenied } from "@/lib/observability";
 import { isDisposableEmail } from "@/lib/disposable-email";
 import { isWaitlistEnabled } from "@/lib/flags";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 export const dynamic = "force-dynamic";
 
@@ -50,15 +51,7 @@ export async function POST(req: Request) {
 
     if (isWaitlistEnabled()) {
       const admin = createAdminClient();
-      const { data: reqRow, error: reqErr } = await admin
-        .from("registration_requests")
-        .select("status, role")
-        .eq("email", email)
-        .maybeSingle();
-      if (reqErr) {
-        console.error("[auth/signup] registration status lookup failed:", reqErr.message, reqErr.details);
-        return jsonError("Could not verify your waitlist status right now. Please try again.", 500);
-      }
+      const reqRow = await fetchRegistrationRequestRow(admin, email);
       if (reqRow?.status === "rejected") {
         return jsonError(
           "Your waitlist application was rejected. Please contact support@mentrixa.one if this seems incorrect.",

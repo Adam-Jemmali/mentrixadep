@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,9 @@ export async function GET(req: Request) {
     }
 
     const admin = createAdminClient();
-    const { data } = await admin
-      .from("registration_requests")
-      .select("status")
-      .eq("email", email)
-      .maybeSingle();
+    const row = await fetchRegistrationRequestRow(admin, email);
 
-    const status = data?.status ?? "none";
+    const status = row?.status ?? "none";
     return NextResponse.json({
       approved: status === "approved",
       status,

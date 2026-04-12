@@ -9,6 +9,7 @@ import { reportAuthCaptchaFailure, reportAuthLockout, reportSecurityRateLimitDen
 import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 export const dynamic = "force-dynamic";
 
@@ -73,15 +74,7 @@ export async function POST(req: Request) {
 
     if (isWaitlistEnabled()) {
       const admin = createAdminClient();
-      const { data: waitlistRow, error: waitlistError } = await admin
-        .from("registration_requests")
-        .select("status, role")
-        .eq("email", email)
-        .maybeSingle();
-      if (waitlistError) {
-        console.error("[auth/signin] waitlist lookup failed:", waitlistError.message, waitlistError.details);
-        return jsonError("Could not verify your waitlist status. Please try again.", 500);
-      }
+      const waitlistRow = await fetchRegistrationRequestRow(admin, email);
       if (waitlistRow?.status === "rejected") {
         await registerAuthFailure(lockKey);
         return jsonError(

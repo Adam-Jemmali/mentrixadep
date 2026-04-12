@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 /**
  * When `registration_requests` is waitlist-approved but `public.users` was created with
@@ -14,22 +15,15 @@ export async function syncApprovedWaitlistToUserProfile(
   if (!norm) return;
 
   const admin = createAdminClient();
-  const { data: requestRow, error: reqErr } = await admin
-    .from("registration_requests")
-    .select("status, role")
-    .eq("email", norm)
-    .maybeSingle();
-
-  if (reqErr) {
-    console.error("[waitlist-user-sync] registration_requests:", reqErr.message);
-    return;
-  }
+  const requestRow = await fetchRegistrationRequestRow(admin, norm);
 
   if (requestRow?.status !== "approved") return;
 
   const { data: userRow, error: userErr } = await admin
     .from("users")
-    .select("role, approved, status")
+    .select(
+      "role, approved, status, stripe_account_id, stripe_account_id_test, stripe_account_id_live",
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -49,12 +43,30 @@ export async function syncApprovedWaitlistToUserProfile(
 
   const nextRole = requestRow.role === "tutor" ? "tutor" : "student";
 
+  const hasStripeConnect =
+    Boolean(
+      userRow?.stripe_account_id?.trim() ||
+        userRow?.stripe_account_id_test?.trim() ||
+        userRow?.stripe_account_id_live?.trim(),
+    );
+
+  /**
+   * Never let waitlist RR=`student` overwrite a real Guide:
+   * - existing `users.role = tutor`, or
+   * - already downgraded to `student` but Stripe Connect is set (guides only).
+   */
+  const roleToPersist =
+    nextRole === "student" &&
+    (userRow?.role === "tutor" || (userRow?.role === "student" && hasStripeConnect))
+      ? "tutor"
+      : nextRole;
+
   const { error: updErr } = await admin
     .from("users")
     .update({
       approved: true,
       status: "approved",
-      role: nextRole,
+      role: roleToPersist,
     })
     .eq("id", userId);
 
