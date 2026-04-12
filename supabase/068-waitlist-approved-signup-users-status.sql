@@ -1,8 +1,8 @@
--- Preserve terminal waitlist decisions on repeated signups.
--- Without this, a new auth signup can overwrite a rejected/approved email back to pending.
+-- 068: Signup trigger — align public.users with waitlist-approved registration_requests
+-- (approved boolean + status text). Without this, INSERT only set approved/auto_reg and
+-- left status at default 'pending' (058), so the app treated waitlist-approved signups as pending.
 --
--- Extends again in 068-waitlist-approved-signup-users-status.sql: sets public.users.status,
--- and promotes is_approved when registration_requests is already approved (waitlist path).
+-- Also re-runs the repair from 059 for any historical rows.
 
 CREATE OR REPLACE FUNCTION public.handle_new_user_with_jwt()
 RETURNS TRIGGER
@@ -15,6 +15,9 @@ DECLARE
   is_approved BOOLEAN;
   auto_reg BOOLEAN;
   norm_email TEXT;
+  waitlist_rr_status TEXT;
+  waitlist_rr_role TEXT;
+  user_access_status TEXT;
   ref_code TEXT;
   referrer_uuid UUID;
   ref_email TEXT;
@@ -22,7 +25,6 @@ DECLARE
 BEGIN
   user_role := lower(trim(COALESCE(NEW.raw_user_meta_data->>'role', '')));
 
-  -- Never trust client metadata for admin role assignment.
   IF user_role NOT IN ('student', 'tutor') THEN
     user_role := 'student';
   END IF;
@@ -30,15 +32,31 @@ BEGIN
   auto_reg := is_auto_approve_registrations();
   is_approved := auto_reg;
 
-  INSERT INTO public.users (id, role, approved)
-  VALUES (NEW.id, user_role, is_approved)
+  norm_email := NULLIF(trim(COALESCE(NEW.email, '')), '');
+
+  IF norm_email IS NOT NULL THEN
+    SELECT rr.status, rr.role INTO waitlist_rr_status, waitlist_rr_role
+    FROM registration_requests rr
+    WHERE lower(rr.email) = lower(norm_email)
+    LIMIT 1;
+
+    IF waitlist_rr_status = 'approved' THEN
+      is_approved := true;
+      IF waitlist_rr_role IN ('student', 'tutor') THEN
+        user_role := waitlist_rr_role;
+      END IF;
+    END IF;
+  END IF;
+
+  user_access_status := CASE WHEN is_approved THEN 'approved' ELSE 'pending' END;
+
+  INSERT INTO public.users (id, role, approved, status)
+  VALUES (NEW.id, user_role, is_approved, user_access_status)
   ON CONFLICT (id) DO NOTHING;
 
   UPDATE auth.users
   SET raw_user_meta_data = jsonb_build_object('role', user_role, 'approved', is_approved)
   WHERE id = NEW.id;
-
-  norm_email := NULLIF(trim(COALESCE(NEW.email, '')), '');
 
   IF norm_email IS NOT NULL THEN
     INSERT INTO public.registration_requests (email, role, status)
@@ -59,7 +77,6 @@ BEGIN
       updated_at = NOW();
   END IF;
 
-  -- Referral: 8-char code in user metadata (email/password signup)
   ref_code := upper(regexp_replace(trim(COALESCE(NEW.raw_user_meta_data->>'referral_code', '')), '[^A-Z0-9]', '', 'g'));
   IF length(ref_code) = 8 THEN
     SELECT u.id INTO referrer_uuid
@@ -83,3 +100,20 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- Idempotent repair (same logic as 059-fix-approved-users-status-sync.sql)
+UPDATE users u
+SET
+  approved = true,
+  status = 'approved',
+  updated_at = NOW()
+FROM auth.users au
+JOIN registration_requests rr
+  ON LOWER(rr.email) = LOWER(au.email)
+WHERE
+  u.id = au.id
+  AND rr.status = 'approved'
+  AND (
+    u.approved IS DISTINCT FROM true
+    OR COALESCE(u.status, 'pending') <> 'approved'
+  );

@@ -358,17 +358,21 @@ async function runSupabaseAuthGuard(
     if (accessStatus === "suspended") {
       const url = request.nextUrl.clone();
       url.pathname = "/suspended";
+      url.search = "";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
     if (accessStatus !== "approved") {
       const url = request.nextUrl.clone();
       url.pathname = pendingApprovalRoute;
+      url.search = "";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
     const url = request.nextUrl.clone();
     url.pathname = getRoleHomePath(role!);
+    // Do not carry ?error=* or other auth query params onto /student or /tutor.
+    url.search = "";
     return finalizeResponse(NextResponse.redirect(url), request, user.id);
   }
 
@@ -390,6 +394,7 @@ async function runSupabaseAuthGuard(
       }
       const url = request.nextUrl.clone();
       url.pathname = "/auth/select-role";
+      url.search = "";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
@@ -399,6 +404,7 @@ async function runSupabaseAuthGuard(
       }
       const url = request.nextUrl.clone();
       url.pathname = "/suspended";
+      url.search = "";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
@@ -408,12 +414,14 @@ async function runSupabaseAuthGuard(
       }
       const url = request.nextUrl.clone();
       url.pathname = pendingApprovalRoute;
+      url.search = "";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 
     if (!checkRouteAccess(pathname, role)) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
+      url.search = "";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 

@@ -1,5 +1,8 @@
--- Repair users marked pending/suspended even though waitlist request is already approved.
+-- Repair users marked pending even though waitlist request is already approved.
 -- This fixes historical rows where admin approval updated registration_requests but missed users.
+--
+-- Trigger-side fix (new signups get correct approved + status): see
+-- 068-waitlist-approved-signup-users-status.sql (runs after 067).
 
 UPDATE users u
 SET
