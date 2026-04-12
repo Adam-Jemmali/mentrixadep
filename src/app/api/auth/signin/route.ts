@@ -8,6 +8,7 @@ import { getRoleHomePath } from "@/lib/role-home";
 import { reportAuthCaptchaFailure, reportAuthLockout, reportSecurityRateLimitDenied } from "@/lib/observability";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
+import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -125,6 +126,8 @@ export async function POST(req: Request) {
       // Generic error for other cases
       return jsonError("Incorrect email or password. Please try again.", 401);
     }
+
+    await syncApprovedWaitlistToUserProfile(signInData.user.id, signInData.user.email ?? email);
 
     const { data: userData, error: userError } = await supabase
       .from("users")
