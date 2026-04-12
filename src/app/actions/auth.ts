@@ -28,6 +28,7 @@ import { signUpServerSchema } from "@/lib/schemas";
 import { getSiteUrl } from "@/lib/site";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
+import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -205,6 +206,8 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
   if (!user) {
     return "/auth/signin";
   }
+
+  await syncApprovedWaitlistToUserProfile(user.id, user.email);
 
   const store = await cookies();
   const intent = store.get(OAUTH_INTENT_COOKIE)?.value;

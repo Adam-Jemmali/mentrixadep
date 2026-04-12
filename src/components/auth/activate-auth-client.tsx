@@ -65,8 +65,7 @@ export function ActivateAuthClient({
       }
 
       if (body.sessionEstablished) {
-        router.push("/pending-approval");
-        router.refresh();
+        router.replace("/auth/session-sync");
         return;
       }
 

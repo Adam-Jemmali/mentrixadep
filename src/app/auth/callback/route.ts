@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { getRoleHomePath } from "@/lib/role-home";
+import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 
 const OTP_TYPES = [
   "signup",
@@ -22,7 +22,6 @@ function isSupportedOtpType(value: string): value is SupportedOtpType {
 
 async function resolvePostAuthDestination(): Promise<string> {
   const supabase = await createClient();
-  const admin = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -31,51 +30,21 @@ async function resolvePostAuthDestination(): Promise<string> {
     return "/auth/signin";
   }
 
+  await syncApprovedWaitlistToUserProfile(user.id, user.email);
+
   const { data: userRow } = await supabase
     .from("users")
     .select("role, status, approved, is_blacklisted")
     .eq("id", user.id)
     .maybeSingle();
 
-  const email = user.email?.trim().toLowerCase();
-  let effectiveUserRow = userRow;
-
-  // If waitlist already approved this email, promote to approved on first confirmation callback.
-  if (email) {
-    const { data: requestRow } = await admin
-      .from("registration_requests")
-      .select("status, role")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (requestRow?.status === "approved") {
-      const nextRole =
-        effectiveUserRow?.role ?? (requestRow.role === "tutor" ? "tutor" : "student");
-      await admin
-        .from("users")
-        .update({
-          approved: true,
-          status: "approved",
-          role: nextRole,
-        })
-        .eq("id", user.id);
-
-      const { data: refreshedRow } = await supabase
-        .from("users")
-        .select("role, status, approved, is_blacklisted")
-        .eq("id", user.id)
-        .maybeSingle();
-      effectiveUserRow = refreshedRow ?? effectiveUserRow;
-    }
-  }
-
-  if (!effectiveUserRow?.role) {
+  if (!userRow?.role) {
     return "/auth/select-role";
   }
 
-  const accessStatus = normalizeAccessStatus(effectiveUserRow);
+  const accessStatus = normalizeAccessStatus(userRow);
   if (accessStatus === "approved") {
-    return getRoleHomePath(effectiveUserRow.role);
+    return getRoleHomePath(userRow.role);
   }
   if (accessStatus === "suspended") {
     return "/suspended";
@@ -107,6 +76,15 @@ export async function GET(request: Request) {
         redirect("/auth/forgot-password?error=expired");
       }
       redirect("/auth/signin?error=oauth");
+    }
+
+    {
+      const {
+        data: { user: sessionUser },
+      } = await supabase.auth.getUser();
+      if (sessionUser) {
+        await syncApprovedWaitlistToUserProfile(sessionUser.id, sessionUser.email);
+      }
     }
 
     // Password reset — go directly to reset page to preserve the recovery session.
@@ -149,6 +127,15 @@ export async function GET(request: Request) {
         redirect("/auth/forgot-password?error=expired");
       }
       redirect("/auth/signin?error=confirm");
+    }
+
+    {
+      const {
+        data: { user: sessionUser },
+      } = await supabase.auth.getUser();
+      if (sessionUser) {
+        await syncApprovedWaitlistToUserProfile(sessionUser.id, sessionUser.email);
+      }
     }
 
     // Password reset via token_hash — go directly to reset page

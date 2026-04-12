@@ -38,6 +38,8 @@ const publicRoutes = new Set([
   "/auth/confirm-reset",
   "/auth/reset-password",
   "/auth/callback",
+  /** Server redirect: sync waitlist approval then send users to dashboard (avoids stuck on pending). */
+  "/auth/session-sync",
   "/offline",
   "/sw.js",
   "/manifest.json",
@@ -103,7 +105,8 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
   const allowFramedAuthEntryPaths =
     pathname === "/auth/activate" ||
     pathname === "/auth/callback" ||
-    pathname === "/auth/signup";
+    pathname === "/auth/signup" ||
+    pathname === "/auth/session-sync";
 
   Object.entries(securityHeaders).forEach(([key, value]) => {
     if (allowFramedAuthEntryPaths && key === "X-Frame-Options") return;
