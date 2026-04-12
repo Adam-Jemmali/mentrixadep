@@ -280,8 +280,13 @@ function detailRow(label: string, value: string): string {
   </tr>`;
 }
 
-function ctaButton(href: string, text: string): string {
-  return `<a href="${href}" style="display:inline-block;margin-top:22px;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(text)}</a>`;
+function ctaButton(
+  href: string,
+  text: string,
+  opts?: { openInNewTab?: boolean },
+): string {
+  const tabAttrs = opts?.openInNewTab ? ` target="_blank" rel="noopener noreferrer"` : "";
+  return `<a href="${href}"${tabAttrs} style="display:inline-block;margin-top:22px;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${escapeHtml(text)}</a>`;
 }
 
 function sessionFactsTable(s: SessionEmailDetails, opts: { includePrice?: boolean; includePartner?: "tutor" | "student" | "both" }): string {
@@ -996,7 +1001,9 @@ export async function sendWaitlistDecisionEmail(
         Great news — your waitlist access as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> is approved.
         You can now sign up / sign in to Mentrixa with this email.
       </p>
-      ${ctaButton(`${APP_URL}/auth/activate?email=${encodeURIComponent(email)}`, "Continue to Mentrixa")}
+      ${ctaButton(`${APP_URL}/auth/signup?email=${encodeURIComponent(email)}`, "Continue to Mentrixa", {
+        openInNewTab: true,
+      })}
     `
     : `
       <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
