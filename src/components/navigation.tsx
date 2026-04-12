@@ -35,7 +35,7 @@ const TUTOR_LINKS = [
 ] as const;
 
 const ADMIN_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/admin", label: "Dashboard" },
   { href: "/admin?tab=pending", label: "Registrations" },
   { href: "/admin?tab=users", label: "Users" },
 ] as const;
@@ -140,7 +140,7 @@ function NavigationInner({ user }: NavigationProps) {
   const logoHref = appShellLocked
     ? "/"
     : user?.role === "admin"
-      ? "/dashboard"
+      ? "/admin"
       : user?.role === "tutor"
         ? "/tutor"
         : user
@@ -151,7 +151,7 @@ function NavigationInner({ user }: NavigationProps) {
   );
 
   const isActive = useCallback((href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === "/admin") return pathname === "/admin" || pathname === "/dashboard";
     if (href === "/student") return pathname === "/student";
     if (href === "/tutor") return pathname === "/tutor";
     if (href === "/admin?tab=pending")
