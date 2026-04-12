@@ -97,10 +97,22 @@ function isPublicPrefixPath(pathname: string): boolean {
   );
 }
 
-function applySecurityHeaders(res: NextResponse): NextResponse {
+function applySecurityHeaders(res: NextResponse, pathname?: string): NextResponse {
   const isDev = process.env.NODE_ENV === "development";
+  const isAuthActivationPath = pathname === "/auth/activate" || pathname === "/auth/callback";
+
   Object.entries(securityHeaders).forEach(([key, value]) => {
+    if (isAuthActivationPath && key === "X-Frame-Options") return;
     if (isDev && key === "Content-Security-Policy") return;
+
+    if (isAuthActivationPath && key === "Content-Security-Policy") {
+      res.headers.set(
+        key,
+        value.replace("frame-ancestors 'none'", "frame-ancestors *"),
+      );
+      return;
+    }
+
     res.headers.set(key, value);
   });
   return res;
@@ -121,7 +133,7 @@ function finalizeResponse(
       userIdRedacted: redactUserIdForLogs(userId),
     });
   }
-  return applySecurityHeaders(response);
+  return applySecurityHeaders(response, request.nextUrl.pathname);
 }
 
 export async function middleware(request: NextRequest) {
@@ -155,7 +167,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (method === "OPTIONS") {
-    return applySecurityHeaders(NextResponse.next({ request }));
+    return applySecurityHeaders(NextResponse.next({ request }), pathname);
   }
 
   // Referral link ?ref=CODE — persist cookie and strip query (clean URLs).
