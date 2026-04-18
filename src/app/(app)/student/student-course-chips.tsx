@@ -54,23 +54,24 @@ export function StudentCourseChips({
   }
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_24px_-10px_rgba(15,23,42,0.12)]">
       <div>
-        <h2 className="text-sm font-medium text-slate-900">My courses</h2>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Focus</p>
+        <h2 className="mt-1 text-base font-bold text-slate-900">My courses</h2>
         <p className="mt-1 text-xs text-slate-500">
-          Select a course to filter sessions and guides below.
+          Tap a subject to filter sessions and Guides below.
         </p>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => onSelectCourse("all")}
           className={cn(
-            "rounded-full px-3 py-1.5 text-xs font-medium transition-colors border",
+            "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors border-2",
             selectedCourse === "all"
-              ? "border-slate-900 bg-slate-900 text-white"
-              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+              ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+              : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200",
           )}
         >
           All
@@ -81,10 +82,10 @@ export function StudentCourseChips({
             type="button"
             onClick={() => onSelectCourse(c.course_name)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors border",
+              "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors border-2",
               selectedCourse === c.course_name
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                : "border-slate-200 bg-white text-slate-700 hover:border-blue-200",
             )}
           >
             {c.course_name}
@@ -110,14 +111,19 @@ export function StudentCourseChips({
         ))}
       </div>
 
-      <form onSubmit={handleAdd} className="mt-4 flex flex-wrap gap-2">
+      <form onSubmit={handleAdd} className="mt-5 flex flex-wrap gap-2">
         <Input
           value={courseName}
           onChange={(e) => setCourseName(e.target.value)}
           placeholder="Add a course (e.g. PROB STATS)"
-          className="h-9 max-w-xs text-sm"
+          className="h-10 max-w-xs rounded-xl border-slate-200 bg-slate-50/80 text-sm"
         />
-        <Button type="submit" size="sm" disabled={loading} variant="secondary">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={loading}
+          className="h-10 rounded-full bg-blue-600 px-5 font-semibold text-white hover:bg-blue-500"
+        >
           {loading ? "Adding…" : "Add"}
         </Button>
       </form>

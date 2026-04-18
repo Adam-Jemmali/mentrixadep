@@ -1,17 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import type { ClanDashboardPayload, ClanMessageRow } from "@/app/actions/clan-dashboard";
 import {
   approveJoinRequest,
   rejectJoinRequest,
 } from "@/app/actions/clan-dashboard";
-import { setClanAvatarPreset, uploadClanAvatar } from "@/app/actions/clan";
+import { setClanAvatarPreset, setClanFocusDivision, uploadClanAvatar } from "@/app/actions/clan";
 import { CLAN_AVATAR_PRESETS, CLAN_QUEST_CHALLENGE_BONUS_XP } from "@/lib/clan-constants";
 import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
 import { ClanChat } from "@/components/clan/clan-chat";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Pending = {
   id: string;
@@ -27,6 +35,7 @@ type Props = {
   currentUserId: string;
   isLeader: boolean;
   divisionLabel: string;
+  divisions: { key: string; name: string }[];
 };
 
 export function ClanDashboardClient({
@@ -36,9 +45,12 @@ export function ClanDashboardClient({
   currentUserId,
   isLeader,
   divisionLabel,
+  divisions,
 }: Props) {
   const { clan, memberCount, weeklyClanXp, challenge, members, trophies } = data;
   const [busy, setBusy] = useState<string | null>(null);
+  const [focusSelection, setFocusSelection] = useState<string>(clan.focus_division_key ?? "__none__");
+  const [focusError, setFocusError] = useState<string | null>(null);
 
   const ch = challenge;
   const target = ch?.quest_target ?? 20;
@@ -78,15 +90,32 @@ export function ClanDashboardClient({
     window.location.reload();
   }
 
+  async function onSaveFocus() {
+    setBusy("focus");
+    setFocusError(null);
+    const key = focusSelection === "__none__" ? null : focusSelection;
+    const res = await setClanFocusDivision(clan.id, key);
+    setBusy(null);
+    if (!res.success) {
+      setFocusError(res.error);
+      return;
+    }
+    window.location.reload();
+  }
+
   return (
     <div className="space-y-8">
       <motion.header
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="overflow-hidden rounded-lg border border-slate-200 bg-slate-900 text-white"
+        className="overflow-hidden rounded-lg border border-white/20 bg-gradient-to-b from-[#182846]/95 via-[#12223e]/95 to-[#0d1c35]/95 text-white"
       >
         <div className="px-5 py-6 sm:px-8 sm:py-8">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-200">
+            <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={14} height={14} />
+            Mentrixer clan board
+          </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex gap-4">
               <ClanAvatarBadge
@@ -95,7 +124,7 @@ export function ClanDashboardClient({
                 presetKey={clan.avatar_preset_key}
                 avatarUrl={clan.avatar_url}
                 size="lg"
-                className="border-slate-600 bg-slate-800 text-slate-200"
+                className="border-white/30 bg-white/10 text-slate-100"
               />
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
@@ -143,7 +172,7 @@ export function ClanDashboardClient({
         <section className="rounded-lg border border-slate-200 bg-white p-4">
           <h2 className="text-sm font-medium text-slate-900">Clan identity</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Preset badge or upload a square image (PNG, JPEG, WebP, max ~900KB).
+            Preset badge or upload your square image
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {CLAN_AVATAR_PRESETS.map((k) => (
@@ -172,6 +201,35 @@ export function ClanDashboardClient({
               </span>
             </label>
           </div>
+
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <h3 className="text-sm font-medium text-slate-900">Focus division</h3>
+            <p className="mt-1 text-xs text-slate-500">Update what your clan is focusing on this week.</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Select value={focusSelection} onValueChange={setFocusSelection}>
+                <SelectTrigger className="sm:max-w-xs">
+                  <SelectValue placeholder="Select division" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No focus</SelectItem>
+                  {divisions.map((d) => (
+                    <SelectItem key={d.key} value={d.key}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                size="sm"
+                disabled={busy !== null}
+                onClick={() => void onSaveFocus()}
+              >
+                {busy === "focus" ? "Saving…" : "Save focus"}
+              </Button>
+            </div>
+            {focusError ? <p className="mt-2 text-xs text-red-600">{focusError}</p> : null}
+          </div>
         </section>
       ) : null}
 
@@ -185,7 +243,7 @@ export function ClanDashboardClient({
                 className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
               >
                 <span className="text-amber-950">
-                  {p.display_name?.trim() || `Learner ${p.user_id.slice(0, 8)}`}
+                  {p.display_name?.trim() || `Mentrixer ${p.user_id.slice(0, 8)}`}
                 </span>
                 <div className="flex gap-2">
                   <Button
@@ -253,11 +311,22 @@ export function ClanDashboardClient({
                 className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
               >
                 <span className="text-slate-500 tabular-nums w-6">{i + 1}</span>
-                <span className="flex-1 text-slate-900">
-                  {m.display_name?.trim() || `Learner ${m.user_id.slice(0, 8)}`}
-                  {m.role === "leader" ? (
-                    <span className="ml-2 text-xs text-amber-700">Leader</span>
-                  ) : null}
+                <span className="flex min-w-0 flex-1 items-center gap-2 text-slate-900">
+                  <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                    {m.avatar_url ? (
+                      <Image src={m.avatar_url} alt="" fill unoptimized className="object-cover" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center">
+                        <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={14} height={14} className="opacity-75" />
+                      </span>
+                    )}
+                  </span>
+                  <span className="min-w-0 truncate">
+                    {m.display_name?.trim() || `Mentrixer ${m.user_id.slice(0, 8)}`}
+                    {m.role === "leader" ? (
+                      <span className="ml-2 text-xs text-amber-700">Leader</span>
+                    ) : null}
+                  </span>
                 </span>
                 <span className="tabular-nums text-slate-700">{m.weekly_xp} XP</span>
               </li>

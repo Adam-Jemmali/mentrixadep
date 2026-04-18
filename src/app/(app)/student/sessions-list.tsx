@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,6 +13,7 @@ import type { StudentSessionTutorProfile } from "@/app/actions/student";
 import type { SessionAiPackage } from "@/lib/database.types";
 
 import { countUp as gsapCountUp } from "@/lib/gsap";
+import { useLevelInfo } from "@/lib/mentrixa-ranks";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
 
@@ -117,7 +119,14 @@ export function SessionsList({
     return sum / ratings.length;
   }, [pastSessions]);
 
-  const { currentLevel, nextLevel, xpToNext, maxXpForBar } = useLevelInfo(totalXp);
+  const {
+    currentLevel,
+    nextLevel,
+    xpToNext,
+    progressPercent,
+    barColorClass,
+    currentRank,
+  } = useLevelInfo(totalXp);
 
   useEffect(() => {
     if (!showHeroStats) return;
@@ -127,7 +136,7 @@ export function SessionsList({
     if (ratingRef.current) gsapCountUp(ratingRef.current, Math.round(avgRating * 10) / 10, 1.2);
 
     if (xpFillRef.current) {
-      const ratio = maxXpForBar > 0 ? Math.min(totalXp / maxXpForBar, 1) : 0;
+      const ratio = Math.min(Math.max(progressPercent / 100, 0), 1);
       gsap.set(xpFillRef.current, { transformOrigin: "left center", scaleX: 0 });
       gsap.to(xpFillRef.current, {
         scaleX: ratio,
@@ -136,7 +145,7 @@ export function SessionsList({
         delay: 0.4,
       });
     }
-  }, [showHeroStats, totalXp, streak, sessionsCompleted, avgRating, maxXpForBar]);
+  }, [showHeroStats, totalXp, streak, sessionsCompleted, avgRating, progressPercent]);
 
   useEffect(() => {
     if (!showHeroStats) return;
@@ -177,61 +186,72 @@ export function SessionsList({
     <>
       {showHeroStats ? (
         <>
-          <div className="stat-cells-animate grid grid-cols-2 gap-px rounded-md border border-slate-200 bg-slate-200 mb-4 md:grid-cols-4">
-            <div className="mentrixa-stat-cell flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4">
+          <div className="stat-cells-animate mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={totalXpRef}
-                className="xp-number text-2xl font-medium tabular-nums text-slate-900"
+                className="xp-number text-2xl font-bold tabular-nums text-blue-700"
               />
-              <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 Total XP
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={streakRef}
-                className={`xp-number text-2xl font-medium tabular-nums ${
+                className={`xp-number text-2xl font-bold tabular-nums ${
                   streak > 0 ? "text-slate-900" : "text-slate-600"
                 }`}
               />
-              <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 Streak days
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={sessionsRef}
-                className="xp-number text-2xl font-medium tabular-nums text-slate-900"
+                className="xp-number text-2xl font-bold tabular-nums text-slate-900"
               />
-              <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 Sessions completed
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={ratingRef}
-                className="xp-number text-2xl font-medium tabular-nums text-slate-900"
+                className="xp-number text-2xl font-bold tabular-nums text-slate-900"
               />
-              <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 Avg rating
               </span>
             </div>
           </div>
 
-          <div className="mb-8 flex flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-white px-4 py-3">
-            <div className="min-w-[12rem] text-sm text-slate-700">
-              {currentLevel} — {xpToNext > 0 ? `${xpToNext} XP to ${nextLevel}` : "Top of track"}
+          <div className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm">
+            <div className="min-w-[12rem]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700">
+                  {currentRank.badge}
+                </span>
+                <span className="text-sm font-semibold text-slate-900">{currentLevel}</span>
+              </div>
+              <p className="mt-1 text-xs text-slate-600">
+                {currentRank.division ? `Division ${currentRank.division}` : "Unique rank"}
+              </p>
+              <p className="mt-0.5 text-xs font-medium text-slate-700">
+                {xpToNext > 0 ? `${xpToNext} XP to ${nextLevel}` : "Top track"}
+              </p>
             </div>
             <div className="min-w-[120px] flex-1">
-              <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   ref={xpFillRef}
-                  className="h-full w-full origin-left scale-x-0 bg-slate-900"
+                  className={`h-full w-full origin-left scale-x-0 bg-gradient-to-r ${barColorClass}`}
                 />
               </div>
             </div>
-            <div className="text-xs font-mono text-slate-600 tabular-nums">
-              {totalXp} / {maxXpForBar} XP
+            <div className="text-xs font-mono font-medium text-slate-600 tabular-nums">
+              {totalXp} XP
             </div>
           </div>
         </>
@@ -239,18 +259,33 @@ export function SessionsList({
 
       <div className={`lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}`}>
         <div className="lg:col-span-2">
-          <section>
+          <section className="relative overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,#182846_0%,#12223e_46%,#0d1c35_100%)] p-4 text-white shadow-[0_14px_38px_-24px_rgba(15,23,42,0.65)] sm:p-6">
+            <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:106px_106px] bg-repeat opacity-[0.055]" />
+            <Image
+              src="/icons/mentrixer.svg"
+              alt=""
+              width={18}
+              height={18}
+              className="pointer-events-none absolute right-5 top-4 opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
+            />
+            <Image
+              src="/icons/mentrixer.svg"
+              alt=""
+              width={16}
+              height={16}
+              className="pointer-events-none absolute right-20 bottom-5 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
+            />
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "upcoming" | "past")}>
-              <TabsList className="mb-4 h-auto gap-0 rounded-none border-b border-slate-200 bg-transparent p-0">
+              <TabsList className="mb-5 h-auto w-full justify-start gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 sm:w-auto">
                 <TabsTrigger
                   value="upcoming"
-                  className="mr-8 rounded-none border-b-2 border-transparent bg-transparent pb-2 text-sm font-medium text-slate-600 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 data-[state=active]:shadow-none"
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
                 >
                   Upcoming ({filteredUpcoming.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="past"
-                  className="rounded-none border-b-2 border-transparent bg-transparent pb-2 text-sm font-medium text-slate-600 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 data-[state=active]:shadow-none"
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
                 >
                   Past ({pastSessions.length})
                 </TabsTrigger>
@@ -258,9 +293,13 @@ export function SessionsList({
 
               <TabsContent value="upcoming" className="mt-0" data-student-sessions-tab="upcoming">
                 {filteredUpcoming.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
-                    <p className="text-sm text-slate-600">No upcoming sessions.</p>
-                    <Button variant="outline" size="sm" className="mt-4 border-slate-300" asChild>
+                  <div className="rounded-xl border border-white/25 bg-white/10 px-6 py-12 text-center">
+                    <p className="text-sm font-medium text-white/85">No upcoming sessions.</p>
+                    <Button
+                      size="sm"
+                      className="mt-5 rounded-md bg-white text-[#1E3A5F] px-6 font-semibold hover:bg-white/90"
+                      asChild
+                    >
                       <Link href="/student">Browse guides</Link>
                     </Button>
                   </div>
@@ -275,8 +314,8 @@ export function SessionsList({
 
               <TabsContent value="past" className="mt-0" data-student-sessions-tab="past">
                 {pastSessions.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
-                    <p className="text-sm text-slate-600">No past sessions.</p>
+                  <div className="rounded-xl border border-white/25 bg-white/10 px-6 py-12 text-center">
+                    <p className="text-sm font-medium text-white/85">No past sessions.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -303,38 +342,4 @@ export function SessionsList({
       />
     </>
   );
-}
-
-function useLevelInfo(totalXp: number) {
-  if (totalXp < 100) {
-    return {
-      currentLevel: "Learner",
-      nextLevel: "Scholar",
-      xpToNext: 100 - totalXp,
-      maxXpForBar: 100,
-    };
-  }
-  if (totalXp < 300) {
-    return {
-      currentLevel: "Scholar",
-      nextLevel: "Expert",
-      xpToNext: 300 - totalXp,
-      maxXpForBar: 300,
-    };
-  }
-  if (totalXp < 700) {
-    return {
-      currentLevel: "Expert",
-      nextLevel: "Master",
-      xpToNext: 700 - totalXp,
-      maxXpForBar: 700,
-    };
-  }
-
-  return {
-    currentLevel: "Master",
-    nextLevel: "Master",
-    xpToNext: 0,
-    maxXpForBar: totalXp || 700,
-  };
 }

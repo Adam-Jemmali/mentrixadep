@@ -21,7 +21,7 @@ export function ThirdSequenceWhyContent() {
   const rightOpacity = 1;
 
   return (
-    <section id="why" className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-10 md:px-8 md:py-14">
+    <section id="why" className="relative flex min-h-[82vh] items-center justify-center overflow-hidden px-5 py-8 md:px-8 md:py-10">
       <div className="relative z-10 w-full max-w-7xl">
         <div
           className="mx-auto mb-6 max-w-3xl text-center"
@@ -29,7 +29,7 @@ export function ThirdSequenceWhyContent() {
         >
           <h2 className="text-[clamp(20px,3.2vw,30px)] font-bold tracking-[-0.03em] text-white">Should you join?</h2>
           <p className="mx-auto mt-3 max-w-lg text-[13px] text-cyan-100/95">
-            You already feel both sides - here&apos;s the split, so you&apos;re not guessing.
+            You already feel both sides 
           </p>
         </div>
 

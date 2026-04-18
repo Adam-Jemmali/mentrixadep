@@ -164,17 +164,17 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
   const isAdmin = user.role === "admin";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <main className="max-w-2xl mx-auto px-6 py-10">
-        <h1 className="text-[22px] font-bold tracking-[-0.03em] mb-1">Settings</h1>
-        <p className="text-sm text-slate-400 mb-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <main className="mx-auto w-full max-w-5xl px-8 py-8">
+        <h1 className="text-3xl font-semibold tracking-tight mb-1">Settings</h1>
+        <p className="mb-8 text-sm text-slate-400">
           Manage your account, notifications, and tutor preferences.
         </p>
 
         {/* ── Profile ──────────────────────────────────────────────── */}
         <Section title="Profile" description="Your public identity on Mentrixa.">
-          <div className="flex items-start gap-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-4">
-            <div className="relative h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-white">
+          <div className="flex items-start gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+            <div className="relative h-20 w-20 overflow-hidden rounded-full border border-slate-700 bg-slate-950">
               {settings.avatar_url ? (
                 <Image
                   src={settings.avatar_url}
@@ -185,15 +185,15 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-slate-500">
+                <div className="flex h-full w-full items-center justify-center text-xl font-medium text-slate-400">
                   {((settings.display_name ?? user.email).slice(0, 1) || "G").toUpperCase()}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1 space-y-3">
               <div>
-                <p className="text-sm font-medium text-slate-900">Profile picture</p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="text-sm font-medium text-slate-100">Profile picture</p>
+                <p className="mt-1 text-sm text-slate-400">
                   Use a clear square image so learners recognize you everywhere.
                 </p>
               </div>
@@ -209,7 +209,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs"
+                  className="h-8 border-slate-700 bg-slate-950 text-xs text-slate-200 hover:bg-slate-900"
                   disabled={avatarUploading}
                   onClick={() => avatarInputRef.current?.click()}
                 >
@@ -222,7 +222,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 text-xs text-slate-600"
+                  className="h-8 border-slate-800 text-xs text-slate-400 hover:bg-slate-900 hover:text-slate-200"
                   disabled={avatarUploading || !settings.avatar_url}
                   onClick={() => void handleRemoveAvatar()}
                 >
@@ -236,20 +236,21 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           </div>
 
           <Field label="Email">
-            <Input value={user.email} disabled className="bg-slate-100 text-slate-500" />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <Input value={user.email} disabled className="border-slate-700 bg-slate-900 text-slate-400" />
+            <p className="mt-1 text-xs text-slate-500">
               Email cannot be changed. Contact support if needed.
             </p>
           </Field>
 
           <Field label="Display name">
             <Input
+              className="border-slate-700 bg-slate-900 text-slate-100"
               value={settings.display_name ?? ""}
               onChange={(e) => update("display_name", e.target.value || null)}
               placeholder={user.email.split("@")[0]}
               maxLength={100}
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="mt-1 text-xs text-slate-500">
               Shown to {isTutor ? "students" : "tutors"} and on your profile.
             </p>
           </Field>
@@ -261,9 +262,9 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
               placeholder={isTutor ? "What you teach, your style, and what learners should know." : "Tell tutors a little about your goals."}
               maxLength={280}
               rows={4}
-              className="resize-none"
+              className="resize-none border-slate-700 bg-slate-900 text-slate-100"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="mt-1 text-xs text-slate-500">
               Keep it short so your profile reads cleanly.
             </p>
           </Field>
@@ -271,12 +272,12 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           <Field label="Role">
             <div className="flex items-center gap-2">
               <span
-                className={`inline-block px-2.5 py-1 rounded-md text-xs font-medium ${
+                className={`inline-block rounded-lg px-3 py-2 text-xs font-medium ${
                   isAdmin
-                    ? "bg-violet-50 text-violet-700"
+                    ? "border border-slate-700 bg-slate-900 text-slate-300"
                     : isTutor
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-emerald-50 text-emerald-700"
+                      ? "border border-slate-700 bg-slate-900 text-slate-300"
+                      : "border border-slate-700 bg-slate-900 text-slate-300"
                 }`}
               >
                 {user.role}
@@ -288,7 +289,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             <select
               value={settings.timezone}
               onChange={(e) => update("timezone", e.target.value)}
-              className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mentrixa-400/40"
+              className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
             >
               {APP_TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>
@@ -296,14 +297,14 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="mt-1 text-xs text-slate-500">
               Used for session times and email reminders.
             </p>
           </Field>
 
           {isTutor && (
             <Field label="Tutor profile note">
-              <p className="text-xs leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-400">
                 This page controls your public guide identity, including your name, photo, bio, timezone, and booking defaults.
               </p>
             </Field>
@@ -364,7 +365,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                 onChange={(e) =>
                   update("session_default_duration", Number(e.target.value))
                 }
-                className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mentrixa-400/40"
+                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
               >
                 {DURATION_OPTIONS.map((d) => (
                   <option key={d} value={d}>
@@ -380,7 +381,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                 onChange={(e) =>
                   update("session_buffer_minutes", Number(e.target.value))
                 }
-                className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mentrixa-400/40"
+                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
               >
                 {BUFFER_OPTIONS.map((b) => (
                   <option key={b} value={b}>
@@ -388,7 +389,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="mt-1 text-xs text-slate-500">
                 Minimum gap between consecutive sessions.
               </p>
             </Field>
@@ -425,24 +426,25 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
         )}
 
         {/* ── Save button ──────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 mb-10">
-          <Button onClick={handleSave} disabled={saving}>
+        <div className="mb-10 flex items-center gap-3">
+          <Button onClick={handleSave} disabled={saving} className="bg-slate-100 text-slate-900 hover:bg-white">
             {saving ? "Saving..." : "Save changes"}
           </Button>
           {saved && (
-            <span className="text-sm text-emerald-600 font-medium">Saved</span>
+            <span className="text-sm font-medium text-blue-400">Saved</span>
           )}
           {error && (
-            <span className="text-sm text-red-600 font-medium">{error}</span>
+            <span className="text-sm font-medium text-red-400">{error}</span>
           )}
         </div>
 
-        <hr className="border-slate-200 mb-8" />
+        <hr className="mb-8 border-slate-800" />
 
         {/* ── Change password ──────────────────────────────────────── */}
         <Section title="Change password" description="Update your sign-in password.">
           <Field label="Current password">
             <Input
+              className="border-slate-700 bg-slate-900 text-slate-100"
               type="password"
               value={currentPw}
               onChange={(e) => setCurrentPw(e.target.value)}
@@ -452,6 +454,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           </Field>
           <Field label="New password">
             <Input
+              className="border-slate-700 bg-slate-900 text-slate-100"
               type="password"
               value={newPw}
               onChange={(e) => setNewPw(e.target.value)}
@@ -461,6 +464,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           </Field>
           <Field label="Confirm new password">
             <Input
+              className="border-slate-700 bg-slate-900 text-slate-100"
               type="password"
               value={confirmPw}
               onChange={(e) => setConfirmPw(e.target.value)}
@@ -473,13 +477,14 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
               variant="outline"
               onClick={handlePasswordChange}
               disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+              className="border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
             >
               {pwSaving ? "Updating..." : "Update password"}
             </Button>
             {pwMsg && (
               <span
                 className={`text-sm font-medium ${
-                  pwMsg.type === "ok" ? "text-emerald-600" : "text-red-600"
+                  pwMsg.type === "ok" ? "text-blue-400" : "text-red-400"
                 }`}
               >
                 {pwMsg.text}
@@ -488,7 +493,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           </div>
         </Section>
 
-        <hr className="border-slate-200 mb-8" />
+        <hr className="mb-8 border-slate-800" />
 
         {/* ── Danger zone ──────────────────────────────────────────── */}
         <Section
@@ -499,20 +504,20 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           {!deleteConfirm ? (
             <Button
               variant="outline"
-              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+              className="border-slate-700 bg-slate-900 text-red-400 hover:bg-slate-800 hover:text-red-300"
               onClick={() => setDeleteConfirm(true)}
             >
               Delete my account
             </Button>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-red-700">
+              <p className="text-sm text-red-400">
                 This will permanently delete your account, all sessions, ratings,
                 and XP data. This action cannot be undone.
               </p>
               <div className="flex gap-2">
                 <Button
-                  className="bg-red-600 text-white hover:bg-red-700"
+                  className="bg-red-600 text-white hover:bg-red-500"
                   onClick={handleDelete}
                   disabled={deleting}
                 >
@@ -520,6 +525,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                 </Button>
                 <Button
                   variant="outline"
+                  className="border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
                   onClick={() => setDeleteConfirm(false)}
                   disabled={deleting}
                 >
@@ -546,16 +552,16 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-8">
+    <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
       <h2
-        className={`text-sm font-semibold mb-0.5 ${
-          danger ? "text-red-700" : "text-slate-900"
+        className={`mb-1 text-lg font-medium ${
+          danger ? "text-red-400" : "text-slate-100"
         }`}
       >
         {title}
       </h2>
       {description && (
-        <p className="text-xs text-slate-400 mb-4">{description}</p>
+        <p className="mb-4 text-sm text-slate-400">{description}</p>
       )}
       <div className="space-y-4">{children}</div>
     </section>
@@ -571,7 +577,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-slate-600 mb-1.5">
+      <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-400">
         {label}
       </label>
       {children}
@@ -593,20 +599,20 @@ function Toggle({
   return (
     <div className="flex items-start justify-between gap-4 py-2">
       <div>
-        <p className="text-sm font-medium text-slate-900">{label}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+        <p className="text-sm font-medium text-slate-100">{label}</p>
+        <p className="mt-1 text-sm text-slate-400">{description}</p>
       </div>
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mentrixa-400/50 ${
-          checked ? "bg-mentrixa-600" : "bg-slate-200"
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-slate-700 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+          checked ? "bg-blue-500" : "bg-slate-800"
         }`}
         role="switch"
         aria-checked={checked}
       >
         <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ${
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-slate-100 transition duration-200 ${
             checked ? "translate-x-5" : "translate-x-0"
           }`}
         />

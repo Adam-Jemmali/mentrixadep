@@ -586,6 +586,7 @@ export interface LeaderboardEntry {
   rank: number;
   userId: string;
   displayName: string;
+  avatarUrl: string | null;
   divisionXp: number;
   streakDays: number;
   level: ReturnType<typeof getDivisionTierFromXp>;
@@ -643,6 +644,47 @@ async function resolveLeaderboardDisplayNames(
   return displayNames;
 }
 
+async function resolveLeaderboardAvatarUrls(
+  adminClient: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+): Promise<Record<string, string | null>> {
+  const avatarUrls: Record<string, string | null> = {};
+  if (userIds.length === 0) return avatarUrls;
+
+  const { data: settingsRows } = await adminClient
+    .from("user_settings")
+    .select("user_id, avatar_url")
+    .in("user_id", userIds);
+
+  for (const row of settingsRows ?? []) {
+    avatarUrls[row.user_id] =
+      typeof row.avatar_url === "string" && row.avatar_url.trim().length > 0
+        ? row.avatar_url.trim()
+        : null;
+  }
+
+  for (const userId of userIds) {
+    if (avatarUrls[userId]) continue;
+    try {
+      const { data } = await adminClient.auth.admin.getUserById(userId);
+      const meta = data?.user?.user_metadata as Record<string, unknown> | undefined;
+      const avatarRaw = meta?.avatar_url ?? meta?.picture;
+      avatarUrls[userId] =
+        typeof avatarRaw === "string" && avatarRaw.trim().length > 0
+          ? avatarRaw.trim()
+          : null;
+    } catch {
+      avatarUrls[userId] = null;
+    }
+  }
+
+  for (const userId of userIds) {
+    if (!(userId in avatarUrls)) avatarUrls[userId] = null;
+  }
+
+  return avatarUrls;
+}
+
 /** Uses mv_division_leaderboard when present; falls back to scanning user_xp. */
 async function buildDivisionLeaderboard(
   divisionKey: string,
@@ -687,11 +729,13 @@ async function buildDivisionLeaderboard(
 
   const userIds = divXpList.map((r) => r.user_id);
   const displayNames = await resolveLeaderboardDisplayNames(adminClient, userIds);
+  const avatarUrls = await resolveLeaderboardAvatarUrls(adminClient, userIds);
 
   return divXpList.map((r, i) => ({
     rank: i + 1,
     userId: r.user_id,
     displayName: displayNames[r.user_id] ?? "Anonymous",
+    avatarUrl: avatarUrls[r.user_id] ?? null,
     divisionXp: r.xp,
     streakDays: r.streak_days,
     level: getDivisionTierFromXp(r.xp),

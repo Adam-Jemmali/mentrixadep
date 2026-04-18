@@ -25,6 +25,30 @@ type Props = {
   currentUserId: string;
 };
 
+function formatChatTime(iso: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "UTC",
+    }).formatToParts(new Date(iso));
+
+    const hour = parts.find((p) => p.type === "hour")?.value ?? "";
+    const minute = parts.find((p) => p.type === "minute")?.value ?? "";
+    const dayPeriod =
+      (parts.find((p) => p.type === "dayPeriod")?.value ?? "").replace(/\./g, "").toUpperCase();
+
+    if (hour && minute && dayPeriod) {
+      return `${hour}:${minute} ${dayPeriod}`;
+    }
+
+    return new Date(iso).toISOString().replace("T", " ").slice(11, 16) + " UTC";
+  } catch {
+    return iso;
+  }
+}
+
 export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
   const [items, setItems] = useState<ClanMessageRow[]>(initialMessages);
   const [text, setText] = useState("");
@@ -125,10 +149,7 @@ export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
               const label =
                 m.display_name?.trim() ||
                 `Learner ${m.user_id.slice(0, 6)}`;
-              const time = new Date(m.created_at).toLocaleTimeString(undefined, {
-                hour: "numeric",
-                minute: "2-digit",
-              });
+              const time = formatChatTime(m.created_at);
               return (
                 <motion.div
                   key={m.id}

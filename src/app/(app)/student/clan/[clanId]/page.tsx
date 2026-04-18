@@ -10,6 +10,8 @@ import {
   listPendingJoinRequests,
 } from "@/app/actions/clan-dashboard";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { ClanDashboardClient } from "./clan-dashboard-client";
 import { ClanPublicPreview } from "./clan-public-preview";
 
@@ -18,6 +20,8 @@ export const metadata = { title: "Clan · Mentrixa" };
 interface Props {
   params: Promise<{ clanId: string }>;
 }
+
+type DivisionOption = { key: string; name: string };
 
 export default async function ClanDetailPage({ params }: Props) {
   const { clanId } = await params;
@@ -33,21 +37,26 @@ export default async function ClanDetailPage({ params }: Props) {
     .maybeSingle();
 
   const divisions = await getDivisionsCatalog();
+  const divisionOptions: DivisionOption[] = divisions.map((d) => ({ key: d.key, name: d.name }));
   const resolveDivName = (key: string | null) =>
-    key ? divisions.find((d) => d.key === key)?.name ?? key : "—";
+    key ? divisions.find((d) => d.key === key)?.name ?? key : "-";
 
   if (!mem?.clan_id) {
     const snap = await getPublicClanSnapshot(clanId);
     if (!snap) notFound();
-    // Resolve the label to a plain string before crossing the server→client boundary
+  // Resolve label before server to client boundary
     const divisionLabel = resolveDivName(snap.focus_division_key ?? null);
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className={mentrixStudent.pageBg}>
         <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between gap-3">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/student/clan">← Clans</Link>
             </Button>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+              <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={13} height={13} />
+              Mentrixer
+            </span>
           </div>
           <ClanPublicPreview snap={snap} divisionLabel={divisionLabel} />
         </main>
@@ -63,16 +72,20 @@ export default async function ClanDetailPage({ params }: Props) {
 
   const pending = await listPendingJoinRequests(clanId);
   const isLeader = data.clan.leader_id === user.id;
-  // Resolve label server-side — never pass functions to Client Components
+  // Resolve label server side
   const divisionLabel = resolveDivName(data.clan.focus_division_key ?? null);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className={mentrixStudent.pageBg}>
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/student/clan">← Clans</Link>
           </Button>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+            <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={13} height={13} />
+            Mentrixer
+          </span>
         </div>
 
         <ClanDashboardClient
@@ -82,6 +95,7 @@ export default async function ClanDetailPage({ params }: Props) {
           currentUserId={user.id}
           isLeader={isLeader}
           divisionLabel={divisionLabel}
+          divisions={divisionOptions}
         />
       </main>
     </div>

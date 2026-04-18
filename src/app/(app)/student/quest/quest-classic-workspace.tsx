@@ -16,6 +16,8 @@ import {
 import { QuestIllustration } from "@/components/illustrations";
 
 const RECENT_KEY = "mentrixa_quests";
+const ACTIVE_QUEST_SESSION_KEY = "mentrixa_active_quest_v1";
+const ACTIVE_QUEST_MAX_AGE_MS = 1000 * 60 * 30;
 const MAX_RECENT = 5;
 
 const GOAL_OPTIONS: { value: QuestGoal; label: string; labelText: string }[] = [
@@ -37,9 +39,38 @@ type QuestResponse = {
 type RecentItem = {
   text: string;
   payload?: QuestResponse;
-  /** True after a correct submit — reopening from Recents is review-only. */
+  /** True after a correct submit. Reopening from Recents is review only. */
   completedLocally?: boolean;
 };
+
+type ActiveQuestSnapshot = {
+  version: 1;
+  savedAt: number;
+  prompt: string;
+  goal: QuestGoal;
+  mode: QuestMode;
+  currentQuest: QuestResponse;
+  hintsRevealed: number;
+  reasoningShown: boolean;
+  solutionShown: boolean;
+  questCompleted: boolean;
+  lastXpAwarded: number | null;
+};
+
+function isValidQuestResponse(value: unknown): value is QuestResponse {
+  if (!value || typeof value !== "object") return false;
+  const q = value as Partial<QuestResponse>;
+  return (
+    typeof q.questId === "string" &&
+    Array.isArray(q.hints) &&
+    q.hints.length > 0 &&
+    q.hints.every((h) => typeof h === "string") &&
+    typeof q.reasoning === "string" &&
+    typeof q.solution === "string" &&
+    (q.mode === "coach" || q.mode === "exam") &&
+    (q.goal === "exam" || q.goal === "interview" || q.goal === "assignment")
+  );
+}
 
 export function QuestClassicWorkspace() {
   const searchParams = useSearchParams();
@@ -76,6 +107,88 @@ export function QuestClassicWorkspace() {
     const q = searchParams.get("prompt");
     if (q != null && q.trim()) setPrompt(decodeURIComponent(q.trim()));
   }, [searchParams]);
+
+  // restore active quest panel after remount unless URL explicitly provides a prompt
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (searchParams.get("prompt")?.trim()) return;
+
+    const raw = window.sessionStorage.getItem(ACTIVE_QUEST_SESSION_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as Partial<ActiveQuestSnapshot>;
+      const age = Date.now() - Number(parsed.savedAt ?? 0);
+      if (
+        parsed.version !== 1 ||
+        !Number.isFinite(age) ||
+        age < 0 ||
+        age > ACTIVE_QUEST_MAX_AGE_MS ||
+        typeof parsed.prompt !== "string" ||
+        !isValidQuestResponse(parsed.currentQuest)
+      ) {
+        window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+        return;
+      }
+
+      const restoredQuest = parsed.currentQuest;
+      const restoredHints = Math.max(
+        1,
+        Math.min(Number(parsed.hintsRevealed ?? 1), restoredQuest.hints.length),
+      );
+
+      setPrompt(parsed.prompt);
+      if (parsed.goal === "exam" || parsed.goal === "interview" || parsed.goal === "assignment") {
+        setGoal(parsed.goal);
+      }
+      if (parsed.mode === "coach" || parsed.mode === "exam") {
+        setMode(parsed.mode);
+      }
+      setCurrentQuest(restoredQuest);
+      setHintsRevealed(restoredHints);
+      setReasoningShown(parsed.reasoningShown === true);
+      setSolutionShown(parsed.solutionShown === true);
+      setQuestCompleted(parsed.questCompleted === true);
+      setLastXpAwarded(
+        typeof parsed.lastXpAwarded === "number" ? parsed.lastXpAwarded : null,
+      );
+    } catch {
+      window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+    }
+  }, [searchParams]);
+
+  // persist active quest panel state for remount/reload resilience
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!currentQuest || isLoading || !prompt.trim()) return;
+
+    const snapshot: ActiveQuestSnapshot = {
+      version: 1,
+      savedAt: Date.now(),
+      prompt: prompt.trim(),
+      goal,
+      mode,
+      currentQuest,
+      hintsRevealed: Math.max(1, Math.min(hintsRevealed, currentQuest.hints.length)),
+      reasoningShown,
+      solutionShown,
+      questCompleted,
+      lastXpAwarded,
+    };
+
+    window.sessionStorage.setItem(ACTIVE_QUEST_SESSION_KEY, JSON.stringify(snapshot));
+  }, [
+    currentQuest,
+    prompt,
+    goal,
+    mode,
+    hintsRevealed,
+    reasoningShown,
+    solutionShown,
+    questCompleted,
+    lastXpAwarded,
+    isLoading,
+  ]);
 
   // load recent
   useEffect(() => {
@@ -155,13 +268,7 @@ export function QuestClassicWorkspace() {
     if (!text) return;
     setSubmitError(null);
     setRecordError(null);
-    setQuestCompleted(false);
-    setLastXpAwarded(null);
     setIsLoading(true);
-    setCurrentQuest(null);
-    setHintsRevealed(0);
-    setReasoningShown(false);
-    setSolutionShown(false);
 
     const result = await submitQuest(text, goal, mode);
     setIsLoading(false);
@@ -172,7 +279,6 @@ export function QuestClassicWorkspace() {
           ? result.message
           : "Something went wrong. Please try again.";
       setSubmitError(msg);
-      setCurrentQuest(null);
       return;
     }
 
@@ -187,7 +293,6 @@ export function QuestClassicWorkspace() {
 
     if (!data.questId || !Array.isArray(data.hints) || data.hints.length === 0) {
       setSubmitError("Got an incomplete response. Please try again.");
-      setCurrentQuest(null);
       return;
     }
     const payload: QuestResponse = {
@@ -200,9 +305,13 @@ export function QuestClassicWorkspace() {
       variants: data.variants ?? [],
     };
     addToRecent(text, payload);
+    setQuestCompleted(false);
+    setLastXpAwarded(null);
     setPrompt(text);
     setCurrentQuest(payload);
     setHintsRevealed(payload.hints.length > 0 ? 1 : 0);
+    setReasoningShown(false);
+    setSolutionShown(false);
 
     if (rightPaneRef.current) {
       rightPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
@@ -300,6 +409,9 @@ export function QuestClassicWorkspace() {
     setRecordError(null);
     setSubmitError(null);
     setPrompt("");
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+    }
     if (rightPaneRef.current) {
       rightPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -327,7 +439,7 @@ export function QuestClassicWorkspace() {
         rightPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
       }
     } else {
-      // No cached payload (old entry) — submit to fetch and cache
+      // No cached payload old entry. Submit to fetch and cache.
       if (textareaRef.current) {
         gsap.fromTo(
           textareaRef.current,
@@ -343,7 +455,7 @@ export function QuestClassicWorkspace() {
 
   const handleSuggestionClick = (text: string) => {
     setPrompt(text);
-    // Defer submit so stagger animation and DOM settle — fixes first-click reliability
+    // Defer submit so stagger animation and DOM settle. Fixes first click reliability.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => void handleSubmit(text));
     });
@@ -607,7 +719,7 @@ export function QuestClassicWorkspace() {
                     onClick={handleRevealNextHint}
                     className="text-sm text-slate-400 hover:text-slate-700 underline underline-offset-2"
                   >
-                    Reveal next hint — {totalHints - hintsRevealed} remaining
+                    Reveal next hint {totalHints - hintsRevealed} remaining
                   </button>
                   <span className="text-xs font-mono text-slate-300">
                     {hintsRevealed} / {totalHints}

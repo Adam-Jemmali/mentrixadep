@@ -39,10 +39,10 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
           return (
             <li key={c.key}>
               <div
-                className={`flex h-full flex-col rounded-xl border bg-white p-5 shadow-sm transition ${
+                className={`flex h-full flex-col rounded-2xl border bg-white p-5 shadow-[0_4px_24px_-10px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 ${
                   focused
                     ? "border-amber-400 ring-2 ring-amber-300/60"
-                    : "border-slate-200 hover:border-slate-300"
+                    : "border-slate-200/90 hover:border-blue-200"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -77,7 +77,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                   <p className="mt-3 text-xs text-slate-400 flex-1">Subject community & leaderboard.</p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" asChild>
+                  <Button size="sm" variant="outline" className="rounded-full border-2" asChild>
                     <Link href={`/student/division/${encodeURIComponent(c.key)}`}>Open</Link>
                   </Button>
                   {!c.isMember ? (
@@ -85,7 +85,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                       size="sm"
                       disabled={pending}
                       onClick={() => handleJoin(c.key)}
-                      className="bg-slate-900 text-white hover:bg-slate-800"
+                      className="rounded-full bg-blue-600 font-semibold text-white shadow-md shadow-blue-500/20 hover:bg-blue-500"
                     >
                       Join division
                     </Button>

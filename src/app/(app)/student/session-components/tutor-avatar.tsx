@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { User } from "lucide-react";
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -54,7 +53,7 @@ export function TutorAvatar({
       {initials.length >= 2 ? (
         <span className="leading-none tracking-tight">{initials}</span>
       ) : (
-        <User className="h-1/2 w-1/2 opacity-90" strokeWidth={2} />
+        <Image src="/images/user.png" alt="User" width={20} height={20} className="opacity-90" />
       )}
     </div>
   );

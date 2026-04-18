@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import { TutorAvatar } from "./tutor-avatar";
 import { StudyPackagePanel } from "./study-package-panel";
 import { DeletePastSessionButton } from "@/components/delete-past-session-button";
@@ -21,7 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronDown, Sparkles, Star } from "lucide-react";
 import type { StudentSessionTutorProfile } from "@/app/actions/student";
 import type { SessionAiPackage } from "@/lib/database.types";
 
@@ -102,11 +102,13 @@ export function PastSessionCard({ session }: { session: Session }) {
             {hasRating ? (
               <div className="flex items-center gap-1" aria-label={`Rated ${rating} out of 5`}>
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
+                  <Image
                     key={s}
-                    className={`h-4 w-4 ${
-                      s <= (rating ?? 0) ? "fill-amber-400 text-amber-500" : "text-slate-300"
-                    }`}
+                    src={s <= (rating ?? 0) ? "/images/xp.png" : "/images/pending.png"}
+                    alt="Star"
+                    width={16}
+                    height={16}
+                    className="h-4 w-4"
                   />
                 ))}
               </div>
@@ -128,10 +130,16 @@ export function PastSessionCard({ session }: { session: Session }) {
           {sessionDoneForUi ? (
             <Collapsible open={packageOpen} onOpenChange={setPackageOpen}>
               <CollapsibleTrigger asChild>
-                <Button type="button" size="sm" variant="outline" className="gap-1">
-                  <Sparkles className="h-4 w-4 text-mentrixa-600" />
+                <Button type="button" size="sm" variant="outline" className="gap-1 text-black">
+                  <Image src="/images/package.png" alt="Package" width={16} height={16} />
                   View Study Package
-                  <ChevronDown className={`h-4 w-4 transition ${packageOpen ? "rotate-180" : ""}`} />
+                  <Image
+                    src="/images/pending.png"
+                    alt="Toggle"
+                    width={16}
+                    height={16}
+                    className={`transition ${packageOpen ? "rotate-180" : ""}`}
+                  />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-4">

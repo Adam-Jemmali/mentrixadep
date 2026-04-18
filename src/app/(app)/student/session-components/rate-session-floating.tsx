@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star } from "lucide-react";
 import { RateSessionForm } from "../rate-session-form";
 import { Button } from "@/components/ui/button";
 
@@ -50,7 +50,7 @@ export function RateSessionFloating({
             </p>
             <p className="mt-0.5 text-sm font-medium text-slate-900">{session.course}</p>
           </div>
-          <Star className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+          <Image src="/images/xp.png" alt="Rating" width={16} height={16} className="shrink-0 opacity-70" />
         </div>
         <RateSessionForm
           sessionId={session.id}

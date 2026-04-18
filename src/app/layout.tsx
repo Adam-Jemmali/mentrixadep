@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   /** PNG / PWA icons — regenerate with `npm run pwa:icons` from `mentrixa-checkout-icon.svg`. */
   icons: {
     icon: [
+      { url: "/favicon-mentrixa.ico?v=20260417", type: "image/x-icon" },
       { url: "/icon.png", type: "image/png" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -82,10 +83,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="google-site-verification" content="7qMsPjvmHXjq4yWwD5z0HMpqJuyTBlhpDONtfRfh9dk" />
-        {/* Favicons: PNG first (Google supports it); .ico for legacy + SERP crawlers */}
+        {/* Favicons: versioned ICO first to bust stale crawler caches, PNGs for modern clients. */}
+        <link rel="icon" href={`${siteUrl}/favicon-mentrixa.ico?v=20260417`} type="image/x-icon" sizes="any" />
         <link rel="icon" href={`${siteUrl}/icons/icon-192.png`} type="image/png" sizes="192x192" />
-        <link rel="icon" href={`${siteUrl}/favicon.ico`} sizes="any" />
-        <link rel="shortcut icon" href={`${siteUrl}/favicon.ico`} type="image/x-icon" />
+        <link rel="icon" href={`${siteUrl}/icon.png`} type="image/png" />
+        <link rel="shortcut icon" href={`${siteUrl}/favicon-mentrixa.ico?v=20260417`} type="image/x-icon" />
       </head>
       <body className="antialiased font-sans overflow-x-hidden" suppressHydrationWarning>
         <OrganizationJsonLd />

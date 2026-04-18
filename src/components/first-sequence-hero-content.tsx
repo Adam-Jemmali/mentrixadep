@@ -10,15 +10,15 @@ const ICON_VERSION = "20260410";
 const WAITLIST_SLIDES = [
   {
     title: "Early access",
-    text: "Waitlisted Mentrixers and Guides are approved in batches by admin to keep session quality high.",
+   
   },
   {
     title: "Priority onboarding",
-    text: "Approved users get the cleanest first experience: no broken queues, no overloaded support.",
+  
   },
   {
     title: "Launch updates",
-    text: "You receive an email confirmation immediately after joining the waitlist.",
+   
   },
 ];
 
@@ -352,10 +352,6 @@ export function FirstSequenceHeroContent() {
             opacity: revealLeft,
             willChange: revealLeft < 0.99 ? 'opacity' : 'auto',
           }}>
-            <div className="pointer-events-none absolute -left-10 -top-8 hidden lg:block">
-              <WatermarkRoleIcon role="mentrixer" />
-            </div>
-
             <h1 className="font-extrabold tracking-[-0.05em] text-white">
               <span className="sr-only">Mentrixa — </span>
               <span
@@ -372,7 +368,7 @@ export function FirstSequenceHeroContent() {
                 <RevealText text="Prove what " progress={progress} />
               </span>
               <span
-                className="lp-hero-line lp-hero-line-delay-3 block mt-1 bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent mx-auto"
+                className="lp-hero-line lp-hero-line-delay-3 block mt-1 bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-transparent mx-auto"
                 style={{
                   fontSize: "clamp(34px, 7.4vw, 70px)",
                   lineHeight: 0.92,
@@ -394,7 +390,7 @@ export function FirstSequenceHeroContent() {
             <div className="mt-7 flex flex-wrap justify-center lg:justify-start gap-3">
               <Link
                 href="/auth/signup"
-                className="lp-cta-pulse group inline-flex items-center gap-2 text-sm font-semibold text-[#0B1120] bg-white px-7 py-3.5 rounded-xl shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 hover:-translate-y-0.5 transition-all"
+                className="lp-cta-pulse group inline-flex items-center gap-2 text-sm font-semibold text-[#0B1120] bg-white px-7 py-3.5 rounded-xl shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 hover:-translate-y-0.5 transition-all"
               >
                 <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
                 Become a Mentrixer
@@ -418,14 +414,9 @@ export function FirstSequenceHeroContent() {
             className="lg:pt-8 xl:pt-12"
             style={{ opacity: revealRight, transform: `translateY(${(1 - revealRight) * 16}px)` }}
           >
-            <div id="waitlist" className="relative overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 backdrop-blur-md p-4 sm:p-5 text-left shadow-xl shadow-indigo-950/45 lg:max-w-xl lg:ml-auto">
-              <div className="pointer-events-none absolute -right-6 -top-2 hidden opacity-20 lg:block">
-                <WatermarkRoleIcon role="guide" />
-              </div>
-              <p className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.2em] uppercase text-blue-200">
-                <RoleIcon role="guide" className="h-3.5 w-3.5" /> Find my Guide now →
-              </p>
-              <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Apply for early access →</h3>
+            <div id="waitlist" className="relative overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 backdrop-blur-md p-4 sm:p-5 text-left shadow-xl shadow-violet-950/45 lg:max-w-xl lg:ml-auto">
+              <p className="mb-2 text-[10px] font-bold tracking-[0.2em] uppercase text-cyan-200">Find my Guide now </p>
+              <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Apply for early access </h3>
 
               <div className="mt-4 grid md:grid-cols-2 gap-4">
                 <div className="rounded-xl border border-white/10 bg-black/55 p-3 min-h-[120px]">
@@ -438,7 +429,7 @@ export function FirstSequenceHeroContent() {
                       )}
                     >
                       <p className="text-sm font-semibold text-white">{s.title}</p>
-                      <p className="mt-1 text-xs text-slate-100/90 leading-relaxed">{s.text}</p>
+                      
                     </div>
                   ))}
                   <div className="mt-3 flex gap-1.5">
@@ -449,7 +440,7 @@ export function FirstSequenceHeroContent() {
                         onClick={() => setSlideIdx(i)}
                         className={cn(
                           "h-1.5 rounded-full transition-all",
-                          i === slideIdx ? "w-7 bg-blue-300" : "w-3 bg-white/30",
+                          i === slideIdx ? "w-7 bg-cyan-300" : "w-3 bg-white/30",
                         )}
                         aria-label={`Waitlist slide ${i + 1}`}
                       />
@@ -461,8 +452,8 @@ export function FirstSequenceHeroContent() {
                     type="email"
                     value={waitlistEmail}
                     onChange={(e) => setWaitlistEmail(e.target.value)}
-                    placeholder="you@university.ca or personal email"
-                    className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500"
+                    placeholder="personal /education email "
+                    className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-sm text-slate-950 outline-none focus:border-cyan-500"
                   />
                   <div className="mt-2 flex gap-2">
                     <button
@@ -496,7 +487,7 @@ export function FirstSequenceHeroContent() {
                   >
                     {waitlistLoading ? "Submitting..." : "Join waitlist"}
                   </button>
-                  {waitlistMsg ? <p className="mt-2 text-xs text-blue-100">{waitlistMsg}</p> : null}
+                  {waitlistMsg ? <p className="mt-2 text-xs text-cyan-100">{waitlistMsg}</p> : null}
                 </div>
               </div>
             </div>

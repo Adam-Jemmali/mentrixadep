@@ -33,7 +33,7 @@ const nextConfig = {
     return [
       {
         // Force browsers and Vercel CDN to always re-fetch favicon files
-        source: "/:file(favicon\\.ico|apple-icon\\.png|icon\\.png|manifest\\.json)",
+        source: "/:file(favicon\\.ico|favicon-mentrixa\\.ico|apple-icon\\.png|icon\\.png|manifest\\.json)",
         headers: [
           {
             key: "Cache-Control",

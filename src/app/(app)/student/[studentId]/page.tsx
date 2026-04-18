@@ -11,9 +11,9 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { studentId } = await params;
   const data = await getStudentProfile(studentId);
-  if (!data) return { title: "Profile — Mentrixa" };
+  if (!data) return { title: "Profile - Mentrixa" };
   return {
-    title: `${data.displayName} — Mentrixa`,
+    title: `${data.displayName} - Mentrixa`,
     description: `Learner profile · ${data.totalXp.toLocaleString()} XP · ${data.levelLabel}`,
   };
 }

@@ -8,7 +8,7 @@ const FEATURE_ITEMS = [
   {
     title: "Live sessions",
     icon: "/images/live.png",
-    hoverColor: "hover:bg-blue-500/20",
+    hoverColor: "hover:bg-cyan-500/20",
     body: "A real expert on your exact course, live on screen, while the problem is still fresh. Not a chatbot. Not a YouTube video.",
   },
   {
@@ -20,25 +20,25 @@ const FEATURE_ITEMS = [
   {
     title: "Skill duels",
     icon: "/images/sword.png",
-    hoverColor: "hover:bg-orange-500/20",
+    hoverColor: "hover:bg-emerald-500/20",
     body: "Head-to-head quizzes against other students in your subject. If you can beat them under pressure, you can beat the exam question on paper.",
   },
   {
     title: "Divisions & XP",
     icon: "/images/xp.png",
-    hoverColor: "hover:bg-emerald-500/20",
+    hoverColor: "hover:bg-cyan-500/20",
     body: "Every session, quest, and duel earns XP. You rank in your subject's division. When you can see you're improving, you don't stop.",
   },
   {
     title: "Instant booking",
     icon: "/images/book.png",
-    hoverColor: "hover:bg-sky-500/20",
+    hoverColor: "hover:bg-violet-500/20",
     body: "You land a time without the scheduling thread - the real cost was always the messages before the calendar opened.",
   },
   {
     title: "Session packages",
     icon: "/images/package.png",
-    hoverColor: "hover:bg-pink-500/20",
+    hoverColor: "hover:bg-emerald-500/20",
     body: "You walk away with something you can reopen - the call fades; your summaries, cards, and follow-ups do not.",
   },
 ];
@@ -74,7 +74,7 @@ export function ThirdStaticFeaturesContent() {
   const cardsOpacity = Math.min(1, Math.max(0.1, (progress - 0.08) * 1.25));
 
   return (
-    <section id="thirdstatic" className="relative h-[320vh]">
+    <section id="thirdstatic" className="relative h-[190vh]">
       <div id="features" className="sticky top-0 h-screen w-full overflow-hidden">
         <Image
           src="/sequences-webp/3rdstatic.webp"

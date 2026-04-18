@@ -38,7 +38,7 @@ export function ClanBrowseClient() {
     }
     if (!r.joined) {
       setInfo(
-        "Request sent. The leader will approve you — check back from Clans in the nav."
+        "Request sent. Leader will approve."
       );
       return;
     }

@@ -16,6 +16,7 @@ export interface WeeklyLeaderboardEntry {
   rank: number;
   userId: string;
   displayName: string;
+  avatarUrl: string | null;
   weeklyXp: number;
   streakDays: number;
   level: ReturnType<typeof getDivisionTierFromXp>;
@@ -101,6 +102,48 @@ async function resolveDisplayNames(
   return displayNames;
 }
 
+async function resolveAvatarUrls(
+  admin: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+): Promise<Record<string, string | null>> {
+  const unique = Array.from(new Set(userIds));
+  const avatarUrls: Record<string, string | null> = {};
+  if (unique.length === 0) return avatarUrls;
+
+  const { data: settingsRows } = await admin
+    .from("user_settings")
+    .select("user_id, avatar_url")
+    .in("user_id", unique);
+
+  for (const row of settingsRows ?? []) {
+    avatarUrls[row.user_id] =
+      typeof row.avatar_url === "string" && row.avatar_url.trim().length > 0
+        ? row.avatar_url.trim()
+        : null;
+  }
+
+  for (const uid of unique) {
+    if (avatarUrls[uid]) continue;
+    try {
+      const { data } = await admin.auth.admin.getUserById(uid);
+      const meta = data?.user?.user_metadata as Record<string, unknown> | undefined;
+      const avatarRaw = meta?.avatar_url ?? meta?.picture;
+      avatarUrls[uid] =
+        typeof avatarRaw === "string" && avatarRaw.trim().length > 0
+          ? avatarRaw.trim()
+          : null;
+    } catch {
+      avatarUrls[uid] = null;
+    }
+  }
+
+  for (const uid of unique) {
+    if (!(uid in avatarUrls)) avatarUrls[uid] = null;
+  }
+
+  return avatarUrls;
+}
+
 export async function getWeeklyDivisionLeaderboard(
   divisionKey: string,
   currentUserId: string,
@@ -123,6 +166,7 @@ export async function getWeeklyDivisionLeaderboard(
   const list = rows ?? [];
   const userIds = list.map((r) => r.user_id);
   const names = await resolveDisplayNames(admin, userIds);
+  const avatarUrls = await resolveAvatarUrls(admin, userIds);
 
   const { data: xpRows } =
     userIds.length > 0
@@ -146,6 +190,7 @@ export async function getWeeklyDivisionLeaderboard(
       rank: i + 1,
       userId: r.user_id,
       displayName: names[r.user_id] ?? "Anonymous",
+      avatarUrl: avatarUrls[r.user_id] ?? null,
       weeklyXp: r.xp_earned,
       streakDays: meta?.streak ?? 0,
       level: getDivisionTierFromXp(allTimeDivXp),

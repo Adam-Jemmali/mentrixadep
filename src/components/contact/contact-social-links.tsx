@@ -30,24 +30,11 @@ function IconTwitter({ className }: { className?: string }) {
   );
 }
 
-function IconReddit({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="9.2" cy="12" r="1.2" fill="currentColor" />
-      <circle cx="14.8" cy="12" r="1.2" fill="currentColor" />
-      <path d="M8.8 15.1c.9.8 1.9 1.2 3.2 1.2 1.2 0 2.3-.4 3.2-1.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M13.2 7.4l2.8.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="16.9" cy="8.1" r="1" fill="currentColor" />
-    </svg>
-  );
-}
 
 function getSocialEnv() {
   return {
     discord: process.env.NEXT_PUBLIC_SOCIAL_DISCORD_URL?.trim() ?? "",
     instagram: process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM_URL?.trim() ?? "",
-    reddit: process.env.NEXT_PUBLIC_SOCIAL_REDDIT_URL?.trim() ?? "",
     twitter: process.env.NEXT_PUBLIC_SOCIAL_TWITTER_URL?.trim() ?? "",
   };
 }
@@ -99,17 +86,8 @@ export function ContactSocialLinks({
       children: <IconInstagram className={variant === "footer" ? "h-4 w-4" : "h-6 w-6"} />,
     });
   }
-  if (isHttpUrl(env.reddit)) {
-    items.push({
-      href: env.reddit,
-      label: "Reddit",
-      color:
-        variant === "default"
-          ? "hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-400/35"
-          : "hover:border-orange-400/40 hover:text-orange-300",
-      children: <IconReddit className={variant === "footer" ? "h-4 w-4" : "h-6 w-6"} />,
-    });
-  }
+  
+
   if (isHttpUrl(env.twitter)) {
     items.push({
       href: env.twitter,

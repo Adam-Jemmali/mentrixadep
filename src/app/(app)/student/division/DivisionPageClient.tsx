@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
@@ -18,6 +19,7 @@ import {
   getDivisionTheme,
   divisionTeaser,
 } from "@/lib/division-ui";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -37,6 +39,35 @@ interface DivisionPageClientProps {
   leaderboard: LeaderboardEntry[];
   divisionStats: DivisionStat[];
   questHistory: QuestHistoryEntry[];
+}
+
+function RankingAvatar({
+  displayName,
+  avatarUrl,
+}: {
+  displayName: string;
+  avatarUrl: string | null;
+}) {
+  const initial = displayName.trim().charAt(0).toUpperCase() || "M";
+
+  if (avatarUrl) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        width={28}
+        height={28}
+        unoptimized
+        className="h-7 w-7 shrink-0 rounded-full border border-slate-200 bg-slate-100 object-cover"
+      />
+    );
+  }
+
+  return (
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-[11px] font-semibold text-slate-600">
+      {initial}
+    </span>
+  );
 }
 
 export function DivisionPageClient(props: DivisionPageClientProps) {
@@ -195,21 +226,22 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
     <main className="max-w-5xl mx-auto px-6 py-8 relative">
       <DivisionIllustration />
 
-      <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-900 text-white mb-8 shadow-lg">
-        <div
-          className={`absolute inset-0 opacity-90 bg-gradient-to-br ${headerTheme?.gradient ?? "from-slate-800 via-slate-900 to-black"}`}
-          aria-hidden
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_50%)]" />
-        <div className="relative px-5 py-6 sm:px-8 sm:py-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+      <section
+        className={`
+          relative mb-8 overflow-hidden
+          ${mentrixStudent.card}
+          before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.png')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']
+        `}
+      >
+        <div className="relative px-5 py-6 sm:px-8 sm:py-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
               Division arena
             </p>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Subject leaderboards that actually move you forward
             </h1>
-            <p className="mt-2 text-sm text-white/85 leading-relaxed">
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
               Stack division XP from quests, climb ranks, then duel peers in the same
               subject—your home arena stays in sync everywhere.
             </p>
@@ -225,7 +257,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
             <Button
               size="sm"
               variant="outline"
-              className="border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
               asChild
             >
               <Link href="/student/duel">Skill duels</Link>
@@ -519,16 +551,19 @@ function LeaderboardTab({
                     )}
                   </td>
                   <td className="py-2 pr-3 align-middle">
-                    <span
-                      className={`text-sm font-medium ${
-                        isCurrent ? "text-mentrixa-800" : "text-slate-900"
-                      }`}
-                    >
-                      {row.displayName}
-                      {isCurrent && (
-                        <span className="ml-1 text-[11px] text-mentrixa-600">(you)</span>
-                      )}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <RankingAvatar displayName={row.displayName} avatarUrl={row.avatarUrl} />
+                      <span
+                        className={`text-sm font-medium ${
+                          isCurrent ? "text-mentrixa-800" : "text-slate-900"
+                        }`}
+                      >
+                        {row.displayName}
+                        {isCurrent && (
+                          <span className="ml-1 text-[11px] text-mentrixa-600">(you)</span>
+                        )}
+                      </span>
+                    </div>
                   </td>
                   <td className="py-2 pr-3 align-middle">
                     <div className="flex items-center gap-3">
@@ -719,7 +754,7 @@ function QuestHistoryTab({
             <>
               No completed quests yet. Finish a problem in the{" "}
               <Link href="/student/quest" className="text-mentrixa-600 hover:underline font-medium">
-                Quest lab
+                Quest 
               </Link>{" "}
               with a correct answer to see it here.
             </>
@@ -780,4 +815,3 @@ function QuestHistoryTab({
     </div>
   );
 }
-

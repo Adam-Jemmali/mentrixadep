@@ -119,7 +119,6 @@ function NavigationInner({ user }: NavigationProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const navRef = useRef<HTMLElement | null>(null);
-  const underlineRefs = useRef<Record<string, HTMLSpanElement | null>>({});
   const mobileLinkRefs = useRef<HTMLAnchorElement[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -172,33 +171,12 @@ function NavigationInner({ user }: NavigationProps) {
   }, []);
 
   useEffect(() => {
-    navItems.forEach((item) => {
-      const ref = underlineRefs.current[item.href];
-      if (!ref) return;
-      if (isActive(item.href)) {
-        gsap.set(ref, { scaleX: 1 });
-      } else {
-        gsap.set(ref, { scaleX: 0 });
-      }
-    });
-  }, [pathname, navItems, isActive]);
-
-  useEffect(() => {
     if (mobileOpen && mobileLinkRefs.current.length > 0) {
       staggerIn(mobileLinkRefs.current);
     }
   }, [mobileOpen]);
 
-  const handleHover = (href: string, enter: boolean) => {
-    const ref = underlineRefs.current[href];
-    if (!ref) return;
-    if (isActive(href)) return;
-    gsap.to(ref, {
-      scaleX: enter ? 1 : 0,
-      duration: enter ? 0.25 : 0.2,
-      ease: enter ? "power2.out" : "power2.in",
-    });
-  };
+
 
   return (
     <nav
@@ -227,25 +205,14 @@ function NavigationInner({ user }: NavigationProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative flex items-center h-9"
-                onMouseEnter={() => handleHover(item.href, true)}
-                onMouseLeave={() => handleHover(item.href, false)}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium transition-colors border-b-2",
+                  active
+                    ? "text-white border-cyan-400/80 font-semibold"
+                    : "text-slate-400 border-transparent hover:text-white"
+                )}
               >
-                <span
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-white transition-colors",
-                    active && "text-white font-semibold",
-                  )}
-                >
-                  {item.label}
-                </span>
-                <span
-                  ref={(el) => {
-                    underlineRefs.current[item.href] = el;
-                  }}
-                  className="absolute bottom-0 left-3 right-3 h-px bg-sky-400/90 origin-left"
-                  style={{ transform: "scaleX(0)" }}
-                />
+                {item.label}
               </Link>
             );
           })}
@@ -277,6 +244,11 @@ function NavigationInner({ user }: NavigationProps) {
                     {primaryLabel}
                   </span>
                   <span className="block text-xs text-slate-500 truncate">{user.email}</span>
+                  {user.bio ? (
+                    <span className="block pt-1 text-xs leading-5 text-slate-400 line-clamp-2">
+                      {user.bio}
+                    </span>
+                  ) : null}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />
                 {profileHref ? (
@@ -357,6 +329,11 @@ function NavigationInner({ user }: NavigationProps) {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-white truncate">{primaryLabel}</p>
                     <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                    {user.bio ? (
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">
+                        {user.bio}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               ) : null}

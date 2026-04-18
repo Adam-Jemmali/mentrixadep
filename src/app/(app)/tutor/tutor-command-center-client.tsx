@@ -82,13 +82,13 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-            <Link href="/settings" className="inline-flex items-center gap-1.5">
+            <Link href="/settings" className="inline-flex items-center gap-1.5 text-black">
               <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
               Settings
             </Link>
           </Button>
           <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-            <Link href={studioHref} className="inline-flex items-center gap-1.5">
+            <Link href={studioHref} className="inline-flex items-center gap-1.5 text-black">
               <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
               Studio output
             </Link>

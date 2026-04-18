@@ -30,21 +30,11 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import type { UserSettings } from "@/app/actions/settings";
 import type { ReferralDashboardData } from "@/app/actions/referral";
 import { ReferralProgramSection } from "@/components/student/referral-program-section";
 import { AccountSecurityPanel } from "@/components/account-security-panel";
-
-const ACCOUNT_LEVEL_CHIP: Record<number, string> = {
-  1: "border-slate-200 bg-slate-100 text-slate-800",
-  2: "border-emerald-200 bg-emerald-50 text-emerald-950",
-  3: "border-sky-200 bg-sky-50 text-sky-950",
-  4: "border-violet-200 bg-violet-50 text-violet-950",
-  5: "border-amber-200 bg-amber-50 text-amber-950",
-  6: "border-orange-200 bg-orange-50 text-orange-950",
-  7: "border-rose-200 bg-rose-50 text-rose-950",
-  8: "border-slate-800 bg-slate-900 text-white",
-};
 
 function ProfileToggle({
   label,
@@ -186,7 +176,7 @@ function StudentProfileFormSection({
   }
 
   return (
-    <section className="mt-8 rounded-md border border-slate-200 bg-white p-5 sm:p-6">
+    <section className={cn("mt-8 p-5 sm:p-6", mentrixStudent.card)}>
         <h2 className="text-sm font-medium text-slate-900">Edit profile</h2>
         <p className="mt-1 text-xs text-slate-500">
           Visible to tutors when you enable sharing. Email is never shown on this page.
@@ -270,13 +260,22 @@ function StudentProfileFormSection({
                 }))
               }
             >
-              <SelectTrigger className="mt-2 h-9 border-slate-200">
+              <SelectTrigger className="mt-2 h-9 border-slate-200 bg-white text-slate-900 focus:ring-slate-400">
                 <SelectValue placeholder="None" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
+              <SelectContent className="border-slate-200 bg-white text-slate-900">
+                <SelectItem
+                  value="__none__"
+                  className="text-slate-900 focus:bg-slate-100 focus:text-slate-900"
+                >
+                  None
+                </SelectItem>
                 {divisions.map((d) => (
-                  <SelectItem key={d.key} value={d.key}>
+                  <SelectItem
+                    key={d.key}
+                    value={d.key}
+                    className="text-slate-900 focus:bg-slate-100 focus:text-slate-900"
+                  >
                     {d.name}
                   </SelectItem>
                 ))}
@@ -367,8 +366,6 @@ export function StudentProfileClient({
     year: "numeric",
   }).format(new Date(data.memberSince));
 
-  const tierClass = ACCOUNT_LEVEL_CHIP[data.accountLevel] ?? ACCOUNT_LEVEL_CHIP[1];
-
   async function onAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
@@ -417,20 +414,20 @@ export function StudentProfileClient({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16 text-slate-900">
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div className={cn(mentrixStudent.pageBg, "pb-16")}>
+      <main className={mentrixStudent.main}>
+        <div className={cn(mentrixStudent.cardMuted, "mb-6 flex flex-wrap items-center justify-between gap-3 px-5 py-4")}>
           <div className="flex flex-wrap gap-3 text-xs">
             <Link
               href="/student"
-              className="font-medium text-slate-600 underline-offset-4 hover:underline"
+              className="font-medium text-slate-600 underline-offset-4 hover:text-slate-900 hover:underline"
             >
               Dashboard
             </Link>
             {data.viewer === "owner" && (
               <Link
                 href={`/student/${data.studentId}`}
-                className="font-medium text-slate-600 underline-offset-4 hover:underline"
+                className="font-medium text-slate-600 underline-offset-4 hover:text-slate-900 hover:underline"
               >
                 Profile settings
               </Link>
@@ -441,11 +438,17 @@ export function StudentProfileClient({
           )}
         </div>
 
-        <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
-          <div className="border-b border-slate-100 px-5 py-6 sm:px-8">
+        <div
+          className={cn(
+            "relative overflow-hidden",
+            mentrixStudent.card,
+            "before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.png')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']",
+          )}
+        >
+          <div className="relative border-b border-slate-100 px-5 py-6 sm:px-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
               <div className="flex shrink-0 flex-col items-center gap-3 sm:items-start">
-                <div className="relative h-28 w-28 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                <div className="relative h-28 w-28 overflow-hidden rounded-full border border-slate-200 bg-slate-50">
                   {data.avatarUrl ? (
                     <Image
                       src={data.avatarUrl}
@@ -474,7 +477,7 @@ export function StudentProfileClient({
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="border-slate-300"
+                      className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
                       disabled={uploading}
                       onClick={() => fileRef.current?.click()}
                     >
@@ -485,7 +488,7 @@ export function StudentProfileClient({
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="text-slate-600"
+                        className="text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                         onClick={() => void onClearAvatar()}
                       >
                         Remove
@@ -502,19 +505,17 @@ export function StudentProfileClient({
 
               <div className="min-w-0 flex-1 space-y-4">
                 <div>
-                  <h1 className="text-xl font-medium tracking-tight text-slate-900">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Mentrixer profile
+                  </p>
+                  <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                     {data.displayName}
                   </h1>
-                  <p className="mt-1 text-xs text-slate-500">Member since {memberSince}</p>
+                  <p className="mt-2 text-sm text-slate-500">Member since {memberSince}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium",
-                      tierClass,
-                    )}
-                  >
+                  <span className="inline-flex items-center rounded-full border border-amber-300/50 bg-amber-400/25 px-3 py-1 text-xs font-bold text-amber-50 shadow-sm backdrop-blur-sm">
                     {data.levelLabel}
                   </span>
                   <span className="font-mono text-xs tabular-nums text-slate-600">
@@ -527,10 +528,12 @@ export function StudentProfileClient({
                   )}
                 </div>
 
-                <XpBar data={data} />
+                <div className="max-w-md">
+                  <XpBar data={data} />
+                </div>
 
                 {data.bio ? (
-                  <p className="text-sm leading-relaxed text-slate-700">{data.bio}</p>
+                  <p className="max-w-2xl text-sm leading-relaxed text-slate-700">{data.bio}</p>
                 ) : (
                   <p className="text-sm text-slate-400">
                     {data.viewer === "owner"
@@ -577,7 +580,7 @@ export function StudentProfileClient({
             <p className="mt-1 text-xs text-slate-500">XP earned per subject division.</p>
             <ul className="mt-4 space-y-2">
               {data.divisionBadges.length === 0 ? (
-                <li className="text-sm text-slate-500">No division XP yet — sessions add XP.</li>
+                <li className="text-sm text-slate-500">No division XP yet sessions add XP.</li>
               ) : (
                 data.divisionBadges.map((d) => (
                   <li

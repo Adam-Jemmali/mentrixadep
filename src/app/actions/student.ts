@@ -572,7 +572,7 @@ export async function getTutorAvailability(course?: string) {
 
   const { data: tutorSettings } = await adminClient
     .from("user_settings")
-    .select("user_id, display_name, avatar_url")
+    .select("user_id, display_name, avatar_url, bio")
     .in("user_id", tutorIds);
 
   const settingsByTutorId = new Map(
@@ -581,6 +581,7 @@ export async function getTutorAvailability(course?: string) {
       {
         display_name: typeof row.display_name === "string" ? row.display_name.trim() || null : null,
         avatar_url: typeof row.avatar_url === "string" && row.avatar_url.length > 0 ? row.avatar_url : null,
+        bio: typeof row.bio === "string" ? row.bio.trim() || null : null,
       },
     ])
   );
@@ -625,6 +626,7 @@ export async function getTutorAvailability(course?: string) {
       const settings = settingsByTutorId.get(avail.tutor_id);
       const avatar_url = settings?.avatar_url ?? tutorMetaAvatar.get(avail.tutor_id) ?? null;
       const display_name = settings?.display_name ?? (email ? email.split("@")[0] : null);
+      const bio = settings?.bio ?? null;
 
       return {
         ...avail,
@@ -636,6 +638,7 @@ export async function getTutorAvailability(course?: string) {
               email,
               display_name,
               avatar_url,
+              bio,
             }
           : undefined,
       };

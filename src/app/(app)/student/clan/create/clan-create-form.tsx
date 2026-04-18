@@ -110,7 +110,7 @@ export function ClanCreateForm({ divisions }: { divisions: Div[] }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label>How learners join</Label>
+          <Label>How Mentrixers join</Label>
           <Select
             value={joinMode}
             onValueChange={(v) => setJoinMode(v as "open" | "approval")}
@@ -119,8 +119,8 @@ export function ClanCreateForm({ divisions }: { divisions: Div[] }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="open">Open — invite or discover</SelectItem>
-              <SelectItem value="approval">Approval — you confirm each request</SelectItem>
+              <SelectItem value="open">Open invite or discover</SelectItem>
+              <SelectItem value="approval">Approval you confirm requests</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -7,6 +8,7 @@ import type { DivisionDetailPayload } from "@/app/actions/divisions";
 import { joinDivision, postDivisionMessage } from "@/app/actions/divisions";
 import { setFocusedDivision } from "@/app/actions/quest";
 import { getDivisionTheme } from "@/lib/division-ui";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { Button } from "@/components/ui/button";
 
 function mapTierToLevelName(tier: string): string {
@@ -14,6 +16,35 @@ function mapTierToLevelName(tier: string): string {
   if (tier === "silver") return "Scholar";
   if (tier === "gold") return "Expert";
   return "Master";
+}
+
+function RankingAvatar({
+  displayName,
+  avatarUrl,
+}: {
+  displayName: string;
+  avatarUrl: string | null;
+}) {
+  const initial = displayName.trim().charAt(0).toUpperCase() || "M";
+
+  if (avatarUrl) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        width={28}
+        height={28}
+        unoptimized
+        className="h-7 w-7 shrink-0 rounded-full border border-slate-200 object-cover bg-slate-100"
+      />
+    );
+  }
+
+  return (
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-[11px] font-semibold text-slate-600">
+      {initial}
+    </span>
+  );
 }
 
 export function DivisionDetailClient({
@@ -65,10 +96,29 @@ export function DivisionDetailClient({
 
   const formatWhen = (iso: string) => {
     try {
-      return new Date(iso).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      });
+      const parts = new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "UTC",
+      }).formatToParts(new Date(iso));
+
+      const month = parts.find((p) => p.type === "month")?.value ?? "";
+      const day = parts.find((p) => p.type === "day")?.value ?? "";
+      const year = parts.find((p) => p.type === "year")?.value ?? "";
+      const hour = parts.find((p) => p.type === "hour")?.value ?? "";
+      const minute = parts.find((p) => p.type === "minute")?.value ?? "";
+      const dayPeriod =
+        (parts.find((p) => p.type === "dayPeriod")?.value ?? "").replace(/\./g, "").toUpperCase();
+
+      if (month && day && year && hour && minute && dayPeriod) {
+        return `${month} ${day}, ${year}, ${hour}:${minute} ${dayPeriod}`;
+      }
+
+      return new Date(iso).toISOString().replace("T", " ").slice(0, 16) + " UTC";
     } catch {
       return iso;
     }
@@ -86,45 +136,48 @@ export function DivisionDetailClient({
         </nav>
 
         <header
-          className={`relative overflow-hidden rounded-2xl border border-slate-200/80 p-6 sm:p-8 text-white shadow-lg bg-gradient-to-br ${theme.gradient}`}
+          className={`
+            relative overflow-hidden p-6 sm:p-8
+            ${mentrixStudent.card}
+            before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.png')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']
+          `}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_55%)]" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex items-center gap-3">
                 <span
-                  className="flex h-14 w-14 items-center justify-center rounded-xl text-xl font-bold bg-white/15 backdrop-blur-sm"
+                  className={`flex h-14 w-14 items-center justify-center rounded-xl text-xl font-bold text-white bg-gradient-to-br ${theme.gradient}`}
                   aria-hidden
                 >
                   {theme.emoji}
                 </span>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-white/75">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
                     Division
                   </p>
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{initial.division.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{initial.division.name}</h1>
                 </div>
               </div>
               {initial.division.description ? (
-                <p className="mt-3 max-w-2xl text-sm text-white/90 leading-relaxed">
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
                   {initial.division.description}
                 </p>
               ) : null}
             </div>
             <div className="grid grid-cols-3 gap-4 text-center lg:text-right">
               <div>
-                <p className="text-2xl font-mono font-bold tabular-nums" data-stat="members">
+                <p className="text-2xl font-mono font-bold tabular-nums text-slate-900" data-stat="members">
                   {initial.memberCount}
                 </p>
-                <p className="text-[11px] uppercase tracking-wide text-white/70">Members</p>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Members</p>
               </div>
               <div>
-                <p className="text-2xl font-mono font-bold tabular-nums">{initial.weeklyPoolXp}</p>
-                <p className="text-[11px] uppercase tracking-wide text-white/70">Weekly XP pool</p>
+                <p className="text-2xl font-mono font-bold tabular-nums text-slate-900">{initial.weeklyPoolXp}</p>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Weekly XP pool</p>
               </div>
               <div>
-                <p className="text-xs font-mono text-white/90">{initial.weekStart}</p>
-                <p className="text-[11px] uppercase tracking-wide text-white/70">Week start (UTC)</p>
+                <p className="text-xs font-mono text-slate-700">{initial.weekStart}</p>
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Week start (UTC)</p>
               </div>
             </div>
           </div>
@@ -141,19 +194,19 @@ export function DivisionDetailClient({
               </Button>
             ) : (
               <>
-                <span className="text-xs text-white/90 self-center font-medium px-2">You’re a member</span>
+                <span className="self-center px-2 text-xs font-medium text-slate-700">You're a member</span>
                 {!initial.isFocused ? (
                   <Button
                     type="button"
                     variant="outline"
                     disabled={pending}
                     onClick={onFocus}
-                    className="border-white/50 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                    className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
                   >
                     Set as focus
                   </Button>
                 ) : (
-                  <span className="text-xs text-amber-200 font-semibold self-center px-2">
+                  <span className="text-xs text-amber-700 font-semibold self-center px-2">
                     Focused division
                   </span>
                 )}
@@ -163,11 +216,11 @@ export function DivisionDetailClient({
               type="button"
               variant="outline"
               asChild
-              className="border-white/50 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
             >
               <Link href="/student/duel">Skill duels</Link>
             </Button>
-            <Button type="button" variant="outline" asChild className="border-white/50 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+            <Button type="button" variant="outline" asChild className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900">
               <Link href="/student/quest">Quest lab</Link>
             </Button>
           </div>
@@ -293,9 +346,14 @@ function LeaderboardTableWeekly({
               className={`border-b border-slate-100 last:border-0 ${r.isCurrentUser ? "bg-blue-50/80" : ""}`}
             >
               <td className="py-2 px-3 font-mono text-slate-600">{r.rank}</td>
-              <td className="py-2 px-3 font-medium text-slate-900">
-                {r.displayName}
-                {r.isCurrentUser ? <span className="text-mentrixa-600 ml-1">(you)</span> : null}
+              <td className="py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <RankingAvatar displayName={r.displayName} avatarUrl={r.avatarUrl} />
+                  <span className="font-medium text-slate-900">
+                    {r.displayName}
+                    {r.isCurrentUser ? <span className="text-mentrixa-600 ml-1">(you)</span> : null}
+                  </span>
+                </div>
               </td>
               <td className="py-2 px-3 font-mono">{r.weeklyXp}</td>
               <td className="py-2 px-3 font-mono text-slate-500">{r.streakDays}d</td>
@@ -335,9 +393,14 @@ function LeaderboardTableAllTime({
               className={`border-b border-slate-100 last:border-0 ${r.isCurrentUser ? "bg-blue-50/80" : ""}`}
             >
               <td className="py-2 px-3 font-mono text-slate-600">{r.rank}</td>
-              <td className="py-2 px-3 font-medium text-slate-900">
-                {r.displayName}
-                {r.isCurrentUser ? <span className="text-mentrixa-600 ml-1">(you)</span> : null}
+              <td className="py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <RankingAvatar displayName={r.displayName} avatarUrl={r.avatarUrl} />
+                  <span className="font-medium text-slate-900">
+                    {r.displayName}
+                    {r.isCurrentUser ? <span className="text-mentrixa-600 ml-1">(you)</span> : null}
+                  </span>
+                </div>
               </td>
               <td className="py-2 px-3 font-mono">{r.divisionXp}</td>
               <td className="py-2 px-3 font-mono text-slate-500">{r.streakDays}d</td>

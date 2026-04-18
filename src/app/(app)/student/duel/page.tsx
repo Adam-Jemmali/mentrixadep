@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { DuelHub } from "./duel-hub";
 import { DuelRowActions } from "@/components/student/duel-row-actions";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 
 export const metadata = { title: "Skill duels · Mentrixa" };
 
@@ -77,35 +78,31 @@ export default async function StudentDuelsPage() {
   const stats = "error" in history ? null : history;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="max-w-2xl mx-auto px-6 py-10">
+    <div className={mentrixStudent.pageBg}>
+      <main className={mentrixStudent.mainSlim}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-              Skill duels
-            </h1>
-            <p className="text-sm text-slate-500 mt-1 max-w-xl">
-              Same timed questions, live scores, win streaks. Match by subject instantly.
-              Enable duels in Settings to be challenged.
-            </p>
+            <p className={mentrixStudent.sectionEyebrow}>PvP training</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Skill duels</h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">Timed battles. Live scores.</p>
           </div>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" className="rounded-full border-2 font-semibold" asChild>
             <Link href="/student/duel/history">History &amp; stats</Link>
           </Button>
         </div>
 
         {stats && stats.totalCompleted > 0 ? (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className={`${mentrixStudent.card} px-3 py-2.5`}>
               <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
                 Record
               </p>
               <p className="mt-0.5 text-sm font-semibold text-slate-900 tabular-nums">
-                {stats.wins}W — {stats.losses}L
-                {stats.ties > 0 ? ` — ${stats.ties}D` : ""}
+                {stats.wins}W - {stats.losses}L
+                {stats.ties > 0 ? ` - ${stats.ties}D` : ""}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <div className={`${mentrixStudent.card} px-3 py-2.5`}>
               <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
                 Duels XP
               </p>
@@ -124,8 +121,8 @@ export default async function StudentDuelsPage() {
           />
         </div>
 
-        <div className="mt-8 border border-slate-200 rounded-lg bg-white overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 text-xs font-medium text-slate-500 uppercase tracking-wide">
+        <div className={`${mentrixStudent.card} mt-8 overflow-hidden p-0`}>
+          <div className="border-b border-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
             Your duels
           </div>
           {rows.length === 0 ? (

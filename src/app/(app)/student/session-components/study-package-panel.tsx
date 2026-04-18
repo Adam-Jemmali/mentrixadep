@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { gsap } from "gsap";
 import { Button } from "@/components/ui/button";
 import { generateSessionPackage, getSessionPackage } from "@/app/actions/autoPilot";
 import type { SessionAiPackage } from "@/lib/database.types";
-import { Loader2 } from "lucide-react";
 
 type Phase = "loading" | "ready" | "empty" | "error" | "generating";
 
@@ -82,7 +82,7 @@ export function StudyPackagePanel({
   if (phase === "loading") {
     return (
       <div className="flex items-center gap-2 py-4 text-sm text-slate-600">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+        <Image src="/images/pending.png" alt="Loading" width={16} height={16} className="animate-spin" />
         Loading Studio output…
       </div>
     );

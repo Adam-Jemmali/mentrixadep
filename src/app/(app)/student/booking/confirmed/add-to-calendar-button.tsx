@@ -1,8 +1,8 @@
 "use client";
 
 import { buildSessionIcsCalendar } from "@/lib/calendar-ics";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus } from "lucide-react";
 
 type Props = {
   requestId: string;
@@ -35,7 +35,7 @@ export function AddToCalendarButton({ requestId, title, description, startIso, e
 
   return (
     <Button type="button" variant="outline" className="gap-2" onClick={download}>
-      <CalendarPlus className="h-4 w-4" aria-hidden />
+      <Image src="/images/book.png" alt="Calendar" width={16} height={16} />
       Add to calendar (.ics)
     </Button>
   );

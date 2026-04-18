@@ -41,6 +41,7 @@ export type ClanDashboardPayload = {
     role: "leader" | "member";
     joined_at: string;
     display_name: string | null;
+    avatar_url: string | null;
     weekly_xp: number;
   }[];
   trophies: {
@@ -159,11 +160,17 @@ export async function getClanDashboard(
     const ids = (memberRows ?? []).map((m) => m.user_id);
     const { data: settings } = await admin
       .from("user_settings")
-      .select("user_id, display_name")
+      .select("user_id, display_name, avatar_url")
       .in("user_id", ids);
 
-    const nameByUser = new Map(
-      (settings ?? []).map((s) => [s.user_id, s.display_name as string | null])
+      const settingsByUser = new Map(
+        (settings ?? []).map((s) => [
+          s.user_id,
+          {
+            display_name: s.display_name as string | null,
+            avatar_url: (s as { avatar_url?: string | null }).avatar_url ?? null,
+          },
+        ])
     );
 
     const { data: weeklyRows } = await admin
@@ -187,7 +194,8 @@ export async function getClanDashboard(
       user_id: m.user_id,
       role: m.role as "leader" | "member",
       joined_at: m.joined_at,
-      display_name: nameByUser.get(m.user_id) ?? null,
+      display_name: settingsByUser.get(m.user_id)?.display_name ?? null,
+      avatar_url: settingsByUser.get(m.user_id)?.avatar_url ?? null,
       weekly_xp: weeklyByUser.get(m.user_id) ?? 0,
     }));
 

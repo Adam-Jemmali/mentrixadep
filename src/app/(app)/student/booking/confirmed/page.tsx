@@ -57,7 +57,7 @@ export default async function BookingConfirmedPage({ searchParams }: PageProps) 
             Session request sent
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Your guide will confirm soon{sr.status === "approved" ? " — this slot is approved." : "."}{" "}
+            Your guide will confirm soon{sr.status === "approved" ? " this slot is approved." : "."}{" "}
             You will get email updates. If the guide declines, Stripe refunds you automatically.
           </p>
 

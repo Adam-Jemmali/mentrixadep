@@ -10,6 +10,17 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useTrack } from "@/lib/use-track";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import {
+  Navbar,
+  NavBody,
+  NavItems,
+  MobileNav,
+  MobileNavHeader,
+  MobileNavMenu,
+  MobileNavToggle,
+  NavbarButton,
+  NavbarLogo,
+} from "@/components/ui/resizable-navbar";
 import { ContactSocialLinks } from "@/components/contact/contact-social-links";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/lib/mentrixa-brand";
 
@@ -89,12 +100,22 @@ const PRICING_POINTS = [
   "Checkout is Stripe. Your card data never touches our servers. If you are a Guide, your payout clears after every session you complete.",
 ];
 
+const LANDING_NAV_ITEMS = [
+  { name: "Features", link: "#features" },
+  { name: "Why join", link: "#why" },
+  { name: "Flow", link: "#flow" },
+  { name: "Pricing", link: "#pricing" },
+  { name: "Contact", link: "#contact" },
+  { name: "Sign in", link: "/auth/signin" },
+];
+
 const FEEDBACK_EMAIL = DEFAULT_PUBLIC_FEEDBACK_EMAIL;
 
 export function HomePageClient() {
   const [pricingRef, pricingVis] = useInViewOnce<HTMLElement>("0px 0px -14% 0px");
   const [ctaRef, ctaVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
   const [contactRef, contactVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const track = useTrack();
 
   useEffect(() => {
@@ -138,103 +159,71 @@ export function HomePageClient() {
 
   return (
     <div className="lp-root">
-      <nav className="lp-nav fixed top-3 left-0 right-0 z-50 group px-3 sm:px-5">
-        <div className="relative mx-auto max-w-6xl">
-          {/* Outer hull border (custom prism shape) */}
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-cyan-300/35 via-white/15 to-blue-300/35"
-            style={{
-              clipPath:
-                "polygon(0 36%, 4% 10%, 28% 10%, 31% 0, 69% 0, 72% 10%, 96% 10%, 100% 36%, 100% 100%, 0 100%)",
-              contain: "layout paint",
-            }}
-          />
+      <Navbar className="lp-nav fixed top-3 left-0 right-0 z-50 px-3 sm:px-5">
+        <div className="relative w-full">
+          <NavBody>
+            <NavbarLogo />
+            <NavItems items={LANDING_NAV_ITEMS} />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <NavbarButton
+                href="/auth/signup?role=tutor"
+                variant="secondary"
+                className="hidden sm:inline-flex"
+              >
+                <RoleIcon role="guide" className="h-3.5 w-3.5" />
+                Become a Guide
+              </NavbarButton>
+              <NavbarButton href="/auth/signup" variant="primary" className="hidden sm:inline-flex">
+                <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
+                Become a Mentrixer
+              </NavbarButton>
+            </div>
+          </NavBody>
 
-          {/* Inner hull fill */}
-          <div
-            className="absolute inset-[1px] bg-gradient-to-r from-slate-950/88 via-slate-900/90 to-slate-950/88 backdrop-blur-md"
-            style={{
-              clipPath:
-                "polygon(0 37%, 4.2% 11.5%, 28.5% 11.5%, 31.5% 1.2%, 68.5% 1.2%, 71.5% 11.5%, 95.8% 11.5%, 100% 37%, 100% 100%, 0 100%)",
-              contain: "layout paint",
-            }}
-          />
+          <MobileNav>
+            <div className="relative w-full">
+              <MobileNavHeader>
+                <NavbarLogo />
+                <MobileNavToggle isOpen={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)} />
+              </MobileNavHeader>
 
-          {/* Left fin */}
-          <div
-            className="pointer-events-none absolute -left-1 top-4 h-7 w-8 bg-gradient-to-r from-cyan-300/25 to-transparent"
-            style={{ clipPath: "polygon(0 52%, 100% 0, 100% 100%)" }}
-          />
+              <MobileNavMenu isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)}>
+                {LANDING_NAV_ITEMS.map((item) => (
+                  <a
+                    key={item.link}
+                    href={item.link}
+                    onClick={() => setMobileNavOpen(false)}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-white/5 hover:text-white"
+                  >
+                    {item.name}
+                  </a>
+                ))}
 
-          {/* Right fin */}
-          <div
-            className="pointer-events-none absolute -right-1 top-4 h-7 w-8 bg-gradient-to-l from-blue-300/25 to-transparent"
-            style={{ clipPath: "polygon(0 0, 100% 52%, 0 100%)" }}
-          />
-
-          {/* Energy seam */}
-          <div
-            className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-cyan-200/70 via-cyan-200/10 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-            style={{ contain: "layout paint" }}
-          />
-
-          {/* Corner emitters */}
-          <div className="pointer-events-none absolute left-5 top-4 h-1.5 w-1.5 rounded-full bg-cyan-200/70 shadow-[0_0_10px_rgba(56,189,248,0.75)]" />
-          <div className="pointer-events-none absolute right-5 top-4 h-1.5 w-1.5 rounded-full bg-blue-200/70 shadow-[0_0_10px_rgba(96,165,250,0.7)]" />
-
-          <div className="relative z-10 h-16 px-5 lg:px-10 flex items-center justify-between" style={{ contain: "content" }}>
-          <Link href="/" className="flex items-center gap-2.5 text-white font-bold text-[16px] tracking-[-0.04em] flex-shrink-0">
-            <MentrixaLogoMark size="sm" className="opacity-95" />
-            <span>Mentrixa</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-[13px] text-indigo-200/75 hover:text-white transition-colors duration-200">
-              Features
-            </a>
-            <a href="#why" className="text-[13px] text-indigo-200/75 hover:text-white transition-colors duration-200">
-              Why join
-            </a>
-            <a href="#flow" className="text-[13px] text-indigo-200/75 hover:text-white transition-colors duration-200">
-              Flow
-            </a>
-            <a href="#pricing" className="text-[13px] text-indigo-200/75 hover:text-white transition-colors duration-200">
-              Pricing
-            </a>
-            <a href="#contact" className="text-[13px] text-indigo-200/75 hover:text-white transition-colors duration-200">
-              Contact
-            </a>
-            <Link href="/auth/signin" className="text-[13px] text-indigo-200/75 hover:text-white transition-colors duration-200">
-              Sign in
-            </Link>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-            <Link
-              href="/auth/signup?role=tutor"
-              className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-300 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors duration-200"
-            >
-              <RoleIcon role="guide" className="h-3.5 w-3.5 brightness-0 invert" />
-              Become a Guide
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#0B1120] bg-white px-3.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors duration-200"
-            >
-              <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
-              Become a Mentrixer
-            </Link>
-          </div>
-          <Link href="/auth/signup" className="sm:hidden text-[12px] font-semibold text-[#0B1120] bg-white px-3 py-1.5 rounded-lg">
-            Join
-          </Link>
+                <div className="mt-2 flex flex-col gap-2">
+                  <NavbarButton
+                    href="/auth/signup?role=tutor"
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    <RoleIcon role="guide" className="h-3.5 w-3.5" />
+                    Become a Guide
+                  </NavbarButton>
+                  <NavbarButton href="/auth/signup" variant="primary" className="w-full">
+                    <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
+                    Become a Mentrixer
+                  </NavbarButton>
+                </div>
+              </MobileNavMenu>
+            </div>
+          </MobileNav>
         </div>
-        </div>
-      </nav>
+      </Navbar>
 
       <section
         ref={pricingRef}
         id="pricing"
         className={cn(
-          "lp-band-pricing py-16 md:py-20 transition-all duration-500",
+          "lp-band-pricing py-10 md:py-12 transition-all duration-500",
           pricingVis ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         )}
       >
@@ -285,7 +274,7 @@ export function HomePageClient() {
       <section
         ref={ctaRef}
         className={cn(
-          "lp-band-cta relative overflow-hidden py-24 md:py-32 transition-all duration-700",
+          "lp-band-cta relative overflow-hidden py-14 md:py-18 transition-all duration-700",
           ctaVis ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
         )}
       >
@@ -299,7 +288,7 @@ export function HomePageClient() {
         <div className="absolute inset-0 bg-slate-950/45" aria-hidden />
         <div className="relative z-10 mx-auto max-w-2xl px-5 text-center">
           <h2 className="text-balance font-bold text-white text-[clamp(28px,4.4vw,46px)] tracking-[-0.04em] leading-[1.05] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
-            Your exam does not care that you haven&apos;t started yet. Your Guide is available today.
+           Your Guide is available today. Become the #1 Mentrixer.    Prove what you know.
           </h2>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Link
@@ -326,7 +315,7 @@ export function HomePageClient() {
         ref={contactRef}
         id="contact"
         className={cn(
-          "lp-band-contact py-16 md:py-24 border-t border-white/[0.06] transition-all duration-700",
+          "lp-band-contact py-10 md:py-14 border-t border-white/[0.06] transition-all duration-700",
           contactVis ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         )}
       >

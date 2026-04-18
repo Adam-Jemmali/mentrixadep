@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flame } from "lucide-react";
+import Image from "next/image";
 
 const container = {
   hidden: { opacity: 0 },
@@ -30,58 +30,61 @@ export function StudentStatStripMotion({
   streakAtRisk: boolean;
 }) {
   const ratingLabel =
-    Number.isFinite(avgRating) && avgRating > 0 ? (Math.round(avgRating * 10) / 10).toFixed(1) : "—";
+    Number.isFinite(avgRating) && avgRating > 0 ? (Math.round(avgRating * 10) / 10).toFixed(1) : "-";
 
   return (
     <motion.div
-      className="grid grid-cols-2 gap-px rounded-md border border-slate-200 bg-slate-200 md:grid-cols-4"
+      className="grid grid-cols-2 gap-3 md:grid-cols-4"
       variants={container}
       initial="hidden"
       animate="show"
     >
       <motion.div
         variants={item}
-        className="flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4"
+        className="flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5"
       >
-        <span className="text-2xl font-medium tabular-nums text-slate-900">
+        <span className="text-2xl font-bold tabular-nums text-blue-700">
           {totalXp.toLocaleString()}
         </span>
-        <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
           Total XP
         </span>
       </motion.div>
       <motion.div
         variants={item}
-        className="flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4"
+        className="flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5"
       >
-        <span className="text-2xl font-medium tabular-nums text-slate-900">{sessionsCompleted}</span>
-        <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <span className="text-2xl font-bold tabular-nums text-slate-900">{sessionsCompleted}</span>
+        <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
           Sessions completed
         </span>
       </motion.div>
       <motion.div
         variants={item}
-        className="flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4"
+        className="flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5"
       >
-        <span className="text-2xl font-medium tabular-nums text-slate-900">{ratingLabel}</span>
-        <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <span className="text-2xl font-bold tabular-nums text-slate-900">{ratingLabel}</span>
+        <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
           Avg. session rating
         </span>
       </motion.div>
       <motion.div
         variants={item}
-        className={`flex flex-col bg-white px-4 py-3 sm:px-5 sm:py-4 ${
-          streakAtRisk ? "ring-inset ring-1 ring-amber-200/80" : ""
+        className={`flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5 ${
+          streakAtRisk ? "ring-2 ring-amber-300/90" : ""
         }`}
       >
         <span className="flex items-center gap-2">
-          <Flame
-            className={`h-5 w-5 shrink-0 ${streakAtRisk ? "text-amber-600" : "text-slate-400"}`}
-            aria-hidden
+          <Image
+            src="/images/live.png"
+            alt="Streak"
+            width={20}
+            height={20}
+            className={`shrink-0 ${streakAtRisk ? "opacity-100" : "opacity-60"}`}
           />
-          <span className="text-2xl font-medium tabular-nums text-slate-900">{streak}</span>
+          <span className="text-2xl font-bold tabular-nums text-slate-900">{streak}</span>
         </span>
-        <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
           {streakAtRisk ? "Streak · log today" : "Day streak"}
         </span>
       </motion.div>

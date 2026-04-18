@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { getDivisionHubCards } from "@/app/actions/divisions";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { DivisionHubClient } from "./division-hub-client";
 
 export const metadata = { title: "Divisions · Mentrixa" };
@@ -9,19 +10,16 @@ export default async function DivisionsHubPage() {
   const cards = await getDivisionHubCards(user.id);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+    <div className={mentrixStudent.pageBg}>
+      <div className={mentrixStudent.mainWide}>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Subject communities
-            </p>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            <p className={mentrixStudent.sectionEyebrow}>Arena & leagues</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Divisions
             </h1>
-            <p className="mt-2 text-sm text-slate-600 max-w-xl leading-relaxed">
-              Join subjects you care about, climb the weekly XP board (resets Monday UTC), and
-              chat with peers. Set one division as your focus for navigation and duels.
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+              Join subject communities, climb the weekly XP board (resets Monday UTC), and coordinate with other Mentrixers. Set a focus division for nav and duels.
             </p>
           </div>
         </div>

@@ -11,28 +11,28 @@ const FLOW_STEPS = [
     icon: "/images/book.png",
     title: "Book",
     line: "Book — Search your course. Pick a verified Guide. Choose a slot. Pay. 3 minutes from now you have a session scheduled.",
-    hoverColor: "hover:bg-sky-500/20",
+    hoverColor: "hover:bg-cyan-500/20",
   },
   {
     number: "02",
     icon: "/images/live.png",
     title: "Meet",
     line: "Meet — Show up live. Screen share your problem. Your Guide works through it with you in real time. Not a lecture. A solution.",
-    hoverColor: "hover:bg-blue-500/20",
+    hoverColor: "hover:bg-violet-500/20",
   },
   {
     number: "03",
     icon: "/images/package.png",
     title: "Unpack",
     line: "Unpack — 1 second after you hang up, Quest drops your custom study pack. It is waiting in your account every time you come back to it.",
-    hoverColor: "hover:bg-violet-500/20",
+    hoverColor: "hover:bg-emerald-500/20",
   },
   {
     number: "04",
     icon: "/images/xp.png",
     title: "Climb",
     line: "Climb — You drill with Quest, compete in duels, climb your division. Progress compounds. You are not the same student you were before the first session.",
-    hoverColor: "hover:bg-emerald-500/20",
+    hoverColor: "hover:bg-cyan-500/20",
   },
 ];
 

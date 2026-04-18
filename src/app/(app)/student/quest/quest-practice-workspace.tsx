@@ -341,7 +341,7 @@ export function QuestPracticeWorkspace({
           {doneResult.correct}/{doneResult.total}
         </p>
         <p className="mt-2 text-sm text-slate-600">
-          {doneResult.perfect ? "Perfect score — bonus XP!" : "Nice work — keep practicing."}
+          {doneResult.perfect ? "Perfect score bonus XP." : "Nice work keep practicing."}
         </p>
         <p className="mt-4 text-lg text-emerald-700 font-medium">+{xpTotal} XP</p>
         {doneResult.mistakeReviews && doneResult.mistakeReviews.length > 0 && (

@@ -9,14 +9,19 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { BookOpen, Calendar, Swords, User, UsersRound, X } from "lucide-react";
+import { signOut } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
 import { trackClientEvent } from "@/lib/use-track";
 import type { AuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
+import { StudentNavbar } from "@/components/student-navbar";
+import { TutorNavbar } from "@/components/tutor-navbar";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -36,6 +41,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { Button } from "@/components/ui/button";
+import { ClickSoundProvider } from "@/components/ui/click-sound-provider";
 import {
   Dialog,
   DialogContent,
@@ -117,11 +123,492 @@ function usePwaRegister() {
   }, []);
 }
 
-function AppNavOrNothing({ user }: { user: AuthUser | null }) {
+function AppNavOrNothing({ user, sidebarOpen, setSidebarOpen }: { user: AuthUser | null; sidebarOpen: boolean; setSidebarOpen: (open: boolean) => void }) {
   const pathname = usePathname();
   if (pathname === "/") return null;
   if (pathname.startsWith("/video/")) return null;
+  if (user?.role === "student" && user.approved) {
+    return null;
+  }
+  if (user?.role === "tutor" && user.approved) {
+    return null;
+  }
   return <Navigation user={user} />;
+}
+
+const STUDENT_SIDEBAR_LINKS = [
+  { href: "/student/quest", label: "Quest", iconSrc: "/images/quest.png" },
+  { href: "/student/learning-path", label: "Path", iconSrc: "/images/live.png" },
+  { href: "/student", label: "Sessions", iconSrc: "/images/book.png" },
+  { href: "/student/division", label: "Division", iconSrc: "/images/xp.png" },
+  { href: "/student/clan", label: "Clan", iconSrc: "/images/clan.png" },
+  { href: "/student/duel", label: "Duels", iconSrc: "/images/sword.png" },
+] as const;
+
+const TUTOR_SIDEBAR_LINKS = [
+  { href: "/tutor/sessions-ai", label: "Studio", iconSrc: "/images/live.png" },
+  { href: "/tutor", label: "Sessions", iconSrc: "/images/book.png" },
+] as const;
+
+function studentNavIsActive(pathname: string, href: string): boolean {
+  if (href === "/student") {
+    return pathname === "/student" || pathname === "/student/";
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function tutorNavIsActive(pathname: string, href: string): boolean {
+  if (href === "/tutor") {
+    return pathname === "/tutor" || pathname === "/tutor/";
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getInitials(displayName: string | null | undefined, email?: string | null): string {
+  const name = displayName?.trim();
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const first = parts[0];
+      const second = parts[1];
+      if (first && second) {
+        return (first.charAt(0) + second.charAt(0)).toUpperCase();
+      }
+    }
+    if (name.length >= 2) return name.slice(0, 2).toUpperCase();
+    return name.charAt(0).toUpperCase();
+  }
+  if (!email) return "M";
+  const part = email.split("@")[0];
+  if (!part) return "M";
+  if (part.length >= 2) return part.slice(0, 2).toUpperCase();
+  return part.charAt(0).toUpperCase();
+}
+
+function StudentSidebarAvatar({
+  avatarUrl,
+  initials,
+}: {
+  avatarUrl: string | null | undefined;
+  initials: string;
+}) {
+  const [broken, setBroken] = useState(false);
+
+  useEffect(() => {
+    setBroken(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !broken) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        width={44}
+        height={44}
+        unoptimized
+        className="h-11 w-11 shrink-0 rounded-full border border-white/15 object-cover"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white">
+      {initials}
+    </div>
+  );
+}
+
+function StudentSidebarNav({ user, sidebarOpen, setSidebarOpen }: { user: AuthUser; sidebarOpen: boolean; setSidebarOpen: (open: boolean) => void }) {
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const profileLabel = user.displayName?.trim() || user.email?.split("@")[0] || "Mentrixer";
+  const profileHref = `/student/${user.id}`;
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    }
+
+    if (profileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [profileMenuOpen]);
+
+  return (
+    <>
+      {/* Sidebar Toggle Button (shows when sidebar is closed) */}
+      <div suppressHydrationWarning>
+        {!sidebarOpen && (
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="fixed left-4 top-4 z-50 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition"
+            aria-label="Open sidebar"
+          >
+            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Sidebar */}
+      <aside suppressHydrationWarning className={cn(
+        "fixed inset-y-0 left-0 z-50 w-72 flex-col border-r border-white/20 bg-gradient-to-b from-[#182846]/95 via-[#12223e]/95 to-[#0d1c35]/95 text-white shadow-[10px_0_40px_-28px_rgba(15,23,42,0.9)] backdrop-blur-md transition-all duration-300",
+        sidebarOpen ? "flex lg:flex" : "hidden -left-72 lg:hidden"
+      )}>
+        <div className="flex h-full min-h-0 flex-col overflow-y-auto px-5 py-5">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+              }}
+              className="flex items-center gap-2.5 text-left transition-opacity hover:opacity-90 flex-1"
+              aria-label="Sign out from Mentrixa"
+            >
+              <Image
+                src={MENTRIXA_LOGO_PNG}
+                alt="Mentrixa"
+                width={34}
+                height={34}
+                className="h-8 w-8 shrink-0 object-contain"
+                priority
+              />
+              <MentrixaWordmark trixaClassName="text-white/95" />
+            </button>
+            
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                setSidebarOpen(false);
+              }}
+              className="p-1 rounded-lg hover:bg-white/10 transition flex-shrink-0"
+              aria-label="Close sidebar"
+            >
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="relative mb-5 h-14 overflow-hidden rounded-2xl bg-gradient-to-r from-white/6 via-slate-100/5 to-white/6">
+            <svg
+              aria-hidden
+              viewBox="0 0 320 56"
+              preserveAspectRatio="none"
+              className="absolute inset-0 h-full w-full"
+            >
+              <polyline
+                points="0,31 14,31 14,35 28,35 28,29 42,29 42,33 56,33 56,37 70,37 70,30 84,30 84,34 98,34 98,28 112,28 112,32 126,32 126,36 140,36 140,30 154,30 154,34 168,34 168,29 182,29 182,33 196,33 196,37 210,37 210,31 224,31 224,35 238,35 238,29 252,29 252,33 266,33 266,37 280,37 280,31 294,31 294,35 308,35 308,30 320,30"
+                fill="none"
+                stroke="rgba(248,250,252,0.95)"
+                strokeWidth="1.8"
+                strokeLinejoin="bevel"
+              />
+              <polyline
+                points="0,40 16,40 16,44 32,44 32,38 48,38 48,42 64,42 64,46 80,46 80,40 96,40 96,44 112,44 112,39 128,39 128,43 144,43 144,47 160,47 160,41 176,41 176,45 192,45 192,39 208,39 208,43 224,43 224,47 240,47 240,41 256,41 256,45 272,45 272,40 288,40 288,44 304,44 304,38 320,38"
+                fill="none"
+                stroke="rgba(241,245,249,0.72)"
+                strokeWidth="1.3"
+                strokeLinejoin="bevel"
+              />
+              <polyline
+                points="0,22 12,22 12,26 24,26 24,20 36,20 36,24 48,24 48,28 60,28 60,22 72,22 72,26 84,26 84,21 96,21 96,25 108,25 108,29 120,29 120,23 132,23 132,27 144,27 144,21 156,21 156,25 168,25 168,29 180,29 180,23 192,23 192,27 204,27 204,21 216,21 216,25 228,25 228,29 240,29 240,23 252,23 252,27 264,27 264,22 276,22 276,26 288,26 288,20 300,20 300,24 312,24 312,28 320,28"
+                fill="none"
+                stroke="rgba(226,232,240,0.55)"
+                strokeWidth="1.05"
+                strokeLinejoin="bevel"
+              />
+            </svg>
+          </div>
+
+          <div ref={menuRef} className="relative" suppressHydrationWarning>
+            <button
+              type="button"
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              className="w-full rounded-2xl border border-white/20 bg-gradient-to-br from-white/14 to-white/6 px-4 py-4 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.8)] transition hover:bg-white/12 hover:text-white text-left"
+              aria-label="Open profile menu"
+              aria-expanded={profileMenuOpen}
+            >
+              <div className="flex items-center gap-3">
+                <StudentSidebarAvatar avatarUrl={user.avatarUrl} initials={getInitials(user.displayName, user.email)} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-100">{profileLabel}</p>
+                  <p className="truncate text-xs text-slate-200/85">{user.email}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200/85">
+                Prove what you know everywhere you can
+              </p>
+            </button>
+
+            {profileMenuOpen && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-2xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] overflow-hidden">
+                <Link
+                  href={profileHref}
+                  onClick={() => setProfileMenuOpen(false)}
+                  className="block px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
+                >
+                  View Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setProfileMenuOpen(false);
+                    await signOut();
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white border-t border-white/10"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+
+          <nav className="mt-6 flex-1" aria-label="Mentrixer sidebar">
+            <ul className="space-y-1.5">
+              {STUDENT_SIDEBAR_LINKS.map(({ href, label, iconSrc }) => {
+                const active = studentNavIsActive(pathname, href);
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all",
+                        active
+                          ? "bg-white/22 text-white shadow-[0_10px_24px_-20px_rgba(255,255,255,0.8)]"
+                          : "text-slate-100/90 hover:bg-white/10 hover:text-white",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-xl border transition-colors",
+                          active ? "border-white/35 bg-white/20" : "border-white/15 bg-white/8",
+                        )}
+                      >
+                        <Image
+                          src={iconSrc}
+                          alt={label}
+                          width={16}
+                          height={16}
+                          className={cn("brightness-0 invert", active ? "opacity-95" : "opacity-80")}
+                        />
+                      </span>
+                      <span>{label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function TutorSidebarNav({ user, sidebarOpen, setSidebarOpen }: { user: AuthUser; sidebarOpen: boolean; setSidebarOpen: (open: boolean) => void }) {
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const profileLabel = user.displayName?.trim() || user.email?.split("@")[0] || "Guide";
+  const profileHref = `/tutor/${user.id}`;
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    }
+
+    if (profileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [profileMenuOpen]);
+
+  return (
+    <>
+      {/* Sidebar Toggle Button (shows when sidebar is closed) */}
+      <div suppressHydrationWarning>
+        {!sidebarOpen && (
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="fixed left-4 top-4 z-50 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition"
+            aria-label="Open sidebar"
+          >
+            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Sidebar */}
+      <aside suppressHydrationWarning className={cn(
+        "fixed inset-y-0 left-0 z-50 w-72 flex-col border-r border-white/20 bg-gradient-to-b from-[#182846]/95 via-[#12223e]/95 to-[#0d1c35]/95 text-white shadow-[10px_0_40px_-28px_rgba(15,23,42,0.9)] backdrop-blur-md transition-all duration-300",
+        sidebarOpen ? "flex lg:flex" : "hidden -left-72 lg:hidden"
+      )}>
+        <div className="flex h-full min-h-0 flex-col overflow-y-auto px-5 py-5">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+              }}
+              className="flex items-center gap-2.5 text-left transition-opacity hover:opacity-90 flex-1"
+              aria-label="Sign out from Mentrixa"
+            >
+              <Image
+                src={MENTRIXA_LOGO_PNG}
+                alt="Mentrixa"
+                width={34}
+                height={34}
+                className="h-8 w-8 shrink-0 object-contain"
+                priority
+              />
+              <MentrixaWordmark trixaClassName="text-white/95" />
+            </button>
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setProfileMenuOpen(false);
+                setSidebarOpen(false);
+              }}
+              className="p-1 rounded-lg hover:bg-white/10 transition flex-shrink-0"
+              aria-label="Close sidebar"
+            >
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="relative mb-5 h-14 overflow-hidden rounded-2xl bg-gradient-to-r from-white/6 via-slate-100/5 to-white/6">
+            <svg
+              aria-hidden
+              viewBox="0 0 320 56"
+              preserveAspectRatio="none"
+              className="absolute inset-0 h-full w-full"
+            >
+              <polyline
+                points="0,31 14,31 14,35 28,35 28,29 42,29 42,33 56,33 56,37 70,37 70,30 84,30 84,34 98,34 98,28 112,28 112,32 126,32 126,36 140,36 140,30 154,30 154,34 168,34 168,29 182,29 182,33 196,33 196,37 210,37 210,31 224,31 224,35 238,35 238,29 252,29 252,33 266,33 266,37 280,37 280,31 294,31 294,35 308,35 308,30 320,30"
+                fill="none"
+                stroke="rgba(248,250,252,0.95)"
+                strokeWidth="1.8"
+                strokeLinejoin="bevel"
+              />
+              <polyline
+                points="0,40 16,40 16,44 32,44 32,38 48,38 48,42 64,42 64,46 80,46 80,40 96,40 96,44 112,44 112,39 128,39 128,43 144,43 144,47 160,47 160,41 176,41 176,45 192,45 192,39 208,39 208,43 224,43 224,47 240,47 240,41 256,41 256,45 272,45 272,40 288,40 288,44 304,44 304,38 320,38"
+                fill="none"
+                stroke="rgba(241,245,249,0.72)"
+                strokeWidth="1.3"
+                strokeLinejoin="bevel"
+              />
+              <polyline
+                points="0,22 12,22 12,26 24,26 24,20 36,20 36,24 48,24 48,28 60,28 60,22 72,22 72,26 84,26 84,21 96,21 96,25 108,25 108,29 120,29 120,23 132,23 132,27 144,27 144,21 156,21 156,25 168,25 168,29 180,29 180,23 192,23 192,27 204,27 204,21 216,21 216,25 228,25 228,29 240,29 240,23 252,23 252,27 264,27 264,22 276,22 276,26 288,26 288,20 300,20 300,24 312,24 312,28 320,28"
+                fill="none"
+                stroke="rgba(226,232,240,0.55)"
+                strokeWidth="1.05"
+                strokeLinejoin="bevel"
+              />
+            </svg>
+          </div>
+
+          <div ref={menuRef} className="relative" suppressHydrationWarning>
+            <button
+              type="button"
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              className="w-full rounded-2xl border border-white/20 bg-gradient-to-br from-white/14 to-white/6 px-4 py-4 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.8)] transition hover:bg-white/12 hover:text-white text-left"
+              aria-label="Open profile menu"
+              aria-expanded={profileMenuOpen}
+            >
+              <div className="flex items-center gap-3">
+                <StudentSidebarAvatar avatarUrl={user.avatarUrl} initials={getInitials(user.displayName, user.email)} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-100">{profileLabel}</p>
+                  <p className="truncate text-xs text-slate-200/85">{user.email}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200/85">
+                Guide control room
+              </p>
+            </button>
+
+            {profileMenuOpen && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-2xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] overflow-hidden">
+                <Link
+                  href={profileHref}
+                  onClick={() => setProfileMenuOpen(false)}
+                  className="block px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
+                >
+                  View Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setProfileMenuOpen(false);
+                    await signOut();
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white border-t border-white/10"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+
+          <nav className="mt-6 flex-1" aria-label="Guide sidebar">
+            <ul className="space-y-1.5">
+              {TUTOR_SIDEBAR_LINKS.map(({ href, label, iconSrc }) => {
+                const active = tutorNavIsActive(pathname, href);
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all",
+                        active
+                          ? "bg-white/22 text-white shadow-[0_10px_24px_-20px_rgba(255,255,255,0.8)]"
+                          : "text-slate-100/90 hover:bg-white/10 hover:text-white",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-xl border transition-colors",
+                          active ? "border-white/35 bg-white/20" : "border-white/15 bg-white/8",
+                        )}
+                      >
+                        <Image
+                          src={iconSrc}
+                          alt={label}
+                          width={16}
+                          height={16}
+                          className={cn("brightness-0 invert", active ? "opacity-95" : "opacity-80")}
+                        />
+                      </span>
+                      <span>{label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </div>
+      </aside>
+    </>
+  );
 }
 
 type LevelUpPayload = { to_level: number | null; title: string | null };
@@ -161,9 +648,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
           }
         }
         const hrs = s.hoursSinceAction != null ? Math.floor(s.hoursSinceAction) : 24;
-        setStreakBanner(
-          `Streak broken risk: ${hrs}h since your last activity. Your ${s.streakDays}-day streak is on the line — complete a quest or practice pack now.`,
-        );
+        setStreakBanner("Streak risk. Keep going today.");
       } else {
         setStreakBanner(null);
       }
@@ -246,7 +731,9 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
             className="shrink-0 rounded p-1 text-amber-800 transition hover:bg-amber-100 hover:text-amber-950"
             aria-label="Dismiss streak reminder"
           >
-            <X className="h-4 w-4" aria-hidden />
+            <span className="block h-4 w-4 text-center text-sm leading-4" aria-hidden>
+              x
+            </span>
           </button>
         </div>
       ) : null}
@@ -295,43 +782,111 @@ function navIsActive(pathname: string, href: string): boolean {
 }
 
 function StudentMobileBottomNav({ userId }: { userId: string }) {
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  
   if (pathname === "/" || pathname.startsWith("/video/") || pathname.startsWith("/auth/")) {
     return null;
   }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    }
+
+    if (profileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [profileMenuOpen]);
+
   const profileHref = `/student/${userId}`;
   const links = [
-    { href: "/student" as const, label: "Sessions", Icon: Calendar },
-    { href: "/student/quest" as const, label: "Quest", Icon: BookOpen },
-    { href: "/student/duel" as const, label: "Duels", Icon: Swords },
-    { href: "/student/division" as const, label: "Division", Icon: UsersRound },
-    { href: profileHref, label: "Profile", Icon: User },
+    { href: "/student" as const, label: "Sessions", iconSrc: "/images/book.png" },
+    { href: "/student/quest" as const, label: "Quest", iconSrc: "/images/quest.png" },
+    { href: "/student/duel" as const, label: "Duels", iconSrc: "/images/sword.png" },
+    { href: "/student/division" as const, label: "Division", iconSrc: "/images/xp.png" },
   ];
+  
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-[60] border-t border-slate-200/90 bg-white/95 backdrop-blur-md md:hidden"
-      aria-label="Student navigation"
-    >
-      <ul className="mx-auto flex max-w-lg items-stretch justify-between gap-0 px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        {links.map(({ href, label, Icon }) => {
-          const active = navIsActive(pathname, href);
-          return (
-            <li key={href} className="min-w-0 flex-1">
-              <Link
-                href={href}
-                className={cn(
-                  "flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium transition-colors",
-                  active ? "text-[#1E3A5F]" : "text-slate-500 hover:text-slate-800",
-                )}
-              >
-                <Icon className={cn("h-5 w-5 shrink-0", active && "text-[#1E3A5F]")} strokeWidth={active ? 2.25 : 2} />
-                <span className="truncate">{label}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <>
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-[60] border-t border-slate-200/90 bg-white/95 backdrop-blur-md md:hidden"
+        aria-label="Mentrixer navigation"
+      >
+        <ul className="mx-auto flex max-w-lg items-stretch justify-between gap-0 px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          {links.map(({ href, label, iconSrc }) => {
+            const active = navIsActive(pathname, href);
+            return (
+              <li key={href} className="min-w-0 flex-1">
+                <Link
+                  href={href}
+                  className={cn(
+                    "flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium transition-colors",
+                    active ? "text-[#1E3A5F]" : "text-slate-500 hover:text-slate-800",
+                  )}
+                >
+                  <Image
+                    src={iconSrc}
+                    alt={label}
+                    width={20}
+                    height={20}
+                    className={cn("shrink-0", active ? "opacity-100" : "opacity-65")}
+                  />
+                  <span className="truncate">{label}</span>
+                </Link>
+              </li>
+            );
+          })}
+          <li ref={menuRef} className="relative min-w-0 flex-1" suppressHydrationWarning>
+            <button
+              type="button"
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              className={cn(
+                "flex min-h-[48px] w-full flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium transition-colors",
+                profileMenuOpen ? "text-[#1E3A5F]" : "text-slate-500 hover:text-slate-800",
+              )}
+              aria-label="Open profile menu"
+              aria-expanded={profileMenuOpen}
+            >
+              <Image
+                src="/icons/mentrixer.svg"
+                alt="Profile"
+                width={20}
+                height={20}
+                className={cn("shrink-0", profileMenuOpen ? "opacity-100" : "opacity-65")}
+              />
+              <span className="truncate">Profile</span>
+            </button>
+
+            {profileMenuOpen && (
+              <div className="absolute bottom-full right-0 mb-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                <Link
+                  href={profileHref}
+                  onClick={() => setProfileMenuOpen(false)}
+                  className="block px-4 py-2.5 text-sm font-medium text-slate-900 transition hover:bg-slate-50 whitespace-nowrap"
+                >
+                  View Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setProfileMenuOpen(false);
+                    await signOut();
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-900 transition hover:bg-slate-50 border-t border-slate-200 whitespace-nowrap"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </li>
+        </ul>
+      </nav>
+    </>
   );
 }
 
@@ -471,6 +1026,22 @@ function ShellEffects() {
   return null;
 }
 
+function AppBackgroundLogos() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <div className="bg-mentrixa-logo-drift absolute left-[8%] top-[14%] opacity-[0.08]">
+        <Image src={MENTRIXA_LOGO_PNG} alt="" width={180} height={180} className="h-[180px] w-[180px] object-contain" />
+      </div>
+      <div className="bg-mentrixa-logo-drift bg-mentrixa-logo-drift--reverse absolute left-[64%] top-[40%] opacity-[0.07]">
+        <Image src={MENTRIXA_LOGO_PNG} alt="" width={150} height={150} className="h-[150px] w-[150px] object-contain" />
+      </div>
+      <div className="bg-mentrixa-logo-drift absolute left-[22%] top-[72%] opacity-[0.06]" style={{ animationDelay: "-10s" }}>
+        <Image src={MENTRIXA_LOGO_PNG} alt="" width={126} height={126} className="h-[126px] w-[126px] object-contain" />
+      </div>
+    </div>
+  );
+}
+
 export function RootLayoutClient({
   user,
   children,
@@ -478,39 +1049,54 @@ export function RootLayoutClient({
   user: AuthUser | null;
   children: ReactNode;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isApprovedStudent = user?.role === "student" && user.approved === true;
+  const isApprovedTutor = user?.role === "tutor" && user.approved === true;
   const isVideoRoute = pathname.startsWith("/video/");
+  const isTutorProfileRoute = /^\/tutor\/[^/]+\/?$/.test(pathname);
 
   return (
     <ErrorBoundary>
+      <ClickSoundProvider />
       <ShellEffects />
-      <AppNavOrNothing user={user} />
+      <AppNavOrNothing user={user} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      {isApprovedStudent && user && <StudentNavbar user={user} />}
+      {isApprovedTutor && user && <TutorNavbar user={user} />}
       <LevelUpExperience user={user} />
       {isApprovedStudent && user ? (
-        <>
-          <StudentMobileBottomNav userId={user.id} />
-          <PushNotificationOptIn />
-        </>
+        <PushNotificationOptIn />
       ) : null}
       {user && user.approved && !isVideoRoute ? <FeedbackWidget /> : null}
       <CookieConsentBanner />
       <main
+        suppressHydrationWarning
         className={cn(
           "relative min-h-screen",
-          isHome
-            ? "bg-[#0B1120]"
-            : cn(
-                "pt-14 bg-[#FAFAFA] bg-mesh-blue",
-                isApprovedStudent && "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
-              ),
+          isHome && "bg-[#0B1120]",
+          !isHome && !isTutorProfileRoute && "bg-mentrixa-app text-slate-100",
+          isTutorProfileRoute && "bg-white text-slate-900",
+          isApprovedStudent && "pt-24 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
+          isApprovedTutor && "pt-24",
         )}
       >
+        {!isHome ? (
+          <>
+            <AppBackgroundLogos />
+            {!isTutorProfileRoute ? (
+              <>
+                <div className="pointer-events-none absolute inset-0 bg-mentrixa-noise" aria-hidden />
+                <div className="pointer-events-none absolute inset-0 bg-mentrixa-logo-grid" aria-hidden />
+                <div className="pointer-events-none absolute inset-0 bg-mentrixa-vignette" aria-hidden />
+              </>
+            ) : null}
+          </>
+        ) : null}
         {isHome ? (
           <PageFade>{children}</PageFade>
         ) : (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="relative z-10 w-full">
             <PageFade>{children}</PageFade>
           </div>
         )}

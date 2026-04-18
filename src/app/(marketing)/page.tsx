@@ -8,6 +8,7 @@ import { ThirdStaticFeaturesContent } from "@/components/third-static-features-c
 import { ThirdSequenceWhyContent } from "@/components/third-sequence-why-content";
 import { FourthStaticFlowContent } from "@/components/fourth-static-flow-content";
 import { FourthStaticSidesCarouselContent } from "@/components/fourth-static-sides-carousel-content";
+import { LandingStoryBridge } from "@/components/landing-story-bridge";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 const ScrollSequence = dynamic(() => import("@/components/scroll-sequence-wrapper"), {
@@ -30,14 +31,29 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
-      <ScrollSequence sequenceId="firstseq" framePath="/sequences-webp/firstseq" totalFrames={120} height={5}>
+      <ScrollSequence sequenceId="firstseq" framePath="/sequences-webp/firstseq" totalFrames={120} height={2.2}>
         <FirstSequenceHeroContent />
       </ScrollSequence>
-      <ScrollSequence sequenceId="secondseq" framePath="/sequences-webp/2ndseq" totalFrames={120} height={5}>
+
+      <LandingStoryBridge
+        chapter="Chapter 01"
+        title="From confusion to clarity"
+        subtitle="You book quickly, meet a real Guide, and get momentum in one pass."
+      />
+
+      <ScrollSequence sequenceId="secondseq" framePath="/sequences-webp/2ndseq" totalFrames={120} height={2.1}>
         <SecondSequenceOutcomeContent />
       </ScrollSequence>
+
+      <LandingStoryBridge
+        chapter="Chapter 02"
+        title="Everything becomes measurable"
+        subtitle="Your outcomes, quests, duels, and rank all connect into one progression arc."
+      />
+
       <ThirdStaticFeaturesContent />
-      <section id="thirdseq" className="relative min-h-screen overflow-hidden">
+
+      <section id="thirdseq" className="relative min-h-[82vh] overflow-hidden">
         <Image
           src="/sequences-webp/3rdseq/frame-035.webp"
           alt="Mentrix AI tutoring overview"
@@ -48,9 +64,17 @@ export default function Home() {
         />
         <ThirdSequenceWhyContent />
       </section>
-      <ScrollSequence sequenceId="fourthseq" framePath="/sequences-webp/4thseq" totalFrames={120} height={5}>
+
+      <LandingStoryBridge
+        chapter="Chapter 03"
+        title="A clear 4-step loop"
+        subtitle="Book, meet, unpack, and climb. Every step feeds the next one automatically."
+      />
+
+      <ScrollSequence sequenceId="fourthseq" framePath="/sequences-webp/4thseq" totalFrames={120} height={2}>
         <FourthStaticFlowContent />
       </ScrollSequence>
+
       <FourthStaticSidesCarouselContent />
       <HomePageClient />
     </>

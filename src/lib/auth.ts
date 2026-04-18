@@ -13,6 +13,7 @@ export interface AuthUser {
   /** From `user_settings`; drives navbar name + avatar */
   displayName?: string | null;
   avatarUrl?: string | null;
+  bio?: string | null;
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -46,7 +47,7 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
 
   const { data: settingsRow } = await supabase
     .from("user_settings")
-    .select("display_name, avatar_url")
+    .select("display_name, avatar_url, bio")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -58,6 +59,10 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
     typeof settingsRow?.avatar_url === "string" && settingsRow.avatar_url.length > 0
       ? settingsRow.avatar_url
       : null;
+  const bio =
+    typeof settingsRow?.bio === "string" && settingsRow.bio.trim()
+      ? settingsRow.bio.trim()
+      : null;
 
   return {
     id: user.id,
@@ -67,6 +72,7 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
     email: user.email,
     displayName,
     avatarUrl,
+    bio,
   };
 }
 

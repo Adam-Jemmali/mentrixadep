@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -10,18 +11,10 @@ import { getStudentDivisionStats, getDivisionLeaderboard } from "@/app/actions/q
 import type { StudentCourse, UserXp } from "@/lib/database.types";
 import { getAccountLevelFromTotalXp } from "@/lib/levels";
 
-const ACCOUNT_LEVEL_BADGE: Record<number, string> = {
-  1: "border-slate-200 bg-slate-100 text-slate-800",
-  2: "border-emerald-200 bg-emerald-50 text-emerald-950",
-  3: "border-sky-200 bg-sky-50 text-sky-950",
-  4: "border-violet-200 bg-violet-50 text-violet-950",
-  5: "border-amber-200 bg-amber-50 text-amber-950",
-  6: "border-orange-200 bg-orange-50 text-orange-950",
-  7: "border-rose-200 bg-rose-50 text-rose-950",
-  8: "border-slate-800 bg-slate-900 text-white",
-};
-import { Button } from "@/components/ui/button";
-import { StudentDashboardIllustration } from "@/components/illustrations";
+
+import { MentrixHeroDecor } from "@/components/student/mentrix-hero-decor";
+import { HeroMentrixerBounce } from "@/components/student/hero-mentrixer-bounce";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { SessionsList } from "./sessions-list";
 import { StudentStatStripMotion } from "./student-stat-strip-motion";
 import { StudentCommandCenterClient } from "./student-command-center-client";
@@ -90,7 +83,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const streakAtRisk = isStreakAtRisk18h(streak, lastActivityAt);
 
   const accountLevel = getAccountLevelFromTotalXp(totalXp);
-  const tierBadgeClass = ACCOUNT_LEVEL_BADGE[accountLevel.level] ?? ACCOUNT_LEVEL_BADGE[1]!;
   const levelProgressDenom =
     accountLevel.xpToNextLevel != null
       ? accountLevel.xpIntoLevel + accountLevel.xpToNextLevel
@@ -142,25 +134,24 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="mb-8 rounded-md border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+    <div className={mentrixStudent.pageBg}>
+      <main className={mentrixStudent.main}>
+        <div className={`${mentrixStudent.heroGradient} mb-8 p-6 sm:p-8`}>
+          <MentrixHeroDecor />
+          <HeroMentrixerBounce />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-xl space-y-4">
               <div>
-                <p className="text-lg font-medium tracking-tight text-slate-900">{greeting}</p>
-                <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                  Sessions, divisions, and practice quests in one place.
-                </p>
+                
+                <p className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">{greeting}</p>
+                <p className="mt-2 text-sm text-white/90">Keep your streak. Keep proving what you know.</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${tierBadgeClass}`}
-                >
+                <span className="inline-flex items-center rounded-full border border-amber-300/50 bg-amber-400/25 px-3 py-1 text-xs font-bold text-amber-50 shadow-sm backdrop-blur-sm">
                   {accountLevel.title}
                 </span>
-                <span className="text-xs text-slate-500 font-mono tabular-nums">
+                <span className="text-xs font-mono tabular-nums text-white/85">
                   {totalXp.toLocaleString()} XP
                   {accountLevel.xpToNextLevel != null
                     ? ` · ${accountLevel.xpToNextLevel} to next level`
@@ -169,42 +160,35 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               </div>
 
               <div className="max-w-md space-y-2">
-                <div className="flex justify-between text-xs text-slate-500">
+                <div className="flex justify-between text-xs text-white/80">
                   <span>Level progress</span>
                   <span className="tabular-nums">{tierProgressPct}%</span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-slate-100">
+                <div className="h-2 w-full rounded-full bg-white/25">
                   <div
-                    className="h-full rounded-full bg-slate-900 transition-[width] duration-300 ease-out"
+                    className="h-full rounded-full bg-white transition-[width] duration-300 ease-out shadow-sm"
                     style={{ width: `${tierProgressPct}%` }}
                   />
                 </div>
               </div>
 
               {streak > 0 && (
-                <p
-                  className={`text-sm ${streakAtRisk ? "text-amber-900" : "text-slate-600"}`}
-                >
+                <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${streakAtRisk ? "text-amber-100" : "text-white/90"}`}>
                   {streakAtRisk
-                    ? "Hey Mentrixer, don't break your streak! Do a session, quest, or rating today!"
-                    : `${streak}-day streak.`}
+                    ? "Streak at risk :(  Play now"
+                    : `${streak}-day streak active`}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col items-start gap-3 lg:items-end shrink-0">
               <div className="flex flex-wrap gap-2">
-                {user.role === "student" && (
-                  <Button size="sm" variant="outline" className="border-slate-300" asChild>
-                    <Link href={`/student/${user.id}`}>Profile</Link>
-                  </Button>
-                )}
-                <Button size="sm" variant="outline" className="border-slate-300" asChild>
-                  <Link href="/student/quest">New quest</Link>
-                </Button>
-              </div>
-              <div className="hidden sm:block opacity-90 [&_svg]:max-h-24">
-                <StudentDashboardIllustration />
+                
+                
+              
+              
+              
+            
               </div>
             </div>
           </div>
@@ -219,12 +203,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         />
 
         {searchParams?.booking === "success" && (
-          <div className="mt-8 mb-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div className="mt-8 mb-2 rounded-2xl border border-emerald-200/80 bg-white px-5 py-4 text-sm text-emerald-900 shadow-sm">
             <p className="font-medium">Payment received</p>
             <p className="mt-1 text-emerald-900/90">
               {hasPendingRequests
                 ? "Your session request was sent to the Guide for approval."
-                : "Your session is booked — see upcoming sessions below."}
+                : "Session booked see upcoming."}
             </p>
             <p className="mt-3 text-xs text-emerald-800/80">
               <Link href={`/student/${user.id}`} className="underline font-medium hover:text-emerald-950">
@@ -234,12 +218,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         )}
         {searchParams?.booking === "cancelled" && (
-          <div className="mt-8 mb-2 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <div className="mt-8 mb-2 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 text-sm text-slate-700 shadow-sm">
             Checkout was cancelled. No charge was made.
           </div>
         )}
         {searchParams?.booking === "error" && (
-          <div className="mt-8 mb-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-8 mb-2 rounded-2xl border border-red-200/80 bg-white px-5 py-4 text-sm text-red-700 shadow-sm">
             Payment succeeded but booking sync failed. Please refresh once or contact support.
             {searchParams.reason ? ` (${searchParams.reason})` : ""}
           </div>
@@ -267,8 +251,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             displayTimeZone={timeZone}
           />
 
-          <div id="sessions-history" className="scroll-mt-24 pt-8 border-t border-slate-200">
-            <h2 className="text-sm font-medium text-slate-900 mb-4">Session history</h2>
+          <div id="sessions-history" className="scroll-mt-24 border-t border-slate-200/80 pt-10">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Live coaching</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-900">Sessions</h2>
+            <p className="mt-1 mb-5 text-sm text-slate-600">Upcoming past guide calls.</p>
             <SessionsList
               upcomingSessions={upcomingSessions}
               pastSessions={pastSessions}

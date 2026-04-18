@@ -2,14 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import {
-  ThumbsDown,
-  ThumbsUp,
-  BookOpen,
-  ExternalLink,
-  CheckCircle2,
-  AlertTriangle,
-} from "lucide-react";
+import Image from "next/image";
 import {
   escalateResolveToTutor,
   saveResolveToStudyNotes,
@@ -82,7 +75,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
           </span>
           {ai.assignmentLikely && (
             <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-700">
-              <AlertTriangle className="h-3 w-3" />
+              <Image src="/images/pending.png" alt="Warning" width={12} height={12} />
               Assignment-like
             </span>
           )}
@@ -156,7 +149,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <ThumbsUp className="h-4 w-4" /> Helpful
+              <Image src="/images/approved.png" alt="Helpful" width={16} height={16} /> Helpful
             </button>
             <button
               type="button"
@@ -168,7 +161,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <ThumbsDown className="h-4 w-4" /> Not really
+              <Image src="/images/pending.png" alt="Not helpful" width={16} height={16} /> Not really
             </button>
           </div>
         </div>
@@ -183,7 +176,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
                 href={bookTutorLink}
                 className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
               >
-                Book Guide <ExternalLink className="h-3.5 w-3.5" />
+                Book Guide <Image src="/images/book.png" alt="Open" width={14} height={14} />
               </Link>
               {!escalated && (
                 <button
@@ -197,7 +190,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
               )}
               {escalated && (
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                  <CheckCircle2 className="h-4 w-4" /> Escalation saved
+                  <Image src="/images/checks.png" alt="Saved" width={16} height={16} /> Escalation saved
                 </span>
               )}
             </div>
@@ -211,7 +204,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
             onClick={saveToNotes}
             className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
           >
-            <BookOpen className="h-4 w-4" /> Save to Study Notes
+            <Image src="/images/book.png" alt="Notes" width={16} height={16} /> Save to Study Notes
           </button>
           {saved && <p className="mt-2 text-xs text-emerald-700">Saved to your study notes.</p>}
           {saveError && <p className="mt-2 text-xs text-red-600">{saveError}</p>}

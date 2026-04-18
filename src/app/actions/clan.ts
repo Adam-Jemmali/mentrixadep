@@ -761,3 +761,63 @@ export async function setClanAvatarPreset(
     };
   }
 }
+
+export async function setClanFocusDivision(
+  clanId: string,
+  focusDivisionKey: string | null
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const cid = parseUUID(clanId);
+    if (!cid.ok) return { success: false, error: "Invalid clan." };
+
+    const admin = createAdminClient();
+    const { data: mem } = await admin
+      .from("clan_members")
+      .select("role")
+      .eq("clan_id", cid.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (mem?.role !== "leader") {
+      return { success: false, error: "Only the leader can change clan focus." };
+    }
+
+    const keyRaw = typeof focusDivisionKey === "string" ? sanitizeString(focusDivisionKey).trim() : "";
+    const key = keyRaw.length > 0 ? keyRaw.slice(0, 64) : null;
+
+    if (key) {
+      const { data: divOk } = await admin
+        .from("divisions")
+        .select("key")
+        .eq("key", key)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (!divOk) {
+        return { success: false, error: "Pick a valid active division." };
+      }
+    }
+
+    await admin
+      .from("clans")
+      .update({
+        focus_division_key: key,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", cid.id);
+
+    revalidatePath("/student/clan");
+    revalidatePath(`/student/clan/${cid.id}`);
+    return { success: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to update focus.",
+    };
+  }
+}

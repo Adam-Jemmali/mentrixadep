@@ -1166,6 +1166,145 @@ export type DuelPublicRow = {
   completed_at: string | null;
 };
 
+export type DuelMatchupPreview = {
+  duelId: string;
+  divisionKey: string;
+  me: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    totalXp: number | null;
+  };
+  opponent: {
+    id: string | null;
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    totalXp: number | null;
+    isAi: boolean;
+  };
+};
+
+async function getLearnerPreview(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string
+): Promise<{ id: string; name: string; avatarUrl: string | null; bio: string | null; totalXp: number | null }> {
+  const { data: settings } = await admin
+    .from("user_settings")
+    .select("display_name, avatar_url, bio")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const { data: xpRow } = await admin
+    .from("user_xp")
+    .select("total_xp")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const displayName =
+    typeof settings?.display_name === "string" ? settings.display_name.trim() : "";
+  const avatarUrl =
+    typeof settings?.avatar_url === "string" && settings.avatar_url.trim().length > 0
+      ? settings.avatar_url.trim()
+      : null;
+  const bio = typeof settings?.bio === "string" && settings.bio.trim().length > 0 ? settings.bio.trim() : null;
+  const totalXp = typeof xpRow?.total_xp === "number" ? xpRow.total_xp : null;
+
+  if (displayName.length > 0) {
+    return { id: userId, name: displayName, avatarUrl, bio, totalXp };
+  }
+
+  try {
+    const { data } = await admin.auth.admin.getUserById(userId);
+    const email = data?.user?.email ?? "";
+    const fallback = email ? (email.split("@")[0] ?? "").trim() : "";
+    return {
+      id: userId,
+      name: fallback || "Learner",
+      avatarUrl,
+      bio,
+      totalXp,
+    };
+  } catch {
+    return { id: userId, name: "Learner", avatarUrl, bio, totalXp };
+  }
+}
+
+export async function getDuelMatchupPreview(
+  duelId: string
+): Promise<{ success: true; preview: DuelMatchupPreview } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student" && user.role !== "admin") {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    const admin = createAdminClient();
+    const { data: duel, error } = await admin
+      .from("skill_duels")
+      .select("id, student_id, opponent_student_id, division_key, is_ai_opponent")
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (error || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+
+    const isAi = (duel as { is_ai_opponent?: boolean }).is_ai_opponent === true;
+    const isParticipant =
+      duel.student_id === user.id || (!isAi && duel.opponent_student_id === user.id);
+    if (!isParticipant) {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const meId = user.id;
+    const opponentId = isAi
+      ? null
+      : meId === duel.student_id
+        ? duel.opponent_student_id
+        : duel.student_id;
+
+    const me = await getLearnerPreview(admin, meId);
+    const opponent = opponentId
+      ? await getLearnerPreview(admin, opponentId)
+      : {
+          id: null,
+          name: "Sparring AI",
+          avatarUrl: null,
+          bio: "Adaptive duel sparring partner",
+          totalXp: null,
+        };
+
+    return {
+      success: true,
+      preview: {
+        duelId: duel.id,
+        divisionKey: duel.division_key,
+        me,
+        opponent: {
+          id: opponent.id,
+          bio: preview.me.bio,
+          totalXp: preview.me.totalXp,
+          name: opponent.name,
+          avatarUrl: opponent.avatarUrl,
+          isAi,
+        },
+          bio: preview.opponent.bio,
+          totalXp: preview.opponent.totalXp,
+      },
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to load matchup.",
+    };
+  }
+}
+
 export async function getDuelForUser(
   duelId: string
 ): Promise<DuelPublicRow | { error: string }> {

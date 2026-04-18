@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import type { ReferralDashboardData } from "@/app/actions/referral";
 import { Button } from "@/components/ui/button";
-import { Check, Copy, Share2 } from "lucide-react";
 
 export function ReferralProgramSection({ initial }: { initial: ReferralDashboardData }) {
   const [copied, setCopied] = useState(false);
@@ -91,12 +91,16 @@ export function ReferralProgramSection({ initial }: { initial: ReferralDashboard
             disabled={pending}
             onClick={() => void copyLink()}
           >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? (
+              <Image src="/images/checks.png" alt="Copied" width={14} height={14} />
+            ) : (
+              <Image src="/images/book.png" alt="Copy" width={14} height={14} />
+            )}
             {copied ? "Copied" : "Copy link"}
           </Button>
           {typeof navigator !== "undefined" && typeof navigator.share === "function" ? (
             <Button type="button" size="sm" variant="outline" className="gap-1.5 border-slate-200" onClick={() => void nativeShare()}>
-              <Share2 className="h-3.5 w-3.5" />
+              <Image src="/images/live.png" alt="Share" width={14} height={14} />
               Share
             </Button>
           ) : null}

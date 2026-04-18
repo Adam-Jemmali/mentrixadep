@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
-import { BookOpen, Zap, ArrowRight, ChevronDown, TrendingUp } from "lucide-react";
 import {
   masteryStatusColor,
   masteryStatusLabel,
   masteryBarColor,
-  estimatedSessionsToMastery,
   type SubjectEntry,
   type KnowledgeNode,
   type NextStepRecommendation,
 } from "@/lib/knowledge-graph";
 import { SkillTree } from "@/components/learning/skill-tree";
 import { SubjectProgressRing } from "@/components/learning/subject-progress-ring";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 interface Props {
   nodes: KnowledgeNode[];
@@ -27,19 +28,19 @@ interface Props {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
-        <BookOpen size={20} className="text-slate-500" />
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-slate-100">
+        <Image src="/images/book.png" alt="Book" width={20} height={20} className="opacity-80" />
       </div>
-      <h2 className="text-sm font-medium text-slate-900">No learning data yet</h2>
-      <p className="mt-1.5 max-w-xs text-sm text-slate-500 leading-relaxed">
-        Complete your first Quest to start building your personalised knowledge map.
+      <h2 className="text-sm font-medium text-slate-800">No learning data yet</h2>
+      <p className="mt-1.5 max-w-xs text-sm text-slate-600 leading-relaxed">
+        Complete your first quest to start your map.
       </p>
       <Link
         href="/student/quest"
-        className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
+        className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-colors hover:bg-blue-500"
       >
+        <Image src="/images/quest.png" alt="Quest" width={14} height={14} />
         Start a Quest
-        <ArrowRight size={13} strokeWidth={2.5} />
       </Link>
     </div>
   );
@@ -66,12 +67,12 @@ function RecommendationCard({ rec }: { rec: NextStepRecommendation }) {
   return (
     <Link
       href="/student/quest"
-      className="group flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 transition-all duration-150 hover:border-slate-300 hover:shadow-sm"
+      className={`group flex flex-col gap-2.5 ${mentrixStudent.card} p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-16px_rgba(37,99,235,0.25)]`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-900 truncate">{rec.subtopic}</p>
-          <p className="text-xs text-slate-500 mt-0.5">{rec.topic} · {rec.subject}</p>
+          <p className="text-sm font-medium text-slate-800 truncate">{rec.subtopic}</p>
+          <p className="text-xs text-slate-500 mt-0.5 truncate">{rec.subject}</p>
         </div>
         <span
           className={`shrink-0 inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-medium ${REASON_COLORS[rec.reason]}`}
@@ -94,15 +95,83 @@ function RecommendationCard({ rec }: { rec: NextStepRecommendation }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-xs text-slate-500">
-          ~{estimatedSessionsToMastery(pct)} session{estimatedSessionsToMastery(pct) !== 1 ? "s" : ""} to mastery
-        </span>
-        <ArrowRight
-          size={12}
-          className="text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5"
+        <span className="text-xs text-slate-500">Go practice</span>
+        <Image
+          src="/images/quest.png"
+          alt="Go"
+          width={13}
+          height={13}
+          className="opacity-70 transition-transform duration-150 group-hover:translate-x-0.5"
         />
       </div>
     </Link>
+  );
+}
+
+function BouncingMentrixer() {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const iconRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const box = boxRef.current;
+    const icon = iconRef.current;
+    if (!box || !icon) return;
+
+    let raf = 0;
+    const iconSize = 26;
+    let x = 8 + Math.random() * 40;
+    let y = 8 + Math.random() * 22;
+    let vx = (Math.random() > 0.5 ? 1 : -1) * (1.4 + Math.random() * 0.8);
+    let vy = (Math.random() > 0.5 ? 1 : -1) * (1.1 + Math.random() * 0.8);
+    let angle = Math.random() * 360;
+    let vr = (Math.random() > 0.5 ? 1 : -1) * (1.1 + Math.random() * 1.3);
+
+    const tick = () => {
+      const maxX = Math.max(0, box.clientWidth - iconSize);
+      const maxY = Math.max(0, box.clientHeight - iconSize);
+
+      x += vx;
+      y += vy;
+      angle += vr;
+
+      if (x <= 0) {
+        x = 0;
+        vx = Math.abs(vx);
+        vr = -vr * 0.98;
+      } else if (x >= maxX) {
+        x = maxX;
+        vx = -Math.abs(vx);
+        vr = -vr * 0.98;
+      }
+
+      if (y <= 0) {
+        y = 0;
+        vy = Math.abs(vy);
+        vr = -vr * 0.98;
+      } else if (y >= maxY) {
+        y = maxY;
+        vy = -Math.abs(vy);
+        vr = -vr * 0.98;
+      }
+
+      icon.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
+      raf = window.requestAnimationFrame(tick);
+    };
+
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div
+      ref={boxRef}
+      className="relative h-14 overflow-hidden rounded-md border border-slate-200 bg-white/70"
+      aria-hidden
+    >
+      <div ref={iconRef} className="absolute left-0 top-0 will-change-transform">
+        <Image src={MENTRIXA_LOGO_PNG} alt="" width={26} height={26} className="opacity-90" />
+      </div>
+    </div>
   );
 }
 
@@ -146,9 +215,12 @@ function TopicRow({ topic }: { topic: SubjectEntry["topics"][number] }) {
               {topic.avgMastery}%
             </span>
           </div>
-          <ChevronDown
-            size={13}
-            className={`text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          <Image
+            src="/images/pending.png"
+            alt="Toggle"
+            width={13}
+            height={13}
+            className={`opacity-70 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           />
         </div>
       </button>
@@ -189,10 +261,10 @@ function TopicRow({ topic }: { topic: SubjectEntry["topics"][number] }) {
 
 function SubjectPanel({ subject }: { subject: SubjectEntry }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+    <div className={`${mentrixStudent.card} overflow-hidden rounded-lg`}>
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-900">{subject.subject}</p>
+          <p className="text-sm font-medium text-slate-800">{subject.subject}</p>
           <p className="text-xs text-slate-500 mt-0.5">
             {subject.masteredSubtopics}/{subject.totalSubtopics} subtopics mastered
           </p>
@@ -243,12 +315,15 @@ function StatsStrip({ nodes }: { nodes: KnowledgeNode[] }) {
   return (
     <div
       ref={stripRef}
-      className="grid grid-cols-2 sm:grid-cols-4 gap-px rounded-lg border border-slate-200 bg-slate-200 overflow-hidden"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4"
     >
       {stats.map((s) => (
-        <div key={s.label} className="stat-cell flex flex-col bg-white px-4 py-3 opacity-0">
-          <span className="text-xl font-medium tabular-nums text-slate-900">{s.value}</span>
-          <span className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <div
+          key={s.label}
+          className="stat-cell flex flex-col rounded-md border border-slate-200/90 bg-white px-4 py-3 opacity-0 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)]"
+        >
+          <span className="text-xl font-bold tabular-nums text-blue-700">{s.value}</span>
+          <span className="mt-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
             {s.label}
           </span>
         </div>
@@ -268,13 +343,11 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
 
   if (tree.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <div className={mentrixStudent.pageBg}>
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6">
-            <h1 className="text-base font-medium text-slate-900">Learning Path</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Your personalised skill map — built from every Quest you complete.
-            </p>
+            <p className={mentrixStudent.sectionEyebrow}>Mastery tree</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Learning path</h1>
           </div>
           <EmptyState />
         </div>
@@ -283,23 +356,24 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div className={mentrixStudent.pageBg}>
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
 
         {/* Page header */}
-        <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-base font-medium text-slate-900">Learning Path</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Your personalised skill map — updated after every Quest.
-            </p>
+            <p className={mentrixStudent.sectionEyebrow}>Forge your arc</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
+              Learning path
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">Track mastery.</p>
           </div>
           <Link
             href="/student/quest"
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 transition-colors duration-150"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:bg-blue-500"
           >
-            <Zap size={11} strokeWidth={2.5} />
-            Adaptive Quest
+          
+            Adaptive quest
           </Link>
         </div>
 
@@ -312,12 +386,9 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Skill tree visualisation */}
-            <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100">
-                <p className="text-sm font-medium text-slate-900">Skill Map</p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Nodes = subtopics · Colour = mastery level
-                </p>
+            <div className={`${mentrixStudent.card} overflow-hidden ring-1 ring-blue-100/80`}>
+              <div className="border-b border-slate-100 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-800">Skill map</p>
               </div>
               <div className="p-4">
                 <SkillTree
@@ -335,10 +406,10 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
                   <button
                     key={s.subject}
                     onClick={() => setActiveSubject(s.subject)}
-                    className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
                       activeSubject === s.subject
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-blue-200"
                     }`}
                   >
                     {s.subject}
@@ -362,8 +433,8 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
           <div className="space-y-6">
 
             {/* Subject progress rings */}
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <p className="text-sm font-medium text-slate-900 mb-4">By subject</p>
+            <div className={`${mentrixStudent.card} p-4`}>
+              <p className="mb-4 text-sm font-semibold text-slate-800">By subject</p>
               <div className="space-y-4">
                 {tree.map((s) => (
                   <SubjectProgressRing
@@ -382,12 +453,13 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
 
             {/* Recommended next steps */}
             {recommendations.length > 0 && (
-              <div>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp size={13} className="text-slate-500" />
-                  <p className="text-sm font-medium text-slate-900">Recommended next steps</p>
+                  <Image src="/images/xp.png" alt="Trend" width={13} height={13} className="opacity-80" />
+                  <p className="text-sm font-medium text-slate-800">Next steps</p>
                 </div>
-                <div className="space-y-2">
+                <BouncingMentrixer />
+                <div className="mt-3 space-y-2">
                   {recommendations.map((rec, i) => (
                     <RecommendationCard key={i} rec={rec} />
                   ))}

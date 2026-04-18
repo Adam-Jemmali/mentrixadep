@@ -72,6 +72,8 @@ export function todayYmdInTimeZone(now: Date, timeZone: string): string {
 export type RecommendedGuide = {
   tutorId: string;
   displayName: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
   coursesMatched: number;
   hasOpenSlot: boolean;
 };
@@ -79,7 +81,15 @@ export type RecommendedGuide = {
 export function rankRecommendedGuides(
   studentCourseNames: string[],
   tutorExpertise: Record<string, { course_name: string; verified: boolean }[]>,
-  availability: { tutor_id: string; tutor?: { email?: string } | null }[]
+  availability: {
+    tutor_id: string;
+    tutor?: {
+      email?: string;
+      display_name?: string | null;
+      avatar_url?: string | null;
+      bio?: string | null;
+    } | null;
+  }[]
 ): RecommendedGuide[] {
   const want = new Set(studentCourseNames.map((c) => c.toLowerCase().trim()).filter(Boolean));
   if (want.size === 0) return [];
@@ -99,10 +109,12 @@ export function rankRecommendedGuides(
     if (coursesMatched === 0) continue;
     const slot = availability.find((a) => a.tutor_id === tid);
     const email = slot?.tutor?.email ?? "";
-    const displayName = email ? email.split("@")[0] ?? "Guide" : "Guide";
+    const displayName = slot?.tutor?.display_name?.trim() || (email ? email.split("@")[0] ?? "Guide" : "Guide");
     scored.push({
       tutorId: tid,
       displayName,
+      avatarUrl: slot?.tutor?.avatar_url ?? null,
+      bio: slot?.tutor?.bio ?? null,
       coursesMatched,
       hasOpenSlot: slotByTutor.has(tid),
     });

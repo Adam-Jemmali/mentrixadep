@@ -357,10 +357,10 @@ export function DuelPlayClient({ duel, side }: Props) {
       : (duel.student_score ?? 0);
 
     const xpLine = tie
-      ? `+${XP.DUEL_TIE} XP each — close match.`
+      ? `+${XP.DUEL_TIE} XP each close match.`
       : youWon
-        ? `+${XP.DUEL_WIN} XP — strong work.`
-        : `+${XP.DUEL_LOSS} XP for finishing — win comes next.`;
+        ? `+${XP.DUEL_WIN} XP strong work.`
+        : `+${XP.DUEL_LOSS} XP for finishing win comes next.`;
 
     return (
       <motion.div
@@ -454,7 +454,7 @@ export function DuelPlayClient({ duel, side }: Props) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center">
         <p className="text-sm font-medium text-slate-800">
-          You finished — waiting for {themLabel.toLowerCase()}
+          You finished waiting for {themLabel.toLowerCase()}
         </p>
         <p className="mt-2 text-xs text-slate-500">
           Scores lock in when both finish. This page updates automatically.
@@ -488,7 +488,7 @@ export function DuelPlayClient({ duel, side }: Props) {
             </p>
             {!duel.is_ai_opponent && theirLen < myLen ? (
               <p className="mt-1.5 text-xs text-slate-500">
-                You’re a question ahead — totals still compare on accuracy.
+                You are a question ahead totals still compare on accuracy.
               </p>
             ) : null}
           </div>

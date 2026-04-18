@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import Image from "next/image";
 import type { PublicClanSnapshot } from "@/app/actions/clan-dashboard";
 import { requestJoinPublicClan } from "@/app/actions/clan";
 import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
@@ -34,7 +35,7 @@ export function ClanPublicPreview({ snap, divisionLabel }: Props) {
     } else {
       setErr(null);
       setInfo(
-        "Request sent. You’ll get access when the leader approves — check back from Clans in the nav."
+        "Request sent. Access after approval."
       );
     }
   }
@@ -42,6 +43,10 @@ export function ClanPublicPreview({ snap, divisionLabel }: Props) {
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div className="rounded-lg border border-slate-200 bg-white p-6">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+          <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={14} height={14} />
+          Mentrixer clan
+        </div>
         <div className="flex gap-4">
           <ClanAvatarBadge
             name={snap.name}

@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { formatDateInZone, formatTimeInZone } from "@/lib/time-format";
 import { AvailabilityBrowser } from "./availability-browser";
 import { StudentCourseChips, type StudentCourseChip } from "./student-course-chips";
@@ -24,6 +24,8 @@ type TutorExpertiseEntry = { course_name: string; proof_description: string; ver
 type RecommendedGuide = {
   tutorId: string;
   displayName: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
   coursesMatched: number;
   hasOpenSlot: boolean;
 };
@@ -59,7 +61,7 @@ export function StudentCommandCenterClient({
   myRank: number | null;
   leaderboardTop: LeaderboardEntry[];
   recommendedGuides: RecommendedGuide[];
-  /** Profile timezone — slot instants are stored in UTC; we display in this zone. */
+  /** Profile timezone. Slots display in this zone. */
   displayTimeZone?: string;
 }) {
   const searchParams = useSearchParams();
@@ -88,56 +90,67 @@ export function StudentCommandCenterClient({
         onSelectCourse={setSelectedCourse}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <motion.section
-          className="lg:col-span-2 rounded-md border border-slate-200 bg-white p-5"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-        >
+
+
+     
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+        <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
           <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-medium text-slate-900">Upcoming sessions</h2>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Today</p>
+              <h2 className="text-base font-bold text-slate-900">Upcoming sessions</h2>
+            </div>
             <Link
               href="#sessions-history"
-              className="text-xs font-medium text-slate-600 underline-offset-4 hover:underline"
+              className="text-xs font-semibold text-blue-600 underline-offset-4 hover:underline"
             >
               Full history
             </Link>
           </div>
           {filteredUpcoming.length === 0 ? (
-            <div className="rounded-md border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
+            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
               <p className="text-sm text-slate-600">
                 No upcoming sessions
                 {selectedCourse !== "all" ? ` for ${selectedCourse}` : ""}.
               </p>
-              <Button asChild size="sm" variant="outline" className="mt-4 border-slate-300">
+              <Button
+                asChild
+                size="sm"
+                className="mt-5 rounded-full bg-blue-600 px-6 font-semibold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500"
+              >
                 <a href="#browse-guides">Browse guides</a>
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-md border border-slate-200">
+            <div className={`overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/50`}>
               <table className="min-w-full text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium text-slate-500">
+                <thead className="border-b border-slate-200/80 bg-white text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Course</th>
-                    <th className="px-3 py-2 font-medium">Guide</th>
-                    <th className="px-3 py-2 font-medium">When</th>
-                    <th className="w-[1%] whitespace-nowrap px-3 py-2" />
+                    <th className="px-4 py-3 font-semibold">Course</th>
+                    <th className="px-4 py-3 font-semibold">Guide</th>
+                    <th className="px-4 py-3 font-semibold">When</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUpcoming.slice(0, 8).map((s) => (
-                    <tr key={s.id} className="border-t border-slate-100 first:border-t-0">
-                      <td className="px-3 py-2.5 font-medium text-slate-900">{s.course}</td>
-                      <td className="px-3 py-2.5 text-slate-700">{s.tutor_email_prefix}</td>
-                      <td className="px-3 py-2.5 text-slate-600 tabular-nums">
+                    <tr key={s.id} className="border-t border-slate-100/90 first:border-t-0 bg-white/80">
+                      <td className="px-4 py-3 font-semibold text-slate-900">{s.course}</td>
+                      <td className="px-4 py-3 text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <Image src="/images/user.png" alt="Guide" width={18} height={18} />
+                          <span>{s.tutor_email_prefix}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 tabular-nums">
                         {formatDateInZone(s.start_time, displayTimeZone)} ·{" "}
                         {formatTimeInZone(s.start_time, displayTimeZone)}
                       </td>
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="px-4 py-3 text-right">
                         <Link
                           href={`/video/session/${s.id}`}
-                          className="text-xs font-medium text-slate-900 underline-offset-4 hover:underline"
+                          className="inline-flex rounded-full border-2 border-blue-200 bg-white px-3 py-1 text-xs font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
                         >
                           Join
                         </Link>
@@ -148,104 +161,107 @@ export function StudentCommandCenterClient({
               </table>
             </div>
           )}
-        </motion.section>
+        </section>
 
         <div className="space-y-6">
-          <motion.section
-            className="rounded-md border border-slate-200 bg-white p-5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: 0.05 }}
-          >
-            <div className="mb-2 flex items-center gap-2 text-slate-700">
-              <BookOpen className="h-4 w-4 text-slate-500" aria-hidden />
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Quests
-              </span>
+          <section className={`${mentrixStudent.card} p-5`}>
+            <div className="mb-3 flex items-center gap-2 text-slate-800">
+              <Image src="/images/xp.png" alt="Rank" width={16} height={16} />
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Rank snapshot</span>
             </div>
-            <p className="mb-3 text-sm text-slate-600">Open a quest to keep your momentum.</p>
-            <Button asChild size="sm" variant="outline" className="border-slate-300">
-              <Link href="/student/quest">Open quest</Link>
-            </Button>
-          </motion.section>
-
-          <motion.section
-            className="rounded-md border border-slate-200 bg-white p-5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: 0.1 }}
-          >
-            <div className="mb-3 flex items-center gap-2 text-slate-700">
-              <Trophy className="h-4 w-4 text-slate-500" aria-hidden />
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Division leaderboard
-              </span>
-            </div>
-            <p className="mb-1 truncate text-xs text-slate-500" title={divisionName}>
+            <p className="mb-1 truncate text-xs font-medium text-slate-500" title={divisionName}>
               {divisionName}
             </p>
             {myRank != null ? (
-              <p className="mb-4 text-2xl font-medium text-slate-900">
-                Your rank <span className="tabular-nums">#{myRank}</span>
+              <p className="mb-4 text-3xl font-semibold tabular-nums text-slate-900">
+                #{myRank}
+                <span className="ml-2 text-sm font-semibold text-slate-500">your rank</span>
               </p>
             ) : (
               <p className="mb-4 text-sm text-slate-600">
                 Earn XP in this division to appear on the board.
               </p>
             )}
-            <ul className="space-y-1 text-sm">
+            <ul className="space-y-1.5 text-sm">
               {leaderboardTop.slice(0, 3).map((row) => (
                 <li
                   key={row.userId}
-                  className={`flex justify-between gap-2 rounded-md px-2 py-1.5 ${
-                    row.isCurrentUser ? "bg-slate-100" : "bg-transparent"
+                  className={`flex justify-between gap-2 rounded-xl px-3 py-2 ${
+                    row.isCurrentUser ? "border border-blue-200 bg-blue-50/80" : "bg-slate-50/90"
                   }`}
                 >
-                  <span className="text-slate-700">
-                    <span className="mr-2 font-mono text-xs text-slate-400">{row.rank}</span>
+                  <span className="text-slate-800">
+                    <span className="mr-2 font-mono text-xs font-bold text-slate-400">#{row.rank}</span>
                     {row.displayName}
                   </span>
-                  <span className="tabular-nums text-slate-600">{row.divisionXp} XP</span>
+                  <span className="tabular-nums font-semibold text-slate-600">{row.divisionXp} XP</span>
                 </li>
               ))}
             </ul>
-            <Link
-              href="/student/division"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-slate-700 underline-offset-4 hover:underline"
-            >
-              Full leaderboard <ArrowRight className="h-3 w-3" />
-            </Link>
-          </motion.section>
+            <div className="mt-4 grid gap-2">
+              <Link href="/student/division" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Open full leaderboard</Link>
+              <Link href="/student/duel" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Enter duel queue</Link>
+            </div>
+          </section>
+
+          <section className={`${mentrixStudent.card} p-5`}>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Quick actions</p>
+            <div className="mt-3 space-y-2">
+              <Link href="/student/quest" className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                <span className="inline-flex items-center gap-2"><Image src="/images/quest.png" alt="Quest" width={16} height={16} /> Start daily quest</span>
+                <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
+              </Link>
+              <Link href="/student/duel" className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                <span className="inline-flex items-center gap-2"><Image src="/images/sword.png" alt="Duel" width={16} height={16} /> Find duel</span>
+                <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
+              </Link>
+              <a href="#browse-guides" className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+                <span className="inline-flex items-center gap-2"><Image src="/images/book.png" alt="Book" width={16} height={16} /> Book a guide</span>
+                <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
+              </a>
+            </div>
+          </section>
         </div>
       </div>
 
       {recommendedGuides.length > 0 && (
-        <section className="rounded-md border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-medium text-slate-900">Recommended for you</h2>
-          <p className="mt-1 text-xs text-slate-500">Based on courses you follow.</p>
-          <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+        <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-slate-900">Recommended guides</h2>
+            <Image src="/images/user.png" alt="Guide" width={18} height={18} />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {recommendedGuides.map((g) => (
               <div
                 key={g.tutorId}
-                className="min-w-[160px] shrink-0 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-slate-300 hover:bg-white"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-4 transition hover:border-blue-200 hover:shadow-sm"
               >
-                <p className="truncate font-medium text-slate-900">{g.displayName}</p>
+                <div className="flex items-center gap-2">
+                  <div className="relative h-9 w-9 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                    {g.avatarUrl ? (
+                      <Image src={g.avatarUrl} alt="" fill unoptimized className="object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[11px] font-bold text-slate-600">
+                        {g.displayName.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <p className="truncate text-sm font-semibold text-slate-900">{g.displayName}</p>
+                </div>
+                <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-xs leading-5 text-slate-600">
+                  {g.bio?.trim() || "Experienced guide with strong match against your selected subjects."}
+                </p>
                 <p className="mt-1 text-sm text-slate-600">
                   {g.coursesMatched} course{g.coursesMatched === 1 ? "" : "s"} matched
                 </p>
                 {g.hasOpenSlot && (
-                  <span className="mt-2 inline-block text-[11px] font-medium text-slate-600">
-                    Has open slots
+                  <span className="mt-2 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                    Open slots
                   </span>
                 )}
-                <div className="mt-3 flex items-center gap-2">
-                  <a
-                    href="#browse-guides"
-                    className="text-xs font-medium text-slate-900 underline-offset-4 hover:underline"
-                  >
-                    Book now
-                  </a>
-                </div>
+                <a href="#browse-guides" className="mt-3 inline-flex text-xs font-semibold text-blue-600 hover:text-blue-700">
+                  Book now
+                </a>
               </div>
             ))}
           </div>
@@ -253,7 +269,12 @@ export function StudentCommandCenterClient({
       )}
 
       <section id="browse-guides" className="scroll-mt-24">
-        <h2 className="mb-4 text-sm font-medium text-slate-900">Browse guides</h2>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Guides</p>
+        <h2 className="mt-1 text-lg font-bold text-slate-900">Browse & book</h2>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+          Prove what you know everywhere you can
+        </p>
+        <p className="mt-1 mb-4 text-sm text-slate-600">Pick a Guide, lock a slot, show up ready to level up.</p>
         <AvailabilityBrowser
           availability={availability}
           courses={availableCourses}

@@ -93,17 +93,7 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
                 }}
               />
             </div>
-            <div className="absolute right-[-10%] bottom-[8%] mx-perspective">
-              <div className="mx-auth-monolith mx-auth-monolith-spin">
-                <Image
-                  src={MENTRIXA_LOGO_PNG}
-                  alt=""
-                  width={280}
-                  height={280}
-                  className="object-contain opacity-[0.22]"
-                />
-              </div>
-            </div>
+            <BouncingAuthMentrixaLogo />
           </div>
         </div>
       )}
@@ -128,6 +118,81 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
           </div>
           {children}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function BouncingAuthMentrixaLogo() {
+  const boundsRef = useRef<HTMLDivElement | null>(null);
+  const logoRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const bounds = boundsRef.current;
+    const logo = logoRef.current;
+    if (!bounds || !logo) return;
+
+    const logoSize = 190;
+    let x = Math.max(12, bounds.clientWidth - logoSize - 56);
+    let y = Math.max(12, bounds.clientHeight - logoSize - 56);
+    let vx = -1.15;
+    let vy = -0.95;
+    let angle = -12;
+    let spin = 0.22;
+    let rafId = 0;
+
+    const tick = () => {
+      const maxX = Math.max(0, bounds.clientWidth - logoSize);
+      const maxY = Math.max(0, bounds.clientHeight - logoSize);
+
+      x += vx;
+      y += vy;
+      angle += spin;
+
+      if (x <= 0) {
+        x = 0;
+        vx = Math.abs(vx);
+        spin = -spin;
+      } else if (x >= maxX) {
+        x = maxX;
+        vx = -Math.abs(vx);
+        spin = -spin;
+      }
+
+      if (y <= 0) {
+        y = 0;
+        vy = Math.abs(vy);
+        spin = -spin;
+      } else if (y >= maxY) {
+        y = maxY;
+        vy = -Math.abs(vy);
+        spin = -spin;
+      }
+
+      logo.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    rafId = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  return (
+    <div ref={boundsRef} className="absolute inset-0 overflow-hidden" aria-hidden>
+      <div
+        ref={logoRef}
+        className="absolute left-0 top-0 will-change-transform"
+      >
+        <Image
+          src={MENTRIXA_LOGO_PNG}
+          alt=""
+          width={190}
+          height={190}
+          className="object-contain opacity-[0.22]"
+        />
       </div>
     </div>
   );

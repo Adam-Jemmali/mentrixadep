@@ -184,7 +184,7 @@ export function AvailabilityBrowser({
       <h2 className="mb-1 text-sm font-medium text-slate-900">Guides</h2>
       <p className="mb-3 text-xs text-slate-500">
         Bookable slots in the next 14 days. Times in{" "}
-        <span className="font-medium text-slate-700">{displayTimeZone}</span> — update in Profile if needed.
+        <span className="font-medium text-slate-700">{displayTimeZone}</span> update in Profile if needed.
       </p>
 
       <Input

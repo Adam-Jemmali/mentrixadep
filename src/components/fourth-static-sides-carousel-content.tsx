@@ -205,8 +205,8 @@ export function FourthStaticSidesCarouselContent() {
   const [selectedRole, setSelectedRole] = useState<"Mentrixer" | "Guide">("Mentrixer");
 
   return (
-    <section id="fourthstatic" className="relative min-h-screen overflow-hidden">
-      <div className="relative min-h-screen overflow-hidden">
+    <section id="fourthstatic" className="relative min-h-[84vh] overflow-hidden">
+      <div className="relative min-h-[84vh] overflow-hidden">
         <Image
           src="/sequences-webp/4thstatic.webp"
           alt="Mentrixa session sides"
@@ -218,7 +218,7 @@ export function FourthStaticSidesCarouselContent() {
         <div className="absolute inset-0 bg-slate-950/45" aria-hidden />
         <BouncingRoleIconsLayer />
 
-        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-10 md:px-8 md:py-12">
+        <div className="relative z-10 mx-auto flex min-h-[84vh] w-full max-w-7xl flex-col px-5 py-8 md:px-8 md:py-10">
           <div className="mx-auto mb-5 max-w-3xl text-center">
             <h2 id="path" className="text-[clamp(22px,3.2vw,34px)] font-bold tracking-[-0.03em] text-white">
               Which side of the session are you on?
@@ -260,7 +260,7 @@ export function FourthStaticSidesCarouselContent() {
                     active ? "scale-[1.01] ring-1 ring-white/30" : "scale-[0.98] opacity-80",
                     isMentrixer
                       ? "border-emerald-400/35 bg-gradient-to-br from-emerald-950/55 via-slate-950/45 to-slate-900/55 shadow-2xl shadow-emerald-950/30"
-                      : "border-blue-400/35 bg-gradient-to-br from-blue-950/55 via-indigo-950/45 to-slate-950/55 shadow-2xl shadow-blue-950/30"
+                      : "border-violet-400/35 bg-gradient-to-br from-violet-950/55 via-violet-900/45 to-slate-950/55 shadow-2xl shadow-violet-950/30"
                   )}
                 >
                   <div className="pointer-events-none absolute -right-8 -top-6 opacity-25">
@@ -269,7 +269,7 @@ export function FourthStaticSidesCarouselContent() {
                   <p
                     className={cn(
                       "inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em]",
-                      isMentrixer ? "text-emerald-300" : "text-blue-300"
+                      isMentrixer ? "text-emerald-300" : "text-violet-300"
                     )}
                   >
                     <RoleIcon role={side.role} className={cn("h-3 w-3", isMentrixer ? "" : "brightness-0 invert")} />
@@ -279,7 +279,7 @@ export function FourthStaticSidesCarouselContent() {
                   <ul className="mt-4 space-y-2.5 text-[13px] text-slate-200/95">
                     {side.points.map((point) => (
                       <li key={point} className="flex gap-2.5">
-                        <Check className={isMentrixer ? "mt-0.5 text-emerald-300" : "mt-0.5 text-blue-300"} />
+                        <Check className={isMentrixer ? "mt-0.5 text-emerald-300" : "mt-0.5 text-violet-300"} />
                         {point}
                       </li>
                     ))}
