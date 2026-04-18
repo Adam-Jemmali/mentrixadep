@@ -442,11 +442,17 @@ export const MENTRIXA_RANKS: MentrixaRank[] = [
 
 export function getRankFromXp(xp: number): MentrixaRank {
   for (let i = MENTRIXA_RANKS.length - 1; i >= 0; i--) {
-    if (xp >= MENTRIXA_RANKS[i].xpMin) {
-      return MENTRIXA_RANKS[i];
+    const rank = MENTRIXA_RANKS[i];
+    if (rank && xp >= rank.xpMin) {
+      return rank;
     }
   }
-  return MENTRIXA_RANKS[0];
+
+  const firstRank = MENTRIXA_RANKS[0];
+  if (!firstRank) {
+    throw new Error("MENTRIXA_RANKS must contain at least one rank");
+  }
+  return firstRank;
 }
 
 export function getProgressToNextRank(xp: number): {
@@ -460,7 +466,7 @@ export function getProgressToNextRank(xp: number): {
   const currentRank = getRankFromXp(xp);
   const currentIndex = MENTRIXA_RANKS.findIndex((r) => r.key === currentRank.key);
   const nextRank =
-    currentIndex < MENTRIXA_RANKS.length - 1 ? MENTRIXA_RANKS[currentIndex + 1] : null;
+    currentIndex < MENTRIXA_RANKS.length - 1 ? (MENTRIXA_RANKS[currentIndex + 1] ?? null) : null;
 
   if (!nextRank || currentRank.xpMax === null) {
     return {

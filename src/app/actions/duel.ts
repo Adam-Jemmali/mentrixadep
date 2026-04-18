@@ -1287,14 +1287,12 @@ export async function getDuelMatchupPreview(
         me,
         opponent: {
           id: opponent.id,
-          bio: preview.me.bio,
-          totalXp: preview.me.totalXp,
           name: opponent.name,
           avatarUrl: opponent.avatarUrl,
+          bio: opponent.bio,
+          totalXp: opponent.totalXp,
           isAi,
         },
-          bio: preview.opponent.bio,
-          totalXp: preview.opponent.totalXp,
       },
     };
   } catch (e) {

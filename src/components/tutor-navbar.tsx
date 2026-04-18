@@ -94,6 +94,8 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
+
+    return undefined;
   }, [profileMenuOpen]);
 
   const isActive = (link: string) => {

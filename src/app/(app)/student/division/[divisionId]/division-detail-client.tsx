@@ -194,7 +194,7 @@ export function DivisionDetailClient({
               </Button>
             ) : (
               <>
-                <span className="self-center px-2 text-xs font-medium text-slate-700">You're a member</span>
+                <span className="self-center px-2 text-xs font-medium text-slate-700">You&apos;re a member</span>
                 {!initial.isFocused ? (
                   <Button
                     type="button"

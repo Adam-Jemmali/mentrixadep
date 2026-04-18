@@ -1,5 +1,4 @@
 import { getDivisionsCatalog } from "@/app/actions/quest";
-import { getCurrentUser } from "@/lib/auth";
 import { QuestPageClient } from "./quest-page-client";
 
 export const metadata = { title: "Quest · Mentrixa" };
@@ -10,7 +9,6 @@ export const maxDuration = 300;
 export default async function QuestPage() {
   const divisions = await getDivisionsCatalog();
   const subjectOptions = divisions.map((d) => ({ key: d.key, name: d.name }));
-  const user = await getCurrentUser();
 
-  return <QuestPageClient subjectOptions={subjectOptions} user={user} />;
+  return <QuestPageClient subjectOptions={subjectOptions} />;
 }

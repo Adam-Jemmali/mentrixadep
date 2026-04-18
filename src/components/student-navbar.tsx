@@ -98,6 +98,8 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
+
+    return undefined;
   }, [profileMenuOpen]);
 
   const isActive = (link: string) => {

@@ -8,10 +8,8 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { signOut } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
@@ -19,7 +17,6 @@ import { trackClientEvent } from "@/lib/use-track";
 import type { AuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { StudentNavbar } from "@/components/student-navbar";
 import { TutorNavbar } from "@/components/tutor-navbar";
 
@@ -172,7 +169,6 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
             return;
           }
         }
-        const hrs = s.hoursSinceAction != null ? Math.floor(s.hoursSinceAction) : 24;
         setStreakBanner("Streak risk. Keep going today.");
       } else {
         setStreakBanner(null);
@@ -295,122 +291,6 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
           </div>
         </div>
       ) : null}
-    </>
-  );
-}
-
-function navIsActive(pathname: string, href: string): boolean {
-  if (href === "/student") {
-    return pathname === "/student" || pathname === "/student/";
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function StudentMobileBottomNav({ userId }: { userId: string }) {
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-  
-  if (pathname === "/" || pathname.startsWith("/video/") || pathname.startsWith("/auth/")) {
-    return null;
-  }
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setProfileMenuOpen(false);
-      }
-    }
-
-    if (profileMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [profileMenuOpen]);
-
-  const profileHref = `/student/${userId}`;
-  const links = [
-    { href: "/student" as const, label: "Sessions", iconSrc: "/images/book.png" },
-    { href: "/student/quest" as const, label: "Quest", iconSrc: "/images/quest.png" },
-    { href: "/student/duel" as const, label: "Duels", iconSrc: "/images/sword.png" },
-    { href: "/student/division" as const, label: "Division", iconSrc: "/images/xp.png" },
-  ];
-  
-  return (
-    <>
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-[60] border-t border-slate-200/90 bg-white/95 backdrop-blur-md md:hidden"
-        aria-label="Mentrixer navigation"
-      >
-        <ul className="mx-auto flex max-w-lg items-stretch justify-between gap-0 px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          {links.map(({ href, label, iconSrc }) => {
-            const active = navIsActive(pathname, href);
-            return (
-              <li key={href} className="min-w-0 flex-1">
-                <Link
-                  href={href}
-                  className={cn(
-                    "flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium transition-colors",
-                    active ? "text-[#1E3A5F]" : "text-slate-500 hover:text-slate-800",
-                  )}
-                >
-                  <Image
-                    src={iconSrc}
-                    alt={label}
-                    width={20}
-                    height={20}
-                    className={cn("shrink-0", active ? "opacity-100" : "opacity-65")}
-                  />
-                  <span className="truncate">{label}</span>
-                </Link>
-              </li>
-            );
-          })}
-          <li ref={menuRef} className="relative min-w-0 flex-1" suppressHydrationWarning>
-            <button
-              type="button"
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className={cn(
-                "flex min-h-[48px] w-full flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium transition-colors",
-                profileMenuOpen ? "text-[#1E3A5F]" : "text-slate-500 hover:text-slate-800",
-              )}
-              aria-label="Open profile menu"
-              aria-expanded={profileMenuOpen}
-            >
-              <Image
-                src="/icons/mentrixer.svg"
-                alt="Profile"
-                width={20}
-                height={20}
-                className={cn("shrink-0", profileMenuOpen ? "opacity-100" : "opacity-65")}
-              />
-              <span className="truncate">Profile</span>
-            </button>
-
-            {profileMenuOpen && (
-              <div className="absolute bottom-full right-0 mb-2 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-                <Link
-                  href={profileHref}
-                  onClick={() => setProfileMenuOpen(false)}
-                  className="block px-4 py-2.5 text-sm font-medium text-slate-900 transition hover:bg-slate-50 whitespace-nowrap"
-                >
-                  View Profile
-                </Link>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setProfileMenuOpen(false);
-                    await signOut();
-                  }}
-                  className="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-900 transition hover:bg-slate-50 border-t border-slate-200 whitespace-nowrap"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </li>
-        </ul>
-      </nav>
     </>
   );
 }
@@ -574,7 +454,6 @@ export function RootLayoutClient({
   user: AuthUser | null;
   children: ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isApprovedStudent = user?.role === "student" && user.approved === true;
@@ -586,7 +465,7 @@ export function RootLayoutClient({
     <ErrorBoundary>
       <ClickSoundProvider />
       <ShellEffects />
-      <AppNavOrNothing user={user} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <AppNavOrNothing user={user} />
       {isApprovedStudent && user && <StudentNavbar user={user} />}
       {isApprovedTutor && user && <TutorNavbar user={user} />}
       <LevelUpExperience user={user} />

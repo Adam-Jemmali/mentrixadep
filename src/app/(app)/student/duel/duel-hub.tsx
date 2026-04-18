@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   joinDuelQueue,
@@ -153,7 +153,7 @@ export function DuelHub({
     return () => window.clearTimeout(timer);
   }, [matchIntro, matchPhase, router]);
 
-  async function showMatchIntroAndNavigate(duelId: string) {
+  const showMatchIntroAndNavigate = useCallback(async (duelId: string) => {
     if (transitioningRef.current) return;
     transitioningRef.current = true;
 
@@ -193,7 +193,7 @@ export function DuelHub({
     } catch {
       fallbackPush();
     }
-  }
+  }, [router, divisions]);
 
   useEffect(() => {
     if (queuePhase !== "waiting" || !divisionKey || matchIntro) return;
@@ -206,7 +206,7 @@ export function DuelHub({
     const id = setInterval(() => void tick(), 2000);
     void tick();
     return () => clearInterval(id);
-  }, [queuePhase, divisionKey, router, divisions, matchIntro]);
+  }, [queuePhase, divisionKey, matchIntro, showMatchIntroAndNavigate]);
 
   /** No human in ~60s → AI sparring opponent (same question set) */
   useEffect(() => {
@@ -230,7 +230,7 @@ export function DuelHub({
       cancelled = true;
       clearTimeout(t);
     };
-  }, [queuePhase, divisionKey, router, divisions, matchIntro]);
+  }, [queuePhase, divisionKey, matchIntro, showMatchIntroAndNavigate]);
 
   async function findMatch() {
     if (!divisionKey) return;
