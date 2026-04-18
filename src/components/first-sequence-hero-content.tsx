@@ -186,21 +186,6 @@ function BouncingRoleIcons() {
   );
 }
 
-function WatermarkRoleIcon({ role }: { role: "mentrixer" | "guide" }) {
-  return (
-    <Image
-      src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
-      alt=""
-      width={120}
-      height={120}
-      unoptimized
-      aria-hidden
-      className="h-20 w-20 object-contain opacity-14 blur-[1px] brightness-125 md:h-24 md:w-24"
-    />
-  );
-}
-
-
 // Letter-by-letter reveal component - memoized for scroll-based animation
 const RevealText = memo(function RevealText({ text, progress }: { text: string; progress: number }) {
   const chars = useMemo(() => {
