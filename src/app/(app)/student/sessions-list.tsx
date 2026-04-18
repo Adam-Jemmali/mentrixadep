@@ -304,49 +304,11 @@ export function SessionsList({
                     </Button>
                   </div>
                 ) : (
-                  <>
-                    <div className="space-y-3 sm:hidden">
-                      {filteredUpcoming.map((session) => (
-                        <UpcomingSessionCard key={session.id} session={session} />
-                      ))}
-                    </div>
-                    <div className="hidden overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/50 sm:block">
-                      <table className="min-w-full text-sm">
-                        <thead className="border-b border-slate-200/80 bg-white text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          <tr>
-                            <th className="px-4 py-3 font-semibold">Course</th>
-                            <th className="px-4 py-3 font-semibold">Guide</th>
-                            <th className="px-4 py-3 font-semibold">When</th>
-                            <th className="w-[1%] whitespace-nowrap px-4 py-3" />
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredUpcoming.slice(0, 8).map((s) => (
-                            <tr key={s.id} className="border-t border-slate-100/90 first:border-t-0 bg-white/80">
-                              <td className="px-4 py-3 font-semibold text-slate-900">{s.course}</td>
-                              <td className="px-4 py-3 text-slate-700">
-                                <div className="flex items-center gap-2">
-                                  <Image src="/images/user.png" alt="Guide" width={18} height={18} />
-                                  <span>{s.tutor_email_prefix}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 text-slate-600 tabular-nums">
-                                {formatDateInZone(s.start_time, displayTimeZone)} · {formatTimeInZone(s.start_time, displayTimeZone)}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <Link
-                                  href={`/video/session/${s.id}`}
-                                  className="inline-flex rounded-full border-2 border-blue-200 bg-white px-3 py-1 text-xs font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
-                                >
-                                  Join
-                                </Link>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
+                  <div className="space-y-3">
+                    {filteredUpcoming.map((session) => (
+                      <UpcomingSessionCard key={session.id} session={session} />
+                    ))}
+                  </div>
                 )}
               </TabsContent>
 
