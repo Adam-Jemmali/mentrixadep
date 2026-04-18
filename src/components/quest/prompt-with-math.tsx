@@ -8,21 +8,23 @@ import "katex/dist/katex.min.css";
  * Renders plain text with optional inline/block LaTeX: \( ... \) and $$ ... $$.
  */
 export function PromptWithMath({ text }: { text: string }) {
+  // Some generators escape inline math dollars as \$...\$.
+  const normalizedText = text.replace(/\\\$/g, "$");
   const parts: ReactNode[] = [];
   let key = 0;
-  const re = /\\\(([\s\S]*?)\\\)|\$\$([\s\S]*?)\$\$/g;
+  const re = /\\\(([\s\S]*?)\\\)|\$\$([\s\S]*?)\$\$|\$([^$\n]+?)\$/g;
   let last = 0;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
+  while ((m = re.exec(normalizedText)) !== null) {
     if (m.index > last) {
       parts.push(
         <span key={key++} className="whitespace-pre-wrap">
-          {text.slice(last, m.index)}
+          {normalizedText.slice(last, m.index)}
         </span>,
       );
     }
     const displayMode = m[2] !== undefined;
-    const inner = (m[1] ?? m[2] ?? "").trim();
+    const inner = (m[1] ?? m[2] ?? m[3] ?? "").trim();
     try {
       const html = katex.renderToString(inner, {
         throwOnError: false,
@@ -40,10 +42,10 @@ export function PromptWithMath({ text }: { text: string }) {
     }
     last = m.index + m[0].length;
   }
-  if (last < text.length) {
+  if (last < normalizedText.length) {
     parts.push(
       <span key={key++} className="whitespace-pre-wrap">
-        {text.slice(last)}
+        {normalizedText.slice(last)}
       </span>,
     );
   }

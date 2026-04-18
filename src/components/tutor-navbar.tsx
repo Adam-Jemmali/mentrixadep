@@ -225,8 +225,8 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive(item.link)
-                      ? "bg-white/15 text-white"
-                      : "text-slate-200 hover:bg-white/5 hover:text-white"
+                      ? "bg-white/20 text-white"
+                      : "text-white/95 hover:bg-white/8 hover:text-white"
                   )}
                 >
                   {item.name}

@@ -193,7 +193,7 @@ export function HomePageClient() {
                     key={item.link}
                     href={item.link}
                     onClick={() => setMobileNavOpen(false)}
-                    className="rounded-lg px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-white/5 hover:text-white"
+                    className="rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/8 hover:text-white"
                   >
                     {item.name}
                   </a>
@@ -227,15 +227,15 @@ export function HomePageClient() {
           pricingVis ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         )}
       >
-        <div className="mx-auto max-w-6xl px-5 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50 p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.45)] md:p-8 lg:p-10">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5 lg:px-8">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50 p-5 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.45)] sm:p-6 md:p-8 lg:p-10">
             <div className="pointer-events-none absolute -right-10 -top-10 hidden md:block">
               <WatermarkRoleIcon role="guide" />
             </div>
             <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Pricing</p>
-                <h2 className="mt-3 font-bold text-slate-900 text-[clamp(24px,3vw,36px)] tracking-[-0.03em] leading-tight">
+                <h2 className="mt-3 font-bold text-slate-900 text-[clamp(22px,6vw,36px)] tracking-[-0.03em] leading-tight sm:text-[clamp(24px,3vw,36px)]">
                   Free to compete and progress. You only pay when you book a Guide.
                 </h2>
 
@@ -286,21 +286,21 @@ export function HomePageClient() {
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-slate-950/45" aria-hidden />
-        <div className="relative z-10 mx-auto max-w-2xl px-5 text-center">
-          <h2 className="text-balance font-bold text-white text-[clamp(28px,4.4vw,46px)] tracking-[-0.04em] leading-[1.05] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
-           Your Guide is available today. Become the #1 Mentrixer.    Prove what you know.
+        <div className="relative z-10 mx-auto max-w-2xl px-4 text-center sm:px-5">
+          <h2 className="text-balance font-bold text-white text-[clamp(24px,7vw,46px)] tracking-[-0.04em] leading-[1.05] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)] sm:text-[clamp(28px,4.4vw,46px)]">
+           Your Guide is available today. Become the #1 Mentrixer. Prove what you know.
           </h2>
-          <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               href="/auth/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-[#0B1120] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-8 py-3.5 text-sm font-semibold text-[#0B1120] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5 sm:w-auto"
             >
               <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
               Become a Mentrixer <ArrowRight />
             </Link>
             <Link
               href="/auth/signup?role=tutor"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 px-8 py-3.5 text-sm font-medium text-white/90 backdrop-blur-sm transition-colors hover:bg-white/10"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/25 px-8 py-3.5 text-sm font-medium text-white/90 backdrop-blur-sm transition-colors hover:bg-white/10 sm:w-auto"
             >
               <RoleIcon role="guide" className="h-3.5 w-3.5 brightness-0 invert" />
               Become a Guide
@@ -319,9 +319,9 @@ export function HomePageClient() {
           contactVis ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         )}
       >
-        <div className="max-w-3xl mx-auto px-5 text-center">
+        <div className="max-w-3xl mx-auto px-4 text-center sm:px-5">
           <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-indigo-300/80 mb-3">Contact + feedback</p>
-          <h2 className="font-bold text-white text-[clamp(22px,3.5vw,32px)] tracking-[-0.03em] leading-tight">
+          <h2 className="font-bold text-white text-[clamp(22px,6vw,32px)] tracking-[-0.03em] leading-tight sm:text-[clamp(22px,3.5vw,32px)]">
             You are why we ship
           </h2>
           <p className="mt-4 text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
@@ -342,9 +342,9 @@ export function HomePageClient() {
         </div>
       </section>
 
-      <footer className="lp-footer-bg py-10 px-5">
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+      <footer className="lp-footer-bg px-4 py-10 sm:px-5">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8">
+          <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
             <div>
               <Link href="/" className="inline-flex items-center gap-2.5">
                 <MentrixaLogoMark size="sm" className="opacity-90" />
@@ -353,7 +353,7 @@ export function HomePageClient() {
           
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-6 md:gap-10">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center md:gap-10">
               <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px]">
                 <Link href="/privacy" className="text-indigo-200/55 hover:text-white transition-colors">
                   Privacy
@@ -372,7 +372,7 @@ export function HomePageClient() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-white/[0.06]">
+          <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[11px] text-slate-500 order-2 sm:order-1">
               &copy; {new Date().getFullYear()} Mentrixa Inc.
             </p>

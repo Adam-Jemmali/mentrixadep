@@ -317,10 +317,12 @@ export function FirstSequenceHeroContent() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16 pb-10 md:pt-20 md:pb-14 lg:pt-24 lg:pb-10" id="firstseq">
-      <BouncingRoleIcons />
+    <div className="relative flex min-h-screen items-start justify-center overflow-hidden px-4 pb-16 pt-24 sm:px-5 sm:pt-28 md:items-center md:pt-20 md:pb-14 lg:pt-24 lg:pb-10" id="firstseq">
+      <div className="hidden md:block">
+        <BouncingRoleIcons />
+      </div>
       <div
-        className="pointer-events-none absolute inset-x-0 top-20 z-20 px-5 text-center md:top-24 lg:top-28"
+        className="pointer-events-none absolute inset-x-0 top-20 z-20 hidden px-5 text-center sm:block md:top-24 lg:top-28"
         style={{ 
           opacity: revealLeft,
           willChange: revealLeft < 0.99 ? 'opacity' : 'auto',
@@ -331,18 +333,17 @@ export function FirstSequenceHeroContent() {
         </p>
       </div>
 
-      <div className="relative z-10 px-5 w-full">
-        <div className="mx-auto grid w-full max-w-7xl items-center gap-7 lg:grid-cols-[minmax(260px,0.95fr)_minmax(140px,0.35fr)_minmax(320px,0.95fr)] lg:gap-8">
-          <div className="relative max-w-2xl text-center" style={{ 
+      <div className="relative z-10 w-full px-0 sm:px-5">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-8 lg:grid lg:grid-cols-[minmax(260px,0.95fr)_minmax(140px,0.35fr)_minmax(320px,0.95fr)] lg:items-center lg:gap-8">
+          <div className="relative mx-auto max-w-2xl text-center" style={{ 
             opacity: revealLeft,
             willChange: revealLeft < 0.99 ? 'opacity' : 'auto',
           }}>
             <h1 className="font-extrabold tracking-[-0.05em] text-white">
               <span className="sr-only">Mentrixa — </span>
               <span
-                className="lp-hero-line lp-hero-line-delay-2 block mx-auto"
+                className="lp-hero-line lp-hero-line-delay-2 block mx-auto text-[clamp(26px,9vw,70px)] sm:text-[clamp(34px,7.4vw,70px)]"
                 style={{
-                  fontSize: "clamp(34px, 7.4vw, 70px)",
                   lineHeight: 0.92,
                   transform: `translate3d(0, ${headlineY}px, 0)`,
                   opacity: lineAOpacity,
@@ -353,9 +354,8 @@ export function FirstSequenceHeroContent() {
                 <RevealText text="Prove what " progress={progress} />
               </span>
               <span
-                className="lp-hero-line lp-hero-line-delay-3 block mt-1 bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-transparent mx-auto"
+                className="lp-hero-line lp-hero-line-delay-3 block mx-auto mt-1 bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-[clamp(26px,9vw,70px)] text-transparent sm:text-[clamp(34px,7.4vw,70px)]"
                 style={{
-                  fontSize: "clamp(34px, 7.4vw, 70px)",
                   lineHeight: 0.92,
                   transform: `translate3d(0, ${headlineY * 1.2}px, 0)`,
                   opacity: lineAOpacity,
@@ -367,15 +367,15 @@ export function FirstSequenceHeroContent() {
               </span>
             </h1>
 
-            <p className="mt-6 text-slate-400 text-[14px] md:text-[15px] max-w-md mx-auto lg:mx-0 leading-snug lp-hero-line lp-hero-line-delay-3">
+            <p className="lp-hero-line lp-hero-line-delay-3 mx-auto mt-5 max-w-[24rem] text-[13px] leading-snug text-slate-300 sm:mt-6 sm:max-w-md sm:text-[14px] md:text-[15px] lg:mx-0">
               Book a verified expert for your exact course. Meet live. Get session-backed study materials within minutes of
               your call.
             </p>
 
-            <div className="mt-7 flex flex-wrap justify-center lg:justify-start gap-3">
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row lg:mt-7 lg:justify-start">
               <Link
                 href="/auth/signup"
-                className="lp-cta-pulse group inline-flex items-center gap-2 text-sm font-semibold text-[#0B1120] bg-white px-7 py-3.5 rounded-xl shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 hover:-translate-y-0.5 transition-all"
+                className="lp-cta-pulse group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0B1120] shadow-lg shadow-cyan-500/10 transition-all hover:-translate-y-0.5 hover:shadow-cyan-500/20 sm:w-auto sm:px-7 sm:py-3.5"
               >
                 <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
                 Become a Mentrixer
@@ -385,7 +385,7 @@ export function FirstSequenceHeroContent() {
               </Link>
               <Link
                 href="/auth/signup?role=tutor"
-                className="inline-flex items-center gap-2 text-sm font-medium text-slate-200 border border-white/15 px-7 py-3.5 rounded-xl hover:bg-white/[0.06] transition-colors"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-slate-100 transition-colors hover:bg-white/[0.06] sm:w-auto sm:px-7 sm:py-3.5"
               >
                 <RoleIcon role="guide" className="h-3.5 w-3.5" />
                 Become a Guide
@@ -396,14 +396,14 @@ export function FirstSequenceHeroContent() {
           <div className="hidden lg:block" aria-hidden />
 
           <div
-            className="lg:pt-8 xl:pt-12"
+            className="w-full pt-2 sm:pt-4 lg:pt-8 xl:pt-12"
             style={{ opacity: revealRight, transform: `translateY(${(1 - revealRight) * 16}px)` }}
           >
-            <div id="waitlist" className="relative overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 backdrop-blur-md p-4 sm:p-5 text-left shadow-xl shadow-violet-950/45 lg:max-w-xl lg:ml-auto">
+            <div id="waitlist" className="relative mx-auto max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 p-4 text-left shadow-xl shadow-violet-950/45 backdrop-blur-md sm:p-5 lg:ml-auto">
               <p className="mb-2 text-[10px] font-bold tracking-[0.2em] uppercase text-cyan-200">Find my Guide now </p>
               <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Apply for early access </h3>
 
-              <div className="mt-4 grid md:grid-cols-2 gap-4">
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="rounded-xl border border-white/10 bg-black/55 p-3 min-h-[120px]">
                   {WAITLIST_SLIDES.map((s, i) => (
                     <div
@@ -438,14 +438,14 @@ export function FirstSequenceHeroContent() {
                     value={waitlistEmail}
                     onChange={(e) => setWaitlistEmail(e.target.value)}
                     placeholder="personal /education email "
-                    className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-sm text-slate-950 outline-none focus:border-cyan-500"
+                    className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-3 text-sm text-slate-950 outline-none focus:border-cyan-500"
                   />
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setWaitlistRole("student")}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium",
+                        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium",
                         waitlistRole === "student" ? "bg-white text-slate-900" : "bg-white/10 text-white",
                       )}
                     >
@@ -456,7 +456,7 @@ export function FirstSequenceHeroContent() {
                       type="button"
                       onClick={() => setWaitlistRole("tutor")}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium",
+                        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium",
                         waitlistRole === "tutor" ? "bg-white text-slate-900" : "bg-white/10 text-white",
                       )}
                     >
@@ -468,7 +468,7 @@ export function FirstSequenceHeroContent() {
                     type="button"
                     onClick={() => void submitWaitlist()}
                     disabled={waitlistLoading}
-                    className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-60"
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-60"
                   >
                     {waitlistLoading ? "Submitting..." : "Join waitlist"}
                   </button>

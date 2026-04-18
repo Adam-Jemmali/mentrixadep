@@ -186,7 +186,7 @@ export function SessionsList({
     <>
       {showHeroStats ? (
         <>
-          <div className="stat-cells-animate mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="stat-cells-animate mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={totalXpRef}
@@ -227,9 +227,9 @@ export function SessionsList({
             </div>
           </div>
 
-          <div className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm">
-            <div className="min-w-[12rem]">
-              <div className="flex flex-wrap items-center gap-2">
+          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:px-5">
+            <div className="min-w-0 sm:min-w-[12rem]">
+              <div className="flex flex-wrap items-center gap-2 sm:justify-start">
                 <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700">
                   {currentRank.badge}
                 </span>
@@ -242,7 +242,7 @@ export function SessionsList({
                 {xpToNext > 0 ? `${xpToNext} XP to ${nextLevel}` : "Top track"}
               </p>
             </div>
-            <div className="min-w-[120px] flex-1">
+            <div className="min-w-0 flex-1">
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   ref={xpFillRef}
@@ -250,7 +250,7 @@ export function SessionsList({
                 />
               </div>
             </div>
-            <div className="text-xs font-mono font-medium text-slate-600 tabular-nums">
+            <div className="text-xs font-mono font-medium text-slate-600 tabular-nums sm:text-right">
               {totalXp} XP
             </div>
           </div>
@@ -276,16 +276,16 @@ export function SessionsList({
               className="pointer-events-none absolute right-20 bottom-5 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
             />
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "upcoming" | "past")}>
-              <TabsList className="mb-5 h-auto w-full justify-start gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 sm:w-auto">
+              <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 sm:flex sm:w-auto sm:justify-start">
                 <TabsTrigger
                   value="upcoming"
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
                 >
                   Upcoming ({filteredUpcoming.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="past"
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
                 >
                   Past ({pastSessions.length})
                 </TabsTrigger>
@@ -304,11 +304,49 @@ export function SessionsList({
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredUpcoming.map((session) => (
-                      <UpcomingSessionCard key={session.id} session={session} />
-                    ))}
-                  </div>
+                  <>
+                    <div className="space-y-3 sm:hidden">
+                      {filteredUpcoming.map((session) => (
+                        <UpcomingSessionCard key={session.id} session={session} />
+                      ))}
+                    </div>
+                    <div className="hidden overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/50 sm:block">
+                      <table className="min-w-full text-sm">
+                        <thead className="border-b border-slate-200/80 bg-white text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold">Course</th>
+                            <th className="px-4 py-3 font-semibold">Guide</th>
+                            <th className="px-4 py-3 font-semibold">When</th>
+                            <th className="w-[1%] whitespace-nowrap px-4 py-3" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredUpcoming.slice(0, 8).map((s) => (
+                            <tr key={s.id} className="border-t border-slate-100/90 first:border-t-0 bg-white/80">
+                              <td className="px-4 py-3 font-semibold text-slate-900">{s.course}</td>
+                              <td className="px-4 py-3 text-slate-700">
+                                <div className="flex items-center gap-2">
+                                  <Image src="/images/user.png" alt="Guide" width={18} height={18} />
+                                  <span>{s.tutor_email_prefix}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-slate-600 tabular-nums">
+                                {formatDateInZone(s.start_time, displayTimeZone)} · {formatTimeInZone(s.start_time, displayTimeZone)}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <Link
+                                  href={`/video/session/${s.id}`}
+                                  className="inline-flex rounded-full border-2 border-blue-200 bg-white px-3 py-1 text-xs font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
+                                >
+                                  Join
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </TabsContent>
 

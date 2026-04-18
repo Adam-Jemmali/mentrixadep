@@ -139,14 +139,15 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
 export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   const { scrollY } = useScroll();
   const widthRaw = useTransform(scrollY, [0, 220], ["100%", "92%"]);
-  const yRaw = useTransform(scrollY, [0, 220], [0, 10]);
+  // Keep mobile navbar text crisp by avoiding Y transforms on the container.
+  const yRaw = useTransform(scrollY, [0, 220], [0, 0]);
   const width = useSpring(widthRaw, { stiffness: 220, damping: 34 });
   const y = useSpring(yRaw, { stiffness: 220, damping: 34 });
 
   return (
     <motion.div
       animate={{
-        backdropFilter: visible ? "blur(10px)" : "none",
+        backdropFilter: "none",
         boxShadow: visible
           ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
           : "none",
@@ -171,7 +172,7 @@ export const MobileNavHeader = ({ children, className }: MobileNavHeaderProps) =
   return (
     <div
       className={cn(
-        "flex w-full flex-row items-center justify-between rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white",
+        "flex w-full flex-row items-center justify-between rounded-2xl border border-white/20 bg-slate-950/88 px-4 py-3 text-white",
         className,
       )}
     >
@@ -189,7 +190,7 @@ export const MobileNavMenu = ({ children, className, isOpen, onClose }: MobileNa
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className={cn(
-          "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-lg border border-white/10 bg-slate-950/92 px-4 py-8 text-white shadow-[0_0_24px_rgba(2,_6,_23,_0.28),_0_1px_1px_rgba(0,_0,_0,_0.2),_0_0_0_1px_rgba(148,_163,_184,_0.08),_0_0_4px_rgba(2,_6,_23,_0.24),_0_16px_68px_rgba(2,_6,_23,_0.28),_0_1px_0_rgba(255,_255,_255,_0.06)_inset]",
+          "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-lg border border-white/20 bg-slate-950 px-4 py-8 text-white shadow-[0_0_24px_rgba(2,_6,_23,_0.28),_0_1px_1px_rgba(0,_0,_0,_0.2),_0_0_0_1px_rgba(148,_163,_184,_0.08),_0_0_4px_rgba(2,_6,_23,_0.24),_0_16px_68px_rgba(2,_6,_23,_0.28),_0_1px_0_rgba(255,_255,_255,_0.06)_inset]",
           className,
         )}
       >

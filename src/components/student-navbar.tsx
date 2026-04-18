@@ -171,11 +171,11 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
                 <MentrixaWordmark trixaClassName="text-white" />
               </a>
-              <div className="flex items-center gap-2">
+              <div className="relative z-[70] flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center justify-center rounded-full hover:bg-white/10 transition p-1"
+                  className="flex items-center justify-center rounded-full border border-white/15 bg-white/5 p-1 transition hover:bg-white/15"
                   aria-label="Open profile menu"
                   aria-expanded={profileMenuOpen}
                 >
@@ -187,14 +187,14 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
 
             {/* Mobile Profile Menu */}
             {profileMenuOpen && (
-              <div className="mt-2 rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] overflow-hidden">
+              <div className="absolute right-0 top-full z-[80] mt-2 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)]">
                 <Link
                   href={profileHref}
                   onClick={() => {
                     setProfileMenuOpen(false);
                     setMobileNavOpen(false);
                   }}
-                  className="block px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
+                  className="block px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 hover:text-white"
                 >
                   View Profile
                 </Link>
@@ -205,7 +205,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                     setMobileNavOpen(false);
                     await signOut();
                   }}
-                  className="w-full px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white border-t border-white/10"
+                  className="w-full border-t border-white/10 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/10 hover:text-white"
                 >
                   Sign Out
                 </button>
@@ -221,8 +221,8 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive(item.link)
-                      ? "bg-white/15 text-white"
-                      : "text-slate-200 hover:bg-white/5 hover:text-white"
+                      ? "bg-white/20 text-white"
+                      : "text-white/95 hover:bg-white/8 hover:text-white"
                   )}
                 >
                   {item.name}

@@ -429,7 +429,7 @@ export function QuestPracticeWorkspace({
             className="space-y-6"
           >
             {question.kind === "mcq" ? (
-              <p className="text-slate-900 font-medium leading-relaxed">{question.prompt}</p>
+              <PromptWithMath text={question.prompt} />
             ) : question.kind === "problem_solving" ? (
               <PromptWithMath text={question.prompt} />
             ) : (
@@ -457,7 +457,7 @@ export function QuestPracticeWorkspace({
                       whileTap={{ scale: 0.98 }}
                       className={cls}
                     >
-                      {opt}
+                      <PromptWithMath text={opt} />
                     </motion.button>
                   );
                 })}
