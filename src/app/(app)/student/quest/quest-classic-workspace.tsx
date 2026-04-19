@@ -102,6 +102,10 @@ export function QuestClassicWorkspace() {
   const rightPaneRef = useRef<HTMLDivElement | null>(null);
   const xpFillRef = useRef<HTMLDivElement | null>(null);
 
+  const focusSolverPane = () => {
+    rightPaneRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   // hydrate from URL
   useEffect(() => {
     const q = searchParams.get("prompt");
@@ -312,10 +316,7 @@ export function QuestClassicWorkspace() {
     setHintsRevealed(payload.hints.length > 0 ? 1 : 0);
     setReasoningShown(false);
     setSolutionShown(false);
-
-    if (rightPaneRef.current) {
-      rightPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    focusSolverPane();
   };
 
   const handleRevealNextHint = () => {
@@ -412,9 +413,7 @@ export function QuestClassicWorkspace() {
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
     }
-    if (rightPaneRef.current) {
-      rightPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    focusSolverPane();
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
@@ -435,9 +434,7 @@ export function QuestClassicWorkspace() {
         setQuestCompleted(false);
         setLastXpAwarded(null);
       }
-      if (rightPaneRef.current) {
-        rightPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      focusSolverPane();
     } else {
       // No cached payload old entry. Submit to fetch and cache.
       if (textareaRef.current) {

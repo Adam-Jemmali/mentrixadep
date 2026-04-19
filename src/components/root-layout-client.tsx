@@ -398,7 +398,7 @@ function PushNotificationOptIn() {
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Enable notifications?</DialogTitle>
           <DialogDescription className="text-sm text-slate-600 leading-relaxed">
-            Get session reminders, duel challenges, level-up moments, and clan updates — without keeping Mentrixa open
+            Get session reminders, duel challenges, level-up moments, and clan updates !
             all day.
           </DialogDescription>
         </DialogHeader>

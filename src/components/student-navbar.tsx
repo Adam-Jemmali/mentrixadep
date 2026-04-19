@@ -109,6 +109,11 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
     return pathname === link || pathname.startsWith(`${link}/`);
   };
 
+  const toggleProfileMenu = () => {
+    setMobileNavOpen(false);
+    setProfileMenuOpen((open) => !open);
+  };
+
   const initials = user ? getInitials(user.displayName, user.email) : "M";
   const profileHref = user ? `/student/${user.id}` : "/student";
 
@@ -131,8 +136,8 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
           <div ref={menuRef} className="relative ml-auto flex-shrink-0">
             <button
               type="button"
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/10 transition"
+              onClick={toggleProfileMenu}
+              className="flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-white/10"
               aria-label="Open profile menu"
               aria-expanded={profileMenuOpen}
             >
@@ -140,11 +145,11 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
             </button>
 
             {profileMenuOpen && (
-              <div className="absolute top-full right-0 z-50 mt-2 rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] overflow-hidden min-w-[200px]">
+              <div className="absolute right-0 top-full z-[90] mt-2 min-w-[200px] overflow-hidden rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] pointer-events-auto">
                 <Link
                   href={profileHref}
                   onClick={() => setProfileMenuOpen(false)}
-                  className="block px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
+                  className="block min-h-11 px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
                 >
                   View Profile
                 </Link>
@@ -154,7 +159,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                     setProfileMenuOpen(false);
                     await signOut();
                   }}
-                  className="w-full px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white border-t border-white/10"
+                  className="w-full border-t border-white/10 px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
                 >
                   Sign Out
                 </button>
@@ -174,8 +179,8 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
               <div className="relative z-[70] flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center justify-center rounded-full border border-white/15 bg-white/5 p-1 transition hover:bg-white/15"
+                  onClick={toggleProfileMenu}
+                  className="flex items-center justify-center rounded-full border border-white/15 bg-white/5 p-1.5 transition hover:bg-white/15"
                   aria-label="Open profile menu"
                   aria-expanded={profileMenuOpen}
                 >
@@ -187,14 +192,14 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
 
             {/* Mobile Profile Menu */}
             {profileMenuOpen && (
-              <div className="absolute right-0 top-full z-[80] mt-2 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)]">
+              <div className="absolute right-0 top-full z-[90] mt-2 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] pointer-events-auto">
                 <Link
                   href={profileHref}
                   onClick={() => {
                     setProfileMenuOpen(false);
                     setMobileNavOpen(false);
                   }}
-                  className="block px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 hover:text-white"
+                  className="block min-h-11 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 hover:text-white"
                 >
                   View Profile
                 </Link>
