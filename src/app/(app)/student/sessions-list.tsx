@@ -6,14 +6,20 @@ import Link from "next/link";
 import { gsap } from "gsap";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { UpcomingSessionCard } from "./session-components/upcoming-session-card";
 import { PastSessionCard } from "./session-components/past-session-card";
 import { RateSessionFloating } from "./session-components/rate-session-floating";
-import type { StudentSessionTutorProfile } from "@/app/actions/student";
+import { StudentWeekCalendar } from "./student-week-calendar";
+import { cn } from "@/lib/utils";
+import { TutorAvatar } from "./session-components/tutor-avatar";
+import { Clock, Calendar as CalendarIcon, History as HistoryIcon, Send } from "lucide-react";
+import { StudentSessionTutorProfile } from "@/app/actions/student";
 import type { SessionAiPackage } from "@/lib/database.types";
 
 import { countUp as gsapCountUp } from "@/lib/gsap";
 import { useLevelInfo } from "@/lib/mentrixa-ranks";
+import { formatSlotRangeInZone } from "@/lib/time-format";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
 
@@ -52,25 +58,41 @@ interface Session {
   ai_package?: SessionAiPackage | null;
 }
 
+interface SessionRequest {
+  id: string;
+  status: string;
+  availability?: {
+    course: string;
+    start_time: string;
+    end_time: string;
+  };
+  tutor: StudentSessionTutorProfile;
+}
+
 interface SessionsListProps {
   upcomingSessions: Session[];
   pastSessions: Session[];
+  sessionRequests?: SessionRequest[];
   totalXp: number;
   streak: number;
-  children?: React.ReactNode;
+  displayTimeZone?: string;
+  weekRange?: { startIso: string; endIso: string };
   showHeroStats?: boolean;
+  children?: React.ReactNode;
 }
 
 export function SessionsList({
   upcomingSessions,
   pastSessions,
+  sessionRequests = [],
   totalXp,
   streak,
-  children,
+  displayTimeZone = "UTC",
+  weekRange: initialWeekRange,
   showHeroStats = true,
+  children,
 }: SessionsListProps) {
-  const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
-  /** null = not hydrated from localStorage yet (avoid flashing the prompt). */
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "requests" | "schedule">("schedule");
   const [rateFloatDismissedIds, setRateFloatDismissedIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
@@ -85,6 +107,29 @@ export function SessionsList({
       return next;
     });
   }, []);
+
+  const weekRange = useMemo(() => {
+    if (initialWeekRange) return initialWeekRange;
+    
+    const d = new Date();
+    const day = d.getUTCDay();
+    const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    monday.setUTCHours(0, 0, 0, 0);
+    
+    const sunday = new Date(monday);
+    sunday.setUTCDate(monday.getUTCDate() + 6);
+    sunday.setUTCHours(23, 59, 59, 999);
+    
+    return {
+      startIso: monday.toISOString(),
+      endIso: sunday.toISOString(),
+    };
+  }, [initialWeekRange]);
+
+  const filteredRequests = useMemo(() => {
+    return sessionRequests.filter(r => r.status === "pending" || r.status === "rejected");
+  }, [sessionRequests]);
 
   const filteredUpcoming = useMemo(
     () => upcomingSessions.filter((s) => s.status !== "cancelled"),
@@ -112,6 +157,7 @@ export function SessionsList({
   const sessionsCompleted = pastSessions.filter(
     (s) => s.completed || s.status === "completed",
   ).length;
+
   const avgRating = useMemo(() => {
     const ratings = pastSessions.flatMap((s) => s.ratings ?? []);
     if (!ratings.length) return 0;
@@ -261,35 +307,65 @@ export function SessionsList({
         <div className="lg:col-span-2">
           <section className="relative overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,#182846_0%,#12223e_46%,#0d1c35_100%)] p-4 text-white shadow-[0_14px_38px_-24px_rgba(15,23,42,0.65)] sm:p-6">
             <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:106px_106px] bg-repeat opacity-[0.055]" />
-            <Image
+            <img
               src="/icons/mentrixer.svg"
               alt=""
-              width={18}
-              height={18}
-              className="pointer-events-none absolute right-5 top-4 opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
+              className="w-[18px] h-[18px] pointer-events-none absolute right-5 top-4 opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
             />
-            <Image
+            <img
               src="/icons/mentrixer.svg"
               alt=""
-              width={16}
-              height={16}
-              className="pointer-events-none absolute right-20 bottom-5 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
+              className="w-4 h-4 pointer-events-none absolute right-20 bottom-5 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
             />
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "upcoming" | "past")}>
-              <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 sm:flex sm:w-auto sm:justify-start">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+              <TabsList className="mb-5 flex h-auto w-full gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 overflow-x-auto">
+                <TabsTrigger
+                  value="schedule"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
+                >
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                  Week
+                </TabsTrigger>
                 <TabsTrigger
                   value="upcoming"
-                  className="rounded-lg px-3 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
                 >
+                  <Clock className="w-3.5 h-3.5" />
                   Upcoming ({filteredUpcoming.length})
                 </TabsTrigger>
                 <TabsTrigger
-                  value="past"
-                  className="rounded-lg px-3 py-2 text-sm font-semibold text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md"
+                  value="requests"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
                 >
-                  Past ({pastSessions.length})
+                  <Send className="w-3.5 h-3.5" />
+                  Requests ({filteredRequests.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="past"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
+                >
+                  <HistoryIcon className="w-3.5 h-3.5" />
+                  History
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="schedule" className="mt-0">
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-white/70">Weekly Schedule</h3>
+                  
+                  </div>
+                  <StudentWeekCalendar 
+                    calendar={{ 
+                      weekRange, 
+                      sessions: [...upcomingSessions, ...pastSessions].map(s => ({ ...s, status: s.status || "scheduled" })), 
+                      sessionRequests 
+                    }}
+                    displayTimezone={displayTimeZone}
+                  />
+                </div>
+              </TabsContent>
 
               <TabsContent value="upcoming" className="mt-0" data-student-sessions-tab="upcoming">
                 {filteredUpcoming.length === 0 ? (
@@ -300,13 +376,60 @@ export function SessionsList({
                       className="mt-5 rounded-md bg-white text-[#1E3A5F] px-6 font-semibold hover:bg-white/90"
                       asChild
                     >
-                      <Link href="/student">Browse guides</Link>
+                      <Link href="#browse-guides">Browse guides</Link>
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {filteredUpcoming.map((session) => (
-                      <UpcomingSessionCard key={session.id} session={session} />
+                      <UpcomingSessionCard key={session.id} session={session} displayTimeZone={displayTimeZone} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="requests" className="mt-0" data-student-sessions-tab="requests">
+                {filteredRequests.length === 0 ? (
+                  <div className="rounded-xl border border-white/25 bg-white/10 px-6 py-12 text-center">
+                    <p className="text-sm font-medium text-white/85">No active requests.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredRequests.map((request) => (
+                      <div key={request.id} className="session-card rounded-xl border border-white/20 bg-white/5 p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 overflow-hidden">
+                             {request.tutor.avatar_url ? (
+                              <Image src={request.tutor.avatar_url} alt="" width={40} height={40} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-xs font-bold">{request.tutor.display_name?.[0]?.toUpperCase() ?? "G"}</span>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-white text-sm">{request.availability?.course.toUpperCase()}</h4>
+                            <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
+                              <TutorAvatar 
+                                displayName={request.tutor.display_name} 
+                                emailPrefix={request.tutor.display_name || "G"} 
+                                avatarUrl={request.tutor.avatar_url} 
+                                size="sm" 
+                              />
+                              <span>with {request.tutor.display_name}</span>
+                            </div>
+                            {request.availability && (
+                              <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                                {formatSlotRangeInZone(request.availability.start_time, request.availability.end_time, displayTimeZone)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={request.status === "rejected" ? "outline" : "default"} className={cn("text-[10px] uppercase font-bold px-2 py-0.5", request.status === "rejected" && "text-red-400 border-red-500/30 bg-red-500/10")}>
+                            {request.status}
+                          </Badge>
+                          <p className="text-[10px] text-slate-500 mt-1">Sent recently</p>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -321,7 +444,7 @@ export function SessionsList({
                   <div className="space-y-3">
                     {pastSessions.map((session) => (
                       <div key={session.id} id={`studio-${session.id}`} className="scroll-mt-24">
-                        <PastSessionCard session={session} />
+                        <PastSessionCard session={session} displayTimeZone={displayTimeZone} />
                       </div>
                     ))}
                   </div>
@@ -331,8 +454,9 @@ export function SessionsList({
           </section>
         </div>
 
-        <div className="mt-10 lg:mt-0 lg:col-span-1">{children}</div>
       </div>
+
+      {children}
 
       <RateSessionFloating
         session={floatingSession}

@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { getDuelForUser } from "@/app/actions/duel";
 import { DuelPlayClient } from "./duel-play-client";
 import { DuelInviteeActions } from "./duel-invitee-actions";
-import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 
 interface Props {
   params: Promise<{ duelId: string }>;
@@ -33,9 +32,7 @@ export default async function DuelDetailPage({ params }: Props) {
     <div className="min-h-screen bg-slate-50">
       <main className="max-w-2xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between gap-4 mb-6">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/student/duel">← Back</Link>
-          </Button>
+          <BackButton />
           <span className="text-xs font-mono text-slate-400 uppercase">
             {duel.status}
           </span>

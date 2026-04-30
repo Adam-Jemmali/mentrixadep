@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/resizable-navbar";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
+import { BubbleText } from "@/components/ui/bubble-text";
 
 const TUTOR_NAV_ITEMS = [
   { name: "Studio", link: "/tutor/sessions-ai" },
@@ -229,7 +230,7 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
                       : "text-white/95 hover:bg-white/8 hover:text-white"
                   )}
                 >
-                  {item.name}
+                  <BubbleText text={item.name} className="text-current" />
                 </Link>
               ))}
             </MobileNavMenu>

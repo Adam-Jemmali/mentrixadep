@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,9 +86,22 @@ export function ActivateAuthClient({
         Your waitlist is approved. Continue with Google or create a password for {email}.
       </p>
 
-      <div className="mt-6 rounded-md border border-slate-200 bg-white p-4">
-        <p className="text-xs text-slate-500">Approved role</p>
-        <p className="text-sm font-medium text-slate-900">{role === "tutor" ? "Guide (Tutor)" : "Mentrixer (Student)"}</p>
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 flex items-center gap-3">
+        <div className={cn(
+          "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+          role === "tutor" ? "bg-violet-50" : "bg-emerald-50"
+        )}>
+          <Image 
+            src={role === "tutor" ? "/icons/guide.svg" : "/icons/mentrixer.svg"} 
+            alt="" 
+            width={24} 
+            height={24} 
+          />
+        </div>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Approved role</p>
+          <p className="text-sm font-semibold text-slate-900">{role === "tutor" ? "Guide (Tutor)" : "Mentrixer (Student)"}</p>
+        </div>
       </div>
 
       <div className="mt-5">

@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { gsap } from "gsap";
 import {
   publishStudioPackage,
@@ -22,9 +23,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare, Copy, Save, Send, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
 
 const STREAM_END = "\n__MENTRIXA_STUDIO_END__";
+
+const playClickSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch (_e) {}
+};
+
+const playTypeSound = () => {
+  if (typeof window === "undefined") return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    gain.gain.setValueAtTime(0.01, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  } catch (_e) {}
+};
 
 type PackageFilter = "all" | "generated" | "pending";
 
@@ -430,13 +470,13 @@ export function TutorStudioClient({
                 {(isOpen || isClosing) && hasPackage && pkg ? (
                   <tr ref={expandedRowRef}>
                     <td colSpan={6} className="border-b border-slate-200 bg-slate-50/50">
-                      <StudioPackagePanel
+                      <SessionPackageEditor
                         sessionId={session.id}
                         course={session.course}
                         pkg={pkg}
                         regenLeft={regenLeft}
                         tutorNotes={contextBySession[session.id] ?? ""}
-                        onTutorNotesChange={(v) =>
+                        onTutorNotesChange={(v: string) =>
                           setContextBySession((prev) => ({ ...prev, [session.id]: v }))
                         }
                         flippedCards={flippedCards}
@@ -446,7 +486,7 @@ export function TutorStudioClient({
                         streamingId={streamingId}
                         onToggleCard={toggleCardFlip}
                         onCopyLink={handleCopyQuestLink}
-                        onSave={async (draft) => {
+                        onSave={async (draft: DraftEdit) => {
                           setSavingId(session.id);
                           setErrorByRow((prev) => ({ ...prev, [session.id]: "" }));
                           const res = await saveStudioPackageDraft(
@@ -508,18 +548,59 @@ export function TutorStudioClient({
   );
 }
 
-function StudioPackagePanel({
+function StudioSection({ 
+  title, 
+  icon: Icon, 
+  children, 
+  delay = 0 
+}: { 
+  title: string; 
+  icon: string | React.ElementType; 
+  children: React.ReactNode; 
+  delay?: number;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+      transition={{ delay, duration: 0.4, type: "spring", bounce: 0.3 }}
+      className={`${mentrixTutor.card} p-5 overflow-hidden group border-2 border-transparent hover:border-blue-100 transition-all`}
+    >
+      <div className="mb-4 flex items-center gap-2.5">
+        <motion.div 
+          whileHover={{ rotate: 15, scale: 1.1 }}
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white"
+        >
+          {typeof Icon === "string" ? (
+            <Image src={Icon} alt="" width={20} height={20} className="group-hover:invert" />
+          ) : (
+            <Icon className="h-5 w-5" />
+          )}
+        </motion.div>
+        <h3 className="text-[13px] font-black uppercase tracking-[0.15em] bg-clip-text text-transparent bg-gradient-to-r from-slate-400 to-slate-500 group-hover:from-blue-600 group-hover:to-blue-400 transition-all duration-300">
+          {title}
+        </h3>
+      </div>
+      <div className="space-y-4">
+        {children}
+      </div>
+    </motion.section>
+  );
+}
+
+function SessionPackageEditor({
   sessionId,
-  course,
   pkg,
+  course,
+  savingId,
+  publishingId,
+  streamingId,
   regenLeft,
   tutorNotes,
   onTutorNotesChange,
   flippedCards,
   copiedKey,
-  savingId,
-  publishingId,
-  streamingId,
   onToggleCard,
   onCopyLink,
   onSave,
@@ -527,16 +608,16 @@ function StudioPackagePanel({
   onRegenerate,
 }: {
   sessionId: string;
-  course: string;
   pkg: SessionAiPackage;
+  course: string;
+  savingId: string | null;
+  publishingId: string | null;
+  streamingId: string | null;
   regenLeft: number;
   tutorNotes: string;
   onTutorNotesChange: (v: string) => void;
   flippedCards: Set<string>;
   copiedKey: string | null;
-  savingId: string | null;
-  publishingId: string | null;
-  streamingId: string | null;
   onToggleCard: (key: string) => void;
   onCopyLink: (sessionId: string, i: number, prompt: string) => void;
   onSave: (draft: DraftEdit) => Promise<void>;
@@ -554,102 +635,133 @@ function StudioPackagePanel({
   const streaming = streamingId === sessionId;
 
   return (
-    <div className="px-4 py-6 md:px-6 md:py-8">
-      <div className="mb-6 space-y-4 border-b border-slate-200 pb-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-sm font-medium text-slate-900">Studio output</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              {course} · {published ? "Visible to your learner" : "Draft — publish when ready"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="h-8 text-xs"
-            disabled={busy || streaming}
-            onClick={() => void onSave(draft)}
-          >
-            {savingId === sessionId ? (
-              <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              "Save edits"
-            )}
-          </Button>
-          {!published ? (
-            <Button
-              type="button"
-              size="sm"
-              className="h-8 text-xs"
-              disabled={busy || streaming}
-              onClick={() => void onPublish()}
-            >
-              {publishingId === sessionId ? (
-                <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  Publishing…
-                </>
+    <div className="px-4 py-8 md:px-8 md:py-10">
+      <div className="mb-10 space-y-6">
+        <header className={`${mentrixTutor.heroGradient} -mx-4 -mt-8 mb-10 p-8 md:-mx-8 md:-mt-10 md:p-10`}>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="relative h-10 w-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-md border border-white/30 shadow-lg">
+                  <Image src="/icons/guide.svg" alt="" width={24} height={24} className="brightness-0 invert" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight">Studio Output</h2>
+                  <p className="text-xs text-blue-50/80 font-medium mt-0.5">
+                    {course} · <span className={published ? "text-blue-200" : "text-amber-200"}>
+                      {published ? "Visible to learner" : "Draft Mode"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                className="h-10 px-5 text-xs font-bold bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md shadow-lg transition-all hover:scale-105 active:scale-95"
+                disabled={busy || streaming}
+                onClick={() => {
+                  playClickSound();
+                  void onSave(draft);
+                }}
+              >
+                {savingId === sessionId ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save edits
+              </Button>
+
+              {!published ? (
+                <Button
+                  type="button"
+                  className="h-10 px-6 text-xs font-bold bg-white text-blue-950 hover:bg-blue-50 shadow-xl transition-all hover:scale-105 active:scale-95"
+                  disabled={busy || streaming}
+                  onClick={() => {
+                    playClickSound();
+                    void onPublish();
+                  }}
+                >
+                  {publishingId === sessionId ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  Send to learner
+                </Button>
               ) : (
-                "Send to learner"
+                <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/30">
+                  <CheckCircle2 className="h-4 w-4 text-blue-300" />
+                  <span className="text-xs font-bold text-blue-50">Published</span>
+                </div>
               )}
-            </Button>
-          ) : null}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8 text-xs"
-            disabled={busy || streaming || regenLeft <= 0}
-            onClick={onRegenerate}
-          >
-            {streaming ? (
-              <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                Regenerating…
-              </>
-            ) : (
-              `Regenerate (${regenLeft} left)`
-            )}
-          </Button>
+
+              <Button
+                type="button"
+                className={`h-10 px-5 text-xs font-bold transition-all hover:scale-105 active:scale-95 ${
+                  regenLeft > 0 
+                    ? "bg-blue-600 text-white hover:bg-blue-500" 
+                    : "bg-slate-800 text-slate-400"
+                }`}
+                disabled={busy || streaming || regenLeft <= 0}
+                onClick={() => {
+                  playClickSound();
+                  onRegenerate();
+                }}
+              >
+                {streaming ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Image src="/icons/mentrixer.svg" alt="" width={16} height={16} className="mr-2 h-4 w-4" />
+                )}
+                Regenerate ({regenLeft})
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <label className="mb-1.5 block text-[11px] font-medium text-slate-500">
-            Guide notes for generation / regenerate (optional)
-          </label>
+        </header>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl border border-blue-100 bg-blue-50/30 p-5 shadow-inner"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-4 w-4 text-blue-600" />
+            <label className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
+              Guide notes
+            </label>
+          </div>
           <Textarea
             value={tutorNotes}
-            onChange={(e) => onTutorNotesChange(e.target.value)}
-            placeholder="e.g. Integration by parts — learner struggled with u-substitution"
-            className="min-h-[72px] text-sm"
+            onChange={(e) => {
+              playTypeSound();
+              onTutorNotesChange(e.target.value);
+            }}
+            placeholder="e.g. Learner struggled with integration by parts."
+            className="min-h-[80px] text-sm bg-white border-blue-100 focus:border-blue-300 focus:ring-blue-200 transition-all rounded-xl shadow-sm"
           />
-        </div>
+        </motion.div>
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-8">
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Summary
-          </label>
+      <div className="mx-auto max-w-2xl space-y-8 pb-20">
+        <StudioSection title="Summary" icon="/icons/mentrixer.svg" delay={0.2}>
           <Textarea
             value={draft.summary}
             onChange={(e) => setDraft((d) => ({ ...d, summary: e.target.value }))}
-            className="min-h-[100px] text-sm"
+            className="min-h-[120px] text-sm leading-relaxed border-slate-100 focus:border-blue-300 transition-all rounded-xl"
           />
-        </section>
+        </StudioSection>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Key points
-          </p>
-          <ul className="space-y-2">
+        <StudioSection title="Key points" icon="/icons/guide.svg" delay={0.3}>
+          <div className="space-y-3">
             {draft.key_points.map((point, i) => (
-              <li key={i}>
+              <motion.div 
+                key={i}
+                whileHover={{ x: 4 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <Input
                   value={point}
                   onChange={(e) => {
@@ -657,123 +769,132 @@ function StudioPackagePanel({
                     next[i] = e.target.value;
                     setDraft((d) => ({ ...d, key_points: next }));
                   }}
-                  className="h-9 text-sm"
+                  className="h-10 text-sm border-slate-100 focus:border-blue-300 transition-all rounded-lg"
                 />
-              </li>
+              </motion.div>
             ))}
-          </ul>
-        </section>
+          </div>
+        </StudioSection>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Flashcards
-          </p>
-          <div className="flex gap-3 overflow-x-auto pb-1">
+        <StudioSection title="Flashcards" icon="/icons/mentrixer.svg" delay={0.4}>
+          <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
             {draft.flashcards.map((card, cardIndex) => {
               const cardKey = `${sessionId}-card-${cardIndex}`;
               const isFlipped = flippedCards.has(cardKey);
               return (
-                <div key={cardKey} className="w-[200px] flex-shrink-0 space-y-2">
-                  <div
-                    className="card-scene cursor-pointer"
-                    onClick={() => onToggleCard(cardKey)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onToggleCard(cardKey);
-                      }
+                <div key={cardKey} className="w-[240px] flex-shrink-0 space-y-3">
+                  <motion.div
+                    whileHover={{ scale: 1.05, rotate: 2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="card-scene h-[140px] cursor-pointer"
+                    onClick={() => {
+                      playClickSound();
+                      onToggleCard(cardKey);
                     }}
-                    role="button"
-                    tabIndex={0}
                   >
                     <div className={`card ${isFlipped ? "is-flipped" : ""}`}>
-                      <div className="card-face card-face--front">
-                        <p className="text-[11px] leading-snug text-slate-600">{card.q}</p>
+                      <div className="card-face card-face--front bg-gradient-to-br from-white to-blue-50/30 border-2 border-blue-100 rounded-2xl shadow-sm flex items-center justify-center p-4">
+                        <p className="text-xs font-bold text-center leading-relaxed text-slate-700">
+                          {card.q}
+                        </p>
+                        <div className="absolute bottom-2 right-3">
+                          <Image src="/icons/guide.svg" alt="" width={12} height={12} className="h-3 w-3 opacity-40" />
+                        </div>
                       </div>
-                      <div className="card-face card-face--back">
-                        <p className="text-[11px] leading-snug text-slate-800">{card.a}</p>
+                      <div className="card-face card-face--back bg-blue-600 rounded-2xl shadow-xl flex items-center justify-center p-4 border-2 border-blue-500">
+                        <p className="text-xs font-medium text-center leading-relaxed text-blue-50">
+                          {card.a}
+                        </p>
                       </div>
                     </div>
+                  </motion.div>
+                  <div className="space-y-2 px-1">
+                    <Input
+                      className="h-9 text-[11px] border-slate-100 focus:border-blue-300 rounded-lg"
+                      value={card.q}
+                      onChange={(e) => {
+                        const next = [...draft.flashcards];
+                        const cur = next[cardIndex] ?? { q: "", a: "" };
+                        next[cardIndex] = { q: e.target.value, a: cur.a };
+                        setDraft((d) => ({ ...d, flashcards: next }));
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <Input
+                      className="h-9 text-[11px] border-slate-100 focus:border-blue-300 rounded-lg"
+                      value={card.a}
+                      onChange={(e) => {
+                        const next = [...draft.flashcards];
+                        const cur = next[cardIndex] ?? { q: "", a: "" };
+                        next[cardIndex] = { q: cur.q, a: e.target.value };
+                        setDraft((d) => ({ ...d, flashcards: next }));
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </div>
-                  <Input
-                    className="h-8 text-[11px]"
-                    value={card.q}
-                    onChange={(e) => {
-                      const next = [...draft.flashcards];
-                      const cur = next[cardIndex] ?? { q: "", a: "" };
-                      next[cardIndex] = { q: e.target.value, a: cur.a };
-                      setDraft((d) => ({ ...d, flashcards: next }));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <Input
-                    className="h-8 text-[11px]"
-                    value={card.a}
-                    onChange={(e) => {
-                      const next = [...draft.flashcards];
-                      const cur = next[cardIndex] ?? { q: "", a: "" };
-                      next[cardIndex] = { q: cur.q, a: e.target.value };
-                      setDraft((d) => ({ ...d, flashcards: next }));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
                 </div>
               );
             })}
           </div>
-        </section>
+        </StudioSection>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Practice exercises
-          </p>
-          <div className="space-y-4">
+        <StudioSection title="Practice exercises" icon="/icons/guide.svg" delay={0.5}>
+          <div className="space-y-6">
             {draft.practice_exercises.map((ex, i) => (
-              <div key={i} className="rounded-md border border-slate-100 bg-slate-50/80 p-3">
-                <Input
-                  className="mb-2 h-8 text-sm font-medium"
-                  value={ex.title}
-                  onChange={(e) => {
-                    const next = [...draft.practice_exercises];
-                    const cur = next[i] ?? { title: "", prompt: "" };
-                    next[i] = { title: e.target.value, prompt: cur.prompt, hint: cur.hint };
-                    setDraft((d) => ({ ...d, practice_exercises: next }));
-                  }}
-                />
-                <Textarea
-                  className="mb-2 min-h-[72px] text-sm"
-                  value={ex.prompt}
-                  onChange={(e) => {
-                    const next = [...draft.practice_exercises];
-                    const cur = next[i] ?? { title: "", prompt: "" };
-                    next[i] = { title: cur.title, prompt: e.target.value, hint: cur.hint };
-                    setDraft((d) => ({ ...d, practice_exercises: next }));
-                  }}
-                />
-                <Input
-                  className="h-8 text-xs text-slate-600"
-                  placeholder="Optional hint"
-                  value={ex.hint ?? ""}
-                  onChange={(e) => {
-                    const next = [...draft.practice_exercises];
-                    const cur = next[i] ?? { title: "", prompt: "" };
-                    const hint = e.target.value.trim() ? e.target.value : undefined;
-                    next[i] = { title: cur.title, prompt: cur.prompt, hint };
-                    setDraft((d) => ({ ...d, practice_exercises: next }));
-                  }}
-                />
-              </div>
+              <motion.div 
+                key={i} 
+                className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 group-hover:bg-white transition-colors shadow-sm"
+              >
+                <div className="mb-4">
+                  <Input
+                    className="mb-3 h-10 text-sm font-bold bg-white border-slate-100 focus:border-blue-300 rounded-xl"
+                    placeholder="Exercise Title"
+                    value={ex.title}
+                    onChange={(e) => {
+                      const next = [...draft.practice_exercises];
+                      const cur = next[i] ?? { title: "", prompt: "" };
+                      next[i] = { title: e.target.value, prompt: cur.prompt, hint: cur.hint };
+                      setDraft((d) => ({ ...d, practice_exercises: next }));
+                    }}
+                  />
+                  <Textarea
+                    className="mb-3 min-h-[90px] text-sm bg-white border-slate-100 focus:border-blue-300 rounded-xl leading-relaxed"
+                    placeholder="Describe the exercise..."
+                    value={ex.prompt}
+                    onChange={(e) => {
+                      const next = [...draft.practice_exercises];
+                      const cur = next[i] ?? { title: "", prompt: "" };
+                      next[i] = { title: cur.title, prompt: e.target.value, hint: cur.hint };
+                      setDraft((d) => ({ ...d, practice_exercises: next }));
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                      <span className="text-[10px] font-bold">?</span>
+                    </div>
+                    <Input
+                      className="h-8 flex-1 text-xs text-slate-500 bg-white/50 border-slate-100 focus:border-amber-200 rounded-lg italic"
+                      placeholder="Optional hint for the learner"
+                      value={ex.hint ?? ""}
+                      onChange={(e) => {
+                        const next = [...draft.practice_exercises];
+                        const cur = next[i] ?? { title: "", prompt: "" };
+                        const hint = e.target.value.trim() ? e.target.value : undefined;
+                        next[i] = { title: cur.title, prompt: cur.prompt, hint };
+                        setDraft((d) => ({ ...d, practice_exercises: next }));
+                      }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </StudioSection>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Follow-up topics
-          </p>
-          <ul className="space-y-2">
+        <StudioSection title="Follow-up topics" icon="/icons/mentrixer.svg" delay={0.6}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {draft.follow_up_topics.map((t, i) => (
-              <li key={i}>
+              <motion.div key={i} whileHover={{ y: -2 }}>
                 <Input
                   value={t}
                   onChange={(e) => {
@@ -781,53 +902,70 @@ function StudioPackagePanel({
                     next[i] = e.target.value;
                     setDraft((d) => ({ ...d, follow_up_topics: next }));
                   }}
-                  className="h-9 text-sm"
+                  className="h-10 text-sm border-slate-100 focus:border-blue-300 rounded-xl bg-slate-50/50 focus:bg-white transition-all"
                 />
-              </li>
+              </motion.div>
             ))}
-          </ul>
-        </section>
+          </div>
+        </StudioSection>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-            Quest prompts (open in Mentrixa Quest)
-          </p>
-          {draft.followup_quests.map((quest, questIndex) => {
-            const key = `${sessionId}-${questIndex}`;
-            const indexLabel = String(questIndex + 1).padStart(2, "0");
-            return (
-              <div key={key} className="mb-3 flex items-start gap-3">
-                <span className="w-6 flex-shrink-0 font-mono text-[11px] text-slate-400">
-                  {indexLabel}
-                </span>
-                <Textarea
-                  className="min-h-[56px] flex-1 text-sm"
-                  value={quest.prompt}
-                  onChange={(e) => {
-                    const next = [...draft.followup_quests];
-                    const cur = next[questIndex] ?? { prompt: "", difficulty: "medium" };
-                    next[questIndex] = {
-                      prompt: e.target.value,
-                      difficulty: cur.difficulty,
-                    };
-                    setDraft((d) => ({ ...d, followup_quests: next }));
-                  }}
-                />
-                <button
-                  type="button"
-                  className={`flex-shrink-0 text-[11px] ${
-                    copiedKey === key ? "text-slate-900" : "text-slate-400 hover:text-slate-700"
-                  }`}
-                  onClick={() => {
-                    void onCopyLink(sessionId, questIndex, quest.prompt);
-                  }}
+        <StudioSection title="Quest prompts" icon="/icons/mentrixer.svg" delay={0.7}>
+          <div className="space-y-4">
+            {draft.followup_quests.map((quest, questIndex) => {
+              const key = `${sessionId}-${questIndex}`;
+              const indexLabel = String(questIndex + 1).padStart(2, "0");
+              return (
+                <motion.div 
+                  key={key} 
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-blue-50/30 border border-blue-100"
                 >
-                  {copiedKey === key ? "Copied" : "Copy link"}
-                </button>
-              </div>
-            );
-          })}
-        </section>
+                  <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
+                    {indexLabel}
+                  </span>
+                  <div className="flex-1 space-y-3">
+                    <Textarea
+                      className="min-h-[70px] text-sm bg-white border-blue-100 focus:border-blue-300 rounded-xl leading-relaxed"
+                      value={quest.prompt}
+                      onChange={(e) => {
+                        const next = [...draft.followup_quests];
+                        const cur = next[questIndex] ?? { prompt: "", difficulty: "medium" };
+                        next[questIndex] = {
+                          prompt: e.target.value,
+                          difficulty: cur.difficulty,
+                        };
+                        setDraft((d) => ({ ...d, followup_quests: next }));
+                      }}
+                    />
+                    <div className="flex items-center justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 text-[11px] font-bold gap-1.5 transition-all ${
+                          copiedKey === key ? "text-blue-700 bg-blue-100" : "text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                        }`}
+                        onClick={() => {
+                          void onCopyLink(sessionId, questIndex, quest.prompt);
+                        }}
+                      >
+                        {copiedKey === key ? (
+                          <>
+                            <CheckCircle2 className="h-3 w-3" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            Copy Quest link
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </StudioSection>
       </div>
     </div>
   );

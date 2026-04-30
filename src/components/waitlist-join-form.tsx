@@ -126,8 +126,8 @@ export function WaitlistJoinForm({ initialEmail = "" }: { initialEmail?: string 
             className={cn(
               "rounded-lg p-3 text-sm",
               msg.startsWith("✓")
-                ? "bg-green-50 text-green-800 border border-green-200"
-                : "bg-amber-50 text-amber-800 border border-amber-200"
+                ? "bg-blue-50 text-blue-800 border border-blue-200"
+                : "bg-slate-50 text-slate-800 border border-slate-200"
             )}
             role="alert"
           >

@@ -156,7 +156,7 @@ export default function Hero() {
                 whileHover={{ scale: 1.02, rotate: 0 }}
               >
                 <div className="p-4 h-full flex flex-col bg-white/90">
-                  <div className="text-xs font-semibold text-brand-600 mb-2">AI Study Package</div>
+                  <div className="text-xs font-semibold text-brand-600 mb-2">Quest Study Package</div>
                   <div className="flex-1 rounded-lg bg-surface-muted/50 p-3 space-y-2">
                     <div className="h-3 rounded bg-brand-100 w-full" />
                     <div className="flex gap-1">

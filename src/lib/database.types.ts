@@ -204,6 +204,58 @@ export interface SessionAiPackage {
   updated_at: string;
 }
 
+export interface SessionAiContext {
+  session_id: string;
+  tutor_id: string;
+  chat_transcript: {
+    authorId: string;
+    authorLabel: string;
+    text: string;
+    sentAt: number;
+  }[];
+  whiteboard_summary: {
+    drawEvents?: number;
+    clearEvents?: number;
+    byTool?: Record<string, number>;
+    recentEvents?: Array<{ tool: string; at: number; source: "local" | "remote" }>;
+  } | null;
+  whiteboard_snapshot_data_url: string | null;
+  screen_share_timeline: Array<{
+    state: "start" | "end";
+    at: number;
+    actorId: string;
+  }>;
+  recording_hints: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SessionRecordingTranscriptionJob {
+  id: string;
+  session_id: string;
+  recording_id: string;
+  tutor_id: string;
+  storage_path: string;
+  mime_type: string;
+  file_size: number | null;
+  status: "queued" | "retry" | "processing" | "completed" | "failed";
+  attempt_count: number;
+  max_attempts: number;
+  not_before: string;
+  locked_at: string | null;
+  locked_by: string | null;
+  gemini_file_name: string | null;
+  gemini_file_uri: string | null;
+  transcript_excerpt: string | null;
+  screen_share_summary: string | null;
+  key_topics: string[];
+  learner_questions: string[];
+  last_error: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * A subject-based community. Students accumulate XP per division.
  * `key` is used as the JSON key in user_xp.division_xp.
@@ -596,6 +648,26 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<SessionAiPackage>;
+      };
+      session_ai_context: {
+        Row: SessionAiContext;
+        Insert: Omit<SessionAiContext, "created_at" | "updated_at"> & {
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<SessionAiContext>;
+      };
+      session_recording_transcription_jobs: {
+        Row: SessionRecordingTranscriptionJob;
+        Insert: Omit<
+          SessionRecordingTranscriptionJob,
+          "id" | "created_at" | "updated_at"
+        > & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<SessionRecordingTranscriptionJob>;
       };
       divisions: {
         Row: Division;

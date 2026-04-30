@@ -23,6 +23,10 @@ import {
   Loader2,
 } from "lucide-react";
 import { stopMediaStream } from "@/lib/webrtc";
+import { BubbleText } from "@/components/ui/bubble-text";
+import { Typewriter } from "@/components/ui/typewriter";
+import Image from "next/image";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,10 +122,10 @@ function ConnectionBadge({ quality }: { quality: ConnectionQuality }) {
     { icon: React.ElementType; label: string; color: string }
   > = {
     checking: { icon: Loader2, label: "Checking…", color: "text-white/40" },
-    excellent: { icon: Wifi, label: "Excellent", color: "text-emerald-400" },
-    good: { icon: Wifi, label: "Good", color: "text-amber-400" },
-    poor: { icon: Wifi, label: "Poor", color: "text-red-400" },
-    offline: { icon: WifiOff, label: "Offline", color: "text-red-400" },
+    excellent: { icon: Wifi, label: "Excellent", color: "text-blue-400" },
+    good: { icon: Wifi, label: "Good", color: "text-violet-400" },
+    poor: { icon: Wifi, label: "Poor", color: "text-white/50" },
+    offline: { icon: WifiOff, label: "Offline", color: "text-white/50" },
   };
   const { icon: Icon, label, color } = config[quality];
   return (
@@ -176,7 +180,7 @@ function AudioMeter({ stream }: { stream: MediaStream | null }) {
     <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
       <div
         ref={barRef}
-        className="h-full rounded-full bg-emerald-400 transition-[width] duration-75"
+        className="h-full rounded-full bg-blue-400 transition-[width] duration-75"
         style={{ width: "0%" }}
       />
     </div>
@@ -366,22 +370,44 @@ export function PreCallLobby({
       <div className="w-full max-w-4xl">
 
         {/* Header */}
-        <div className="mb-6 text-center">
-          <div className="mb-3 flex justify-start">
+        <div className="mb-8 text-center flex flex-col items-center">
+          <div className="w-full flex justify-start mb-6">
             <button
               onClick={handleBack}
-              className="rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 hover:bg-white/10 hover:text-white transition-all active:scale-95 flex items-center gap-2"
             >
+              <ChevronDown size={14} className="rotate-90" />
               Back to dashboard
             </button>
           </div>
-          <p className="text-[11px] font-medium uppercase tracking-widest text-white/30 mb-1">
-            Mentrixa · Session Room
+
+          <div className="mb-4">
+             <Image src={MENTRIXA_LOGO_PNG} alt="Mentrixa" width={40} height={40} className="mx-auto drop-shadow-glow" />
+          </div>
+
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20 mb-2">
+            Session Room
           </p>
-          <h1 className="text-lg font-medium text-white">{courseLabel}</h1>
-          <p className="text-sm text-white/40 mt-0.5">
-            Waiting for {partnerLabel} ({partnerKind.toLowerCase()})
-          </p>
+          
+          <h1 className="text-3xl font-black text-white tracking-tighter mb-1">
+            <BubbleText text={courseLabel} />
+          </h1>
+
+          <div className="flex items-center gap-2 text-white/40 justify-center mt-2">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5">
+              <Image 
+                src={userRole === "student" ? "/icons/guide.svg" : "/icons/mentrixer.svg"} 
+                alt="" 
+                width={14} 
+                height={14} 
+                className="opacity-60"
+              />
+              <span className="text-[10px] uppercase font-bold tracking-wider">
+                Waiting for {partnerLabel}
+              </span>
+            </div>
+            <span className="text-xs opacity-20">({partnerKind})</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4">
@@ -511,11 +537,11 @@ export function PreCallLobby({
                 <div key={item.label} className="flex items-center justify-between">
                   <span className="text-xs text-white/50">{item.label}</span>
                   {item.warn ? (
-                    <span className="text-[10px] text-amber-400">{item.warnMsg}</span>
+                    <span className="text-[10px] text-violet-400">{item.warnMsg}</span>
                   ) : (
                     <span
                       className={`text-[10px] font-medium ${
-                        item.ok ? "text-emerald-400" : "text-white/30"
+                        item.ok ? "text-blue-400" : "text-white/30"
                       }`}
                     >
                       {item.ok ? "✓ Ready" : "Checking…"}
@@ -540,31 +566,53 @@ export function PreCallLobby({
                 {isJoining ? "Joining…" : "Join Session"}
               </button>
               {!permissionError && (
-                <p className="text-center text-[10px] text-white/20 mt-2">
-                  You&apos;re joining as{" "}
-                  <span className="text-white/40">
-                    {userRole === "student" ? "Learner" : "Guide"}
-                  </span>
-                </p>
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <Image 
+                    src={userRole === "tutor" ? "/icons/guide.svg" : "/icons/mentrixer.svg"} 
+                    alt="" 
+                    width={12} 
+                    height={12} 
+                    className="opacity-40"
+                  />
+                  <p className="text-center text-[10px] text-white/20">
+                    You&apos;re joining as{" "}
+                    <span className="text-white/40 font-bold uppercase tracking-tight">
+                      {userRole === "student" ? "Learner" : "Guide"}
+                    </span>
+                  </p>
+                </div>
               )}
             </div>
           </div>
         </div>
 
         {/* Waiting room banner — shown when other party hasn't joined */}
-        <div className="mt-4 flex items-center justify-center gap-3">
-          <div className="flex gap-1">
+        <div className="mt-8 flex flex-col items-center justify-center gap-4 py-6 border-t border-white/5">
+          <div className="flex gap-2">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="h-1.5 w-1.5 rounded-full bg-white/20 animate-pulse"
-                style={{ animationDelay: `${i * 200}ms` }}
+                className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce"
+                style={{ animationDelay: `${i * 150}ms` }}
               />
             ))}
           </div>
-          <p className="text-xs text-white/30">
-            Waiting for {partnerLabel} ({partnerKind}) to join
-          </p>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.02] border border-white/5">
+            <Image 
+              src={userRole === "student" ? "/icons/guide.svg" : "/icons/mentrixer.svg"} 
+              alt="" 
+              width={16} 
+              height={16} 
+              className="opacity-40"
+            />
+            <div className="text-xs text-white/30 font-medium">
+              <Typewriter 
+                text={[`Waiting for ${partnerLabel} (${partnerKind}) to join...`, "Syncing session state...", "Preparing workspace..."]} 
+                speed={40} 
+                waitTime={3000} 
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

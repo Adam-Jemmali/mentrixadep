@@ -35,6 +35,19 @@ export const resolveIntakeSchema = z.object({
   bookTutorIfAiFails: z.boolean().optional().default(false),
 });
 
-export const recordingConsentSchema = z.object({
-  recordingConsentConfirmed: z.literal(true),
+export const userSettingsSchema = z.object({
+  display_name: z.string().trim().max(100).nullable().optional(),
+  bio: z.string().trim().max(280).nullable().optional(),
+  profile_visible_to_tutors: z.boolean().optional(),
+  avatar_url: z.string().trim().max(2048).url().nullable().optional(),
+  timezone: z.string().max(64).optional(),
+  email_session_reminders: z.boolean().optional(),
+  email_session_booked: z.boolean().optional(),
+  email_session_cancelled: z.boolean().optional(),
+  email_weekly_summary: z.boolean().optional(),
+  email_marketing: z.boolean().optional(),
+  session_default_duration: z.number().int().min(15).max(480).optional(),
+  session_buffer_minutes: z.number().int().min(0).max(120).optional(),
+  focused_division_key: z.string().trim().max(64).nullable().optional(),
+  duel_opt_in: z.boolean().optional(),
 });

@@ -22,7 +22,7 @@ type Props = {
   className?: string;
 };
 
-const sizePx = { sm: 36, md: 48, lg: 72 };
+const sizePx = { sm: 36, md: 56, lg: 96 };
 
 export function ClanAvatarBadge({
   name,
@@ -36,21 +36,25 @@ export function ClanAvatarBadge({
   const pk = (presetKey && PRESET_ICONS[presetKey] ? presetKey : "shield") as string;
   const Icon = PRESET_ICONS[pk] ?? Shield;
 
+  const containerClasses = cn(
+    "relative shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300",
+    size === "lg" ? "rounded-[1.5rem]" : size === "md" ? "rounded-xl" : "rounded-lg",
+    "bg-slate-50 text-slate-200",
+    className
+  );
+
   if (avatarKind === "custom" && avatarUrl) {
     return (
       <div
-        className={cn(
-          "relative shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100",
-          className
-        )}
+        className={containerClasses}
         style={{ width: px, height: px }}
       >
         <Image
           src={avatarUrl}
-          alt=""
+          alt={name}
           width={px}
           height={px}
-          className="object-cover"
+          className="object-cover w-full h-full rounded-[inherit]"
           unoptimized
         />
       </div>
@@ -59,19 +63,19 @@ export function ClanAvatarBadge({
 
   return (
     <div
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-slate-700",
-        className
-      )}
+      className={containerClasses}
       style={{ width: px, height: px }}
       title={name}
     >
       <Icon
-        className={
-          size === "lg" ? "h-9 w-9" : size === "sm" ? "h-4 w-4" : "h-6 w-6"
-        }
+        className={cn(
+          size === "lg" ? "h-10 w-10" : size === "sm" ? "h-4 w-4" : "h-6 w-6"
+        )}
+        strokeWidth={1}
       />
       <span className="sr-only">{name}</span>
     </div>
   );
 }
+
+

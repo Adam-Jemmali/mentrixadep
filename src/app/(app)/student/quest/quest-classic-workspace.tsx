@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { staggerIn } from "@/lib/gsap";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import {
   type QuestGoal,
   type QuestMode,
 } from "@/app/actions/quest";
+import { BackButton } from "@/components/ui/back-button";
+import { emitXpAward } from "@/lib/xp-events";
 import { QuestIllustration } from "@/components/illustrations";
 
 const RECENT_KEY = "mentrixa_quests";
@@ -74,6 +76,7 @@ function isValidQuestResponse(value: unknown): value is QuestResponse {
 
 export function QuestClassicWorkspace() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [prompt, setPrompt] = useState("");
   const [goal, setGoal] = useState<QuestGoal>("exam");
@@ -270,14 +273,15 @@ export function QuestClassicWorkspace() {
     // Read from textarea ref when clicking button to avoid stale state from batching
     const text = (autoText ?? textareaRef.current?.value ?? prompt).trim();
     if (!text) return;
+    setPrompt(text); // Update immediately for display
     setSubmitError(null);
     setRecordError(null);
     setIsLoading(true);
 
     const result = await submitQuest(text, goal, mode);
-    setIsLoading(false);
 
     if ("error" in result && result.error) {
+      setIsLoading(false);
       const msg =
         typeof result.message === "string" && result.message.trim()
           ? result.message
@@ -296,6 +300,7 @@ export function QuestClassicWorkspace() {
     };
 
     if (!data.questId || !Array.isArray(data.hints) || data.hints.length === 0) {
+      setIsLoading(false);
       setSubmitError("Got an incomplete response. Please try again.");
       return;
     }
@@ -311,11 +316,35 @@ export function QuestClassicWorkspace() {
     addToRecent(text, payload);
     setQuestCompleted(false);
     setLastXpAwarded(null);
-    setPrompt(text);
+
+    // Manually persist to sessionStorage IMMEDIATELY to survive router refreshes/remounts
+    if (typeof window !== "undefined") {
+      const snapshot: ActiveQuestSnapshot = {
+        version: 1,
+        savedAt: Date.now(),
+        prompt: text.trim(),
+        goal,
+        mode,
+        currentQuest: payload,
+        hintsRevealed: payload.hints.length > 0 ? 1 : 0,
+        reasoningShown: false,
+        solutionShown: false,
+        questCompleted: false,
+        lastXpAwarded: null,
+      };
+      window.sessionStorage.setItem(ACTIVE_QUEST_SESSION_KEY, JSON.stringify(snapshot));
+    }
+
     setCurrentQuest(payload);
     setHintsRevealed(payload.hints.length > 0 ? 1 : 0);
     setReasoningShown(false);
     setSolutionShown(false);
+    setIsLoading(false);
+
+    // Clear URL prompt to prevent it from blocking restoration logic on remounts
+    const currentPath = window.location.pathname;
+    router.replace(currentPath);
+
     focusSolverPane();
   };
 
@@ -376,6 +405,13 @@ export function QuestClassicWorkspace() {
         setStreakDays(result.streakDays ?? streakDays);
         setUserAnswer("");
         setAnswerFeedback(null);
+        // Emit XP award event for floating animation and navbar pulse
+        if ((result.xpAwarded ?? 0) > 0) {
+          emitXpAward({
+            amount: result.xpAwarded ?? 0,
+            totalXp: result.totalXp ?? totalXp,
+          });
+        }
       } else {
         setAnswerFeedback(result.feedback ?? "Not quite right. Review the hints and try again.");
       }
@@ -423,17 +459,38 @@ export function QuestClassicWorkspace() {
     setUserAnswer("");
     setAnswerFeedback(null);
     if (item.payload) {
-      setCurrentQuest(item.payload);
-      setHintsRevealed(item.payload.hints.length);
-      setReasoningShown(true);
-      setSolutionShown(true);
-      if (item.completedLocally) {
-        setQuestCompleted(true);
-        setLastXpAwarded(null);
-      } else {
-        setQuestCompleted(false);
-        setLastXpAwarded(null);
+      const isDone = !!item.completedLocally;
+      const initialHints = isDone ? item.payload.hints.length : 1;
+
+      // Manually persist IMMEDIATELY
+      if (typeof window !== "undefined") {
+        const snapshot: ActiveQuestSnapshot = {
+          version: 1,
+          savedAt: Date.now(),
+          prompt: item.text.trim(),
+          goal,
+          mode,
+          currentQuest: item.payload,
+          hintsRevealed: initialHints,
+          reasoningShown: isDone,
+          solutionShown: isDone,
+          questCompleted: isDone,
+          lastXpAwarded: null,
+        };
+        window.sessionStorage.setItem(ACTIVE_QUEST_SESSION_KEY, JSON.stringify(snapshot));
       }
+
+      setCurrentQuest(item.payload);
+      setHintsRevealed(initialHints);
+      setReasoningShown(isDone);
+      setSolutionShown(isDone);
+      setQuestCompleted(isDone);
+      setLastXpAwarded(null);
+
+      // Clear URL prompt
+      const currentPath = window.location.pathname;
+      router.replace(currentPath);
+
       focusSolverPane();
     } else {
       // No cached payload old entry. Submit to fetch and cache.
@@ -506,6 +563,9 @@ export function QuestClassicWorkspace() {
         {/* LEFT PANE */}
         <aside className="relative min-h-0 border-b border-slate-200 bg-slate-50 md:h-full md:border-b-0 md:border-r flex flex-col justify-between overflow-y-auto">
           <div className="flex-1 px-5 pt-6 pb-4">
+            <div className="mb-6">
+              <BackButton />
+            </div>
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-2 block">
               Problem
             </label>
@@ -681,16 +741,10 @@ export function QuestClassicWorkspace() {
             </div>
           )}
 
-          {isLoading && (
-            <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400 md:h-full md:min-h-0">
-              Generating hints…
-            </div>
-          )}
-
-          {/* Active quest document */}
-          {currentQuest && !isLoading && (
+          {/* Active quest document or loading state with persistent question */}
+          {(currentQuest || isLoading) && (
             <div className="max-w-3xl mx-auto">
-              {/* User prompt */}
+              {/* User prompt - Persistent */}
               <div className="border-b border-slate-100 pb-6 mb-6">
                 <p className="text-xs font-mono text-slate-300 mb-2">Your question</p>
                 <p className="text-slate-900 font-medium leading-relaxed whitespace-pre-wrap">
@@ -698,130 +752,143 @@ export function QuestClassicWorkspace() {
                 </p>
               </div>
 
-              {/* Hints */}
-              {visibleHints.map((hint, index) => (
-                <HintSection
-                  key={index}
-                  index={index}
-                  total={totalHints}
-                  text={hint}
-                />
-              ))}
-
-              {/* Next hint control */}
-              {!allHintsRevealed && totalHints > 0 && (
-                <div className="flex items-center gap-4 mb-6">
-                  <button
-                    type="button"
-                    onClick={handleRevealNextHint}
-                    className="text-sm text-slate-400 hover:text-slate-700 underline underline-offset-2"
-                  >
-                    Reveal next hint {totalHints - hintsRevealed} remaining
-                  </button>
-                  <span className="text-xs font-mono text-slate-300">
-                    {hintsRevealed} / {totalHints}
-                  </span>
+              {isLoading ? (
+                <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-6 h-6 border-2 border-mentrixa-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="animate-pulse">Generating hints…</p>
+                  </div>
                 </div>
-              )}
+              ) : (
+                currentQuest && (
+                  <>
+                    {/* Hints */}
+                    {visibleHints.map((hint, index) => (
+                      <HintSection
+                        key={index}
+                        index={index}
+                        total={totalHints}
+                        text={hint}
+                      />
+                    ))}
 
-              {/* Reasoning & solution */}
-              {allHintsRevealed && (
-                <>
-                  <ReasoningSection
-                    text={currentQuest.reasoning}
-                    mode={currentQuest.mode}
-                    shown={reasoningShown}
-                    onShow={() => setReasoningShown(true)}
-                  />
-                  {currentQuest.mode === "coach" && currentQuest.solution && (
-                    <SolutionSection
-                      text={currentQuest.solution}
-                      shown={solutionShown}
-                      onShow={() => setSolutionShown(true)}
-                    />
-                  )}
-
-                  {/* Variant problems */}
-                  <div className="mt-6">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-3">
-                      Practice further
-                    </p>
-                    <div className="space-y-2">
-                      {(currentQuest.variants ?? []).slice(0, 3).map((v, i) => (
+                    {/* Next hint control */}
+                    {!allHintsRevealed && totalHints > 0 && (
+                      <div className="flex items-center gap-4 mb-6">
                         <button
-                          key={i}
                           type="button"
-                          onClick={() => handleSuggestionClick(v.prompt)}
-                          className="flex items-baseline text-sm text-mentrixa-600 hover:underline"
+                          onClick={handleRevealNextHint}
+                          className="text-sm text-slate-400 hover:text-slate-700 underline underline-offset-2"
                         >
-                          <span className="font-mono text-[11px] text-slate-300 mr-3">
-                            {`0${i + 1}`}
-                          </span>
-                          <span>{v.prompt}</span>
+                          Reveal next hint {totalHints - hintsRevealed} remaining
                         </button>
-                      ))}
-                    </div>
-                  </div>
+                        <span className="text-xs font-mono text-slate-300">
+                          {hintsRevealed} / {totalHints}
+                        </span>
+                      </div>
+                    )}
 
-                  {/* Completion controls: answer input + submit */}
-                  <div className="mt-8 pt-6 border-t border-slate-100">
-                    {recordError && (
-                      <p className="text-xs text-red-500 mb-3">{recordError}</p>
-                    )}
-                    {questCompleted ? (
-                      <div className="flex flex-col gap-3">
-                        <p className="text-sm font-medium text-slate-700">
-                          Quest complete!
-                          {lastXpAwarded != null && lastXpAwarded > 0 && (
-                            <span className="ml-1.5 text-emerald-600">+{lastXpAwarded} XP</span>
-                          )}
-                        </p>
-                        {lastXpAwarded == null && (
-                          <p className="text-xs text-slate-500 leading-relaxed">
-                            This run is saved in Recents for review only. To answer again for XP, start
-                            a new attempt with the same wording.
-                          </p>
-                        )}
-                        <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
-                          <Button size="sm" onClick={handleAskAnother}>
-                            Ask another question
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={isLoading || !prompt.trim()}
-                            onClick={() => void handleSubmit()}
-                          >
-                            Same question, new attempt
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">
-                          Your answer
-                        </p>
-                        <Textarea
-                          value={userAnswer}
-                          onChange={(e) => setUserAnswer(e.target.value)}
-                          placeholder={getAnswerPlaceholder()}
-                          className="min-h-[100px] resize-none border border-slate-200 rounded-lg text-sm p-3 bg-slate-50 focus-visible:ring-0 focus-visible:border-mentrixa-400"
-                          disabled={submittingAnswer}
+                    {/* Reasoning & solution */}
+                    {allHintsRevealed && (
+                      <>
+                        <ReasoningSection
+                          text={currentQuest.reasoning}
+                          mode={currentQuest.mode}
+                          shown={reasoningShown}
+                          onShow={() => setReasoningShown(true)}
                         />
-                        {answerFeedback && (
-                          <p className="text-xs text-amber-600">{answerFeedback}</p>
+                        {currentQuest.mode === "coach" && currentQuest.solution && (
+                          <SolutionSection
+                            text={currentQuest.solution}
+                            shown={solutionShown}
+                            onShow={() => setSolutionShown(true)}
+                          />
                         )}
-                        <Button
-                          size="sm"
-                          onClick={handleSubmitAnswer}
-                          disabled={submittingAnswer || !userAnswer.trim()}
-                        >
-                          {submittingAnswer ? "Checking…" : "Submit answer"}
-                        </Button>
-                      </div>
+
+                        {/* Variant problems */}
+                        <div className="mt-6">
+                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-3">
+                            More questions
+                          </p>
+                          <div className="space-y-2">
+                            {(currentQuest.variants ?? []).slice(0, 3).map((v, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => handleSuggestionClick(v.prompt)}
+                                className="flex items-baseline text-sm text-mentrixa-600 hover:underline"
+                              >
+                                <span className="font-mono text-[11px] text-slate-300 mr-3">
+                                  {`0${i + 1}`}
+                                </span>
+                                <span>{v.prompt}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Completion controls: answer input + submit */}
+                        <div className="mt-8 pt-6 border-t border-slate-100">
+                          {recordError && (
+                            <p className="text-xs text-red-500 mb-3">{recordError}</p>
+                          )}
+                          {questCompleted ? (
+                            <div className="flex flex-col gap-3">
+                              <p className="text-sm font-medium text-slate-700">
+                                Quest complete!
+                                {lastXpAwarded != null && lastXpAwarded > 0 && (
+                                  <span className="ml-1.5 text-emerald-600">+{lastXpAwarded} XP</span>
+                                )}
+                              </p>
+                              {lastXpAwarded == null && (
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                  This run is saved in Recents for review only. To answer again for XP, start
+                                  a new attempt with the same wording.
+                                </p>
+                              )}
+                              <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
+                                <Button size="sm" onClick={handleAskAnother}>
+                                  Ask another question
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isLoading || !prompt.trim()}
+                                  onClick={() => void handleSubmit()}
+                                >
+                                  Same question, new attempt
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-3">
+                              <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">
+                                Your answer
+                              </p>
+                              <Textarea
+                                value={userAnswer}
+                                onChange={(e) => setUserAnswer(e.target.value)}
+                                placeholder={getAnswerPlaceholder()}
+                                className="min-h-[100px] resize-none border border-slate-200 rounded-lg text-sm p-3 bg-slate-50 focus-visible:ring-0 focus-visible:border-mentrixa-400"
+                                disabled={submittingAnswer}
+                              />
+                              {answerFeedback && (
+                                <p className="text-xs text-amber-600">{answerFeedback}</p>
+                              )}
+                              <Button
+                                size="sm"
+                                onClick={handleSubmitAnswer}
+                                disabled={submittingAnswer || !userAnswer.trim()}
+                              >
+                                {submittingAnswer ? "Checking…" : "Submit answer"}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
-                  </div>
-                </>
+                  </>
+                )
               )}
             </div>
           )}

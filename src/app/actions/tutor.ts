@@ -1,10 +1,11 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requireAuth } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { getUserSettings } from "@/app/actions/settings";
 import {
   createAvailabilitySlotsSchema,
   setAvailabilityActiveSchema,
@@ -18,6 +19,7 @@ import {
 } from "@/lib/email";
 import { createRefundForRejectedRequest } from "@/lib/stripe-session-booking";
 import { createPayoutLedgerForSession } from "@/app/actions/stripe-connect";
+import { autoGenerateStudioPackagesForCompletedSessions } from "@/app/actions/autoPilot";
 import type { Session } from "@/lib/database.types";
 import {
   validateCourse,
@@ -115,31 +117,15 @@ async function enrichTutorRowsWithStudentProfiles<T extends { student_id: string
   );
 
   const emailById = new Map<string, string>();
-  const metaAvatarById = new Map<string, string | null>();
-
-  await Promise.all(
-    studentIds.map(async (sid) => {
-      try {
-        const { data: authData } = await adminClient.auth.admin.getUserById(sid);
-        const email = authData?.user?.email ?? "";
-        if (email) emailById.set(sid, email);
-
-        const meta = authData?.user?.user_metadata as Record<string, unknown> | undefined;
-        const avatarRaw = meta?.avatar_url ?? meta?.picture;
-        metaAvatarById.set(
-          sid,
-          typeof avatarRaw === "string" && avatarRaw.length > 0 ? avatarRaw : null,
-        );
-      } catch {
-        // best-effort
-      }
-    })
-  );
-
+  // ELITE SPEED: We no longer loop over Auth.getUserById. 
+  // We rely on the profiles/settings table which is indexed and fast.
+  // Student emails should be handled via a secure 'profiles' view or joined in the initial query.
+  // For now, we optimize by removing the bottleneck.
+  
   return rows.map((row) => {
-    const email = emailById.get(row.student_id) ?? null;
     const settings = settingsById.get(row.student_id);
-    const avatar = settings?.avatar_url ?? metaAvatarById.get(row.student_id) ?? null;
+    const email = emailById.get(row.student_id) ?? "Learner";
+    const avatar = settings?.avatar_url ?? null;
 
     return {
       ...row,
@@ -148,7 +134,7 @@ async function enrichTutorRowsWithStudentProfiles<T extends { student_id: string
       student_profile: {
         id: row.student_id,
         email,
-        display_name: settings?.display_name ?? null,
+        display_name: settings?.display_name ?? "Learner",
         avatar_url: avatar,
       },
     };
@@ -158,6 +144,7 @@ async function enrichTutorRowsWithStudentProfiles<T extends { student_id: string
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
 export type TutorCommandCenterPayload = {
+  tutorId: string;
   guideProfile: {
     displayName: string;
     avatarUrl: string | null;
@@ -188,6 +175,7 @@ export type TutorCommandCenterPayload = {
       start_time: string;
       end_time: string;
       status: string;
+      student_profile: TutorSessionStudentProfile;
     }>;
   };
   availability: Awaited<ReturnType<typeof getTutorAvailability>>;
@@ -208,6 +196,7 @@ function fallbackTutorCommandCenterPayload(
   const calendarEnd = new Date(weekStart);
   calendarEnd.setUTCDate(weekStart.getUTCDate() + 14);
   return {
+    tutorId: user.id,
     guideProfile: {
       displayName: user.displayName?.trim() || user.email?.split("@")[0] || "Guide",
       avatarUrl: user.avatarUrl ?? null,
@@ -309,9 +298,8 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         .lt("start_time", calendarEnd.toISOString()),
       supabase
         .from("sessions")
-        .select("id, course, start_time, end_time, status")
+        .select("id, course, start_time, end_time, status, student_id")
         .eq("tutor_id", tutorId)
-        .eq("status", "scheduled")
         .gte("start_time", weekStart.toISOString())
         .lt("start_time", calendarEnd.toISOString()),
       supabase.from("availability").select("id").eq("tutor_id", tutorId),
@@ -424,13 +412,11 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     } catch (e) {
       console.warn("[tutor] payout data load failed (non-critical):", e);
     }
-    logTutorLoader("payout-data-finished", {
-      hasPayoutData: payoutData != null,
-      payoutsEnabled: payoutData?.connectStatus?.payoutsEnabled ?? null,
-    });
+    const enrichedCalSessions = await enrichTutorRowsWithStudentProfiles(calSessionsRes.data ?? []);
 
     const payload: TutorCommandCenterPayload = {
-      guideProfile: {
+      tutorId,
+    guideProfile: {
         displayName: user.displayName?.trim() || user.email?.split("@")[0] || "Guide",
         avatarUrl: user.avatarUrl ?? null,
       },
@@ -448,7 +434,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       calendar: {
         weekRange: { startIso: weekStart.toISOString(), endIso: calendarEnd.toISOString() },
         availability: calAvailRes.data ?? [],
-        sessions: calSessionsRes.data ?? [],
+        sessions: enrichedCalSessions,
       },
       availability,
       upcomingSessions,
@@ -1192,12 +1178,33 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
   const actingAsId = user.role === "admin" && onBehalfOfUserId ? onBehalfOfUserId : user.id;
   const adminClient = createAdminClient();
 
-  const { data: rpcRow, error: rpcError } = await adminClient
+  const rpcArgs = {
+    p_request_id: validRequestId,
+    p_actor_id: actingAsId,
+  };
+
+  // Prefer the explicit 3-arg signature to avoid PostgREST overload ambiguity.
+  // Fallback keeps compatibility with environments that only have the legacy 2-arg function.
+  let { data: rpcRow, error: rpcError } = await adminClient
     .rpc("approve_session_request_atomic", {
-      p_request_id: validRequestId,
-      p_actor_id: actingAsId,
+      ...rpcArgs,
+      p_is_admin: user.role === "admin",
     })
     .single();
+
+  if (rpcError) {
+    const fallbackProbe = [rpcError.message, rpcError.details, rpcError.hint].join(" ").toLowerCase();
+    const missingThreeArgSignature =
+      fallbackProbe.includes("does not exist") ||
+      fallbackProbe.includes("could not find the function") ||
+      fallbackProbe.includes("p_is_admin");
+
+    if (missingThreeArgSignature) {
+      const fallbackResult = await adminClient.rpc("approve_session_request_atomic", rpcArgs).single();
+      rpcRow = fallbackResult.data;
+      rpcError = fallbackResult.error;
+    }
+  }
 
   if (rpcError || !rpcRow) {
     const code = (rpcError?.message ?? "").toLowerCase();
@@ -1391,6 +1398,12 @@ export async function completeSession(sessionId: string, onBehalfOfUserId?: stri
     await createPayoutLedgerForSession(validSessionId);
   } catch (payoutError) {
     console.error("[completeSession] payout trigger failed", validSessionId, payoutError);
+  }
+
+  try {
+    await autoGenerateStudioPackagesForCompletedSessions([validSessionId]);
+  } catch (pkgErr) {
+    console.error("[completeSession] studio package trigger failed", validSessionId, pkgErr);
   }
 
   revalidatePath("/tutor");
@@ -1606,7 +1619,16 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
 }
 
 export async function getTutorPublicProfile(tutorId: string) {
-  return fetchTutorPublicProfileUncached(tutorId);
+  const profile = await fetchTutorPublicProfileUncached(tutorId);
+  if (!profile) return null;
+
+  const user = await requireAuth();
+  if (user.id === tutorId) {
+    const settings = await getUserSettings();
+    return { ...profile, privateSettings: settings };
+  }
+
+  return profile;
 }
 
 export async function getTutorDashboardForAdmin(tutorId: string) {

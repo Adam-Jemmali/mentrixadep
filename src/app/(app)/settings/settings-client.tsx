@@ -166,6 +166,19 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <main className="mx-auto w-full max-w-5xl px-8 py-8">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 -ml-3 text-xs text-slate-400 hover:text-white hover:bg-white/10"
+            onClick={() => router.back()}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3 opacity-60" />
+              Back
+            </span>
+          </Button>
+        </div>
         <h1 className="text-3xl font-semibold tracking-tight mb-1">Settings</h1>
         <p className="mb-8 text-sm text-slate-400">
           Manage your account, notifications, and tutor preferences.
@@ -289,7 +302,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             <select
               value={settings.timezone}
               onChange={(e) => update("timezone", e.target.value)}
-              className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
             >
               {APP_TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>
@@ -365,7 +378,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                 onChange={(e) =>
                   update("session_default_duration", Number(e.target.value))
                 }
-                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
               >
                 {DURATION_OPTIONS.map((d) => (
                   <option key={d} value={d}>
@@ -381,7 +394,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                 onChange={(e) =>
                   update("session_buffer_minutes", Number(e.target.value))
                 }
-                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
               >
                 {BUFFER_OPTIONS.map((b) => (
                   <option key={b} value={b}>
@@ -431,7 +444,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             {saving ? "Saving..." : "Save changes"}
           </Button>
           {saved && (
-            <span className="text-sm font-medium text-blue-400">Saved</span>
+            <span className="text-sm font-medium text-indigo-400">Saved</span>
           )}
           {error && (
             <span className="text-sm font-medium text-red-400">{error}</span>
@@ -484,7 +497,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             {pwMsg && (
               <span
                 className={`text-sm font-medium ${
-                  pwMsg.type === "ok" ? "text-blue-400" : "text-red-400"
+                  pwMsg.type === "ok" ? "text-indigo-400" : "text-red-400"
                 }`}
               >
                 {pwMsg.text}
@@ -605,8 +618,8 @@ function Toggle({
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-slate-700 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
-          checked ? "bg-blue-500" : "bg-slate-800"
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-slate-700 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+          checked ? "bg-indigo-600" : "bg-slate-800"
         }`}
         role="switch"
         aria-checked={checked}

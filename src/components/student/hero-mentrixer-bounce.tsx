@@ -38,7 +38,7 @@ export function HeroMentrixerBounce() {
         vy: randomBetween(0.9, 1.6),
         angle: randomBetween(0, 360),
         vr: randomBetween(0.8, 1.7),
-        size: 24,
+        size: 48,
       },
       {
         x: 110,
@@ -47,7 +47,7 @@ export function HeroMentrixerBounce() {
         vy: randomBetween(0.9, 1.5),
         angle: randomBetween(0, 360),
         vr: -randomBetween(0.7, 1.4),
-        size: 20,
+        size: 40,
       },
       {
         x: 220,
@@ -56,7 +56,7 @@ export function HeroMentrixerBounce() {
         vy: -randomBetween(0.8, 1.4),
         angle: randomBetween(0, 360),
         vr: randomBetween(0.6, 1.3),
-        size: 18,
+        size: 32,
       },
     ];
 
@@ -112,13 +112,13 @@ export function HeroMentrixerBounce() {
   return (
     <div ref={boxRef} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       <div ref={iconARef} className="absolute left-0 top-0 will-change-transform opacity-85">
-        <Image src="/icons/mentrixer.svg" alt="" width={24} height={24} />
+        <Image src="/icons/mentrixer.svg" alt="" width={48} height={48} />
       </div>
       <div ref={iconBRef} className="absolute left-0 top-0 will-change-transform opacity-65">
-        <Image src="/icons/mentrixer.svg" alt="" width={20} height={20} />
+        <Image src="/icons/mentrixer.svg" alt="" width={40} height={40} />
       </div>
       <div ref={iconCRef} className="absolute left-0 top-0 will-change-transform opacity-55">
-        <Image src="/icons/mentrixer.svg" alt="" width={18} height={18} />
+        <Image src="/icons/mentrixer.svg" alt="" width={32} height={32} />
       </div>
     </div>
   );

@@ -4,16 +4,19 @@ import { useEffect, useMemo, useRef } from "react";
 import { gsap } from "gsap";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { ScrollRevealCard } from "@/components/ui/card";
 import Link from "next/link";
 import { SessionsList } from "./sessions-list";
 import { SessionRequestsList } from "./session-requests-list";
 import { AvailabilityManager } from "./availability-manager";
 import { AutoApproveToggle } from "./auto-approve-toggle";
-import { CreateAvailabilityForm } from "./create-availability-form";
+import { CreateAvailabilityCard } from "@/components/ui/create-availability-card";
 import { CourseManager } from "./course-manager";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatDate } from "@/lib/time-format";
-import { TutorDashboardIllustration } from "@/components/illustrations";
+import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
+import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
+import { Typewriter } from "@/components/ui/typewriter";
 
 type AnySession = {
   id: string;
@@ -68,6 +71,8 @@ interface TutorDashboardClientProps {
   autoApprove: boolean;
   tutorCourses?: TutorCourseItem[];
   tutorTimezone?: string;
+  greeting?: string;
+  firstName?: string;
 }
 
 export function TutorDashboardClient({
@@ -78,6 +83,8 @@ export function TutorDashboardClient({
   autoApprove,
   tutorCourses = [],
   tutorTimezone = "UTC",
+  greeting = "Good day",
+  firstName = "Guide",
 }: TutorDashboardClientProps) {
   const { viewingAsUserId } = useAdminViewContext();
   const studioHref = viewingAsUserId
@@ -187,61 +194,77 @@ export function TutorDashboardClient({
   }, [pastSessions]);
 
   return (
+    <div className={mentrixTutor.pageBg}>
     <div className="max-w-7xl mx-auto px-6 py-8 relative">
-      <TutorDashboardIllustration />
-      <header className="flex items-center justify-between mb-6">
-        <h1 className="text-[22px] font-bold tracking-[-0.03em] text-slate-900">
-          Studio
-        </h1>
-        <Button size="sm">Add availability</Button>
+      <header className={`${mentrixTutor.heroGradient} mb-10 p-6 sm:p-8`}>
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-xl space-y-3">
+            <TutorHeroGreeting greeting={greeting} firstName={firstName} />
+            <div className="mt-1 text-sm text-white/90 h-[20px]">
+              <Typewriter text="Studio Guide Manage Mentrixa" speed={40} waitTime={5000} />
+            </div>
+            
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-emerald-300/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-50 shadow-sm backdrop-blur-sm">
+                Guide Studio
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 lg:items-end shrink-0">
+            <Button size="sm" className="h-9 text-xs bg-white text-slate-900 hover:bg-slate-100">
+              Add availability
+            </Button>
+          </div>
+        </div>
       </header>
 
       {/* Stat bar */}
-      <div className="mentrixa-stat-row grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="mentrixa-stat-cell rounded-lg border border-slate-200 bg-white px-4 py-3">
-          <div className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.18em] mb-1">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className={mentrixTutor.card + " p-4"}>
+          <div className={mentrixTutor.sectionEyebrow + " mb-1"}>
             Revenue this month
           </div>
           <div
             ref={revenueRef}
-            className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900"
+            className="text-[24px] font-bold tracking-[-0.03em] text-slate-900"
           >
             ${revenueThisMonth.toFixed(2)}
           </div>
         </div>
 
-        <div className="mentrixa-stat-cell rounded-lg border border-slate-200 bg-white px-4 py-3">
-          <div className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.18em] mb-1">
+        <div className={mentrixTutor.card + " p-4"}>
+          <div className={mentrixTutor.sectionEyebrow + " mb-1"}>
             Sessions taught
           </div>
           <div
             ref={sessionsRef}
-            className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900"
+            className="text-[24px] font-bold tracking-[-0.03em] text-slate-900"
           >
             {sessionsTaught}
           </div>
         </div>
 
-        <div className="mentrixa-stat-cell rounded-lg border border-slate-200 bg-white px-4 py-3">
-          <div className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.18em] mb-1">
+        <div className={mentrixTutor.card + " p-4"}>
+          <div className={mentrixTutor.sectionEyebrow + " mb-1"}>
             Avg rating
           </div>
           <div
             ref={ratingRef}
-            className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900"
+            className="text-[24px] font-bold tracking-[-0.03em] text-slate-900"
           >
             {avgRating != null ? `${avgRating.toFixed(1)} / 5` : "–"}
           </div>
         </div>
 
-        <div className="mentrixa-stat-cell rounded-lg border border-slate-200 bg-white px-4 py-3">
-          <div className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.18em] mb-1">
+        <div className={`${mentrixTutor.card} p-4 ${pendingCount > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
+          <div className={`${mentrixTutor.sectionEyebrow} mb-1 ${pendingCount > 0 ? "text-red-600" : ""}`}>
             Pending requests
           </div>
           <div
             ref={pendingRef}
-            className={`text-[24px] font-semibold tracking-[-0.03em] ${
-              pendingCount > 0 ? "text-[#B91C1C]" : "text-slate-900"
+            className={`text-[24px] font-bold tracking-[-0.03em] ${
+              pendingCount > 0 ? "text-red-700" : "text-slate-900"
             }`}
           >
             {pendingCount}
@@ -268,6 +291,7 @@ export function TutorDashboardClient({
       <div className="grid lg:grid-cols-12 gap-8">
         {/* Main area */}
         <div className="lg:col-span-8">
+          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
           <Tabs defaultValue="requests" className="w-full">
             <TabsList className="h-auto bg-transparent border-b border-slate-200 rounded-none px-0 mb-4">
               <TabsTrigger
@@ -291,7 +315,7 @@ export function TutorDashboardClient({
             </TabsList>
 
             <TabsContent value="requests" className="mt-0" ref={requestsSectionRef}>
-              <SessionRequestsList sessionRequests={sessionRequests} />
+              <SessionRequestsList sessionRequests={sessionRequests} displayTimezone={tutorTimezone} />
             </TabsContent>
 
             <TabsContent value="upcoming" className="mt-0">
@@ -306,62 +330,67 @@ export function TutorDashboardClient({
               />
             </TabsContent>
           </Tabs>
+          </ScrollRevealCard>
         </div>
 
         {/* Sidebar */}
-        <aside className="lg:col-span-4">
-          <section className="mb-4">
+        <aside className="lg:col-span-4 space-y-6">
+          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
             <CourseManager courses={tutorCourses} />
-          </section>
+          </ScrollRevealCard>
 
-          <section>
-            <h2 className="text-sm font-semibold text-slate-900 mb-3">Availability</h2>
+          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+            <h2 className="text-sm font-bold text-slate-900 mb-3">Availability</h2>
 
             <div className="flex items-center justify-between py-3 border-b border-[#F1F5F9] mb-4">
-              <p className="text-sm text-slate-700">Auto-approve bookings</p>
+              <p className="text-sm text-slate-700 font-medium">Auto-approve bookings</p>
               <AutoApproveToggle initialValue={autoApprove} />
             </div>
 
-            <div className="max-h-48 overflow-y-auto no-scrollbar">
+            <div className="max-h-48 overflow-y-auto no-scrollbar mb-4">
               <AvailabilityManager availability={availability} displayTimezone={tutorTimezone} />
             </div>
 
-            <CreateAvailabilityForm
-              tutorCourseNames={tutorCourses.map((c) => c.course_name)}
-              defaultTimezone={tutorTimezone}
-            />
-          </section>
+            <div className="mt-6">
+              <CreateAvailabilityCard
+                tutorCourseNames={tutorCourses.map((c) => c.course_name)}
+                defaultTimezone={tutorTimezone}
+                className="border-none shadow-none bg-transparent max-w-full"
+              />
+            </div>
+          </ScrollRevealCard>
 
-          <section className="border-t border-[#E2E8F0] pt-4 mt-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">Recent packages</h3>
-            <div>
+          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+            <h3 className="text-sm font-bold text-slate-900 mb-2">Recent packages</h3>
+            <div className="space-y-1">
               {recentPackages.map((session) => (
                 <div
                   key={session.id}
-                  className="py-2.5 border-b border-[#F8FAFC] flex items-center justify-between"
+                  className="py-2.5 border-b border-[#F8FAFC] last:border-0 flex items-center justify-between"
                 >
-                  <p className="text-sm text-slate-500">
+                  <p className="text-xs text-slate-500 font-medium">
                     {session.course} · {formatDate(session.start_time)}
                   </p>
                   <a
                     href={studioHref}
-                    className="text-xs text-mentrixa-600 hover:underline"
+                    className="text-[11px] text-blue-600 font-bold hover:underline"
                   >
                     View
                   </a>
                 </div>
               ))}
               {recentPackages.length === 0 && (
-                <p className="text-xs text-slate-400">No AI packages yet.</p>
+                <p className="text-xs text-slate-400 py-2">No Quest packages yet.</p>
               )}
             </div>
 
-            <Button variant="outline" size="sm" className="w-full mt-3" asChild>
+            <Button variant="outline" size="sm" className="w-full mt-4 h-9 text-xs border-slate-200" asChild>
               <Link href={studioHref}>Open Studio</Link>
             </Button>
-          </section>
+          </ScrollRevealCard>
         </aside>
       </div>
+    </div>
     </div>
   );
 }

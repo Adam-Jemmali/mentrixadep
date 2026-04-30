@@ -78,76 +78,34 @@ export async function getUserSettings(): Promise<UserSettings> {
   };
 }
 
+import { userSettingsSchema } from "@/lib/schemas";
+
 export async function updateUserSettings(settings: Partial<UserSettings>) {
   const user = await requireAuth();
   const supabase = await createClient();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
 
-  const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
-
-  if (settings.display_name !== undefined) {
-    const name = (settings.display_name ?? "").trim().slice(0, 100);
-    payload.display_name = name || null;
+  // M-02: Use strict whitelisting with Zod to prevent mass assignment.
+  const validated = userSettingsSchema.partial().safeParse(settings);
+  if (!validated.success) {
+    throw new Error("Invalid settings provided.");
   }
+  
+  const payload: Record<string, unknown> = { 
+    ...validated.data,
+    updated_at: new Date().toISOString() 
+  };
 
-  if (settings.bio !== undefined) {
-    const b = (settings.bio ?? "").trim().slice(0, 280);
-    payload.bio = b || null;
-  }
-
-  if (settings.profile_visible_to_tutors !== undefined) {
-    payload.profile_visible_to_tutors = !!settings.profile_visible_to_tutors;
-  }
-
-  if (settings.avatar_url !== undefined) {
-    const u = (settings.avatar_url ?? "").trim();
+  // Additional business logic/sanitization if needed (e.g. avatar URL domain check)
+  if (validated.data.avatar_url) {
+    const u = validated.data.avatar_url;
     if (
-      u.length > 0 &&
-      (!supabaseUrl ||
-        !u.startsWith(supabaseUrl) ||
-        !u.includes("/storage/v1/object/public/profile-pics/"))
+      !supabaseUrl ||
+      !u.startsWith(supabaseUrl) ||
+      !u.includes("/storage/v1/object/public/profile-pics/")
     ) {
       throw new Error("Avatar must use the app's profile-pics storage bucket");
     }
-    payload.avatar_url = u.length > 0 ? u.slice(0, 2048) : null;
-  }
-
-  if (settings.timezone !== undefined) {
-    payload.timezone = settings.timezone;
-  }
-
-  const boolFields = [
-    "email_session_reminders",
-    "email_session_booked",
-    "email_session_cancelled",
-    "email_weekly_summary",
-    "email_marketing",
-  ] as const;
-
-  for (const field of boolFields) {
-    if (settings[field] !== undefined) {
-      payload[field] = !!settings[field];
-    }
-  }
-
-  if (settings.session_default_duration !== undefined) {
-    const dur = Math.max(15, Math.min(180, settings.session_default_duration));
-    payload.session_default_duration = dur;
-  }
-
-  if (settings.session_buffer_minutes !== undefined) {
-    const buf = Math.max(0, Math.min(60, settings.session_buffer_minutes));
-    payload.session_buffer_minutes = buf;
-  }
-
-  if (settings.focused_division_key !== undefined) {
-    const v = settings.focused_division_key;
-    payload.focused_division_key =
-      v === null || v === "" ? null : String(v).trim().slice(0, 64);
-  }
-
-  if (settings.duel_opt_in !== undefined) {
-    payload.duel_opt_in = !!settings.duel_opt_in;
   }
 
   const { error } = await supabase
@@ -158,10 +116,10 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
     throw new Error("Failed to save settings");
   }
 
-  if (payload.display_name !== undefined) {
+  if (validated.data.display_name !== undefined) {
     const adminClient = createAdminClient();
     await adminClient.auth.admin.updateUserById(user.id, {
-      user_metadata: { full_name: payload.display_name },
+      user_metadata: { full_name: validated.data.display_name },
     });
   }
 

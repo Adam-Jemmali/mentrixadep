@@ -7,18 +7,23 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { createClient, RealtimeChannel } from "@supabase/supabase-js";
-import { env } from "@/lib/env";
+import { RealtimeChannel } from "@supabase/supabase-js";
+import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { gsap } from "gsap";
 import {
   createPeerConnection,
   getUserMedia,
   stopMediaStream,
 } from "@/lib/webrtc";
-import { leaveVideoRoom } from "@/app/actions/video";
+import { checkAndEnforceSessionTiming, leaveVideoRoom } from "@/app/actions/video";
 import { saveRecording } from "@/app/actions/recordings";
+import {
+  saveSessionAiContext,
+  type SessionAiChatLine,
+  type SessionAiScreenShareEvent,
+  type SessionAiWhiteboardSummary,
+} from "@/app/actions/session-ai-context";
 import { useRouter } from "next/navigation";
-import { VideoCallIllustration } from "@/components/illustrations";
 import { MessageSquare, LayoutPanelLeft, ArrowLeft } from "lucide-react";
 import { trackClientEvent } from "@/lib/use-track";
 import {
@@ -29,6 +34,10 @@ import { Whiteboard } from "@/components/video/whiteboard";
 import { InSessionChat } from "@/components/video/in-session-chat";
 import { PostCallSummary } from "@/components/video/post-call-summary";
 import { ToolbarQualityBadge } from "@/components/video/connection-quality";
+import Image from "next/image";
+import { BubbleText } from "@/components/ui/bubble-text";
+import { ParticleTextEffect } from "@/components/ui/particle-text";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 /** Trigger a browser download so the user keeps a local copy of the recording. */
 function downloadBlobToDevice(blob: Blob, filename: string): void {
@@ -93,46 +102,6 @@ async function buildPlayableWebmBlob(
   }
 }
 
-/** Cover-fit video into a rectangle (object-cover behavior). */
-function drawVideoCover(
-  ctx: CanvasRenderingContext2D,
-  video: HTMLVideoElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
-  if (!vw || !vh || video.readyState < 2) return;
-  const scale = Math.max(w / vw, h / vh);
-  const tw = vw * scale;
-  const th = vh * scale;
-  const tx = x + (w - tw) / 2;
-  const ty = y + (h - th) / 2;
-  ctx.drawImage(video, tx, ty, tw, th);
-}
-
-/** Letterboxed fit — entire frame visible (object-contain), for screen / full-frame fidelity. */
-function drawVideoContain(
-  ctx: CanvasRenderingContext2D,
-  video: HTMLVideoElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
-  if (!vw || !vh || video.readyState < 2) return;
-  const scale = Math.min(w / vw, h / vh);
-  const tw = vw * scale;
-  const th = vh * scale;
-  const tx = x + (w - tw) / 2;
-  const ty = y + (h - th) / 2;
-  ctx.drawImage(video, tx, ty, tw, th);
-}
-
 function isDisplayCaptureVideoTrack(track: MediaStreamTrack | undefined): boolean {
   if (!track || track.kind !== "video") return false;
   const s = track.getSettings() as MediaTrackSettings & {
@@ -166,6 +135,8 @@ interface VideoCallProps {
   guideLabel: string;
   /** ISO datetime string — used to gate lobby join button ±5 min */
   sessionStartTime?: string | null;
+  /** ISO datetime string — used for warning fallback UX if server check is unavailable */
+  sessionEndTime?: string | null;
 }
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
@@ -180,6 +151,7 @@ export function VideoCall({
   learnerLabel,
   guideLabel,
   sessionStartTime,
+  sessionEndTime,
 }: VideoCallProps) {
   const router = useRouter();
   const afterCallPath = userRole === "tutor" ? "/tutor" : "/student";
@@ -199,7 +171,8 @@ export function VideoCall({
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
+  const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
+  const supabaseRef = useRef<ReturnType<typeof createBrowserSupabaseClient> | null>(null);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
@@ -216,7 +189,12 @@ export function VideoCall({
   /** True while we are in the realtime room but no one else is in presence yet (before the call links). */
   const [waitingForOtherParticipant, setWaitingForOtherParticipant] = useState(false);
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [hasRecording, setHasRecording] = useState(false);
+  /** The actual time the session "started" (when the student first joined). Defaults to scheduled start. */
+  const [actualStartTime, setActualStartTime] = useState<Date | null>(null);
   const [isSharingScreen, setIsSharingScreen] = useState(false);
+  /** Whether the remote participant is currently sharing their screen. */
+  const [remoteIsScreenShare, setRemoteIsScreenShare] = useState(false);
   /** Student (and non-sharing): main video uses contain for remote display-capture so nothing is cropped. */
   const [remoteMainVideoFit, setRemoteMainVideoFit] = useState<"cover" | "contain">("cover");
   const [isPipDragging, setIsPipDragging] = useState(false);
@@ -225,6 +203,17 @@ export function VideoCall({
     kind: "success" | "error" | "info";
     message: string;
   } | null>(null);
+  const [sessionWarning, setSessionWarning] = useState<"60s" | "15s" | null>(null);
+  const [showTutorReconnectPrompt, setShowTutorReconnectPrompt] = useState(false);
+  const [showStudentReconnectingOverlay, setShowStudentReconnectingOverlay] = useState(false);
+
+  const sessionDurationSeconds = (sessionStartTime && sessionEndTime)
+    ? (new Date(sessionEndTime).getTime() - new Date(sessionStartTime).getTime()) / 1000
+    : 1800; // Default 30 min if missing
+
+  const isSessionTrulyOver = (sessionEndTime)
+    ? new Date(sessionEndTime) <= new Date()
+    : false;
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
@@ -253,6 +242,7 @@ export function VideoCall({
   const recordingStoppedResolveRef = useRef<(() => void) | null>(null);
   const controlActionLockRef = useRef(false);
   const combinedStreamForRecordingRef = useRef<MediaStream | null>(null);
+  const recordingDisplayStreamRef = useRef<MediaStream | null>(null);
   /** Live display-capture track while screen sharing (same track sent to the peer). */
   const displayVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   /** Camera track before screen share — used to restore after display ends (getVideoTracks()[0] can be wrong). */
@@ -271,6 +261,33 @@ export function VideoCall({
   /** After Supabase channel.track — safe to interpret presence as "in room". */
   const realtimeRoomJoinedRef = useRef(false);
   const lastRealtimeStatusRef = useRef<string | null>(null);
+  const chatTranscriptRef = useRef<SessionAiChatLine[]>([]);
+  const whiteboardSummaryRef = useRef<SessionAiWhiteboardSummary | null>(null);
+  const screenShareTimelineRef = useRef<SessionAiScreenShareEvent[]>([]);
+  const recordingHintsRef = useRef<Record<string, unknown>>({});
+  const sessionWarningSentRef = useRef<{ sixty: boolean; fifteen: boolean }>({
+    sixty: false,
+    fifteen: false,
+  });
+  const sessionForceEndedRef = useRef(false);
+
+  const persistTutorSessionAiContext = useCallback(async () => {
+    if (userRole !== "tutor") return;
+
+    const payload = {
+      sessionId,
+      chatTranscript: chatTranscriptRef.current,
+      whiteboardSummary: whiteboardSummaryRef.current,
+      whiteboardSnapshotDataUrl: whiteboardSnapshot,
+      screenShareTimeline: screenShareTimelineRef.current,
+      recordingHints: recordingHintsRef.current,
+    };
+
+    const res = await saveSessionAiContext(payload);
+    if (!res.ok) {
+      console.warn("[video-call] saveSessionAiContext failed:", res.error);
+    }
+  }, [sessionId, userRole, whiteboardSnapshot]);
 
   function trackRealtimeStatus(status: string, channelName: string) {
     if (lastRealtimeStatusRef.current === status) return;
@@ -357,7 +374,27 @@ export function VideoCall({
   }
 
   const handleEndCall = async () => {
-    if (isLeaving) return;
+    if (isLeaving || controlActionLockRef.current) return;
+    controlActionLockRef.current = true;
+
+    // ELITE SECURITY & DATA INTEGRITY: Tutors cannot leave until session ends to protect the recording.
+    if (userRole === "tutor") {
+      const now = Date.now();
+      // Use actual start if available, otherwise scheduled
+      const anchor = actualStartTime || (sessionStartTime ? new Date(sessionStartTime) : new Date());
+      const endTime = anchor.getTime() + (sessionDurationSeconds * 1000);
+
+      if (now < endTime && !isSessionTrulyOver) {
+        const endStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        setNotice({
+          kind: "error",
+          message: `Data Integrity Lock: Session is active until ${endStr}. You must stay until the student's time is complete to ensure the recording is processed.`,
+        });
+        controlActionLockRef.current = false;
+        return;
+      }
+    }
+
     isLeavingRef.current = true;
     setIsLeaving(true);
     setWaitingForOtherParticipant(false);
@@ -395,6 +432,9 @@ export function VideoCall({
         }
         channelRef.current.unsubscribe();
       }
+      setRealtimeChannel(null);
+
+      await persistTutorSessionAiContext();
 
       // Show post-call summary instead of immediately navigating
       setShowPostCall(true);
@@ -405,7 +445,25 @@ export function VideoCall({
   };
 
   const handleBackToDashboard = async () => {
-    if (isLeaving) return;
+    if (isLeaving || controlActionLockRef.current) return;
+    controlActionLockRef.current = true;
+
+    // ELITE SECURITY & DATA INTEGRITY: Tutors cannot leave until session ends to protect the recording.
+    if (userRole === "tutor") {
+      const now = Date.now();
+      const anchor = actualStartTime || (sessionStartTime ? new Date(sessionStartTime) : new Date());
+      const endTime = anchor.getTime() + (sessionDurationSeconds * 1000);
+
+      if (now < endTime && !isSessionTrulyOver) {
+        setNotice({
+          kind: "error",
+          message: "Dashboard Lock: Premature exit blocked. You must stay in the room until the session actually ends to finalize the recording upload.",
+        });
+        controlActionLockRef.current = false;
+        return;
+      }
+    }
+
     isLeavingRef.current = true;
     setIsLeaving(true);
     setWaitingForOtherParticipant(false);
@@ -427,6 +485,8 @@ export function VideoCall({
         }
         channelRef.current.unsubscribe();
       }
+      setRealtimeChannel(null);
+      await persistTutorSessionAiContext();
       await leaveVideoRoom(sessionId);
     } catch (err) {
       console.warn("Back-to-dashboard cleanup failed:", err);
@@ -437,11 +497,21 @@ export function VideoCall({
 
   // Initialize Supabase client for Realtime
   useEffect(() => {
-    supabaseRef.current = createClient(env.public.supabaseUrl, env.public.supabaseAnonKey);
+    try {
+      supabaseRef.current = createBrowserSupabaseClient();
+    } catch {
+      supabaseRef.current = null;
+      setConnectionStatus("error");
+      setError(
+        "Video signaling is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then restart the dev server.",
+      );
+    }
+
     return () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
       }
+      setRealtimeChannel(null);
     };
   }, []);
 
@@ -456,12 +526,16 @@ export function VideoCall({
     };
   }, [inLobby]);
 
+  // Update session timer based on actual start time (student join anchor)
   useEffect(() => {
     const interval = setInterval(() => {
-      setSessionSeconds((prev) => prev + 1);
+      const anchor = actualStartTime || (sessionStartTime ? new Date(sessionStartTime) : new Date());
+      const now = new Date();
+      const diff = Math.floor((now.getTime() - anchor.getTime()) / 1000);
+      setSessionSeconds(Math.max(0, diff));
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [actualStartTime, sessionStartTime]);
 
   useEffect(() => {
     isSharingScreenRef.current = isSharingScreen;
@@ -563,17 +637,27 @@ export function VideoCall({
   // Effect to ensure remote video plays when stream is available (both users see remote cam)
   useEffect(() => {
     if (isSharingScreen) return;
-    if (remoteStreamRef.current && remoteVideoRef.current && document.contains(remoteVideoRef.current)) {
-      if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
-        remoteVideoRef.current.srcObject = remoteStreamRef.current;
-        remoteVideoRef.current.play().catch((err) => {
-          if (!err.message?.includes("play() request was interrupted")) {
-            console.error("Error playing remote video (useEffect):", err);
+    
+    const bindRemote = async () => {
+      if (remoteStreamRef.current && remoteVideoRef.current && document.contains(remoteVideoRef.current)) {
+        const stream = remoteStreamRef.current;
+        // Ensure the track is actually live and enabled
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack && videoTrack.readyState === "live" && remoteVideoRef.current.srcObject !== stream) {
+          remoteVideoRef.current.srcObject = stream;
+          try {
+            await remoteVideoRef.current.play();
+          } catch (err) {
+            if (err instanceof Error && !err.message.includes("interrupted")) {
+              console.warn("[video-call] remoteVideo.play() failed:", err);
+            }
           }
-        });
+        }
       }
-    }
-  }, [connectionStatus, hasRemoteStream, isSharingScreen]);
+    };
+    
+    void bindRemote();
+  }, [connectionStatus, hasRemoteStream, isSharingScreen, remoteIsScreenShare]);
 
   const syncRemoteMainVideoFit = useCallback(() => {
     if (isSharingScreen) return;
@@ -582,23 +666,69 @@ export function VideoCall({
     setRemoteMainVideoFit(isDisplayCaptureVideoTrack(t) ? "contain" : "cover");
   }, [isSharingScreen]);
 
-  // Auto-disconnect when session ends
+  // Server-authoritative timing checks + in-call warnings.
   useEffect(() => {
     const checkSessionEnd = setInterval(async () => {
       try {
-        const { validateJoinRequest } = await import("@/app/actions/video");
-        await validateJoinRequest(sessionId);
-      } catch (error) {
-        // Session window expired, disconnect
-        if (error instanceof Error && error.message.includes("expired")) {
-          handleEndCall();
+        const result = await checkAndEnforceSessionTiming(sessionId);
+
+        if (result.warning === "60s" && !sessionWarningSentRef.current.sixty) {
+          sessionWarningSentRef.current.sixty = true;
+          setSessionWarning("60s");
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "session-warning",
+            payload: { level: "60s", from: userId },
+          });
         }
+
+        if (result.warning === "15s" && !sessionWarningSentRef.current.fifteen) {
+          sessionWarningSentRef.current.fifteen = true;
+          setSessionWarning("15s");
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "session-warning",
+            payload: { level: "15s", from: userId },
+          });
+        }
+
+        if (result.shouldEnd && !sessionForceEndedRef.current) {
+          sessionForceEndedRef.current = true;
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "session-force-end",
+            payload: { reason: result.reason ?? "time_elapsed", from: userId },
+          });
+          setNotice({
+            kind: "info",
+            message:
+              result.reason === "cancelled"
+                ? "This session was cancelled and will now end."
+                : "Session time ended. Wrapping up this call.",
+          });
+          await handleEndCall();
+        }
+      } catch (error) {
+        // Fallback warning path if server check is temporarily unavailable.
+        if (sessionEndTime) {
+          const remainingMs = new Date(sessionEndTime).getTime() - Date.now();
+          const remainingSec = Math.floor(remainingMs / 1000);
+          if (remainingSec <= 60 && !sessionWarningSentRef.current.sixty) {
+            sessionWarningSentRef.current.sixty = true;
+            setSessionWarning("60s");
+          }
+          if (remainingSec <= 15 && !sessionWarningSentRef.current.fifteen) {
+            sessionWarningSentRef.current.fifteen = true;
+            setSessionWarning("15s");
+          }
+        }
+        console.warn("Session timing check failed:", error);
       }
-    }, 30000); // Check every 30 seconds
+    }, 5000);
 
     return () => clearInterval(checkSessionEnd);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, [sessionId, sessionEndTime, userId]);
 
   // Initialize WebRTC and signaling
   useEffect(() => {
@@ -614,11 +744,11 @@ export function VideoCall({
         realtimeRoomJoinedRef.current = false;
         if (mounted) setWaitingForOtherParticipant(false);
 
-        console.log("Initializing call...");
+        if (process.env.NODE_ENV === "development") console.log("Initializing call...");
         setConnectionStatus("connecting");
         
         // Get user media — prefer devices chosen in pre-call lobby
-        console.log("Requesting camera and microphone access...");
+        if (process.env.NODE_ENV === "development") console.log("Requesting camera and microphone access...");
         let stream: MediaStream;
         const lbs = lobbySettings;
         if (lbs) {
@@ -951,6 +1081,13 @@ export function VideoCall({
             setWaitingForOtherParticipant(false);
             setConnectionStatus("connected");
             setHasRemoteStream(true);
+            setShowTutorReconnectPrompt(false);
+            setShowStudentReconnectingOverlay(false);
+            channelRef.current?.send({
+              type: "broadcast",
+              event: "participant-reconnected",
+              payload: { from: userId },
+            });
             console.log("Peer connection established!");
             console.log("Local tracks:", stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
             if (remoteStreamRef.current) {
@@ -959,6 +1096,17 @@ export function VideoCall({
           } else if (state === "failed" || state === "disconnected" || state === "closed") {
             if (callWasConnectedRef.current && !isLeavingRef.current) {
               console.log("Peer left the call — staying in room with local video");
+              channelRef.current?.send({
+                type: "broadcast",
+                event: "participant-reconnecting",
+                payload: { from: userId },
+              });
+              if (userRole === "tutor") {
+                setShowTutorReconnectPrompt(true);
+              }
+              if (userRole === "student") {
+                setShowStudentReconnectingOverlay(true);
+              }
               if (!peerLeftNoticeShownRef.current) {
                 peerLeftNoticeShownRef.current = true;
                 setNotice({
@@ -1009,7 +1157,11 @@ export function VideoCall({
         };
 
         // Subscribe to signaling channel
-        if (!supabaseRef.current) return;
+        if (!supabaseRef.current) {
+          throw new Error(
+            "Video signaling is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+          );
+        }
 
         const channel = supabaseRef.current.channel(`video-room-${roomId}`, {
           config: {
@@ -1019,9 +1171,10 @@ export function VideoCall({
         });
 
         channelRef.current = channel;
+        setRealtimeChannel(channel);
 
         // Handle incoming offers
-        channel.on("broadcast", { event: "offer" }, async (message) => {
+        channel.on("broadcast", { event: "offer" }, async (message: unknown) => {
           // Extract payload - Supabase Realtime wraps it
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const payload = (message as any).payload || message;
@@ -1105,7 +1258,7 @@ export function VideoCall({
         });
 
         // Handle incoming answers
-        channel.on("broadcast", { event: "answer" }, async (message) => {
+        channel.on("broadcast", { event: "answer" }, async (message: unknown) => {
           // Extract payload - Supabase Realtime wraps it
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const payload = (message as any).payload || message;
@@ -1170,7 +1323,7 @@ export function VideoCall({
         });
 
         // Handle ICE candidates
-        channel.on("broadcast", { event: "ice-candidate" }, async (message) => {
+        channel.on("broadcast", { event: "ice-candidate" }, async (message: unknown) => {
           // Extract payload - Supabase Realtime wraps it
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const payload = (message as any).payload || message;
@@ -1199,7 +1352,92 @@ export function VideoCall({
           }
         });
 
-        // Track presence to know when both participants are ready
+        channel.on("broadcast", { event: "session-warning" }, (message: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const payload = (message as any).payload || message;
+          if (!payload || payload.from === userId) return;
+          const level = payload.level === "15s" ? "15s" : payload.level === "60s" ? "60s" : null;
+          if (!level) return;
+          setSessionWarning((prev) => (prev === "15s" ? prev : level));
+          if (level === "60s") sessionWarningSentRef.current.sixty = true;
+          if (level === "15s") sessionWarningSentRef.current.fifteen = true;
+        });
+
+        channel.on("broadcast", { event: "session-force-end" }, (message: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const payload = (message as any).payload || message;
+          if (!payload || payload.from === userId) return;
+          if (sessionForceEndedRef.current || isLeavingRef.current) return;
+          sessionForceEndedRef.current = true;
+          setNotice({
+            kind: "info",
+            message: "Session was ended by server timing enforcement.",
+          });
+          void handleEndCall();
+        });
+
+        channel.on("broadcast", { event: "participant-reconnecting" }, (message: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const payload = (message as any).payload || message;
+          if (!payload || payload.from === userId) return;
+          if (userRole === "student") {
+            setShowStudentReconnectingOverlay(true);
+          }
+        });
+
+        channel.on("broadcast", { event: "participant-reconnected" }, (message: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const payload = (message as any).payload || message;
+          if (!payload || payload.from === userId) return;
+          setShowStudentReconnectingOverlay(false);
+          setShowTutorReconnectPrompt(false);
+        });
+
+        channel.on("broadcast", { event: "screen-share-started" }, (message: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const payload = (message as any).payload || message;
+          if (!payload || payload.from === userId) return;
+          setRemoteIsScreenShare(true);
+        });
+
+        channel.on("broadcast", { event: "screen-share-stopped" }, (message: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const payload = (message as any).payload || message;
+          if (!payload || payload.from === userId) return;
+          setRemoteIsScreenShare(false);
+        });
+
+          channel.on("broadcast", { event: "recording-available" }, (message: unknown) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const payload = (message as any).payload || message;
+            if (!payload || !payload.recordingId) return;
+            console.log("[video-call] Recording ID received from peer:", payload.recordingId);
+            setHasRecording(true);
+          });
+
+        // ELITE SYNC: Check for student's first join to anchor the session time
+        const checkStudentJoin = async () => {
+          if (!supabaseRef.current) return;
+          const { data: participants } = await supabaseRef.current
+            .from("call_participants")
+            .select("joined_at")
+            .eq("room_id", roomId)
+            .eq("role", "student")
+            .order("joined_at", { ascending: true })
+            .limit(1);
+
+          if (participants && participants.length > 0) {
+            const firstJoin = new Date(participants[0].joined_at);
+            setActualStartTime(firstJoin);
+          }
+        };
+
+        void checkStudentJoin();
+
+        // Also listen for new participants to update anchor in real-time
+        channel.on("presence", { event: "join" }, () => {
+          void checkStudentJoin();
+        });
         let offerSent = false;
         let otherParticipantPresent = false;
 
@@ -1237,7 +1475,7 @@ export function VideoCall({
           }
         });
 
-        channel.on("presence", { event: "join" }, ({ key, newPresences }) => {
+        channel.on("presence", { event: "join" }, ({ key, newPresences }: { key: string; newPresences: unknown[] }) => {
           console.log("Participant joined:", key, newPresences);
           if (key !== userId) {
             if (mounted) setWaitingForOtherParticipant(false);
@@ -1254,7 +1492,7 @@ export function VideoCall({
           }
         });
 
-        channel.on("presence", { event: "leave" }, ({ key }) => {
+        channel.on("presence", { event: "leave" }, ({ key }: { key: string }) => {
           if (!mounted || key === userId || isLeavingRef.current) return;
           if (!callWasConnectedRef.current) return;
           if (peerLeftNoticeShownRef.current) return;
@@ -1271,7 +1509,7 @@ export function VideoCall({
         });
 
         // Subscribe to channel and set presence
-        await channel.subscribe(async (status) => {
+        await channel.subscribe(async (status: string) => {
           console.log("Channel subscription status:", status);
           trackRealtimeStatus(status, channel.topic);
           if (status === "SUBSCRIBED") {
@@ -1359,7 +1597,7 @@ export function VideoCall({
       channel: RealtimeChannel
     ) {
       try {
-        console.log("Creating offer...");
+        if (process.env.NODE_ENV === "development") console.log("Creating offer...");
         
         // Ensure we're in stable state
         if (pc.signalingState !== "stable") {
@@ -1414,83 +1652,112 @@ export function VideoCall({
       if (channelRef.current) {
         channelRef.current.unsubscribe();
       }
+      setRealtimeChannel(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- we intentionally initialize call once for identity/session tuple
   }, [sessionId, roomId, roomToken, userRole, userId, inLobby]);
 
   const toggleMute = () => {
+    if (controlActionLockRef.current || !localStreamRef.current) return;
     runControlAction(() => {
-      if (localStreamRef.current) {
-        const audioTracks = localStreamRef.current.getAudioTracks();
-        audioTracks.forEach((track) => {
-          track.enabled = isMuted;
-        });
-        setIsMuted(!isMuted);
-      }
+      const audioTracks = localStreamRef.current?.getAudioTracks() ?? [];
+      const newState = !isMuted;
+      audioTracks.forEach((track) => {
+        track.enabled = !newState;
+      });
+      setIsMuted(newState);
+      console.log(`[video-call] Audio ${newState ? 'muted' : 'unmuted'}`);
     });
   };
 
   const toggleVideo = () => {
+    if (controlActionLockRef.current || !localStreamRef.current) return;
     runControlAction(() => {
-      if (localStreamRef.current) {
-        const videoTracks = localStreamRef.current.getVideoTracks();
-        videoTracks.forEach((track) => {
-          track.enabled = isVideoOff;
-        });
-        setIsVideoOff(!isVideoOff);
-      }
+      const videoTracks = localStreamRef.current?.getVideoTracks() ?? [];
+      const newState = !isVideoOff;
+      videoTracks.forEach((track) => {
+        track.enabled = !newState;
+      });
+      setIsVideoOff(newState);
+      console.log(`[video-call] Video ${newState ? 'off' : 'on'}`);
     });
   };
 
   const startRecording = async () => {
-    if (isStartingRecordingRef.current || isRecording || isProcessingRecording) {
+    if (isStartingRecordingRef.current || isRecording || isProcessingRecording || controlActionLockRef.current) {
+      console.warn("[video-call] startRecording ignored: already in progress or locked.");
       return;
     }
-    if (!localStreamRef.current) {
-      setError("Cannot start recording: local stream not available");
+    if (!localStreamRef.current || !peerConnectionRef.current) {
+      setError("Cannot start recording: connection not ready.");
       return;
     }
 
     if (connectionStatus !== "connected") {
-      setError("Cannot start recording: wait until the call is connected.");
-      return;
-    }
-
-    if (!localVideoRef.current) {
-      setError("Video is not ready yet. Wait a moment, then try Record again.");
-      return;
-    }
-
-    if (!displayVideoTrackRef.current && !remoteVideoRef.current) {
-      setError("Connect with the other participant first, or share your screen to record.");
+      setError("Wait until the call is fully connected before recording.");
       return;
     }
 
     const consentOk = window.confirm(
       "Recording consent required: confirm that both parties explicitly agree to this recording."
     );
-    if (!consentOk) {
-      setError(
-        "Recording not started. You must confirm both parties agreed to recording."
-      );
-      return;
-    }
+    if (!consentOk) return;
 
+    controlActionLockRef.current = true;
     isStartingRecordingRef.current = true;
     try {
       console.log("Starting recording...");
       setError(null);
       setNotice(null);
 
-      const localVideo = localVideoRef.current;
-      const remoteVideo = remoteVideoRef.current;
+      // ELITE SYNC: Check if we are already sharing our screen. 
+      // If so, use the existing track instead of prompting the user again.
+      let recordingDisplayStream: MediaStream | null = recordingDisplayStreamRef.current;
+      let recordingDisplayTrack: MediaStreamTrack | null | undefined = displayVideoTrackRef.current;
 
-      if (localVideo.paused) {
-        await localVideo.play().catch((err) => console.warn("Local video play error:", err));
+      if (displayVideoTrackRef.current && displayVideoTrackRef.current.readyState === "live") {
+        recordingDisplayTrack = displayVideoTrackRef.current;
+        console.log("Reusing existing screen share track for recording.");
+      } else {
+        console.log("No active screen share found for recording, requesting new stream...");
+        recordingDisplayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            frameRate: { ideal: 30, max: 30 },
+            cursor: "always",
+          } as MediaTrackConstraints,
+          audio: false,
+        });
+        recordingDisplayTrack = recordingDisplayStream.getVideoTracks()[0];
+        recordingDisplayStreamRef.current = recordingDisplayStream;
+
+        // AUTO-SHARE: If we just started a screen capture for recording, 
+        // automatically share it with the student so the tutor doesn't have to share twice.
+        if (!isSharingScreenRef.current) {
+          console.log("Automatically initiating screen share with student...");
+          void handleShareScreen(recordingDisplayStream);
+        }
       }
-      if (remoteVideo && remoteVideo.paused) {
-        await remoteVideo.play().catch((err) => console.warn("Remote video play error:", err));
+
+      if (!recordingDisplayTrack) {
+        throw new Error("No display track was returned. Choose a screen/window to record.");
       }
+
+      recordingDisplayTrack.onended = () => {
+        console.log("Recording display track ended.");
+        screenShareTimelineRef.current.push({
+          state: "end",
+          at: Date.now(),
+          actorId: userId,
+        });
+        // If we are still recording, we should stop it gracefully
+        if (mediaRecorderRef.current?.state === "recording" || mediaRecorderRef.current?.state === "paused") {
+          setNotice({
+            kind: "info",
+            message: "Screen capture ended. Finalizing recording...",
+          });
+          void stopRecording();
+        }
+      };
 
       closeRecordingAudioContext();
 
@@ -1522,133 +1789,30 @@ export function VideoCall({
         await audioContext.resume().catch(() => {});
       }
 
-      // Always composite with canvas so the file includes both participants + screen share layout
-      // (direct capture of a single display track omitted remote PiP and was not a full session record).
-      let combinedStream: MediaStream;
+      const combinedStream = new MediaStream();
+      combinedStream.addTrack(recordingDisplayTrack);
+      recordingHintsRef.current = {
+        ...recordingHintsRef.current,
+        recordingMode: "tutor-screen-capture",
+        recordingStartedAt: Date.now(),
+      };
 
-      {
-        let cw = 1920;
-        let ch = 1080;
-        if (isSharingScreenRef.current) {
-          const rv = remoteVideo;
-          if (rv && rv.videoWidth > 0 && rv.videoHeight > 0) {
-            cw = rv.videoWidth;
-            ch = rv.videoHeight;
-          } else if (displayVideoTrackRef.current) {
-            const s = displayVideoTrackRef.current.getSettings();
-            if (s.width && s.height) {
-              cw = s.width;
-              ch = s.height;
-            }
-          }
-          const maxDim = 3840;
-          if (cw > maxDim || ch > maxDim) {
-            const scale = Math.min(maxDim / cw, maxDim / ch);
-            cw = Math.floor(cw * scale);
-            ch = Math.floor(ch * scale);
-          }
-          cw = Math.max(640, cw);
-          ch = Math.max(360, ch);
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = cw;
-        canvas.height = ch;
-        const ctx = canvas.getContext("2d", { alpha: false });
-        if (!ctx) {
-          setError("Failed to create canvas context");
-          return;
-        }
-
-        canvasRef.current = canvas;
-        recordingActiveRef.current = true;
-
-        const drawFrame = () => {
-          if (!ctx || !recordingActiveRef.current) {
-            if (animationFrameRef.current) {
-              cancelAnimationFrame(animationFrameRef.current);
-              animationFrameRef.current = null;
-            }
-            return;
-          }
-
-          ctx.fillStyle = "#000000";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          const sharing = isSharingScreenRef.current;
-
-          if (sharing) {
-            // Layout matches UI: main (remoteVideoRef) = screen capture; PiP (localVideoRef) = other person
-            const screenEl = remoteVideo;
-            const pipEl = localVideo;
-            if (screenEl && screenEl.readyState >= 2 && screenEl.videoWidth > 0) {
-              try {
-                drawVideoContain(ctx, screenEl, 0, 0, canvas.width, canvas.height);
-              } catch (err) {
-                console.warn("Error drawing screen share:", err);
-              }
-            }
-            if (pipEl && pipEl.readyState >= 2 && pipEl.videoWidth > 0) {
-              try {
-                const pw = canvas.width * 0.22;
-                const ph = canvas.height * 0.22;
-                const px = canvas.width - pw - 16;
-                const py = 16;
-                drawVideoCover(ctx, pipEl, px, py, pw, ph);
-              } catch (err) {
-                console.warn("Error drawing PiP:", err);
-              }
-            }
-          } else {
-            // Default: remote main, local PiP
-            if (remoteVideo && remoteVideo.readyState >= 2 && remoteVideo.videoWidth > 0) {
-              try {
-                drawVideoCover(ctx, remoteVideo, 0, 0, canvas.width * 0.72, canvas.height);
-              } catch (err) {
-                console.warn("Error drawing remote video:", err);
-              }
-            }
-            if (localVideo.readyState >= 2 && localVideo.videoWidth > 0) {
-              try {
-                const pw = canvas.width * 0.26;
-                const ph = canvas.height * 0.26;
-                const px = canvas.width - pw - 20;
-                const py = canvas.height - ph - 20;
-                drawVideoCover(ctx, localVideo, px, py, pw, ph);
-              } catch (err) {
-                console.warn("Error drawing local video:", err);
-              }
-            }
-          }
-
-          if (recordingActiveRef.current) {
-            animationFrameRef.current = requestAnimationFrame(drawFrame);
-          }
-        };
-
-        drawFrame();
-
-        const canvasStream = canvas.captureStream(30);
-        canvasStreamRef.current = canvasStream;
-
-        combinedStream = new MediaStream();
-        canvasStream.getVideoTracks().forEach((track) => combinedStream.addTrack(track));
-
-        if (destination && destination.stream.getAudioTracks().length > 0) {
-          destination.stream.getAudioTracks().forEach((track) => combinedStream.addTrack(track));
-        } else if (localStreamRef.current.getAudioTracks().length > 0) {
-          localStreamRef.current.getAudioTracks().forEach((track) => {
-            combinedStream.addTrack(track.clone());
-          });
-        }
-
-        combinedStreamForRecordingRef.current = combinedStream;
-        await new Promise((resolve) => setTimeout(resolve, 600));
+      if (destination && destination.stream.getAudioTracks().length > 0) {
+        destination.stream.getAudioTracks().forEach((track) => combinedStream.addTrack(track));
+      } else if (localStreamRef.current.getAudioTracks().length > 0) {
+        localStreamRef.current.getAudioTracks().forEach((track) => {
+          combinedStream.addTrack(track.clone());
+        });
       }
+
+      combinedStreamForRecordingRef.current = combinedStream;
+      canvasRef.current = null;
+      canvasStreamRef.current = null;
 
       console.log("Combined stream tracks:", {
         video: combinedStream.getVideoTracks().length,
         audio: combinedStream.getAudioTracks().length,
-        screenShareLayout: isSharingScreenRef.current,
+        recordingMode: "tutor-screen-capture",
       });
 
       // Prefer MP4/H.264 when supported (Windows Media Player handles it far better than WebM).
@@ -1681,8 +1845,7 @@ export function VideoCall({
       selectedMimeTypeRef.current = selectedMimeType;
 
       const videoTrackForBitrate = combinedStream.getVideoTracks()[0];
-      const treatAsHighMotion =
-        isSharingScreenRef.current || (videoTrackForBitrate?.getSettings().width ?? 0) > 1600;
+      const treatAsHighMotion = (videoTrackForBitrate?.getSettings().width ?? 0) > 1600;
       const videoBitsPerSecond = treatAsHighMotion
         ? suggestedScreenCaptureBitrate(videoTrackForBitrate)
         : 2_500_000;
@@ -1749,6 +1912,8 @@ export function VideoCall({
         const startedAtIso =
           recordingStartTimeRef.current?.toISOString() ?? new Date().toISOString();
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let uploadResult: any = null;
         try {
           console.log("Recording stopped, processing...", {
             chunks: recordedChunksRef.current.length,
@@ -1811,8 +1976,30 @@ export function VideoCall({
           uploadFormData.append("recordingConsentConfirmed", "true");
 
           const result = await saveRecording(uploadFormData);
+          uploadResult = result;
+
+          if (!result || typeof result !== "object" || !("success" in result)) {
+            recordingHintsRef.current = {
+              ...recordingHintsRef.current,
+              uploadStatus: "unknown",
+              durationMs,
+            };
+            setError(null);
+            setNotice({
+              kind: "info",
+              message:
+                `Saved “${fileName}” to your device (Downloads). Cloud backup status is unavailable right now, so it may not appear in Mentrixa library for this recording.`,
+            });
+            return;
+          }
 
           if (!result.success) {
+            recordingHintsRef.current = {
+              ...recordingHintsRef.current,
+              uploadStatus: "failed",
+              uploadError: result.error ?? "Unknown error",
+              durationMs,
+            };
             setError(null);
             setNotice({
               kind: "error",
@@ -1822,6 +2009,17 @@ export function VideoCall({
           }
 
           setError(null);
+          recordingHintsRef.current = {
+            ...recordingHintsRef.current,
+            uploadStatus: "success",
+            uploadedFileName: result.recording?.file_name ?? fileName,
+            durationMs,
+            mimeType: fileMimeForUpload,
+          };
+          if (result.recording?.id) {
+            setHasRecording(true);
+          }
+
           setNotice({
             kind: "success",
             message: `Saved “${fileName}” locally and in Mentrixa (${result.recording?.file_name ?? "library"}). ${fileName.endsWith(".mp4") ? "MP4 usually plays best in Windows Media Player." : "If the picture is frozen or seek fails in Windows Media Player, open the file in Microsoft Edge or the Films & TV app."}`,
@@ -1855,6 +2053,16 @@ export function VideoCall({
           setIsRecording(false);
           recordingStoppedResolveRef.current?.();
           recordingStoppedResolveRef.current = null;
+
+          // ELITE SYNC: Tell the student the recording is now available
+          if (recordingHintsRef.current.uploadStatus === "success") {
+            channelRef.current?.send({
+              type: "broadcast",
+              event: "recording-available",
+              payload: { recordingId: uploadResult?.recording?.id },
+            });
+          }
+          
           rebindVideoElementsAfterRecording();
         }
       };
@@ -1864,8 +2072,9 @@ export function VideoCall({
         isStoppingRef.current = false;
         stopRecordingCanvasLoop();
         closeRecordingAudioContext();
-        if (canvasStreamRef.current) {
-          canvasStreamRef.current.getTracks().forEach((track) => track.stop());
+        const canvasStream = canvasStreamRef.current;
+        if (canvasStream) {
+          canvasStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
           canvasStreamRef.current = null;
         }
         combinedStreamForRecordingRef.current?.getTracks().forEach((t) => {
@@ -1903,10 +2112,6 @@ export function VideoCall({
         recordingWallClockStartMsRef.current = null;
         stopRecordingCanvasLoop();
         closeRecordingAudioContext();
-        if (canvasStreamRef.current) {
-          canvasStreamRef.current.getTracks().forEach((track) => track.stop());
-          canvasStreamRef.current = null;
-        }
         combinedStreamForRecordingRef.current?.getTracks().forEach((t) => {
           if (t.readyState !== "ended") t.stop();
         });
@@ -1942,8 +2147,15 @@ export function VideoCall({
         if (t.readyState !== "ended") t.stop();
       });
       combinedStreamForRecordingRef.current = null;
+      recordingDisplayStreamRef.current?.getTracks().forEach((t) => {
+        if (t.readyState !== "ended") t.stop();
+      });
+      recordingDisplayStreamRef.current = null;
     } finally {
       isStartingRecordingRef.current = false;
+      window.setTimeout(() => {
+        controlActionLockRef.current = false;
+      }, 500); // 500ms safety lockout after start
     }
   };
 
@@ -2050,6 +2262,10 @@ export function VideoCall({
       if (canvasStreamRef.current) {
         canvasStreamRef.current.getTracks().forEach((track) => track.stop());
       }
+      if (recordingDisplayStreamRef.current) {
+        recordingDisplayStreamRef.current.getTracks().forEach((track) => track.stop());
+        recordingDisplayStreamRef.current = null;
+      }
       const ctx = recordingAudioContextRef.current;
       recordingAudioContextRef.current = null;
       if (ctx && ctx.state !== "closed") {
@@ -2109,129 +2325,164 @@ export function VideoCall({
     return `${mm}:${ss}`;
   };
 
-  const handleShareScreen = async () => {
-    if (controlActionLockRef.current || isSharingScreen || !peerConnectionRef.current) return;
+  const handleShareScreen = async (existingStream?: MediaStream) => {
+    if (controlActionLockRef.current || !peerConnectionRef.current) return;
+    
+    // If we are already sharing and this isn't an auto-share from recording, 
+    // we allow "switching" by stopping the current share first.
+    if (isSharingScreen && !existingStream) {
+      console.log("Switching screen share source...");
+    }
+
     controlActionLockRef.current = true;
     try {
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+      // ELITE SYNC: If we are already recording, we reuse that stream instead of prompting again.
+      const displayStream = existingStream || recordingDisplayStreamRef.current || await navigator.mediaDevices.getDisplayMedia({
         video: {
           frameRate: { ideal: 30, max: 30 },
-          // Show pointer in capture when the browser supports it
           cursor: "always",
         } as MediaTrackConstraints,
         audio: false,
       });
+
       const displayTrack = displayStream.getVideoTracks()[0];
       if (!displayTrack) {
-        setNotice({
-          kind: "error",
-          message: "Screen share started but no video track was returned.",
-        });
-        return;
+        throw new Error("No video track returned from screen capture.");
       }
 
-      const pc = peerConnectionRef.current;
-      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+      // If we had a previous display track, stop it to avoid leaks and browser UI confusion
+      if (displayVideoTrackRef.current && displayVideoTrackRef.current !== displayTrack) {
+        displayVideoTrackRef.current.stop();
+      }
 
+      // ELITE SYNC: Re-track existing camera to restore later
       const existingCamera = localStreamRef.current
         ?.getVideoTracks()
         .find((t) => t.kind === "video" && t.readyState === "live");
       cameraTrackBeforeScreenRef.current = existingCamera ?? null;
 
-      if (sender) {
+      const pc = peerConnectionRef.current;
+      const videoSender = pc.getSenders().find((s) => s.track?.kind === "video");
+
+      // Robust track replacement with automatic fallback
+      if (videoSender) {
         try {
-          await sender.replaceTrack(displayTrack);
+          await videoSender.replaceTrack(displayTrack);
         } catch (replaceErr) {
-          console.error("replaceTrack (screen) failed:", replaceErr);
+          console.error("[video-call] replaceTrack (screen) failed, attempting camera fallback:", replaceErr);
           displayTrack.stop();
-          cameraTrackBeforeScreenRef.current = null;
-          setError(
-            replaceErr instanceof Error
-              ? replaceErr.message
-              : "Could not attach screen share to the call.",
-          );
-          return;
+          
+          // RECOVERY: If screen share failed to attach, force-restore the camera so the student doesn't see black.
+          const cameraTrack = cameraTrackBeforeScreenRef.current ?? 
+            localStreamRef.current?.getVideoTracks().find(t => t.readyState === "live");
+          
+          if (cameraTrack) {
+            await videoSender.replaceTrack(cameraTrack).catch(e => console.error("[video-call] Fallback failed:", e));
+          }
+          
+          setIsSharingScreen(false);
+          isSharingScreenRef.current = false;
+          throw new Error("Screen share connection failed. Reverting to camera for stability.");
         }
-      } else {
-        console.warn("No video sender; screen preview only");
       }
 
       displayVideoTrackRef.current = displayTrack;
+      screenShareTimelineRef.current.push({
+        state: "start",
+        at: Date.now(),
+        actorId: userId,
+      });
 
       const audioTracks = localStreamRef.current?.getAudioTracks() ?? [];
       const preview = new MediaStream([displayTrack, ...audioTracks]);
 
-      // Fullscreen main = your screen (1:1 with capture, letterboxed). PiP = other participant.
+      // ATOMIC UI SWAP: 
+      // Fullscreen main = your screen (1:1 with capture). 
+      // PiP = other participant (student).
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = preview;
-        await remoteVideoRef.current.play().catch((e) => {
-          console.warn("Screen preview on main video:", e);
-        });
+        void remoteVideoRef.current.play().catch(e => console.warn("Main preview failed:", e));
       }
       if (localVideoRef.current && remoteStreamRef.current) {
         localVideoRef.current.srcObject = remoteStreamRef.current;
-        await localVideoRef.current.play().catch((e) => {
-          console.warn("Remote participant in PiP:", e);
-        });
+        void localVideoRef.current.play().catch(e => console.warn("PiP remote failed:", e));
       }
 
       setIsSharingScreen(true);
+      isSharingScreenRef.current = true;
+
+      // ELITE SYNC: Tell the student we are sharing so they can adjust their layout
+      channelRef.current?.send({
+        type: "broadcast",
+        event: "screen-share-started",
+        payload: { from: userId },
+      });
 
       displayTrack.onended = async () => {
-        displayVideoTrackRef.current = null;
-        isSharingScreenRef.current = false;
-
-        const pcNow = peerConnectionRef.current;
-        const videoSender = pcNow
-          ?.getSenders()
-          .find((s) => s.track?.kind === "video");
-
-        const cameraTrack =
-          cameraTrackBeforeScreenRef.current ??
-          localStreamRef.current
-            ?.getVideoTracks()
-            .find((t) => t.kind === "video" && t.readyState === "live");
-
-        try {
-          if (
-            pcNow &&
-            pcNow.connectionState !== "closed" &&
-            videoSender &&
-            cameraTrack &&
-            cameraTrack.readyState === "live"
-          ) {
-            await videoSender.replaceTrack(cameraTrack);
-          } else if (pcNow && videoSender && localStreamRef.current) {
-            const fallback = localStreamRef.current
-              .getVideoTracks()
-              .find((t) => t.kind === "video" && t.readyState === "live");
-            if (fallback) await videoSender.replaceTrack(fallback);
-          }
-        } catch (e) {
-          console.warn("replaceTrack (camera after screen end) failed:", e);
-          setNotice({
-            kind: "error",
-            message:
-              "Screen share ended. If your camera is missing, turn video off and on or refresh the page.",
+        // ELITE FALLBACK: If screen share ends, always try to restore the camera.
+        const cleanup = async () => {
+          setIsSharingScreen(false);
+          isSharingScreenRef.current = false;
+          displayVideoTrackRef.current = null;
+          
+          // ELITE SYNC: Tell the student the share has ended
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "screen-share-stopped",
+            payload: { from: userId },
           });
-        }
 
-        cameraTrackBeforeScreenRef.current = null;
+          const pcNow = peerConnectionRef.current;
+          const videoSender = pcNow
+            ?.getSenders()
+            .find((s) => s.track?.kind === "video");
 
-        try {
-          if (remoteVideoRef.current && remoteStreamRef.current) {
-            remoteVideoRef.current.srcObject = remoteStreamRef.current;
-            await remoteVideoRef.current.play().catch(() => {});
+          const cameraTrack =
+            cameraTrackBeforeScreenRef.current ??
+            localStreamRef.current
+              ?.getVideoTracks()
+              .find((t) => t.kind === "video" && t.readyState === "live");
+
+          try {
+            if (
+              pcNow &&
+              pcNow.connectionState !== "closed" &&
+              videoSender &&
+              cameraTrack &&
+              cameraTrack.readyState === "live"
+            ) {
+              await videoSender.replaceTrack(cameraTrack);
+            } else if (pcNow && videoSender && localStreamRef.current) {
+              const fallback = localStreamRef.current
+                .getVideoTracks()
+                .find((t) => t.kind === "video" && t.readyState === "live");
+              if (fallback) await videoSender.replaceTrack(fallback);
+            }
+          } catch (e) {
+            console.warn("Restoring camera layout failed:", e);
           }
-          if (localVideoRef.current && localStreamRef.current) {
-            localVideoRef.current.srcObject = localStreamRef.current;
-            await localVideoRef.current.play().catch(() => {});
-          }
-        } catch (e) {
-          console.warn("Restoring camera layout failed:", e);
-        }
 
-        setIsSharingScreen(false);
+          cameraTrackBeforeScreenRef.current = null;
+
+          // ATOMIC UI RESTORE: Put student back in main, you back in PiP
+          try {
+            if (remoteVideoRef.current && remoteStreamRef.current) {
+              const rStream = remoteStreamRef.current;
+              if (rStream.getVideoTracks().some(t => t.readyState === "live")) {
+                remoteVideoRef.current.srcObject = rStream;
+                void remoteVideoRef.current.play().catch(() => {});
+              }
+            }
+            if (localVideoRef.current && localStreamRef.current) {
+              localVideoRef.current.srcObject = localStreamRef.current;
+              void localVideoRef.current.play().catch(() => {});
+            }
+          } catch (e) {
+            console.warn("Restoring video elements failed:", e);
+          }
+        };
+
+        void cleanup();
       };
     } catch (err) {
       console.warn("getDisplayMedia:", err);
@@ -2245,6 +2496,24 @@ export function VideoCall({
         controlActionLockRef.current = false;
       }, 200);
     }
+  };
+
+  const handleTutorRejoinAttempt = () => {
+    if (userRole !== "tutor") return;
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "participant-reconnecting",
+      payload: { from: userId },
+    });
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "request-offer",
+      payload: { from: userId },
+    });
+    setNotice({
+      kind: "info",
+      message: "Reconnect request sent. Waiting for learner response...",
+    });
   };
 
   const handlePipPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -2317,7 +2586,11 @@ export function VideoCall({
           <span>Dashboard</span>
         </button>
         <p className="text-xs text-white/30 hidden sm:block">
-          {courseLabel} · {learnerLabel} &amp; {guideLabel}
+          <BubbleText text={courseLabel} className="mr-2" /> 
+          · 
+          <BubbleText text={learnerLabel} className="mx-2" /> 
+          &amp; 
+          <BubbleText text={guideLabel} className="ml-2" />
         </p>
         <div className="flex items-center gap-3">
           {peerConnectionRef.current && (
@@ -2341,12 +2614,22 @@ export function VideoCall({
             muted={false}
             onLoadedMetadata={syncRemoteMainVideoFit}
             onLoadedData={syncRemoteMainVideoFit}
-            className={`w-full h-full ${
-              isSharingScreen || remoteMainVideoFit === "contain"
+            className={`w-full h-full transition-all duration-500 ${
+              isSharingScreen || remoteIsScreenShare || remoteMainVideoFit === "contain"
                 ? "object-contain"
                 : "object-cover"
             }`}
           />
+
+          {/* Sharing indicator for Tutor */}
+          {isSharingScreen && (
+            <div className="absolute top-3 left-3 z-30 flex items-center gap-2 rounded-full px-3 py-1 bg-blue-500/80 backdrop-blur-md border border-white/20 shadow-lg animate-in fade-in slide-in-from-top-2">
+              <LayoutPanelLeft size={12} className="text-white" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+                Sharing Screen
+              </span>
+            </div>
+          )}
 
           {/* PiP self-view */}
           <div
@@ -2369,11 +2652,48 @@ export function VideoCall({
 
           {/* Connecting overlay */}
           {connectionStatus !== "connected" && (
-            <div className="absolute inset-0 bg-black/80 z-[15] flex items-center justify-center">
-              <VideoCallIllustration />
-              <div className="text-center absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-white text-sm font-mono">Connecting...</p>
-                <div className="w-[200px] border-b border-[#2563EB] mt-3" ref={connectingLineRef} />
+            <div className="absolute inset-0 bg-[#080C14] z-[15] flex flex-col items-center justify-center">
+              {/* Particle background for cinematic feel */}
+              <div className="absolute inset-0 opacity-20 pointer-events-none">
+                <ParticleTextEffect words={["MENTRIXA", "WELCOME"]} />
+              </div>
+              
+              <div className="relative z-10 flex flex-col items-center gap-10">
+                {/* Mentrixa Logo with premium glow */}
+                <div className="relative">
+                  <div className="absolute -inset-4 rounded-full bg-blue-500/10 blur-2xl animate-pulse" />
+                  <Image 
+                    src={MENTRIXA_LOGO_PNG} 
+                    alt="Mentrixa Logo" 
+                    width={100} 
+                    height={100} 
+                    className="relative z-10 w-24 h-24 object-contain"
+                  />
+                </div>
+
+                <div className="text-center space-y-4">
+                  <h2 className="text-white text-3xl font-bold tracking-tight">
+                    Welcome to Mentrixa
+                  </h2>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <p className="text-white/40 text-xs font-medium uppercase tracking-[0.3em] animate-pulse">
+                      Waiting for other participant
+                    </p>
+                    <div className="flex gap-1">
+                      <div className="w-1 h-1 rounded-full bg-blue-500/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1 h-1 rounded-full bg-blue-500/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1 h-1 rounded-full bg-blue-500/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {userRole === "student" && showStudentReconnectingOverlay && connectionStatus !== "connected" && (
+            <div className="absolute inset-0 z-[16] flex items-center justify-center bg-black/55">
+              <div className="rounded-lg border border-sky-400/30 bg-sky-500/15 px-4 py-3 text-sm text-sky-100">
+                Tutor is reconnecting. Please keep this tab open.
               </div>
             </div>
           )}
@@ -2382,7 +2702,9 @@ export function VideoCall({
           {isRecording && (
             <div
               ref={recordingIndicatorRef}
-              className="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded px-2 py-1 bg-black/60 border border-red-500/30"
+              className={`absolute z-20 flex items-center gap-1.5 rounded px-2 py-1 bg-black/60 border border-red-500/30 transition-all duration-300 ${
+                isSharingScreen ? "top-12 left-3" : "top-3 left-3"
+              }`}
             >
               <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
               <span className="text-[10px] font-mono text-red-300">
@@ -2397,7 +2719,7 @@ export function VideoCall({
               <div
                 className={`text-xs px-3 py-2 rounded border ${
                   notice.kind === "success"
-                    ? "bg-emerald-500/15 border-emerald-400/30 text-emerald-100"
+                    ? "bg-blue-500/15 border-blue-400/30 text-blue-100"
                     : notice.kind === "info"
                       ? "bg-sky-500/15 border-sky-400/30 text-sky-100"
                       : "bg-amber-500/15 border-amber-400/30 text-amber-100"
@@ -2407,6 +2729,22 @@ export function VideoCall({
                 <button
                   type="button"
                   onClick={() => setNotice(null)}
+                  className="ml-2 opacity-70 hover:opacity-100 underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            {sessionWarning && (
+              <div className="text-xs px-3 py-2 rounded border bg-amber-500/15 border-amber-400/30 text-amber-100">
+                <span className="leading-snug">
+                  {sessionWarning === "15s"
+                    ? "Session ends in 15 seconds. Please wrap up now."
+                    : "Session ends in 60 seconds. Please prepare to wrap up."}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSessionWarning(null)}
                   className="ml-2 opacity-70 hover:opacity-100 underline"
                 >
                   Dismiss
@@ -2424,6 +2762,20 @@ export function VideoCall({
                   className="ml-2 opacity-70 hover:opacity-100 underline"
                 >
                   Dismiss
+                </button>
+              </div>
+            )}
+            {userRole === "tutor" && showTutorReconnectPrompt && connectionStatus !== "connected" && (
+              <div className="text-xs px-3 py-2 rounded border bg-orange-500/15 border-orange-400/30 text-orange-100">
+                <span className="leading-snug">
+                  Connection dropped. Rejoin now to continue the session.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleTutorRejoinAttempt}
+                  className="ml-2 opacity-90 hover:opacity-100 underline"
+                >
+                  Rejoin
                 </button>
               </div>
             )}
@@ -2531,17 +2883,16 @@ export function VideoCall({
             {userRole === "tutor" && (
               <button
                 onClick={() => {
-                  if (isRecording) stopRecording();
-                  else void startRecording();
+                  if (!isRecording) void startRecording();
                 }}
-                disabled={isLeaving || connectionStatus !== "connected" || isProcessingRecording}
+                disabled={isLeaving || connectionStatus !== "connected" || isProcessingRecording || isRecording}
                 className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${
                   isRecording
-                    ? "border-red-600/50 text-red-300 hover:border-red-400"
+                    ? "border-red-600/50 text-red-500 bg-red-500/5 cursor-not-allowed"
                     : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
                 }`}
               >
-                {isRecording ? "Stop rec" : "Record"}
+                {isRecording ? "Recording..." : "Record"}
               </button>
             )}
 
@@ -2565,9 +2916,12 @@ export function VideoCall({
           }
         >
           <InSessionChat
-            channel={channelRef.current}
+            channel={realtimeChannel}
             userId={userId}
             userLabel={userRole === "student" ? learnerLabel : guideLabel}
+            onMessagesChange={(messages) => {
+              chatTranscriptRef.current = messages;
+            }}
           />
         </div>
 
@@ -2575,9 +2929,12 @@ export function VideoCall({
         {activePanel === "whiteboard" && (
           <div className="w-[480px] flex-none border-l border-white/8 overflow-hidden">
             <Whiteboard
-              channel={channelRef.current}
+              channel={realtimeChannel}
               userId={userId}
               onSnapshot={(url) => setWhiteboardSnapshot(url)}
+              onActivitySummaryChange={(summary) => {
+                whiteboardSummaryRef.current = summary;
+              }}
             />
           </div>
         )}
@@ -2589,9 +2946,12 @@ export function VideoCall({
           sessionId={sessionId}
           userRole={userRole}
           durationSeconds={sessionSeconds}
-          recordingSaved={isProcessingRecording || false}
+          recordingSaved={hasRecording}
           whiteboardSnapshotUrl={whiteboardSnapshot}
-          onClose={() => setShowPostCall(false)}
+          onClose={() => {
+            setShowPostCall(false);
+            void handleBackToDashboard();
+          }}
         />
       )}
     </div>

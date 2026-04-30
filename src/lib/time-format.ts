@@ -39,10 +39,10 @@ export function formatTimeInZone(date: Date | string, timeZone: string): string 
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "—";
   try {
-    return new Intl.DateTimeFormat("en-CA", {
-      hour: "2-digit",
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
       minute: "2-digit",
-      hour12: false,
+      hour12: true,
       timeZone,
     }).format(d);
   } catch {
@@ -129,3 +129,49 @@ export function formatTimeRangeInZone(
   return `${formatTimeInZone(startDate, timeZone)} - ${formatTimeInZone(endDate, timeZone)}`;
 }
 
+/**
+ * Returns a YYYY-MM-DD key for a given instant in a specific timezone.
+ * Useful for grouping items by "local day" in a calendar.
+ */
+export function getDayKeyInZone(date: Date | string, timeZone: string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "0000-00-00";
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone,
+    }).formatToParts(d);
+    const year = parts.find((p) => p.type === "year")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    return `${year}-${month}-${day}`;
+  } catch {
+    return d.toISOString().slice(0, 10);
+  }
+}
+
+/**
+ * Returns the Monday-to-Sunday range for the week containing the given date, in UTC.
+ */
+export function getWeekRangeUTC(date: Date = new Date()): { startIso: string; endIso: string } {
+  const now = new Date(date);
+  const day = now.getUTCDay();
+  // Monday = 1, Sunday = 0.
+  // diff to Monday:
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1);
+  
+  const monday = new Date(now);
+  monday.setUTCDate(diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  sunday.setUTCHours(23, 59, 59, 999);
+  
+  return {
+    startIso: monday.toISOString(),
+    endIso: sunday.toISOString(),
+  };
+}

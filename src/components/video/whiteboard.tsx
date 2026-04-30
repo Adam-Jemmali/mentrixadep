@@ -45,8 +45,9 @@ interface DrawEvent {
 }
 
 interface BroadcastPayload {
-  type: "draw" | "clear";
+  type: "draw" | "clear" | "request-sync" | "state-sync";
   event?: DrawEvent;
+  history?: DrawEvent[];
   authorId: string;
 }
 
@@ -54,6 +55,12 @@ interface WhiteboardProps {
   channel: RealtimeChannel | null;
   userId: string;
   onSnapshot?: (dataUrl: string) => void;
+  onActivitySummaryChange?: (summary: {
+    drawEvents: number;
+    clearEvents: number;
+    byTool: Record<string, number>;
+    recentEvents: Array<{ tool: string; at: number; source: "local" | "remote" }>;
+  }) => void;
 }
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
@@ -154,7 +161,7 @@ function renderEvent(ctx: CanvasRenderingContext2D, ev: DrawEvent) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function Whiteboard({ channel, userId, onSnapshot }: WhiteboardProps) {
+export function Whiteboard({ channel, userId, onSnapshot, onActivitySummaryChange }: WhiteboardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -170,6 +177,40 @@ export function Whiteboard({ channel, userId, onSnapshot }: WhiteboardProps) {
   const textInputRef = useRef<HTMLInputElement>(null);
   const [textPos, setTextPos] = useState<{ x: number; y: number } | null>(null);
   const [textValue, setTextValue] = useState("");
+  const activitySummaryRef = useRef<{
+    drawEvents: number;
+    clearEvents: number;
+    byTool: Record<string, number>;
+    recentEvents: Array<{ tool: string; at: number; source: "local" | "remote" }>;
+  }>({
+    drawEvents: 0,
+    clearEvents: 0,
+    byTool: {},
+    recentEvents: [],
+  });
+
+  const pushActivity = useCallback(
+    (tool: string, source: "local" | "remote") => {
+      const next = activitySummaryRef.current;
+      if (tool === "clear") {
+        next.clearEvents += 1;
+      } else {
+        next.drawEvents += 1;
+        next.byTool[tool] = (next.byTool[tool] ?? 0) + 1;
+      }
+      next.recentEvents.push({ tool, at: Date.now(), source });
+      if (next.recentEvents.length > 80) {
+        next.recentEvents = next.recentEvents.slice(-80);
+      }
+      onActivitySummaryChange?.({
+        drawEvents: next.drawEvents,
+        clearEvents: next.clearEvents,
+        byTool: { ...next.byTool },
+        recentEvents: [...next.recentEvents],
+      });
+    },
+    [onActivitySummaryChange],
+  );
 
   // Sync canvas size to container
   useEffect(() => {
@@ -210,6 +251,11 @@ export function Whiteboard({ channel, userId, onSnapshot }: WhiteboardProps) {
     ctx.fillRect(0, 0, canvas.width || 800, canvas.height || 500);
   }, []);
 
+  const broadcast = useCallback((payload: BroadcastPayload) => {
+    if (!channel) return;
+    void channel.send({ type: "broadcast", event: "whiteboard", payload });
+  }, [channel]);
+
   // Subscribe to remote draw events
   useEffect(() => {
     if (!channel) return;
@@ -220,27 +266,42 @@ export function Whiteboard({ channel, userId, onSnapshot }: WhiteboardProps) {
         if (payload.authorId === userId) return;
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return;
+
+        if (payload.type === "request-sync") {
+          // Send current history to the new participant
+          broadcast({ type: "state-sync", history: historyRef.current, authorId: userId });
+          return;
+        }
+
+        if (payload.type === "state-sync") {
+          if (payload.history && historyRef.current.length === 0) {
+            historyRef.current = payload.history;
+            payload.history.forEach((ev) => renderEvent(ctx, ev));
+          }
+          return;
+        }
+
         if (payload.type === "clear") {
           ctx.fillStyle = "#111";
           ctx.fillRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
           historyRef.current = [];
+          pushActivity("clear", "remote");
           return;
         }
         if (payload.event) {
           renderEvent(ctx, payload.event);
           historyRef.current.push(payload.event);
+          pushActivity(payload.event.tool, "remote");
         }
       }
     );
+
+    // Immediately request state from peers when joined
+    broadcast({ type: "request-sync", authorId: userId });
     return () => {
       void sub.unsubscribe();
     };
-  }, [channel, userId]);
-
-  const broadcast = useCallback((payload: BroadcastPayload) => {
-    if (!channel) return;
-    void channel.send({ type: "broadcast", event: "whiteboard", payload });
-  }, [channel]);
+  }, [channel, userId, pushActivity, broadcast]);
 
   function getCanvasPos(e: React.PointerEvent<HTMLCanvasElement>) {
     const rect = canvasRef.current!.getBoundingClientRect();
@@ -360,9 +421,10 @@ export function Whiteboard({ channel, userId, onSnapshot }: WhiteboardProps) {
       if (ev) {
         historyRef.current.push(ev);
         broadcast({ type: "draw", event: ev, authorId: userId });
+        pushActivity(ev.tool, "local");
       }
     },
-    [isDrawing, tool, color, lineWidth, userId, broadcast]
+    [isDrawing, tool, color, lineWidth, userId, broadcast, pushActivity]
   );
 
   const handleCanvasClick = useCallback(
@@ -399,9 +461,10 @@ export function Whiteboard({ channel, userId, onSnapshot }: WhiteboardProps) {
     renderEvent(ctx, ev);
     historyRef.current.push(ev);
     broadcast({ type: "draw", event: ev, authorId: userId });
+    pushActivity(ev.tool, "local");
     setTextPos(null);
     setTextValue("");
-  }, [textPos, textValue, color, lineWidth, userId, broadcast]);
+  }, [textPos, textValue, color, lineWidth, userId, broadcast, pushActivity]);
 
   const clearBoard = useCallback(() => {
     const ctx = canvasRef.current?.getContext("2d");
@@ -410,7 +473,8 @@ export function Whiteboard({ channel, userId, onSnapshot }: WhiteboardProps) {
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     historyRef.current = [];
     broadcast({ type: "clear", authorId: userId });
-  }, [userId, broadcast]);
+    pushActivity("clear", "local");
+  }, [userId, broadcast, pushActivity]);
 
   const downloadSnapshot = useCallback(() => {
     const canvas = canvasRef.current;

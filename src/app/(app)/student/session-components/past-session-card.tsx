@@ -7,7 +7,7 @@ import { TutorAvatar } from "./tutor-avatar";
 import { StudyPackagePanel } from "./study-package-panel";
 import { DeletePastSessionButton } from "@/components/delete-past-session-button";
 import { RateSessionForm } from "../rate-session-form";
-import { formatDate, formatTime } from "@/lib/time-format";
+import { formatDateInZone, formatTimeInZone } from "@/lib/time-format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +40,13 @@ type Session = {
   ai_package?: SessionAiPackage | null;
 };
 
-export function PastSessionCard({ session }: { session: Session }) {
+export function PastSessionCard({ 
+  session, 
+  displayTimeZone = "UTC" 
+}: { 
+  session: Session;
+  displayTimeZone?: string;
+}) {
   const router = useRouter();
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
@@ -80,8 +86,8 @@ export function PastSessionCard({ session }: { session: Session }) {
                 {session.course}
               </Badge>
               <p className="mt-2 text-sm text-slate-600">
-                {formatDate(session.start_time)} · {formatTime(session.start_time)} –{" "}
-                {formatTime(session.end_time)}
+                {formatDateInZone(session.start_time, displayTimeZone)} · {formatTimeInZone(session.start_time, displayTimeZone)} –{" "}
+                {formatTimeInZone(session.end_time, displayTimeZone)}
               </p>
             </div>
           </div>

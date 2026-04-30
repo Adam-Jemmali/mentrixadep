@@ -54,16 +54,16 @@ export function PostCallSummary({
   const destination =
     userRole === "tutor"
       ? `/tutor/sessions-ai`
-      : `/student`;
+      : `/student#sessions-history`;
 
   const ctaLabel =
     userRole === "tutor"
-      ? "Open AI Studio"
+      ? "Open  Studio"
       : "Rate your session";
 
   const redirectNote =
     userRole === "tutor"
-      ? "Opening Studio where you can build the AI package for your learner."
+      ? "Opening Studio where you can build the Quest package for your learner."
       : "You'll be taken to rate this session and see your study package.";
 
   // Entrance animation
@@ -104,8 +104,8 @@ export function PostCallSummary({
       >
         {/* Header */}
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15">
-            <CheckCircle size={18} className="text-emerald-400" strokeWidth={2} />
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/15">
+            <CheckCircle size={18} className="text-blue-400" strokeWidth={2} />
           </div>
           <div>
             <p className="text-sm font-medium text-white">Session complete</p>
@@ -135,7 +135,15 @@ export function PostCallSummary({
               </span>
             </div>
             <p className="text-sm font-medium text-white">
-              {recordingSaved ? "Saved" : "Not recorded"}
+              {recordingSaved ? (
+                <span className="flex items-center gap-1.5 text-blue-400">
+                  <CheckCircle size={14} /> Recorded
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-amber-400">
+                  <Loader2 size={14} className="animate-spin" /> Saving...
+                </span>
+              )}
             </p>
           </div>
         </div>

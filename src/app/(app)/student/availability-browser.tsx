@@ -10,18 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookSessionButton } from "./book-session-button";
 import { Badge } from "@/components/ui/badge";
 import { formatUsdFromCents } from "@/lib/duel-reward";
-import { BookingPriceBreakdown } from "@/components/booking-price-breakdown";
 import { splitSessionPriceCents } from "@/lib/booking-pricing";
+import { Typewriter } from "@/components/ui/typewriter";
+import { BookingConfirmationCard } from "@/components/ui/booking-confirmation-card";
 
 function slotsInNextDays<T extends { start_time: string }>(slots: T[], days: number): T[] {
   const now = Date.now();
@@ -181,7 +176,9 @@ export function AvailabilityBrowser({
 
   return (
     <aside>
-      <h2 className="mb-1 text-sm font-medium text-slate-900">Guides</h2>
+      <h2 className="mb-1 text-sm font-medium text-slate-900 h-[20px]">
+        <Typewriter text="Guides" speed={70} waitTime={8000} />
+      </h2>
       <p className="mb-3 text-xs text-slate-500">
         Bookable slots in the next 14 days. Times in{" "}
         <span className="font-medium text-slate-700">{displayTimeZone}</span> update in Profile if needed.
@@ -230,6 +227,7 @@ export function AvailabilityBrowser({
                 size="sm"
                 disabled={waitlistBusy || !waitlistEmail.trim()}
                 onClick={() => void submitWaitlistRequest()}
+                className="h-8"
               >
                 {waitlistBusy ? "Saving..." : "Notify me"}
               </Button>
@@ -288,18 +286,19 @@ export function AvailabilityBrowser({
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {guide.slots.map((slot) => (
-                  <button
+                  <Button
                     key={slot.id}
-                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setSelectedSlot(slot);
                     }}
-                    className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-slate-300 hover:bg-slate-50"
+                    className="h-7 px-2 text-[10px] border-slate-200 hover:border-slate-300 bg-white"
                   >
                     {slot.course} · {formatTimeInZone(slot.start_time, displayTimeZone)}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -343,94 +342,41 @@ function BookingDialog({
     (e) => e.course_name.toLowerCase() === slot.course.toLowerCase(),
   );
 
+  async function handleBook() {
+    if (!slot) return;
+    setCheckoutBusy(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ availabilityId: slot.id }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "Failed to start checkout");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      console.error(err);
+      setCheckoutBusy(false);
+    }
+  }
+
   return (
     <Dialog open={!!slot} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100vh-2rem)] w-[min(96vw,42rem)] flex-col overflow-hidden border border-slate-200 bg-white p-0 shadow-2xl sm:max-w-none">
-        <div className="max-h-[calc(100vh-2rem)] overflow-y-auto">
-          <div className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-medium tracking-tight text-white">
-                Book a session
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-600">
-                Confirm the session details, then continue to secure checkout.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 text-sm text-slate-800">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="relative h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
-                      {slot.tutor?.avatar_url ? (
-                        <Image
-                          src={slot.tutor.avatar_url}
-                          alt={slot.tutor?.display_name ?? slot.tutor?.email ?? "Guide"}
-                          width={32}
-                          height={32}
-                          unoptimized
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-white">
-                          {((slot.tutor?.display_name ?? slot.tutor?.email ?? "Guide").slice(0, 1) || "G").toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-base font-medium text-slate-900">
-                        {slot.tutor?.display_name?.trim() ?? slot.tutor?.email?.split("@")[0] ?? "Guide"}
-                      </p>
-                      {slot.tutor?.email ? <p className="text-xs text-slate-500">{slot.tutor.email}</p> : null}
-                    </div>
-                  </div>
-                  {courseExpertise?.verified && (
-                    <Badge
-                      variant="outline"
-                      className="border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-700"
-                    >
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-                <p className="mt-2 font-medium leading-snug text-slate-900">{slot.course}</p>
-                <p className="mt-1 font-mono text-xs text-slate-600 tabular-nums">{scheduleLine}</p>
-              </div>
-
-              {courseExpertise && (
-                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3">
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Qualifications
-                  </p>
-                  <p className="text-sm leading-relaxed text-slate-800">{courseExpertise.proof_description}</p>
-                </div>
-              )}
-
-              <div className="relative rounded-md border border-slate-200 bg-white px-4 py-4">
-                <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Pricing</p>
-                <BookingPriceBreakdown sessionPriceCents={priceCents} />
-                <p className="mt-4 border-t border-slate-200 pt-3 text-xs leading-relaxed text-slate-600">
-                  Stripe checkout lists the session and the 5% platform fee as separate line items. If the guide
-                  declines, you are refunded automatically. Cancel 60+ minutes before the session per policy.
-                </p>
-                {checkoutBusy ? (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-white/90">
-                    <p className="text-sm font-medium text-slate-800">Opening secure checkout…</p>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="sticky bottom-0 z-10 flex-col gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row sm:justify-end sm:px-5">
-            <DialogClose asChild>
-              <Button variant="outline" size="default" className="h-10 w-full border-slate-300 sm:w-auto">
-                Cancel
-              </Button>
-            </DialogClose>
-            <BookSessionButton availabilityId={slot.id} onBusyChange={setCheckoutBusy} />
-          </DialogFooter>
-        </div>
+      <DialogContent className="max-h-[95vh] max-w-lg overflow-y-auto p-0 border-none bg-transparent shadow-none">
+        <BookingConfirmationCard
+          tutorName={slot.tutor?.display_name?.trim() ?? slot.tutor?.email?.split("@")[0] ?? "Guide"}
+          tutorEmail={slot.tutor?.email ?? ""}
+          tutorAvatarUrl={slot.tutor?.avatar_url}
+          courseName={slot.course}
+          scheduleLine={scheduleLine}
+          qualifications={courseExpertise?.proof_description}
+          priceCents={priceCents}
+          onConfirm={handleBook}
+          onCancel={() => onOpenChange(false)}
+          loading={checkoutBusy}
+        />
       </DialogContent>
     </Dialog>
   );

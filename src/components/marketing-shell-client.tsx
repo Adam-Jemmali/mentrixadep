@@ -55,7 +55,9 @@ export function MarketingShellClient({ children }: { children: ReactNode }) {
         className="relative min-h-screen bg-[#0B1120]"
         style={{ opacity: ready ? 1 : 0, transition: "opacity 1ms linear" }}
       >
-        {children}
+        <div className="relative z-10">
+          {children}
+        </div>
       </main>
     </>
   );

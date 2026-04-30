@@ -18,6 +18,7 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { getDivisionKeyForCourse } from "@/app/actions/quest";
 import { applyXpAward } from "@/app/actions/xp";
+import { autoGenerateStudioPackagesForCompletedSessions } from "@/app/actions/autoPilot";
 import { XP } from "@/lib/xp-constants";
 import {
   sendSessionBookedEmail,
@@ -245,6 +246,31 @@ export async function getPastSessions() {
   }));
 }
 
+export async function getSessionRequests() {
+  const user = await requireRole(["student", "admin"]);
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("session_requests")
+    .select(`
+      *,
+      availability:availability_id (
+        course,
+        start_time,
+        end_time
+      )
+    `)
+    .eq("student_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch session requests: ${error.message}`);
+  }
+
+  const rows = data || [];
+  return enrichStudentSessionsWithTutorProfiles(rows);
+}
+
 /**
  * Single sessions fetch for the learner hub (replaces separate upcoming + past queries).
  * Falls back to getUpcomingSessions + getPastSessions if the merged filter is rejected.
@@ -252,92 +278,21 @@ export async function getPastSessions() {
 export async function getStudentSessionsHubBundle(): Promise<{
   upcomingSessions: Awaited<ReturnType<typeof getUpcomingSessions>>;
   pastSessions: Awaited<ReturnType<typeof getPastSessions>>;
+  sessionRequests: Awaited<ReturnType<typeof getSessionRequests>>;
 }> {
-  const user = await requireRole(["student", "admin"]);
-  const supabase = await createClient();
-  const nowIso = new Date().toISOString();
-
-  const orFilter = `end_time.lt.${nowIso},and(status.in.(completed,cancelled),end_time.gte.${nowIso}),and(status.eq.scheduled,end_time.gte.${nowIso})`;
-
-  let mergedRows: Session[] | null = null;
-  let error: { message?: string } | null = null;
-
-  {
-    const res = await supabase
-      .from("sessions")
-      .select("*")
-      .eq("student_id", user.id)
-      .is("student_hidden_at", null)
-      .or(orFilter);
-    mergedRows = res.data;
-    error = res.error;
-  }
-
-  if (isMissingSessionHideColumnsError(error)) {
-    const res = await supabase
-      .from("sessions")
-      .select("*")
-      .eq("student_id", user.id)
-      .or(orFilter);
-    mergedRows = res.data;
-    error = res.error;
-  }
-
-  if (error) {
-    const [upcomingSessions, pastSessions] = await Promise.all([
-      getUpcomingSessions(),
-      getPastSessions(),
-    ]);
-    return { upcomingSessions, pastSessions };
-  }
-
-  const allRows = mergedRows ?? [];
-
-  const upcomingRaw = allRows
-    .filter((s) => s.status === "scheduled" && new Date(s.end_time) >= new Date(nowIso))
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-
-  const upcomingIds = new Set(upcomingRaw.map((s) => s.id));
-  const pastRaw = allRows.filter((s) => !upcomingIds.has(s.id));
-  const pastSorted = pastRaw.sort(
-    (a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime(),
-  );
-
-  const upcomingSessions = await enrichStudentSessionsWithTutorProfiles(upcomingRaw);
-
-  if (pastSorted.length === 0) {
-    return { upcomingSessions, pastSessions: [] };
-  }
-
-  const sessionIds = pastSorted.map((s) => s.id);
-  const [{ data: ratings }, withTutors] = await Promise.all([
-    supabase
-      .from("ratings")
-      .select("*")
-      .in("session_id", sessionIds)
-      .eq("student_id", user.id),
-    enrichStudentSessionsWithTutorProfiles(pastSorted),
+  const [upcomingSessions, pastSessions, sessionRequests] = await Promise.all([
+    getUpcomingSessions(),
+    getPastSessions(),
+    getSessionRequests(),
   ]);
 
-  const adminClient = createAdminClient();
-  const { data: pkgRows } = await adminClient
-    .from("session_ai_packages")
-    .select("*")
-    .in("session_id", sessionIds)
-    .not("package_published_at", "is", null);
-
-  const pkgBySession = new Map(
-    (pkgRows ?? []).map((p) => [p.session_id, p as SessionAiPackage])
-  );
-
-  const pastSessions = withTutors.map((session) => ({
-    ...session,
-    ratings: (ratings || []).filter((r) => r.session_id === session.id),
-    ai_package: pkgBySession.get(session.id) ?? null,
-  }));
-
-  return { upcomingSessions, pastSessions };
+  return {
+    upcomingSessions,
+    pastSessions,
+    sessionRequests,
+  };
 }
+
 
 export type StudentHubSnapshot = {
   user_xp: Record<string, unknown> | null;
@@ -1188,6 +1143,12 @@ export async function rateSession(
           success: false,
           error: `Could not finalize session before rating: ${completeErr.message}`,
         };
+      }
+
+      try {
+        await autoGenerateStudioPackagesForCompletedSessions([validSessionId]);
+      } catch (pkgErr) {
+        console.error("[rateSession] studio package trigger failed", validSessionId, pkgErr);
       }
     }
 

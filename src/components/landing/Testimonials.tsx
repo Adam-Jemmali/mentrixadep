@@ -6,7 +6,7 @@ const TESTIMONIALS = [
   {
     name: "Alex M.",
     initials: "AM",
-    quote: "The AI study package after each session actually helped me retain way more than my old notes. Division leaderboard got me to show up every week.",
+    quote: "The Quest study package after each session actually helped me retain way more than my old notes. Division leaderboard got me to show up every week.",
     year: "2nd year CS, uOttawa",
   },
   {

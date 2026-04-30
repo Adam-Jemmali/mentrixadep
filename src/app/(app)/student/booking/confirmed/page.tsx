@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { formatDate, formatTime } from "@/lib/time-format";
+import { formatDate } from "@/lib/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
 import { AddToCalendarButton } from "./add-to-calendar-button";
 import { splitSessionPriceCents } from "@/lib/booking-pricing";
 import { formatUsdFromCents } from "@/lib/duel-reward";
+import { Typewriter } from "@/components/ui/typewriter";
+import { GlassTimeCard } from "@/components/ui/glass-time-card";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 
 interface PageProps {
   searchParams?: { request?: string };
@@ -47,46 +50,95 @@ export default async function BookingConfirmedPage({ searchParams }: PageProps) 
   const price = splitSessionPriceCents(availability.price_per_session ?? 2500);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <main className="mx-auto max-w-lg px-4 py-12">
-        <div className="rounded-md border border-slate-200 bg-white p-6">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Payment received
-          </p>
-          <h1 className="mt-2 text-xl font-medium tracking-tight text-slate-900">
-            Session request sent
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Your guide will confirm soon{sr.status === "approved" ? " this slot is approved." : "."}{" "}
-            You will get email updates. If the guide declines, Stripe refunds you automatically.
-          </p>
+    <div className="min-h-screen bg-mentrixa-app text-white relative overflow-hidden flex items-center justify-center py-12 px-4">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-          <div className="mt-6 space-y-1 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm">
-            <p className="font-medium text-slate-900">{availability.course}</p>
-            <p className="font-mono text-slate-700">
-              {formatDate(availability.start_time)} · {formatTime(availability.start_time)} –{" "}
-              {formatTime(availability.end_time)} · {formatDurationLabel(durationMin)}
-            </p>
-            <p className="pt-2 text-xs text-slate-500">
-              Charged: {formatUsdFromCents(price.totalCents)} (session {formatUsdFromCents(price.sessionCents)}{" "}
-              + platform {formatUsdFromCents(price.platformFeeCents)})
-            </p>
+      <main className="relative z-10 w-full max-w-2xl">
+        <div className="flex flex-col items-center text-center space-y-8">
+          
+          {/* Success Icon & Header */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="p-3 bg-emerald-500/20 rounded-full border border-emerald-500/30 animate-pulse">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400 flex items-center gap-2">
+               
+                Payment received
+              </p>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mt-2">
+                Session request sent
+              </h1>
+            </div>
+            
+            <div className="max-w-md mx-auto">
+               <Typewriter 
+                text={`Your guide will confirm soon${sr.status === "approved" ? " (this slot is approved)" : ""}. You will get email updates. If the guide declines, Stripe refunds you automatically.`}
+                speed={30}
+                className="text-slate-400 text-sm leading-relaxed"
+              />
+            </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <AddToCalendarButton
-              requestId={sr.id}
-              title={`Mentrixa · ${availability.course}`}
-              description={`Learner session · Request ${sr.id.slice(0, 8)}… · ${formatDate(availability.start_time)}`}
-              startIso={availability.start_time}
-              endIso={availability.end_time}
+          {/* Session Details Card */}
+          <div className="w-full max-w-lg space-y-4">
+            <GlassTimeCard 
+              time={availability.start_time} 
+              staticTime 
+              showTimezone 
+              className="bg-white/10"
             />
-            <Button asChild variant="default" className="bg-slate-900 hover:bg-slate-800">
-              <Link href="/student">Back to dashboard</Link>
+            
+            <div className="p-6 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-slate-800 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div className="text-left">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Subject</p>
+                  <h3 className="text-xl font-bold text-white tracking-tight">{availability.course.toUpperCase()}</h3>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Duration</p>
+                  <p className="text-lg font-bold text-white tracking-tight">{formatDurationLabel(durationMin)}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 text-sm text-slate-400">
+                <div className="flex justify-between items-center">
+                  <span>Price</span>
+                  <span className="text-white font-bold">{formatUsdFromCents(price.totalCents)}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 italic text-center mt-2 border-t border-slate-800 pt-3">
+                  Breakdown: {formatUsdFromCents(price.sessionCents)} session + {formatUsdFromCents(price.platformFeeCents)} platform fee
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-lg">
+            <div className="flex-1 w-full">
+              <AddToCalendarButton
+                requestId={sr.id}
+                title={`Mentrixa · ${availability.course}`}
+                description={`Learner session · Request ${sr.id.slice(0, 8)}… · ${formatDate(availability.start_time)}`}
+                startIso={availability.start_time}
+                endIso={availability.end_time}
+              />
+            </div>
+            <Button asChild size="lg" className="flex-1 w-full font-bold group">
+              <Link href="/student" className="flex items-center justify-center gap-2">
+                Back to dashboard
+                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
           </div>
+
         </div>
       </main>
     </div>
   );
 }
+

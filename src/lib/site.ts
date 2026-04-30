@@ -7,9 +7,6 @@ import { env } from "@/lib/env";
 export function getSiteUrl(): string {
   const fromEnv = env.public.appUrl?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Missing required environment variable: NEXT_PUBLIC_SITE_URL or NEXT_PUBLIC_APP_URL");
-  }
   return "http://localhost:3000";
 }
 

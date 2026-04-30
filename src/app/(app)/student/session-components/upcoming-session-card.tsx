@@ -3,7 +3,7 @@
 import { TutorAvatar } from "./tutor-avatar";
 import { JoinVideoCallButton } from "@/components/join-video-call-button";
 import { CancelSessionButton } from "../cancel-session-button";
-import { formatDate, formatTime } from "@/lib/time-format";
+import { formatDateInZone, formatTimeInZone } from "@/lib/time-format";
 import { Badge } from "@/components/ui/badge";
 import type { StudentSessionTutorProfile } from "@/app/actions/student";
 
@@ -16,7 +16,13 @@ type Session = {
   tutor: StudentSessionTutorProfile;
 };
 
-export function UpcomingSessionCard({ session }: { session: Session }) {
+export function UpcomingSessionCard({ 
+  session, 
+  displayTimeZone = "UTC" 
+}: { 
+  session: Session;
+  displayTimeZone?: string;
+}) {
   const emailPrefix = session.tutor.email?.split("@")[0] ?? "Guide";
   const name = session.tutor.display_name?.trim() || emailPrefix;
   const st = (session.status ?? "scheduled").toLowerCase();
@@ -38,7 +44,7 @@ export function UpcomingSessionCard({ session }: { session: Session }) {
             {session.course}
           </Badge>
           <p className="mt-2 text-sm text-slate-600">
-            {formatDate(session.start_time)} · {formatTime(session.start_time)} – {formatTime(session.end_time)}
+            {formatDateInZone(session.start_time, displayTimeZone)} · {formatTimeInZone(session.start_time, displayTimeZone)} – {formatTimeInZone(session.end_time, displayTimeZone)}
           </p>
         </div>
       </div>

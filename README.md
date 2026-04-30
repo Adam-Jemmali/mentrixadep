@@ -5,34 +5,40 @@ A full-stack Next.js application for managing online tutoring sessions with role
 ## Features
 
 ### Authentication & Authorization
+
 - User registration with role selection (Student / Tutor)
 - Admin approval workflow before login is allowed
 - JWT-based role metadata for fast middleware checks
 - Row Level Security (RLS) on every table
 
 ### Admin Dashboard
+
 - Approve / reject registrations
 - View all users and system state
 
 ### Student Dashboard
+
 - Browse tutor availability by course
 - Book 30-minute sessions (auto-approve or manual)
 - Cancel sessions (only > 60 min before start)
 - Rate completed sessions (1–5 stars + comment)
 
 ### Tutor Dashboard
+
 - Create / delete 30-minute availability slots
 - Approve / reject session requests (or toggle auto-approve)
 - View upcoming and past sessions
 - Cancel sessions
 
 ### Video Calling
+
 - WebRTC peer-to-peer video & audio
 - Supabase Realtime signaling (no third-party APIs)
 - Automatic room creation with time-window enforcement
 - Session recording (tutor only, saved to Supabase Storage)
 
 ### UI / UX
+
 - Dark-mode design with glassmorphism
 - Framer Motion animations
 - Role-based navigation
@@ -41,16 +47,16 @@ A full-stack Next.js application for managing online tutoring sessions with role
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript (strict mode) |
-| Database | Supabase (PostgreSQL) |
-| Auth | Supabase Auth + JWT metadata |
-| Realtime | Supabase Realtime (signaling) |
-| Storage | Supabase Storage (recordings) |
-| Styling | Tailwind CSS + Framer Motion |
-| Video | WebRTC + MediaRecorder API |
+| Layer     | Technology                    |
+| --------- | ----------------------------- |
+| Framework | Next.js 14 (App Router)       |
+| Language  | TypeScript (strict mode)      |
+| Database  | Supabase (PostgreSQL)         |
+| Auth      | Supabase Auth + JWT metadata  |
+| Realtime  | Supabase Realtime (signaling) |
+| Storage   | Supabase Storage (recordings) |
+| Styling   | Tailwind CSS + Framer Motion  |
+| Video     | WebRTC + MediaRecorder API    |
 
 ## Project Structure
 
@@ -152,11 +158,11 @@ Authorization: Bearer <CRON_SECRET>
 
 To sign in with different accounts (student, tutor, admin) in different tabs on the same machine, use subdomains. Each subdomain has isolated cookies:
 
-| Tab | URL | Use for |
-|-----|-----|---------|
-| 1 | `http://student.localhost:3000` | Student account |
-| 2 | `http://tutor.localhost:3000` | Tutor account |
-| 3 | `http://admin.localhost:3000` | Admin account |
+| Tab | URL                             | Use for         |
+| --- | ------------------------------- | --------------- |
+| 1   | `http://student.localhost:3000` | Student account |
+| 2   | `http://tutor.localhost:3000`   | Tutor account   |
+| 3   | `http://admin.localhost:3000`   | Admin account   |
 
 **Setup:** In Supabase Dashboard → Authentication → URL Configuration → Redirect URLs, add:
 
@@ -172,6 +178,7 @@ Then open each URL in a separate tab and sign in with the desired account. Sessi
 ## Build & Deploy
 
 ```bash
+npm run env:verify
 npm run build
 npm start
 ```

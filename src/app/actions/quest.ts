@@ -19,6 +19,20 @@ import { getDivisionTierFromXp } from "@/lib/levels";
 import { XP } from "@/lib/xp-constants";
 import { applyXpAward } from "@/app/actions/xp";
 import { recordClanQuestCompletion } from "@/app/actions/clan-dashboard";
+import { z } from "zod";
+
+const submitQuestSchema = z.object({
+  prompt: z.string().min(1).max(5000),
+  goal: z.enum(["exam", "interview", "assignment"]),
+  mode: z.enum(["coach", "exam"]),
+});
+
+const submitAnswerSchema = z.object({
+  questId: z.string().uuid(),
+  userAnswer: z.string().min(1).max(10000),
+  goal: z.enum(["exam", "interview", "assignment"]),
+  mode: z.enum(["coach", "exam"]),
+});
 
 export type QuestGoal = "exam" | "interview" | "assignment";
 export type QuestMode = "coach" | "exam";
@@ -81,9 +95,10 @@ export async function submitQuest(
   mode: QuestMode
 ): Promise<SubmitQuestResult | SubmitQuestError> {
   try {
+    const validated = submitQuestSchema.parse({ prompt, goal, mode });
     const user = await requireRole(["student", "admin"]);
     const result = await generateExplanation(
-      { prompt: prompt.trim(), goal, mode },
+      { prompt: validated.prompt, goal: validated.goal, mode: validated.mode },
       user.id
     );
 
@@ -97,14 +112,14 @@ export async function submitQuest(
       return {
         error: true,
         message:
-          "The AI did not return hints for this problem. Try rephrasing, shortening your question, or try again in a moment.",
+          "Quest did not return hints for this problem. Try rephrasing, shortening your question, or try again in a moment.",
       };
     }
     if (!finalAnswer?.trim()) {
       return {
         error: true,
         message:
-          "The AI did not return a gradable answer. Try again, or split your question into a smaller part.",
+          "Quest did not return a gradable answer. Try again, or split your question into a smaller part.",
       };
     }
 
@@ -196,16 +211,14 @@ export async function submitQuestAnswer(
   mode: QuestMode
 ): Promise<SubmitQuestAnswerResult | { error: true; message: string }> {
   try {
+    const validated = submitAnswerSchema.parse({ questId, userAnswer, goal, mode });
     const user = await requireRole(["student", "admin"]);
-    if (!userAnswer?.trim()) {
-      return { error: true, message: "Please enter your answer." };
-    }
 
     const adminClient = createAdminClient();
     const { data: quest, error: questError } = await adminClient
       .from("quests")
       .select("prompt, solution")
-      .eq("id", questId)
+      .eq("id", validated.questId)
       .single();
 
     if (questError || !quest?.solution?.trim()) {
@@ -217,7 +230,7 @@ export async function submitQuestAnswer(
       .from("user_quest_progress")
       .select("status")
       .eq("user_id", user.id)
-      .eq("quest_id", questId)
+      .eq("quest_id", validated.questId)
       .maybeSingle();
 
     if (progress?.status === "completed") {
@@ -232,9 +245,9 @@ export async function submitQuestAnswer(
       {
         problem: quest.prompt,
         correctAnswer: quest.solution,
-        userAnswer: userAnswer.trim(),
-        goal,
-        mode,
+        userAnswer: validated.userAnswer,
+        goal: validated.goal,
+        mode: validated.mode,
       },
       user.id
     );
@@ -252,7 +265,7 @@ export async function submitQuestAnswer(
       };
     }
 
-    const recordResult = await recordQuestAttempt(questId, true, { awardXp: true });
+    const recordResult = await recordQuestAttempt(validated.questId, true, { awardXp: true });
     if ("error" in recordResult) {
       return { error: true, message: recordResult.message };
     }
@@ -279,8 +292,8 @@ export interface RecordQuestAttemptResult {
   streakDays: number;
 }
 
-/** Record success or failure for the current quest. Optionally award XP (disabled by default to prevent unverified "Solved it" cheating). */
-export async function recordQuestAttempt(
+/** Internal only: Record success or failure for the current quest. */
+async function recordQuestAttempt(
   questId: string,
   success: boolean,
   options?: { awardXp?: boolean }
@@ -1025,4 +1038,143 @@ export async function getCurrentUserXp(): Promise<UserXpResult | { error: true; 
       message: err instanceof Error ? err.message : "Something went wrong.",
     };
   }
+}
+
+export interface QuestAccuracyTrend {
+  subject: string;
+  accuracyPercent: number;
+  direction: "up" | "down" | "neutral" | null;
+}
+
+/**
+ * Calculates student's average accuracy over their last 10 quests in their focused subject.
+ * Compares the average of the last 5 vs. the previous 5 to determine trend direction.
+ */
+export async function getQuestAccuracyTrend(userId: string): Promise<QuestAccuracyTrend | null> {
+  await requireRole(["student", "admin"]);
+  const adminClient = createAdminClient();
+
+  // 1. Resolve which subject/division to focus on
+  const { data: settings } = await adminClient
+    .from("user_settings")
+    .select("focused_division_key")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let divisionKey = settings?.focused_division_key;
+  if (!divisionKey) {
+    const { data: xp } = await adminClient
+      .from("user_xp")
+      .select("division_xp")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const divXp = (xp?.division_xp as Record<string, number>) ?? {};
+    const entries = Object.entries(divXp).sort((a, b) => b[1] - a[1]);
+    divisionKey = entries[0]?.[0];
+  }
+
+  if (!divisionKey) return null;
+
+  // Get human-readable division name
+  const { data: division } = await adminClient
+    .from("divisions")
+    .select("name")
+    .eq("key", divisionKey)
+    .maybeSingle();
+  const subjectName = division?.name?.replace(/ Division$/, "") ?? divisionKey;
+
+  // 2. Fetch last 30 completed quests to find 10 matches for this division
+  const { data: progressRows } = await adminClient
+    .from("user_quest_progress")
+    .select(`
+      num_attempts,
+      status,
+      last_attempt_at,
+      quests!inner (
+        metadata
+      )
+    `)
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .order("last_attempt_at", { ascending: false })
+    .limit(40);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!progressRows || (progressRows as any[]).length === 0) return null;
+
+  const relevantQuests: { correct: number; total: number }[] = [];
+
+  // 2.5 Optimization: Pre-fetch course mapping to avoid N+1 queries
+  const { data: allMappings } = await adminClient
+    .from("course_division_map")
+    .select("course, divisions(key)");
+  const courseToDiv = new Map<string, string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (allMappings as any[])?.forEach((m) => {
+    const key = m.divisions?.key || m.divisions?.[0]?.key;
+    if (m.course && key) courseToDiv.set(m.course, key);
+  });
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of (progressRows as any[])) {
+    const questData = Array.isArray(row.quests) ? row.quests[0] : row.quests;
+    if (!questData) continue;
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = questData.metadata as any;
+    const course = meta?.course || "";
+    
+    // Check if this quest belongs to the student's active division
+    const questDivKey = course ? courseToDiv.get(course) || "general" : "general";
+    
+    if (questDivKey === divisionKey) {
+      let correct = 1;
+      let total = row.num_attempts || 1;
+      
+      // If it's a practice pack, metadata contains specific correct/total
+      if (meta?.result?.correct !== undefined) {
+        correct = meta.result.correct;
+        total = meta.result.total || row.num_attempts || 1;
+      }
+      
+      relevantQuests.push({ correct, total });
+    }
+    if (relevantQuests.length >= 10) break;
+  }
+
+  if (relevantQuests.length === 0) return null;
+
+  // 3. Calculate Overall Accuracy (Last 10)
+  const last10 = relevantQuests.slice(0, 10);
+  const totalCorrect = last10.reduce((acc, q) => acc + q.correct, 0);
+  const totalQuestions = last10.reduce((acc, q) => acc + q.total, 0);
+  
+  if (totalQuestions === 0) return null;
+  const accuracyPercent = Math.round((totalCorrect / totalQuestions) * 100);
+
+  // 4. Calculate Trend (Last 5 vs Prev 5)
+  let direction: "up" | "down" | "neutral" | null = null;
+  if (relevantQuests.length >= 10) {
+    const last5 = relevantQuests.slice(0, 5);
+    const prev5 = relevantQuests.slice(5, 10);
+    
+    const last5Total = last5.reduce((acc, q) => acc + q.total, 0);
+    const prev5Total = prev5.reduce((acc, q) => acc + q.total, 0);
+    
+    if (last5Total > 0 && prev5Total > 0) {
+      const accLast5 = last5.reduce((acc, q) => acc + q.correct, 0) / last5Total;
+      const accPrev5 = prev5.reduce((acc, q) => acc + q.correct, 0) / prev5Total;
+      
+      // ±1% threshold for "neutral"
+      if (accLast5 > accPrev5 + 0.01) direction = "up";
+      else if (accLast5 < accPrev5 - 0.01) direction = "down";
+      else direction = "neutral";
+    }
+  }
+
+  return {
+    subject: subjectName,
+    accuracyPercent,
+    direction
+  };
 }

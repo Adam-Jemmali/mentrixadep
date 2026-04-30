@@ -10,29 +10,29 @@ const FLOW_STEPS = [
     number: "01",
     icon: "/images/book.png",
     title: "Book",
-    line: "Book — Search your course. Pick a verified Guide. Choose a slot. Pay. 3 minutes from now you have a session scheduled.",
-    hoverColor: "hover:bg-cyan-500/20",
+    line: " Search your course. Pick a verified Guide. Choose a slot. Pay.",
+    hoverColor: "hover:bg-indigo-500/20",
   },
   {
     number: "02",
     icon: "/images/live.png",
     title: "Meet",
-    line: "Meet — Show up live. Screen share your problem. Your Guide works through it with you in real time. Not a lecture. A solution.",
+    line: " Show up live. Screen share your problem. Your Guide works through it with you in real time. Not a lecture. A solution.",
     hoverColor: "hover:bg-violet-500/20",
   },
   {
     number: "03",
     icon: "/images/package.png",
     title: "Unpack",
-    line: "Unpack — 1 second after you hang up, Quest drops your custom study pack. It is waiting in your account every time you come back to it.",
-    hoverColor: "hover:bg-emerald-500/20",
+    line: " 1 second after you hang up, Quest drops your custom study pack.",
+    hoverColor: "hover:bg-purple-500/20",
   },
   {
     number: "04",
     icon: "/images/xp.png",
     title: "Climb",
-    line: "Climb — You drill with Quest, compete in duels, climb your division. Progress compounds. You are not the same student you were before the first session.",
-    hoverColor: "hover:bg-cyan-500/20",
+    line: " You drill with Quest, compete in duels, climb your division. Progress compounds. You are not the same student you were before the first session.",
+    hoverColor: "hover:bg-indigo-500/20",
   },
 ];
 
@@ -84,11 +84,10 @@ export function FourthStaticFlowContent() {
           {FLOW_STEPS.map((step, i) => (
             <TiltCard
               key={step.title}
-              title={step.title}
-              hoverColor={step.hoverColor}
               className={cn(
                 "h-full rounded-2xl border border-white/10 bg-slate-950/82 p-3.5 text-left shadow-xl shadow-black/30 backdrop-blur-md",
                 "transform-gpu transition-all duration-500 ease-out hover:-rotate-1 hover:scale-[1.03] hover:shadow-2xl",
+                step.hoverColor,
                 cardsOpacity < 0.2 ? "pointer-events-none" : ""
               )}
               style={{
@@ -100,7 +99,7 @@ export function FourthStaticFlowContent() {
               <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/25 bg-slate-900/80">
                 <Image src={step.icon} alt="" width={20} height={20} className="object-contain brightness-0 invert" />
               </div>
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-cyan-200">{step.number}</p>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-300">{step.number}</p>
               <h3 className="text-[15px] font-semibold text-white">{step.title}</h3>
               <p className="mt-1.5 text-[12px] leading-snug text-slate-100/95 md:text-[13px]">{step.line}</p>
             </TiltCard>

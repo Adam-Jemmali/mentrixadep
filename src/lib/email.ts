@@ -626,7 +626,7 @@ export async function sendAiPackageReadyEmail(
     : "";
 
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
-    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your AI study package for <strong style="color:#eee;">${escapeHtml(session.course)}</strong> is ready — built from your real session, not generic filler. ${statsLine ? `Inside: <strong style="color:#ddd;">${escapeHtml(statsLine)}</strong>.` : "Open it for the full summary, cards, and quests."}</p>
+    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your  study package for <strong style="color:#eee;">${escapeHtml(session.course)}</strong> is ready — built from your real session, not generic filler. ${statsLine ? `Inside: <strong style="color:#ddd;">${escapeHtml(statsLine)}</strong>.` : "Open it for the full summary, cards, and quests."}</p>
     ${previewBlock}
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0 0;border-collapse:collapse;">
       ${detailRow("Course", escapeHtml(session.course))}
@@ -637,8 +637,8 @@ export async function sendAiPackageReadyEmail(
 
   await sendEmail(
     studentEmail,
-    `${hi}, your ${session.course} AI package is ready · Mentrixa`,
-    baseTemplate("Your AI Study Package is ready", body)
+    `${hi}, your ${session.course} Quest package is ready · Mentrixa`,
+    baseTemplate("Your Quest Study Package is ready", body)
   );
 }
 

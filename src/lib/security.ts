@@ -541,20 +541,18 @@ export const securityHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
   // Allow camera and microphone for same origin (required for video calling)
   // identity-credentials-get: Google Identity Services / FedCM (Sign in with Google button)
-  "Permissions-Policy": "camera=(self), microphone=(self)",
+  "Permissions-Policy": "camera=(self), microphone=(self), geolocation=(), interest-cohort=(), payment=()",
   // Content Security Policy - strict but allows necessary resources
   "Content-Security-Policy": [
     "default-src 'self'",
-    // Google Identity Services: https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://js.stripe.com ",
-    // Dev tooling / some libs create workers from blob: URLs; without worker-src, script-src blocks them
+    "upgrade-insecure-requests",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://js.stripe.com https://*.stripe.com",
     "worker-src 'self' blob:",
-    // Google Identity Services loads https://accounts.google.com/gsi/style (see google-sign-in-button)
-    "style-src 'self' 'unsafe-inline' https://accounts.google.com",
-    "img-src 'self' data: https:",
-    "font-src 'self' data:",
-    "frame-src 'self' https://accounts.google.com",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://www.gstatic.com https://api.stripe.com ",
+    "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com",
+    "img-src 'self' data: https: https://*.googleusercontent.com https://*.stripe.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "frame-src 'self' https://accounts.google.com https://js.stripe.com https://*.stripe.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://www.gstatic.com https://api.stripe.com https://*.stripe.com",
     "media-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
@@ -562,7 +560,7 @@ export const securityHeaders = {
   ].join("; "),
   // Strict Transport Security (HSTS) - only in production
   ...(process.env.NODE_ENV === "production" && {
-    "Strict-Transport-Security": "max-age=31536000",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
   }),
 };
 

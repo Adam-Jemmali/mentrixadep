@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getRoleHomePath } from "@/lib/role-home";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
+import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
 
 /**
  * After password signup when Supabase returns an immediate session (no email confirm step),
@@ -38,5 +38,10 @@ export async function GET() {
     redirect("/pending-approval");
   }
 
-  redirect(getRoleHomePath(userRow.role));
+  redirect(
+    await getPostApprovalRedirectPath({
+      userId: user.id,
+      role: userRow.role,
+    }),
+  );
 }

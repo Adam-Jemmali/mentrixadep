@@ -26,20 +26,18 @@ function playClickSound(audioContext: AudioContext) {
   };
 }
 
-function isStudentOrTutorPath(pathname: string): boolean {
-  return pathname.startsWith("/student") || pathname.startsWith("/tutor");
-}
-
 function getSoundTarget(target: EventTarget | null): HTMLElement | null {
   if (!(target instanceof HTMLElement)) return null;
 
-  // Explicit opt-in always wins.
-  const explicit = target.closest('[data-click-sound="true"]');
-  if (explicit instanceof HTMLElement) return explicit;
+  // Explicit opt-in/opt-out
+  const explicit = target.closest('[data-click-sound]');
+  if (explicit instanceof HTMLElement) {
+    return explicit.getAttribute("data-click-sound") === "false" ? null : explicit;
+  }
 
-  // Automatic coverage for interactive controls in student/guide surfaces.
+  // Broad selection for any interactive or semi-interactive element
   const auto = target.closest(
-    "button, a[href], [role='button'], [role='tab'], [role='menuitem'], input[type='button'], input[type='submit']",
+    "button, a, [role='button'], [role='tab'], [role='menuitem'], [role='option'], [role='switch'], [role='checkbox'], input, select, label",
   );
   return auto instanceof HTMLElement ? auto : null;
 }
@@ -62,9 +60,6 @@ export function ClickSoundProvider() {
     };
 
     const handleClick = (event: MouseEvent) => {
-      const pathname = window.location.pathname;
-      if (!isStudentOrTutorPath(pathname)) return;
-
       const target = getSoundTarget(event.target);
       if (!target) return;
       if (target.getAttribute("data-click-sound") === "false") return;

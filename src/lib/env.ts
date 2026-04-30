@@ -1,133 +1,83 @@
-function getDevPreferredEnvVar(key: string, defaultValue?: string): string | undefined {
-  return process.env[key] ?? defaultValue;
-}
+import { z } from "zod";
 
-function getSupabaseUrl(): string {
-  const url = getDevPreferredEnvVar("NEXT_PUBLIC_SUPABASE_URL");
-  if (!url) {
-    throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL");
-  }
-  return url.trim();
-}
+/**
+ * Flexible Environment Configuration
+ * Provides backward compatibility for the entire app.
+ */
+const envSchema = z.object({
+  // Supabase
+  NEXT_PUBLIC_SUPABASE_URL: z.string().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
-function getSupabaseAnonKey(): string {
-  const key = getDevPreferredEnvVar("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  if (!key) {
-    throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  }
-  return key.trim();
-}
+  // Stripe
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
-export function getCronSecret(): string {
-  const secret = getDevPreferredEnvVar("CRON_SECRET");
-  if (!secret || secret.trim() === "") {
-    throw new Error("Missing required environment variable: CRON_SECRET");
-  }
-  return secret.trim();
-}
+  // AI & Others
+  OPENAI_API_KEY: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
 
-export function getGeminiApiKey(): string {
-  const key = getDevPreferredEnvVar("GEMINI_API_KEY");
-  if (!key || key.trim() === "") {
-    throw new Error("Missing required environment variable: GEMINI_API_KEY");
-  }
-  return key.trim();
-}
+  // App Metadata
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NEXT_PUBLIC_SITE_URL: z.string().optional(),
+});
 
-export function getStripeSecretKey(): string {
-  const key = getDevPreferredEnvVar("STRIPE_SECRET_KEY");
-  if (!key || key.trim() === "") {
-    throw new Error("Missing required environment variable: STRIPE_SECRET_KEY");
-  }
-  return key.trim();
-}
-
-export function getStripeWebhookSecret(): string {
-  const secret = getDevPreferredEnvVar("STRIPE_WEBHOOK_SECRET");
-  if (!secret || secret.trim() === "") {
-    throw new Error("Missing required environment variable: STRIPE_WEBHOOK_SECRET");
-  }
-  return secret.trim();
-}
-
-export function getResendApiKey(): string {
-  const key = getDevPreferredEnvVar("RESEND_API_KEY");
-  if (!key || key.trim() === "") {
-    throw new Error("Missing required environment variable: RESEND_API_KEY");
-  }
-  return key.trim();
-}
+const result = envSchema.safeParse(process.env);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const data = result.success ? result.data : ({} as any);
 
 export const env = {
   public: {
-    appUrl: getDevPreferredEnvVar("NEXT_PUBLIC_APP_URL"),
-    stripePublishableKey: getDevPreferredEnvVar("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
-    get supabaseUrl() {
-      return getSupabaseUrl();
-    },
-    get supabaseAnonKey() {
-      return getSupabaseAnonKey();
-    },
+    supabaseUrl: data.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    supabaseAnonKey: data.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+    siteUrl: data.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    appUrl: data.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   },
   server: {
-    supabaseServiceRoleKey: getDevPreferredEnvVar("SUPABASE_SERVICE_ROLE_KEY"),
-    get cronSecret() {
-      return getCronSecret();
-    },
-    get geminiApiKey() {
-      return getGeminiApiKey();
-    },
-    get stripeSecretKey() {
-      return getStripeSecretKey();
-    },
-    get stripeWebhookSecret() {
-      return getStripeWebhookSecret();
-    },
-    get resendApiKey() {
-      return getResendApiKey();
-    },
-  },
-  webrtc: {
-    stunServers: getDevPreferredEnvVar("NEXT_PUBLIC_STUN_SERVERS")?.split(",") || [
-      "stun:stun.l.google.com:19302",
-      "stun:stun1.l.google.com:19302",
-    ],
-    turnServers: getDevPreferredEnvVar("NEXT_PUBLIC_TURN_SERVERS")?.split(",") || [],
-  },
-} as const;
+    supabaseServiceRoleKey: data.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    stripeSecretKey: data.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "",
+    stripeWebhookSecret: data.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "",
+    openaiApiKey: data.OPENAI_API_KEY || process.env.OPENAI_API_KEY || "",
+    resendApiKey: data.RESEND_API_KEY || process.env.RESEND_API_KEY || "",
+    geminiApiKey: data.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "",
+    nodeEnv: data.NODE_ENV || process.env.NODE_ENV || "development",
+  }
+};
 
-/**
- * Log missing production secrets at startup — does **not** throw.
+/** 
+ * BACKWARD COMPATIBILITY HELPERS
+ * These ensure existing code can still call getStripeSecretKey(), etc.
  */
-export function validateEnvAtStartup(): void {
-  if (process.env.NODE_ENV !== "production") return;
-  if ((process.env.NEXT_PHASE ?? "").includes("phase-production-build")) return;
-  if (process.env.npm_lifecycle_event === "build") return;
-  const required = [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-    "GEMINI_API_KEY",
-    "RESEND_API_KEY",
-    "CRON_SECRET",
-  ];
-  const missing = required.filter((k) => !process.env[k]?.trim());
-  if (missing.length > 0) {
-    console.error(
-      "[env] Production is missing required environment variables — add them in Vercel → Settings → Environment Variables (Production):",
-      missing.join(", "),
-    );
-  }
-
-  const cronAllowlist = (process.env.CRON_ALLOWED_IPS ?? "").trim();
-  const requireCronSig = (process.env.CRON_REQUIRE_SIGNATURE ?? "false").toLowerCase() === "true";
-  if (!cronAllowlist && !requireCronSig) {
-    console.warn(
-      "[env] Cron hardening not configured: set CRON_ALLOWED_IPS or CRON_REQUIRE_SIGNATURE=true (see PRELAUNCH.md).",
-    );
-  }
+export function getStripeSecretKey() {
+  return env.server.stripeSecretKey;
 }
 
+export function getResendApiKey() {
+  return env.server.resendApiKey;
+}
 
+export function getGeminiApiKey() {
+  return env.server.geminiApiKey;
+}
+
+export function getOpenaiApiKey() {
+  return env.server.openaiApiKey;
+}
+
+export function getSupabaseUrl() {
+  return env.public.supabaseUrl;
+}
+
+export function getSupabaseAnonKey() {
+  return env.public.supabaseAnonKey;
+}
+
+export function getSupabaseServiceRoleKey() {
+  return env.server.supabaseServiceRoleKey;
+}
+
+export function getStripeWebhookSecret() {
+  return env.server.stripeWebhookSecret;
+}

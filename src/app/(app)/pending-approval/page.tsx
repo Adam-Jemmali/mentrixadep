@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PendingApprovalContent } from "@/components/auth/PendingApprovalContent";
-import { getRoleHomePath } from "@/lib/role-home";
+import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 
 export default async function PendingApprovalPage() {
@@ -22,7 +22,12 @@ export default async function PendingApprovalPage() {
 
   const accessStatus = normalizeAccessStatus(userData);
   if (accessStatus === "approved" && userData?.role) {
-    redirect(getRoleHomePath(userData.role));
+    redirect(
+      await getPostApprovalRedirectPath({
+        userId: user.id,
+        role: userData.role,
+      }),
+    );
   }
   if (accessStatus === "suspended") {
     redirect("/suspended");

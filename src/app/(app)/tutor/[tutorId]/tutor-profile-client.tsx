@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -18,6 +20,13 @@ import { splitSessionPriceCents } from "@/lib/booking-pricing";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
 import { formatSlotRangeInZone } from "@/lib/time-format";
 import { AccountSecurityPanel } from "@/components/account-security-panel";
+import { Typewriter } from "@/components/ui/typewriter";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { APP_TIMEZONES } from "@/lib/timezones";
+import { updateUserSettings, type UserSettings } from "@/app/actions/settings";
+import { cn } from "@/lib/utils";
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -50,6 +59,7 @@ interface Profile {
   autoApprove: boolean;
   /** Same IANA zone as Guide settings — slot labels match times they chose when creating availability. */
   tutorTimezone: string;
+  privateSettings?: UserSettings;
 }
 
 interface TutorProfileClientProps {
@@ -86,6 +96,180 @@ function relativeDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+// ─── sub-components ──────────────────────────────────────────────────────────
+
+function ProfileToggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3 border-b border-slate-100 last:border-b-0">
+      <div>
+        <p className="text-sm font-medium text-slate-900">{label}</p>
+        <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none",
+          checked ? "bg-blue-600" : "bg-slate-200"
+        )}
+        role="switch"
+        aria-checked={checked}
+      >
+        <span
+          className={cn(
+            "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
+            checked ? "translate-x-5" : "translate-x-0"
+          )}
+        />
+      </button>
+    </div>
+  );
+}
+
+function TutorProfileFormSection({ 
+  initial, 
+  onSaved 
+}: { 
+  initial: UserSettings; 
+  onSaved: () => void 
+}) {
+  const [form, setForm] = useState<UserSettings>(initial);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateUserSettings(form);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
+  const BUFFER_OPTIONS = [0, 5, 10, 15, 30, 60] as const;
+
+  return (
+    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-900 mb-1">Edit Profile & Settings</h2>
+      <p className="text-sm text-slate-500 mb-6">Update your identity and teaching preferences.</p>
+
+      <div className="space-y-6">
+        <div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Display name</Label>
+          <Input 
+            value={form.display_name ?? ""} 
+            onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
+            className="mt-1.5"
+            placeholder="Your name for learners"
+          />
+        </div>
+
+        <div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Bio</Label>
+          <Textarea 
+            value={form.bio ?? ""} 
+            onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
+            className="mt-1.5 resize-none"
+            rows={4}
+            placeholder="Tell learners about your style and expertise..."
+          />
+        </div>
+
+        <div>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Timezone</Label>
+          <select
+            value={form.timezone}
+            onChange={e => setForm(f => ({ ...f, timezone: e.target.value }))}
+            className="mt-1.5 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            {APP_TIMEZONES.map(tz => (
+              <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900 mb-3">Teaching Defaults</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs text-slate-500">Default duration</Label>
+              <select
+                value={form.session_default_duration}
+                onChange={e => setForm(f => ({ ...f, session_default_duration: Number(e.target.value) }))}
+                className="mt-1.5 flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900"
+              >
+                {DURATION_OPTIONS.map(d => (
+                  <option key={d} value={d}>{d} minutes</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-500">Buffer between sessions</Label>
+              <select
+                value={form.session_buffer_minutes}
+                onChange={e => setForm(f => ({ ...f, session_buffer_minutes: Number(e.target.value) }))}
+                className="mt-1.5 flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900"
+              >
+                {BUFFER_OPTIONS.map(b => (
+                  <option key={b} value={b}>{b === 0 ? "No buffer" : `${b} minutes`}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900 mb-2">Notifications</h3>
+          <ProfileToggle 
+            label="Session reminders" 
+            description="1 hour before a session starts." 
+            checked={form.email_session_reminders} 
+            onChange={v => setForm(f => ({ ...f, email_session_reminders: v }))} 
+          />
+          <ProfileToggle 
+            label="Session booked" 
+            description="When a student books a session." 
+            checked={form.email_session_booked} 
+            onChange={v => setForm(f => ({ ...f, email_session_booked: v }))} 
+          />
+          <ProfileToggle 
+            label="Session cancelled" 
+            description="When a session is cancelled." 
+            checked={form.email_session_cancelled} 
+            onChange={v => setForm(f => ({ ...f, email_session_cancelled: v }))} 
+          />
+        </div>
+
+        {error && <p className="text-sm font-medium text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
+
+        <Button 
+          type="button" 
+          onClick={handleSave} 
+          disabled={saving}
+          className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white"
+        >
+          {saving ? "Saving..." : "Save all changes"}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 // ─── component ────────────────────────────────────────────────────────────────
 
 export function TutorProfileClient({
@@ -94,6 +278,7 @@ export function TutorProfileClient({
   isOwnProfile = false,
   viewerRole = null,
 }: TutorProfileClientProps) {
+  const router = useRouter();
   const nameRef = useRef<HTMLHeadingElement>(null);
   const statRefs = useRef<HTMLSpanElement[]>([]);
   const ratingBarRefs = useRef<HTMLDivElement[]>([]);
@@ -253,6 +438,19 @@ export function TutorProfileClient({
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="mb-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 -ml-3 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+          asChild
+        >
+          <Link href="/tutor" className="inline-flex items-center gap-1.5">
+            <Image src="/icons/guide.svg" alt="" width={12} height={12} className="h-3 w-3 opacity-60" />
+            Back to dashboard
+          </Link>
+        </Button>
+      </div>
 
       {/* ── PROFILE HEADER ────────────────────────────────────────────────── */}
       <div className="border-b border-[#E2E8F0] pb-8 mb-8">
@@ -291,12 +489,9 @@ export function TutorProfileClient({
 
         {isOwnProfile && (
           <div className="mt-3">
-            <Link
-              href="/settings"
-              className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-50"
-            >
-              Settings
-            </Link>
+            <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700 border border-blue-100">
+              Your public profile
+            </span>
           </div>
         )}
 
@@ -335,7 +530,9 @@ export function TutorProfileClient({
 
       {/* ── REVIEWS ───────────────────────────────────────────────────────── */}
       <section className="border-t border-[#E2E8F0] pt-8 mt-8">
-        <h2 className="text-[18px] font-semibold text-slate-900 mb-6">Reviews</h2>
+        <h2 className="text-[18px] font-semibold text-slate-900 mb-6 h-[28px]">
+          <Typewriter text="Reviews" speed={70} waitTime={8000} />
+        </h2>
 
         {profile.ratingCount === 0 ? (
           <p className="text-sm text-slate-400">No reviews yet.</p>
@@ -389,6 +586,16 @@ export function TutorProfileClient({
         )}
       </section>
 
+      {isOwnProfile && profile.privateSettings && (
+        <TutorProfileFormSection 
+          initial={profile.privateSettings} 
+          onSaved={() => {
+            router.refresh();
+            // Optional: add a global toast here if available
+          }}
+        />
+      )}
+
       {isOwnProfile && <AccountSecurityPanel className="mt-8" />}
 
       {/* ── BOOKING DIALOG ────────────────────────────────────────────────── */}
@@ -431,7 +638,7 @@ export function TutorProfileClient({
                   sessionPriceCents={dialogSlot.price_per_session ?? 2500}
                 />
                 <p className="mt-4 border-t-2 border-mentrixa-200 pt-3 text-sm font-medium leading-relaxed text-neutral-900">
-                  Stripe lists the session and 5% platform fee separately. If you decline this request, the
+                  Stripe lists the session and 15% platform fee separately. If you decline this request, the
                   learner is refunded automatically. Cancellations 60+ minutes before follow your refund policy.
                 </p>
                 {bookingLoading ? (

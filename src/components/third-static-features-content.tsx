@@ -8,7 +8,7 @@ const FEATURE_ITEMS = [
   {
     title: "Live sessions",
     icon: "/images/live.png",
-    hoverColor: "hover:bg-cyan-500/20",
+    hoverColor: "hover:bg-indigo-500/20",
     body: "A real expert on your exact course, live on screen, while the problem is still fresh. Not a chatbot. Not a YouTube video.",
   },
   {
@@ -20,13 +20,13 @@ const FEATURE_ITEMS = [
   {
     title: "Skill duels",
     icon: "/images/sword.png",
-    hoverColor: "hover:bg-emerald-500/20",
+    hoverColor: "hover:bg-purple-500/20",
     body: "Head-to-head quizzes against other students in your subject. If you can beat them under pressure, you can beat the exam question on paper.",
   },
   {
     title: "Divisions & XP",
     icon: "/images/xp.png",
-    hoverColor: "hover:bg-cyan-500/20",
+    hoverColor: "hover:bg-indigo-500/20",
     body: "Every session, quest, and duel earns XP. You rank in your subject's division. When you can see you're improving, you don't stop.",
   },
   {
@@ -38,7 +38,7 @@ const FEATURE_ITEMS = [
   {
     title: "Session packages",
     icon: "/images/package.png",
-    hoverColor: "hover:bg-emerald-500/20",
+    hoverColor: "hover:bg-purple-500/20",
     body: "You walk away with something you can reopen - the call fades; your summaries, cards, and follow-ups do not.",
   },
 ];
@@ -124,7 +124,7 @@ export function ThirdStaticFeaturesContent() {
                 <article
                   key={item.title}
                   className={cn(
-                    "rounded-2xl border border-cyan-200/15 bg-slate-950/82 p-3.5 text-white shadow-xl shadow-black/30 backdrop-blur-md",
+                    "rounded-2xl border border-indigo-200/15 bg-slate-950/82 p-3.5 text-white shadow-xl shadow-black/30 backdrop-blur-md",
                     "transform-gpu transition-all duration-500 ease-out hover:-rotate-1 hover:scale-[1.03] hover:shadow-2xl",
                     item.hoverColor
                   )}

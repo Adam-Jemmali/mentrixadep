@@ -28,9 +28,7 @@ export function ThirdSequenceWhyContent() {
           style={{ opacity: headingOpacity, transform: `translateY(${(1 - headingOpacity) * 16}px)` }}
         >
           <h2 className="text-[clamp(20px,3.2vw,30px)] font-bold tracking-[-0.03em] text-white">Should you join?</h2>
-          <p className="mx-auto mt-3 max-w-lg text-[13px] text-cyan-100/95">
-            You already feel both sides 
-          </p>
+         
         </div>
 
         <div className="grid items-start gap-5 md:gap-6 lg:grid-cols-[1fr_0.8fr_1fr]">
@@ -56,16 +54,16 @@ export function ThirdSequenceWhyContent() {
 
           <div
             className={cn(
-              "rounded-2xl border border-emerald-300/15 bg-slate-950/82 p-4 md:p-5 shadow-xl shadow-black/30 backdrop-blur-md",
+              "rounded-2xl border border-blue-300/15 bg-slate-950/82 p-4 md:p-5 shadow-xl shadow-black/30 backdrop-blur-md",
               "transition-all duration-500"
             )}
             style={{ opacity: rightOpacity, transform: `translateY(${(1 - rightOpacity) * 18}px)` }}
           >
-            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-200">If you start now</p>
+            <p className="mb-3 text-[10px] font-bold tracking-[0.2em] uppercase text-blue-200">If you start now</p>
             <ul className="space-y-3">
               {WHY_NOW.map((line) => (
                 <li key={line} className="flex gap-2.5 text-[12px] leading-snug text-slate-100/95 md:text-[13px]">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
                   {line}
                 </li>
               ))}

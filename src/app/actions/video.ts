@@ -6,6 +6,8 @@ import { requireAuth } from "@/lib/auth";
 import { validateUUID } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
+import { createPayoutLedgerForSession } from "@/app/actions/stripe-connect";
+import { autoGenerateStudioPackagesForCompletedSessions } from "@/app/actions/autoPilot";
 
 /**
  * Create a video room for a session (participants may join early; room expires after session end).
@@ -307,5 +309,98 @@ export async function leaveVideoRoom(sessionId: string) {
     .is("left_at", null);
 
   return { success: true };
+}
+
+type SessionTimingCheckResult = {
+  success: true;
+  shouldEnd: boolean;
+  reason: "time_elapsed" | "already_completed" | "cancelled" | null;
+  remainingSeconds: number;
+  warning: "60s" | "15s" | null;
+};
+
+/**
+ * Server-authoritative timer check used by the in-call UI and cron.
+ * If the session has reached end_time, it marks the session completed and triggers
+ * payout/package best-effort flows.
+ */
+export async function checkAndEnforceSessionTiming(
+  sessionId: string,
+): Promise<SessionTimingCheckResult> {
+  const user = await requireAuth();
+  const validatedSessionId = validateUUID(sessionId);
+  const adminClient = createAdminClient();
+
+  const { data: session, error } = await adminClient
+    .from("sessions")
+    .select("id, student_id, tutor_id, end_time, status, completed")
+    .eq("id", validatedSessionId)
+    .single();
+
+  if (error || !session) {
+    throw new Error("Session not found");
+  }
+
+  if (session.student_id !== user.id && session.tutor_id !== user.id && user.role !== "admin") {
+    throw new Error("Unauthorized: You are not part of this session");
+  }
+
+  const nowMs = Date.now();
+  const endMs = new Date(session.end_time).getTime();
+  const remainingSeconds = Math.max(0, Math.floor((endMs - nowMs) / 1000));
+
+  if (session.status === "cancelled") {
+    return {
+      success: true,
+      shouldEnd: true,
+      reason: "cancelled",
+      remainingSeconds,
+      warning: null,
+    };
+  }
+
+  const isAlreadyCompleted = session.status === "completed" || session.completed === true;
+  const reachedEnd = nowMs >= endMs;
+
+  if (isAlreadyCompleted || reachedEnd) {
+    if (!isAlreadyCompleted) {
+      await adminClient
+        .from("sessions")
+        .update({ status: "completed", completed: true })
+        .eq("id", validatedSessionId)
+        .neq("status", "completed");
+    }
+
+    // Best-effort side effects; failures should not block end enforcement.
+    try {
+      await createPayoutLedgerForSession(validatedSessionId);
+    } catch (payoutErr) {
+      console.error("[checkAndEnforceSessionTiming] payout trigger failed", payoutErr);
+    }
+
+    try {
+      await autoGenerateStudioPackagesForCompletedSessions([validatedSessionId]);
+    } catch (pkgErr) {
+      console.error("[checkAndEnforceSessionTiming] package trigger failed", pkgErr);
+    }
+
+    return {
+      success: true,
+      shouldEnd: true,
+      reason: isAlreadyCompleted ? "already_completed" : "time_elapsed",
+      remainingSeconds: 0,
+      warning: null,
+    };
+  }
+
+  const warning = remainingSeconds <= 15 ? "15s" : remainingSeconds <= 60 ? "60s" : null;
+
+  return {
+    success: true,
+    shouldEnd: false,
+    reason: null,
+    remainingSeconds,
+    warning,
+  };
 }
 

@@ -3,10 +3,13 @@
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { validateUUID, sanitizeError, enforceRateLimit, RATE_LIMITS, getRateLimitId } from "@/lib/security";
+import { validateUUID, sanitizeError, enforceRateLimit, RATE_LIMITS, getRateLimitId, emailSchema } from "@/lib/security";
+import { z } from "zod";
 import { sendWaitlistDecisionEmail } from "@/lib/email";
+import { verifyAdministrativeZeroTrust, logSensitiveAdminAction } from "@/lib/zero-trust";
 
 async function findAuthUserByEmail(email: string) {
+  emailSchema.parse(email);
   const adminClient = createAdminClient();
   const target = email.trim().toLowerCase();
   let page = 1;
@@ -155,6 +158,11 @@ export async function rejectRegistrationRequest(requestId: string) {
           await adminClient.from("users").delete().eq("id", authUser.id);
           // Delete from Supabase auth entirely
           await adminClient.auth.admin.deleteUser(authUser.id);
+
+          await logSensitiveAdminAction(user.id, "DELETE_USER_VIA_REJECTION", { 
+            targetUserId: authUser.id, 
+            requestEmail: request.email 
+          });
         }
       } catch (deleteErr) {
         // Best-effort: log but don't fail the rejection
@@ -512,8 +520,8 @@ export async function unsuspendUser(userId: string) {
   return { success: true };
 }
 
-export async function promoteToAdmin(userId: string) {
-  const admin = await requireRole("admin");
+export async function promoteToAdmin(userId: string, mfaCode?: string) {
+  const admin = await verifyAdministrativeZeroTrust(mfaCode);
   const adminClient = createAdminClient();
 
   enforceRateLimit(getRateLimitId(admin.id), RATE_LIMITS.adminAction, "promote to admin");
@@ -525,6 +533,9 @@ export async function promoteToAdmin(userId: string) {
     .eq("id", validId);
 
   if (error) throw new Error(sanitizeError(error));
+  
+  await logSensitiveAdminAction(admin.id, "PROMOTE_TO_ADMIN", { targetUserId: validId });
+
   revalidatePath("/admin/users");
   return { success: true };
 }
@@ -593,6 +604,8 @@ export async function getSystemSettings(): Promise<SystemSettings> {
 }
 
 export async function updateSystemSetting(key: string, value: Record<string, unknown>) {
+  z.string().min(1).max(100).parse(key);
+  z.record(z.string(), z.any()).parse(value);
   await requireRole("admin");
   const adminClient = createAdminClient();
 

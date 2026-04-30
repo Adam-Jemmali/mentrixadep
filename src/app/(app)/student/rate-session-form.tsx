@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { rateSession } from "@/app/actions/student";
+import { emitXpAward } from "@/lib/xp-events";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,6 +61,10 @@ export function RateSessionForm({
         return;
       }
       void fireRatingConfetti();
+      // Emit XP award event for floating animation and navbar pulse
+      emitXpAward({
+        amount: 50, // XP.SESSION_RATE = 50
+      });
       setOptimisticDone(true);
       await new Promise((r) => setTimeout(r, 450));
       onSuccess?.();

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { StudentHeroGreeting } from "@/components/student/student-hero-greeting";
 
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -7,14 +9,21 @@ import {
   getStudentHubSnapshot,
   getStudentSessionsHubBundle,
 } from "@/app/actions/student";
-import { getStudentDivisionStats, getDivisionLeaderboard } from "@/app/actions/quest";
+import { getTopRival } from "@/app/actions/top-rival";
+import { 
+  getStudentDivisionStats, 
+  getDivisionLeaderboard, 
+  getQuestAccuracyTrend 
+} from "@/app/actions/quest";
 import type { StudentCourse, UserXp } from "@/lib/database.types";
 import { getAccountLevelFromTotalXp } from "@/lib/levels";
 
 
+import { getWeekRangeUTC } from "@/lib/time-format";
 import { MentrixHeroDecor } from "@/components/student/mentrix-hero-decor";
 import { HeroMentrixerBounce } from "@/components/student/hero-mentrixer-bounce";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { Typewriter } from "@/components/ui/typewriter";
 import { SessionsList } from "./sessions-list";
 import { StudentStatStripMotion } from "./student-stat-strip-motion";
 import { StudentCommandCenterClient } from "./student-command-center-client";
@@ -27,6 +36,9 @@ import {
 } from "@/lib/student-dashboard-helpers";
 import { getUpcomingSessionBriefs } from "@/app/actions/pre-session-brief";
 import { PreSessionBriefCard } from "@/components/pre-session-brief-card";
+import { TopRivalCard } from "@/components/top-rival-card";
+import { Button } from "@/components/ui/button";
+import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 interface StudentPageProps {
   searchParams?: {
@@ -36,19 +48,22 @@ interface StudentPageProps {
 }
 
 async function tutorEmailPrefixByTutorId(tutorIds: string[]): Promise<Map<string, string>> {
+  if (tutorIds.length === 0) return new Map();
+  
   const adminClient = createAdminClient();
   const map = new Map<string, string>();
-  await Promise.all(
-    tutorIds.map(async (id) => {
-      try {
-        const { data } = await adminClient.auth.admin.getUserById(id);
-        const email = data?.user?.email ?? "";
-        map.set(id, email ? email.split("@")[0]! : "Guide");
-      } catch {
-        map.set(id, "Guide");
-      }
-    }),
-  );
+  
+  // ELITE SPEED: Fetch all profiles in ONE batch query instead of a slow loop
+  const { data: profiles } = await adminClient
+    .from("profiles")
+    .select("id, display_name")
+    .in("id", tutorIds);
+
+  tutorIds.forEach(id => {
+    const profile = profiles?.find(p => p.id === id);
+    map.set(id, profile?.display_name ? profile.display_name.split(" ")[0]! : "Guide");
+  });
+  
   return map;
 }
 
@@ -56,12 +71,14 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, divisionStats, sessionBriefs, availability] = await Promise.all([
+  const [snapshot, sessionsBundle, divisionStats, sessionBriefs, availability, rivalData, questAccuracy] = await Promise.all([
     getStudentHubSnapshot(),
     getStudentSessionsHubBundle(),
     getStudentDivisionStats(user.id),
     getUpcomingSessionBriefs().catch(() => []),
     getTutorAvailability(),
+    getTopRival(),
+    getQuestAccuracyTrend(user.id),
   ]);
 
   const { upcomingSessions, pastSessions } = sessionsBundle;
@@ -93,13 +110,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       : 100;
 
   const sessionsCompleted = pastSessions.filter(
-    (s) => s.completed || s.status === "completed",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (s: any) => s.completed || s.status === "completed",
   ).length;
 
-  const allRatings = pastSessions.flatMap((s) => s.ratings ?? []);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allRatings = pastSessions.flatMap((s: any) => s.ratings ?? []);
   const avgRating =
     allRatings.length > 0
-      ? allRatings.reduce((acc, r) => acc + r.rating, 0) / allRatings.length
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? allRatings.reduce((acc: number, r: any) => acc + r.rating, 0) / allRatings.length
       : 0;
 
   const sortedDivisions = [...divisionStats].sort((a, b) => b.xp - a.xp);
@@ -117,9 +137,11 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
   const leaderboardTop = await getDivisionLeaderboard(focusedDivisionKey, user.id);
 
-  const tutorIds = Array.from(new Set(upcomingSessions.map((s) => s.tutor_id)));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tutorIds = Array.from(new Set(upcomingSessions.map((s: any) => s.tutor_id))) as string[];
   const prefixByTutor = await tutorEmailPrefixByTutorId(tutorIds);
-  const upcomingForClient = upcomingSessions.map((s) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upcomingForClient = upcomingSessions.map((s: any) => ({
     id: s.id,
     course: s.course,
     start_time: s.start_time,
@@ -133,18 +155,21 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     availability,
   );
 
+  const weekRange = getWeekRangeUTC(now);
+
   return (
     <div className={mentrixStudent.pageBg}>
       <main className={mentrixStudent.main}>
-        <div className={`${mentrixStudent.heroGradient} mb-8 p-6 sm:p-8`}>
+        <div className={`${mentrixStudent.heroGradient} mb-8 p-6 sm:p-8 relative overflow-hidden`}>
           <MentrixHeroDecor />
           <HeroMentrixerBounce />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-xl space-y-4">
               <div>
-                
-                <p className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">{greeting}</p>
-                <p className="mt-2 text-sm text-white/90">Keep your streak. Keep proving what you know.</p>
+                <StudentHeroGreeting greeting={greeting} firstName={firstName} />
+                <div className="mt-2 text-sm text-white/90 h-[20px]">
+                  <Typewriter text="Keep your streak. Keep proving what you know." speed={40} waitTime={5000} />
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -175,7 +200,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               {streak > 0 && (
                 <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${streakAtRisk ? "text-amber-100" : "text-white/90"}`}>
                   {streakAtRisk
-                    ? "Streak at risk :(  Play now"
+                    ? "Keep your streak alive !"
                     : `${streak}-day streak active`}
                 </p>
               )}
@@ -183,12 +208,24 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
             <div className="flex flex-col items-start gap-3 lg:items-end shrink-0">
               <div className="flex flex-wrap gap-2">
-                
-                
-              
-              
-              
-            
+                <Button variant="outline" size="sm" className="h-8 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                  <Link href={`/student/${user.id}`} className="inline-flex items-center gap-1.5">
+                    <Image src="/icons/mentrixer.svg" alt="" width={14} height={14} className="h-3.5 w-3.5 opacity-80" />
+                    Profile & Settings
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                  <Link href="/student/quest" className="inline-flex items-center gap-1.5 text-white">
+                    <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
+                    Daily quest
+                  </Link>
+                </Button>
+                <Button size="sm" className="h-8 text-xs bg-white text-slate-900 hover:bg-slate-100" asChild>
+                  <Link href="#browse-guides" className="inline-flex items-center gap-1.5">
+                    <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
+                    Book session
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -200,6 +237,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           sessionsCompleted={sessionsCompleted}
           avgRating={avgRating}
           streakAtRisk={streakAtRisk}
+          questAccuracy={questAccuracy}
         />
 
         {searchParams?.booking === "success" && (
@@ -231,13 +269,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
         {sessionBriefs.length > 0 && (
           <div className="mt-6 space-y-3">
-            {sessionBriefs.map((brief) => (
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {sessionBriefs.map((brief: any) => (
               <PreSessionBriefCard key={brief.id} brief={brief} />
             ))}
           </div>
         )}
 
         <div className="mt-10 space-y-10">
+          <TopRivalCard rivalData={rivalData} />
+
           <StudentCommandCenterClient
             studentCourses={studentCourses}
             upcomingSessions={upcomingForClient}
@@ -255,15 +296,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Live coaching</p>
             <h2 className="mt-1 text-lg font-bold text-slate-900">Sessions</h2>
             <p className="mt-1 mb-5 text-sm text-slate-600">Upcoming past guide calls.</p>
-            <SessionsList
-              upcomingSessions={upcomingSessions}
-              pastSessions={pastSessions}
-              totalXp={totalXp}
-              streak={streak}
-              showHeroStats={false}
-            >
-              {null}
-            </SessionsList>
+              <SessionsList
+                upcomingSessions={upcomingSessions}
+                pastSessions={pastSessions}
+                sessionRequests={sessionsBundle.sessionRequests}
+                totalXp={totalXp}
+                streak={streak}
+                displayTimeZone={timeZone}
+                weekRange={weekRange}
+                showHeroStats={false}
+              />
           </div>
         </div>
       </main>

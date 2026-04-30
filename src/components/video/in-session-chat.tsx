@@ -33,10 +33,28 @@ interface ChatPayload {
   sentAt: number;
 }
 
+function isChatPayload(value: unknown): value is ChatPayload {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<ChatPayload>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.authorId === "string" &&
+    typeof candidate.authorLabel === "string" &&
+    typeof candidate.text === "string" &&
+    typeof candidate.sentAt === "number"
+  );
+}
+
 interface InSessionChatProps {
   channel: RealtimeChannel | null;
   userId: string;
   userLabel: string;
+  onMessagesChange?: (messages: Array<{
+    authorId: string;
+    authorLabel: string;
+    text: string;
+    sentAt: number;
+  }>) => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -51,7 +69,7 @@ function formatTime(ts: number): string {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function InSessionChat({ channel, userId, userLabel }: InSessionChatProps) {
+export function InSessionChat({ channel, userId, userLabel, onMessagesChange }: InSessionChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,21 +78,42 @@ export function InSessionChat({ channel, userId, userLabel }: InSessionChatProps
   // Subscribe to incoming messages
   useEffect(() => {
     if (!channel) return;
+
+    const appendIncomingMessage = (rawMessage: unknown) => {
+      // Realtime payload shape can vary by sender/runtime; accept both wrapped and flat formats.
+      const wrapped = rawMessage as { payload?: unknown } | null;
+      const payload = isChatPayload(wrapped?.payload)
+        ? wrapped.payload
+        : isChatPayload(rawMessage)
+          ? rawMessage
+          : null;
+
+      if (!payload) {
+        console.warn("[InSessionChat] Ignoring malformed chat payload", rawMessage);
+        return;
+      }
+
+      const msg: ChatMessage = {
+        id: payload.id,
+        authorId: payload.authorId,
+        authorLabel: payload.authorLabel,
+        text: payload.text,
+        sentAt: payload.sentAt,
+        isSelf: payload.authorId === userId,
+      };
+
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    };
+
     channel.on(
       "broadcast",
       { event: "chat" },
-      ({ payload }: { payload: ChatPayload }) => {
-        if (payload.authorId === userId) return; // already added locally
-        const msg: ChatMessage = {
-          id: payload.id,
-          authorId: payload.authorId,
-          authorLabel: payload.authorLabel,
-          text: payload.text,
-          sentAt: payload.sentAt,
-          isSelf: false,
-        };
-        setMessages((prev) => [...prev, msg]);
-      }
+      (message: unknown) => {
+        appendIncomingMessage(message);
+      },
     );
     // Do not unsubscribe the shared channel here. Video signaling uses the same channel.
   }, [channel, userId]);
@@ -85,6 +124,17 @@ export function InSessionChat({ channel, userId, userLabel }: InSessionChatProps
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
+
+  useEffect(() => {
+    onMessagesChange?.(
+      messages.map((m) => ({
+        authorId: m.authorId,
+        authorLabel: m.authorLabel,
+        text: m.text,
+        sentAt: m.sentAt,
+      })),
+    );
+  }, [messages, onMessagesChange]);
 
   const sendMessage = useCallback(() => {
     const text = draft.trim();
@@ -98,14 +148,14 @@ export function InSessionChat({ channel, userId, userLabel }: InSessionChatProps
       sentAt: Date.now(),
     };
 
-    void channel.send({ type: "broadcast", event: "chat", payload });
-
     setMessages((prev) => [
       ...prev,
       { ...payload, isSelf: true },
     ]);
     setDraft("");
     inputRef.current?.focus();
+
+    void channel.send({ type: "broadcast", event: "chat", payload });
   }, [draft, channel, userId, userLabel]);
 
   const handleKeyDown = useCallback(

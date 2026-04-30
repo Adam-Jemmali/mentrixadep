@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { OrganizationJsonLd } from "@/components/organization-json-ld";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { ConsoleSilencer } from "@/components/console-silencer";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -88,8 +89,20 @@ export default function RootLayout({
         <link rel="icon" href={`${siteUrl}/icons/icon-192.png`} type="image/png" sizes="192x192" />
         <link rel="icon" href={`${siteUrl}/icon.png`} type="image/png" />
         <link rel="shortcut icon" href={`${siteUrl}/favicon-mentrixa.ico?v=20260417`} type="image/x-icon" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener("unhandledrejection", function(event) {
+                if (event.reason && typeof event.reason.message === "string" && event.reason.message.includes("tabs:outgoing.message.ready")) {
+                  event.preventDefault();
+                }
+              });
+            `
+          }}
+        />
       </head>
-      <body className="antialiased font-sans overflow-x-hidden" suppressHydrationWarning>
+      <body className="antialiased font-sans overflow-x-hidden relative" suppressHydrationWarning>
+        <ConsoleSilencer />
         <OrganizationJsonLd />
         <DevServiceWorkerGuard />
         {children}

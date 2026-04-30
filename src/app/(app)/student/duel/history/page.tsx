@@ -180,7 +180,7 @@ export default async function DuelHistoryPage() {
                 .map((r) => {
                   const label =
                     r.is_ai_opponent && r.student_id === myId
-                      ? "Sparring AI"
+                      ? "Sparring Quest"
                       : r.student_id === myId
                         ? nameById[r.opponent_student_id ?? ""] ?? "Learner"
                         : nameById[r.student_id] ?? "Learner";

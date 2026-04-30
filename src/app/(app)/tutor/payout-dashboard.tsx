@@ -303,7 +303,7 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-medium text-slate-900">Payouts</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Stripe Checkout · Stripe Connect Express · CAD</p>
+          <p className="mt-0.5 text-xs text-slate-500">Stripe Checkout CAD</p>
         </div>
         <TransferToBankButton availableCents={availableCents} payoutsEnabled={connectStatus.payoutsEnabled} />
       </div>

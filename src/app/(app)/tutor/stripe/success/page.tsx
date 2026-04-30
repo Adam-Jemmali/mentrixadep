@@ -68,7 +68,7 @@ export default function StripeSuccessPage() {
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-      <h1 className="text-2xl font-bold text-slate-900">
+      <h1 className="text-2xl font-bold bg-slate-900 text-white">
         {state === "success" ? "Stripe Connected" : state === "incomplete" ? "Stripe Setup Incomplete" : state === "error" ? "Stripe Connection Failed" : "Checking Stripe Connection"}
       </h1>
       <p className="mt-3 text-sm text-slate-600">{message}</p>
@@ -76,7 +76,7 @@ export default function StripeSuccessPage() {
         <Link href="/tutor" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">
           Back to Tutor Dashboard
         </Link>
-        <Link href="/tutor/stripe/refresh" className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900">
+        <Link href="/tutor/stripe/refresh" className="rounded-md border bg-slate-900 px-4 py-2 text-sm font-medium text-white">
           Reopen Stripe
         </Link>
       </div>

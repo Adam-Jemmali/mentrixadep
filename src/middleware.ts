@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   securityHeaders,
   getClientIpFromRequest,
-  checkRateLimitWithRetryAfter,
+  checkSlidingWindowRateLimit,
   RATE_LIMITS,
   getMaxBodyBytesForPath,
   validateApiCsrf,
@@ -31,6 +31,7 @@ const publicRoutes = new Set([
   "/api/auth/signin",
   "/api/auth/signup",
   "/api/auth/request-password-reset",
+  "/api/guest-practice",
   "/auth/signin",
   "/auth/signup",
   "/auth/activate",
@@ -52,6 +53,8 @@ const publicRoutes = new Set([
   "/contact",
   "/privacy",
   "/terms",
+  /** Guest quest demo — no auth required, uses rate limiting via cookies */
+  "/try",
 ]);
 
 /** Public tutor profile pages: /tutor/[tutorId] (and nested public paths under /tutor/). */
@@ -133,6 +136,7 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
 
     res.headers.set(key, value);
   });
+  res.headers.set("X-Permitted-Cross-Domain-Policies", "none");
   return res;
 }
 
@@ -262,7 +266,7 @@ export async function middleware(request: NextRequest) {
     const ip = getClientIpFromRequest(request);
     const key = `mw-auth:${ip}:${pathname}`;
     const { maxRequests, windowMs } = RATE_LIMITS.authPage;
-    const { allowed, retryAfterSeconds } = checkRateLimitWithRetryAfter(
+    const { allowed, retryAfterSeconds } = await checkSlidingWindowRateLimit(
       key,
       maxRequests,
       windowMs

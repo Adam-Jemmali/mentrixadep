@@ -5,14 +5,15 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { ScrollRevealCard } from "@/components/ui/card";
 import type { TutorCommandCenterPayload } from "@/app/actions/tutor";
 import { SessionRequestsList } from "./session-requests-list";
 import { TutorWeekCalendar } from "./tutor-week-calendar";
 import { AvailabilityManager } from "./availability-manager";
 import { AutoApproveToggle } from "./auto-approve-toggle";
-import { CreateAvailabilityForm } from "./create-availability-form";
+import { CreateAvailabilityCard } from "@/components/ui/create-availability-card";
 import { CourseManager } from "./course-manager";
-import { useAdminViewContext } from "@/components/admin-view-context";
+import { TutorAvatar } from "../student/session-components/tutor-avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,9 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatDate } from "@/lib/time-format";
+import { formatDateInZone } from "@/lib/time-format";
 import { TutorPayoutDashboard } from "./payout-dashboard";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { Typewriter } from "@/components/ui/typewriter";
+import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
+import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
+import { TutorHeroDecor } from "@/components/tutor/tutor-hero-decor";
+import { HeroGuideBounce } from "@/components/tutor/hero-guide-bounce";
 
 const TutorEarningsChart = dynamic(
   () => import("./tutor-earnings-chart").then((m) => m.TutorEarningsChart),
@@ -42,75 +47,86 @@ function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPayload }) {
-  const { viewingAsUserId } = useAdminViewContext();
+export function TutorCommandCenterClient({ 
+  data, 
+  greeting, 
+  firstName 
+}: { 
+  data: TutorCommandCenterPayload;
+  greeting: string;
+  firstName: string;
+}) {
+
   const [addOpen, setAddOpen] = useState(false);
   const searchParams = useSearchParams();
   const connectParam = searchParams.get("connect");
-  const studioHref = viewingAsUserId
-    ? `/tutor/sessions-ai?tutorId=${viewingAsUserId}`
-    : "/tutor/sessions-ai";
 
   const { metrics, earningsLast30Days, lateCancellationAlerts, sessionRequests, calendar } = data;
   const pending = metrics.pendingRequestCount;
 
   return (
+    <div className={mentrixTutor.pageBg}>
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-lg font-medium tracking-tight text-slate-900">Guide center</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Manage bookings, payouts, and your week.
-          </p>
-          <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5">
-            {data.guideProfile.avatarUrl ? (
-              <Image
-                src={data.guideProfile.avatarUrl}
-                alt={data.guideProfile.displayName}
-                width={24}
-                height={24}
-                className="h-6 w-6 rounded-full object-cover"
-                unoptimized
+      <header className={`${mentrixTutor.heroGradient} mb-10 p-6 sm:p-8 relative overflow-hidden`}>
+        <TutorHeroDecor />
+        <HeroGuideBounce />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-xl space-y-3">
+            <TutorHeroGreeting greeting={greeting} firstName={firstName} />
+            <div className="mt-1 text-sm text-white/90 h-[20px]">
+              <Typewriter text="Manage bookings, payouts, and your week." speed={40} waitTime={5000} />
+            </div>
+            
+            <div className="mt-4 inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm shadow-sm">
+              <TutorAvatar 
+                displayName={data.guideProfile.displayName} 
+                emailPrefix={data.guideProfile.displayName} 
+                avatarUrl={data.guideProfile.avatarUrl} 
+                size="sm" 
               />
-            ) : (
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[11px] font-semibold text-slate-700">
-                {data.guideProfile.displayName.slice(0, 1).toUpperCase()}
-              </div>
-            )}
-            <span className="text-xs font-medium text-slate-700">{data.guideProfile.displayName}</span>
+              <span className="text-sm font-medium text-white">{data.guideProfile.displayName}</span>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-            <Link href="/settings" className="inline-flex items-center gap-1.5 text-black">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
-              Settings
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-            <Link href={studioHref} className="inline-flex items-center gap-1.5 text-black">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
-              Studio output
-            </Link>
-          </Button>
-          <Button type="button" size="sm" className="h-8 text-xs  " onClick={() => setAddOpen(true)}>
-            <span className="inline-flex items-center gap-1.5">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
-              Add availability
-            </span>
-          </Button>
+
+          <div className="flex flex-wrap items-center gap-3 lg:items-end shrink-0">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" 
+              onClick={() => {
+                document.getElementById("course-manager")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                Manage Courses
+              </span>
+            </Button>
+            <Button variant="outline" size="sm" className="h-9 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+              <Link href={`/tutor/${data.tutorId}`} className="inline-flex items-center gap-1.5">
+                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                Edit Profile & Settings
+              </Link>
+            </Button>
+            <Button type="button" size="sm" className="h-9 text-xs bg-white text-slate-900 hover:bg-slate-100" onClick={() => setAddOpen(true)}>
+              <span className="inline-flex items-center gap-1.5">
+                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                Add availability
+              </span>
+            </Button>
+          </div>
         </div>
       </header>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-white">Add availability</DialogTitle>
+        <DialogContent className="max-h-[95vh] max-w-2xl overflow-y-auto p-0 border-none bg-transparent shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Add availability</DialogTitle>
             <DialogDescription>
               Learners only see slots that match your listed courses.
             </DialogDescription>
           </DialogHeader>
-          <CreateAvailabilityForm
+          <CreateAvailabilityCard
             tutorCourseNames={data.tutorCourses.map((c) => c.course_name)}
             defaultTimezone={data.tutorTimezone}
           />
@@ -118,63 +134,60 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
       </Dialog>
 
       {/* Metrics */}
-      <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+      <section className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className={mentrixTutor.card + " p-5"}>
+          <div className={mentrixTutor.sectionEyebrow}>
             This month&apos;s earnings
           </div>
-          <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
+          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
             {formatUsd(metrics.earningsThisMonthCents)}
           </div>
-          <p className="mt-2 text-[11px] leading-snug text-slate-500">{metrics.stripePayoutCaption}</p>
+          <p className="mt-2 text-[11px] leading-snug text-slate-500 font-medium">{metrics.stripePayoutCaption}</p>
         </div>
 
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <div className={mentrixTutor.card + " p-5"}>
+          <div className={mentrixTutor.sectionEyebrow}>
             Sessions this week
           </div>
-          <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
+          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
             {metrics.sessionsThisWeek}
           </div>
-      
         </div>
 
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <div className={mentrixTutor.card + " p-5"}>
+          <div className={mentrixTutor.sectionEyebrow}>
             Average rating
           </div>
-          <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
+          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
             {metrics.avgRating != null ? metrics.avgRating.toFixed(1) : "—"}
           </div>
-      
         </div>
 
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <div className={mentrixTutor.card + " p-5"}>
+          <div className={mentrixTutor.sectionEyebrow}>
             Response rate
           </div>
-          <div className="mt-2 text-xl font-medium tabular-nums text-slate-900">
+          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
             {metrics.responseRatePercent != null ? `${metrics.responseRatePercent.toFixed(1)}%` : "—"}
           </div>
-        
         </div>
 
         <div
-          className={`rounded-md border p-4 ${
-            pending > 0 ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"
+          className={`${mentrixTutor.card} p-5 ${
+            pending > 0 ? "border-red-200 bg-red-50/50" : ""
           }`}
         >
           <div
-            className={`text-[11px] font-medium uppercase tracking-wide ${
-              pending > 0 ? "text-red-700" : "text-slate-500"
+            className={`${mentrixTutor.sectionEyebrow} ${
+              pending > 0 ? "text-red-600" : ""
             }`}
           >
             New session requests
           </div>
           <div
-            className={`mt-2 text-xl font-medium tabular-nums ${
-              pending > 0 ? "text-red-800" : "text-slate-900"
-            }`}
+            className={`mt-2 text-2xl font-bold tabular-nums ${
+              pending > 0 ? "text-red-700" : "text-slate-900"
+            } tracking-tight`}
           >
             {pending}
           </div>
@@ -193,7 +206,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
           <ul className="mt-2 list-inside list-disc text-xs text-amber-900/85">
             {lateCancellationAlerts.map((a) => (
               <li key={a.id}>
-                {a.course} · {formatDate(a.start_time)}
+                {a.course} · {formatDateInZone(a.start_time, data.tutorTimezone)}
               </li>
             ))}
           </ul>
@@ -203,42 +216,51 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
       {/* Actions + chart */}
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="lg:col-span-7 min-w-0">
-          <h2 className="mb-3 text-sm font-medium text-slate-900">Action items</h2>
-          <SessionRequestsList sessionRequests={sessionRequests} />
+          <ScrollRevealCard className={mentrixTutor.card + " p-5 h-full"}>
+            <div className="mb-4">
+              <h2 className="text-sm font-bold text-slate-900">Action items</h2>
+              <p className="text-[11px] text-slate-500 font-medium">Declining a paid request refunds the learner</p>
+            </div>
+            <SessionRequestsList sessionRequests={sessionRequests} displayTimezone={data.tutorTimezone} />
+          </ScrollRevealCard>
         </section>
 
         <section className="lg:col-span-5 min-w-0">
-          <h2 className="mb-3 text-sm font-medium text-slate-900">Earnings (last 30 days)</h2>
-          <div className="rounded-md border border-slate-200 bg-white p-4">
-            <TutorEarningsChart data={earningsLast30Days} />
-            <p className="mt-2 text-[11px] text-slate-500">
-              Totals from completed sessions (recognized when the session ends).
-            </p>
-          </div>
+          <ScrollRevealCard className={mentrixTutor.card + " p-5 h-full"}>
+            <h2 className="mb-4 text-sm font-bold text-slate-900">Earnings (last 30 days)</h2>
+            <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+              <TutorEarningsChart data={earningsLast30Days} />
+              <p className="mt-3 text-[11px] text-slate-500 font-medium leading-relaxed">
+                Totals from completed sessions (recognized when the session ends).
+              </p>
+            </div>
+          </ScrollRevealCard>
         </section>
       </div>
 
       {/* Calendar */}
-      <section className="mt-8 rounded-md border border-slate-200 bg-white p-4 sm:p-6 min-w-0">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-sm font-medium text-slate-900">This + next week</h2>
-           
+      <section className="mt-8 min-w-0">
+        <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Week&apos;s Schedule</h2>
+              <p className="text-[11px] text-slate-500 font-medium">View and manage your availability slots</p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 w-full text-xs sm:w-auto border-slate-200"
+              onClick={() => setAddOpen(true)}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                Add availability
+              </span>
+            </Button>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8 w-full text-xs sm:w-auto"
-            onClick={() => setAddOpen(true)}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
-              Add availability
-            </span>
-          </Button>
-        </div>
-        <TutorWeekCalendar calendar={calendar} displayTimezone={data.tutorTimezone} />
+          <TutorWeekCalendar calendar={calendar} displayTimezone={data.tutorTimezone} />
+        </ScrollRevealCard>
       </section>
 
       {/* Expertise + availability controls */}
@@ -272,6 +294,7 @@ export function TutorCommandCenterClient({ data }: { data: TutorCommandCenterPay
           />
         </div>
       )}
+      </div>
     </div>
   );
 }

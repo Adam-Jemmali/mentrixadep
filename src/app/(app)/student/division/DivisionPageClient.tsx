@@ -20,6 +20,9 @@ import {
   divisionTeaser,
 } from "@/lib/division-ui";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { Typewriter } from "@/components/ui/typewriter";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { BackButton } from "@/components/ui/back-button";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -224,11 +227,15 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
 
   return (
     <main className="max-w-5xl mx-auto px-6 py-8 relative">
+      <div className="mb-6">
+        <BackButton />
+      </div>
       <DivisionIllustration />
 
-      <section
+      <TiltCard
+        tiltLimit={3}
         className={`
-          relative mb-8 overflow-hidden
+          relative mb-8 overflow-hidden block
           ${mentrixStudent.card}
           before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.png')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']
         `}
@@ -238,8 +245,8 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
               Division arena
             </p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Subject leaderboards that actually move you forward
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl h-[36px]">
+              <Typewriter text="Subject leaderboards that actually move you forward" speed={60} waitTime={8000} />
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
               Stack division XP from quests, climb ranks, then duel peers in the same
@@ -264,7 +271,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
             </Button>
           </div>
         </div>
-      </section>
+      </TiltCard>
 
       {/* Division header */}
       {divisionKey ? (
@@ -348,7 +355,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
           <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
             <div
               data-user-xp-bar
-              className="w-full h-full bg-gradient-to-r from-blue-300  to-blue-300 origin-left"
+              className="w-full h-full bg-gradient-to-r from-indigo-400 to-purple-500 origin-left"
             />
           </div>
           <p className="text-sm font-mono text-slate-400 text-right">
@@ -362,19 +369,19 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
         <TabsList className="bg-transparent p-0 mb-4 border-b border-slate-200 rounded-none h-auto">
           <TabsTrigger
             value="leaderboard"
-            className="mr-6 rounded-none bg-transparent pb-2 text-xs font-medium data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400 border-b-2 border-transparent hover:text-slate-900"
+            className="mr-6 rounded-none bg-transparent pb-2 text-xs font-medium data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400 border-b-2 border-transparent hover:text-slate-900"
           >
             Leaderboard
           </TabsTrigger>
           <TabsTrigger
             value="my-divisions"
-            className="mr-6 rounded-none bg-transparent pb-2 text-xs font-medium data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400 border-b-2 border-transparent hover:text-slate-900"
+            className="mr-6 rounded-none bg-transparent pb-2 text-xs font-medium data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400 border-b-2 border-transparent hover:text-slate-900"
           >
             My Divisions
           </TabsTrigger>
           <TabsTrigger
             value="history"
-            className="mr-6 rounded-none bg-transparent pb-2 text-xs font-medium data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400 border-b-2 border-transparent hover:text-slate-900"
+            className="mr-6 rounded-none bg-transparent pb-2 text-xs font-medium data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400 border-b-2 border-transparent hover:text-slate-900"
           >
             Quest History
           </TabsTrigger>
@@ -445,8 +452,8 @@ function mapTierToLevelName(tier?: LevelInfo["tier"]): string {
 function levelColorClass(name: string): string {
   if (name === "Learner") return "text-slate-500";
   if (name === "Scholar") return "text-slate-600";
-  if (name === "Expert") return "text-blue-700";
-  if (name === "Master") return "text-cyan-700";
+  if (name === "Expert") return "text-indigo-600";
+  if (name === "Master") return "text-purple-600";
   return "text-slate-500";
 }
 
@@ -479,7 +486,7 @@ function LeaderboardTab({
             onClick={() => handleHeaderSort(k)}
             className={
               sortKey === k
-                ? "text-xs text-mentrixa-600 font-semibold underline underline-offset-2"
+                ? "text-xs text-indigo-600 font-semibold underline underline-offset-2"
                 : "text-xs text-slate-400 hover:text-slate-700"
             }
           >
@@ -525,7 +532,7 @@ function LeaderboardTab({
                   key={row.userId}
                   data-leaderboard-row
                   className={`border-b border-slate-100 ${
-                    isCurrent ? "bg-[#EFF6FF]" : "bg-white"
+                    isCurrent ? "bg-indigo-50/50" : "bg-white"
                   }`}
                   style={{ borderLeft: `3px solid ${rankBorderColor}` }}
                 >
@@ -555,12 +562,12 @@ function LeaderboardTab({
                       <RankingAvatar displayName={row.displayName} avatarUrl={row.avatarUrl} />
                       <span
                         className={`text-sm font-medium ${
-                          isCurrent ? "text-mentrixa-800" : "text-slate-900"
+                          isCurrent ? "text-indigo-900" : "text-slate-900"
                         }`}
                       >
                         {row.displayName}
                         {isCurrent && (
-                          <span className="ml-1 text-[11px] text-mentrixa-600">(you)</span>
+                          <span className="ml-1 text-[11px] text-indigo-600">(you)</span>
                         )}
                       </span>
                     </div>
@@ -569,7 +576,7 @@ function LeaderboardTab({
                     <div className="flex items-center gap-3">
                       <span
                         className={`text-sm font-mono ${
-                          isCurrent ? "text-mentrixa-800" : "text-slate-700"
+                          isCurrent ? "text-indigo-900" : "text-slate-700"
                         }`}
                       >
                         {row.divisionXp}
@@ -578,7 +585,7 @@ function LeaderboardTab({
                         <div
                           data-xp-bar-inner
                           data-width-px={barWidth}
-                          className="absolute left-0 top-0 h-full bg-mentrixa-600 rounded"
+                          className="absolute left-0 top-0 h-full bg-indigo-600 rounded"
                           style={{ width: 0 }}
                         />
                       </div>
@@ -587,7 +594,7 @@ function LeaderboardTab({
                   <td className="py-2 pr-3 align-middle">
                     <span
                       className={`text-sm font-mono ${
-                        isCurrent ? "text-mentrixa-700" : "text-slate-400"
+                        isCurrent ? "text-indigo-700" : "text-slate-400"
                       }`}
                     >
                       {row.streakDays}d
@@ -667,7 +674,7 @@ function MyDivisionsTab({
               <td className="py-2 align-middle">
                 <button
                   type="button"
-                  className="text-xs text-mentrixa-600 hover:underline"
+                  className="text-xs text-indigo-600 hover:underline"
                   onClick={onViewLeaderboard}
                 >
                   View leaderboard
@@ -727,7 +734,7 @@ function QuestHistoryTab({
               onClick={() => setScope("arena")}
               className={
                 scope === "arena"
-                  ? "rounded-md bg-slate-900 text-white px-3 py-1.5"
+                  ? "rounded-md bg-indigo-600 text-white px-3 py-1.5"
                   : "rounded-md px-3 py-1.5 text-slate-500 hover:text-slate-900"
               }
             >
@@ -738,7 +745,7 @@ function QuestHistoryTab({
               onClick={() => setScope("all")}
               className={
                 scope === "all"
-                  ? "rounded-md bg-slate-900 text-white px-3 py-1.5"
+                  ? "rounded-md bg-indigo-600 text-white px-3 py-1.5"
                   : "rounded-md px-3 py-1.5 text-slate-500 hover:text-slate-900"
               }
             >
@@ -753,7 +760,7 @@ function QuestHistoryTab({
           {entries.length === 0 ? (
             <>
               No completed quests yet. Finish a problem in the{" "}
-              <Link href="/student/quest" className="text-mentrixa-600 hover:underline font-medium">
+              <Link href="/student/quest" className="text-indigo-600 hover:underline font-medium">
                 Quest 
               </Link>{" "}
               with a correct answer to see it here.
@@ -763,7 +770,7 @@ function QuestHistoryTab({
               Nothing in this filter. Try{" "}
               <button
                 type="button"
-                className="text-mentrixa-600 hover:underline font-medium"
+                className="text-indigo-600 hover:underline font-medium"
                 onClick={() => setScope("all")}
               >
                 All subjects

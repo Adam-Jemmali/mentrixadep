@@ -47,7 +47,7 @@ function choiceLine(
 function labelsForSide(duel: DuelPublicRow, side: Props["side"]) {
   const youAreChallenger = side === "challenger";
   const youLabel = "You";
-  const themLabel = duel.is_ai_opponent ? "Sparring AI" : "Opponent";
+  const themLabel = duel.is_ai_opponent ? "Sparring Quest" : "Opponent";
   return { youLabel, themLabel, youAreChallenger };
 }
 

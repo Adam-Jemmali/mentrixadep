@@ -124,6 +124,7 @@ function NavigationInner({ user }: NavigationProps) {
 
   /** Waitlist / admin not approved yet — show logo + sign out only (matches middleware: no app routes). */
   const appShellLocked = Boolean(user && !user.approved && user.role !== "admin");
+  const isJoinPage = pathname === "/join";
 
   const navItems = useMemo(() => {
     if (!user || appShellLocked) return [];
@@ -146,7 +147,7 @@ function NavigationInner({ user }: NavigationProps) {
           ? "/student"
           : "/";
   const showRoleLogo = Boolean(
-    user && (user.role === "student" || user.role === "tutor") && !appShellLocked,
+    !user || ((user.role === "student" || user.role === "tutor") && !appShellLocked)
   );
 
   const isActive = useCallback((href: string) => {
@@ -176,30 +177,38 @@ function NavigationInner({ user }: NavigationProps) {
     }
   }, [mobileOpen]);
 
-
-
   return (
     <nav
       ref={navRef}
       className="fixed top-0 left-0 right-0 z-50 h-14 bg-slate-900/90 backdrop-blur-md border-b border-white/[0.06]"
     >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        <Link href={logoHref} className="flex items-center gap-2 shrink-0">
-          {showRoleLogo ? (
-            <Image
-              src="/mentrixalogo/logo.png"
-              alt="Mentrixa"
-              width={32}
-              height={32}
-              priority
-              className="h-8 w-8 object-contain"
-            />
-          ) : null}
-          <MentrixaWordmark trixaClassName="text-white/95" />
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href={logoHref} className="flex items-center gap-2">
+            {showRoleLogo && (
+              <Image
+                src="/mentrixalogo/logo.png"
+                alt="Mentrixa"
+                width={32}
+                height={32}
+                priority
+                className="h-8 w-8 object-contain"
+              />
+            )}
+            <MentrixaWordmark trixaClassName="text-white/95" />
+          </Link>
+
+          {isJoinPage && (
+            <div className="ml-4 pl-4 border-l border-white/10 hidden sm:block">
+              <p className="text-[12px] font-medium text-slate-200 tracking-tight leading-none">
+                Join Mentrixa. <span className="text-white/40 font-normal">We&apos;re currently accepting new members.</span>
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="hidden md:flex items-center gap-0.5">
-          {navItems.map((item) => {
+          {!isJoinPage && navItems.map((item) => {
             const active = isActive(item.href);
             return (
               <Link
@@ -219,7 +228,7 @@ function NavigationInner({ user }: NavigationProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {user ? (
+          {!isJoinPage && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger
                 className="flex items-center gap-2 rounded-full px-1.5 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
@@ -270,138 +279,144 @@ function NavigationInner({ user }: NavigationProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Link
-                href="/auth/signin"
-                className="text-sm font-medium text-slate-400 hover:text-white px-3 py-1.5 transition-colors"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="text-sm font-semibold text-slate-900 bg-white px-4 py-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
-              >
-                Get started
-              </Link>
-            </div>
-          )}
-
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <button
-              type="button"
-              onClick={() => setMobileOpen((o) => !o)}
-              className="md:hidden flex flex-col justify-center gap-1 h-8 w-8 items-center"
-              aria-label="Toggle navigation"
-              aria-expanded={mobileOpen}
-            >
-              <span
-                className={cn(
-                  "block w-[18px] h-px bg-white transition-transform duration-200 origin-center",
-                  mobileOpen && "translate-y-[6px] rotate-45",
-                )}
-              />
-              <span
-                className={cn(
-                  "block w-[18px] h-px bg-white transition-all duration-200",
-                  mobileOpen && "opacity-0",
-                )}
-              />
-              <span
-                className={cn(
-                  "block w-[18px] h-px bg-white transition-transform duration-200 origin-center",
-                  mobileOpen && "-translate-y-[6px] -rotate-45",
-                )}
-              />
-            </button>
-            <SheetContent
-              side="right"
-              className="pt-8 px-6 bg-slate-900 border-l border-white/10 text-white"
-            >
-              <SheetHeader>
-                <SheetTitle className="text-left">
-                  <MentrixaWordmark trixaClassName="text-white/95" />
-                </SheetTitle>
-              </SheetHeader>
-              {user ? (
-                <div className="mt-6 flex items-center gap-3">
-                  <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white truncate">{primaryLabel}</p>
-                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                    {user.bio ? (
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">
-                        {user.bio}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-              <div
-                className={cn(
-                  "flex flex-col divide-y divide-white/10",
-                  user ? "mt-6" : "mt-8",
-                )}
-              >
-                {(user ? navItems : STUDENT_LINKS).map((item, index) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    ref={(el) => {
-                      if (el) {
-                        mobileLinkRefs.current[index] = el;
-                      }
-                    }}
-                    onClick={() => setMobileOpen(false)}
-                    className="py-3 text-base font-medium text-slate-200 hover:text-white transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-              {user ? (
-                <div className="mt-6 flex flex-col gap-0 border-t border-white/10 pt-4">
-                  {profileHref ? (
-                    <Link
-                      href={profileHref}
-                      onClick={() => setMobileOpen(false)}
-                      className="py-2.5 text-sm font-medium text-slate-200 hover:text-white"
-                    >
-                      Profile
-                    </Link>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="py-2.5 text-left text-sm font-medium text-red-400 hover:text-red-300"
-                    onClick={async () => {
-                      setMobileOpen(false);
-                      await signOut();
-                    }}
-                  >
-                    Sign out
-                  </button>
-                </div>
-              ) : null}
-              {!user && (
-                <div className="mt-6 flex flex-col gap-3">
+          ) : !isJoinPage ? (
+            <>
+              {!["/privacy", "/terms"].includes(pathname) && (
+                <div className="hidden md:flex items-center gap-2">
                   <Link
                     href="/auth/signin"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-2 text-sm font-medium text-slate-400 hover:text-white"
+                    className="text-sm font-medium text-slate-400 hover:text-white px-3 py-1.5 transition-colors"
                   >
                     Sign in
                   </Link>
                   <Link
                     href="/auth/signup"
-                    onClick={() => setMobileOpen(false)}
-                    className="text-center text-sm font-semibold text-slate-900 bg-white px-4 py-2.5 rounded-lg"
+                    className="text-sm font-semibold text-slate-900 bg-white px-4 py-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
                   >
                     Get started
                   </Link>
                 </div>
               )}
-            </SheetContent>
-          </Sheet>
+            </>
+          ) : null}
+
+          {!isJoinPage && (
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <button
+                type="button"
+                onClick={() => setMobileOpen((o) => !o)}
+                className="md:hidden flex flex-col justify-center gap-1 h-8 w-8 items-center"
+                aria-label="Toggle navigation"
+                aria-expanded={mobileOpen}
+              >
+                <span
+                  className={cn(
+                    "block w-[18px] h-px bg-white transition-transform duration-200 origin-center",
+                    mobileOpen && "translate-y-[6px] rotate-45",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "block w-[18px] h-px bg-white transition-all duration-200",
+                    mobileOpen && "opacity-0",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "block w-[18px] h-px bg-white transition-transform duration-200 origin-center",
+                    mobileOpen && "-translate-y-[6px] -rotate-45",
+                  )}
+                />
+              </button>
+              <SheetContent
+                side="right"
+                className="pt-8 px-6 bg-slate-900 border-l border-white/10 text-white"
+              >
+                <SheetHeader>
+                  <SheetTitle className="text-left">
+                    <MentrixaWordmark trixaClassName="text-white/95" />
+                  </SheetTitle>
+                </SheetHeader>
+                {user ? (
+                  <div className="mt-6 flex items-center gap-3">
+                    <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-white truncate">{primaryLabel}</p>
+                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      {user.bio ? (
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">
+                          {user.bio}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+                <div
+                  className={cn(
+                    "flex flex-col divide-y divide-white/10",
+                    user ? "mt-6" : "mt-8",
+                  )}
+                >
+                  {(user ? navItems : STUDENT_LINKS).map((item, index) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      ref={(el) => {
+                        if (el) {
+                          mobileLinkRefs.current[index] = el;
+                        }
+                      }}
+                      onClick={() => setMobileOpen(false)}
+                      className="py-3 text-base font-medium text-slate-200 hover:text-white transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+                {user ? (
+                  <div className="mt-6 flex flex-col gap-0 border-t border-white/10 pt-4">
+                    {profileHref ? (
+                      <Link
+                        href={profileHref}
+                        onClick={() => setMobileOpen(false)}
+                        className="py-2.5 text-sm font-medium text-slate-200 hover:text-white"
+                      >
+                        Profile
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="py-2.5 text-left text-sm font-medium text-red-400 hover:text-red-300"
+                      onClick={async () => {
+                        setMobileOpen(false);
+                        await signOut();
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                ) : null}
+                {!user && (
+                  <div className="mt-6 flex flex-col gap-3">
+                    <Link
+                      href="/auth/signin"
+                      onClick={() => setMobileOpen(false)}
+                      className="py-2 text-sm font-medium text-slate-400 hover:text-white"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      onClick={() => setMobileOpen(false)}
+                      className="text-center text-sm font-semibold text-slate-900 bg-white px-4 py-2.5 rounded-lg"
+                    >
+                      Get started
+                    </Link>
+                  </div>
+                )}
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </div>
     </nav>

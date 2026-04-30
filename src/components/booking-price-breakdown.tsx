@@ -14,17 +14,17 @@ export function BookingPriceBreakdown({
 
   return (
     <div className={`space-y-2 text-sm ${className}`}>
-      <div className="flex justify-between gap-3 text-slate-800">
+      <div className="flex justify-between gap-3 text-slate-300">
         <span>Session (guide)</span>
-        <span className="font-medium tabular-nums text-slate-900">{formatUsdFromCents(split.sessionCents)}</span>
+        <span className="font-medium tabular-nums text-white">{formatUsdFromCents(split.sessionCents)}</span>
       </div>
-      <div className="flex justify-between gap-3 text-slate-700">
-        <span>Platform fee (5%)</span>
-        <span className="font-medium tabular-nums text-slate-700">
+      <div className="flex justify-between gap-3 text-slate-400">
+        <span>Platform fee (15%)</span>
+        <span className="font-medium tabular-nums text-slate-300">
           {formatUsdFromCents(split.platformFeeCents)}
         </span>
       </div>
-      <div className="flex justify-between gap-3 border-t border-slate-200 pt-2 text-sm font-medium text-slate-900">
+      <div className="flex justify-between gap-3 border-t border-slate-800 pt-2 text-sm font-bold text-white">
         <span>Total due</span>
         <span className="tabular-nums">{formatUsdFromCents(split.totalCents)}</span>
       </div>

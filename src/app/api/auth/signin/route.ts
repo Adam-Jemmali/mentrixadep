@@ -4,12 +4,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError, validateEmail, validatePassword, RATE_LIMITS, checkSlidingWindowRateLimit, getClientIpFromRequest } from "@/lib/security";
 import { clearAuthFailures, compositeRateKey, emailLockKey, emailRateKey, getAuthLockState, ipRateKey, registerAuthFailure } from "@/lib/security/auth-abuse";
 import { isCaptchaConfigured, verifyTurnstileToken } from "@/lib/security/captcha";
-import { getRoleHomePath } from "@/lib/role-home";
 import { reportAuthCaptchaFailure, reportAuthLockout, reportSecurityRateLimitDenied } from "@/lib/observability";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
+import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
 
 export const dynamic = "force-dynamic";
 
@@ -161,7 +161,10 @@ export async function POST(req: Request) {
     }
 
     await clearAuthFailures(lockKey);
-    const redirectTo = getRoleHomePath(userData.role);
+    const redirectTo = await getPostApprovalRedirectPath({
+      userId: signInData.user.id,
+      role: userData.role,
+    });
     return NextResponse.json({ ok: true, redirectTo });
   } catch (error) {
     return jsonError(sanitizeError(error), 400);

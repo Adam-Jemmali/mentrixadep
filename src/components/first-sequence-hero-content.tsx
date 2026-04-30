@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef, memo, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
+import { GooeyText } from "@/components/ui/gooey-text-morphing";
+import { Typewriter } from "@/components/ui/typewriter";
+import { BubbleText } from "@/components/ui/bubble-text";
+import ParticleAnimation from "@/components/ui/particle-animation";
 
 const ICON_VERSION = "20260410";
 
@@ -176,44 +181,18 @@ function BouncingRoleIcons() {
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
-      <div ref={mentrixerRef} className="absolute left-0 top-0 will-change-transform">
-        <RoleIcon role="mentrixer" className="h-11 w-11 opacity-85 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
+      <div ref={mentrixerRef} className="absolute left-0 top-0 will-change-transform shadow-2xl rounded-full">
+        <RoleIcon role="mentrixer" className="h-11 w-11 opacity-85" />
       </div>
-      <div ref={guideRef} className="absolute left-0 top-0 will-change-transform">
-        <RoleIcon role="guide" className="h-11 w-11 opacity-85 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
+      <div ref={guideRef} className="absolute left-0 top-0 will-change-transform shadow-2xl rounded-full">
+        <RoleIcon role="guide" className="h-11 w-11 opacity-85" />
       </div>
     </div>
   );
 }
 
 // Letter-by-letter reveal component - memoized for scroll-based animation
-const RevealText = memo(function RevealText({ text, progress }: { text: string; progress: number }) {
-  const chars = useMemo(() => {
-    return text.split('').map((char, idx) => {
-      const revealStart = 0.25 + (idx * 0.008);
-      const revealEnd = revealStart + 0.15;
-      const charProgress = Math.max(0, Math.min(1, (progress - revealStart) / (revealEnd - revealStart)));
-      return { char, charProgress };
-    });
-  }, [text, progress]);
-  
-  return (
-    <>
-      {chars.map(({ char, charProgress }, idx) => (
-        <span
-          key={idx}
-          style={{
-            opacity: charProgress,
-            display: 'inline-block',
-            willChange: charProgress > 0 && charProgress < 1 ? 'opacity' : 'auto',
-          }}
-        >
-          {char === ' ' ? '\u00A0' : char}
-        </span>
-      ))}
-    </>
-  );
-});
+
 type WaitlistRole = "student" | "tutor";
 
 
@@ -267,7 +246,7 @@ export function FirstSequenceHeroContent() {
   const revealLeft = Math.min(1, Math.max(0.2, progress * 1.25));
   const revealRight = Math.min(1, Math.max(0.15, (progress - 0.08) * 1.3));
   const headlineY = 26 - progress * 54;
-  const lineAOpacity = Math.min(1, 0.4 + progress * 1.05);
+  const lineAOpacity = Math.min(1, 0.3 + progress * 1.5);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -276,7 +255,7 @@ export function FirstSequenceHeroContent() {
     return () => window.clearInterval(id);
   }, []);
 
-  async function submitWaitlist() {
+  const submitWaitlist = useCallback(async () => {
     setWaitlistMsg(null);
     const email = waitlistEmail.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -314,68 +293,58 @@ export function FirstSequenceHeroContent() {
     } finally {
       setWaitlistLoading(false);
     }
-  }
+  }, [waitlistEmail, waitlistRole]);
 
   return (
-    <div className="relative flex min-h-screen items-start justify-center overflow-hidden px-4 pb-16 pt-24 sm:px-5 sm:pt-28 md:items-center md:pt-20 md:pb-14 lg:pt-24 lg:pb-10" id="firstseq">
+    <div className="relative flex min-h-screen items-start justify-center overflow-hidden px-4 pb-8 pt-14 sm:px-5 sm:pt-16 md:items-center md:pt-14 md:pb-8 lg:pt-16 lg:pb-6" id="firstseq">
+      <ParticleAnimation className="absolute inset-0 z-0 opacity-30" />
       <div className="hidden md:block">
         <BouncingRoleIcons />
       </div>
       <div
-        className="pointer-events-none absolute inset-x-0 top-20 z-20 hidden px-5 text-center sm:block md:top-24 lg:top-28"
+        className="pointer-events-none absolute inset-x-0 top-64 z-[100] block px-5 text-center md:top-80 lg:top-[26rem]"
         style={{ 
-          opacity: revealLeft,
-          willChange: revealLeft < 0.99 ? 'opacity' : 'auto',
+          opacity: Math.min(1, revealLeft * 1.5),
+          willChange: 'opacity, transform',
         }}
       >
-        <p className="lp-hero-line lp-hero-line-delay-1 mx-auto w-fit text-[11px] font-semibold uppercase tracking-[0.25em] text-purple-400">
-          See your progress. Beat the curve. Book in 3 minutes.
-        </p>
+        <div className="mx-auto h-40 w-full max-w-4xl mt-2">
+          <GooeyText 
+            texts={[
+              "Compete. Climb. Improve.", 
+              "Meet live.", 
+              "Book a Guide."
+            ]} 
+            morphTime={2.5}
+            cooldownTime={3}
+            textClassName="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter"
+            className="h-full"
+          />
+        </div>
       </div>
 
       <div className="relative z-10 w-full px-0 sm:px-5">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-8 lg:grid lg:grid-cols-[minmax(260px,0.95fr)_minmax(140px,0.35fr)_minmax(320px,0.95fr)] lg:items-center lg:gap-8">
-          <div className="relative mx-auto max-w-2xl text-center" style={{ 
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 lg:grid lg:max-w-[90rem] lg:grid-cols-[1fr_1fr] lg:items-start lg:gap-12 lg:px-8 xl:px-16">
+          <div className="relative mx-auto max-w-2xl text-center lg:mx-0 lg:max-w-lg lg:text-left lg:-ml-32 lg:pt-16 xl:-ml-48" style={{ 
             opacity: revealLeft,
-            willChange: revealLeft < 0.99 ? 'opacity' : 'auto',
+            willChange: 'opacity, transform',
           }}>
-            <h1 className="font-extrabold tracking-[-0.05em] text-white">
-              <span className="sr-only">Mentrixa — </span>
-              <span
-                className="lp-hero-line lp-hero-line-delay-2 block mx-auto text-[clamp(26px,9vw,70px)] sm:text-[clamp(34px,7.4vw,70px)]"
-                style={{
-                  lineHeight: 0.92,
-                  transform: `translate3d(0, ${headlineY}px, 0)`,
-                  opacity: lineAOpacity,
-                  willChange: "transform, opacity",
-                  contain: "content",
-                }}
-              >
-                <RevealText text="Prove what " progress={progress} />
-              </span>
-              <span
-                className="lp-hero-line lp-hero-line-delay-3 block mx-auto mt-1 bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-[clamp(26px,9vw,70px)] text-transparent sm:text-[clamp(34px,7.4vw,70px)]"
-                style={{
-                  lineHeight: 0.92,
-                  transform: `translate3d(0, ${headlineY * 1.2}px, 0)`,
-                  opacity: lineAOpacity,
-                  willChange: "transform, opacity",
-                  contain: "content",
-                }}
-              >
-                <RevealText text="you know." progress={progress} />
-              </span>
-            </h1>
+            <div 
+              style={{
+                opacity: lineAOpacity,
+                transform: `translate3d(0, ${headlineY * 1.1}px, 0)`,
+              }}
+              className="space-y-4"
+            >
+              <div className="min-h-[60px] md:min-h-[40px]">
+                {/* GooeyText moved to laptop screen area above */}
+              </div>
+            </div>
 
-            <p className="lp-hero-line lp-hero-line-delay-3 mx-auto mt-5 max-w-[24rem] text-[13px] leading-snug text-slate-300 sm:mt-6 sm:max-w-md sm:text-[14px] md:text-[15px] lg:mx-0">
-              Book a verified expert for your exact course. Meet live. Get session-backed study materials within minutes of
-              your call.
-            </p>
-
-            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row lg:mt-7 lg:justify-start">
+            <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row lg:mt-6 lg:justify-start lg:gap-4">
               <Link
                 href="/auth/signup"
-                className="lp-cta-pulse group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0B1120] shadow-lg shadow-cyan-500/10 transition-all hover:-translate-y-0.5 hover:shadow-cyan-500/20 sm:w-auto sm:px-7 sm:py-3.5"
+                className="lp-cta-pulse group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0B1120] shadow-lg shadow-indigo-500/10 transition-all hover:-translate-y-0.5 hover:shadow-indigo-500/20 sm:w-auto sm:px-7 sm:py-3.5"
               >
                 <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
                 Become a Mentrixer
@@ -390,21 +359,27 @@ export function FirstSequenceHeroContent() {
                 <RoleIcon role="guide" className="h-3.5 w-3.5" />
                 Become a Guide
               </Link>
+              <Link
+                href="/try"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-medium text-white/95 transition-colors hover:bg-white/[0.04] sm:w-auto sm:px-7 sm:py-3.5"
+              >
+                Try a  Quest 
+              </Link>
             </div>
           </div>
 
-          <div className="hidden lg:block" aria-hidden />
-
           <div
-            className="w-full pt-2 sm:pt-4 lg:pt-8 xl:pt-12"
+            className="w-full pt-2 sm:pt-4 lg:pt-16"
             style={{ opacity: revealRight, transform: `translateY(${(1 - revealRight) * 16}px)` }}
           >
-            <div id="waitlist" className="relative mx-auto max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 p-4 text-left shadow-xl shadow-violet-950/45 backdrop-blur-md sm:p-5 lg:ml-auto">
-              <p className="mb-2 text-[10px] font-bold tracking-[0.2em] uppercase text-cyan-200">Find my Guide now </p>
-              <h3 className="text-white text-lg sm:text-xl font-semibold tracking-tight">Apply for early access </h3>
+            <div id="waitlist" className="relative mx-auto max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 p-2.5 text-left shadow-xl shadow-violet-950/45 backdrop-blur-md sm:p-3 lg:ml-auto lg:w-full lg:max-w-[22rem] xl:-mr-12">
+  
+              <h3 className="text-[15px] font-semibold tracking-tight text-white sm:text-base">
+                <Typewriter text="Apply for early access" speed={70} waitTime={2500} cursorChar="_" />
+              </h3>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/55 p-3 min-h-[120px]">
+              <div className="mt-2.5 grid gap-2 lg:grid-cols-[1fr_1.2fr] lg:gap-2">
+                <div className="min-h-[72px] rounded-xl border border-white/10 bg-black/55 p-2">
                   {WAITLIST_SLIDES.map((s, i) => (
                     <div
                       key={s.title}
@@ -417,7 +392,7 @@ export function FirstSequenceHeroContent() {
                       
                     </div>
                   ))}
-                  <div className="mt-3 flex gap-1.5">
+                  <div className="mt-2 flex gap-1.5">
                     {WAITLIST_SLIDES.map((_, i) => (
                       <button
                         key={i}
@@ -425,59 +400,66 @@ export function FirstSequenceHeroContent() {
                         onClick={() => setSlideIdx(i)}
                         className={cn(
                           "h-1.5 rounded-full transition-all",
-                          i === slideIdx ? "w-7 bg-cyan-300" : "w-3 bg-white/30",
+                          i === slideIdx ? "w-7 bg-blue-500" : "w-3 bg-white/30",
                         )}
                         aria-label={`Waitlist slide ${i + 1}`}
                       />
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/55 p-3">
+                <div className="rounded-xl border border-white/10 bg-black/55 p-2">
                   <input
                     type="email"
                     value={waitlistEmail}
                     onChange={(e) => setWaitlistEmail(e.target.value)}
-                    placeholder="personal /education email "
-                    className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-3 text-sm text-slate-950 outline-none focus:border-cyan-500"
+                    placeholder="personal  "
+                    className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500"
                   />
-                  <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div className="mt-2 grid grid-cols-2 gap-1.5">
                     <button
                       type="button"
                       onClick={() => setWaitlistRole("student")}
                       className={cn(
-                        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium",
+                        "inline-flex flex-nowrap min-h-8 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium",
                         waitlistRole === "student" ? "bg-white text-slate-900" : "bg-white/10 text-white",
                       )}
                     >
-                      <RoleIcon role="mentrixer" className={cn("h-3 w-3", waitlistRole === "student" ? "" : "brightness-0 invert")} />
-                      Mentrixer
+                      <RoleIcon role="mentrixer" className={cn("h-3 w-5", waitlistRole === "student" ? "" : "brightness-0 invert")} />
+                      <BubbleText text="Mentrixer" activeColor="text-blue-500" neighborColor="text-blue-400" className="text-current whitespace-nowrap" />
                     </button>
                     <button
                       type="button"
                       onClick={() => setWaitlistRole("tutor")}
                       className={cn(
-                        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium",
+                        "inline-flex flex-nowrap min-h-8 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium",
                         waitlistRole === "tutor" ? "bg-white text-slate-900" : "bg-white/10 text-white",
                       )}
                     >
                       <RoleIcon role="guide" className={cn("h-3 w-3", waitlistRole === "tutor" ? "" : "brightness-0 invert")} />
-                      Guide
+                      <BubbleText text="Guide" activeColor="text-purple-500" neighborColor="text-purple-400" className="text-current whitespace-nowrap" />
                     </button>
                   </div>
                   <button
                     type="button"
                     onClick={() => void submitWaitlist()}
                     disabled={waitlistLoading}
-                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-60"
+                    className="mt-2.5 inline-flex min-h-8 w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-60"
                   >
                     {waitlistLoading ? "Submitting..." : "Join waitlist"}
                   </button>
-                  {waitlistMsg ? <p className="mt-2 text-xs text-cyan-100">{waitlistMsg}</p> : null}
+                  {waitlistMsg ? <p className="mt-2 text-xs text-blue-200">{waitlistMsg}</p> : null}
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+      <div className="absolute bottom-4 inset-x-0 h-16 w-full z-10 pointer-events-none md:bottom-8 lg:bottom-12">
+        <ParticleTextEffect 
+          key={JSON.stringify(["PROVE WHAT YOU KNOW", "MENTRIXA"])}
+          words={["PROVE WHAT YOU KNOW", "MENTRIXA", "CLIMB", "SOLVE", "WIN"]} 
+          className="w-full h-full opacity-60"
+        />
       </div>
     </div>
   );

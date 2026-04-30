@@ -13,6 +13,7 @@ import { IconMenu2, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
+import { BubbleText } from "@/components/ui/bubble-text";
 
 type NavbarProps = {
   children: React.ReactNode;
@@ -129,7 +130,9 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
               className="absolute inset-0 h-full w-full rounded-full bg-white/10"
             />
           )}
-          <span className="relative z-20">{item.name}</span>
+          <span className="relative z-20">
+            <BubbleText text={item.name} className="text-current" />
+          </span>
         </a>
       ))}
     </motion.div>
@@ -239,10 +242,10 @@ export const NavbarButton = ({
   variant?: "primary" | "secondary" | "dark" | "gradient";
 } & (React.ComponentPropsWithoutRef<"a"> | React.ComponentPropsWithoutRef<"button">)) => {
   const variantStyles = {
-    primary: "bg-slate-900 text-white hover:bg-slate-800",
+    primary: "bg-indigo-600 text-white hover:bg-indigo-700",
     secondary: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
     dark: "bg-black text-white hover:bg-slate-900",
-    gradient: "bg-gradient-to-b from-cyan-400 to-blue-600 text-white hover:opacity-95",
+    gradient: "bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500 text-white hover:opacity-95",
   } as const;
 
   return (

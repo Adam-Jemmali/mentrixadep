@@ -4,6 +4,8 @@ import { getTutorDashboardForAdmin } from "@/app/actions/tutor";
 import { TutorDashboardClient, type AnySessionRequest } from "../../tutor-dashboard-client";
 import { AdminViewProvider } from "@/components/admin-view-context";
 import Link from "next/link";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/lib/student-dashboard-helpers";
 
 interface Props {
   params: Promise<{ tutorId: string }>;
@@ -18,9 +20,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TutorDashboardAdminPage({ params }: Props) {
   const { tutorId } = await params;
+  const now = new Date();
   const data = await getTutorDashboardForAdmin(tutorId);
 
   if (!data) notFound();
+
+  // Fetch tutor profile since getTutorDashboardForAdmin doesn't include it
+  const adminClient = createAdminClient();
+  const [{ data: authData }, { data: settingsRow }] = await Promise.all([
+    adminClient.auth.admin.getUserById(tutorId),
+    adminClient.from("user_settings").select("display_name").eq("user_id", tutorId).maybeSingle()
+  ]);
+
+  const tutorEmail = authData?.user?.email || "";
+  const tutorDisplayName = settingsRow?.display_name || tutorEmail.split("@")[0] || "Guide";
+
+  const timeZone = data.tutorTimezone || "UTC";
+  const firstName = firstNameFromDisplayName(tutorDisplayName, tutorEmail);
+  const hour = getLocalHour(now, timeZone);
+  const greeting = greetingForHour(hour, firstName);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -47,6 +65,8 @@ export default async function TutorDashboardAdminPage({ params }: Props) {
           autoApprove={data.autoApprove}
           tutorCourses={data.tutorCourses}
           tutorTimezone={data.tutorTimezone}
+          greeting={greeting}
+          firstName={firstName}
         />
       </AdminViewProvider>
     </div>

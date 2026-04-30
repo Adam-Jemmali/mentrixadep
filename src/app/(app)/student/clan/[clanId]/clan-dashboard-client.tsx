@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type { ClanDashboardPayload, ClanMessageRow } from "@/app/actions/clan-dashboard";
 import {
@@ -9,6 +10,7 @@ import {
   rejectJoinRequest,
 } from "@/app/actions/clan-dashboard";
 import { setClanAvatarPreset, setClanFocusDivision, uploadClanAvatar } from "@/app/actions/clan";
+import { createClanSkillDuel } from "@/app/actions/duel";
 import { CLAN_AVATAR_PRESETS, CLAN_QUEST_CHALLENGE_BONUS_XP } from "@/lib/clan-constants";
 import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
 import { ClanChat } from "@/components/clan/clan-chat";
@@ -20,6 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
+import { Typewriter } from "@/components/ui/typewriter";
+import { GooeyText } from "@/components/ui/gooey-text-morphing";
+import { cn } from "@/lib/utils";
 
 type Pending = {
   id: string;
@@ -48,6 +54,7 @@ export function ClanDashboardClient({
   divisions,
 }: Props) {
   const { clan, memberCount, weeklyClanXp, challenge, members, trophies } = data;
+  const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [focusSelection, setFocusSelection] = useState<string>(clan.focus_division_key ?? "__none__");
   const [focusError, setFocusError] = useState<string | null>(null);
@@ -103,274 +110,354 @@ export function ClanDashboardClient({
     window.location.reload();
   }
 
+  async function onDuel(opponentId: string) {
+    if (!clan.focus_division_key) {
+      alert("Set a focus division first!");
+      return;
+    }
+    setBusy(opponentId);
+    const res = await createClanSkillDuel(opponentId, clan.focus_division_key);
+    setBusy(null);
+    if (res.success) {
+      router.push(`/student/duel/${res.duelId}`);
+    } else {
+      alert(res.error);
+    }
+  }
+
   return (
-    <div className="space-y-8">
-      <motion.header
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-        className="overflow-hidden rounded-lg border border-white/20 bg-gradient-to-b from-[#182846]/95 via-[#12223e]/95 to-[#0d1c35]/95 text-white"
-      >
-        <div className="px-5 py-6 sm:px-8 sm:py-8">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-200">
-            <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={14} height={14} />
-            Mentrixer clan board
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex gap-4">
-              <ClanAvatarBadge
-                name={clan.name}
-                avatarKind={clan.avatar_kind}
-                presetKey={clan.avatar_preset_key}
-                avatarUrl={clan.avatar_url}
-                size="lg"
-                className="border-white/30 bg-white/10 text-slate-100"
-              />
-              <div>
-                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                  {clan.tag}
-                </p>
-                <h1 className="text-xl font-semibold tracking-tight">{clan.name}</h1>
-                {clan.description ? (
-                  <p className="mt-2 text-sm text-slate-300 max-w-xl leading-relaxed">
-                    {clan.description}
-                  </p>
-                ) : null}
-                <p className="mt-2 text-xs text-slate-400">
-                  Focus:{" "}
-                  {divisionLabel}
-                  {" · "}
-                  Join: {clan.join_mode === "approval" ? "Leader approval" : "Open"}
-                </p>
+    <div className="min-h-screen bg-[#FDFDFF] text-slate-900 p-6 md:p-10 space-y-12 max-w-7xl mx-auto">
+      {/* HEADER: Premium Clean White */}
+      <header className="relative flex flex-col md:flex-row items-center md:items-end justify-between gap-8 pb-12 border-b border-slate-100">
+        <div className="flex flex-col items-center md:items-start gap-4 flex-1">
+          <div className="flex items-center gap-6">
+            <ClanAvatarBadge
+              name={clan.name}
+              avatarKind={clan.avatar_kind}
+              presetKey={clan.avatar_preset_key}
+              avatarUrl={clan.avatar_url}
+              size="lg"
+              className="w-24 h-24 md:w-32 md:h-32 rounded-3xl border-none shadow-none bg-slate-50"
+            />
+            <div className="space-y-1">
+              <div className="h-6 overflow-hidden">
+                <Typewriter text={clan.tag} speed={80} className="text-xs font-bold tracking-[0.3em] uppercase text-slate-300" />
+              </div>
+              <div className="h-[80px] md:h-[100px] flex items-center">
+                <ParticleTextEffect
+                  words={[clan.name.toUpperCase()]}
+                  className="text-left font-black"
+                />
               </div>
             </div>
-            <dl className="grid grid-cols-3 gap-3 text-center sm:text-right">
-              <div>
-                <dt className="text-[10px] font-medium uppercase text-slate-500">
-                  Members
-                </dt>
-                <dd className="text-lg font-semibold tabular-nums">{memberCount}</dd>
-              </div>
-              <div>
-                <dt className="text-[10px] font-medium uppercase text-slate-500">
-                  Week XP
-                </dt>
-                <dd className="text-lg font-semibold tabular-nums">{weeklyClanXp}</dd>
-              </div>
-              <div>
-                <dt className="text-[10px] font-medium uppercase text-slate-500">
-                  Clan XP
-                </dt>
-                <dd className="text-lg font-semibold tabular-nums">{clan.xp_total}</dd>
-              </div>
-            </dl>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+
+            <div className="h-8 min-w-[120px]">
+              <GooeyText
+                texts={divisionLabel.split(' ')}
+                className="text-slate-900"
+                textClassName="text-sm font-black"
+              />
+            </div>
           </div>
         </div>
-      </motion.header>
 
-      {isLeader ? (
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-medium text-slate-900">Clan identity</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Preset badge or upload your square image
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {CLAN_AVATAR_PRESETS.map((k) => (
-              <Button
-                key={k}
-                type="button"
-                size="sm"
-                variant={clan.avatar_preset_key === k ? "default" : "outline"}
-                className="capitalize"
-                disabled={busy !== null}
-                onClick={() => void onPreset(k)}
-              >
-                {k}
-              </Button>
-            ))}
-            <label className="inline-flex">
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="sr-only"
-                disabled={busy !== null}
-                onChange={(e) => void onFile(e)}
-              />
-              <span className="inline-flex h-9 cursor-pointer items-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 hover:bg-slate-50">
-                {busy === "up" ? "Uploading…" : "Upload"}
-              </span>
-            </label>
-          </div>
-
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <h3 className="text-sm font-medium text-slate-900">Focus division</h3>
-            <p className="mt-1 text-xs text-slate-500">Update what your clan is focusing on this week.</p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Select value={focusSelection} onValueChange={setFocusSelection}>
-                <SelectTrigger className="sm:max-w-xs">
-                  <SelectValue placeholder="Select division" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">No focus</SelectItem>
-                  {divisions.map((d) => (
-                    <SelectItem key={d.key} value={d.key}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                size="sm"
-                disabled={busy !== null}
-                onClick={() => void onSaveFocus()}
-              >
-                {busy === "focus" ? "Saving…" : "Save focus"}
-              </Button>
-            </div>
-            {focusError ? <p className="mt-2 text-xs text-red-600">{focusError}</p> : null}
-          </div>
-        </section>
-      ) : null}
-
-      {isLeader && pending.length > 0 ? (
-        <section className="rounded-lg border border-amber-200 bg-amber-50/80 p-4">
-          <h2 className="text-sm font-medium text-amber-950">Join requests</h2>
-          <ul className="mt-3 divide-y divide-amber-100">
-            {pending.map((p) => (
-              <li
-                key={p.id}
-                className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
-              >
-                <span className="text-amber-950">
-                  {p.display_name?.trim() || `Mentrixer ${p.user_id.slice(0, 8)}`}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    type="button"
-                    disabled={busy !== null}
-                    onClick={() => void onApprove(p.id)}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                    disabled={busy !== null}
-                    onClick={() => void onReject(p.id)}
-                  >
-                    Decline
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="flex gap-12 text-center md:text-right">
           <div>
-            <h2 className="text-sm font-medium text-slate-900">Weekly challenge</h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Together, complete {target} Quests this week. When the bar fills, the clan earns{" "}
-              {CLAN_QUEST_CHALLENGE_BONUS_XP} bonus XP (once per week).
-            </p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1">Members</p>
+            <p className="text-4xl font-black italic tracking-tighter">{memberCount}</p>
           </div>
-          {bonusAwarded ? (
-            <span className="text-xs font-medium text-emerald-700">Bonus earned this week</span>
-          ) : null}
-        </div>
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-          <motion.div
-            className="h-full bg-slate-800"
-            initial={false}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.35 }}
-          />
-        </div>
-        <p className="mt-2 text-xs text-slate-600 tabular-nums">
-          {done} / {target} Quests completed · {pct}%
-        </p>
-      </section>
-
-      <div className="grid gap-8 lg:grid-cols-2">
-        <section className="rounded-lg border border-slate-200 bg-white">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <h2 className="text-sm font-medium text-slate-900">This week’s standings</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Division XP earned this UTC week (all subjects).
-            </p>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1">Weekly XP</p>
+            <p className="text-4xl font-black italic tracking-tighter text-indigo-600">{weeklyClanXp.toLocaleString()}</p>
           </div>
-          <ul className="divide-y divide-slate-100">
-            {members.map((m, i) => (
-              <li
-                key={m.user_id}
-                className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
-              >
-                <span className="text-slate-500 tabular-nums w-6">{i + 1}</span>
-                <span className="flex min-w-0 flex-1 items-center gap-2 text-slate-900">
-                  <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-                    {m.avatar_url ? (
-                      <Image src={m.avatar_url} alt="" fill unoptimized className="object-cover" />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center">
-                        <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={14} height={14} className="opacity-75" />
-                      </span>
-                    )}
-                  </span>
-                  <span className="min-w-0 truncate">
-                    {m.display_name?.trim() || `Mentrixer ${m.user_id.slice(0, 8)}`}
-                    {m.role === "leader" ? (
-                      <span className="ml-2 text-xs text-amber-700">Leader</span>
-                    ) : null}
-                  </span>
-                </span>
-                <span className="tabular-nums text-slate-700">{m.weekly_xp} XP</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        </div>
+      </header>
 
-        <ClanChat
-          clanId={clan.id}
-          initialMessages={initialMessages}
-          currentUserId={currentUserId}
-        />
-      </div>
+      <div className="grid lg:grid-cols-12 gap-16">
+        <div className="lg:col-span-8 space-y-16">
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-medium text-slate-900">Trophy room</h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Clan wars will appear here when the feature goes live. Past wins are kept for bragging rights.
-        </p>
-        {trophies.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">No completed wars yet.</p>
-        ) : (
-          <ul className="mt-4 divide-y divide-slate-100">
-            {trophies.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-center justify-between gap-2 py-2 text-sm"
-              >
-                <span className="text-slate-800">
-                  vs {t.opponent_name}{" "}
-                  <span className="text-slate-400">· {t.ended_label}</span>
-                </span>
-                <span
-                  className={
-                    t.won ? "font-medium text-emerald-700" : "text-slate-500"
-                  }
+          {/* BATTLE ROOM: NEW - Play against other clans */}
+          <section className="group relative overflow-hidden space-y-8 p-10 bg-[linear-gradient(160deg,#050811_0%,#1e1b4b_100%)] rounded-[40px] shadow-2xl border border-white/5">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 blur-[100px] pointer-events-none" />
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">Battle Arena</h2>
+                <div className="flex items-center gap-2">
+                  
+                  
+                </div>
+              </div>
+              <div className="hidden md:block">
+                <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Focus</p>
+                   <p className="text-xs font-bold text-white mt-1">{divisionLabel}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
+              <div className="space-y-6">
+                <p className="text-sm font-medium leading-relaxed text-slate-400 max-w-sm">
+                  Represent <span className="text-white font-bold">{clan.name}</span> in the Global Arena. Defeat rival clans to earn massive Clan XP and climb the World Standings.
+                </p>
+                <Button
+                  onClick={() => router.push('/student/duel')}
+                  className="h-16 px-12 rounded-2xl bg-white hover:bg-indigo-50 text-slate-900 font-black italic uppercase tracking-widest text-sm shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-all hover:scale-[1.05] active:scale-[0.95]"
                 >
-                  {t.won ? "Won" : "Lost"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  Fight for Clan
+                </Button>
+              </div>
+              <div className="relative h-48 flex items-center justify-center">
+                <motion.div 
+                  animate={{ 
+                    scale: [1, 1.05, 1],
+                    opacity: [0.1, 0.2, 0.1]
+                  }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <div className="text-[100px] font-black italic tracking-tighter text-white select-none">WAR</div>
+                </motion.div>
+                <div className="relative h-32 w-32 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+                   <img src="/icons/mentrixer.svg" alt="Mentrixer" className="absolute inset-0 w-full h-full object-contain" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* CHALLENGE: Minimalist & High-End */}
+          <section className="space-y-6">
+            <div className="flex items-end justify-between">
+              <div>
+                <h2 className="text-2xl font-black italic uppercase tracking-tight text-slate-900">Weekly Challenge</h2>
+                <div className="mt-1 h-5 overflow-hidden">
+                  <Typewriter text={`Complete ${target} Quests for ${CLAN_QUEST_CHALLENGE_BONUS_XP} XP bonus`} speed={30} className="text-xs font-medium text-slate-400" />
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-4xl font-black italic text-slate-900">{done}</span>
+                <span className="text-lg font-bold text-slate-200"> / {target}</span>
+              </div>
+            </div>
+
+            <div className="relative pt-2">
+              <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-slate-900"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+                />
+              </div>
+              {bonusAwarded && (
+                <p className="absolute -top-6 right-0 text-[10px] font-black uppercase tracking-widest text-emerald-500">Bonus Unlocked</p>
+              )}
+            </div>
+          </section>
+
+          {/* STANDINGS: Typography focused */}
+          <section className="space-y-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">Standings</h2>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Mentrixers</span>
+            </div>
+            <div className="space-y-2">
+              {members.map((m, i) => (
+                <motion.div
+                  key={m.user_id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-6 py-4 px-2 hover:bg-slate-50/50 transition-colors rounded-2xl group"
+                >
+                  <span className="w-8 text-2xl font-black italic text-slate-100 group-hover:text-slate-200 transition-colors">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+
+                  <div className="relative h-12 w-12 shrink-0">
+                    {m.avatar_url ? (
+                      <Image src={m.avatar_url} alt="" fill unoptimized className="object-cover rounded-full" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-50 rounded-full text-slate-300 font-bold text-xs">
+                        {m.display_name?.[0] || 'M'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-lg text-slate-900 truncate">
+                        {m.display_name?.trim() || `Mentrixer ${m.user_id.slice(0, 8)}`}
+                      </span>
+                      {m.role === "leader" && (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Leader</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-8">
+                    <div className="text-right">
+                      <span className="text-xl font-black italic text-slate-900 block">{m.weekly_xp.toLocaleString()}</span>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Weekly XP</span>
+                    </div>
+
+                    {m.user_id !== currentUserId && (
+                      <button
+                        onClick={() => void onDuel(m.user_id)}
+                        disabled={busy === m.user_id}
+                        className="h-10 px-6 rounded-xl border border-slate-100 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:border-slate-900 hover:text-slate-900 transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        {busy === m.user_id ? "..." : "Friendly Battle"}
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* SIDEBAR: Clean & Functional */}
+        <aside className="lg:col-span-4 space-y-16">
+
+          <div className="h-[500px] flex flex-col bg-white">
+            <ClanChat
+              clanId={clan.id}
+              initialMessages={initialMessages}
+              currentUserId={currentUserId}
+              members={members}
+            />
+          </div>
+
+          <div className="space-y-10">
+            {isLeader && (
+              <section className="space-y-8">
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">Management</h2>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3">Badge Preset</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {CLAN_AVATAR_PRESETS.map((k) => (
+                        <button
+                          key={k}
+                          onClick={() => void onPreset(k)}
+                          disabled={busy !== null}
+                          className={cn(
+                            "h-12 rounded-xl border font-bold uppercase text-[10px] tracking-tighter transition-all",
+                            clan.avatar_preset_key === k
+                              ? "bg-slate-900 border-slate-900 text-white"
+                              : "border-slate-100 text-slate-400 hover:border-slate-300"
+                          )}
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3">Custom Emblem</label>
+                    <label className="flex items-center justify-center w-full h-12 rounded-xl border border-dashed border-slate-200 hover:border-slate-900 hover:bg-slate-50 transition-all cursor-pointer group">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        disabled={busy !== null}
+                        onChange={(e) => void onFile(e)}
+                      />
+                      <span className="text-xs font-bold text-slate-300 group-hover:text-slate-900 transition-colors uppercase tracking-widest">
+                        {busy === "up" ? "Uploading..." : "Upload Image"}
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Focus Division</label>
+                    <Select value={focusSelection} onValueChange={setFocusSelection}>
+                      <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
+                        <SelectValue placeholder="Select division" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">No Focus</SelectItem>
+                        {divisions.map((d) => (
+                          <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {focusError && <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{focusError}</p>}
+                    <Button
+                      className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-xs"
+                      disabled={busy !== null}
+                      onClick={() => void onSaveFocus()}
+                    >
+                      {busy === "focus" ? "Saving..." : "Update Focus"}
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {isLeader && pending.length > 0 && (
+              <section className="space-y-8">
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">Join Requests</h2>
+                <div className="space-y-4">
+                  {pending.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                      <span className="text-xs font-black uppercase tracking-tighter truncate">{p.display_name || "Mentrixer"}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => void onApprove(p.id)}
+                          disabled={busy !== null}
+                          className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-600 transition-colors"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => void onReject(p.id)}
+                          disabled={busy !== null}
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className="space-y-8">
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">History</h2>
+              {trophies.length === 0 ? (
+                <p className="text-xs font-bold text-slate-200 uppercase tracking-widest italic">Vault Empty</p>
+              ) : (
+                <div className="space-y-4">
+                  {trophies.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between group">
+                      <div className="space-y-1">
+                        <p className="text-sm font-black italic uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">vs {t.opponent_name}</p>
+                        <p className="text-[10px] font-bold text-slate-200 uppercase tracking-widest">{t.ended_label}</p>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-black uppercase italic tracking-widest",
+                        t.won ? "text-emerald-500" : "text-slate-200"
+                      )}>
+                        {t.won ? "Victory" : "Defeat"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
+

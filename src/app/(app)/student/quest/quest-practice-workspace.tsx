@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { Input } from "@/components/ui/input";
 import { PromptWithMath } from "@/components/quest/prompt-with-math";
 import { ShareScoreCardButton } from "@/components/quest/share-score-card";
@@ -15,6 +17,7 @@ import {
   finalizePracticeQuest,
   type PracticeQuestionPublic,
 } from "@/app/actions/practice-quest";
+import { emitXpAward } from "@/lib/xp-events";
 import type { PracticeDifficulty, PracticePackType } from "@/lib/practice-quest-types";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
@@ -37,9 +40,12 @@ type Phase = "wizard" | "run" | "done";
 
 export function QuestPracticeWorkspace({
   subjectOptions,
+  onboardingMode = false,
 }: {
   subjectOptions: { key: string; name: string }[];
+  onboardingMode?: boolean;
 }) {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("wizard");
   const [subjectKey, setSubjectKey] = useState(subjectOptions[0]?.key ?? "general");
   const [customSubject, setCustomSubject] = useState("");
@@ -155,12 +161,24 @@ export function QuestPracticeWorkspace({
     return () => stopTimer();
   }, [stopTimer]);
 
+  useEffect(() => {
+    if (!onboardingMode || phase !== "done" || !doneResult) return;
+    router.push("/student?celebration=levelup");
+  }, [onboardingMode, phase, doneResult, router]);
+
   const finishRun = async (id: string) => {
     stopTimer();
     const fin = await finalizePracticeQuest(id);
     if (fin.success) {
       setDoneResult(fin.result);
       setPhase("done");
+      // Emit XP award event for floating animation and navbar pulse
+      if ((fin.result.xpAwarded ?? 0) > 0) {
+        emitXpAward({
+          amount: fin.result.xpAwarded,
+          totalXp: fin.result.totalXp ?? 0,
+        });
+      }
     } else {
       setErr(fin.error);
     }
@@ -251,6 +269,9 @@ export function QuestPracticeWorkspace({
   if (phase === "wizard") {
     return (
       <div className="max-w-xl mx-auto py-10 px-4">
+        <div className="mb-6">
+          <BackButton />
+        </div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
           Practice packs
         </p>
@@ -281,51 +302,55 @@ export function QuestPracticeWorkspace({
             />
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-slate-500">Difficulty</label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {DIFFICULTIES.map((d) => (
-                <button
-                  key={d.value}
-                  type="button"
-                  onClick={() => setDifficulty(d.value)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm ${
-                    difficulty === d.value
-                      ? "border-mentrixa-500 bg-mentrixa-50 text-mentrixa-900"
-                      : "border-slate-200 text-slate-600"
-                  }`}
-                >
-                  {d.label}
-                </button>
-              ))}
+          {!onboardingMode && (
+            <div>
+              <label className="text-xs font-medium text-slate-500">Difficulty</label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {DIFFICULTIES.map((d) => (
+                  <button
+                    key={d.value}
+                    type="button"
+                    onClick={() => setDifficulty(d.value)}
+                    className={`rounded-lg border px-3 py-1.5 text-sm ${
+                      difficulty === d.value
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-900"
+                        : "border-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div>
-            <label className="text-xs font-medium text-slate-500">Question type</label>
-            <div className="mt-2 grid gap-2">
-              {PACK_TYPES.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => setPackType(p.value)}
-                  className={`text-left rounded-xl border p-3 text-sm ${
-                    packType === p.value
-                      ? "border-mentrixa-500 bg-mentrixa-50"
-                      : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <span className="font-semibold text-slate-900">{p.label}</span>
-                  <span className="block text-xs text-slate-500 mt-0.5">{p.desc}</span>
-                </button>
-              ))}
+          {!onboardingMode && (
+            <div>
+              <label className="text-xs font-medium text-slate-500">Question type</label>
+              <div className="mt-2 grid gap-2">
+                {PACK_TYPES.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setPackType(p.value)}
+                    className={`text-left rounded-xl border p-3 text-sm ${
+                      packType === p.value
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <span className="font-semibold text-slate-900">{p.label}</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">{p.desc}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {err && <p className="text-sm text-red-600">{err}</p>}
 
           <Button className="w-full" disabled={busy} onClick={() => void beginPack()}>
-            {busy ? "Generating…" : "Generate quest"}
+            {busy ? "Generating…" : onboardingMode ? "Start your first quest" : "Generate quest"}
           </Button>
         </div>
       </div>
@@ -337,7 +362,7 @@ export function QuestPracticeWorkspace({
     return (
       <div className="max-w-lg mx-auto py-10 px-4 text-center">
         <h2 className="text-2xl font-bold text-slate-900">Quest complete</h2>
-        <p className="mt-4 text-4xl font-mono font-bold text-mentrixa-600">
+        <p className="mt-4 text-4xl font-mono font-bold text-indigo-600">
           {doneResult.correct}/{doneResult.total}
         </p>
         <p className="mt-2 text-sm text-slate-600">
@@ -414,7 +439,7 @@ export function QuestPracticeWorkspace({
         </div>
         <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-8">
           <motion.div
-            className="h-full bg-mentrixa-500"
+            className="h-full bg-indigo-600"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
           />
@@ -447,7 +472,7 @@ export function QuestPracticeWorkspace({
                     if (i === mcqResult.correctIndex) cls += " border-emerald-500 bg-emerald-50";
                     else if (i === mcqPicked && !mcqResult.correct)
                       cls += " border-red-400 bg-red-50";
-                  } else if (mcqPicked === i) cls += " ring-2 ring-mentrixa-400";
+                  } else if (mcqPicked === i) cls += " ring-2 ring-indigo-400";
                   return (
                     <motion.button
                       key={i}

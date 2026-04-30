@@ -1,6 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { processPendingSessionXpAwards } from "@/app/actions/xp";
 import { createPayoutLedgerForSession } from "@/app/actions/stripe-connect";
+import {
+  autoGenerateStudioPackagesForCompletedSessions,
+  enqueueRecordingTranscriptionJobsForSessions,
+  processPendingRecordingTranscriptionJobs,
+} from "@/app/actions/autoPilot";
 import { authorizeCronRequest, runCronJob } from "@/lib/cron";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +38,10 @@ export async function GET(request: Request) {
     );
     const payoutFailures = payoutResults.filter((r) => r.status === "rejected").length;
 
+    const transcriptionEnqueue = await enqueueRecordingTranscriptionJobsForSessions(sessionIds);
+    const transcriptionWorker = await processPendingRecordingTranscriptionJobs(1);
+    const studioResult = await autoGenerateStudioPackagesForCompletedSessions(sessionIds);
+
     const xpResult = await processPendingSessionXpAwards();
 
     return {
@@ -42,6 +51,16 @@ export async function GET(request: Request) {
       rows_failed: payoutFailures,
       xpAwards: xpResult,
       payoutLedgerCreated: sessionIds.length,
+      transcriptionJobsQueued: transcriptionEnqueue.queued,
+      transcriptionJobsExisting: transcriptionEnqueue.existing,
+      transcriptionJobsEnqueueFailed: transcriptionEnqueue.failed,
+      transcriptionJobsClaimed: transcriptionWorker.claimed,
+      transcriptionJobsCompleted: transcriptionWorker.completed,
+      transcriptionJobsRetried: transcriptionWorker.retried,
+      transcriptionJobsFailed: transcriptionWorker.failed,
+      studioPackagesGenerated: studioResult.generated,
+      studioPackagesSkipped: studioResult.skipped,
+      studioPackagesFailed: studioResult.failed,
     };
   });
 }

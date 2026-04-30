@@ -1,6 +1,4 @@
 import { requireAuth } from "@/lib/auth";
-import { getUserSettings } from "@/app/actions/settings";
-import { SettingsClient } from "./settings-client";
 import { redirect } from "next/navigation";
 
 export const metadata = {
@@ -14,16 +12,9 @@ export default async function SettingsPage() {
     redirect("/admin/settings");
   }
 
-  const settings = await getUserSettings();
+  if (user.role === "tutor") {
+    redirect(`/tutor/${user.id}`);
+  }
 
-  return (
-    <SettingsClient
-      user={{
-        id: user.id,
-        email: user.email ?? "",
-        role: user.role,
-      }}
-      settings={settings}
-    />
-  );
+  redirect(`/student/${user.id}`);
 }

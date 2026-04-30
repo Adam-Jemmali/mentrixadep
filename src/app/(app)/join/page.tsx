@@ -38,7 +38,7 @@ export default async function JoinPage({
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Join Mentrixa</h1>
+        <h1 className="text-2xl font-bold text-blue-900 mb-2">Join Mentrixa</h1>
         <p className="text-sm text-slate-600">
           We&apos;re currently accepting new members. Enter your email to join the waitlist.
         </p>

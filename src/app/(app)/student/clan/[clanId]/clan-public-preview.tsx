@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import Image from "next/image";
 import type { PublicClanSnapshot } from "@/app/actions/clan-dashboard";
 import { requestJoinPublicClan } from "@/app/actions/clan";
 import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { CLAN_MAX_MEMBERS } from "@/lib/clan-constants";
 
 type Props = {
@@ -79,9 +79,7 @@ export function ClanPublicPreview({ snap, divisionLabel }: Props) {
           <Button type="button" disabled={busy || full} onClick={() => void join()}>
             {full ? "Clan full" : busy ? "…" : "Request to join"}
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/student/clan">Back</Link>
-          </Button>
+          <BackButton />
         </div>
       </div>
     </div>

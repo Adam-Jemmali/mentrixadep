@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { JoinVideoCallButton } from "@/components/join-video-call-button";
-import { formatTimeRangeInZone } from "@/lib/time-format";
+import { formatTimeRangeInZone, getDayKeyInZone, formatDateInZone } from "@/lib/time-format";
 import { cn } from "@/lib/utils";
+import { TutorAvatar } from "../student/session-components/tutor-avatar";
 
 type CalendarPayload = {
   weekRange: { startIso: string; endIso: string };
@@ -19,13 +20,12 @@ type CalendarPayload = {
     start_time: string;
     end_time: string;
     status: string;
+    student_profile: {
+      display_name: string | null;
+      avatar_url: string | null;
+    };
   }>;
 };
-
-function utcDayKey(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-}
 
 type Slot =
   | { kind: "available"; id: string; course: string; start: string; end: string }
@@ -36,6 +36,8 @@ type Slot =
       start: string;
       end: string;
       status: string;
+      studentName: string;
+      studentAvatar: string | null;
     };
 
 export function TutorWeekCalendar({
@@ -45,7 +47,11 @@ export function TutorWeekCalendar({
   calendar: CalendarPayload;
   displayTimezone: string;
 }) {
-  const now = Date.now();
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+  }, []);
 
   const { dayKeys, labels, slotsByDay } = useMemo(() => {
     const start = new Date(calendar.weekRange.startIso);
@@ -59,16 +65,9 @@ export function TutorWeekCalendar({
     for (let i = 0; i < dayCount; i++) {
       const d = new Date(start);
       d.setUTCDate(start.getUTCDate() + i);
-      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      const key = getDayKeyInZone(d, displayTimezone);
       keys.push(key);
-      lbl.push(
-        d.toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          timeZone: "UTC",
-        }),
-      );
+      lbl.push(formatDateInZone(d, displayTimezone));
     }
 
     const combined: Slot[] = [];
@@ -83,6 +82,8 @@ export function TutorWeekCalendar({
         start: s.start_time,
         end: s.end_time,
         status: s.status ?? "scheduled",
+        studentName: s.student_profile?.display_name ?? "Student",
+        studentAvatar: s.student_profile?.avatar_url ?? null,
       });
     }
     combined.sort((x, y) => new Date(x.start).getTime() - new Date(y.start).getTime());
@@ -90,17 +91,18 @@ export function TutorWeekCalendar({
     const byDay = new Map<string, Slot[]>();
     for (const k of keys) byDay.set(k, []);
     for (const slot of combined) {
-      const k = utcDayKey(slot.start);
+      const k = getDayKeyInZone(slot.start, displayTimezone);
       if (!byDay.has(k)) continue;
       byDay.get(k)!.push(slot);
     }
 
     return { dayKeys: keys, labels: lbl, slotsByDay: byDay };
-  }, [calendar]);
+  }, [calendar, displayTimezone]);
+
 
   function slotStyle(slot: Slot): { className: string; label: string } {
     const endMs = new Date(slot.end).getTime();
-    const isPast = endMs <= now;
+    const isPast = now ? endMs <= now : false;
 
     if (slot.kind === "booked") {
       if (isPast || slot.status === "completed" || slot.status === "cancelled") {
@@ -138,14 +140,30 @@ export function TutorWeekCalendar({
                 const { className, label } = slotStyle(slot);
                 const showJoin =
                   slot.kind === "booked" &&
-                  new Date(slot.end).getTime() > now &&
+                  (!now || new Date(slot.end).getTime() > now) &&
                   slot.status !== "cancelled";
                 const body = (
                   <>
                     <div className="font-medium">
                       {formatTimeRangeInZone(slot.start, slot.end, displayTimezone)}
                     </div>
-                    <div className="truncate opacity-90">{slot.course}</div>
+                    <div className="font-bold text-xs truncate mb-1">
+                      {slot.course.toUpperCase()}
+                    </div>
+                    {slot.kind === "booked" && (
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <TutorAvatar 
+                          displayName={slot.studentName} 
+                          emailPrefix={slot.studentName} 
+                          avatarUrl={slot.studentAvatar} 
+                          size="sm" 
+                          verified={false}
+                        />
+                        <div className="text-[10px] opacity-70 truncate">
+                          with {slot.studentName}
+                        </div>
+                      </div>
+                    )}
                     <div className="mt-0.5 text-[10px] opacity-80">{label}</div>
                     {showJoin ? (
                       <div className="mt-2">

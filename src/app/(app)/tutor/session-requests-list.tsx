@@ -7,9 +7,8 @@ import { gsap } from "gsap";
 import { Building2 } from "lucide-react";
 import { approveSessionRequest, rejectSessionRequest } from "@/app/actions/tutor";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { formatDate, formatTimeRange } from "@/lib/time-format";
+import { formatSlotRangeInZone } from "@/lib/time-format";
 import { Button } from "@/components/ui/button";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 interface SessionRequest {
   id: string;
@@ -35,9 +34,11 @@ interface SessionRequest {
 
 interface SessionRequestsListProps {
   sessionRequests: SessionRequest[];
+  displayTimezone: string;
 }
 
-export function SessionRequestsList({ sessionRequests }: SessionRequestsListProps) {
+export function SessionRequestsList({ sessionRequests, displayTimezone }: SessionRequestsListProps) {
+
   const [rows, setRows] = useState(sessionRequests);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
@@ -218,8 +219,7 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
                     <td className="py-2.5 px-3 align-middle">
                       {availability ? (
                         <span className="text-sm text-slate-500">
-                          {formatDate(availability.start_time)} ·{" "}
-                          {formatTimeRange(availability.start_time, availability.end_time)}
+                          {formatSlotRangeInZone(availability.start_time, availability.end_time, displayTimezone)}
                         </span>
                       ) : (
                         <span className="text-xs text-slate-400">–</span>
@@ -236,20 +236,16 @@ export function SessionRequestsList({ sessionRequests }: SessionRequestsListProp
                           size="sm"
                           onClick={() => handleApprove(request.id)}
                         >
-                          <span className="inline-flex items-center gap-1.5">
-                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
-                            Accept
-                          </span>
+                          <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                          Accept
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleReject(request.id)}
                         >
-                          <span className="inline-flex items-center gap-1.5">
-                            <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
-                            Decline
-                          </span>
+                          <Image src="/icons/mentrixer.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                          Decline
                         </Button>
                       </div>
                     </td>

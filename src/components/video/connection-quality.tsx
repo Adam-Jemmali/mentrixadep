@@ -79,9 +79,9 @@ const QUALITY_CONFIG: Record<
   QualityLevel,
   { bars: number; color: string; label: string }
 > = {
-  excellent: { bars: 3, color: "text-emerald-400", label: "Excellent" },
-  good: { bars: 2, color: "text-amber-400", label: "Good" },
-  poor: { bars: 1, color: "text-red-400", label: "Poor" },
+  excellent: { bars: 3, color: "text-blue-400", label: "Excellent" },
+  good: { bars: 2, color: "text-violet-400", label: "Good" },
+  poor: { bars: 1, color: "text-white/50", label: "Poor" },
   unknown: { bars: 0, color: "text-white/30", label: "Checking…" },
 };
 
@@ -155,9 +155,9 @@ export function ConnectionDot({
   }, [peerConnection]);
 
   const colors: Record<QualityLevel, string> = {
-    excellent: "bg-emerald-400",
-    good: "bg-amber-400",
-    poor: "bg-red-400",
+    excellent: "bg-blue-400",
+    good: "bg-violet-400",
+    poor: "bg-white/50",
     unknown: "bg-white/20",
   };
 
@@ -192,9 +192,9 @@ export function ToolbarQualityBadge({
   }, [peerConnection]);
 
   const colorMap: Record<QualityLevel, string> = {
-    excellent: "text-emerald-400",
-    good: "text-amber-400",
-    poor: "text-red-400",
+    excellent: "text-blue-400",
+    good: "text-violet-400",
+    poor: "text-white/50",
     unknown: "text-white/30",
   };
 

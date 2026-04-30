@@ -67,7 +67,7 @@ export function SessionsList({
                 Rating
               </th>
               <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
-                AI Package
+                Quest Package
               </th>
             </tr>
           </thead>

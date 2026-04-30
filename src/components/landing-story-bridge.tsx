@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { SparklesCore } from "@/components/ui/sparkles";
 
 type Props = {
   chapter: string;
@@ -41,6 +42,19 @@ export function LandingStoryBridge({ chapter, title, subtitle }: Props) {
       aria-label={`${chapter} transition`}
     >
       <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:108px_108px] bg-repeat opacity-[0.055]" />
+      
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <SparklesCore
+          id={`sparkles-${chapter.replace(/\s+/g, '-')}`}
+          background="transparent"
+          minSize={0.4}
+          maxSize={1.2}
+          particleDensity={60}
+          className="h-full w-full"
+          particleColor="#60A5FA"
+          speed={1}
+        />
+      </div>
 
       <div
         className={cn(

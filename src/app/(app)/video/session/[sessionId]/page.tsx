@@ -99,7 +99,7 @@ export default async function VideoSessionPage({
   const adminClient = createAdminClient();
   const { data: sessionRow } = await adminClient
     .from("sessions")
-    .select("course, student_id, tutor_id, start_time")
+    .select("course, student_id, tutor_id, start_time, end_time")
     .eq("id", sessionId)
     .single();
 
@@ -130,6 +130,7 @@ export default async function VideoSessionPage({
       learnerLabel={learnerLabel}
       guideLabel={guideLabel}
       sessionStartTime={sessionRow?.start_time ?? null}
+      sessionEndTime={sessionRow?.end_time ?? null}
     />
   );
 }

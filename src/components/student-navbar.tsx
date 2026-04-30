@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
+import { onXpAward } from "@/lib/xp-events";
 import type { AuthUser } from "@/lib/auth";
 import {
   Navbar,
@@ -18,6 +19,9 @@ import {
 } from "@/components/ui/resizable-navbar";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
+import { XpCounter } from "@/components/xp-counter";
+import { BubbleText } from "@/components/ui/bubble-text";
+import { SecurityShield } from "@/components/security/SecurityShield";
 
 const STUDENT_NAV_ITEMS = [
   { name: "Sessions", link: "/student" },
@@ -84,8 +88,34 @@ interface StudentNavbarProps {
 export function StudentNavbar({ user }: StudentNavbarProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [totalXp, setTotalXp] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+
+  // Fetch current XP on mount
+  useEffect(() => {
+    const fetchXp = async () => {
+      try {
+        const res = await fetch("/api/student/pwa-context", { credentials: "include" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { totalXp?: number };
+        setTotalXp(data.totalXp ?? 0);
+      } catch (e) {
+        console.error("[StudentNavbar] failed to fetch XP", e);
+      }
+    };
+    void fetchXp();
+  }, []);
+
+  // Listen for XP awards and update total
+  useEffect(() => {
+    const unsubscribe = onXpAward((event) => {
+      if (event.totalXp != null) {
+        setTotalXp(event.totalXp);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -132,12 +162,22 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
             onItemClick={() => setMobileNavOpen(false)}
           />
 
+          {/* XP Counter & Security Status */}
+          <div className="ml-4 flex items-center gap-4">
+            <div className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition">
+              <XpCounter totalXp={totalXp} />
+            </div>
+            <div className="hidden lg:block px-2 py-1 rounded-full bg-white/5 border border-white/5 hover:border-white/10 transition">
+              <SecurityShield />
+            </div>
+          </div>
+
           {/* Profile Menu */}
           <div ref={menuRef} className="relative ml-auto flex-shrink-0">
             <button
               type="button"
               onClick={toggleProfileMenu}
-              className="flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-white/10"
+              className="flex items-center gap-2 rounded-full px-3 py-1.5 transition hover:bg-white/10"
               aria-label="Open profile menu"
               aria-expanded={profileMenuOpen}
             >
@@ -145,11 +185,15 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
             </button>
 
             {profileMenuOpen && (
-              <div className="absolute right-0 top-full z-[90] mt-2 min-w-[200px] overflow-hidden rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] pointer-events-auto">
+              <div className="absolute right-0 top-full z-50 mt-2 min-w-[240px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_40px_-20px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                  <MentrixaLogoMark size="sm" className="shrink-0" />
+                  <MentrixaWordmark trixaClassName="text-slate-900 text-xs" />
+                </div>
                 <Link
                   href={profileHref}
                   onClick={() => setProfileMenuOpen(false)}
-                  className="block min-h-11 px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
+                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
                   View Profile
                 </Link>
@@ -159,7 +203,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                     setProfileMenuOpen(false);
                     await signOut();
                   }}
-                  className="w-full border-t border-white/10 px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:bg-white/10 hover:text-white"
+                  className="w-full border-t border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
                   Sign Out
                 </button>
@@ -180,7 +224,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 <button
                   type="button"
                   onClick={toggleProfileMenu}
-                  className="flex items-center justify-center rounded-full border border-white/15 bg-white/5 p-1.5 transition hover:bg-white/15"
+                  className="flex items-center justify-center rounded-full p-1 transition hover:bg-white/10"
                   aria-label="Open profile menu"
                   aria-expanded={profileMenuOpen}
                 >
@@ -192,14 +236,18 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
 
             {/* Mobile Profile Menu */}
             {profileMenuOpen && (
-              <div className="absolute right-0 top-full z-[90] mt-2 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-white/20 bg-gradient-to-b from-[#1a3a52] to-[#0d1c35] shadow-[0_10px_40px_-20px_rgba(0,0,0,0.8)] pointer-events-auto">
+              <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_40px_-20px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                  <MentrixaLogoMark size="sm" className="shrink-0" />
+                  <MentrixaWordmark trixaClassName="text-slate-900 text-xs" />
+                </div>
                 <Link
                   href={profileHref}
                   onClick={() => {
                     setProfileMenuOpen(false);
                     setMobileNavOpen(false);
                   }}
-                  className="block min-h-11 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 hover:text-white"
+                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
                   View Profile
                 </Link>
@@ -210,7 +258,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                     setMobileNavOpen(false);
                     await signOut();
                   }}
-                  className="w-full border-t border-white/10 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/10 hover:text-white"
+                  className="w-full border-t border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
                   Sign Out
                 </button>
@@ -230,7 +278,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                       : "text-white/95 hover:bg-white/8 hover:text-white"
                   )}
                 >
-                  {item.name}
+                  <BubbleText text={item.name} className="text-current" />
                 </Link>
               ))}
             </MobileNavMenu>

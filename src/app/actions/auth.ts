@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getRoleHomePath } from "@/lib/role-home";
+import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
 import {
   OAUTH_INTENT_COOKIE,
   OAUTH_ROLE_COOKIE,
@@ -101,7 +101,8 @@ export async function applyRoleAndSyncProfile(
 
   const approved = !waitlistEnabled || waitlistStatus === "approved" || (role === "student" && autoApprove);
 
-  const { error: uErr } = await supabase
+  const admin = createAdminClient();
+  const { error: uErr } = await admin
     .from("users")
     .update({
       role,
@@ -253,7 +254,7 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
   } else if (intent === "signup") {
     await clearOAuthCookies();
     if (existingRole && existingApproved) {
-      return getRoleHomePath(existingRole);
+      return getPostApprovalRedirectPath({ userId: user.id, role: existingRole });
     }
     return "/auth/select-role";
   } else if (intent === "signin") {
@@ -278,7 +279,7 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
     return "/pending-approval";
   }
 
-  return getRoleHomePath(userData.role);
+  return getPostApprovalRedirectPath({ userId: user.id, role: userData.role });
 }
 
 /** After GIS `signInWithIdToken` (no Supabase OAuth redirect). */

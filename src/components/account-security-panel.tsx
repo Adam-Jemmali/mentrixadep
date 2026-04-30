@@ -64,103 +64,112 @@ export function AccountSecurityPanel({ className }: { className?: string }) {
     }
   }
 
-  return (
-    <section className={cn("mt-8 rounded-md border border-slate-200 bg-white p-5 sm:p-6", className)}>
-      <h2 className="text-sm font-semibold text-slate-900">Account security</h2>
-      <p className="mt-1 text-xs text-slate-500">
-        Manage your sign-in password and permanently delete your account.
-      </p>
+  const inputClasses = "mt-2 border-indigo-100 bg-indigo-50/20 text-indigo-900 placeholder:text-slate-400 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl h-11";
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+  return (
+    <section className={cn("mt-8 rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-[0_20px_50px_-12px_rgba(79,70,229,0.08)]", className)}>
+      <div className="flex items-center gap-3 mb-8">
+
+        <h2 className="text-xs font-black uppercase tracking-[0.25em] text-indigo-950">Identity Encryption</h2>
+      </div>
+
+      <div className="grid gap-8 sm:grid-cols-3">
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Current password</label>
+          <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-indigo-400">Current Cipher</label>
           <Input
             type="password"
             value={currentPw}
             onChange={(e) => setCurrentPw(e.target.value)}
             autoComplete="current-password"
             placeholder="Current password"
+            className={inputClasses}
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">New password</label>
+          <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-indigo-400">New Cipher</label>
           <Input
             type="password"
             value={newPw}
             onChange={(e) => setNewPw(e.target.value)}
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder="8+ characters"
+            className={inputClasses}
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Confirm new password</label>
+          <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-indigo-400">Verify Cipher</label>
           <Input
             type="password"
             value={confirmPw}
             onChange={(e) => setConfirmPw(e.target.value)}
             autoComplete="new-password"
-            placeholder="Re-enter new password"
+            placeholder="Verify new password"
+            className={inputClasses}
           />
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-8 flex items-center gap-6">
         <Button
           type="button"
-          variant="outline"
           onClick={() => void handlePasswordChange()}
           disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+          className="h-12 min-w-[200px] rounded-2xl bg-indigo-600 text-xs font-black uppercase italic tracking-widest text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all"
         >
-          {pwSaving ? "Updating..." : "Update password"}
+          {pwSaving ? "Encrypting..." : "Update Cycpher"}
         </Button>
         {pwMsg ? (
-          <span className={cn("text-sm font-medium", pwMsg.type === "ok" ? "text-emerald-700" : "text-red-700")}>
+          <span className={cn("text-[11px] font-black uppercase italic tracking-widest", pwMsg.type === "ok" ? "text-emerald-600" : "text-red-600")}>
             {pwMsg.text}
           </span>
         ) : null}
       </div>
 
-      <div className="mt-6 border-t border-red-100 pt-4">
-        <h3 className="text-sm font-semibold text-red-700">Danger zone</h3>
-        <p className="mt-1 text-xs text-red-700/80">
-          Deleting your account is permanent and removes your profile, sessions, ratings, and XP data.
+      <div className="mt-10 border-t border-red-50 pt-8">
+        <div className="flex items-center gap-3 mb-4">
+      
+           <h3 className="text-xs font-black uppercase tracking-[0.25em] text-red-600">Termination Protocol</h3>
+        </div>
+        <p className="text-[11px] leading-relaxed text-red-800/60 italic max-w-xl">
+          Initiating account termination is permanent. All XP data, battle history, and identity records will be purged.
         </p>
 
         {!deleteArmed ? (
           <Button
             type="button"
             variant="outline"
-            className="mt-3 border-red-200 text-red-700 hover:bg-red-50"
+            className="mt-6 border-red-200 bg-red-50/50 text-red-600 hover:bg-red-100 hover:text-red-700 text-[10px] font-black uppercase tracking-widest h-11 px-8 rounded-2xl"
             onClick={() => {
               setDeleteArmed(true);
               setDeleteError(null);
             }}
           >
-            Delete my account
+            Purge Identity
           </Button>
         ) : (
-          <div className="mt-3 space-y-3">
+          <div className="mt-8 space-y-5 max-w-sm rounded-3xl border border-red-100 bg-red-50/30 p-6">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-red-700">Type DELETE to confirm</label>
+              <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-red-600">Authorization Key</label>
               <Input
                 value={deletePhrase}
                 onChange={(e) => setDeletePhrase(e.target.value)}
-                placeholder="DELETE"
-                className="border-red-200"
+                placeholder="Type DELETE"
+                className="border-red-200 bg-white text-red-900 placeholder:text-red-200 h-11 rounded-xl"
               />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
-                className="bg-red-600 text-white hover:bg-red-700"
+                className="h-11 bg-red-600 text-[10px] font-black uppercase tracking-widest text-white hover:bg-red-700 shadow-lg shadow-red-600/20 px-6 rounded-xl"
                 onClick={() => void handleDeleteAccount()}
                 disabled={deleting || !canDelete}
               >
-                {deleting ? "Deleting..." : "Permanently delete account"}
+                {deleting ? "Purging..." : "Execute Purge"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
+                className="h-11 border-indigo-100 bg-white text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:bg-indigo-50 px-6 rounded-xl"
                 onClick={() => {
                   setDeleteArmed(false);
                   setDeletePhrase("");
@@ -168,10 +177,10 @@ export function AccountSecurityPanel({ className }: { className?: string }) {
                 }}
                 disabled={deleting}
               >
-                Cancel
+                Abort
               </Button>
             </div>
-            {deleteError ? <p className="text-sm text-red-700">{deleteError}</p> : null}
+            {deleteError ? <p className="text-[11px] font-bold text-red-600 uppercase italic tracking-widest">{deleteError}</p> : null}
           </div>
         )}
       </div>

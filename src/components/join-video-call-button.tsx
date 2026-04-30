@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface JoinVideoCallButtonProps {
   sessionId: string;
   startTime: string;
   endTime: string;
+  className?: string;
 }
 
 /** Join is available immediately after booking; remains available through 24h after end (wrap-up). */
-export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideoCallButtonProps) {
+export function JoinVideoCallButton({ sessionId, startTime, endTime, className }: JoinVideoCallButtonProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [phase, setPhase] = useState<"open" | "ended">("open");
@@ -51,7 +53,7 @@ export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideo
 
   if (!isMounted) {
     return (
-      <Button size="sm" disabled className="min-w-[120px]">
+      <Button size="sm" disabled className={cn("min-w-[120px]", className)}>
         Join session
       </Button>
     );
@@ -59,7 +61,7 @@ export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideo
 
   if (phase === "ended") {
     return (
-      <Button size="sm" variant="outline" disabled className="min-w-[120px]">
+      <Button size="sm" variant="outline" disabled className={cn("min-w-[120px]", className)}>
         Session ended
       </Button>
     );
@@ -70,7 +72,7 @@ export function JoinVideoCallButton({ sessionId, startTime, endTime }: JoinVideo
       size="sm"
       onClick={handleJoin}
       disabled={isChecking}
-      className="min-w-[120px] bg-slate-900 hover:bg-slate-800"
+      className={cn("min-w-[120px] bg-slate-900 hover:bg-slate-800", className)}
     >
       {isChecking ? "Joining…" : "Join session"}
     </Button>

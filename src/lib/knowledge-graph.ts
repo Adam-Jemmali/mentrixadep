@@ -266,7 +266,7 @@ export interface NextStepRecommendation {
   topic: string;
   subtopic: string;
   masteryScore: number;
-  reason: "weakest" | "almost_mastered" | "new_territory";
+  reason: "almost_mastered" | "new_territory";
   estimatedSessions: number;
 }
 
@@ -296,20 +296,7 @@ export function buildNextStepRecommendations(
     });
   };
 
-  // 1. Weakest per subject
-  const bySubject = new Map<string, KnowledgeNode[]>();
-  for (const n of nodes) {
-    if (!bySubject.has(n.subject)) bySubject.set(n.subject, []);
-    bySubject.get(n.subject)!.push(n);
-  }
-  for (const [, subjectNodes] of bySubject) {
-    const weakest = subjectNodes
-      .filter((n: KnowledgeNode) => n.masteryScore < 90)
-      .sort((a: KnowledgeNode, b: KnowledgeNode) => a.masteryScore - b.masteryScore)[0];
-    if (weakest) add(weakest, "weakest");
-  }
-
-  // 2. Almost mastered (60-89 range, closest to 90)
+  // 1. Almost mastered (60-89 range, closest to 90)
   const almostMastered = nodes
     .filter((n) => n.masteryScore >= 60 && n.masteryScore < 90)
     .sort((a, b) => b.masteryScore - a.masteryScore);

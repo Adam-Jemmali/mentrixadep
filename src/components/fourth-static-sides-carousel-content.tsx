@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { BubbleText } from "@/components/ui/bubble-text";
+import { Typewriter } from "@/components/ui/typewriter";
 
 const ICON_VERSION = "20260410";
 
@@ -13,24 +15,24 @@ const SIDES = [
     title: "You came here to get better",
     points: [
       "Search your exact course. Every Guide you see is verified and available. No guessing. No waiting for a reply.",
-      "You meet live. Screen share the problem. Your Guide does not tell you the answer. They show you how to get there.",
+      "You meet live. Screen share. Draw log functions :D.  Your Guide is here to prove what you know.",
       "Quest, duels, and your division rank track every improvement. The Mentrixer who books consistently does not plateau. They compound.",
     ],
     cta: "Claim my spot as a Mentrixer",
     href: "/auth/signup",
-    tone: "emerald",
+    tone: "blue",
   },
   {
     role: "Guide",
     title: "Your knowledge is worth more than you are charging for it",
     points: [
       "You set your availability, your subjects, your rate. You accept only the sessions you want. Nothing runs without your approval.",
-      "tripe deposits your earnings after every session. You do not invoice anyone. You do not follow up. You teach and you get paid.",
-      "Quest generates your session package. You review, adjust, and send. What used to take 30 minutes of manual notes takes 3.",
+      "Stripe deposits your earnings after every session. You teach and you get paid.",
+      "Quest generates your session package. You review, adjust, and send.",
     ],
     cta: "Apply to teach on Mentrixa",
     href: "/auth/signup?role=tutor",
-    tone: "blue",
+    tone: "violet",
   },
 ] as const;
 
@@ -220,8 +222,8 @@ export function FourthStaticSidesCarouselContent() {
 
         <div className="relative z-10 mx-auto flex min-h-[84vh] w-full max-w-7xl flex-col px-5 py-8 md:px-8 md:py-10">
           <div className="mx-auto mb-5 max-w-3xl text-center">
-            <h2 id="path" className="text-[clamp(22px,3.2vw,34px)] font-bold tracking-[-0.03em] text-white">
-              Which side of the session are you on?
+            <h2 id="path" className="text-[clamp(22px,3.2vw,34px)] font-bold tracking-[-0.03em] text-white h-[40px]">
+              <Typewriter text="Which side of the session are you on?" speed={50} waitTime={4000} />
             </h2>
             <p className="mt-2 text-[13px] text-slate-200/80">Choose a side and start there.</p>
           </div>
@@ -240,7 +242,7 @@ export function FourthStaticSidesCarouselContent() {
                   )}
                 >
                   <RoleIcon role={side.role} className={cn("h-3 w-3", active ? "" : "brightness-0 invert")} />
-                  {side.role}
+                  <BubbleText text={side.role} activeColor="text-current" neighborColor="text-current" />
                 </button>
               );
             })}
@@ -248,7 +250,7 @@ export function FourthStaticSidesCarouselContent() {
 
           <div className="grid flex-1 items-start gap-4 md:grid-cols-2 md:gap-5">
             {SIDES.map((side) => {
-              const isMentrixer = side.tone === "emerald";
+              const isMentrixer = side.tone === "blue";
               const active = selectedRole === side.role;
               return (
                 <article
@@ -259,7 +261,7 @@ export function FourthStaticSidesCarouselContent() {
                     "relative cursor-pointer overflow-hidden rounded-2xl border p-6 backdrop-blur-sm transition-all duration-500",
                     active ? "scale-[1.01] ring-1 ring-white/30" : "scale-[0.98] opacity-80",
                     isMentrixer
-                      ? "border-emerald-400/35 bg-gradient-to-br from-emerald-950/55 via-slate-950/45 to-slate-900/55 shadow-2xl shadow-emerald-950/30"
+                      ? "border-blue-400/35 bg-gradient-to-br from-blue-950/55 via-slate-950/45 to-slate-900/55 shadow-2xl shadow-blue-950/30"
                       : "border-violet-400/35 bg-gradient-to-br from-violet-950/55 via-violet-900/45 to-slate-950/55 shadow-2xl shadow-violet-950/30"
                   )}
                 >
@@ -269,17 +271,19 @@ export function FourthStaticSidesCarouselContent() {
                   <p
                     className={cn(
                       "inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em]",
-                      isMentrixer ? "text-emerald-300" : "text-violet-300"
+                      isMentrixer ? "text-blue-300" : "text-violet-300"
                     )}
                   >
                     <RoleIcon role={side.role} className={cn("h-3 w-3", isMentrixer ? "" : "brightness-0 invert")} />
                     {side.role}
                   </p>
-                  <h3 className="mt-2 text-[19px] font-bold text-white">{side.title}</h3>
+                  <h3 className="mt-2 text-[19px] font-bold text-white h-[56px]">
+                    <Typewriter text={side.title} speed={40} waitTime={5000} />
+                  </h3>
                   <ul className="mt-4 space-y-2.5 text-[13px] text-slate-200/95">
                     {side.points.map((point) => (
                       <li key={point} className="flex gap-2.5">
-                        <Check className={isMentrixer ? "mt-0.5 text-emerald-300" : "mt-0.5 text-violet-300"} />
+                        <Check className={isMentrixer ? "mt-0.5 text-blue-300" : "mt-0.5 text-violet-300"} />
                         {point}
                       </li>
                     ))}

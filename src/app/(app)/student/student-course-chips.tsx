@@ -70,8 +70,8 @@ export function StudentCourseChips({
           className={cn(
             "min-h-11 w-full rounded-full px-3.5 py-2 text-xs font-semibold transition-colors border-2 sm:w-auto",
             selectedCourse === "all"
-              ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-500/20"
-              : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200",
+              ? "border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+              : "border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-200",
           )}
         >
           All
@@ -84,8 +84,8 @@ export function StudentCourseChips({
             className={cn(
               "inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors border-2 sm:w-auto sm:justify-start",
               selectedCourse === c.course_name
-                ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                : "border-slate-200 bg-white text-slate-700 hover:border-blue-200",
+                ? "border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                : "border-slate-200 bg-white text-slate-700 hover:border-indigo-200",
             )}
           >
             {c.course_name}
@@ -122,7 +122,7 @@ export function StudentCourseChips({
           type="submit"
           size="sm"
           disabled={loading}
-          className="h-11 rounded-full bg-blue-600 px-5 font-semibold text-white hover:bg-blue-500 sm:w-auto"
+          className="h-11 rounded-full bg-indigo-600 px-5 font-semibold text-white hover:bg-indigo-500 sm:w-auto"
         >
           {loading ? "Adding…" : "Add"}
         </Button>

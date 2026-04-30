@@ -9,7 +9,6 @@ import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatTimeRangeInZone } from "@/lib/time-format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -178,7 +177,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                                 onClick={() => setDeleteId(slot.id)}
                               >
                                 <span className="inline-flex items-center gap-1.5">
-                                  <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                                  <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3" />
                                   Delete
                                 </span>
                               </Button>
@@ -213,7 +212,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" size="sm" onClick={() => setDeleteId(null)}>
               <span className="inline-flex items-center gap-1.5">
-                <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3" />
                 Cancel
               </span>
             </Button>
@@ -225,7 +224,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
               onClick={() => void confirmDelete()}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Image src={MENTRIXA_LOGO_PNG} alt="" width={12} height={12} className="h-3 w-3" />
+                <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3" />
                 Delete slot
               </span>
             </Button>

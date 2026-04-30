@@ -273,7 +273,7 @@ export function ShareScoreCardButton({
 
       ctx.fillStyle = "rgba(226,232,240,0.95)";
       ctx.font = "600 20px system-ui, sans-serif";
-      ctx.fillText("Progress worth posting.", 160, 124);
+      ctx.fillText("Progress worth posting !", 160, 124);
 
       ctx.fillStyle = "rgba(255,255,255,0.94)";
       ctx.font = "700 30px system-ui, sans-serif";
@@ -301,7 +301,7 @@ export function ShareScoreCardButton({
 
       ctx.fillStyle = "rgba(125,211,252,0.96)";
       ctx.font = "700 20px system-ui, sans-serif";
-      ctx.fillText("Replay now. Keep your edge.", 84, h - 52);
+      ctx.fillText("Replay now. Keep your edge. You proved what you know!", 84, h - 52);
 
       ctx.font = "600 18px system-ui, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,0.62)";

@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
-import { getRoleHomePath } from "@/lib/role-home";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
+import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
 
 const OTP_TYPES = [
   "signup",
@@ -44,7 +44,7 @@ async function resolvePostAuthDestination(): Promise<string> {
 
   const accessStatus = normalizeAccessStatus(userRow);
   if (accessStatus === "approved") {
-    return getRoleHomePath(userRow.role);
+    return getPostApprovalRedirectPath({ userId: user.id, role: userRow.role });
   }
   if (accessStatus === "suspended") {
     return "/suspended";

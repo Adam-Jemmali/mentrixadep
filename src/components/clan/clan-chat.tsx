@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { trackClientEvent } from "@/lib/use-track";
-import { postClanMessage, type ClanMessageRow } from "@/app/actions/clan-dashboard";
-import { Button } from "@/components/ui/button";
+import { postClanMessage, type ClanMessageRow, type ClanDashboardPayload } from "@/app/actions/clan-dashboard";
 import { Input } from "@/components/ui/input";
+import { Send } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -23,38 +25,34 @@ type Props = {
   clanId: string;
   initialMessages: ClanMessageRow[];
   currentUserId: string;
+  members: ClanDashboardPayload["members"];
 };
 
 function formatChatTime(iso: string): string {
   try {
-    const parts = new Intl.DateTimeFormat("en-US", {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-      timeZone: "UTC",
-    }).formatToParts(new Date(iso));
-
-    const hour = parts.find((p) => p.type === "hour")?.value ?? "";
-    const minute = parts.find((p) => p.type === "minute")?.value ?? "";
-    const dayPeriod =
-      (parts.find((p) => p.type === "dayPeriod")?.value ?? "").replace(/\./g, "").toUpperCase();
-
-    if (hour && minute && dayPeriod) {
-      return `${hour}:${minute} ${dayPeriod}`;
-    }
-
-    return new Date(iso).toISOString().replace("T", " ").slice(11, 16) + " UTC";
+    });
   } catch {
-    return iso;
+    return "";
   }
 }
 
-export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
+export function ClanChat({ clanId, initialMessages, currentUserId, members }: Props) {
   const [items, setItems] = useState<ClanMessageRow[]>(initialMessages);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const memberMap = useMemo(() => {
+    const m = new Map<string, typeof members[0]>();
+    for (const mem of members) m.set(mem.user_id, mem);
+    return m;
+  }, [members]);
 
   useEffect(() => {
     setItems(initialMessages);
@@ -84,12 +82,15 @@ export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
             created_at?: string;
           };
           if (!n.id || !n.user_id || !n.body || !n.created_at) return;
+          
+          const mem = memberMap.get(n.user_id);
           const row: ClanMessageRow = {
             id: n.id,
             user_id: n.user_id,
             body: n.body,
             created_at: n.created_at,
-            display_name: null,
+            display_name: mem?.display_name ?? null,
+            avatar_url: mem?.avatar_url ?? null,
           };
           setItems((prev) => {
             if (prev.some((p) => p.id === row.id)) return prev;
@@ -117,7 +118,7 @@ export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [clanId]);
+  }, [clanId, memberMap]);
 
   async function send() {
     const t = text.trim();
@@ -134,77 +135,101 @@ export function ClanChat({ clanId, initialMessages, currentUserId }: Props) {
   }
 
   return (
-    <div className="flex flex-col rounded-lg border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 px-4 py-3">
-        <h3 className="text-sm font-medium text-slate-900">Clan chat</h3>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Real-time — only your clan sees this thread.
-        </p>
+    <div className="flex flex-col h-full bg-white">
+      <div className="pb-6 border-b border-slate-50 flex items-center justify-between">
+        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">
+          Clan Chat
+        </h3>
+        <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest">Live Thread</span>
       </div>
-      <div className="flex max-h-[min(420px,50vh)] flex-col">
-        <div className="min-h-[200px] flex-1 space-y-3 overflow-y-auto px-4 py-3">
+      
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto no-scrollbar py-6 space-y-8">
           <AnimatePresence initial={false}>
             {items.map((m) => {
               const mine = m.user_id === currentUserId;
-              const label =
-                m.display_name?.trim() ||
-                `Learner ${m.user_id.slice(0, 6)}`;
+              const label = m.display_name?.trim() || `Mentrixer ${m.user_id.slice(0, 6)}`;
               const time = formatChatTime(m.created_at);
+              
               return (
                 <motion.div
                   key={m.id}
                   layout
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className={`flex flex-col gap-0.5 ${mine ? "items-end" : "items-start"}`}
+                  className={cn(
+                    "flex gap-3",
+                    mine ? "flex-row-reverse items-start text-right" : "flex-row items-start text-left"
+                  )}
                 >
-                  <div
-                    className={`max-w-[92%] rounded-md px-3 py-2 text-sm ${
-                      mine
-                        ? "bg-slate-900 text-white"
-                        : "bg-slate-100 text-slate-900"
-                    }`}
-                  >
-                    {!mine && (
-                      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500 mb-1">
-                        {label}
-                      </p>
+                  <div className="relative h-8 w-8 shrink-0 mt-1">
+                    {m.avatar_url ? (
+                      <Image src={m.avatar_url} alt="" fill unoptimized className="object-cover rounded-full" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-50 rounded-full text-[10px] font-bold text-slate-300">
+                        {label[0]}
+                      </div>
                     )}
-                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
                   </div>
-                  <span className="text-[10px] text-slate-400 tabular-nums">
-                    {time}
-                  </span>
+
+                  <div className={cn("flex flex-col gap-1.5 max-w-[80%]", mine ? "items-end" : "items-start")}>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">
+                         {label}
+                       </span>
+                       <span className="text-[8px] font-bold text-slate-200 uppercase tracking-widest">
+                         {time}
+                       </span>
+                    </div>
+                    <div className={cn(
+                      "px-4 py-2.5 rounded-2xl text-xs font-medium leading-relaxed break-words whitespace-pre-wrap transition-all",
+                      mine 
+                        ? "bg-slate-900 text-white rounded-tr-none shadow-lg shadow-slate-900/10" 
+                        : "bg-slate-50 text-slate-600 rounded-tl-none"
+                    )}>
+                      {m.body}
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}
           </AnimatePresence>
           <div ref={bottomRef} />
         </div>
+
         {error && (
-          <p className="px-4 text-xs text-red-600">{error}</p>
+          <p className="py-2 text-[9px] font-bold text-red-400 uppercase tracking-wider">{error}</p>
         )}
+
         <form
-          className="flex gap-2 border-t border-slate-100 p-3"
+          className="pt-4"
           onSubmit={(e) => {
             e.preventDefault();
             void send();
           }}
         >
-          <Input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Write a message…"
-            maxLength={2000}
-            className="text-sm"
-            disabled={sending}
-          />
-          <Button type="submit" size="sm" disabled={sending || !text.trim()}>
-            {sending ? "…" : "Send"}
-          </Button>
+          <div className="relative group">
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Message..."
+              maxLength={2000}
+              className="bg-slate-50 border-none h-12 rounded-xl text-slate-900 pl-4 pr-12 transition-all placeholder:text-slate-300 text-xs font-bold"
+              disabled={sending}
+            />
+            <button
+              type="submit"
+              disabled={sending || !text.trim()}
+              className="absolute right-2 top-1.5 p-2 text-slate-200 hover:text-slate-900 transition-all"
+            >
+               <Send size={16} />
+            </button>
+          </div>
         </form>
       </div>
     </div>
   );
 }
+
+
+

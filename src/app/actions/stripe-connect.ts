@@ -8,6 +8,7 @@ import { getSiteUrl } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { PLATFORM_FEE_BPS } from "@/lib/booking-pricing";
 import { formatStripeConnectError } from "@/lib/stripe-connect-errors";
+import { validateUUID } from "@/lib/security";
 
 const TUTOR_SHARE_BPS = 10_000 - PLATFORM_FEE_BPS;
 const STRIPE_ACCOUNT_ID_TEST_COLUMN = "stripe_account_id_test" as const;
@@ -66,6 +67,7 @@ async function setStripeAccountIdForCurrentMode(admin: AdminClient, userId: stri
 }
 
 export async function resolveStoredStripeAccountId(userId: string, adoptLegacy = true): Promise<string | null> {
+  validateUUID(userId);
   const admin = createAdminClient();
   const row = await loadStripeAccountRow(admin, userId);
   const stripe = getStripe();
@@ -266,13 +268,13 @@ function buildOnboardingGuide(account: Stripe.Account | null): ConnectStatus["on
       key: "personal",
       label: "Add personal details",
       done: !hasPersonal,
-      details: hasPersonal ? "Use your real legal name, date of birth, and ID details." : undefined,
+      details: hasPersonal ? "Use your real legal name, date of birth and ID details." : undefined,
     },
     {
       key: "business",
       label: "Choose Individual / Sole proprietor",
       done: !hasBusiness,
-      details: hasBusiness ? "You do not need a company. Pick Individual or Sole proprietor." : undefined,
+      details: hasBusiness ? "When asked to fill company, write your porfolio's name and website as the company." : undefined,
     },
     {
       key: "bank",
@@ -348,6 +350,7 @@ export async function openStripeConnectOrDashboard(): Promise<{ url: string }> {
 }
 
 export async function refreshConnectStatus(tutorId?: string): Promise<ConnectStatus> {
+  if (tutorId) validateUUID(tutorId);
   const user = await requireRole(["tutor", "admin"]);
   const actingId = tutorId ?? user.id;
   const admin = createAdminClient();
@@ -470,6 +473,7 @@ export async function applyStripeAccountWebhookUpdate(account: Stripe.Account): 
 }
 
 export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<PayoutDashboardData> {
+  if (tutorIdOverride) validateUUID(tutorIdOverride);
   const fallback: PayoutDashboardData = {
     connectStatus: {
       hasAccount: false,
@@ -651,6 +655,7 @@ export async function triggerManualPayout(amountCents?: number): Promise<{ url: 
 }
 
 export async function transferSessionPayout(ledgerRowId: string): Promise<void> {
+  validateUUID(ledgerRowId);
   const admin = createAdminClient();
 
   const { data: ledger } = await admin
@@ -700,15 +705,54 @@ export async function transferSessionPayout(ledgerRowId: string): Promise<void> 
     }
   }
 
-  console.warn(
-    `[connect] ledger ${ledgerRowId}: no destination charge on session — Connect marketplace expects stripe_destination_charge; leaving row pending.`,
-  );
+  // Actual payout transfer logic for sessions that were NOT destination charges
+  // (i.e. the student paid Mentrixa directly and we now move the tutor's share)
+  const stripeAccountId = await resolveStoredStripeAccountId(ledger.tutor_id, true);
+  if (!stripeAccountId) {
+    console.warn(`[connect] ledger ${ledgerRowId}: tutor ${ledger.tutor_id} has no Stripe account; cannot pay out.`);
+    return;
+  }
+
+  const stripe = getStripe();
+  try {
+    const transfer = await stripe.transfers.create({
+      amount: ledger.net_cents,
+      currency: "cad",
+      destination: stripeAccountId,
+      description: `Payout for ${ledger.course || "session"} (ID: ${ledger.session_id || "N/A"})`,
+      metadata: {
+        ledger_id: ledger.id,
+        tutor_id: ledger.tutor_id,
+        session_id: ledger.session_id,
+      },
+    });
+
+    await admin
+      .from("tutor_payout_ledger")
+      .update({
+        status: "transferred",
+        transfer_id: transfer.id,
+        transferred_at: new Date().toISOString(),
+      })
+      .eq("id", ledgerRowId)
+      .in("status", ["pending", "held"]);
+
+    if (ledger.session_id) {
+      await admin.from("sessions").update({ payout_status: "transferred" }).eq("id", ledger.session_id);
+    }
+
+    console.log(`[connect] ledger ${ledgerRowId}: payout of ${ledger.net_cents} CAD transferred to ${stripeAccountId}`);
+  } catch (err) {
+    console.error(`[connect] ledger ${ledgerRowId}: Stripe transfer failed:`, err);
+    throw err;
+  }
 }
 
 export async function retryPendingTransfersForTutor(tutorId: string): Promise<{
   scanned: number;
   errors: number;
 }> {
+  validateUUID(tutorId);
   const admin = createAdminClient();
   const { data: rows } = await admin
     .from("tutor_payout_ledger")

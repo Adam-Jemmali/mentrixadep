@@ -101,7 +101,7 @@ export default function SignInPage() {
       <GoogleSignInButton variant="signin" />
 
       {passwordReset && (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 text-center">
+        <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 text-center">
           ✓ Password updated successfully. Please sign in with your new password.
         </div>
       )}

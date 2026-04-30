@@ -5,6 +5,9 @@ import { getMyClan } from "@/app/actions/clan";
 import { Button } from "@/components/ui/button";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { ClanBrowseClient } from "./clan-browse-client";
+import { Typewriter } from "@/components/ui/typewriter";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { BackButton } from "@/components/ui/back-button";
 
 export const metadata = { title: "Clans · Mentrixa" };
 
@@ -15,10 +18,15 @@ export default async function StudentClanHubPage() {
   return (
     <div className={mentrixStudent.pageBg}>
       <main className={mentrixStudent.mainSlim}>
+        <div className="mb-6">
+          <BackButton />
+        </div>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className={mentrixStudent.sectionEyebrow}>Squad up</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Clans</h1>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 h-[32px]">
+              <Typewriter text="Clans" speed={70} waitTime={8000} />
+            </h1>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-600">
               Team with other Mentrixers, track weekly momentum, and coordinate in clan chat.
             </p>
@@ -28,14 +36,14 @@ export default async function StudentClanHubPage() {
               <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={13} height={13} />
               Mentrixer
             </span>
-            <Button asChild size="sm" className="rounded-full bg-blue-600 font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-500">
+            <Button asChild size="sm" className="rounded-full bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-500/20 hover:bg-indigo-500">
               <Link href="/student/clan/create">Create a clan</Link>
             </Button>
           </div>
         </div>
 
         {my.clan ? (
-          <div className={`${mentrixStudent.card} mt-8 p-5`}>
+          <TiltCard tiltLimit={5} scale={1.02} className={`${mentrixStudent.card} mt-8 p-5 block`}>
             <p className="text-sm text-slate-600">
               You’re in{" "}
               <span className="font-bold text-slate-900">{my.clan.name}</span>
@@ -44,7 +52,7 @@ export default async function StudentClanHubPage() {
             <Button className="mt-4 rounded-full font-semibold" size="sm" asChild>
               <Link href={`/student/clan/${my.clan.id}`}>Open clan dashboard</Link>
             </Button>
-          </div>
+          </TiltCard>
         ) : null}
 
         <div className="mt-10">

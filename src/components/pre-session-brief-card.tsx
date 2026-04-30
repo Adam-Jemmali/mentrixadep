@@ -127,7 +127,7 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
           {isImminent ? "get ready" : "away"}
         </span>
         <span className="ml-auto font-mono text-[10px] tracking-wide opacity-60">
-          AI BRIEF
+          Quest BRIEF
         </span>
       </div>
 

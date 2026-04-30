@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useTrack } from "@/lib/use-track";
+import PricingSection from "@/components/ui/pricing";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import {
   Navbar,
@@ -58,14 +59,6 @@ const ArrowRight = memo(function ArrowRight() {
   );
 });
 
-const Check = memo(function Check({ className = "" }: { className?: string }) {
-  return (
-    <svg className={`w-4 h-4 shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-    </svg>
-  );
-});
-
 const RoleIcon = memo(function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
   return (
     <Image
@@ -80,26 +73,6 @@ const RoleIcon = memo(function RoleIcon({ role, className = "" }: { role: "mentr
   );
 });
 
-const WatermarkRoleIcon = memo(function WatermarkRoleIcon({ role }: { role: "mentrixer" | "guide" }) {
-  return (
-    <Image
-      src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
-      alt=""
-      width={128}
-      height={128}
-      unoptimized
-      aria-hidden
-      className="h-20 w-20 object-contain opacity-12 blur-[1px] brightness-125"
-    />
-  );
-});
-const PRICING_POINTS = [
-  "Your account is free. Browse every Guide. Read every profile. Pay nothing until you click Book.",
-  "The price you see is the price you pay. The 15% platform fee is already inside it. No surprise charges at checkout.",
-  "Every Guide sets their own rate between $15 and $60 CAD per session. You see the price before you book. Always!",
-  "Checkout is Stripe. Your card data never touches our servers. If you are a Guide, your payout clears after every session you complete.",
-];
-
 const LANDING_NAV_ITEMS = [
   { name: "Features", link: "#features" },
   { name: "Why join", link: "#why" },
@@ -112,7 +85,6 @@ const LANDING_NAV_ITEMS = [
 const FEEDBACK_EMAIL = DEFAULT_PUBLIC_FEEDBACK_EMAIL;
 
 export function HomePageClient() {
-  const [pricingRef, pricingVis] = useInViewOnce<HTMLElement>("0px 0px -14% 0px");
   const [ctaRef, ctaVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
   const [contactRef, contactVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -219,57 +191,7 @@ export function HomePageClient() {
         </div>
       </Navbar>
 
-      <section
-        ref={pricingRef}
-        id="pricing"
-        className={cn(
-          "lp-band-pricing py-10 md:py-12 transition-all duration-500",
-          pricingVis ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-        )}
-      >
-        <div className="mx-auto max-w-6xl px-4 sm:px-5 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50 p-5 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.45)] sm:p-6 md:p-8 lg:p-10">
-            <div className="pointer-events-none absolute -right-10 -top-10 hidden md:block">
-              <WatermarkRoleIcon role="guide" />
-            </div>
-            <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Pricing</p>
-                <h2 className="mt-3 font-bold text-slate-900 text-[clamp(22px,6vw,36px)] tracking-[-0.03em] leading-tight sm:text-[clamp(24px,3vw,36px)]">
-                  Free to compete and progress. You only pay when you book a Guide.
-                </h2>
-
-                <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
-                    <p className="text-3xl font-bold tracking-tight text-slate-900">$15</p>
-                    <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">from / hr</p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
-                    <p className="text-3xl font-bold tracking-tight text-slate-900">$60</p>
-                    <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">cap / hr</p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
-                    <p className="text-3xl font-bold tracking-tight text-slate-900">15%</p>
-                    <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">fee included</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 md:p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">What this means</p>
-                <div className="mt-4 space-y-3.5 text-left">
-                  {PRICING_POINTS.map((p) => (
-                    <div key={p} className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-700">
-                      <Check className="mt-0.5 shrink-0 text-emerald-600" />
-                      {p}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PricingSection />
 
       <section
         ref={ctaRef}

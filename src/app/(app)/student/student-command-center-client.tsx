@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { ScrollRevealCard } from "@/components/ui/card";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { formatDateInZone, formatTimeInZone } from "@/lib/time-format";
 import { AvailabilityBrowser } from "./availability-browser";
 import { StudentCourseChips, type StudentCourseChip } from "./student-course-chips";
 import type { LeaderboardEntry } from "@/app/actions/quest";
+import { User } from "lucide-react";
 
 type Upcoming = {
   id: string;
@@ -65,6 +68,7 @@ export function StudentCommandCenterClient({
   displayTimeZone?: string;
 }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const normalizedInitial = (searchParams.get("subject") ?? "").trim().toLowerCase();
   const initialSelection = studentCourses.some(
     (c) => c.course_name.trim().toLowerCase() === normalizedInitial,
@@ -73,6 +77,31 @@ export function StudentCommandCenterClient({
         ?.course_name ?? "all"
     : "all";
   const [selectedCourse, setSelectedCourse] = useState<string | "all">(initialSelection);
+
+  // ELITE REALTIME SYNC: Listen for availability changes and refresh the dashboard instantly
+  useEffect(() => {
+    const supabase = createClient();
+    
+    const channel = supabase
+      .channel("availability-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "availability",
+        },
+        () => {
+          // Revalidate the server-side data without a full page reload
+          router.refresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [router]);
 
   const filteredUpcoming = useMemo(() => {
     if (selectedCourse === "all") return upcomingSessions;
@@ -95,7 +124,7 @@ export function StudentCommandCenterClient({
      
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-        <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
+        <ScrollRevealCard className={`${mentrixStudent.card} p-5 sm:p-6`}>
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Today</p>
@@ -103,7 +132,7 @@ export function StudentCommandCenterClient({
             </div>
             <Link
               href="#sessions-history"
-              className="text-xs font-semibold text-blue-600 underline-offset-4 hover:underline"
+              className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
             >
               Full history
             </Link>
@@ -117,7 +146,7 @@ export function StudentCommandCenterClient({
               <Button
                 asChild
                 size="sm"
-                className="mt-5 rounded-full bg-blue-600 px-6 font-semibold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500"
+                className="mt-5 h-8 text-xs"
               >
                 <a href="#browse-guides">Browse guides</a>
               </Button>
@@ -139,7 +168,7 @@ export function StudentCommandCenterClient({
                       <td className="px-4 py-3 font-semibold text-slate-900">{s.course}</td>
                       <td className="px-4 py-3 text-slate-700">
                         <div className="flex items-center gap-2">
-                          <Image src="/images/user.png" alt="Guide" width={18} height={18} />
+                          <User className="w-4 h-4 opacity-50" />
                           <span>{s.tutor_email_prefix}</span>
                         </div>
                       </td>
@@ -150,7 +179,7 @@ export function StudentCommandCenterClient({
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/video/session/${s.id}`}
-                          className="inline-flex rounded-full border-2 border-blue-200 bg-white px-3 py-1 text-xs font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
+                          className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                         >
                           Join
                         </Link>
@@ -161,10 +190,10 @@ export function StudentCommandCenterClient({
               </table>
             </div>
           )}
-        </section>
+        </ScrollRevealCard>
 
         <div className="space-y-6">
-          <section className={`${mentrixStudent.card} p-5`}>
+          <ScrollRevealCard className={`${mentrixStudent.card} p-5`}>
             <div className="mb-3 flex items-center gap-2 text-slate-800">
               <Image src="/images/xp.png" alt="Rank" width={16} height={16} />
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Rank snapshot</span>
@@ -187,7 +216,7 @@ export function StudentCommandCenterClient({
                 <li
                   key={row.userId}
                   className={`flex justify-between gap-2 rounded-xl px-3 py-2 ${
-                    row.isCurrentUser ? "border border-blue-200 bg-blue-50/80" : "bg-slate-50/90"
+                    row.isCurrentUser ? "border border-indigo-200 bg-indigo-50/80" : "bg-slate-50/90"
                   }`}
                 >
                   <span className="text-slate-800">
@@ -199,42 +228,42 @@ export function StudentCommandCenterClient({
               ))}
             </ul>
             <div className="mt-4 grid gap-2">
-              <Link href="/student/division" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Open full leaderboard</Link>
-              <Link href="/student/duel" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Enter duel queue</Link>
+              <Link href="/student/division" className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50">Open full leaderboard</Link>
+              <Link href="/student/duel" className="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50">Enter duel queue</Link>
             </div>
-          </section>
+          </ScrollRevealCard>
 
-          <section className={`${mentrixStudent.card} p-5`}>
+          <ScrollRevealCard className={`${mentrixStudent.card} p-5`}>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Quick actions</p>
             <div className="mt-3 space-y-2">
-              <Link href="/student/quest" className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+              <Link href="/student/quest" className="flex min-h-10 items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
                 <span className="inline-flex items-center gap-2"><Image src="/images/quest.png" alt="Quest" width={16} height={16} /> Start daily quest</span>
                 <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
               </Link>
-              <Link href="/student/duel" className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+              <Link href="/student/duel" className="flex min-h-10 items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
                 <span className="inline-flex items-center gap-2"><Image src="/images/sword.png" alt="Duel" width={16} height={16} /> Find duel</span>
                 <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
               </Link>
-              <a href="#browse-guides" className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50">
+              <a href="#browse-guides" className="flex min-h-10 items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
                 <span className="inline-flex items-center gap-2"><Image src="/images/book.png" alt="Book" width={16} height={16} /> Book a guide</span>
                 <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
               </a>
             </div>
-          </section>
+          </ScrollRevealCard>
         </div>
       </div>
 
       {recommendedGuides.length > 0 && (
-        <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
+        <ScrollRevealCard className={`${mentrixStudent.card} p-5 sm:p-6`}>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-slate-900">Recommended guides</h2>
-            <Image src="/images/user.png" alt="Guide" width={18} height={18} />
+            <User className="w-4 h-4 opacity-50" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {recommendedGuides.map((g) => (
               <div
                 key={g.tutorId}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-4 transition hover:border-blue-200 hover:shadow-sm"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-4 transition hover:border-indigo-200 hover:shadow-sm"
               >
                 <div className="flex items-center gap-2">
                   <div className="relative h-9 w-9 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
@@ -255,23 +284,23 @@ export function StudentCommandCenterClient({
                   {g.coursesMatched} course{g.coursesMatched === 1 ? "" : "s"} matched
                 </p>
                 {g.hasOpenSlot && (
-                  <span className="mt-2 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                  <span className="mt-2 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-800">
                     Open slots
                   </span>
                 )}
-                <a href="#browse-guides" className="mt-3 inline-flex text-xs font-semibold text-blue-600 hover:text-blue-700">
+                <a href="#browse-guides" className="mt-3 inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
                   Book now
                 </a>
               </div>
             ))}
           </div>
-        </section>
+        </ScrollRevealCard>
       )}
 
       <section id="browse-guides" className="scroll-mt-24">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Guides</p>
         <h2 className="mt-1 text-lg font-bold text-slate-900">Browse & book</h2>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">
           Prove what you know everywhere you can
         </p>
         <p className="mt-1 mb-4 text-sm text-slate-600">Pick a Guide, lock a slot, show up ready to level up.</p>

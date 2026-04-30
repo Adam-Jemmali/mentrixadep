@@ -9,7 +9,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { StudentNavbar } from "@/components/student-navbar";
 import { TutorNavbar } from "@/components/tutor-navbar";
+import { FloatingXpAnimations } from "@/components/floating-xp-animations";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -137,9 +138,11 @@ type LevelUpPayload = { to_level: number | null; title: string | null };
 
 function LevelUpExperience({ user }: { user: AuthUser | null }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [payload, setPayload] = useState<LevelUpPayload | null>(null);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
+  const celebrationTriggeredRef = useRef(false);
 
   const uid = user?.id;
   const isStudent = user?.role === "student";
@@ -181,6 +184,22 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
   useEffect(() => {
     void refreshStreak();
   }, [refreshStreak]);
+
+  useEffect(() => {
+    const shouldCelebrate = pathname === "/student" && searchParams.get("celebration") === "levelup";
+    if (!shouldCelebrate || celebrationTriggeredRef.current) return;
+
+    celebrationTriggeredRef.current = true;
+    setPayload({ to_level: null, title: "Level up" });
+    setOpen(true);
+    void fireLevelUpConfetti();
+
+    if (typeof window !== "undefined") {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete("celebration");
+      window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}`);
+    }
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (!uid || !user?.approved) return;
@@ -396,15 +415,15 @@ function PushNotificationOptIn() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">Enable notifications?</DialogTitle>
+          <DialogTitle className="text-lg text-blue-900 font-semibold">Enable notifications?</DialogTitle>
           <DialogDescription className="text-sm text-slate-600 leading-relaxed">
-            Get session reminders, duel challenges, level-up moments, and clan updates !
-            all day.
+            Get session reminders, duel challenges, level-up moments, and clan updates!
+         
           </DialogDescription>
         </DialogHeader>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
-          <Button type="button" variant="outline" className="min-h-[44px] w-full sm:w-auto" onClick={dismiss}>
+          <Button type="button" variant="outline" className="min-h-[44px]  text-white w-full sm:w-auto" onClick={dismiss}>
             Not now
           </Button>
           <Button type="button" className="min-h-[44px] w-full sm:w-auto" disabled={busy} onClick={() => void subscribe()}>
@@ -455,18 +474,22 @@ export function RootLayoutClient({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isHome = pathname === "/";
   const isApprovedStudent = user?.role === "student" && user.approved === true;
   const isApprovedTutor = user?.role === "tutor" && user.approved === true;
   const isVideoRoute = pathname.startsWith("/video/");
   const isTutorProfileRoute = /^\/tutor\/[^/]+\/?$/.test(pathname);
+  const isQuestOnboarding =
+    isApprovedStudent && pathname === "/student/quest" && searchParams.get("onboarding") === "true";
 
   return (
     <ErrorBoundary>
       <ClickSoundProvider />
       <ShellEffects />
       <AppNavOrNothing user={user} />
-      {isApprovedStudent && user && <StudentNavbar user={user} />}
+      <FloatingXpAnimations />
+      {isApprovedStudent && user && !isQuestOnboarding ? <StudentNavbar user={user} /> : null}
       {isApprovedTutor && user && <TutorNavbar user={user} />}
       <LevelUpExperience user={user} />
       {isApprovedStudent && user ? (
@@ -481,7 +504,7 @@ export function RootLayoutClient({
           isHome && "bg-[#0B1120]",
           !isHome && !isTutorProfileRoute && "bg-mentrixa-app text-slate-100",
           isTutorProfileRoute && "bg-white text-slate-900",
-          isApprovedStudent && "pt-24 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
+          isApprovedStudent && !isQuestOnboarding && "pt-24 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
           isApprovedTutor && "pt-24",
         )}
       >

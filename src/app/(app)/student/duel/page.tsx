@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
-import { getDuelHistorySummary, listStudentDuels } from "@/app/actions/duel";
+import { getDuelHistorySummary, listStudentDuels, getLearnerPreview } from "@/app/actions/duel";
 import { getDivisionsCatalog } from "@/app/actions/quest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { DuelHub } from "./duel-hub";
 import { DuelRowActions } from "@/components/student/duel-row-actions";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
 
 export const metadata = { title: "Skill duels · Mentrixa" };
 
@@ -25,15 +27,15 @@ function sortDuels<
 export default async function StudentDuelsPage() {
   const user = await requireRole(["student", "admin"]);
   const myId = user.id;
+  const admin = createAdminClient();
 
-  const [rowsRaw, divisions, history] = await Promise.all([
+  const [rowsRaw, divisions, history, currentUser] = await Promise.all([
     listStudentDuels(),
     getDivisionsCatalog(),
     getDuelHistorySummary(),
+    getLearnerPreview(admin, myId),
   ]);
   const rows = sortDuels(rowsRaw);
-
-  const admin = createAdminClient();
 
   const { data: duelSettings } = await admin
     .from("user_settings")
@@ -79,37 +81,42 @@ export default async function StudentDuelsPage() {
 
   return (
     <div className={mentrixStudent.pageBg}>
-      <main className={mentrixStudent.mainSlim}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className={mentrixStudent.mainWide}>
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className={mentrixStudent.sectionEyebrow}>PvP training</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Skill duels</h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">Timed battles. Live scores.</p>
+            <p className={mentrixStudent.sectionEyebrow}>PvP training & leagues</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+               Skill duels
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+              Timed battles. Live scores. Challenge others in real-time or practice with sparring quests.
+            </p>
           </div>
-          <Button variant="outline" size="sm" className="rounded-full border-2 font-semibold" asChild>
+          <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95" asChild>
             <Link href="/student/duel/history">History &amp; stats</Link>
           </Button>
         </div>
 
         {stats && stats.totalCompleted > 0 ? (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className={`${mentrixStudent.card} px-3 py-2.5`}>
+            <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
               <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
                 Record
               </p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-900 tabular-nums">
-                {stats.wins}W - {stats.losses}L
-                {stats.ties > 0 ? ` - ${stats.ties}D` : ""}
-              </p>
-            </div>
-            <div className={`${mentrixStudent.card} px-3 py-2.5`}>
+              <div className="mt-1 h-12 w-full max-w-[200px]">
+                <ParticleTextEffect 
+                  words={[`${stats.wins}W - ${stats.losses}L${stats.ties > 0 ? ` - ${stats.ties}D` : ""}`]} 
+                />
+              </div>
+            </TiltCard>
+            <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
               <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
                 Duels XP
               </p>
               <p className="mt-0.5 text-sm font-semibold text-slate-900 tabular-nums">
                 {stats.xpFromDuels} XP
               </p>
-            </div>
+            </TiltCard>
           </div>
         ) : null}
 
@@ -118,10 +125,12 @@ export default async function StudentDuelsPage() {
             divisions={divisions}
             preferredDivisionKey={preferredDuelDivision}
             initialQueueDivision={initialQueueDivision}
+            currentUser={currentUser}
           />
         </div>
 
-        <div className={`${mentrixStudent.card} mt-8 overflow-hidden p-0`}>
+
+        <TiltCard tiltLimit={3} className={`${mentrixStudent.card} mt-8 overflow-hidden p-0 block`}>
           <div className="border-b border-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
             Your duels
           </div>
@@ -135,7 +144,7 @@ export default async function StudentDuelsPage() {
                 const otherId = r.student_id === myId ? r.opponent_student_id : r.student_id;
                 const label =
                   r.is_ai_opponent && r.student_id === myId
-                    ? "Sparring AI"
+                    ? "Sparring Quest"
                     : otherId
                       ? (nameById[otherId] ?? "Learner")
                       : "Learner";
@@ -163,8 +172,8 @@ export default async function StudentDuelsPage() {
               })}
             </ul>
           )}
-        </div>
-      </main>
+        </TiltCard>
+      </div>
     </div>
   );
 }

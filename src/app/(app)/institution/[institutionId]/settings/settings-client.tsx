@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Building2, ImageIcon } from "lucide-react";
 import { updateInstitution } from "@/app/actions/institution";
 import type { Institution } from "@/lib/database.types";
+import { Button } from "@/components/ui/button";
 
 export function InstitutionSettingsClient({ institution }: { institution: Institution }) {
   const router = useRouter();
@@ -145,14 +146,14 @@ export function InstitutionSettingsClient({ institution }: { institution: Instit
 
       {/* Save */}
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
           onClick={handleSave}
           disabled={isPending}
-          className="h-9 px-5 text-[13px] font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 disabled:opacity-40 transition-colors"
+          className="bg-slate-900 text-white hover:bg-indigo-600"
         >
           {isPending ? "Saving…" : "Save changes"}
-        </button>
+        </Button>
         {saved && <p className="text-[12px] text-emerald-600">Saved.</p>}
         {error && <p className="text-[12px] text-red-600">{error}</p>}
       </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { requireRole } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateDuelQuestions } from "@/lib/ai";
 import { revalidatePath } from "next/cache";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/security";
 import type { SkillDuelQuestion } from "@/lib/database.types";
 import { areUsersInSameClan } from "@/app/actions/clan";
+import { recordClanDuelWin } from "@/app/actions/clan-dashboard";
 import { applyXpAward } from "@/app/actions/xp";
 import { XP } from "@/lib/xp-constants";
 import { DUEL_QUESTION_COUNT } from "@/lib/duel-constants";
@@ -550,7 +552,7 @@ export async function createAiDuelFromQueue(
     enforceRateLimit(
       getRateLimitId(user.id),
       RATE_LIMITS.duelQueueJoin,
-      "duel ai match"
+      "duel MENTRIXA match"
     );
 
     const admin = createAdminClient();
@@ -641,7 +643,7 @@ export async function createAiDuelFromQueue(
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : "Failed to create AI duel.",
+      error: e instanceof Error ? e.message : "Failed to create Bot  duel.",
     };
   }
 }
@@ -917,6 +919,20 @@ async function maybeCompleteDuel(
     }
   }
 
+  // Clan XP Logic
+  if (winner !== "tie") {
+    const winnerId = winner === "student" ? row.student_id : row.opponent_student_id;
+    const loserId = winner === "student" ? row.opponent_student_id : row.student_id;
+    
+    if (winnerId && loserId && !isAi) {
+      const sameClan = await areUsersInSameClan(winnerId, loserId);
+      await recordClanDuelWin(winnerId, !sameClan);
+    } else if (winnerId && isAi) {
+       // Against AI, it's always a friendly boost to the clan
+       await recordClanDuelWin(winnerId, false);
+    }
+  }
+
   revalidatePath("/student/duel");
   revalidatePath(`/student/duel/${duelId}`);
   revalidatePath("/student/duel/history");
@@ -945,8 +961,8 @@ export async function submitSkillDuelQuestionAnswer(
       "duel answer step"
     );
 
-    const admin = createAdminClient();
-    const { data: duel, error: fetchErr } = await admin
+    const supabase = await createClient();
+    const { data: duel, error: fetchErr } = await supabase
       .from("skill_duels")
       .select("*")
       .eq("id", id.id)
@@ -1009,7 +1025,7 @@ export async function submitSkillDuelQuestionAnswer(
       [key]: next,
     };
 
-    const { error: upErr } = await admin
+    const { error: upErr } = await supabase
       .from("skill_duels")
       .update(patch)
       .eq("id", id.id);
@@ -1018,7 +1034,7 @@ export async function submitSkillDuelQuestionAnswer(
       return { success: false, error: upErr.message };
     }
 
-    await maybeCompleteDuel(admin, id.id, questions);
+    await maybeCompleteDuel(createAdminClient(), id.id, questions);
     return { success: true };
   } catch (e) {
     return {
@@ -1046,8 +1062,8 @@ export async function submitSkillDuelAnswers(
       "duel answers"
     );
 
-    const admin = createAdminClient();
-    const { data: duel, error: fetchErr } = await admin
+    const supabase = await createClient();
+    const { data: duel, error: fetchErr } = await supabase
       .from("skill_duels")
       .select("*")
       .eq("id", id.id)
@@ -1119,7 +1135,7 @@ export async function submitSkillDuelAnswers(
     if (isChallenger) patch.student_answers = answers;
     else patch.opponent_answers = answers;
 
-    const { error: upErr } = await admin
+    const { error: upErr } = await supabase
       .from("skill_duels")
       .update(patch)
       .eq("id", id.id);
@@ -1128,7 +1144,7 @@ export async function submitSkillDuelAnswers(
       return { success: false, error: upErr.message };
     }
 
-    await maybeCompleteDuel(admin, id.id, questions);
+    await maybeCompleteDuel(createAdminClient(), id.id, questions);
     return { success: true };
   } catch (e) {
     return {
@@ -1175,6 +1191,7 @@ export type DuelMatchupPreview = {
     avatarUrl: string | null;
     bio: string | null;
     totalXp: number | null;
+    clan: { name: string; tag: string } | null;
   };
   opponent: {
     id: string | null;
@@ -1183,13 +1200,21 @@ export type DuelMatchupPreview = {
     bio: string | null;
     totalXp: number | null;
     isAi: boolean;
+    clan: { name: string; tag: string } | null;
   };
 };
 
-async function getLearnerPreview(
+export async function getLearnerPreview(
   admin: ReturnType<typeof createAdminClient>,
   userId: string
-): Promise<{ id: string; name: string; avatarUrl: string | null; bio: string | null; totalXp: number | null }> {
+): Promise<{ 
+  id: string; 
+  name: string; 
+  avatarUrl: string | null; 
+  bio: string | null; 
+  totalXp: number | null;
+  clan: { name: string; tag: string } | null;
+}> {
   const { data: settings } = await admin
     .from("user_settings")
     .select("display_name, avatar_url, bio")
@@ -1202,6 +1227,24 @@ async function getLearnerPreview(
     .eq("user_id", userId)
     .maybeSingle();
 
+  const { data: membership } = await admin
+    .from("clan_members")
+    .select("clan_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let clan: { name: string; tag: string } | null = null;
+  if (membership?.clan_id) {
+    const { data: clanRow } = await admin
+      .from("clans")
+      .select("name, tag")
+      .eq("id", membership.clan_id)
+      .maybeSingle();
+    if (clanRow) {
+      clan = { name: clanRow.name, tag: clanRow.tag };
+    }
+  }
+
   const displayName =
     typeof settings?.display_name === "string" ? settings.display_name.trim() : "";
   const avatarUrl =
@@ -1211,23 +1254,26 @@ async function getLearnerPreview(
   const bio = typeof settings?.bio === "string" && settings.bio.trim().length > 0 ? settings.bio.trim() : null;
   const totalXp = typeof xpRow?.total_xp === "number" ? xpRow.total_xp : null;
 
+  const result = { 
+    id: userId, 
+    name: displayName || "Learner", 
+    avatarUrl, 
+    bio, 
+    totalXp, 
+    clan 
+  };
+
   if (displayName.length > 0) {
-    return { id: userId, name: displayName, avatarUrl, bio, totalXp };
+    return result;
   }
 
   try {
     const { data } = await admin.auth.admin.getUserById(userId);
     const email = data?.user?.email ?? "";
-    const fallback = email ? (email.split("@")[0] ?? "").trim() : "";
-    return {
-      id: userId,
-      name: fallback || "Learner",
-      avatarUrl,
-      bio,
-      totalXp,
-    };
+    result.name = email ? (email.split("@")[0] ?? "").trim() : "Learner";
+    return result;
   } catch {
-    return { id: userId, name: "Learner", avatarUrl, bio, totalXp };
+    return result;
   }
 }
 
@@ -1273,10 +1319,11 @@ export async function getDuelMatchupPreview(
       ? await getLearnerPreview(admin, opponentId)
       : {
           id: null,
-          name: "Sparring AI",
+          name: "Sparring Quest",
           avatarUrl: null,
           bio: "Adaptive duel sparring partner",
           totalXp: null,
+          clan: null,
         };
 
     return {
@@ -1286,11 +1333,7 @@ export async function getDuelMatchupPreview(
         divisionKey: duel.division_key,
         me,
         opponent: {
-          id: opponent.id,
-          name: opponent.name,
-          avatarUrl: opponent.avatarUrl,
-          bio: opponent.bio,
-          totalXp: opponent.totalXp,
+          ...opponent,
           isAi,
         },
       },
@@ -1302,6 +1345,7 @@ export async function getDuelMatchupPreview(
     };
   }
 }
+
 
 export async function getDuelForUser(
   duelId: string

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTutorCommandCenterData } from "@/app/actions/tutor";
 import { TutorCommandCenterClient } from "./tutor-command-center-client";
+import { requireRole } from "@/lib/auth";
+import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/lib/student-dashboard-helpers";
 
 export const metadata: Metadata = {
   title: "Guide center · Mentrixa",
@@ -10,12 +12,19 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function TutorPage() {
+  const user = await requireRole(["tutor", "admin"]);
+  const now = new Date();
+
   try {
     const data = await getTutorCommandCenterData();
+    const timeZone = data.tutorTimezone || "UTC";
+    const firstName = firstNameFromDisplayName(data.guideProfile.displayName, user.email || "");
+    const hour = getLocalHour(now, timeZone);
+    const greeting = greetingForHour(hour, firstName);
 
     return (
-      <div className="min-h-screen bg-neutral-50">
-        <TutorCommandCenterClient data={data} />
+      <div className="min-h-screen bg-slate-50">
+        <TutorCommandCenterClient data={data} greeting={greeting} firstName={firstName} />
       </div>
     );
   } catch (e) {

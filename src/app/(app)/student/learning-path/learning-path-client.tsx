@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
@@ -16,6 +17,9 @@ import { SkillTree } from "@/components/learning/skill-tree";
 import { SubjectProgressRing } from "@/components/learning/subject-progress-ring";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { Typewriter } from "@/components/ui/typewriter";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { BackButton } from "@/components/ui/back-button";
 
 interface Props {
   nodes: KnowledgeNode[];
@@ -37,7 +41,7 @@ function EmptyState() {
       </p>
       <Link
         href="/student/quest"
-        className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-colors hover:bg-blue-500"
+        className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-colors hover:bg-indigo-500"
       >
         <Image src="/images/quest.png" alt="Quest" width={14} height={14} />
         Start a Quest
@@ -49,14 +53,12 @@ function EmptyState() {
 // ─── Recommendation card ──────────────────────────────────────────────────────
 
 const REASON_LABELS: Record<NextStepRecommendation["reason"], string> = {
-  weakest: "Needs work",
   almost_mastered: "Almost there",
   new_territory: "New territory",
 };
 
 const REASON_COLORS: Record<NextStepRecommendation["reason"], string> = {
-  weakest: "bg-red-50 text-red-700 border-red-100",
-  almost_mastered: "bg-blue-50 text-blue-700 border-blue-100",
+  almost_mastered: "bg-indigo-50 text-indigo-700 border-indigo-100",
   new_territory: "bg-violet-50 text-violet-700 border-violet-100",
 };
 
@@ -65,10 +67,8 @@ function RecommendationCard({ rec }: { rec: NextStepRecommendation }) {
   const status = pct >= 80 ? "proficient" : pct >= 40 ? "learning" : "locked" as const;
 
   return (
-    <Link
-      href="/student/quest"
-      className={`group flex flex-col gap-2.5 ${mentrixStudent.card} p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-16px_rgba(37,99,235,0.25)]`}
-    >
+    <TiltCard tiltLimit={5} scale={1.02} className={cn("group flex flex-col gap-2.5 rounded-2xl border bg-white p-4 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 block")}>
+      <Link href="/student/quest" className="flex flex-col gap-2.5 w-full">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800 truncate">{rec.subtopic}</p>
@@ -104,7 +104,8 @@ function RecommendationCard({ rec }: { rec: NextStepRecommendation }) {
           className="opacity-70 transition-transform duration-150 group-hover:translate-x-0.5"
         />
       </div>
-    </Link>
+      </Link>
+    </TiltCard>
   );
 }
 
@@ -261,7 +262,7 @@ function TopicRow({ topic }: { topic: SubjectEntry["topics"][number] }) {
 
 function SubjectPanel({ subject }: { subject: SubjectEntry }) {
   return (
-    <div className={`${mentrixStudent.card} overflow-hidden rounded-lg`}>
+    <TiltCard className={`${mentrixStudent.card} overflow-hidden rounded-lg`}>
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800">{subject.subject}</p>
@@ -278,7 +279,7 @@ function SubjectPanel({ subject }: { subject: SubjectEntry }) {
           <TopicRow key={topic.topic} topic={topic} />
         ))}
       </div>
-    </div>
+    </TiltCard>
   );
 }
 
@@ -322,10 +323,10 @@ function StatsStrip({ nodes }: { nodes: KnowledgeNode[] }) {
           key={s.label}
           className="stat-cell flex flex-col rounded-md border border-slate-200/90 bg-white px-4 py-3 opacity-0 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)]"
         >
-          <span className="text-xl font-bold tabular-nums text-blue-700">{s.value}</span>
-          <span className="mt-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+          <span className="text-xl font-bold tabular-nums text-indigo-600">{s.value}</span>
+          <div className="flex items-center gap-1 text-[10px] font-black text-indigo-500 uppercase tracking-widest">
             {s.label}
-          </span>
+          </div>
         </div>
       ))}
     </div>
@@ -347,7 +348,9 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6">
             <p className={mentrixStudent.sectionEyebrow}>Mastery tree</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Learning path</h1>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 h-[32px]">
+              <Typewriter text="Learning path" speed={70} waitTime={8000} />
+            </h1>
           </div>
           <EmptyState />
         </div>
@@ -358,19 +361,22 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
   return (
     <div className={mentrixStudent.pageBg}>
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
 
         {/* Page header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className={mentrixStudent.sectionEyebrow}>Forge your arc</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-              Learning path
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl h-[36px]">
+              <Typewriter text="Learning path" speed={70} waitTime={8000} />
             </h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">Track mastery.</p>
           </div>
           <Link
             href="/student/quest"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:bg-blue-500"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-500"
           >
           
             Adaptive quest
@@ -386,7 +392,7 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Skill tree visualisation */}
-            <div className={`${mentrixStudent.card} overflow-hidden ring-1 ring-blue-100/80`}>
+            <TiltCard tiltLimit={3} className={`${mentrixStudent.card} overflow-hidden ring-1 ring-indigo-100/80`}>
               <div className="border-b border-slate-100 px-4 py-3">
                 <p className="text-sm font-semibold text-slate-800">Skill map</p>
               </div>
@@ -397,7 +403,7 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
                   onSubjectSelect={setActiveSubject}
                 />
               </div>
-            </div>
+            </TiltCard>
 
             {/* Subject selector tabs */}
             {tree.length > 1 && (
@@ -408,8 +414,8 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
                     onClick={() => setActiveSubject(s.subject)}
                     className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
                       activeSubject === s.subject
-                        ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-blue-200"
+                        ? "border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "border-slate-200 hover:border-indigo-300"
                     }`}
                   >
                     {s.subject}
@@ -433,7 +439,7 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
           <div className="space-y-6">
 
             {/* Subject progress rings */}
-            <div className={`${mentrixStudent.card} p-4`}>
+            <TiltCard tiltLimit={5} className={`${mentrixStudent.card} p-4`}>
               <p className="mb-4 text-sm font-semibold text-slate-800">By subject</p>
               <div className="space-y-4">
                 {tree.map((s) => (
@@ -449,7 +455,7 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
                   />
                 ))}
               </div>
-            </div>
+            </TiltCard>
 
             {/* Recommended next steps */}
             {recommendations.length > 0 && (

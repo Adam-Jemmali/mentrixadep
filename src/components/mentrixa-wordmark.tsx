@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Typewriter } from "@/components/ui/typewriter";
 
 /** Matches landing / marketing header: gradient MEN + solid TRIXA. */
 export function MentrixaWordmark({
@@ -6,13 +7,19 @@ export function MentrixaWordmark({
   trixaClassName,
 }: {
   className?: string;
-  /** Color for the “TRIXA” half (e.g. white on dark nav). */
   trixaClassName?: string;
 }) {
   return (
-    <span className={cn("font-display font-bold text-lg tracking-tight", className)}>
-    
-      <span className={cn("text-text-primary", trixaClassName)}>MENTRIXA</span>
+    <span className={cn("font-display font-black text-xl tracking-tight inline-flex items-center", className, trixaClassName)}>
+      <span className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
+        <Typewriter 
+          text="MENTRIXA" 
+          speed={100} 
+          waitTime={10000} 
+          cursorChar="_" 
+          cursorClassName="text-purple-500" 
+        />
+      </span>
     </span>
   );
 }

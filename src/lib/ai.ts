@@ -58,6 +58,14 @@ export interface SessionPackageResponse {
 }
 
 /** Re-export for server actions that map DB rows. */
+export interface RecordingStudioInsights {
+  transcriptExcerpt: string;
+  screenShareSummary: string;
+  keyTopics: string[];
+  learnerQuestions: string[];
+}
+
+/** Re-export for server actions that map DB rows. */
 export type { NormalizedStudioPackage } from "@/lib/studio-package";
 
 /** Rich context for session packages (recordings, quests, prior sessions). */
@@ -402,11 +410,8 @@ async function generateJson(
         responseMimeType: "application/json",
       },
     });
-    const res = await Promise.race([requestPromise, timeoutPromise]);
-    const text = (res as { text?: string }).text;
-    if (typeof text !== "string" || !text.trim()) {
-      throw new Error("Empty or invalid AI response");
-    }
+    const result = await Promise.race([requestPromise, timeoutPromise]);
+    const text = typeof (result as { text?: string }).text === "string" ? (result as { text: string }).text : "";
     return text.trim();
   });
 }
@@ -1768,3 +1773,242 @@ Do not include markdown fences or commentary.`;
     return handleAiError(err, "generateAdaptiveQuestPack", params.subject.slice(0, 100));
   }
 }
+
+function normalizeRecordingInsights(parsed: Partial<Record<string, unknown>>): RecordingAnalysisResult {
+  const transcriptExcerpt = typeof parsed.transcriptExcerpt === "string" ? parsed.transcriptExcerpt.trim().slice(0, 4000) : "";
+  const screenShareSummary = typeof parsed.screenShareSummary === "string" ? parsed.screenShareSummary.trim().slice(0, 2000) : "";
+  const keyTopics = Array.isArray(parsed.keyTopics)
+    ? parsed.keyTopics.filter((topic): topic is string => typeof topic === "string").map((topic) => topic.trim()).filter(Boolean).slice(0, 10)
+    : [];
+  const learnerQuestions = Array.isArray(parsed.learnerQuestions)
+    ? parsed.learnerQuestions.filter((question): question is string => typeof question === "string").map((question) => question.trim()).filter(Boolean).slice(0, 10)
+    : [];
+
+  return {
+    transcriptExcerpt,
+    screenShareSummary,
+    keyTopics,
+    learnerQuestions,
+  };
+}
+
+export interface RecordingAnalysisResult {
+  transcriptExcerpt: string;
+  screenShareSummary: string;
+  keyTopics: string[];
+  learnerQuestions: string[];
+}
+
+async function analyzeRecordingContext(
+  input: { course: string; mimeType: string; base64Data?: string; fileUri?: string },
+  userId: string
+): Promise<RecordingAnalysisResult | AiErrorResult> {
+  try {
+    await enforceAiRateLimit(userId, "quest.ai");
+
+    if (isCircuitOpen()) {
+      return { error: true, message: CIRCUIT_OPEN_ERROR };
+    }
+
+    const course = sanitizeForPrompt(input.course).slice(0, 120);
+    const systemPrompt = `You analyze a tutoring session recording and return JSON only:
+{
+  "transcriptExcerpt": string,
+  "screenShareSummary": string,
+  "keyTopics": string[],
+  "learnerQuestions": string[]
+}
+
+Rules:
+- transcriptExcerpt: 2-5 concise sentences summarizing the spoken session content.
+- screenShareSummary: concise summary of what the learner likely saw or did on screen.
+- keyTopics: 3-8 short topic labels.
+- learnerQuestions: 0-10 short questions, misconceptions, or prompts from the learner.
+- Keep the output grounded in the provided recording and course context.
+- Return strict JSON only.`;
+
+    const userContent = `Course: ${course}
+MIME type: ${input.mimeType}
+Recording source: ${input.fileUri ? "Gemini file URI" : "inline base64"}`;
+
+    const client = getClient();
+    const contents = input.fileUri
+      ? [
+          {
+            role: "user" as const,
+            parts: [
+              { text: userContent },
+              { fileData: { fileUri: input.fileUri, mimeType: input.mimeType } },
+            ],
+          },
+        ]
+      : [
+          {
+            role: "user" as const,
+            parts: [
+              { text: userContent },
+              { inlineData: { mimeType: input.mimeType, data: input.base64Data ?? "" } },
+            ],
+          },
+        ];
+
+    const raw = await withBackoff(async () => {
+      const response = await Promise.race([
+        client.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: contents as never,
+          config: {
+            systemInstruction: `${MENTRIXA_SYSTEM_GUARD}\n\n${systemPrompt}`,
+            responseMimeType: "application/json",
+          },
+        }),
+        new Promise<never>((_, reject) => {
+          const err = new Error("Request timed out");
+          (err as Error & { name: string }).name = "AbortError";
+          setTimeout(() => reject(err), SESSION_PACKAGE_TIMEOUT_MS);
+        }),
+      ]);
+      return typeof (response as { text?: string }).text === "string" ? (response as { text: string }).text : "";
+    });
+
+    if (containsPii(raw)) {
+      return { error: true, message: "AI response contained unexpected content. Please try again." };
+    }
+
+    const parsedResult = parseModelJson<Record<string, unknown>>(raw);
+    if (!parsedResult.ok) {
+      return { error: true, message: "Failed to parse recording analysis." };
+    }
+
+    return normalizeRecordingInsights(parsedResult.value);
+  } catch (err) {
+    return handleAiError(err, "analyzeRecordingContext", input.course.slice(0, 100));
+  }
+}
+
+export async function analyzeRecordingForStudioContext(
+  input: { course: string; mimeType: string; base64Data: string },
+  userId: string
+): Promise<RecordingAnalysisResult | AiErrorResult> {
+  return analyzeRecordingContext(input, userId);
+}
+
+export async function analyzeRecordingForStudioContextFromFile(
+  input: { course: string; mimeType: string; fileUri: string },
+  userId: string
+): Promise<RecordingAnalysisResult | AiErrorResult> {
+  return analyzeRecordingContext(input, userId);
+}
+
+export async function generatePracticeQuestPackGuest(
+  params: {
+    subject: string;
+    difficulty: PracticeDifficulty;
+    packType: PracticePackType;
+    questionCount: number;
+  }
+): Promise<{ questions: PracticeQuestion[] } | AiErrorResult> {
+  try {
+    const n = Math.min(10, Math.max(5, Math.floor(params.questionCount)));
+    const subject = sanitizeForPrompt(params.subject).slice(0, 120);
+    const diff = params.difficulty;
+    const pack = params.packType;
+    const level = "guest learner";
+
+    const systemPrompt = `You write practice questions for learners. Return ONLY valid JSON:
+{
+  "questions": [ ... exactly ${n} items ... ]
+}
+
+Each item must match pack type "${pack}":
+${PACK_TYPE_INSTRUCTIONS[pack]}
+
+Shared rules:
+- id: string, unique per item, e.g. "q0", "q1", ...
+- kind: must match pack type (${pack === "mcq" ? '"mcq"' : pack === "short_answer" ? '"short_answer"' : '"problem_solving"'})
+- prompt: clear question text (for problem_solving, math may use LaTeX)
+- difficulty: subject=${subject}, learner tier=${diff}, account level label=${level} — calibrate rigor accordingly.
+
+Do not include markdown fences or commentary outside the JSON object. Return a single JSON object only.`;
+
+    const userContent = `Subject: ${subject}
+Difficulty tier: ${diff}
+Pack type: ${pack}
+Learner level: ${level}
+Generate ${n} questions.`;
+
+    const raw = await generateJsonRetryOnTimeout(systemPrompt, userContent, PRACTICE_PACK_TIMEOUT_MS);
+
+    if (containsPii(raw)) {
+      return { error: true, message: "AI response contained unexpected content. Please try again." };
+    }
+
+    const parsedResult = parseModelJson<{ questions?: unknown[] }>(raw);
+    if (!parsedResult.ok) {
+      return { error: true, message: "Failed to parse practice pack JSON." };
+    }
+
+    const parsed = parsedResult.value;
+    const rawList = Array.isArray(parsed.questions) ? parsed.questions : [];
+    const questions: PracticeQuestion[] = [];
+
+    for (let i = 0; i < rawList.length && questions.length < n; i++) {
+      const o = rawList[i];
+      if (!o || typeof o !== "object") continue;
+      const row = o as Record<string, unknown>;
+      const id = typeof row.id === "string" ? row.id : `q${i}`;
+      const kind = row.kind as string;
+
+      if (pack === "mcq" && kind === "mcq") {
+        const options = Array.isArray(row.options)
+          ? row.options.filter((x) => typeof x === "string").map((x) => String(x).slice(0, 500))
+          : [];
+        const ci = typeof row.correctIndex === "number" ? Math.floor(row.correctIndex) : -1;
+        const prompt = typeof row.prompt === "string" ? row.prompt : "";
+        const explanation = typeof row.explanation === "string" ? row.explanation : "";
+        if (options.length !== 4 || ci < 0 || ci > 3 || prompt.length < 4) continue;
+        questions.push({
+          id,
+          kind: "mcq",
+          prompt: prompt.slice(0, 4000),
+          options,
+          correctIndex: ci,
+          explanation: explanation.slice(0, 2000),
+        });
+      } else if (pack === "short_answer" && kind === "short_answer") {
+        const prompt = typeof row.prompt === "string" ? row.prompt : "";
+        const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
+        const explanation = typeof row.explanation === "string" ? row.explanation : "";
+        if (prompt.length < 4 || ref.length < 2) continue;
+        questions.push({
+          id,
+          kind: "short_answer",
+          prompt: prompt.slice(0, 4000),
+          referenceAnswer: ref.slice(0, 4000),
+          explanation: explanation.slice(0, 2000),
+        });
+      } else if (pack === "problem_solving" && kind === "problem_solving") {
+        const prompt = typeof row.prompt === "string" ? row.prompt : "";
+        const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
+        const explanation = typeof row.explanation === "string" ? row.explanation : "";
+        if (prompt.length < 4 || ref.length < 2) continue;
+        questions.push({
+          id,
+          kind: "problem_solving",
+          prompt: prompt.slice(0, 6000),
+          referenceAnswer: ref.slice(0, 4000),
+          explanation: explanation.slice(0, 2000),
+        });
+      }
+    }
+
+    if (questions.length < 5) {
+      return { error: true, message: "Could not generate enough valid questions. Try again." };
+    }
+
+    return { questions: questions.slice(0, n) };
+  } catch (err) {
+    return handleAiError(err, "generatePracticeQuestPackGuest", params.subject.slice(0, 100));
+  }
+}
+
