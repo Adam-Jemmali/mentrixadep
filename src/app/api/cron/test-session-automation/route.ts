@@ -65,31 +65,25 @@ export async function GET(req: NextRequest) {
 
     // 2. Book as student (Bypass Stripe)
     // We pass a dummy stripeCheckoutSessionId to satisfy the schema/checks
-    const bookResult = await bookSessionAsUser(avail.id, studentId, {
-      skipStripeVerification: true,
-      stripeCheckoutSessionId: `auto_${randomUUID().slice(0, 8)}`
-    });
-
-    if (!bookResult.success) {
-      throw new Error(`Booking failed: ${bookResult.error}`);
+    let bookResult;
+    try {
+      bookResult = await bookSessionAsUser(avail.id, studentId, {
+        skipStripeVerification: true,
+        stripeCheckoutSessionId: `auto_${randomUUID().slice(0, 8)}`
+      });
+    } catch (err) {
+      throw new Error(`Booking failed: ${err instanceof Error ? err.message : String(err)}`);
     }
 
-    const requestId = (bookResult as any).request?.id;
+    const requestId = (bookResult as { request?: { id: string } }).request?.id;
     if (!requestId) {
       throw new Error("No request ID returned from booking action");
     }
 
     // 3. Approve instantly (Internal Admin Context)
-    // Note: approveSessionRequest normally calls requireRole. 
-    // If it fails due to no session, we would need to manually call the RPC.
-    // However, let's try the action first since it might handle revalidation.
-    // If it fails, we'll hit the RPC directly.
     try {
-      const approveResult = await approveSessionRequest(requestId, tutorId);
-      if (!approveResult.success) {
-        throw new Error(`Approval failed: ${approveResult.error}`);
-      }
-    } catch (e) {
+      await approveSessionRequest(requestId, tutorId);
+    } catch (_e) {
        console.warn("[automation] approveSessionRequest action failed (likely auth), falling back to direct RPC");
        // Fallback to direct RPC using admin client
        const { error: rpcErr } = await admin.rpc("approve_session_request_atomic", {
