@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
       throw new Error(`Availability creation failed: ${availErr.message}`);
     }
 
-    // 2. Book as student (Bypass Stripe)
+    // 2. Book as student 
     // We pass a dummy stripeCheckoutSessionId to satisfy the schema/checks
     let bookResult;
     try {
