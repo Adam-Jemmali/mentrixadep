@@ -1,5 +1,7 @@
 {
-  "regions": ["iad1"],
+  "regions": [
+    "iad1"
+  ],
   "functions": {
     "src/app/api/tutor/studio-stream/route.ts": {
       "maxDuration": 60
@@ -18,9 +20,18 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self)" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self)"
+        }
       ]
     }
   ],
@@ -39,11 +50,11 @@
     },
     {
       "path": "/api/cron/enforce-session-timing",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/process-recording-transcriptions",
-      "schedule": "30 */2 * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/send-reminders",
