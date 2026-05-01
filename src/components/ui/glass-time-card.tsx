@@ -18,8 +18,10 @@ export function GlassTimeCard(props: GlassTimeCardProps) {
   
   const [currentTime, setCurrentTime] = useState<Date>(time ? new Date(time) : new Date());
   const [timezoneName, setTimezoneName] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
+    setMounted(true);
     const timezoneOffset = new Date().getTimezoneOffset();
     const timezoneShorter = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const offset = -timezoneOffset / 60;
@@ -37,7 +39,7 @@ export function GlassTimeCard(props: GlassTimeCardProps) {
   }, [staticTime, time]);
   
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString(undefined, {
+    return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       second: showSeconds ? '2-digit' : undefined,
@@ -67,11 +69,13 @@ export function GlassTimeCard(props: GlassTimeCardProps) {
       )}
     >
       <div className="flex flex-col gap-1 items-center">
-        <div className="text-sm font-medium tracking-widest text-white/70 uppercase mb-2">{formatDate(currentTime)}</div>
-        <div className="text-6xl font-bold tabular-nums tracking-tight bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">
-          {formatTime(currentTime)}
+        <div className="text-sm font-medium tracking-widest text-white/70 uppercase mb-2">
+          {mounted ? formatDate(currentTime) : "..."}
         </div>
-        {showTimezone && (
+        <div className="text-6xl font-bold tabular-nums tracking-tight bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">
+          {mounted ? formatTime(currentTime) : "--:--"}
+        </div>
+        {showTimezone && mounted && (
           <div className="text-xs text-white/50 mt-2 font-medium">{timezoneName}</div>
         )}
       </div>

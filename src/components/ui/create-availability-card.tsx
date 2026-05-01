@@ -460,7 +460,7 @@ export function CreateAvailabilityCard({
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl space-y-3">
                 <div className="flex justify-between items-start">
-                  <h4 className="font-bold text-lg text-primary">{course}</h4>
+                  <h4 className="font-bold text-lg text-purple-400 text-primary">{course}</h4>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-white">${price}</p>
                     <p className="text-[10px] text-slate-400 uppercase">Per Session</p>

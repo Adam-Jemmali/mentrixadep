@@ -188,14 +188,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (method === "OPTIONS") {
+  if (method === "OPTIONS" && publicAuthPageOptions204.has(pathname)) {
     // Reply 204 early for all OPTIONS probes to avoid 405 Method Not Allowed on page routes.
     return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
   }
 
   // Handle accidental POSTs to auth page routes (extensions / stale forms) to avoid 405.
   // Real sign-in/up logic uses /api/auth/*.
-  if (method === "POST" && (pathname === "/auth/signin" || pathname === "/auth/signup")) {
+  if (method === "POST" && publicAuthPageOptions204.has(pathname)) {
     return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
   }
 
