@@ -1496,7 +1496,7 @@ export function VideoCall({
           }
         });
 
-        channel.on("presence", { event: "join" }, ({ key, newPresences }: { key: string; newPresences: any[] }) => {
+        channel.on("presence", { event: "join" }, ({ key, newPresences }: { key: string; newPresences: Record<string, unknown>[] }) => {
           console.log("Participant joined:", key, newPresences);
           if (key !== userId) {
             if (mounted) setWaitingForOtherParticipant(false);
