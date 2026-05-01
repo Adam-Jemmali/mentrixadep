@@ -16,8 +16,10 @@ export function ConsoleSilencer() {
 
     console.error = (...args) => {
       const msg = args.join(" ");
-      // Silence React/Apollo DevTools extension error
+      // Silence React/Apollo/Grammarly DevTools extension noise
       if (msg.includes("tabs:outgoing.message.ready")) return;
+      if (msg.includes("Cannot read properties of null (reading 'cssRules')")) return;
+      if (msg.includes("Property 'cssRules' of object 'CSSStyleSheet' is not accessible")) return;
       originalError.apply(console, args);
     };
 
@@ -25,6 +27,7 @@ export function ConsoleSilencer() {
       const msg = args.join(" ");
       // Silence Framer Motion's internal useScroll warning
       if (msg.includes("non-static position, like 'relative'")) return;
+      if (msg.includes("Duplicate presence of slot")) return;
       originalWarn.apply(console, args);
     };
 

@@ -189,10 +189,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (method === "OPTIONS") {
-    if (publicAuthPageOptions204.has(pathname)) {
-      return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
-    }
-    return applySecurityHeaders(NextResponse.next({ request }), pathname);
+    // Reply 204 early for all OPTIONS probes to avoid 405 Method Not Allowed on page routes.
+    return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
   }
 
   // Referral link ?ref=CODE — persist cookie and strip query (clean URLs).

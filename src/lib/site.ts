@@ -7,6 +7,11 @@ import { env } from "@/lib/env";
 export function getSiteUrl(): string {
   const fromEnv = env.public.appUrl?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
+
+  // Vercel deployment URL
+  const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL;
+  if (vercelUrl) return `https://${vercelUrl}`;
+
   return "http://localhost:3000";
 }
 

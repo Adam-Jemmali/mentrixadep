@@ -549,7 +549,7 @@ export const securityHeaders = {
     "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://js.stripe.com https://*.stripe.com",
     "worker-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com",
-    "img-src 'self' data: https: https://*.googleusercontent.com https://*.stripe.com",
+    "img-src 'self' blob: data: https: https://*.googleusercontent.com https://*.stripe.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "frame-src 'self' https://accounts.google.com https://js.stripe.com https://*.stripe.com",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://www.gstatic.com https://api.stripe.com https://*.stripe.com",
