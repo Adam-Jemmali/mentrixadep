@@ -287,10 +287,9 @@ export function HomePageClient() {
                   href="/contact"
                   className="font-semibold text-white border-b border-indigo-400/50 hover:border-indigo-300 pb-0.5 transition-colors"
                 >
-                  Contact
                 </Link>
               </nav>
-      
+              <ContactSocialLinks variant="footer" />
             </div>
           </div>
 

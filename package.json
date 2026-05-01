@@ -14,6 +14,7 @@
     "test:ci": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ci": "playwright test --reporter=line",
+    "test:smoke": "playwright test e2e/smoke-critical.spec.ts",
     "env:verify": "node scripts/verify-prod-env.mjs",
     "cron:verify": "node scripts/verify-cron.mjs",
     "stripe:verify": "node scripts/verify-stripe-setup.mjs",

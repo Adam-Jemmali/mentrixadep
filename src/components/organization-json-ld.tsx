@@ -18,6 +18,12 @@ export function OrganizationJsonLd() {
           "@type": "ImageObject",
           url: `${siteUrl}/mentrixalogo/logo.png`,
         },
+        sameAs: [
+          process.env.NEXT_PUBLIC_SOCIAL_DISCORD_URL,
+          process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM_URL,
+          process.env.NEXT_PUBLIC_SOCIAL_TWITTER_URL,
+          process.env.NEXT_PUBLIC_SOCIAL_LINKEDIN_URL,
+        ].filter(Boolean) as string[],
       },
       {
         "@type": "WebSite",

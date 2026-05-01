@@ -326,7 +326,7 @@ export function FirstSequenceHeroContent() {
 
       <div className="relative z-10 w-full px-0 sm:px-5">
         <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 lg:grid lg:max-w-[90rem] lg:grid-cols-[1fr_1fr] lg:items-start lg:gap-12 lg:px-8 xl:px-16">
-          <div className="relative mx-auto max-w-2xl text-center lg:mx-0 lg:max-w-lg lg:text-left lg:-ml-32 lg:pt-16 xl:-ml-48" style={{ 
+          <div className="relative mx-auto max-w-2xl text-center lg:mx-0 lg:max-w-lg lg:text-left lg:pt-16" style={{ 
             opacity: revealLeft,
             willChange: 'opacity, transform',
           }}>

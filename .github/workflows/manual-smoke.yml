@@ -1,0 +1,51 @@
+name: Manual Smoke Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      tutor_id:
+        description: "Tutor UUID to test booking against"
+        required: false
+        default: ""
+      session_id:
+        description: "Active Session UUID to test joining"
+        required: false
+        default: ""
+
+jobs:
+  smoke-test:
+    name: Run Critical Flow Tests
+    runs-on: ubuntu-latest
+    
+    env:
+      # Secrets must be configured in GitHub Repo Secrets
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3000"
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      
+      E2E_STUDENT_EMAIL: ${{ secrets.E2E_STUDENT_EMAIL }}
+      E2E_STUDENT_PASSWORD: ${{ secrets.E2E_STUDENT_PASSWORD }}
+      E2E_TUTOR_EMAIL: ${{ secrets.E2E_TUTOR_EMAIL }}
+      E2E_TUTOR_PASSWORD: ${{ secrets.E2E_TUTOR_PASSWORD }}
+      
+      E2E_TUTOR_ID: ${{ github.event.inputs.tutor_id || secrets.E2E_TUTOR_ID }}
+      E2E_SESSION_ID: ${{ github.event.inputs.session_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Smoke Tests
+        run: npx playwright test e2e/smoke-critical.spec.ts --reporter=github

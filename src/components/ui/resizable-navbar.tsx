@@ -93,9 +93,9 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
           : "none",
       }}
       transition={{ type: "spring", stiffness: 200, damping: 50 }}
-      style={{ minWidth: "980px", width, y, scale }}
+      style={{ minWidth: "min(980px, 94vw)", width, y, scale }}
       className={cn(
-        "relative z-[60] mx-auto hidden flex-row items-center justify-between self-start rounded-full border border-white/10 bg-slate-950/45 px-4 py-2 text-white lg:flex",
+        "relative z-[60] mx-auto hidden flex-row items-center justify-between self-start rounded-full border border-white/10 bg-slate-950/45 px-6 py-2 text-white lg:flex",
         visible && "bg-slate-950/55 shadow-[0_18px_42px_-28px_rgba(2,6,23,0.45)]",
         className,
       )}
