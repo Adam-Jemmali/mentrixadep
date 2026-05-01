@@ -18,17 +18,6 @@ export const metadata: Metadata = {
   title: `${SITE_NAME} — Live tutoring, quests & divisions`,
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  manifest: "/manifest.json",
-  /** PNG / PWA icons — regenerate with `npm run pwa:icons` from `mentrixa-checkout-icon.svg`. */
-  icons: {
-    icon: [
-      { url: "/favicon-mentrixa.ico?v=20260417", type: "image/x-icon" },
-      { url: "/icon.png", type: "image/png" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-  },
   appleWebApp: {
     capable: true,
     title: "Mentrixa",
@@ -89,6 +78,7 @@ export default function RootLayout({
         <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="icon" href="/icon.png" type="image/png" />
         <link rel="shortcut icon" href="/favicon-mentrixa.ico?v=20260417" type="image/x-icon" />
+        <link rel="manifest" href="/manifest.json" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

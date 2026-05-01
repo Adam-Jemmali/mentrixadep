@@ -193,6 +193,12 @@ export async function middleware(request: NextRequest) {
     return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
   }
 
+  // Handle accidental POSTs to auth page routes (extensions / stale forms) to avoid 405.
+  // Real sign-in/up logic uses /api/auth/*.
+  if (method === "POST" && (pathname === "/auth/signin" || pathname === "/auth/signup")) {
+    return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
+  }
+
   // Referral link ?ref=CODE — persist cookie and strip query (clean URLs).
   const refRaw = request.nextUrl.searchParams.get("ref");
   if (refRaw && method === "GET") {
