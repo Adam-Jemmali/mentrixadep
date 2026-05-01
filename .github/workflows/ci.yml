@@ -23,6 +23,7 @@ jobs:
       STRIPE_SECRET_KEY: sk_test_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_placeholder
       RESEND_API_KEY: re_placeholder
+      WAITLIST_ENABLED: "false"
       # Optional: real tutor UUID for booking smoke test (repository variable / secret)
       # E2E_TUTOR_ID: ""
 

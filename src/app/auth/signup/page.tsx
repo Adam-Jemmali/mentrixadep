@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { isWaitlistEnabled } from "@/lib/flags";
+import { SignupFormClient } from "@/components/auth/signup-form-client";
 
 /**
  * Entry point for “sign up” links (including waitlist approval emails).
@@ -18,5 +19,6 @@ export default function SignUpPage({
   if (isWaitlistEnabled()) {
     redirect("/join");
   }
-  redirect("/auth/signin");
+  
+  return <SignupFormClient />;
 }

@@ -14,27 +14,15 @@ async function mockSupabaseSignUp(
   page: Parameters<typeof test>[0]["page"],
   options: { email: string; withSession: boolean },
 ) {
-  await page.route("**/auth/v1/signup**", async (route) => {
-    const user = {
-      id: "11111111-1111-4111-8111-111111111111",
-      email: options.email,
-      user_metadata: {},
-    };
-    const session = options.withSession
-      ? {
-          access_token: "test-access-token",
-          refresh_token: "test-refresh-token",
-          token_type: "bearer",
-          expires_in: 3600,
-          expires_at: Math.floor(Date.now() / 1000) + 3600,
-          user,
-        }
-      : null;
+  await page.route("**/api/auth/signup**", async (route) => {
+    const ok = true;
+    const sessionEstablished = options.withSession;
+    const email = options.email;
 
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ user, session }),
+      body: JSON.stringify({ ok, sessionEstablished, email }),
     });
   });
 }

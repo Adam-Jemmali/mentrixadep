@@ -81,7 +81,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                         </div>
                         {c.weeklyRank != null && (
                           <div className="flex items-center gap-1 text-[10px] font-black text-indigo-500 uppercase tracking-widest">
-                             <span>· Rank #{c.weeklyRank}</span>
+                             <span>| Rank #{c.weeklyRank}</span>
                           </div>
                         )}
                       </div>
