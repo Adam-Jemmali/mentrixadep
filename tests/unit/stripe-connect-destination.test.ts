@@ -22,6 +22,10 @@ vi.mock("stripe", () => {
   };
 });
 
+const LEDGER_ID = "550e8400-e29b-41d4-a716-446655440000";
+const SESSION_ID = "550e8400-e29b-41d4-a716-446655440001";
+const TUTOR_ID = "550e8400-e29b-41d4-a716-446655440002";
+
 vi.mock("@/lib/env", () => ({
   getStripeSecretKey: () => "sk_test_mock",
   env: {
@@ -31,7 +35,7 @@ vi.mock("@/lib/env", () => ({
 }));
 
 vi.mock("@/lib/auth", () => ({
-  requireRole: vi.fn(async () => ({ id: "tutor_1", role: "tutor", approved: true })),
+  requireRole: vi.fn(async () => ({ id: TUTOR_ID, role: "tutor", approved: true })),
 }));
 
 const fromMock = vi.fn();
@@ -57,13 +61,13 @@ describe("Stripe Connect destination-charge payout flow", () => {
           select: () => ({
             eq: (_col: string, v: string) => ({
               single: async () => {
-                if (v === "ledger_1") {
+                if (v === LEDGER_ID) {
                   return {
                     data: {
-                      id: "ledger_1",
+                      id: LEDGER_ID,
                       status: "pending",
-                      session_id: "session_1",
-                      tutor_id: "tutor_1",
+                      session_id: SESSION_ID,
+                      tutor_id: TUTOR_ID,
                       net_cents: 4000,
                     },
                   };
@@ -84,7 +88,7 @@ describe("Stripe Connect destination-charge payout flow", () => {
             eq: () => ({
               maybeSingle: async () => ({
                 data: {
-                  id: "session_1",
+                  id: SESSION_ID,
                   status: "scheduled",
                   start_time: "2026-04-07T00:00:00.000Z",
                   end_time: "2026-04-07T01:00:00.000Z",
@@ -104,9 +108,10 @@ describe("Stripe Connect destination-charge payout flow", () => {
     });
 
     const { transferSessionPayout } = await import("@/app/actions/stripe-connect");
-    await transferSessionPayout("ledger_1");
+    await transferSessionPayout(LEDGER_ID);
 
-    expect(ledgerUpdateEq).toHaveBeenCalledWith("id", "ledger_1");
+    expect(ledgerUpdateEq).toHaveBeenCalledWith("id", LEDGER_ID);
     expect(transfersCreate).not.toHaveBeenCalled();
   });
 });
+
