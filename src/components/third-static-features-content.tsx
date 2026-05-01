@@ -75,7 +75,7 @@ export function ThirdStaticFeaturesContent() {
 
   return (
     <section id="thirdstatic" className="relative h-[190vh]">
-      <div id="features" className="sticky top-0 h-screen w-full overflow-hidden">
+      <div id="features" className="relative sticky top-0 h-screen w-full overflow-hidden">
         <Image
           src="/sequences-webp/3rdstatic.webp"
           alt="Mentrixa features overview"

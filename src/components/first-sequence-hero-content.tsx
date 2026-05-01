@@ -42,6 +42,7 @@ function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; class
       height={16}
       unoptimized
       className={`block ${className}`}
+      style={{ height: "auto" }}
       aria-hidden
     />
   );
@@ -424,7 +425,7 @@ export function FirstSequenceHeroContent() {
                         waitlistRole === "student" ? "bg-white text-slate-900" : "bg-white/10 text-white",
                       )}
                     >
-                      <RoleIcon role="mentrixer" className={cn("h-3 w-5", waitlistRole === "student" ? "" : "brightness-0 invert")} />
+                      <RoleIcon role="mentrixer" className={cn("h-3 w-3", waitlistRole === "student" ? "" : "brightness-0 invert")} />
                       <BubbleText text="Mentrixer" activeColor="text-blue-500" neighborColor="text-blue-400" className="text-current whitespace-nowrap" />
                     </button>
                     <button

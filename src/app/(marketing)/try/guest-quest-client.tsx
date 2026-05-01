@@ -65,6 +65,19 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
   const [err, setErr] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
+  const correctCount = results.filter(Boolean).length;
+  const isPerfect = questions != null && correctCount === questions.length && phase === "done";
+
+  // Trigger confetti when entering results phase
+  useEffect(() => {
+    if (phase === "done") {
+      import("@/lib/confetti-burst").then((m) => {
+        void m.fireRatingConfetti();
+        if (isPerfect) setTimeout(() => void m.fireLevelUpConfetti(), 1200);
+      });
+    }
+  }, [phase, isPerfect]);
+
   useEffect(() => {
     const picked = defaultSubjects.find((s) => s.key === subjectKey);
     if (picked) setSubjectName(picked.name.replace(/\s+Division$/i, "").trim());
@@ -227,7 +240,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
               }}
               disabled={busy}
             >
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={18} height={18} className="h-4.5 w-4.5" />
+              <Image src={MENTRIXA_LOGO_PNG} alt="" width={18} height={18} className="h-[18px] w-[18px]" />
               {busy ? "Preparing quest…" : "Start free quest →"}
             </Button>
           </div>
@@ -404,15 +417,6 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     const accuracy = Math.round((correct / questions.length) * 100);
     const wouldXp = XP.QUEST_COMPLETE + (correct === questions.length ? XP.QUEST_PERFECT_BONUS : 0);
     const isPerfect = correct === questions.length;
-
-    // Trigger confetti once when entering results
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      import("@/lib/confetti-burst").then((m) => {
-        void m.fireRatingConfetti();
-        if (isPerfect) setTimeout(() => void m.fireLevelUpConfetti(), 1200);
-      });
-    }, [isPerfect]);
 
     return (
       <motion.div
