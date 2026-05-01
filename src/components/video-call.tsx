@@ -1472,14 +1472,39 @@ export function VideoCall({
                 }
               }, 500); // Small delay to ensure both are ready
             }
+
+            // If tutor and not connected yet, request offer
+            if (userRole === "tutor" && !callWasConnectedRef.current) {
+              setTimeout(() => {
+                if (mounted && !callWasConnectedRef.current) {
+                  console.log("Tutor: requesting offer from student (presence sync)");
+                  channel.send({
+                    type: "broadcast",
+                    event: "request-offer",
+                    payload: { from: userId },
+                  });
+                }
+              }, 800);
+            }
           }
         });
 
-        channel.on("presence", { event: "join" }, ({ key, newPresences }: { key: string; newPresences: unknown[] }) => {
+        channel.on("presence", { event: "join" }, ({ key, newPresences }: { key: string; newPresences: any[] }) => {
           console.log("Participant joined:", key, newPresences);
           if (key !== userId) {
             if (mounted) setWaitingForOtherParticipant(false);
             otherParticipantPresent = true;
+
+            // If tutor joins after student OR student joins after tutor, ensure signaling starts
+            if (userRole === "tutor" && !callWasConnectedRef.current) {
+              console.log("Tutor: requesting offer from newly joined participant");
+              channel.send({
+                type: "broadcast",
+                event: "request-offer",
+                payload: { from: userId },
+              });
+            }
+
             // If student and haven't sent offer yet, send it now
             if (userRole === "student" && !offerSent) {
               setTimeout(() => {
@@ -2677,7 +2702,7 @@ export function VideoCall({
                   </h2>
                   <div className="flex flex-col items-center gap-1.5">
                     <p className="text-white/40 text-xs font-medium uppercase tracking-[0.3em] animate-pulse">
-                      Waiting for other participant
+                      {waitingForOtherParticipant ? "Waiting for other participant" : "Establishing secure connection"}
                     </p>
                     <div className="flex gap-1">
                       <div className="w-1 h-1 rounded-full bg-blue-500/40 animate-bounce" style={{ animationDelay: '0ms' }} />
