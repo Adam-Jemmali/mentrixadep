@@ -33,6 +33,86 @@ function asPracticePackType(value: unknown): PracticePackType {
     : "mcq";
 }
 
+type GuestFallbackQuestion = {
+  id: string;
+  kind: "mcq";
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+};
+
+function buildGuestFallbackMcqPack(subject: string): GuestFallbackQuestion[] {
+  const s = subject.trim() || "General";
+  return [
+    {
+      id: "q0",
+      kind: "mcq",
+      prompt: `In ${s}, which study approach usually improves retention the most over time?`,
+      options: [
+        "One long cram session before a deadline",
+        "Spaced practice over multiple short sessions",
+        "Only reading notes once",
+        "Skipping review after solving questions",
+      ],
+      correctIndex: 1,
+      explanation: "Spaced repetition improves long-term recall more reliably than cramming.",
+    },
+    {
+      id: "q1",
+      kind: "mcq",
+      prompt: `When solving a hard ${s} problem, what should you do first?`,
+      options: [
+        "Guess quickly and move on",
+        "Rewrite the question in your own words and list knowns/unknowns",
+        "Search for the final answer immediately",
+        "Ignore constraints and assumptions",
+      ],
+      correctIndex: 1,
+      explanation: "Clarifying the problem statement and constraints reduces avoidable mistakes.",
+    },
+    {
+      id: "q2",
+      kind: "mcq",
+      prompt: `Which feedback loop helps you improve fastest in ${s}?`,
+      options: [
+        "Solve many questions without checking errors",
+        "Review only correct answers",
+        "Analyze mistakes and retry similar questions",
+        "Avoid timed practice completely",
+      ],
+      correctIndex: 2,
+      explanation: "Targeted error review and deliberate retry builds durable skill growth.",
+    },
+    {
+      id: "q3",
+      kind: "mcq",
+      prompt: `For beginner practice in ${s}, what is the best sequence?`,
+      options: [
+        "Hard problems first, basics later",
+        "Memorize answers, skip reasoning",
+        "Foundations first, then progressively harder mixed practice",
+        "Random topics with no progression",
+      ],
+      correctIndex: 2,
+      explanation: "Progressive difficulty with a strong foundation prevents fragile understanding.",
+    },
+    {
+      id: "q4",
+      kind: "mcq",
+      prompt: `If you have 20 minutes to prepare for a ${s} quiz, what is highest impact?`,
+      options: [
+        "Passive rereading only",
+        "Active recall: quick self-test and explain one concept aloud",
+        "Open social media between each question",
+        "Skip checking why answers are wrong",
+      ],
+      correctIndex: 1,
+      explanation: "Active recall and self-explanation are high-yield under time constraints.",
+    },
+  ];
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -66,13 +146,14 @@ export async function POST(req: Request) {
       questionCount: 5,
     });
 
-    if ("error" in gen) {
-      return NextResponse.json({ success: false, error: gen.message }, { status: 500 });
-    }
+    const questions =
+      "error" in gen
+        ? buildGuestFallbackMcqPack(subject.slice(0, 120))
+        : gen.questions;
 
     // increment cookie
     const next = { date: today, count: count + 1 };
-    const res = NextResponse.json({ success: true, questions: gen.questions });
+    const res = NextResponse.json({ success: true, questions });
     res.headers.set("Set-Cookie", `guest_quests=${encodeURIComponent(JSON.stringify(next))}; Path=/; Max-Age=86400; SameSite=Lax`);
     return res;
   } catch (e) {
