@@ -1,6 +1,6 @@
 /** Try Quest (marketing guest demo) — mixed modalities; validated server-side before JSON response. */
 
-export type GuestTryQuestionKind = "mcq" | "true_false" | "flashcard" | "short_answer" | "image_mcq";
+export type GuestTryQuestionKind = "mcq" | "true_false" | "short_answer" | "image_mcq";
 
 export type GuestTryQuestion = {
   id: string;
@@ -25,20 +25,39 @@ export const GUEST_TRY_IMAGE_OPTIONS = [
   "/guest-quest/shape-star.svg",
 ] as const;
 
-/** Normalize common math typings so 3x^2 and 3x² still match reference "3x²". */
+/** Normalize common math typings so 3x^2, 3*x**2, and 3x² all align for grading. */
 function normalizeGuestAnswerTokens(s: string): string {
-  let t = s.trim().toLowerCase().replace(/\s+/g, " ");
+  let t = s.trim().normalize("NFKC").toLowerCase().replace(/\s+/g, " ");
   t = t.replace(/\*/g, "").replace(/×/g, "x").replace(/\u00b7/g, "");
   t = t.replace(/\btheta\b/g, "θ");
+  t = t.replace(/\*\*\s*2\b/g, "²").replace(/\*\*\s*3\b/g, "³");
+  t = t.replace(/\^\s*2\b/g, "²").replace(/\^\s*3\b/g, "³");
+  t = t.replace(/(\d)\s+x\s+²/g, "$1x²").replace(/(\d)\s+x\s+³/g, "$1x³");
+  t = t.replace(/\bx\s*\^\s*2\b/g, "x²").replace(/\bx\s*\^\s*3\b/g, "x³");
   t = t.replace(/(\d)\s*x\s*\^\s*2\b/g, "$1x²").replace(/(\d)\s*x\s*\^\s*3\b/g, "$1x³");
   t = t.replace(/\blog\s*\(\s*n\s*\)/g, "log(n)");
   return t;
 }
 
+/** Compact monomials like 3x² after normalization (covers caret/forms already folded to ²³). */
+function monomialCanon(compact: string): string | null {
+  let m = /^(\d+)x([²³])$/.exec(compact);
+  if (m) return `${m[1]}x${m[2]}`;
+  m = /^x([²³])$/.exec(compact);
+  if (m) return `1x${m[1]}`;
+  return null;
+}
+
 function gradeSingleShortCandidate(u: string, r: string): boolean {
   if (u.length < 2 || r.length < 1) return false;
   if (u === r) return true;
-  const parts = r.split(/[,;/]/).map((p) => p.trim()).filter(Boolean);
+  const uCompact = u.replace(/\s/g, "");
+  const rCompact = r.replace(/\s/g, "");
+  if (uCompact === rCompact) return true;
+  const Mu = monomialCanon(uCompact);
+  const Mr = monomialCanon(rCompact);
+  if (Mu && Mr && Mu === Mr) return true;
+  const parts = r.split(/[,/]/).map((p) => p.trim()).filter(Boolean);
   if (parts.length >= 2 && parts.every((p) => p.length > 1 && u.includes(p))) return true;
   if (r.length <= 48 && u.includes(r)) return true;
   if (r.length > 5 && r.includes(u) && u.length >= 4) return true;
@@ -47,21 +66,39 @@ function gradeSingleShortCandidate(u: string, r: string): boolean {
   return ratio >= 0.88 && u.length >= 6;
 }
 
-/** `referenceRaw` may list alternate acceptable phrases separated by `|` (comma clauses still mean include-all). */
+/** Split synonymous acceptable answers: prefer `|`, then short semicolon-separated phrases (not comma-AND lists). */
+export function splitGuestTryShortAnswerAlternatives(referenceRaw: string): string[] {
+  const t = referenceRaw.trim();
+  if (!t) return [];
+  const pipes = t.split("|").map((x) => x.trim()).filter(Boolean);
+  if (pipes.length >= 2) return pipes;
+  const semis = t.split(";").map((x) => x.trim()).filter(Boolean);
+  if (semis.length >= 2 && semis.every((s) => s.length <= 96 && !s.includes(","))) return semis;
+  return [t];
+}
+
+/** Accepts `|`- or `;`-separated alternates; comma inside one phrase still means multi-fragment AND for that phrase only. */
 export function gradeGuestShortAnswer(userRaw: string, referenceRaw: string): boolean {
   const u = normalizeGuestAnswerTokens(userRaw);
-  const rawAlts = referenceRaw.split("|").map((x) => x.trim()).filter(Boolean);
-  const candidates =
-    rawAlts.length >= 2 ? rawAlts.map((x) => normalizeGuestAnswerTokens(x)) : [normalizeGuestAnswerTokens(referenceRaw)];
+  const candidates = splitGuestTryShortAnswerAlternatives(referenceRaw)
+    .map((x) => normalizeGuestAnswerTokens(x.trim()))
+    .filter(Boolean);
   return candidates.some((r) => gradeSingleShortCandidate(u, r));
+}
+
+/** Pretty list for UI (feedback): variants separated by middle dots. */
+export function formatGuestTryReferenceAnswerDisplay(referenceRaw: string): string {
+  return splitGuestTryShortAnswerAlternatives(referenceRaw.trim())
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .join(" · ");
 }
 
 const GUEST_TRY_KIND_UI: Record<GuestTryQuestionKind, { badge: string; hint: string }> = {
   mcq: { badge: "Deep cut MCQ", hint: "Wrong answers are meant to look tempting." },
   true_false: { badge: "True / False", hint: "Read every qualifier in the statement." },
-  flashcard: { badge: "Flash precision", hint: "Pick the gloss that matches the term exactly." },
   short_answer: { badge: "Sharp recall", hint: "Short phrase — synonyms usually count." },
-  image_mcq: { badge: "Visual pick", hint: "Match the shapes to the clue." },
+  image_mcq: { badge: "Visual pick", hint: "Use the picture — pick the option that matches." },
 };
 
 export function guestTryKindUi(kind: GuestTryQuestionKind): { badge: string; hint: string } {
@@ -77,7 +114,6 @@ export function isPlayableGuestTryQuestion(q: GuestTryQuestion): boolean {
       return typeof q.referenceAnswer === "string" && q.referenceAnswer.trim().length >= 2;
     case "true_false":
     case "mcq":
-    case "flashcard":
       return (
         Array.isArray(q.options) &&
         q.options.length >= 2 &&
@@ -163,7 +199,10 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
         : null;
 
   if (kindRaw === "short_answer") {
-    const ref = typeof o.referenceAnswer === "string" ? o.referenceAnswer.trim().slice(0, 2000) : "";
+    const ref =
+      typeof o.referenceAnswer === "string"
+        ? o.referenceAnswer.trim().replace(/\$/g, "").slice(0, 2000)
+        : "";
     if (ref.length < 2) return null;
     return {
       id,
@@ -230,7 +269,7 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
     if (!options || ci == null) return null;
     return {
       id,
-      kind: "flashcard",
+      kind: "mcq",
       prompt,
       explanation,
       promptImageUrl,

@@ -2137,7 +2137,7 @@ Generate ${n} challenging, subject-specific questions (no generic study advice).
   }
 }
 
-/** Marketing Try Quest — exactly `questionCount` mixed items (MCQ, TF, flashcard, short answer, image pick). */
+/** Marketing Try Quest — exactly `questionCount` mixed items (MCQ, TF, short answer, image picks — no flashcards). */
 export async function generateGuestTryQuestPack(params: {
   subject: string;
   difficulty: PracticeDifficulty;
@@ -2152,9 +2152,9 @@ export async function generateGuestTryQuestPack(params: {
     const rigorBlock = `
 Try Quest is an elite 8-round guest gauntlet—it must feel challenging and fair, not a trivia lightning round:
 - Target difficulty: AP / honors / early undergrad reasoning—students should need ~25–70 seconds of careful thinking per item.
-- Wrong MCQ/flashcard answers must be LOOK-alikes: tight wording traps, almost-right formulas, correct vocabulary applied to the wrong setting.
+- Wrong MCQ answers must be LOOK-alikes: tight wording traps, almost-right formulas, correct vocabulary applied to the wrong setting.
 - True/false: craft stems that reward precise logic—test absolute qualifiers (always/never/necessary/sufficient), boundary cases, and subtle reversals.
-- Flashcards: four glosses where three sound plausible to someone partially confident.
+- image_mcq prompts must clearly describe which visual to choose (shapes are fixed icons on the client).
 
 Tone: confident and playful difficulty—reward sharp readers; avoid fluff study-skills questions unless the subject truly is study skills.
 `;
@@ -2165,21 +2165,21 @@ JSON reliability (critical):
 - Plain UTF-8 strings only: NO LaTeX, NO backslashes, NO dollar signs $ anywhere, NO double-quote characters inside string values (use simple wording like x squared or x³ Unicode).
 - NEVER wrap prompts in square brackets and NEVER start a prompt with [Discipline] — use the discipline prefix format below instead.
 - Do NOT include promptImageUrl or optionImageUrls — the server attaches safe images when needed.
-- short_answer.referenceAnswer may embed alternate acceptable answers separated ONLY by pipe | when genuinely synonymous (example: n log n | O(n log n)).
+- short_answer.referenceAnswer: REQUIRED pipe-separated synonyms for anything algebraic (example: 3x² | 3x^2 | 3*x^2 | 3 x squared). The grader treats these as OR matches; never use semicolons for synonyms.
 `;
 
     const kindSchedule = `
 Emit exactly ${n} objects in array order (indices q0 … q${n - 1}). Each item MUST use the kind at that slot:
 - q0: kind "mcq" — four text options, correctIndex 0–3.
 - q1: kind "true_false" — include boolean "correctTrue" (true if the correct answer is True, false if False). Also include short explanation.
-- q2: kind "flashcard" — prompt line 1: "FLASHCARD — Term: <term>" then line 2: "Pick the best gloss." four gloss options, correctIndex.
-- q3: kind "short_answer" — referenceAnswer: concise phrase (2–120 chars). Use pipe | only between synonymous acceptable answers. No options array.
-- q4: kind "image_mcq" — prompt asks which of four fixed demo icons matches; options MUST be exactly these four strings IN ORDER:
+- q2: kind "image_mcq" — prompt requires looking at the icons; options MUST be exactly these four strings IN ORDER:
   ["Rounded square (blue)","Circle (green)","Triangle (orange)","Star (purple)"]
-  correctIndex 0–3 picks which shape is correct for your prompt.
-- q5: kind "mcq" — include a scenario that benefits from visual reasoning (still text-only prompt).
+  correctIndex 0–3. Invent a non-trivial clue (symmetry, vertices, edges, inside/outside count).
+- q3: kind "short_answer" — referenceAnswer: concise phrase(s); separate synonyms with | only. No options array.
+- q4: kind "image_mcq" — another distinct visual-clue question using the SAME four option strings in the SAME order (different prompt and correctIndex from q2).
+- q5: kind "mcq" — four text options, challenging distractors.
 - q6: kind "true_false" — correctTrue boolean.
-- q7: kind "flashcard" — different term than q2.
+- q7: kind "image_mcq" — third distinct visual-clue question using the SAME four option strings in order (again different prompt/correctIndex from q2 and q4).
 ${n > 8 ? `- q8 … q${n - 1}: kind "mcq" — four text options each, correctIndex 0–3.` : ""}
 `;
 
@@ -2202,7 +2202,7 @@ SUBJECT MODE ("${subject}"):
 
 Shared fields for every item:
 - id: string "q0" … "q${n - 1}"
-- kind: one of mcq | true_false | flashcard | short_answer | image_mcq (must match slot schedule)
+- kind: one of mcq | true_false | short_answer | image_mcq (must match slot schedule)
 - prompt: question text
 - explanation: 1–3 sentences (why the keyed answer is right)
 

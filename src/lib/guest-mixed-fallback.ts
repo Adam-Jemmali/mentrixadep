@@ -11,9 +11,12 @@ const IMAGE_SHAPE_CAPTIONS = [
   "Star (purple)",
 ] as const;
 
-/** Honors / early undergrad traps — mixed modalities; same-origin images only. Subject shown only as UI chip (no bracket tags in prompts). */
+/**
+ * Honors-level mixed pack — no flashcards; several rounds require interpreting images (shapes + diagram).
+ * Subject is shown only as a UI chip (no bracket tags in prompts).
+ */
 export function buildGuestMixedFallbackPack(_subjectRaw: string): GuestTryQuestion[] {
-  const q: GuestTryQuestion[] = [
+  return [
     {
       id: "fb-mcq-1",
       kind: "mcq",
@@ -40,17 +43,13 @@ export function buildGuestMixedFallbackPack(_subjectRaw: string): GuestTryQuesti
       correctIndex: 1,
     },
     {
-      id: "fb-flash-1",
-      kind: "flashcard",
-      prompt: "FLASHCARD — Term: homomorphism (algebra)\nPick the best gloss.",
-      explanation:
-        "A homomorphism preserves the relevant operations (for example in groups, f(ab) = f(a)f(b)), not arbitrary maps.",
-      options: [
-        "Any bijection between two sets",
-        "A structure-preserving map that respects the operations",
-        "A matrix that is always orthogonal",
-        "An algorithm that sorts in O(n log n) time only",
-      ],
+      id: "fb-img-1",
+      kind: "image_mcq",
+      prompt:
+        "Look at the four icons: which shape has a smooth closed boundary with no corners (no vertices)?",
+      explanation: "A circle has no vertices; the square, triangle, and star each has corners or intersecting segments.",
+      options: [...IMAGE_SHAPE_CAPTIONS],
+      optionImageUrls: [...GUEST_TRY_IMAGE_OPTIONS],
       correctIndex: 1,
     },
     {
@@ -58,14 +57,14 @@ export function buildGuestMixedFallbackPack(_subjectRaw: string): GuestTryQuesti
       kind: "short_answer",
       prompt: "Short answer (one expression): what is the derivative of x³ with respect to x?",
       explanation: "Power rule: derivative is 3x².",
-      referenceAnswer: "3x²; 3x^2; 3 x squared",
+      referenceAnswer: "3x² | 3x^2 | 3*x^2 | 3x**2 | 3 x^2 | 3 x² | 3 x squared",
     },
     {
-      id: "fb-img-1",
+      id: "fb-img-2",
       kind: "image_mcq",
       prompt:
-        "Visual pick: which icon is the only simple polygon here with exactly three straight edges meeting at three vertices?",
-      explanation: "Only the triangle has three edges and three vertices; the star has more edges and intersecting segments.",
+        "Which icon is the only simple polygon here with exactly three straight edges and three vertices?",
+      explanation: "Only the triangle fits; the star has many edges and intersections.",
       options: [...IMAGE_SHAPE_CAPTIONS],
       optionImageUrls: [...GUEST_TRY_IMAGE_OPTIONS],
       correctIndex: 2,
@@ -81,24 +80,29 @@ export function buildGuestMixedFallbackPack(_subjectRaw: string): GuestTryQuesti
       correctIndex: 1,
     },
     {
-      id: "fb-tf-2",
-      kind: "true_false",
-      prompt: "Statement: Every invertible square matrix over the reals is diagonalizable.",
-      explanation:
-        "Invertible only guarantees nonsingular; defective matrices (e.g., a nontrivial Jordan block) can be invertible yet not diagonalizable.",
-      options: ["True", "False"],
-      correctIndex: 1,
+      id: "fb-mcq-diagram",
+      kind: "mcq",
+      prompt:
+        "Study the diagram: moving left to right along the bottom axis, the blue curve always rises (height increases). Which choice best describes that behavior on the window shown?",
+      explanation: "The plotted curve is monotone increasing across the visible domain.",
+      promptImageUrl: "/guest-quest/diagram-grid.svg",
+      options: [
+        "The curve is strictly increasing on the visible window",
+        "The curve is strictly decreasing on the visible window",
+        "The curve stays flat",
+        "The curve repeatedly rises and falls",
+      ],
+      correctIndex: 0,
     },
     {
-      id: "fb-short-2",
-      kind: "short_answer",
+      id: "fb-img-3",
+      kind: "image_mcq",
       prompt:
-        "Short answer: worst-case time complexity class for comparison-based sorting of n items (standard big-O family).",
-      explanation:
-        "Comparison sorts need Ω(n log n) comparisons in the worst case; mergesort/heapsort achieve Θ(n log n).",
-      referenceAnswer: "O(n log n) | n log n | theta(n log n) | Θ(n log n)",
+        "Which icon shows a star-like silhouette with several sharp outer points radiating from the center?",
+      explanation: "The purple star icon matches that description; the other shapes do not.",
+      options: [...IMAGE_SHAPE_CAPTIONS],
+      optionImageUrls: [...GUEST_TRY_IMAGE_OPTIONS],
+      correctIndex: 3,
     },
   ];
-
-  return q;
 }

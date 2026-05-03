@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getDivisionTheme, divisionTeaser } from "@/lib/division-ui";
 import {
+  formatGuestTryReferenceAnswerDisplay,
   gradeGuestShortAnswer,
   guestTryKindUi,
   isPlayableGuestTryQuestion,
@@ -27,7 +28,7 @@ import {
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
   if (!x || typeof x !== "object") return false;
   const o = x as Record<string, unknown>;
-  const kinds = ["mcq", "true_false", "flashcard", "short_answer", "image_mcq"] as const;
+  const kinds = ["mcq", "true_false", "short_answer", "image_mcq"] as const;
   return (
     typeof o.id === "string" &&
     typeof o.kind === "string" &&
@@ -345,7 +346,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
           )}
 
           <p className="mt-4 text-center text-[11px] text-slate-500 leading-relaxed px-1">
-            Eight rounds · MCQ, true/false, flashcards, visuals, and short recall · difficulty pinned to advanced for every demo run.
+            Eight rounds · MCQ, true/false, picture rounds, and short recall · difficulty pinned to advanced for every demo run.
           </p>
 
           <div className="mt-5">
@@ -654,9 +655,14 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                         {wasCorrect ? "✓ Crushed it!" : "→ Close — read the breakdown"}
                       </p>
                       <p className={`text-sm ${wasCorrect ? "text-blue-800" : "text-slate-800"}`}>{q.explanation}</p>
-                      {isShort && !wasCorrect && q.referenceAnswer ? (
+                      {isShort && q.referenceAnswer ? (
                         <p className="mt-2 text-sm text-slate-700">
-                          Example answer: <span className="font-semibold">{q.referenceAnswer.replace(/\|/g, " · ")}</span>
+                          <span className="text-slate-500">
+                            {wasCorrect ? "Accepted answers include: " : "Example answers: "}
+                          </span>
+                          <span className="font-semibold text-slate-900">
+                            {formatGuestTryReferenceAnswerDisplay(q.referenceAnswer)}
+                          </span>
                         </p>
                       ) : null}
                     </div>
