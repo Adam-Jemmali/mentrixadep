@@ -27,6 +27,10 @@ import type {
   PracticePackType,
   PracticeQuestion,
 } from "@/lib/practice-quest-types";
+import {
+  normalizeGuestTryPack,
+  type GuestTryQuestion,
+} from "@/lib/guest-try-types";
 import { createClient } from "@supabase/supabase-js";
 
 // ============================================
@@ -1972,6 +1976,16 @@ export async function analyzeRecordingForStudioContextFromFile(
   return analyzeRecordingContext(input, userId);
 }
 
+export function isGeneralMixedGuestSubject(subjectRaw: string): boolean {
+  const s = subjectRaw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+division$/i, "")
+    .trim();
+  if (!s) return true;
+  return s === "general" || s === "mixed";
+}
+
 export async function generatePracticeQuestPackGuest(
   params: {
     subject: string;
@@ -1986,6 +2000,39 @@ export async function generatePracticeQuestPackGuest(
     const diff = params.difficulty;
     const pack = params.packType;
     const level = "guest learner";
+    const mixedGeneral = isGeneralMixedGuestSubject(subject);
+
+    const rigorBlock = `
+Guest demo rigor (must feel like a real honors-level quiz, not lifestyle tips):
+- Questions must require **specific disciplinary reasoning**: definitions applied to concrete cases, quantitative comparisons, mechanism/order reasoning, or elimination among subtle alternatives.
+- Forbidden unless the subject line is literally about study skills or metacognition: time management, cramming vs spaced repetition, generic motivation, or vague learning strategies.
+- MCQ wrong answers must be **plausible misconceptions** in the stated domain—not joke answers or unrelated fillers.
+- Increase difficulty for tier "${diff}": wrong answers should tempt partial understanding.
+`;
+
+    const jsonSafetyBlock = `
+JSON reliability (critical):
+- Return exactly one JSON object, no markdown fences, no commentary.
+- Each MCQ: exactly 4 string options, correctIndex integer 0–3, fields id, kind, prompt, options, explanation.
+- Prompts and options: plain UTF-8 text only. Do NOT use LaTeX or backslashes. Avoid double-quote characters inside strings (use plain wording).
+`;
+
+    const domainBlock = mixedGeneral
+      ? `
+MIXED-SUBJECT MODE (subject is General / mixed preview):
+- Emit exactly ${n} MCQs in array order; each question targets a **different** discipline—do not repeat domains:
+  q0 → Biology / physiology or genetics reasoning (not definitions only)
+  q1 → Chemistry (bonding, periodic trends, equilibrium intuition, or stoichiometry reasoning)
+  q2 → Physics (forces, energy, circuits, waves—conceptual with numeric or comparative framing when possible)
+  q3 → Mathematics (algebra, geometry, probability, functions—requires a step of inference)
+  q4 → Computer science / logic (algorithms, data structures, complexity classes, boolean logic)
+- Prefix each prompt with a short tag exactly like [Biology], [Chemistry], [Physics], [Mathematics], [Computer science] matching that item’s domain.
+`
+      : `
+SUBJECT-FOCUSED MODE ("${subject}"):
+- Every question must test **real ${subject} content** at tier "${diff}"—applied scenarios, contrasts between closely related ideas, or multi-step elimination.
+- Prefix each prompt with [${subject}] for clarity.
+`;
 
     const systemPrompt = `You write practice questions for learners. Return ONLY valid JSON:
 {
@@ -2001,13 +2048,23 @@ Shared rules:
 - prompt: clear question text (for problem_solving, math may use LaTeX)
 - difficulty: subject=${subject}, learner tier=${diff}, account level label=${level} — calibrate rigor accordingly.
 
+${rigorBlock}
+${jsonSafetyBlock}
+${domainBlock}
+
 Do not include markdown fences or commentary outside the JSON object. Return a single JSON object only.`;
 
-    const userContent = `Subject: ${subject}
+    const userContent = mixedGeneral
+      ? `Subject: General (mixed STEM preview — five distinct domains as specified)
 Difficulty tier: ${diff}
 Pack type: ${pack}
 Learner level: ${level}
-Generate ${n} questions.`;
+Generate ${n} challenging questions following the domain rotation exactly.`
+      : `Subject: ${subject}
+Difficulty tier: ${diff}
+Pack type: ${pack}
+Learner level: ${level}
+Generate ${n} challenging, subject-specific questions (no generic study advice).`;
 
     const raw = await generateJsonRetryOnTimeout(systemPrompt, userContent, PRACTICE_PACK_TIMEOUT_MS);
 
@@ -2077,6 +2134,116 @@ Generate ${n} questions.`;
     return { questions: questions.slice(0, n) };
   } catch (err) {
     return handleAiError(err, "generatePracticeQuestPackGuest", params.subject.slice(0, 100));
+  }
+}
+
+/** Marketing Try Quest — exactly `questionCount` mixed items (MCQ, TF, flashcard, short answer, image pick). */
+export async function generateGuestTryQuestPack(params: {
+  subject: string;
+  difficulty: PracticeDifficulty;
+  questionCount: number;
+}): Promise<{ questions: GuestTryQuestion[] } | AiErrorResult> {
+  try {
+    const n = Math.min(10, Math.max(8, Math.floor(params.questionCount)));
+    const subject = sanitizeForPrompt(params.subject).slice(0, 120);
+    const diff = params.difficulty;
+    const mixedGeneral = isGeneralMixedGuestSubject(subject);
+
+    const rigorBlock = `
+Try Quest is an elite 8-round guest gauntlet—it must feel challenging and fair, not a trivia lightning round:
+- Target difficulty: AP / honors / early undergrad reasoning—students should need ~25–70 seconds of careful thinking per item.
+- Wrong MCQ/flashcard answers must be LOOK-alikes: tight wording traps, almost-right formulas, correct vocabulary applied to the wrong setting.
+- True/false: craft stems that reward precise logic—test absolute qualifiers (always/never/necessary/sufficient), boundary cases, and subtle reversals.
+- Flashcards: four glosses where three sound plausible to someone partially confident.
+
+Tone: confident and playful difficulty—reward sharp readers; avoid fluff study-skills questions unless the subject truly is study skills.
+`;
+
+    const jsonSafetyBlock = `
+JSON reliability (critical):
+- Return exactly one JSON object, no markdown fences, no commentary outside JSON.
+- Plain UTF-8 strings only: NO LaTeX, NO backslashes, NO double-quote characters inside string values (use simple wording).
+- Do NOT include promptImageUrl or optionImageUrls — the server attaches safe images when needed.
+- short_answer.referenceAnswer may embed alternate acceptable answers separated ONLY by pipe | when genuinely synonymous (example: n log n | O(n log n)).
+`;
+
+    const kindSchedule = `
+Emit exactly ${n} objects in array order (indices q0 … q${n - 1}). Each item MUST use the kind at that slot:
+- q0: kind "mcq" — four text options, correctIndex 0–3.
+- q1: kind "true_false" — include boolean "correctTrue" (true if the correct answer is True, false if False). Also include short explanation.
+- q2: kind "flashcard" — prompt line 1: "FLASHCARD — Term: <term>" then line 2: "Pick the best gloss." four gloss options, correctIndex.
+- q3: kind "short_answer" — referenceAnswer: concise phrase (2–120 chars). Use pipe | only between synonymous acceptable answers. No options array.
+- q4: kind "image_mcq" — prompt asks which of four fixed demo icons matches; options MUST be exactly these four strings IN ORDER:
+  ["Rounded square (blue)","Circle (green)","Triangle (orange)","Star (purple)"]
+  correctIndex 0–3 picks which shape is correct for your prompt.
+- q5: kind "mcq" — include a scenario that benefits from visual reasoning (still text-only prompt).
+- q6: kind "true_false" — correctTrue boolean.
+- q7: kind "flashcard" — different term than q2.
+${n > 8 ? `- q8 … q${n - 1}: kind "mcq" — four text options each, correctIndex 0–3.` : ""}
+`;
+
+    const domainBlock = mixedGeneral
+      ? `
+MIXED STEM MODE (General / mixed):
+- Rotate disciplines across items: mix biology/chemistry/physics/math/cs reasoning (no repeating the same narrow subtopic twice).
+- Prefix each prompt with a tag like [Biology], [Chemistry], [Physics], [Mathematics], or [Computer science] matching the item.
+`
+      : `
+SUBJECT MODE ("${subject}"):
+- Every item tests real ${subject} content at tier "${diff}".
+- Prefix each prompt with [${subject.slice(0, 48)}].
+`;
+
+    const systemPrompt = `You write short assessment items for a marketing demo. Return ONLY valid JSON:
+{
+  "questions": [ ... exactly ${n} objects in the prescribed order ... ]
+}
+
+Shared fields for every item:
+- id: string "q0" … "q${n - 1}"
+- kind: one of mcq | true_false | flashcard | short_answer | image_mcq (must match slot schedule)
+- prompt: question text
+- explanation: 1–3 sentences (why the keyed answer is right)
+
+${kindSchedule}
+
+${rigorBlock}
+${jsonSafetyBlock}
+${domainBlock}
+
+difficulty calibration: tier="${diff}", learner=guest preview.
+
+Do not wrap JSON in markdown. Return a single JSON object only.`;
+
+    const userContent = mixedGeneral
+      ? `Subject: General (mixed STEM preview)
+Difficulty: ${diff}
+Generate ${n} items following the slot schedule exactly.`
+      : `Subject: ${subject}
+Difficulty: ${diff}
+Generate ${n} subject-specific items following the slot schedule exactly.`;
+
+    const raw = await generateJsonRetryOnTimeout(systemPrompt, userContent, PRACTICE_PACK_TIMEOUT_MS);
+
+    if (containsPii(raw)) {
+      return { error: true, message: "AI response contained unexpected content. Please try again." };
+    }
+
+    const parsedResult = parseModelJson<{ questions?: unknown[] }>(raw);
+    if (!parsedResult.ok) {
+      return { error: true, message: "Failed to parse Try Quest JSON." };
+    }
+
+    const rawList = Array.isArray(parsedResult.value.questions) ? parsedResult.value.questions : [];
+    const questions = normalizeGuestTryPack(rawList, n);
+
+    if (questions.length < n) {
+      return { error: true, message: "Try Quest pack incomplete." };
+    }
+
+    return { questions };
+  } catch (err) {
+    return handleAiError(err, "generateGuestTryQuestPack", params.subject.slice(0, 100));
   }
 }
 

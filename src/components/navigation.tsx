@@ -146,8 +146,11 @@ function NavigationInner({ user }: NavigationProps) {
         : user
           ? "/student"
           : "/";
+  /** Include mark on landing-style routes and waitlist-locked shell (e.g. /pending-approval). */
   const showRoleLogo = Boolean(
-    !user || ((user.role === "student" || user.role === "tutor") && !appShellLocked)
+    !user ||
+      appShellLocked ||
+      ((user.role === "student" || user.role === "tutor") && !appShellLocked),
   );
 
   const isActive = useCallback((href: string) => {

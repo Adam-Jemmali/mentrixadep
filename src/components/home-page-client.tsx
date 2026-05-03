@@ -295,7 +295,7 @@ export function HomePageClient() {
 
           <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[11px] text-slate-500 order-2 sm:order-1">
-              &copy; {new Date().getFullYear()} Mentrixa Inc.
+              &copy; {new Date().getFullYear()} Mentrixa 
             </p>
             <span className="order-1 sm:order-2 text-[12px] text-indigo-300/70 sm:text-right">
               <a

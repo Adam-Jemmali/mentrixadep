@@ -15,16 +15,26 @@ import { GooeyText } from "@/components/ui/gooey-text-morphing";
 import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { getDivisionTheme, divisionTeaser } from "@/lib/division-ui";
+import {
+  gradeGuestShortAnswer,
+  guestTryKindUi,
+  isPlayableGuestTryQuestion,
+  type GuestTryQuestion,
+} from "@/lib/guest-try-types";
 
-type Q = {
-  id: string;
-  kind: string;
-  prompt: string;
-  options?: string[];
-  correctIndex?: number;
-  explanation?: string;
-};
+function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
+  if (!x || typeof x !== "object") return false;
+  const o = x as Record<string, unknown>;
+  const kinds = ["mcq", "true_false", "flashcard", "short_answer", "image_mcq"] as const;
+  return (
+    typeof o.id === "string" &&
+    typeof o.kind === "string" &&
+    (kinds as readonly string[]).includes(o.kind) &&
+    typeof o.prompt === "string"
+  );
+}
 
 // Sound effect utility
 function playClickSound() {
@@ -52,14 +62,79 @@ function playClickSound() {
   }
 }
 
+function playOutcomeSound(correct: boolean) {
+  try {
+    interface WebKitWindow extends Window {
+      webkitAudioContext?: typeof AudioContext;
+    }
+    const AudioContextClass =
+      window.AudioContext || ((window as WebKitWindow).webkitAudioContext as typeof AudioContext);
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = correct ? "sine" : "triangle";
+    const base = correct ? 784 : 162;
+    osc.frequency.setValueAtTime(base, ctx.currentTime);
+    if (correct) {
+      osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.09);
+    } else {
+      osc.frequency.exponentialRampToValueAtTime(108, ctx.currentTime + 0.14);
+    }
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(correct ? 0.048 : 0.036, ctx.currentTime + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (correct ? 0.15 : 0.22));
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + (correct ? 0.17 : 0.24));
+  } catch {
+    // ignore
+  }
+}
+
+function hapticOutcome(correct: boolean) {
+  try {
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(correct ? [12, 36, 16] : [40, 28, 40, 28]);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function streakFromEnd(resultsSoFar: boolean[]): number {
+  let s = 0;
+  for (let i = resultsSoFar.length - 1; i >= 0; i--) {
+    if (resultsSoFar[i]) s++;
+    else break;
+  }
+  return s;
+}
+
+function bestStreakInRun(resultsSoFar: boolean[]): number {
+  let cur = 0;
+  let best = 0;
+  for (const ok of resultsSoFar) {
+    if (ok) {
+      cur++;
+      best = Math.max(best, cur);
+    } else {
+      cur = 0;
+    }
+  }
+  return best;
+}
+
 export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: string; name: string }[] }) {
   const router = useRouter();
   const [subjectKey, setSubjectKey] = useState(defaultSubjects[0]?.key ?? "general");
   const [subjectName, setSubjectName] = useState(defaultSubjects[0]?.name ?? "General");
   const [phase, setPhase] = useState<"wizard" | "run" | "done">("wizard");
-  const [questions, setQuestions] = useState<Q[] | null>(null);
+  const [questions, setQuestions] = useState<GuestTryQuestion[] | null>(null);
   const [qIndex, setQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
+  const [shortAnswerText, setShortAnswerText] = useState("");
+  const [shortSubmitted, setShortSubmitted] = useState(false);
   const [results, setResults] = useState<boolean[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -83,6 +158,12 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     if (picked) setSubjectName(picked.name.replace(/\s+Division$/i, "").trim());
   }, [subjectKey, defaultSubjects]);
 
+  useEffect(() => {
+    setShortAnswerText("");
+    setShortSubmitted(false);
+    setSelected(null);
+  }, [qIndex, questions]);
+
   const start = async () => {
     setErr(null);
     setBusy(true);
@@ -90,7 +171,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
       const res = await fetch("/api/guest-practice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: subjectName, difficulty: "beginner", packType: "mcq" }),
+        body: JSON.stringify({ subject: subjectName, difficulty: "advanced" }),
       });
       const j = await res.json();
       if (!j.success) {
@@ -98,7 +179,18 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
         setBusy(false);
         return;
       }
-      setQuestions(j.questions as Q[]);
+      const rawList = j.questions;
+      const cleaned = Array.isArray(rawList)
+        ? rawList.filter(isGuestTryQuestion).filter(isPlayableGuestTryQuestion)
+        : [];
+      if (cleaned.length === 0) {
+        setErr("Could not load demo questions. Please try again.");
+        setBusy(false);
+        return;
+      }
+      setQuestions(cleaned);
+      setQIndex(0);
+      setResults([]);
       setPhase("run");
       setBusy(false);
     } catch (e) {
@@ -110,10 +202,31 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
   const onSelect = (idx: number) => {
     if (!questions) return;
     const q = questions[qIndex];
-    if (!q) return;
+    if (!q || q.kind === "short_answer") return;
+    if (q.correctIndex === undefined) return;
     const correct = q.correctIndex === idx;
     setSelected(idx);
-    setResults((r) => [...r, correct]);
+    setResults((r) => {
+      const next = [...r, correct];
+      playOutcomeSound(correct);
+      hapticOutcome(correct);
+      return next;
+    });
+  };
+
+  const submitShortAnswer = () => {
+    if (!questions) return;
+    const q = questions[qIndex];
+    if (!q || q.kind !== "short_answer") return;
+    const ref = q.referenceAnswer ?? "";
+    const ok = gradeGuestShortAnswer(shortAnswerText, ref);
+    setShortSubmitted(true);
+    setResults((r) => {
+      const next = [...r, ok];
+      playOutcomeSound(ok);
+      hapticOutcome(ok);
+      return next;
+    });
   };
 
   const next = () => {
@@ -149,7 +262,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
 
           <div className="mt-4 min-h-[48px] flex items-center justify-center">
             <ParticleTextEffect 
-              words={["GUESS", "SOLVE", "LEARN", "WIN"]} 
+              words={["GAUNTLET", "FOCUS", "OUTPLAY", "LEVEL UP"]} 
               className="text-center"
             />
           </div>
@@ -231,7 +344,11 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
             </motion.div>
           )}
 
-          <div className="mt-6">
+          <p className="mt-4 text-center text-[11px] text-slate-500 leading-relaxed px-1">
+            Eight rounds · MCQ, true/false, flashcards, visuals, and short recall · difficulty pinned to advanced for every demo run.
+          </p>
+
+          <div className="mt-5">
             <Button
               className="w-full h-11 text-base font-semibold flex items-center justify-center gap-2"
               onClick={() => {
@@ -241,7 +358,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
               disabled={busy}
             >
               <Image src={MENTRIXA_LOGO_PNG} alt="" width={18} height={18} className="h-[18px] w-[18px]" />
-              {busy ? "Preparing quest…" : "Start free quest →"}
+              {busy ? "Forging your gauntlet…" : "Start free quest →"}
             </Button>
           </div>
         </TiltCard>
@@ -253,7 +370,20 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     const q = questions[qIndex];
     if (!q) return null;
 
+    const isShort = q.kind === "short_answer";
+    const choiceAnswered = !isShort && selected != null;
+    const answered = isShort ? shortSubmitted : choiceAnswered;
+    const wasCorrect = answered ? results[qIndex] : undefined;
+    const imageMcq =
+      q.kind === "image_mcq" &&
+      Array.isArray(q.optionImageUrls) &&
+      Array.isArray(q.options) &&
+      q.optionImageUrls.length === q.options.length &&
+      q.optionImageUrls.length > 0;
+
     const progress = ((qIndex + 1) / questions.length) * 100;
+    const kindUi = guestTryKindUi(q.kind);
+    const streakNow = answered ? streakFromEnd(results) : 0;
 
     return (
       <AnimatePresence mode="wait">
@@ -266,10 +396,10 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
           className="max-w-3xl mx-auto py-8 px-4"
         >
           {/* Progress bar */}
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Question {qIndex + 1} of {questions.length}
+                Round {qIndex + 1} / {questions.length}
               </span>
               <span className="text-xs font-medium text-slate-500">{Math.round(progress)}%</span>
             </div>
@@ -283,87 +413,203 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
             </div>
           </div>
 
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
+                {kindUi.badge}
+              </span>
+              <p className="text-[11px] text-slate-500 max-w-lg leading-snug">{kindUi.hint}</p>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap mt-0.5">
+              Elite gauntlet
+            </span>
+          </div>
+
           {/* Question card */}
           <TiltCard tiltLimit={2} className="rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)] p-6 sm:p-8 block">
+            {q.promptImageUrl ? (
+              <div className="relative mb-6 h-44 w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50 sm:h-52">
+                <Image
+                  src={q.promptImageUrl}
+                  alt=""
+                  fill
+                  className="object-contain p-3"
+                  sizes="(max-width: 768px) 100vw, 42rem"
+                  unoptimized={q.promptImageUrl.startsWith("/")}
+                />
+              </div>
+            ) : null}
+
             <PromptWithMath text={q.prompt} />
 
-            {/* Options grid */}
-            <motion.div
-              className="mt-6 grid gap-3 sm:grid-cols-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.15, duration: 0.3 }}
-            >
-              {q.options?.map((opt, i) => {
-                const isSelected = selected === i;
-                const isCorrect = i === q.correctIndex;
-                const showFeedback = selected != null;
-
-                let bgClass = "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50";
-                if (showFeedback && isCorrect) {
-                  bgClass = "bg-blue-50 border-blue-400";
-                } else if (showFeedback && isSelected && !isCorrect) {
-                  bgClass = "bg-slate-50 border-slate-400";
-                } else if (showFeedback && !isSelected) {
-                  bgClass = "bg-slate-50 border-slate-200";
-                }
-
-                return (
-                  <motion.button
-                    key={i}
+            {isShort ? (
+              <motion.div
+                className="mt-6 space-y-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.25 }}
+              >
+                <Textarea
+                  value={shortAnswerText}
+                  onChange={(e) => setShortAnswerText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (shortSubmitted) return;
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      if (shortAnswerText.trim().length >= 1) {
+                        playClickSound();
+                        submitShortAnswer();
+                      }
+                    }
+                  }}
+                  disabled={shortSubmitted}
+                  placeholder="Type your answer…"
+                  rows={3}
+                  className="resize-none text-sm bg-slate-50/80 border-slate-200"
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
                     type="button"
+                    className="font-semibold"
+                    disabled={shortSubmitted || shortAnswerText.trim().length < 1}
                     onClick={() => {
                       playClickSound();
-                      onSelect(i);
+                      submitShortAnswer();
                     }}
-                    disabled={selected != null}
-                    whileHover={selected == null ? { scale: 1.02 } : {}}
-                    whileTap={selected == null ? { scale: 0.98 } : {}}
-                    className={`relative border-2 rounded-xl p-4 text-left text-sm font-medium transition-all ${bgClass} ${
-                      showFeedback ? "cursor-default" : "cursor-pointer"
-                    }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`min-w-fit h-5 w-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
-                          isCorrect && showFeedback
-                            ? "bg-emerald-500 border-emerald-500"
-                            : isSelected && !isCorrect && showFeedback
-                              ? "bg-red-500 border-red-500"
-                              : "border-slate-300"
-                        }`}
-                      >
-                        {isCorrect && showFeedback && (
-                          <motion.span
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                            className="text-white text-xs font-bold"
-                          >
-                            ✓
-                          </motion.span>
-                        )}
-                        {isSelected && !isCorrect && showFeedback && (
-                          <motion.span
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                            className="text-white text-xs font-bold"
-                          >
-                            ✕
-                          </motion.span>
-                        )}
+                    Check answer
+                  </Button>
+                  <span className="text-[10px] text-slate-400">
+                    Tip: <kbd className="rounded border border-slate-200 bg-white px-1 py-0.5 font-mono">Ctrl</kbd>{" "}
+                    +{" "}
+                    <kbd className="rounded border border-slate-200 bg-white px-1 py-0.5 font-mono">Enter</kbd>{" "}
+                    to submit
+                  </span>
+                </div>
+              </motion.div>
+            ) : imageMcq && q.options && q.optionImageUrls ? (
+              <motion.div
+                className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+              >
+                {q.options.map((opt, i) => {
+                  const url = q.optionImageUrls![i]!;
+                  const isSel = selected === i;
+                  const isCorr = i === q.correctIndex;
+                  const showFb = selected != null;
+
+                  let bgClass = "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50";
+                  if (showFb && isCorr) bgClass = "bg-blue-50 border-blue-400";
+                  else if (showFb && isSel && !isCorr) bgClass = "bg-slate-50 border-slate-400";
+                  else if (showFb && !isSel) bgClass = "bg-slate-50 border-slate-200";
+
+                  return (
+                    <motion.button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        playClickSound();
+                        onSelect(i);
+                      }}
+                      disabled={selected != null}
+                      whileHover={selected == null ? { scale: 1.02 } : {}}
+                      whileTap={selected == null ? { scale: 0.98 } : {}}
+                      className={`flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-center transition-all ${bgClass} ${
+                        showFb ? "cursor-default" : "cursor-pointer"
+                      }`}
+                    >
+                      <div className="relative h-20 w-full">
+                        <Image src={url} alt="" fill className="object-contain p-1" unoptimized sizes="120px" />
                       </div>
-                      <span className="text-slate-900">{opt}</span>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </motion.div>
+                      <span className="text-[11px] font-medium leading-snug text-slate-800">{opt}</span>
+                    </motion.button>
+                  );
+                })}
+              </motion.div>
+            ) : !isShort && !imageMcq && (!q.options || q.options.length === 0) ? (
+              <p className="mt-6 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">
+                This round failed to load choices. Go back and start the quest again.
+              </p>
+            ) : (
+              <motion.div
+                className="mt-6 grid gap-3 sm:grid-cols-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+              >
+                {(q.options ?? []).map((opt, i) => {
+                  const isSelected = selected === i;
+                  const isCorrect = i === q.correctIndex;
+                  const showFeedback = selected != null;
+
+                  let bgClass = "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50";
+                  if (showFeedback && isCorrect) {
+                    bgClass = "bg-blue-50 border-blue-400";
+                  } else if (showFeedback && isSelected && !isCorrect) {
+                    bgClass = "bg-slate-50 border-slate-400";
+                  } else if (showFeedback && !isSelected) {
+                    bgClass = "bg-slate-50 border-slate-200";
+                  }
+
+                  return (
+                    <motion.button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        playClickSound();
+                        onSelect(i);
+                      }}
+                      disabled={selected != null}
+                      whileHover={selected == null ? { scale: 1.02 } : {}}
+                      whileTap={selected == null ? { scale: 0.98 } : {}}
+                      className={`relative border-2 rounded-xl p-4 text-left text-sm font-medium transition-all ${bgClass} ${
+                        showFeedback ? "cursor-default" : "cursor-pointer"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`min-w-fit h-5 w-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
+                            isCorrect && showFeedback
+                              ? "bg-emerald-500 border-emerald-500"
+                              : isSelected && !isCorrect && showFeedback
+                                ? "bg-red-500 border-red-500"
+                                : "border-slate-300"
+                          }`}
+                        >
+                          {isCorrect && showFeedback && (
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-white text-xs font-bold"
+                            >
+                              ✓
+                            </motion.span>
+                          )}
+                          {isSelected && !isCorrect && showFeedback && (
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-white text-xs font-bold"
+                            >
+                              ✕
+                            </motion.span>
+                          )}
+                        </div>
+                        <span className="text-slate-900">{opt}</span>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </motion.div>
+            )}
 
             {/* Feedback section */}
             <AnimatePresence>
-              {selected != null && (
+              {answered && wasCorrect !== undefined && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -371,20 +617,41 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                   transition={{ duration: 0.25 }}
                   className="mt-6"
                 >
-                  <div
-                    className={`rounded-lg border-2 p-4 ${
-                      selected === q.correctIndex ? "bg-blue-50 border-blue-200" : "bg-slate-50 border-slate-200"
-                    }`}
-                  >
-                    <p
-                      className={`font-semibold mb-1 ${selected === q.correctIndex ? "text-blue-900" : "text-slate-900"}`}
+                  {wasCorrect && streakNow >= 2 ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-900"
                     >
-                      {selected === q.correctIndex ? "✓ Correct!" : "→ Not quite"}
-                    </p>
-                    <p className={`text-sm ${selected === q.correctIndex ? "text-blue-800" : "text-slate-800"}`}>
-                      {q.explanation}
-                    </p>
-                  </div>
+                      <span aria-hidden>🔥</span> On fire · {streakNow} in a row
+                    </motion.div>
+                  ) : null}
+
+                  <motion.div
+                    initial={false}
+                    animate={
+                      wasCorrect
+                        ? { x: 0, scale: [1, 1.01, 1] }
+                        : { x: [0, -7, 7, -5, 5, 0], scale: 1 }
+                    }
+                    transition={wasCorrect ? { duration: 0.35 } : { duration: 0.42 }}
+                  >
+                    <div
+                      className={`rounded-lg border-2 p-4 ${
+                        wasCorrect ? "bg-blue-50 border-blue-200" : "bg-slate-50 border-slate-200"
+                      }`}
+                    >
+                      <p className={`font-semibold mb-1 ${wasCorrect ? "text-blue-900" : "text-slate-900"}`}>
+                        {wasCorrect ? "✓ Crushed it!" : "→ Close — read the breakdown"}
+                      </p>
+                      <p className={`text-sm ${wasCorrect ? "text-blue-800" : "text-slate-800"}`}>{q.explanation}</p>
+                      {isShort && !wasCorrect && q.referenceAnswer ? (
+                        <p className="mt-2 text-sm text-slate-700">
+                          Example answer: <span className="font-semibold">{q.referenceAnswer.replace(/\|/g, " · ")}</span>
+                        </p>
+                      ) : null}
+                    </div>
+                  </motion.div>
 
                   <motion.div
                     initial={{ opacity: 0, y: 4 }}
@@ -400,7 +667,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                       className="font-semibold flex items-center gap-1.5"
                     >
                       <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
-                      {qIndex + 1 >= questions.length ? "See results →" : "Next question →"}
+                      {qIndex + 1 >= questions.length ? "See results →" : "Next round →"}
                     </Button>
                   </motion.div>
                 </motion.div>
@@ -415,6 +682,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
   if (phase === "done" && questions) {
     const correct = results.filter(Boolean).length;
     const accuracy = Math.round((correct / questions.length) * 100);
+    const streakRecord = bestStreakInRun(results);
     const wouldXp = XP.QUEST_COMPLETE + (correct === questions.length ? XP.QUEST_PERFECT_BONUS : 0);
     const isPerfect = correct === questions.length;
 
@@ -467,7 +735,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
             className="w-full max-w-xl rounded-[2.5rem] border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-[0_0_80px_-20px_rgba(59,130,246,0.3)]"
           >
             {/* Stats Grid (Clan Dashboard Style) */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               <div className="rounded-3xl bg-white/5 border border-white/5 p-6 text-center group hover:bg-white/10 transition-colors">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Accuracy</p>
                 <div className="text-4xl font-black text-white flex items-baseline justify-center gap-1">
@@ -479,6 +747,13 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                 <div className="text-4xl font-black text-white flex items-baseline justify-center gap-1">
                   <BubbleText text={`${correct}/${questions.length}`} activeColor="text-blue-400" />
                 </div>
+              </div>
+              <div className="rounded-3xl bg-white/5 border border-white/5 p-6 text-center group hover:bg-white/10 transition-colors">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Best streak</p>
+                <div className="text-4xl font-black text-white flex items-baseline justify-center gap-1">
+                  <BubbleText text={`${streakRecord}`} activeColor="text-amber-400" />
+                </div>
+                <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-tighter">Correct in a row</p>
               </div>
             </div>
 
