@@ -100,26 +100,45 @@ export async function POST(req: Request) {
     })();
 
     const supabase = await createClient();
-    const origin = new URL(req.url).origin;
-    const { data, error } = await supabase.auth.signUp({
+    const admin = createAdminClient();
+    const userMetadata = {
+      role,
+      age_confirmed_13_or_older: true,
+      ...(refCookie ? { referral_code: refCookie } : {}),
+    };
+
+    const createRes = await admin.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          role,
-          age_confirmed_13_or_older: true,
-          ...(refCookie ? { referral_code: refCookie } : {}),
-        },
-        emailRedirectTo: `${origin}/auth/callback`,
-      },
+      email_confirm: true,
+      user_metadata: userMetadata,
     });
-    if (error) return jsonError(sanitizeError(error), 400);
+
+    if (createRes.error) {
+      const msg = sanitizeError(createRes.error);
+      const duplicateLike =
+        msg.toLowerCase().includes("already") ||
+        msg.toLowerCase().includes("exists") ||
+        msg.toLowerCase().includes("registered");
+      if (!duplicateLike) {
+        return jsonError(msg, 400);
+      }
+    }
+
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      return jsonError(sanitizeError(signInError), 400);
+    }
 
     return NextResponse.json({
       ok: true,
-      email: data.user?.email ?? email,
-      sessionEstablished: !!data.session,
-      message: "Please check your email to confirm your account.",
+      email: signInData.user?.email ?? email,
+      sessionEstablished: !!signInData.session,
+      message: "Account created successfully.",
     });
   } catch (error) {
     return jsonError(sanitizeError(error), 400);

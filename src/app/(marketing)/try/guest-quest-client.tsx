@@ -540,7 +540,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                 <Button
                   variant="ghost"
                   onClick={() => router.push("/")}
-                  className="h-12 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-xs uppercase tracking-widest"
+                  className="h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest"
                 >
                   Main Menu
                 </Button>

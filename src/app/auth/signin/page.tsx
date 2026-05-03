@@ -40,6 +40,25 @@ export default function SignInPage() {
     }
   }, [authError]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const hashErrCode = hash.get("error_code");
+    const hashErr = hash.get("error");
+    const searchErrCode = searchParams.get("error_code");
+    const searchErr = searchParams.get("error");
+
+    const expired =
+      hashErrCode === "otp_expired" ||
+      searchErrCode === "otp_expired" ||
+      (hashErr === "access_denied" && hashErrCode === "otp_expired") ||
+      (searchErr === "access_denied" && searchErrCode === "otp_expired");
+
+    if (expired) {
+      setError("Your confirmation link expired. Sign up again with the same email to continue.");
+    }
+  }, [searchParams]);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);

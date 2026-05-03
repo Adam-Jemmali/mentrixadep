@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 type Role = "student" | "tutor";
 
 export function SignupFormClient() {
+  const router = useRouter();
   const [role, setRole] = useState<Role>("student");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,11 @@ export function SignupFormClient() {
       if (!res.ok || !body.ok) {
         setError(toUserFacingAuthError(body.error ?? "Signup failed."));
         setLoading(false);
+        return;
+      }
+
+      if (body.sessionEstablished) {
+        router.replace("/auth/session-sync");
         return;
       }
 
