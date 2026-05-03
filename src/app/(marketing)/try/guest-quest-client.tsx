@@ -345,9 +345,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
             </motion.div>
           )}
 
-          <p className="mt-4 text-center text-[11px] text-slate-500 leading-relaxed px-1">
-            Eight rounds · MCQ, true/false, picture rounds, and short recall · difficulty pinned to advanced for every demo run.
-          </p>
+    
 
           <div className="mt-5">
             <Button

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PendingApprovalContent } from "@/components/auth/PendingApprovalContent";
+import { PendingApprovalRealtimeRefresh } from "@/components/auth/PendingApprovalRealtimeRefresh";
 import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 
@@ -49,9 +50,14 @@ export default async function PendingApprovalPage() {
   }
 
   return (
-    <PendingApprovalContent
-      role={(userData?.role as "student" | "tutor" | "admin" | null) ?? null}
-      registrationStatus={registrationStatus}
-    />
+    <>
+      {registrationStatus === "pending" ? (
+        <PendingApprovalRealtimeRefresh userId={user.id} email={email} />
+      ) : null}
+      <PendingApprovalContent
+        role={(userData?.role as "student" | "tutor" | "admin" | null) ?? null}
+        registrationStatus={registrationStatus}
+      />
+    </>
   );
 }
