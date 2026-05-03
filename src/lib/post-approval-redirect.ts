@@ -13,6 +13,9 @@ export async function getPostApprovalRedirectPath(params: {
   const normalizedRole =
     typeof params.role === "string" ? params.role.trim().toLowerCase() : params.role;
   const basePath = getRoleHomePath(normalizedRole);
+  if (normalizedRole === "tutor") {
+    return "/tutor?onboarding=true";
+  }
   if (normalizedRole !== "student") {
     return basePath;
   }
@@ -44,7 +47,7 @@ export async function getPostApprovalRedirectPath(params: {
   const completedQuests = questsRes.count ?? 0;
 
   if (completedSessions === 0 && completedQuests === 0) {
-    return "/student/quest?onboarding=true";
+    return "/student?onboarding=true";
   }
 
   return basePath;

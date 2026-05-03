@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { deleteRegistrationRequestsByIdentityEmail } from "@/lib/delete-registration-requests-by-email";
 
 export interface UserSettings {
   display_name: string | null;
@@ -165,12 +166,8 @@ export async function deleteAccount() {
   const user = await requireAuth();
   const adminClient = createAdminClient();
 
-  // Best-effort clean-up for waitlist trace by email.
   if (user.email) {
-    await adminClient
-      .from("registration_requests")
-      .delete()
-      .eq("email", user.email.trim().toLowerCase());
+    await deleteRegistrationRequestsByIdentityEmail(adminClient, user.email);
   }
 
   // Ensure app profile row is removed.
@@ -178,11 +175,16 @@ export async function deleteAccount() {
 
   const { error } = await adminClient.auth.admin.deleteUser(user.id, false);
   if (error) {
-    throw new Error("Failed to delete account");
+    throw new Error(error.message || "Failed to delete account");
   }
 
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Best-effort cleanup for current browser session cookie after auth deletion.
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Ignore: auth record is already deleted.
+  }
 
   return { success: true };
 }

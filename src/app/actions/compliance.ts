@@ -3,6 +3,7 @@
 import { requireAuth, requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError, validateUUID } from "@/lib/security";
+import { deleteRegistrationRequestsByIdentityEmail } from "@/lib/delete-registration-requests-by-email";
 
 /**
  * FERPA/COPPA data processor allowlist.
@@ -61,7 +62,7 @@ async function deleteUserDataInternal(userId: string): Promise<void> {
   await Promise.allSettled(tasks.map((run) => run()));
 
   if (authEmail) {
-    await admin.from("registration_requests").delete().eq("email", authEmail);
+    await deleteRegistrationRequestsByIdentityEmail(admin, authEmail);
   }
 
   // Ensure public profile row is removed even if auth cascade did not fire yet.

@@ -538,7 +538,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                   Try Another
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => router.push("/")}
                   className="h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest"
                 >

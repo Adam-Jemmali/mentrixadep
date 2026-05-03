@@ -2,17 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Search,
   ExternalLink,
-  Shield,
   Ban,
   CheckCircle2,
   MoreHorizontal,
   X,
 } from "lucide-react";
-import { suspendUser, unsuspendUser, promoteToAdmin, verifyTutorCourse } from "@/app/actions/admin";
+import { suspendUser, unsuspendUser, verifyTutorCourse } from "@/app/actions/admin";
 import type { AdminUser } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +38,6 @@ function relativeTime(iso: string) {
 }
 
 export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initialCourses }: Props) {
-  const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
@@ -99,17 +96,6 @@ export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initi
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, approved: !suspend } : u)));
     } catch { /* ignore */ }
     setLoadingId(null);
-  };
-
-  const handlePromote = async (userId: string) => {
-    setLoadingId(userId);
-    setActiveMenu(null);
-    try {
-      await promoteToAdmin(userId);
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: "admin" } : u)));
-    } catch { /* ignore */ }
-    setLoadingId(null);
-    router.refresh();
   };
 
   const handleVerifyCourse = async (courseId: string) => {
@@ -331,15 +317,6 @@ export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initi
           className="fixed z-50 bg-white border border-[#E5E7EB] rounded-xl shadow-lg py-1 w-48"
           style={{ top: activeMenu.top, right: activeMenu.right }}
         >
-          {activeUser.role !== "admin" && (
-            <button
-              onClick={() => handlePromote(activeUser.id)}
-              className="flex items-center gap-2.5 w-full px-4 py-2.5 text-[12px] text-slate-700 hover:bg-slate-50 transition-colors text-left"
-            >
-              <Shield className="w-3.5 h-3.5 text-violet-500" strokeWidth={1.8} />
-              Promote to admin
-            </button>
-          )}
           {(activeUser.status ?? (activeUser.approved ? "approved" : "pending")) !== "suspended" ? (
             <button
               onClick={() => handleSuspend(activeUser.id, true)}

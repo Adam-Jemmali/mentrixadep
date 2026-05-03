@@ -47,6 +47,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
 
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const update = useCallback(
     <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
@@ -94,13 +95,14 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
   };
 
   const handleDelete = async () => {
+    setDeleteError(null);
     setDeleting(true);
     try {
       await deleteAccount();
-      window.location.href = "/";
-    } catch {
+      window.location.assign("https://mentrixa.one");
+    } catch (e) {
       setDeleting(false);
-      setDeleteConfirm(false);
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete account. Please try again.");
     }
   };
 
@@ -518,7 +520,10 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             <Button
               variant="outline"
               className="border-slate-700 bg-slate-900 text-red-400 hover:bg-slate-800 hover:text-red-300"
-              onClick={() => setDeleteConfirm(true)}
+              onClick={() => {
+                setDeleteError(null);
+                setDeleteConfirm(true);
+              }}
             >
               Delete my account
             </Button>
@@ -545,6 +550,9 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
                   Cancel
                 </Button>
               </div>
+              {deleteError ? (
+                <p className="text-sm font-medium text-red-400">{deleteError}</p>
+              ) : null}
             </div>
           )}
         </Section>

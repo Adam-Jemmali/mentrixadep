@@ -20,6 +20,8 @@ import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { StudentNavbar } from "@/components/student-navbar";
 import { TutorNavbar } from "@/components/tutor-navbar";
 import { FloatingXpAnimations } from "@/components/floating-xp-animations";
+import { StudentFirstLoginTour } from "@/components/student-first-login-tour";
+import { TutorFirstLoginTour } from "@/components/tutor-first-login-tour";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -495,6 +497,8 @@ export function RootLayoutClient({
         <StudentNavbar user={user} />
       ) : null}
       {isApprovedTutor && user && !isVideoRoute ? <TutorNavbar user={user} /> : null}
+      {isApprovedStudent && user ? <StudentFirstLoginTour user={user} /> : null}
+      {isApprovedTutor && user ? <TutorFirstLoginTour user={user} /> : null}
       <LevelUpExperience user={user} />
       {isApprovedStudent && user ? (
         <PushNotificationOptIn />

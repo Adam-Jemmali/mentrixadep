@@ -32,6 +32,8 @@ export interface RegistrationRequest {
   email: string;
   role: "student" | "tutor";
   status: RegistrationStatus;
+  /** Set when this email was tied to an auth account (signup or approve while user exists). */
+  account_linked_at?: string | null;
   created_at: string;
   updated_at: string;
 }

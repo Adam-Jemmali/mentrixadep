@@ -142,6 +142,7 @@ export async function applyRoleAndSyncProfile(
         role,
         status,
         updated_at: new Date().toISOString(),
+        account_linked_at: new Date().toISOString(),
       },
       { onConflict: "email" }
     );

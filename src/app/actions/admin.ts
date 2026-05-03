@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { validateUUID, sanitizeError, enforceRateLimit, RATE_LIMITS, getRateLimitId, emailSchema } from "@/lib/security";
 import { z } from "zod";
 import { sendWaitlistDecisionEmail } from "@/lib/email";
-import { verifyAdministrativeZeroTrust, logSensitiveAdminAction } from "@/lib/zero-trust";
+import { logSensitiveAdminAction } from "@/lib/zero-trust";
 
 async function findAuthUserByEmail(email: string) {
   emailSchema.parse(email);
@@ -45,7 +45,26 @@ export async function getRegistrationRequests() {
     throw new Error(`Failed to fetch registration requests: ${error.message}`);
   }
 
-  return data;
+  const rows = data ?? [];
+  const filtered: typeof rows = [];
+
+  for (const r of rows) {
+    if (r.status !== "approved") {
+      filtered.push(r);
+      continue;
+    }
+    const linked = (r as { account_linked_at?: string | null }).account_linked_at;
+    if (linked) {
+      const authUser = await findAuthUserByEmail(r.email);
+      if (!authUser) {
+        /* Approved but auth account was removed (e.g. user deleted account); omit from admin list. */
+        continue;
+      }
+    }
+    filtered.push(r);
+  }
+
+  return filtered;
 }
 
 export async function approveRegistrationRequest(requestId: string) {
@@ -96,12 +115,17 @@ export async function approveRegistrationRequest(requestId: string) {
       }
     }
 
+    const requestPatch: Record<string, unknown> = {
+      status: "approved",
+      updated_at: new Date().toISOString(),
+    };
+    if (authUser) {
+      requestPatch.account_linked_at = new Date().toISOString();
+    }
+
     const { error: requestUpdateError } = await adminClient
       .from("registration_requests")
-      .update({
-        status: "approved",
-        updated_at: new Date().toISOString(),
-      })
+      .update(requestPatch)
       .eq("id", validRequestId);
 
     if (requestUpdateError) {
@@ -264,10 +288,15 @@ export async function approveAllPendingRegistrations(): Promise<{ count: number 
       if (updateError) continue;
     }
 
-    await adminClient
-      .from("registration_requests")
-      .update({ status: "approved", updated_at: new Date().toISOString() })
-      .eq("id", request.id);
+    const batchPatch: Record<string, unknown> = {
+      status: "approved",
+      updated_at: new Date().toISOString(),
+    };
+    if (authUser) {
+      batchPatch.account_linked_at = new Date().toISOString();
+    }
+
+    await adminClient.from("registration_requests").update(batchPatch).eq("id", request.id);
 
     void sendWaitlistDecisionEmail(request.email, request.role, "approved");
     approved++;
@@ -521,23 +550,10 @@ export async function unsuspendUser(userId: string) {
 }
 
 export async function promoteToAdmin(userId: string, mfaCode?: string) {
-  const admin = await verifyAdministrativeZeroTrust(mfaCode);
-  const adminClient = createAdminClient();
-
-  enforceRateLimit(getRateLimitId(admin.id), RATE_LIMITS.adminAction, "promote to admin");
-  const validId = validateUUID(userId);
-
-  const { error } = await adminClient
-    .from("users")
-    .update({ role: "admin" as const })
-    .eq("id", validId);
-
-  if (error) throw new Error(sanitizeError(error));
-  
-  await logSensitiveAdminAction(admin.id, "PROMOTE_TO_ADMIN", { targetUserId: validId });
-
-  revalidatePath("/admin/users");
-  return { success: true };
+  void userId;
+  void mfaCode;
+  await requireRole("admin");
+  throw new Error("Promoting users to admin is disabled.");
 }
 
 export async function getUserDetail(userId: string) {

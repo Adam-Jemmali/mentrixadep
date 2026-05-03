@@ -57,10 +57,10 @@ export function AccountSecurityPanel({ className }: { className?: string }) {
     setDeleting(true);
     try {
       await deleteAccount();
-      window.location.href = "/";
-    } catch {
+      window.location.assign("https://mentrixa.one");
+    } catch (e) {
       setDeleting(false);
-      setDeleteError("Failed to delete account. Please try again.");
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete account. Please try again.");
     }
   }
 
