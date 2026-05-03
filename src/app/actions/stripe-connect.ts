@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripeSecretKey } from "@/lib/env";
 import { getSiteUrl } from "@/lib/site";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { PLATFORM_FEE_BPS } from "@/lib/booking-pricing";
 import { formatStripeConnectError } from "@/lib/stripe-connect-errors";
 import { validateUUID } from "@/lib/security";
@@ -773,7 +774,7 @@ export async function retryPendingTransfersForTutor(tutorId: string): Promise<{
 }
 
 function scheduleConnectPayoutRetries(tutorId: string, logPrefix: string): void {
-  void (async () => {
+  after(async () => {
     try {
       const r = await retryPendingTransfersForTutor(tutorId);
       if (r.scanned > 0) {
@@ -782,7 +783,7 @@ function scheduleConnectPayoutRetries(tutorId: string, logPrefix: string): void 
     } catch (e) {
       console.error(logPrefix, e);
     }
-  })();
+  });
 }
 
 export async function createPayoutLedgerForSession(sessionId: string): Promise<void> {

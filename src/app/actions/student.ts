@@ -24,7 +24,11 @@ import {
   sendSessionBookedEmail,
   type SessionEmailDetails,
 } from "@/lib/email";
-import { getVerifiedPaymentIntentForBooking } from "@/lib/stripe-session-booking";
+import {
+  getVerifiedPaymentIntentForBooking,
+  refundPaidCheckoutSession,
+} from "@/lib/stripe-session-booking";
+import { claimAvailabilityForPaidCheckout } from "@/lib/stripe-booking-sync";
 import { addDaysIso } from "@/lib/booking-pricing";
 import type { Session, SessionAiPackage } from "@/lib/database.types";
 
@@ -229,20 +233,27 @@ export async function getPastSessions() {
   ]);
 
   const adminClient = createAdminClient();
-  const { data: pkgRows } = await adminClient
+  const { data: allPkgRows } = await adminClient
     .from("session_ai_packages")
     .select("*")
-    .in("session_id", sessionIds)
-    .not("package_published_at", "is", null);
+    .in("session_id", sessionIds);
 
-  const pkgBySession = new Map(
-    (pkgRows ?? []).map((p) => [p.session_id, p as SessionAiPackage])
-  );
+  const pkgBySession = new Map<string, SessionAiPackage>();
+  const draftPackageSessionIds = new Set<string>();
+  for (const p of allPkgRows ?? []) {
+    const row = p as SessionAiPackage;
+    if (row.package_published_at) {
+      pkgBySession.set(row.session_id, row);
+    } else {
+      draftPackageSessionIds.add(row.session_id);
+    }
+  }
 
   return withTutors.map((session) => ({
     ...session,
     ratings: (ratings || []).filter((r) => r.session_id === session.id),
     ai_package: pkgBySession.get(session.id) ?? null,
+    has_studio_package_draft: draftPackageSessionIds.has(session.id),
   }));
 }
 
@@ -947,6 +958,17 @@ export async function bookSessionAsUser(
           studentId: validStudentId,
         }
       );
+      const claim = await claimAvailabilityForPaidCheckout(
+        validAvailabilityId,
+        verified.checkoutSessionId,
+        validStudentId
+      );
+      if (!claim.ok) {
+        await refundPaidCheckoutSession(options.stripeCheckoutSessionId);
+        throw new Error(
+          "This slot was booked by another learner before your payment finished. Your payment has been refunded automatically — please choose another time."
+        );
+      }
       stripeCheckoutSessionId = verified.checkoutSessionId;
       stripePaymentIntentId = verified.paymentIntentId;
       stripeDestinationCharge = verified.destinationCharge;
@@ -1068,7 +1090,8 @@ export async function bookSessionAsUser(
         message.includes("not found") ||
         message.includes("rate limit") ||
         message.includes("invalid") ||
-        message.includes("checkout")
+        message.includes("checkout") ||
+        message.includes("another learner")
       ) {
         throw error;
       }
@@ -1329,23 +1352,27 @@ export async function getStudentDashboardForAdmin(studentId: string) {
     enrichStudentSessionsWithTutorProfiles(pastSessionsRaw),
   ]);
 
-  const { data: pkgRowsAdmin } =
+  const { data: allPkgRowsAdmin } =
     sessionIds.length > 0
-      ? await adminClient
-          .from("session_ai_packages")
-          .select("*")
-          .in("session_id", sessionIds)
-          .not("package_published_at", "is", null)
+      ? await adminClient.from("session_ai_packages").select("*").in("session_id", sessionIds)
       : { data: [] as SessionAiPackage[] };
 
-  const pkgBySessionAdmin = new Map(
-    (pkgRowsAdmin ?? []).map((p) => [p.session_id, p as SessionAiPackage])
-  );
+  const pkgBySessionAdmin = new Map<string, SessionAiPackage>();
+  const draftPackageSessionIdsAdmin = new Set<string>();
+  for (const p of allPkgRowsAdmin ?? []) {
+    const row = p as SessionAiPackage;
+    if (row.package_published_at) {
+      pkgBySessionAdmin.set(row.session_id, row);
+    } else {
+      draftPackageSessionIdsAdmin.add(row.session_id);
+    }
+  }
 
   const pastSessions = pastWithTutors.map((s) => ({
     ...s,
     ratings: ratings.filter((r) => r.session_id === s.id),
     ai_package: pkgBySessionAdmin.get(s.id) ?? null,
+    has_studio_package_draft: draftPackageSessionIdsAdmin.has(s.id),
   }));
 
   const totalXp = xpResult.data?.total_xp ?? 0;

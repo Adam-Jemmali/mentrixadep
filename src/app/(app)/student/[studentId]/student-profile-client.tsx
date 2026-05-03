@@ -423,7 +423,14 @@ export function StudentProfileClient({
             asChild
           >
             <Link href="/student" className="flex items-center gap-2">
-              <img src="/icons/mentrixer.svg" alt="" className="h-4 w-4 opacity-60" />
+              <Image
+                src="/icons/mentrixer.svg"
+                alt=""
+                width={16}
+                height={16}
+                unoptimized
+                className="h-4 w-4 opacity-60"
+              />
               Arena Dashboard
             </Link>
           </Button>
@@ -453,7 +460,14 @@ export function StudentProfileClient({
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-white">
-                      <img src="/icons/mentrixer.svg" alt="" className="h-20 w-20 opacity-20" />
+                      <Image
+                        src="/icons/mentrixer.svg"
+                        alt=""
+                        width={80}
+                        height={80}
+                        unoptimized
+                        className="h-20 w-20 opacity-20"
+                      />
                     </div>
                   )}
                   

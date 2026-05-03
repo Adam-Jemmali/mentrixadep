@@ -328,6 +328,8 @@ export const RATE_LIMITS = {
   deletePastSession: { maxRequests: 30, windowMs: 60 * 1000 },
   adminAction: { maxRequests: 30, windowMs: 60 * 1000 },
   questAi: { maxRequests: 20, windowMs: 60 * 60 * 1000 },
+  /** Studio package stream — separate bucket from `questAi` so tutor generates aren’t capped by quest traffic. */
+  studioPackageAi: { maxRequests: 40, windowMs: 60 * 60 * 1000 },
   resolveAi: { maxRequests: 20, windowMs: 60 * 60 * 1000 },
   stripeCheckout: { maxRequests: 5, windowMs: 60 * 1000 },
   duelCreate: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
@@ -439,10 +441,16 @@ export function getClientIpFromRequest(request: {
 /** Max JSON/body size for middleware Content-Length checks. */
 export const MAX_BODY_BYTES_DEFAULT = 1 * 1024 * 1024; // 1MB
 export const MAX_BODY_BYTES_VIDEO_UPLOAD = 10 * 1024 * 1024; // 10MB
+export const MAX_BODY_BYTES_VIDEO_SERVER_ACTION_UPLOAD = 600 * 1024 * 1024; // 600MB
 
 export function getMaxBodyBytesForPath(pathname: string): number {
   if (pathname.startsWith("/api/video/upload")) {
     return MAX_BODY_BYTES_VIDEO_UPLOAD;
+  }
+  // `saveRecording` currently runs as a Server Action from `/video/session/[sessionId]`,
+  // so the request path is page-like and must allow large multipart payloads.
+  if (pathname.startsWith("/video/session/")) {
+    return MAX_BODY_BYTES_VIDEO_SERVER_ACTION_UPLOAD;
   }
   return MAX_BODY_BYTES_DEFAULT;
 }
@@ -540,8 +548,9 @@ export const securityHeaders = {
   // Keep popups/postMessage flows (OAuth, browser integrations) functional.
   "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
   // Allow camera and microphone for same origin (required for video calling)
-  // identity-credentials-get: Google Identity Services / FedCM (Sign in with Google button)
-  "Permissions-Policy": "camera=(self), microphone=(self), geolocation=(), interest-cohort=(), payment=()",
+  // identity-credentials-get: Google Identity Services / FedCM (Sign in with Google)
+  "Permissions-Policy":
+    "camera=(self), microphone=(self), geolocation=(), interest-cohort=(), payment=(), identity-credentials-get=(self)",
   // Content Security Policy - strict but allows necessary resources
   "Content-Security-Policy": [
     "default-src 'self'",

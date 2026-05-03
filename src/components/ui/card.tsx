@@ -128,10 +128,15 @@ const ScrollRevealCard = React.forwardRef<HTMLDivElement, React.HTMLAttributes<H
       offset: ["start end", "end start"],
     });
 
+    /* Guard: before layout, scroll progress can be NaN and poisons transform/box-shadow interpolation. */
+    const scrollSafe = useTransform(scrollYProgress, (v) =>
+      typeof v === "number" && Number.isFinite(v) ? v : 0,
+    );
+
     /* Scroll animations */
-    const rotateX = useTransform(scrollYProgress, [0, 0.3, 0.5], [6, 1, 0]);
-    const translateY = useTransform(scrollYProgress, [0, 0.3, 0.5], [40, 8, 0]);
-    const scale = useTransform(scrollYProgress, [0, 0.3, 0.5], [0.97, 0.995, 1]);
+    const rotateX = useTransform(scrollSafe, [0, 0.3, 0.5], [6, 1, 0]);
+    const translateY = useTransform(scrollSafe, [0, 0.3, 0.5], [40, 8, 0]);
+    const scale = useTransform(scrollSafe, [0, 0.3, 0.5], [0.97, 0.995, 1]);
 
     /* Hover tilt */
     const tilt = useTiltHover({ tiltLimit: 8, hoverScale: 1.02 });

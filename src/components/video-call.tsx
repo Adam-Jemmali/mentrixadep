@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -13,18 +14,32 @@ import { gsap } from "gsap";
 import {
   createPeerConnection,
   getUserMedia,
+  isMediaPermissionDenied,
+  mapMediaStreamError,
   stopMediaStream,
 } from "@/lib/webrtc";
 import { checkAndEnforceSessionTiming, leaveVideoRoom } from "@/app/actions/video";
-import { saveRecording } from "@/app/actions/recordings";
 import {
   saveSessionAiContext,
   type SessionAiChatLine,
   type SessionAiScreenShareEvent,
   type SessionAiWhiteboardSummary,
 } from "@/app/actions/session-ai-context";
+
+/** Prefer excluding the current browser tab from capture to avoid infinite “hall of mirrors” recursion. */
+function requestDisplayMediaForSession(): Promise<MediaStream> {
+  return navigator.mediaDevices.getDisplayMedia({
+    video: {
+      frameRate: { ideal: 30, max: 30 },
+      cursor: "always",
+    } as MediaTrackConstraints,
+    audio: false,
+    preferCurrentTab: false,
+    selfBrowserSurface: "exclude",
+  } as Parameters<MediaDevices["getDisplayMedia"]>[0]);
+}
 import { useRouter } from "next/navigation";
-import { MessageSquare, LayoutPanelLeft, ArrowLeft } from "lucide-react";
+import { MessageSquare, LayoutPanelLeft } from "lucide-react";
 import { trackClientEvent } from "@/lib/use-track";
 import {
   PreCallLobby,
@@ -32,12 +47,12 @@ import {
 } from "@/components/video/pre-call-lobby";
 import { Whiteboard } from "@/components/video/whiteboard";
 import { InSessionChat } from "@/components/video/in-session-chat";
-import { PostCallSummary } from "@/components/video/post-call-summary";
 import { ToolbarQualityBadge } from "@/components/video/connection-quality";
 import Image from "next/image";
 import { BubbleText } from "@/components/ui/bubble-text";
 import { ParticleTextEffect } from "@/components/ui/particle-text";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { PostCallSummary } from "@/components/video/post-call-summary";
 
 /** Trigger a browser download so the user keeps a local copy of the recording. */
 function downloadBlobToDevice(blob: Blob, filename: string): void {
@@ -56,15 +71,123 @@ function downloadBlobToDevice(blob: Blob, filename: string): void {
   }
 }
 
+/**
+ * Whether the participant may leave before server force-end (same rules for tutor and learner).
+ * `peerLeftNoticeShown` must only be the debounced “other party left” flag — not raw presence (flaky).
+ */
+function computeSessionLeaveAllowed(params: {
+  bypassSessionTimeLock: boolean;
+  sessionEndTime: string | null | undefined;
+  finalMinuteMode: boolean;
+  peerLeftNoticeShown: boolean;
+}): boolean {
+  if (params.bypassSessionTimeLock) return true;
+
+  const now = Date.now();
+  const endMs = params.sessionEndTime ? new Date(params.sessionEndTime).getTime() : NaN;
+  const hasValidEnd = Number.isFinite(endMs) && endMs > 0;
+  const sessionEndedClock = hasValidEnd && now >= endMs;
+  const remainingSec = hasValidEnd ? Math.floor((endMs - now) / 1000) : Number.POSITIVE_INFINITY;
+  const inScheduledFinalMinute =
+    hasValidEnd && remainingSec <= 60 && remainingSec >= 0;
+
+  if (
+    params.finalMinuteMode ||
+    params.peerLeftNoticeShown ||
+    inScheduledFinalMinute ||
+    sessionEndedClock
+  ) {
+    return true;
+  }
+
+  const waitingOnSchedule =
+    (hasValidEnd && now < endMs) || (!hasValidEnd && !params.finalMinuteMode && !params.peerLeftNoticeShown);
+
+  return !waitingOnSchedule;
+}
+
 function humanizeRecordingError(err: unknown): string {
   if (err instanceof Error) {
     const m = err.message.toLowerCase();
     if (m.includes("network") || m.includes("failed to fetch")) {
       return "Network error while saving to the cloud. Check your connection — a copy should still be on your device.";
     }
+    if (m.includes("unexpected response")) {
+      return "The server could not finish the upload (often a timeout on large recordings). Your copy in Downloads is still safe.";
+    }
     return err.message;
   }
   return "Something went wrong while processing the recording.";
+}
+
+type RecordingUploadResult = {
+  success: boolean;
+  recording?: { id?: string; file_name?: string };
+  error?: string;
+};
+
+/** Route Handler upload avoids the default Server Actions ~1MB body cap on multipart recordings. */
+async function uploadRecordingViaApi(formData: FormData): Promise<RecordingUploadResult> {
+  const res = await fetch("/api/recordings/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  let parsed: unknown = null;
+  try {
+    parsed = await res.json();
+  } catch {
+    /* ignore */
+  }
+
+  if (!res.ok) {
+    const msg =
+      parsed &&
+      typeof parsed === "object" &&
+      "error" in parsed &&
+      typeof (parsed as { error: unknown }).error === "string"
+        ? (parsed as { error: string }).error
+        : `Upload failed (${res.status})`;
+    return { success: false, error: msg };
+  }
+
+  if (parsed && typeof parsed === "object" && "success" in parsed) {
+    return parsed as RecordingUploadResult;
+  }
+
+  return { success: false, error: "Unexpected server response while uploading recording." };
+}
+
+/** True if the remote MediaStream still has at least one live track (stronger signal than presence during reconnects). */
+function remoteMediaHasLiveTrack(stream: MediaStream | null): boolean {
+  if (!stream) return false;
+  return stream.getTracks().some((t) => t.readyState === "live");
+}
+
+function presenceHasOtherParticipant(
+  channel: RealtimeChannel | null,
+  selfUserId: string,
+): boolean {
+  if (!channel) return false;
+  try {
+    return Object.keys(channel.presenceState()).some((k) => k !== selfUserId);
+  } catch {
+    return false;
+  }
+}
+
+/** WebRTC still looks like an active session (avoid false "peer left" on presence flake). */
+function peerTransportLooksHealthy(pc: RTCPeerConnection | null): boolean {
+  if (!pc) return false;
+  const cs = pc.connectionState;
+  const ice = pc.iceConnectionState;
+  if (cs === "failed" || cs === "closed") return false;
+  if (ice === "failed" || ice === "closed") return false;
+  return (
+    cs === "connected" ||
+    ice === "connected" ||
+    ice === "completed"
+  );
 }
 
 /** Generic WebM type — avoids codec strings in the Blob that confuse some desktop players (e.g. Windows Media Player). */
@@ -154,7 +277,8 @@ export function VideoCall({
   sessionEndTime,
 }: VideoCallProps) {
   const router = useRouter();
-  const afterCallPath = userRole === "tutor" ? "/tutor" : "/student";
+  const afterCallPath =
+    userRole === "tutor" ? "/tutor/sessions-ai" : "/student?sessionsTab=past#sessions-history";
 
   // ─── Lobby / phase state ───────────────────────────────────────────────────
   const [inLobby, setInLobby] = useState(true);
@@ -162,9 +286,9 @@ export function VideoCall({
 
   // ─── Panel state (chat / whiteboard) ─────────────────────────────────────
   const [activePanel, setActivePanel] = useState<"none" | "chat" | "whiteboard">("none");
+  /** Peer messages received while chat panel is closed (badge on chat icon). */
+  const [chatUnreadFromPeer, setChatUnreadFromPeer] = useState(0);
 
-  // ─── Post-call summary ────────────────────────────────────────────────────
-  const [showPostCall, setShowPostCall] = useState(false);
   const [whiteboardSnapshot, setWhiteboardSnapshot] = useState<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -189,7 +313,7 @@ export function VideoCall({
   /** True while we are in the realtime room but no one else is in presence yet (before the call links). */
   const [waitingForOtherParticipant, setWaitingForOtherParticipant] = useState(false);
   const [sessionSeconds, setSessionSeconds] = useState(0);
-  const [hasRecording, setHasRecording] = useState(false);
+  const sessionSecondsRef = useRef(0);
   /** The actual time the session "started" (when the student first joined). Defaults to scheduled start. */
   const [actualStartTime, setActualStartTime] = useState<Date | null>(null);
   const [isSharingScreen, setIsSharingScreen] = useState(false);
@@ -204,12 +328,18 @@ export function VideoCall({
     message: string;
   } | null>(null);
   const [sessionWarning, setSessionWarning] = useState<"60s" | "15s" | null>(null);
+  /** Final-minute mode: scheduled end is near; both sides may leave once session time allows. */
+  const [finalMinuteMode, setFinalMinuteMode] = useState(false);
   const [showTutorReconnectPrompt, setShowTutorReconnectPrompt] = useState(false);
   const [showStudentReconnectingOverlay, setShowStudentReconnectingOverlay] = useState(false);
-
-  const isSessionTrulyOver = (sessionEndTime)
-    ? new Date(sessionEndTime) <= new Date()
-    : false;
+  /** After teardown, show wrap-up card before navigating away. */
+  const [postCallOverlay, setPostCallOverlay] = useState<{
+    durationSeconds: number;
+    recordingMode: "hidden" | "saved" | "failed" | "none";
+    whiteboardSnapshotUrl: string | null;
+    /** Times a recording file was saved to the device (each stop after a captured blob). */
+    localRecordingDownloadCount: number;
+  } | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
@@ -254,10 +384,38 @@ export function VideoCall({
   const callWasConnectedRef = useRef(false);
   /** Only show one "other participant left" notice per session. */
   const peerLeftNoticeShownRef = useRef(false);
+
+  /** Re-render periodically so Leave unlocks when wall clock enters the final minute without waiting for a poll. */
+  const [leaveGateClock, setLeaveGateClock] = useState(0);
+  useEffect(() => {
+    if (inLobby) return;
+    const id = window.setInterval(() => {
+      setLeaveGateClock((n) => n + 1);
+    }, 10_000);
+    return () => window.clearInterval(id);
+  }, [inLobby, sessionId]);
+
+  const manualLeaveAllowed = useMemo(
+    () =>
+      computeSessionLeaveAllowed({
+        bypassSessionTimeLock: false,
+        sessionEndTime,
+        finalMinuteMode,
+        peerLeftNoticeShown: peerLeftNoticeShownRef.current,
+      }),
+    [sessionEndTime, finalMinuteMode, notice, leaveGateClock],
+  );
+
   /** After Supabase channel.track — safe to interpret presence as "in room". */
   const realtimeRoomJoinedRef = useRef(false);
   const lastRealtimeStatusRef = useRef<string | null>(null);
   const chatTranscriptRef = useRef<SessionAiChatLine[]>([]);
+  const latestChatMessagesRef = useRef<SessionAiChatLine[]>([]);
+  /** Bridges session chat broadcasts (registered on the channel with signaling) into InSessionChat. */
+  const inSessionChatBroadcastRef = useRef<((raw: unknown) => void) | null>(null);
+  /** Count of peer-authored messages considered "read" (user had chat open through that count). */
+  const readPeerChatCountRef = useRef(0);
+  const activePanelRef = useRef<"none" | "chat" | "whiteboard">(activePanel);
   const whiteboardSummaryRef = useRef<SessionAiWhiteboardSummary | null>(null);
   const screenShareTimelineRef = useRef<SessionAiScreenShareEvent[]>([]);
   const recordingHintsRef = useRef<Record<string, unknown>>({});
@@ -266,7 +424,37 @@ export function VideoCall({
     fifteen: false,
   });
   const sessionForceEndedRef = useRef(false);
+  /** Cleared when the call ends so server timing polls stop racing teardown / uploads. */
+  const sessionTimingPollIntervalRef = useRef<number | null>(null);
+  const sessionTimingPollInFlightRef = useRef(false);
+  /** True after we commit to ending this video session (blocks duplicate handleEndCall). */
+  const videoSessionTeardownStartedRef = useRef(false);
   const peerLeftTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    activePanelRef.current = activePanel;
+  }, [activePanel]);
+
+  useEffect(() => {
+    videoSessionTeardownStartedRef.current = false;
+    sessionForceEndedRef.current = false;
+    sessionWarningSentRef.current = { sixty: false, fifteen: false };
+  }, [sessionId]);
+
+  const handleInSessionChatMessagesChange = useCallback(
+    (messages: SessionAiChatLine[]) => {
+      chatTranscriptRef.current = messages;
+      latestChatMessagesRef.current = messages;
+      const peerCount = messages.filter((m) => m.authorId !== userId).length;
+      if (activePanelRef.current === "chat") {
+        readPeerChatCountRef.current = peerCount;
+        setChatUnreadFromPeer(0);
+      } else {
+        setChatUnreadFromPeer(Math.max(0, peerCount - readPeerChatCountRef.current));
+      }
+    },
+    [userId],
+  );
 
   const persistTutorSessionAiContext = useCallback(async () => {
     if (userRole !== "tutor") return;
@@ -307,6 +495,7 @@ export function VideoCall({
   }
 
   const runControlAction = (fn: () => void) => {
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
     if (controlActionLockRef.current) return;
     controlActionLockRef.current = true;
     try {
@@ -370,52 +559,88 @@ export function VideoCall({
     });
   }
 
-  const handleEndCall = async () => {
-    if (isLeaving || controlActionLockRef.current) return;
-    controlActionLockRef.current = true;
+  const handleEndCall = async (options?: { bypassSessionTimeLock?: boolean }) => {
+    if (videoSessionTeardownStartedRef.current) return;
 
-    // ELITE SECURITY & DATA INTEGRITY: Tutors cannot leave until session ends to protect the recording.
-    if (userRole === "tutor") {
-      const now = Date.now();
-      // Use scheduled end time strictly if available
-      const endTime = sessionEndTime ? new Date(sessionEndTime).getTime() : 0;
-
-      if (now < endTime && !isSessionTrulyOver) {
-        const endStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        setNotice({
-          kind: "error",
-          message: `Session is active until ${endStr}. You must stay in the room until the session end time to finalize and save the recording.`,
-        });
-        controlActionLockRef.current = false;
-        return;
-      }
-    }
-
-    isLeavingRef.current = true;
     setIsLeaving(true);
-    setWaitingForOtherParticipant(false);
+    isLeavingRef.current = true;
 
     try {
-      const mr = mediaRecorderRef.current;
+      // Manual leave: same time gate for tutor and learner (final 60s, scheduled end passed, or debounced peer-left only).
       if (
-        mr &&
-        (mr.state === "recording" || mr.state === "paused")
+        !options?.bypassSessionTimeLock &&
+        !computeSessionLeaveAllowed({
+          bypassSessionTimeLock: false,
+          sessionEndTime,
+          finalMinuteMode,
+          peerLeftNoticeShown: peerLeftNoticeShownRef.current,
+        })
       ) {
+        const endMs = sessionEndTime ? new Date(sessionEndTime).getTime() : NaN;
+        const endStr = Number.isFinite(endMs)
+          ? new Date(endMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : null;
+        setNotice({
+          kind: "error",
+          message: endStr
+            ? `Session is active until ${endStr}. Stay in the room until the last minute of the scheduled time (or until your guide ends the call) — then you can leave.`
+            : "Stay in the call until the last minute of your scheduled session (or until your guide leaves). You can leave once the timer allows.",
+        });
+        setIsLeaving(false);
+        isLeavingRef.current = false;
+        return;
+      }
+
+      videoSessionTeardownStartedRef.current = true;
+      // Leave wins over in-flight Share/Record locks; their delayed `finally` will not clear this if teardown is set.
+      controlActionLockRef.current = false;
+      const durationForSummary = sessionSecondsRef.current;
+      const whiteboardForSummary = whiteboardSnapshot;
+
+      if (sessionTimingPollIntervalRef.current != null) {
+        window.clearInterval(sessionTimingPollIntervalRef.current);
+        sessionTimingPollIntervalRef.current = null;
+      }
+
+      setError(null);
+      setSessionWarning(null);
+
+      setWaitingForOtherParticipant(false);
+
+      const mr = mediaRecorderRef.current;
+      if (mr && (mr.state === "recording" || mr.state === "paused")) {
         await stopRecording();
       }
 
-      // Stop media streams
+      try {
+        displayVideoTrackRef.current?.stop();
+      } catch {
+        /* ignore */
+      }
+      displayVideoTrackRef.current = null;
+      try {
+        recordingDisplayStreamRef.current?.getTracks().forEach((t) => {
+          if (t.readyState !== "ended") t.stop();
+        });
+      } catch {
+        /* ignore */
+      }
+      recordingDisplayStreamRef.current = null;
+      setIsSharingScreen(false);
+      isSharingScreenRef.current = false;
+
       stopMediaStream(localStreamRef.current);
 
-      // Close peer connection
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
       }
 
-      // Leave room
-      await leaveVideoRoom(sessionId);
+      try {
+        await leaveVideoRoom(sessionId);
+      } catch (leaveErr) {
+        console.warn("[video-call] leaveVideoRoom:", leaveErr);
+      }
 
-      // Untrack presence and unsubscribe from channel
       if (channelRef.current) {
         trackClientEvent("realtime_disconnect", {
           channel: channelRef.current.topic,
@@ -426,67 +651,54 @@ export function VideoCall({
         } catch (err) {
           console.warn("Error untracking presence:", err);
         }
-        channelRef.current.unsubscribe();
-      }
-      setRealtimeChannel(null);
-
-      await persistTutorSessionAiContext();
-
-      // Show post-call summary instead of immediately navigating
-      setShowPostCall(true);
-    } catch (err) {
-      console.error("Error ending call:", err);
-      router.push(afterCallPath);
-    }
-  };
-
-  const handleBackToDashboard = async () => {
-    if (isLeaving || controlActionLockRef.current) return;
-    controlActionLockRef.current = true;
-
-    // ELITE SECURITY & DATA INTEGRITY: Tutors cannot leave until session ends to protect the recording.
-    if (userRole === "tutor") {
-      const now = Date.now();
-      const endTime = sessionEndTime ? new Date(sessionEndTime).getTime() : 0;
-
-      if (now < endTime && !isSessionTrulyOver) {
-        setNotice({
-          kind: "error",
-          message: "Dashboard Lock: Premature exit blocked. You must stay in the room until the session end time to finalize the recording upload.",
-        });
-        controlActionLockRef.current = false;
-        return;
-      }
-    }
-
-    isLeavingRef.current = true;
-    setIsLeaving(true);
-    setWaitingForOtherParticipant(false);
-
-    try {
-      stopMediaStream(localStreamRef.current);
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-      }
-      if (channelRef.current) {
-        trackClientEvent("realtime_disconnect", {
-          channel: channelRef.current.topic,
-          reason: "navigate_dashboard",
-        });
         try {
-          await channelRef.current.untrack();
-        } catch {
-          // non-critical
+          channelRef.current.unsubscribe();
+        } catch (err) {
+          console.warn("Error unsubscribing channel:", err);
         }
-        channelRef.current.unsubscribe();
       }
       setRealtimeChannel(null);
-      await persistTutorSessionAiContext();
-      await leaveVideoRoom(sessionId);
+
+      try {
+        await persistTutorSessionAiContext();
+      } catch (persistErr) {
+        console.warn("[video-call] persistTutorSessionAiContext:", persistErr);
+      }
+
+      let recordingMode: "hidden" | "saved" | "failed" | "none" = "hidden";
+      let localRecordingDownloadCount = 0;
+      if (userRole === "tutor") {
+        const hints = recordingHintsRef.current;
+        const st = hints.uploadStatus;
+        const started = hints.recordingStartedAt != null;
+        if (st === "success") recordingMode = "saved";
+        else if (st === "failed") recordingMode = "failed";
+        else if (started) recordingMode = "failed";
+        else recordingMode = "none";
+        localRecordingDownloadCount =
+          typeof hints.localRecordingDownloadCount === "number"
+            ? hints.localRecordingDownloadCount
+            : 0;
+      }
+
+      setPostCallOverlay({
+        durationSeconds: durationForSummary,
+        recordingMode,
+        whiteboardSnapshotUrl: whiteboardForSummary,
+        localRecordingDownloadCount,
+      });
     } catch (err) {
-      console.warn("Back-to-dashboard cleanup failed:", err);
-    } finally {
+      videoSessionTeardownStartedRef.current = false;
+      console.error("Error ending call:", err);
+      setNotice({
+        kind: "info",
+        message: "The call ended with a cleanup issue. You can close this tab or return home.",
+      });
       router.push(afterCallPath);
+    } finally {
+      controlActionLockRef.current = false;
+      setIsLeaving(false);
+      isLeavingRef.current = false;
     }
   };
 
@@ -527,7 +739,9 @@ export function VideoCall({
       const anchor = actualStartTime || (sessionStartTime ? new Date(sessionStartTime) : new Date());
       const now = new Date();
       const diff = Math.floor((now.getTime() - anchor.getTime()) / 1000);
-      setSessionSeconds(Math.max(0, diff));
+      const next = Math.max(0, diff);
+      sessionSecondsRef.current = next;
+      setSessionSeconds(next);
     }, 1000);
     return () => clearInterval(interval);
   }, [actualStartTime, sessionStartTime]);
@@ -663,13 +877,19 @@ export function VideoCall({
 
   // Server-authoritative timing checks + in-call warnings.
   useEffect(() => {
-    const checkSessionEnd = setInterval(async () => {
+    if (inLobby) return;
+
+    const checkSessionEnd = window.setInterval(async () => {
+      if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
+      if (isProcessingRef.current) return;
+      if (sessionTimingPollInFlightRef.current) return;
+      sessionTimingPollInFlightRef.current = true;
       try {
         const result = await checkAndEnforceSessionTiming(sessionId);
 
         if (result.warning === "60s" && !sessionWarningSentRef.current.sixty) {
           sessionWarningSentRef.current.sixty = true;
-          setSessionWarning("60s");
+          enterFinalMinuteMode("60s");
           channelRef.current?.send({
             type: "broadcast",
             event: "session-warning",
@@ -679,7 +899,7 @@ export function VideoCall({
 
         if (result.warning === "15s" && !sessionWarningSentRef.current.fifteen) {
           sessionWarningSentRef.current.fifteen = true;
-          setSessionWarning("15s");
+          enterFinalMinuteMode("15s");
           channelRef.current?.send({
             type: "broadcast",
             event: "session-warning",
@@ -689,41 +909,48 @@ export function VideoCall({
 
         if (result.shouldEnd && !sessionForceEndedRef.current) {
           sessionForceEndedRef.current = true;
-          channelRef.current?.send({
-            type: "broadcast",
-            event: "session-force-end",
-            payload: { reason: result.reason ?? "time_elapsed", from: userId },
-          });
+          if (!sessionWarningSentRef.current.sixty) {
+            sessionWarningSentRef.current.sixty = true;
+            enterFinalMinuteMode("60s");
+          } else {
+            setFinalMinuteMode(true);
+          }
           setNotice({
             kind: "info",
             message:
               result.reason === "cancelled"
-                ? "This session was cancelled and will now end."
-                : "Session time ended. Wrapping up this call.",
+                ? "This session was cancelled. You can now leave the room."
+                : "Session time ended. You can now leave the room whenever you are ready.",
           });
-          await handleEndCall();
         }
       } catch (error) {
-        // Fallback warning path if server check is temporarily unavailable.
         if (sessionEndTime) {
           const remainingMs = new Date(sessionEndTime).getTime() - Date.now();
           const remainingSec = Math.floor(remainingMs / 1000);
           if (remainingSec <= 60 && !sessionWarningSentRef.current.sixty) {
             sessionWarningSentRef.current.sixty = true;
-            setSessionWarning("60s");
+            enterFinalMinuteMode("60s");
           }
           if (remainingSec <= 15 && !sessionWarningSentRef.current.fifteen) {
             sessionWarningSentRef.current.fifteen = true;
-            setSessionWarning("15s");
+            enterFinalMinuteMode("15s");
           }
         }
         console.warn("Session timing check failed:", error);
+      } finally {
+        sessionTimingPollInFlightRef.current = false;
       }
     }, 5000);
 
-    return () => clearInterval(checkSessionEnd);
+    sessionTimingPollIntervalRef.current = checkSessionEnd;
+    return () => {
+      window.clearInterval(checkSessionEnd);
+      if (sessionTimingPollIntervalRef.current === checkSessionEnd) {
+        sessionTimingPollIntervalRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, sessionEndTime, userId]);
+  }, [sessionId, sessionEndTime, userId, inLobby]);
 
   // Initialize WebRTC and signaling
   useEffect(() => {
@@ -759,19 +986,28 @@ export function VideoCall({
               ? { deviceId: lbs.videoDeviceId ? { exact: lbs.videoDeviceId } : undefined, width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
               : false,
           };
+          const fallbackConstraints: MediaStreamConstraints = {
+            audio: lbs.audioEnabled
+              ? { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+              : false,
+            video: lbs.videoEnabled
+              ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
+              : false,
+          };
 
           try {
             stream = await navigator.mediaDevices.getUserMedia(constraints);
-          } catch {
+          } catch (firstErr) {
+            // Do not re-prompt after an explicit deny — same outcome, avoids noisy double errors.
+            if (isMediaPermissionDenied(firstErr)) {
+              throw mapMediaStreamError(firstErr);
+            }
             // Device IDs can go stale after unplugging; retry without explicit IDs but with same on/off policy.
-            stream = await navigator.mediaDevices.getUserMedia({
-              audio: lbs.audioEnabled
-                ? { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-                : false,
-              video: lbs.videoEnabled
-                ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
-                : false,
-            });
+            try {
+              stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+            } catch (secondErr) {
+              throw mapMediaStreamError(secondErr);
+            }
           }
         } else {
           stream = await getUserMedia(true, true);
@@ -1065,6 +1301,17 @@ export function VideoCall({
           }
         };
 
+        const cancelPeerLeftNotice = () => {
+          if (peerLeftTimeoutRef.current != null) {
+            window.clearTimeout(peerLeftTimeoutRef.current);
+            peerLeftTimeoutRef.current = null;
+          }
+          peerLeftNoticeShownRef.current = false;
+          setNotice((prev) =>
+            prev?.message === "The other participant has left the call." ? null : prev,
+          );
+        };
+
         // Handle connection state changes
         pc.onconnectionstatechange = () => {
           if (!mounted) return;
@@ -1073,6 +1320,7 @@ export function VideoCall({
 
           if (state === "connected") {
             callWasConnectedRef.current = true;
+            cancelPeerLeftNotice();
             setWaitingForOtherParticipant(false);
             setConnectionStatus("connected");
             setHasRemoteStream(true);
@@ -1090,7 +1338,14 @@ export function VideoCall({
             }
           } else if (state === "failed" || state === "disconnected" || state === "closed") {
             if (callWasConnectedRef.current && !isLeavingRef.current) {
-              console.log("Peer left the call — staying in room with local video");
+              // `disconnected` is often transient (ICE restart, network blip). Do not infer "they left"
+              // from WebRTC alone — Supabase presence `leave` is authoritative for that toast.
+              const treatAsPossiblePeerLoss = state === "failed" || state === "closed";
+              console.log(
+                treatAsPossiblePeerLoss
+                  ? "Peer connection ended — staying in room with local video"
+                  : "Peer connection interrupted (may recover) — reconnecting UI",
+              );
               channelRef.current?.send({
                 type: "broadcast",
                 event: "participant-reconnecting",
@@ -1102,10 +1357,24 @@ export function VideoCall({
               if (userRole === "student") {
                 setShowStudentReconnectingOverlay(true);
               }
+              if (treatAsPossiblePeerLoss) {
                 if (peerLeftTimeoutRef.current) clearTimeout(peerLeftTimeoutRef.current);
                 peerLeftTimeoutRef.current = window.setTimeout(() => {
                   if (!mounted || isLeavingRef.current) return;
                   if (pc.connectionState === "connected") return;
+
+                  // Supabase presence can recover after a PC blip — don't claim they "left".
+                  if (presenceHasOtherParticipant(channelRef.current, userId)) {
+                    peerLeftTimeoutRef.current = null;
+                    return;
+                  }
+                  if (
+                    remoteMediaHasLiveTrack(remoteStreamRef.current) &&
+                    peerTransportLooksHealthy(pc)
+                  ) {
+                    peerLeftTimeoutRef.current = null;
+                    return;
+                  }
 
                   if (!peerLeftNoticeShownRef.current) {
                     peerLeftNoticeShownRef.current = true;
@@ -1119,6 +1388,7 @@ export function VideoCall({
                     remoteVideoRef.current.srcObject = null;
                   }
                 }, 10000);
+              }
             } else if (!callWasConnectedRef.current) {
               // Never connected — only show error for initial connection failure
               if (state === "failed") {
@@ -1359,22 +1629,9 @@ export function VideoCall({
           if (!payload || payload.from === userId) return;
           const level = payload.level === "15s" ? "15s" : payload.level === "60s" ? "60s" : null;
           if (!level) return;
-          setSessionWarning((prev) => (prev === "15s" ? prev : level));
+          enterFinalMinuteMode(level);
           if (level === "60s") sessionWarningSentRef.current.sixty = true;
           if (level === "15s") sessionWarningSentRef.current.fifteen = true;
-        });
-
-        channel.on("broadcast", { event: "session-force-end" }, (message: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const payload = (message as any).payload || message;
-          if (!payload || payload.from === userId) return;
-          if (sessionForceEndedRef.current || isLeavingRef.current) return;
-          sessionForceEndedRef.current = true;
-          setNotice({
-            kind: "info",
-            message: "Session was ended by server timing enforcement.",
-          });
-          void handleEndCall();
         });
 
         channel.on("broadcast", { event: "participant-reconnecting" }, (message: unknown) => {
@@ -1392,12 +1649,7 @@ export function VideoCall({
           if (!payload || payload.from === userId) return;
           setShowStudentReconnectingOverlay(false);
           setShowTutorReconnectPrompt(false);
-          // ELITE SYNC: Clear any pending "left" notice if they reconnect
-          if (peerLeftTimeoutRef.current) {
-            clearTimeout(peerLeftTimeoutRef.current);
-            peerLeftTimeoutRef.current = null;
-          }
-          peerLeftNoticeShownRef.current = false;
+          cancelPeerLeftNotice();
         });
 
         channel.on("broadcast", { event: "screen-share-started" }, (message: unknown) => {
@@ -1419,7 +1671,17 @@ export function VideoCall({
           const payload = (message as any).payload || message;
           if (!payload || !payload.recordingId) return;
           console.log("[video-call] Recording ID received from peer:", payload.recordingId);
-          setHasRecording(true);
+          if (userRole === "student" && mounted) {
+            setNotice({
+              kind: "success",
+              message: "Your guide saved the session recording to the library.",
+            });
+          }
+        });
+
+        // Session text chat — same channel/bindings lifecycle as WebRTC signaling (not a separate React effect).
+        channel.on("broadcast", { event: "chat" }, (message: unknown) => {
+          inSessionChatBroadcastRef.current?.(message);
         });
 
         // ELITE SYNC: Check for student's first join to anchor the session time
@@ -1457,6 +1719,10 @@ export function VideoCall({
           );
 
           console.log("Presence sync:", { participants, hasOtherParticipant, userId });
+
+          if (hasOtherParticipant) {
+            cancelPeerLeftNotice();
+          }
 
           if (mounted && realtimeRoomJoinedRef.current) {
             if (callWasConnectedRef.current || isLeavingRef.current) {
@@ -1499,6 +1765,7 @@ export function VideoCall({
         channel.on("presence", { event: "join" }, ({ key, newPresences }: { key: string; newPresences: Record<string, unknown>[] }) => {
           console.log("Participant joined:", key, newPresences);
           if (key !== userId) {
+            cancelPeerLeftNotice();
             if (mounted) setWaitingForOtherParticipant(false);
             otherParticipantPresent = true;
 
@@ -1533,20 +1800,31 @@ export function VideoCall({
           if (peerLeftTimeoutRef.current) clearTimeout(peerLeftTimeoutRef.current);
           peerLeftTimeoutRef.current = window.setTimeout(() => {
             if (!mounted || isLeavingRef.current) return;
-            // Re-check presence state before showing notice
-            const currentState = channelRef.current?.presenceState() || {};
-            const stillGone = !Object.keys(currentState).some(k => k !== userId);
-            
-            if (stillGone) {
-              peerLeftNoticeShownRef.current = true;
-              setNotice({
-                kind: "info",
-                message: "The other participant has left the call.",
-              });
-              setHasRemoteStream(false);
-              if (remoteVideoRef.current) {
-                remoteVideoRef.current.srcObject = null;
-              }
+
+            // Re-check presence — other may have rejoined during the debounce window.
+            if (presenceHasOtherParticipant(channelRef.current, userId)) {
+              peerLeftTimeoutRef.current = null;
+              return;
+            }
+
+            // Presence `leave` often fires on Realtime reconnect while WebRTC is still fine.
+            const pcNow = peerConnectionRef.current;
+            if (
+              remoteMediaHasLiveTrack(remoteStreamRef.current) &&
+              peerTransportLooksHealthy(pcNow)
+            ) {
+              peerLeftTimeoutRef.current = null;
+              return;
+            }
+
+            peerLeftNoticeShownRef.current = true;
+            setNotice({
+              kind: "info",
+              message: "The other participant has left the call.",
+            });
+            setHasRemoteStream(false);
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = null;
             }
           }, 10000);
         });
@@ -1610,26 +1888,45 @@ export function VideoCall({
         });
       } catch (err) {
         if (mounted) {
-          console.error("Error initializing call:", err);
-          if (err instanceof Error) {
-            const errorMsg = err.message;
-            console.error("Full error details:", {
-              name: err.name,
-              message: errorMsg,
-              stack: err.stack
-            });
-            setError(errorMsg);
+          const errorForUi =
+            err instanceof Error
+              ? isMediaPermissionDenied(err)
+                ? mapMediaStreamError(err)
+                : err
+              : new Error(String(err));
+          const errorMsg = errorForUi.message;
+          const expectedPermissionIssue =
+            isMediaPermissionDenied(err) ||
+            /permission denied|microphone permission|camera permission|blocked or cancelled/i.test(
+              errorMsg,
+            );
 
-            // If it's a permission error, set a flag to show retry button
-            if (errorMsg.toLowerCase().includes("permission") ||
-              errorMsg.toLowerCase().includes("denied") ||
-              err.name === "NotAllowedError" ||
-              err.name === "PermissionDeniedError") {
-              setIsRequestingPermission(true);
-            }
+          if (expectedPermissionIssue) {
+            console.warn("Video call: camera/microphone not available:", errorMsg);
           } else {
+            console.error("Error initializing call:", err);
+            if (err instanceof Error) {
+              console.error("Full error details:", {
+                name: err.name,
+                message: err.message,
+                stack: err.stack,
+              });
+            }
+          }
+
+          setError(errorMsg);
+
+          if (
+            errorMsg.toLowerCase().includes("permission") ||
+            errorMsg.toLowerCase().includes("denied") ||
+            (err instanceof Error &&
+              (err.name === "NotAllowedError" || err.name === "PermissionDeniedError"))
+          ) {
+            setIsRequestingPermission(true);
+          } else if (!(err instanceof Error)) {
             setError("Failed to initialize video call");
           }
+
           setConnectionStatus("error");
         }
       }
@@ -1701,6 +1998,7 @@ export function VideoCall({
   }, [sessionId, roomId, roomToken, userRole, userId, inLobby]);
 
   const toggleMute = () => {
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
     if (controlActionLockRef.current || !localStreamRef.current) return;
     runControlAction(() => {
       const audioTracks = localStreamRef.current?.getAudioTracks() ?? [];
@@ -1714,6 +2012,7 @@ export function VideoCall({
   };
 
   const toggleVideo = () => {
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
     if (controlActionLockRef.current || !localStreamRef.current) return;
     runControlAction(() => {
       const videoTracks = localStreamRef.current?.getVideoTracks() ?? [];
@@ -1727,6 +2026,8 @@ export function VideoCall({
   };
 
   const startRecording = async () => {
+    if (userRole !== "tutor") return;
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
     if (isStartingRecordingRef.current || isRecording || isProcessingRecording || controlActionLockRef.current) {
       console.warn("[video-call] startRecording ignored: already in progress or locked.");
       return;
@@ -1745,6 +2046,7 @@ export function VideoCall({
       "Recording consent required: confirm that both parties explicitly agree to this recording."
     );
     if (!consentOk) return;
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
 
     controlActionLockRef.current = true;
     isStartingRecordingRef.current = true;
@@ -1763,13 +2065,13 @@ export function VideoCall({
         console.log("Reusing existing screen share track for recording.");
       } else {
         console.log("No active screen share found for recording, requesting new stream...");
-        recordingDisplayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            frameRate: { ideal: 30, max: 30 },
-            cursor: "always",
-          } as MediaTrackConstraints,
-          audio: false,
-        });
+        recordingDisplayStream = await requestDisplayMediaForSession();
+        if (videoSessionTeardownStartedRef.current || isLeavingRef.current) {
+          recordingDisplayStream.getTracks().forEach((t) => {
+            if (t.readyState !== "ended") t.stop();
+          });
+          return;
+        }
         recordingDisplayTrack = recordingDisplayStream.getVideoTracks()[0];
         recordingDisplayStreamRef.current = recordingDisplayStream;
 
@@ -1781,26 +2083,13 @@ export function VideoCall({
         }
       }
 
+      if (videoSessionTeardownStartedRef.current || isLeavingRef.current) {
+        return;
+      }
+
       if (!recordingDisplayTrack) {
         throw new Error("No display track was returned. Choose a screen/window to record.");
       }
-
-      recordingDisplayTrack.onended = () => {
-        console.log("Recording display track ended.");
-        screenShareTimelineRef.current.push({
-          state: "end",
-          at: Date.now(),
-          actorId: userId,
-        });
-        // If we are still recording, we should stop it gracefully
-        if (mediaRecorderRef.current?.state === "recording" || mediaRecorderRef.current?.state === "paused") {
-          setNotice({
-            kind: "info",
-            message: "Screen capture ended. Finalizing recording...",
-          });
-          void stopRecording();
-        }
-      };
 
       closeRecordingAudioContext();
 
@@ -2003,6 +2292,16 @@ export function VideoCall({
           const endedAt = new Date(wallEndMs);
 
           downloadBlobToDevice(blob, fileName);
+          {
+            const prev =
+              typeof recordingHintsRef.current.localRecordingDownloadCount === "number"
+                ? recordingHintsRef.current.localRecordingDownloadCount
+                : 0;
+            recordingHintsRef.current = {
+              ...recordingHintsRef.current,
+              localRecordingDownloadCount: prev + 1,
+            };
+          }
 
           const file = new File([blob], fileName, {
             type: fileMimeForUpload,
@@ -2018,7 +2317,7 @@ export function VideoCall({
           uploadFormData.append("mimeType", fileMimeForUpload);
           uploadFormData.append("recordingConsentConfirmed", "true");
 
-          const result = await saveRecording(uploadFormData);
+          const result = await uploadRecordingViaApi(uploadFormData);
           uploadResult = result;
 
           if (!result || typeof result !== "object" || !("success" in result)) {
@@ -2031,7 +2330,7 @@ export function VideoCall({
             setNotice({
               kind: "info",
               message:
-                `Saved “${fileName}” to your device (Downloads). Cloud backup status is unavailable right now, so it may not appear in Mentrixa library for this recording.`,
+                `Saved “${fileName}” to your device .`,
             });
             return;
           }
@@ -2046,7 +2345,7 @@ export function VideoCall({
             setError(null);
             setNotice({
               kind: "error",
-              message: `Saved “${fileName}” to your device (Downloads). Cloud backup failed: ${result.error ?? "Unknown error"}.`,
+              message: `Saved “${fileName}” to your device .`,
             });
             return;
           }
@@ -2059,10 +2358,6 @@ export function VideoCall({
             durationMs,
             mimeType: fileMimeForUpload,
           };
-          if (result.recording?.id) {
-            setHasRecording(true);
-          }
-
           setNotice({
             kind: "success",
             message: `Saved “${fileName}” locally and in Mentrixa (${result.recording?.file_name ?? "library"}). ${fileName.endsWith(".mp4") ? "MP4 usually plays best in Windows Media Player." : "If the picture is frozen or seek fails in Windows Media Player, open the file in Microsoft Edge or the Films & TV app."}`,
@@ -2144,6 +2439,20 @@ export function VideoCall({
       };
 
       console.log("Starting MediaRecorder with options:", options);
+      if (videoSessionTeardownStartedRef.current || isLeavingRef.current) {
+        try {
+          recordingDisplayTrack.onended = null;
+        } catch {
+          /* ignore */
+        }
+        combinedStreamForRecordingRef.current?.getTracks().forEach((t) => {
+          if (t.readyState !== "ended") t.stop();
+        });
+        combinedStreamForRecordingRef.current = null;
+        mediaRecorderRef.current = null;
+        return;
+      }
+      bindDisplayTrackEnded(recordingDisplayTrack);
       recordingWallClockStartMsRef.current = Date.now();
       mediaRecorder.start(250);
 
@@ -2197,7 +2506,9 @@ export function VideoCall({
     } finally {
       isStartingRecordingRef.current = false;
       window.setTimeout(() => {
-        controlActionLockRef.current = false;
+        if (!videoSessionTeardownStartedRef.current) {
+          controlActionLockRef.current = false;
+        }
       }, 500); // 500ms safety lockout after start
     }
   };
@@ -2280,6 +2591,172 @@ export function VideoCall({
     });
   };
 
+  const enterFinalMinuteMode = useCallback(
+    (level: "60s" | "15s") => {
+      setSessionWarning((prev) => (prev === "15s" ? "15s" : level));
+      setFinalMinuteMode(true);
+
+      if (level === "60s") {
+        if (userRole === "tutor") {
+          setNotice({
+            kind: "info",
+            message:
+              "Session ends in about a minute. You can keep recording, chatting, and sharing — stop a recording anytime to save a copy to your device. Leave when you are ready (from the final minute onward).",
+          });
+        } else {
+          setNotice({
+            kind: "info",
+            message:
+              "Session ends in about a minute. You can keep talking and chatting — you may leave from the final minute onward.",
+          });
+        }
+        return;
+      }
+
+      setNotice({
+        kind: "info",
+        message:
+          userRole === "tutor"
+            ? "Session ends in about 15 seconds. Wrap up — you can leave when ready."
+            : "Session ends in about 15 seconds. You can leave when ready.",
+      });
+    },
+    [userRole],
+  );
+
+  /** Restore camera to the peer and normal PiP layout; optionally stop the display-capture track. */
+  async function restorePeerCameraLayout(options: { stopDisplayTrack: boolean }) {
+    const displayTrack = displayVideoTrackRef.current;
+    setIsSharingScreen(false);
+    isSharingScreenRef.current = false;
+
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "screen-share-stopped",
+      payload: { from: userId },
+    });
+
+    const pcNow = peerConnectionRef.current;
+    const videoSender = pcNow?.getSenders().find((s) => s.track?.kind === "video");
+    const cameraTrack =
+      cameraTrackBeforeScreenRef.current ??
+      localStreamRef.current?.getVideoTracks().find((t) => t.kind === "video" && t.readyState === "live");
+
+    try {
+      if (
+        pcNow &&
+        pcNow.connectionState !== "closed" &&
+        videoSender &&
+        cameraTrack &&
+        cameraTrack.readyState === "live"
+      ) {
+        await videoSender.replaceTrack(cameraTrack);
+      } else if (pcNow && videoSender && localStreamRef.current) {
+        const fallback = localStreamRef.current
+          .getVideoTracks()
+          .find((t) => t.kind === "video" && t.readyState === "live");
+        if (fallback) await videoSender.replaceTrack(fallback);
+      }
+    } catch (e) {
+      console.warn("Restoring camera after screen share failed:", e);
+    }
+
+    cameraTrackBeforeScreenRef.current = null;
+
+    try {
+      if (remoteVideoRef.current && remoteStreamRef.current) {
+        const rStream = remoteStreamRef.current;
+        if (rStream.getVideoTracks().some((t) => t.readyState === "live")) {
+          remoteVideoRef.current.srcObject = rStream;
+          void remoteVideoRef.current.play().catch(() => { });
+        }
+      }
+      if (localVideoRef.current && localStreamRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+        void localVideoRef.current.play().catch(() => { });
+      }
+    } catch (e) {
+      console.warn("Restoring video elements after screen share failed:", e);
+    }
+
+    if (options.stopDisplayTrack && displayTrack && displayTrack.readyState !== "ended") {
+      try {
+        displayTrack.onended = null;
+        displayTrack.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    if (options.stopDisplayTrack) {
+      displayVideoTrackRef.current = null;
+    }
+  }
+
+  function bindDisplayTrackEnded(displayTrack: MediaStreamTrack) {
+    displayTrack.onended = () => {
+      void (async () => {
+        if (videoSessionTeardownStartedRef.current || isLeavingRef.current) {
+          try {
+            displayTrack.onended = null;
+          } catch {
+            /* ignore */
+          }
+          try {
+            if (displayVideoTrackRef.current === displayTrack) {
+              displayVideoTrackRef.current = null;
+            }
+            if (displayTrack.readyState !== "ended") displayTrack.stop();
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+        const mr = mediaRecorderRef.current;
+        const recording = mr?.state === "recording" || mr?.state === "paused";
+        screenShareTimelineRef.current.push({
+          state: "end",
+          at: Date.now(),
+          actorId: userId,
+        });
+        if (recording) {
+          setNotice({
+            kind: "info",
+            message: "Screen capture ended. Finalizing recording...",
+          });
+          await stopRecording();
+        }
+        if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
+        await restorePeerCameraLayout({ stopDisplayTrack: true });
+      })();
+    };
+  }
+
+  /** Stop sending screen to the peer while optionally keeping capture alive for an active recording. */
+  async function handleStopScreenShare() {
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
+    if (controlActionLockRef.current || !peerConnectionRef.current) return;
+    if (!isSharingScreenRef.current) return;
+    controlActionLockRef.current = true;
+    try {
+      const mr = mediaRecorderRef.current;
+      const recording = mr?.state === "recording" || mr?.state === "paused";
+      const displayTrack = displayVideoTrackRef.current;
+      const keepCaptureForRecording =
+        recording && !!displayTrack && displayTrack.readyState === "live";
+
+      await restorePeerCameraLayout({ stopDisplayTrack: !keepCaptureForRecording });
+      if (keepCaptureForRecording && displayTrack) {
+        bindDisplayTrackEnded(displayTrack);
+      }
+    } finally {
+      window.setTimeout(() => {
+        if (!videoSessionTeardownStartedRef.current) {
+          controlActionLockRef.current = false;
+        }
+      }, 200);
+    }
+  }
+
   // Cleanup recording on unmount (do not depend on isRecording — ref state is source of truth)
   useEffect(() => {
     return () => {
@@ -2318,6 +2795,7 @@ export function VideoCall({
   }, []);
 
   const retryPermissionRequest = async () => {
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
     setIsRequestingPermission(true);
     setError(null);
 
@@ -2348,7 +2826,12 @@ export function VideoCall({
 
       setConnectionStatus("connecting");
     } catch (err) {
-      console.error("Error retrying permission:", err);
+      const msg = err instanceof Error ? err.message : "";
+      if (isMediaPermissionDenied(err) || /permission denied|blocked/i.test(msg)) {
+        console.warn("Retry camera/microphone:", msg);
+      } else {
+        console.error("Error retrying permission:", err);
+      }
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -2369,13 +2852,8 @@ export function VideoCall({
   };
 
   const handleShareScreen = async (existingStream?: MediaStream) => {
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
     if (controlActionLockRef.current || !peerConnectionRef.current) return;
-
-    // If we are already sharing and this isn't an auto-share from recording, 
-    // we allow "switching" by stopping the current share first.
-    if (isSharingScreen && !existingStream) {
-      console.log("Switching screen share source...");
-    }
 
     controlActionLockRef.current = true;
     try {
@@ -2384,13 +2862,29 @@ export function VideoCall({
       const existingDisplayStream = recordingDisplayStreamRef.current;
       const isExistingLive = existingDisplayStream?.getVideoTracks().some(t => t.readyState === "live");
 
-      const displayStream = existingStream || (isExistingLive ? existingDisplayStream : null) || await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          frameRate: { ideal: 30, max: 30 },
-          cursor: "always",
-        } as MediaTrackConstraints,
-        audio: false,
-      });
+      let displayStream: MediaStream;
+      if (existingStream) {
+        displayStream = existingStream;
+      } else if (isExistingLive && existingDisplayStream) {
+        displayStream = existingDisplayStream;
+      } else {
+        displayStream = await requestDisplayMediaForSession();
+        if (videoSessionTeardownStartedRef.current || isLeavingRef.current) {
+          displayStream.getTracks().forEach((t) => {
+            if (t.readyState !== "ended") t.stop();
+          });
+          return;
+        }
+      }
+
+      if (videoSessionTeardownStartedRef.current || isLeavingRef.current) {
+        if (!existingStream && displayStream !== existingDisplayStream) {
+          displayStream.getTracks().forEach((t) => {
+            if (t.readyState !== "ended") t.stop();
+          });
+        }
+        return;
+      }
 
       const displayTrack = displayStream.getVideoTracks()[0];
       if (!displayTrack) {
@@ -2433,6 +2927,16 @@ export function VideoCall({
         }
       }
 
+      if (videoSessionTeardownStartedRef.current || isLeavingRef.current) {
+        try {
+          displayTrack.onended = null;
+          if (displayTrack.readyState !== "ended") displayTrack.stop();
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+
       displayVideoTrackRef.current = displayTrack;
       screenShareTimelineRef.current.push({
         state: "start",
@@ -2465,88 +2969,30 @@ export function VideoCall({
         payload: { from: userId },
       });
 
-      displayTrack.onended = async () => {
-        // ELITE FALLBACK: If screen share ends, always try to restore the camera.
-        const cleanup = async () => {
-          setIsSharingScreen(false);
-          isSharingScreenRef.current = false;
-          displayVideoTrackRef.current = null;
-
-          // ELITE SYNC: Tell the student the share has ended
-          channelRef.current?.send({
-            type: "broadcast",
-            event: "screen-share-stopped",
-            payload: { from: userId },
-          });
-
-          const pcNow = peerConnectionRef.current;
-          const videoSender = pcNow
-            ?.getSenders()
-            .find((s) => s.track?.kind === "video");
-
-          const cameraTrack =
-            cameraTrackBeforeScreenRef.current ??
-            localStreamRef.current
-              ?.getVideoTracks()
-              .find((t) => t.kind === "video" && t.readyState === "live");
-
-          try {
-            if (
-              pcNow &&
-              pcNow.connectionState !== "closed" &&
-              videoSender &&
-              cameraTrack &&
-              cameraTrack.readyState === "live"
-            ) {
-              await videoSender.replaceTrack(cameraTrack);
-            } else if (pcNow && videoSender && localStreamRef.current) {
-              const fallback = localStreamRef.current
-                .getVideoTracks()
-                .find((t) => t.kind === "video" && t.readyState === "live");
-              if (fallback) await videoSender.replaceTrack(fallback);
-            }
-          } catch (e) {
-            console.warn("Restoring camera layout failed:", e);
-          }
-
-          cameraTrackBeforeScreenRef.current = null;
-
-          // ATOMIC UI RESTORE: Put student back in main, you back in PiP
-          try {
-            if (remoteVideoRef.current && remoteStreamRef.current) {
-              const rStream = remoteStreamRef.current;
-              if (rStream.getVideoTracks().some(t => t.readyState === "live")) {
-                remoteVideoRef.current.srcObject = rStream;
-                void remoteVideoRef.current.play().catch(() => { });
-              }
-            }
-            if (localVideoRef.current && localStreamRef.current) {
-              localVideoRef.current.srcObject = localStreamRef.current;
-              void localVideoRef.current.play().catch(() => { });
-            }
-          } catch (e) {
-            console.warn("Restoring video elements failed:", e);
-          }
-        };
-
-        void cleanup();
-      };
+      bindDisplayTrackEnded(displayTrack);
     } catch (err) {
-      console.warn("getDisplayMedia:", err);
+      if (isMediaPermissionDenied(err)) {
+        console.warn("Screen share: cancelled or blocked by browser.");
+      } else {
+        console.warn("getDisplayMedia:", err);
+      }
       setError(
-        err instanceof Error && err.name === "NotAllowedError"
+        err instanceof Error && isMediaPermissionDenied(err)
           ? "Screen sharing was blocked or cancelled."
           : "Screen sharing was cancelled or unavailable.",
       );
     } finally {
       window.setTimeout(() => {
-        controlActionLockRef.current = false;
+        if (!videoSessionTeardownStartedRef.current) {
+          controlActionLockRef.current = false;
+        }
       }, 200);
     }
   };
 
   const handleTutorRejoinAttempt = () => {
     if (userRole !== "tutor") return;
+    if (videoSessionTeardownStartedRef.current || isLeavingRef.current) return;
     channelRef.current?.send({
       type: "broadcast",
       event: "participant-reconnecting",
@@ -2620,18 +3066,25 @@ export function VideoCall({
     );
   }
 
+  if (postCallOverlay) {
+    return (
+      <PostCallSummary
+        sessionId={sessionId}
+        userRole={userRole}
+        durationSeconds={postCallOverlay.durationSeconds}
+        recordingMode={postCallOverlay.recordingMode}
+        localRecordingDownloadCount={postCallOverlay.localRecordingDownloadCount}
+        whiteboardSnapshotUrl={postCallOverlay.whiteboardSnapshotUrl ?? undefined}
+        onClose={() => setPostCallOverlay(null)}
+      />
+    );
+  }
+
   return (
     <div className="fixed inset-0 touch-manipulation bg-[#080C14] overflow-hidden text-white flex flex-col">
-      {/* Top bar */}
+      {/* Top bar — no dashboard / shell navigation during the call (leave ends session from toolbar). */}
       <div className="flex-none h-12 z-10 px-4 flex items-center justify-between border-b border-white/10 backdrop-blur-md bg-[rgba(8,12,20,0.8)]">
-        <button
-          onClick={() => void handleBackToDashboard()}
-          className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
-          aria-label="Back to dashboard"
-        >
-          <ArrowLeft size={14} />
-          <span>Dashboard</span>
-        </button>
+        <div className="w-24 shrink-0" aria-hidden />
         <p className="text-xs text-white/30 hidden sm:block">
           <BubbleText text={courseLabel} className="mr-2" />
           ·
@@ -2854,6 +3307,7 @@ export function VideoCall({
           >
             {/* Mute */}
             <button
+              type="button"
               onClick={toggleMute}
               disabled={isLeaving}
               className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${isMuted
@@ -2866,6 +3320,7 @@ export function VideoCall({
 
             {/* Video */}
             <button
+              type="button"
               onClick={toggleVideo}
               disabled={isLeaving}
               className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${isVideoOff
@@ -2876,38 +3331,73 @@ export function VideoCall({
               {isVideoOff ? "Camera on" : "Camera off"}
             </button>
 
-            {/* Screen share */}
+            {/* Screen share — toggle off while recording keeps capture for the file (see handleStopScreenShare). */}
             <button
-              onClick={() => void handleShareScreen()}
-              disabled={isLeaving || isSharingScreen}
+              type="button"
+              onClick={() => {
+                if (isSharingScreen) void handleStopScreenShare();
+                else void handleShareScreen();
+              }}
+              disabled={isLeaving}
+              title={
+                isSharingScreen
+                  ? "Stop sending your screen to the call (recording can continue)"
+                  : "Share your screen"
+              }
               className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${isSharingScreen
                   ? "border-sky-500/40 text-sky-300"
                   : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
                 }`}
             >
-              {isSharingScreen ? "Sharing" : "Share"}
+              {isSharingScreen ? "Stop share" : "Share"}
             </button>
 
             {/* Chat toggle */}
             <button
-              onClick={() =>
-                setActivePanel((p) => (p === "chat" ? "none" : "chat"))
-              }
+              type="button"
+              onClick={() => {
+                setActivePanel((p) => {
+                  const next = p === "chat" ? "none" : "chat";
+                  activePanelRef.current = next;
+                  if (next === "chat") {
+                    const msgs = latestChatMessagesRef.current;
+                    const peer = msgs.filter((m) => m.authorId !== userId).length;
+                    readPeerChatCountRef.current = peer;
+                    setChatUnreadFromPeer(0);
+                  }
+                  return next;
+                });
+              }}
               disabled={isLeaving}
-              className={`h-9 w-9 flex items-center justify-center rounded-md border bg-transparent active:scale-95 transition-all duration-150 ${activePanel === "chat"
+              className={`relative h-9 w-9 flex items-center justify-center rounded-md border bg-transparent active:scale-95 transition-all duration-150 ${activePanel === "chat"
                   ? "border-white/30 text-white"
                   : "border-white/15 text-white/50 hover:border-white/30 hover:text-white"
                 }`}
               title="Chat"
+              aria-label={
+                chatUnreadFromPeer > 0
+                  ? `Chat, ${chatUnreadFromPeer} new message${chatUnreadFromPeer === 1 ? "" : "s"}`
+                  : "Chat"
+              }
             >
               <MessageSquare size={14} strokeWidth={2} />
+              {chatUnreadFromPeer > 0 ? (
+                <span className="absolute -top-0.5 -right-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-red-500 px-[3px] text-[9px] font-bold leading-none text-white shadow-sm ring-2 ring-black/40">
+                  {chatUnreadFromPeer > 9 ? "9+" : chatUnreadFromPeer}
+                </span>
+              ) : null}
             </button>
 
             {/* Whiteboard toggle */}
             <button
-              onClick={() =>
-                setActivePanel((p) => (p === "whiteboard" ? "none" : "whiteboard"))
-              }
+              type="button"
+              onClick={() => {
+                setActivePanel((p) => {
+                  const next = p === "whiteboard" ? "none" : "whiteboard";
+                  activePanelRef.current = next;
+                  return next;
+                });
+              }}
               disabled={isLeaving}
               className={`h-9 w-9 flex items-center justify-center rounded-md border bg-transparent active:scale-95 transition-all duration-150 ${activePanel === "whiteboard"
                   ? "border-white/30 text-white"
@@ -2921,24 +3411,46 @@ export function VideoCall({
             {/* Record (tutor only) */}
             {userRole === "tutor" && (
               <button
+                type="button"
                 onClick={() => {
-                  if (!isRecording) void startRecording();
+                  if (isRecording) void stopRecording();
+                  else void startRecording();
                 }}
-                disabled={isLeaving || connectionStatus !== "connected" || isProcessingRecording || isRecording}
+                disabled={
+                  isLeaving ||
+                  connectionStatus !== "connected" ||
+                  (!isRecording && isProcessingRecording)
+                }
                 className={`h-9 px-3 rounded-md text-[12px] font-medium border bg-transparent active:scale-95 transition-all duration-150 ${isRecording
-                    ? "border-red-600/50 text-red-500 bg-red-500/5 cursor-not-allowed"
-                    : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
+                    ? "border-red-600/50 text-red-400 bg-red-500/10 hover:bg-red-500/15"
+                    : isProcessingRecording
+                      ? "border-white/10 text-white/35 cursor-wait"
+                      : "border-white/15 text-white/70 hover:border-white/30 hover:text-white"
                   }`}
               >
-                {isRecording ? "Recording..." : "Record"}
+                {isProcessingRecording
+                  ? "Saving…"
+                  : isRecording
+                    ? "Stop"
+                    : "Record"}
               </button>
             )}
 
-            {/* End call */}
+            {/* End call — same schedule gate for guide and learner */}
             <button
+              type="button"
               onClick={() => void handleEndCall()}
-              disabled={isLeaving}
-              className="h-9 px-4 rounded-md text-[12px] font-medium border border-red-500/30 text-red-300 bg-transparent hover:bg-red-500/10 hover:border-red-500 active:scale-95 transition-all duration-150"
+              disabled={isLeaving || !manualLeaveAllowed}
+              title={
+                !isLeaving && !manualLeaveAllowed
+                  ? "You can leave in the last 60 seconds of the scheduled session, after it ends, or if the other participant has left."
+                  : undefined
+              }
+              className={`h-9 px-4 rounded-md text-[12px] font-medium border border-red-500/30 bg-transparent active:scale-95 transition-all duration-150 ${
+                manualLeaveAllowed && !isLeaving
+                  ? "text-red-300 hover:bg-red-500/10 hover:border-red-500"
+                  : "text-red-300/35 border-red-500/15 cursor-not-allowed"
+              }`}
             >
               {isLeaving ? "Leaving…" : "Leave"}
             </button>
@@ -2955,11 +3467,11 @@ export function VideoCall({
         >
           <InSessionChat
             channel={realtimeChannel}
+            broadcastHandlerRef={inSessionChatBroadcastRef}
             userId={userId}
             userLabel={userRole === "student" ? learnerLabel : guideLabel}
-            onMessagesChange={(messages) => {
-              chatTranscriptRef.current = messages;
-            }}
+            sendDisabled={isLeaving}
+            onMessagesChange={handleInSessionChatMessagesChange}
           />
         </div>
 
@@ -2978,20 +3490,6 @@ export function VideoCall({
         )}
       </div>
 
-      {/* Post-call summary overlay */}
-      {showPostCall && (
-        <PostCallSummary
-          sessionId={sessionId}
-          userRole={userRole}
-          durationSeconds={sessionSeconds}
-          recordingSaved={hasRecording}
-          whiteboardSnapshotUrl={whiteboardSnapshot}
-          onClose={() => {
-            setShowPostCall(false);
-            void handleBackToDashboard();
-          }}
-        />
-      )}
     </div>
   );
 }

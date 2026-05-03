@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,8 @@ interface Session {
     comment: string | null;
   }>;
   ai_package?: SessionAiPackage | null;
+  studio_package_withdrawn_at?: string | null;
+  has_studio_package_draft?: boolean;
 }
 
 interface SessionRequest {
@@ -79,6 +82,9 @@ interface SessionsListProps {
   weekRange?: { startIso: string; endIso: string };
   showHeroStats?: boolean;
   children?: React.ReactNode;
+  /** From server searchParams for correct first paint / hydration when deep-linking. */
+  initialOpenStudyPackageId?: string;
+  initialSessionsTab?: "past" | "upcoming";
 }
 
 export function SessionsList({
@@ -91,13 +97,67 @@ export function SessionsList({
   weekRange: initialWeekRange,
   showHeroStats = true,
   children,
+  initialOpenStudyPackageId = "",
+  initialSessionsTab,
 }: SessionsListProps) {
-  const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "requests" | "schedule">("schedule");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initialPkg = (initialOpenStudyPackageId ?? "").trim();
+  const spOpenPkg = (searchParams.get("openStudyPackage") ?? "").trim();
+  const sessionsTabParam =
+    (searchParams.get("sessionsTab") ?? "").trim() ||
+    (initialSessionsTab === "past"
+      ? "past"
+      : initialSessionsTab === "upcoming"
+        ? "upcoming"
+        : "");
+
+  const [deepLinkPackageId, setDeepLinkPackageId] = useState(initialPkg);
+  const openStudyPackageId = spOpenPkg || deepLinkPackageId;
+
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "requests" | "schedule">(() => {
+    if (sessionsTabParam === "past" || initialPkg || spOpenPkg) return "past";
+    if (sessionsTabParam === "upcoming") return "upcoming";
+    return "schedule";
+  });
   const [rateFloatDismissedIds, setRateFloatDismissedIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     setRateFloatDismissedIds(loadRateFloatDismissedIds());
   }, []);
+
+  useEffect(() => {
+    if (sessionsTabParam === "past" || openStudyPackageId) {
+      setActiveTab("past");
+    } else if (sessionsTabParam === "upcoming") {
+      setActiveTab("upcoming");
+    }
+  }, [sessionsTabParam, openStudyPackageId]);
+
+  useEffect(() => {
+    if (spOpenPkg && spOpenPkg !== deepLinkPackageId) {
+      setDeepLinkPackageId(spOpenPkg);
+    }
+  }, [spOpenPkg, deepLinkPackageId]);
+
+  useEffect(() => {
+    if (!openStudyPackageId || activeTab !== "past") return;
+    const el = document.getElementById(`studio-${openStudyPackageId}`);
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [openStudyPackageId, activeTab, pastSessions]);
+
+  useEffect(() => {
+    if (!openStudyPackageId || activeTab !== "past") return;
+    const t = window.setTimeout(() => {
+      setDeepLinkPackageId("");
+      router.replace("/student#sessions-history", { scroll: false });
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [openStudyPackageId, activeTab, router]);
 
   const dismissRateFloatForSession = useCallback((sessionId: string) => {
     setRateFloatDismissedIds((prev) => {
@@ -307,15 +367,21 @@ export function SessionsList({
         <div className="lg:col-span-2">
           <section className="relative overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,#182846_0%,#12223e_46%,#0d1c35_100%)] p-4 text-white shadow-[0_14px_38px_-24px_rgba(15,23,42,0.65)] sm:p-6">
             <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:106px_106px] bg-repeat opacity-[0.055]" />
-            <img
+            <Image
               src="/icons/mentrixer.svg"
               alt=""
-              className="w-[18px] h-[18px] pointer-events-none absolute right-5 top-4 opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
+              width={18}
+              height={18}
+              unoptimized
+              className="pointer-events-none absolute right-5 top-4 h-[18px] w-[18px] opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
             />
-            <img
+            <Image
               src="/icons/mentrixer.svg"
               alt=""
-              className="w-4 h-4 pointer-events-none absolute right-20 bottom-5 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
+              width={16}
+              height={16}
+              unoptimized
+              className="pointer-events-none absolute right-20 bottom-5 h-4 w-4 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
             />
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
@@ -444,7 +510,11 @@ export function SessionsList({
                   <div className="space-y-3">
                     {pastSessions.map((session) => (
                       <div key={session.id} id={`studio-${session.id}`} className="scroll-mt-24">
-                        <PastSessionCard session={session} displayTimeZone={displayTimeZone} />
+                        <PastSessionCard
+                          session={session}
+                          displayTimeZone={displayTimeZone}
+                          autoExpandStudyPackage={openStudyPackageId === session.id}
+                        />
                       </div>
                     ))}
                   </div>

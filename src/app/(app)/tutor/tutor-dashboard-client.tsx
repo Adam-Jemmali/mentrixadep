@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,8 @@ export function TutorDashboardClient({
   greeting = "Good day",
   firstName = "Guide",
 }: TutorDashboardClientProps) {
+  const router = useRouter();
+  const [slotsCreatedNotice, setSlotsCreatedNotice] = useState(false);
   const { viewingAsUserId } = useAdminViewContext();
   const studioHref = viewingAsUserId
     ? `/tutor/sessions-ai?tutorId=${viewingAsUserId}`
@@ -188,6 +191,22 @@ export function TutorDashboardClient({
     }
   };
 
+  useEffect(() => {
+    if (!slotsCreatedNotice) return;
+    router.refresh();
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById("tutor-availability-slots")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 200);
+    const hideTimer = window.setTimeout(() => setSlotsCreatedNotice(false), 5200);
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(hideTimer);
+    };
+  }, [slotsCreatedNotice, router]);
+
   const recentPackages = useMemo(() => {
     // Best-effort: use most recent past sessions as stand-in
     return pastSessions.slice(0, 3);
@@ -195,6 +214,18 @@ export function TutorDashboardClient({
 
   return (
     <div className={mentrixTutor.pageBg}>
+    {slotsCreatedNotice ? (
+      <div
+        role="alert"
+        aria-live="polite"
+        className="pointer-events-none fixed bottom-6 left-1/2 z-[200] w-[min(92vw,24rem)] -translate-x-1/2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-center shadow-lg"
+      >
+        <p className="text-sm font-semibold text-slate-900">Slots created</p>
+        <p className="mt-1 text-xs text-slate-600">
+          Taking you to your availability slots…
+        </p>
+      </div>
+    ) : null}
     <div className="max-w-7xl mx-auto px-6 py-8 relative">
       <header className={`${mentrixTutor.heroGradient} mb-10 p-6 sm:p-8`}>
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -339,7 +370,7 @@ export function TutorDashboardClient({
             <CourseManager courses={tutorCourses} />
           </ScrollRevealCard>
 
-          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+          <ScrollRevealCard id="tutor-availability-slots" className={`scroll-mt-24 ${mentrixTutor.card} p-6`}>
             <h2 className="text-sm font-bold text-slate-900 mb-3">Availability</h2>
 
             <div className="flex items-center justify-between py-3 border-b border-[#F1F5F9] mb-4">
@@ -356,6 +387,7 @@ export function TutorDashboardClient({
                 tutorCourseNames={tutorCourses.map((c) => c.course_name)}
                 defaultTimezone={tutorTimezone}
                 className="border-none shadow-none bg-transparent max-w-full"
+                onSlotsCreated={() => setSlotsCreatedNotice(true)}
               />
             </div>
           </ScrollRevealCard>

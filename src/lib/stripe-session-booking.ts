@@ -45,6 +45,36 @@ export async function getVerifiedPaymentIntentForBooking(
 }
 
 /**
+ * Full refund when a paid Checkout no longer maps to the winning slot lock (late payer).
+ * Idempotent per checkout session id.
+ */
+export async function refundPaidCheckoutSession(checkoutSessionId: string): Promise<void> {
+  const stripe = new Stripe(getStripeSecretKey());
+  const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+  if (session.payment_status !== "paid") {
+    return;
+  }
+  const pi = session.payment_intent;
+  const paymentIntentId =
+    typeof pi === "string"
+      ? pi
+      : pi && typeof pi === "object" && "id" in pi
+        ? (pi as Stripe.PaymentIntent).id
+        : null;
+  if (!paymentIntentId) {
+    return;
+  }
+
+  await stripe.refunds.create(
+    {
+      payment_intent: paymentIntentId,
+      reason: "requested_by_customer",
+    },
+    { idempotencyKey: `checkout_auto_refund_${checkoutSessionId}` }
+  );
+}
+
+/**
  * Full refund for a rejected session request (idempotent per request id).
  */
 export async function createRefundForRejectedRequest(

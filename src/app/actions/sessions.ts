@@ -22,6 +22,10 @@ type SessionRow = {
   completed: boolean;
 };
 
+function normalizeSessionStatus(status: string | null | undefined): string {
+  return (status ?? "").toLowerCase().trim();
+}
+
 /**
  * Hide a past session from the caller's history only.
  * The session row and linked data remain intact for the other participant.
@@ -81,9 +85,10 @@ export async function deletePastSession(
 
     const endMs = new Date(session.end_time).getTime();
     const endedBySchedule = endMs < Date.now();
+    const sessionStatus = normalizeSessionStatus(session.status);
     const finishedOutOfBand =
-      session.status === "completed" ||
-      session.status === "cancelled" ||
+      sessionStatus === "completed" ||
+      sessionStatus === "cancelled" ||
       session.completed === true;
     if (!endedBySchedule && !finishedOutOfBand) {
       return {
@@ -99,6 +104,24 @@ export async function deletePastSession(
       return {
         success: false,
         error: "You can only delete sessions you took part in.",
+      };
+    }
+
+    if (
+      isStudent &&
+      sessionStatus !== "cancelled" &&
+      session.tutor_id &&
+      !(await studentHasRatedSession(
+        validId,
+        actingAsId,
+        userSb,
+        adminSb,
+        isAdminOnBehalf
+      ))
+    ) {
+      return {
+        success: false,
+        error: "Rate this session before removing it from your history.",
       };
     }
 
@@ -119,6 +142,31 @@ export async function deletePastSession(
   } catch (error) {
     return { success: false, error: sanitizeError(error) };
   }
+}
+
+async function studentHasRatedSession(
+  sessionId: string,
+  studentId: string,
+  userSb: Awaited<ReturnType<typeof createClient>>,
+  adminSb: ReturnType<typeof createAdminClient> | null,
+  isAdminOnBehalf: boolean
+): Promise<boolean> {
+  const selectOne = async (
+    client: Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>
+  ) => {
+    const { data } = await client
+      .from("ratings")
+      .select("id")
+      .eq("session_id", sessionId)
+      .eq("student_id", studentId)
+      .maybeSingle();
+    return !!data;
+  };
+
+  if (isAdminOnBehalf && adminSb) {
+    if (await selectOne(adminSb)) return true;
+  }
+  return selectOne(userSb);
 }
 
 async function loadSessionRow(
@@ -208,6 +256,15 @@ async function hideSessionForActor(
 
   const { error: userErr } = await userSb.from("sessions").update(hidePatch).eq("id", validId);
   if (!userErr) return { ok: true };
+
+  if (adminSb) {
+    const { error: adminErr } = await adminSb.from("sessions").update(hidePatch).eq("id", validId);
+    if (!adminErr) return { ok: true };
+    return {
+      ok: false,
+      error: `Could not hide session: ${userErr.message} (admin fallback: ${adminErr.message})`,
+    };
+  }
 
   return {
     ok: false,

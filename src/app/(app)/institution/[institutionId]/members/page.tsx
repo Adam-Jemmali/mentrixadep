@@ -2,17 +2,22 @@ import { redirect } from "next/navigation";
 import { getInstitutionById, getInstitutionMembers } from "@/app/actions/institution";
 import { InstitutionMembersClient } from "./members-client";
 
-export default async function MembersPage({ params }: { params: { institutionId: string } }) {
+export default async function MembersPage({
+  params,
+}: {
+  params: Promise<{ institutionId: string }>;
+}) {
+  const { institutionId } = await params;
   const [institution, members] = await Promise.all([
-    getInstitutionById(params.institutionId),
-    getInstitutionMembers(params.institutionId),
+    getInstitutionById(institutionId),
+    getInstitutionMembers(institutionId),
   ]);
 
   if (!institution) redirect("/");
 
   return (
     <InstitutionMembersClient
-      institutionId={params.institutionId}
+      institutionId={institutionId}
       plan={institution.plan}
       members={members}
     />

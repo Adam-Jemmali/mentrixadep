@@ -44,6 +44,15 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
+  const weekScheduleHash = "/tutor#week-schedule";
+
+  const goToWeekSchedule = () => {
+    router.replace(weekScheduleHash);
+    // Ensure hash navigation always applies even when staying on the same route.
+    if (typeof window !== "undefined") {
+      window.location.hash = "week-schedule";
+    }
+  };
 
   useEffect(() => {
     setRows(sessionRequests);
@@ -70,6 +79,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
     const rowEl = rowRefs.current[id];
     if (!rowEl) {
       await approveSessionRequest(id, viewingAsUserId ?? undefined);
+      goToWeekSchedule();
       router.refresh();
       return;
     }
@@ -82,7 +92,10 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
       ease: "power2.in",
       onComplete: () => {
         setRows((current) => current.filter((r) => r.id !== id));
-        approveSessionRequest(id, viewingAsUserId ?? undefined).then(() => router.refresh());
+        approveSessionRequest(id, viewingAsUserId ?? undefined).then(() => {
+          goToWeekSchedule();
+          router.refresh();
+        });
       },
     });
   };
@@ -177,10 +190,10 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                             <Image
                               src={learnerAvatar}
                               alt={learnerName}
-                              width={32}
-                              height={32}
+                              fill
                               unoptimized
-                              className="h-full w-full object-cover"
+                              className="object-cover"
+                              sizes="32px"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-600">
@@ -201,7 +214,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                                 width={12}
                                 height={12}
                                 unoptimized
-                                className="w-3 h-3 object-contain rounded-sm"
+                                className="object-contain rounded-sm"
                               />
                             ) : (
                               <Building2 className="w-2.5 h-2.5" strokeWidth={2} />
@@ -236,7 +249,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                           size="sm"
                           onClick={() => handleApprove(request.id)}
                         >
-                          <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                          <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
                           Accept
                         </Button>
                         <Button
@@ -244,7 +257,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                           variant="outline"
                           onClick={() => handleReject(request.id)}
                         >
-                          <Image src="/icons/mentrixer.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                          <img src="/icons/mentrixer.svg" alt="" width={16} height={16} className="shrink-0" />
                           Decline
                         </Button>
                       </div>

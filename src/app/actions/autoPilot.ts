@@ -59,11 +59,13 @@ export async function getTutorSessionsWithPackages(onBehalfOfTutorId?: string): 
         .from("sessions")
         .select("id, course, start_time, end_time, completed, status, student_id")
         .eq("tutor_id", targetTutorId)
+        .is("tutor_hidden_at", null)
         .lt("end_time", nowIso),
       adminClient
         .from("sessions")
         .select("id, course, start_time, end_time, completed, status, student_id")
         .eq("tutor_id", targetTutorId)
+        .is("tutor_hidden_at", null)
         .in("status", ["completed", "cancelled"])
         .gte("end_time", nowIso),
     ]);
@@ -881,6 +883,19 @@ async function sendStudioPackageReadyEmail(
   }
 }
 
+async function clearStudioPackageWithdrawnAt(
+  adminClient: ReturnType<typeof createAdminClient>,
+  sessionId: string,
+): Promise<void> {
+  const { error } = await adminClient
+    .from("sessions")
+    .update({ studio_package_withdrawn_at: null })
+    .eq("id", sessionId);
+  if (error) {
+    console.warn("[Studio] clearStudioPackageWithdrawnAt", sessionId, error.message);
+  }
+}
+
 /**
  * Generate AI Studio package (summary, flashcards, exercises, topics, quest prompts).
  * Learner-initiated: published immediately + email. Guide-initiated: draft until publish.
@@ -987,6 +1002,8 @@ export async function generateSessionPackage(
     if (insertError) {
       return { error: insertError.message };
     }
+
+    await clearStudioPackageWithdrawnAt(adminClient, validSessionId);
 
     const pkg = inserted as SessionAiPackage;
     if (publishedAt) {
@@ -1115,6 +1132,7 @@ export async function persistStudioDraftFromNormalized(
     if (iErr) {
       return { error: iErr.message };
     }
+    await clearStudioPackageWithdrawnAt(adminClient, validSessionId);
     revalidatePath("/tutor/sessions-ai");
     revalidatePath("/student");
     return { package: inserted as SessionAiPackage };
@@ -1256,11 +1274,73 @@ export async function publishStudioPackage(
 }
 
 /**
+ * Remove a session from the tutor's Studio list entirely: deletes any AI package (draft or
+ * published) and sets `sessions.tutor_hidden_at` so the row no longer appears here. The booking
+ * record remains for billing/history elsewhere; learners lose a published package until a new one exists.
+ */
+export async function deleteStudioPackage(
+  sessionId: string,
+  onBehalfOfTutorId?: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const user = await requireRole(["tutor", "admin"]);
+    const validSessionId = validateUUID(sessionId);
+    const adminClient = createAdminClient();
+    const targetTutorId =
+      user.role === "admin" && onBehalfOfTutorId ? onBehalfOfTutorId : user.id;
+
+    const { data: session, error: sErr } = await adminClient
+      .from("sessions")
+      .select("id, tutor_id")
+      .eq("id", validSessionId)
+      .maybeSingle();
+    if (sErr || !session) {
+      return { error: "Session not found" };
+    }
+    if (session.tutor_id !== targetTutorId) {
+      return { error: "Unauthorized" };
+    }
+
+    const { error: dErr } = await adminClient
+      .from("session_ai_packages")
+      .delete()
+      .eq("session_id", validSessionId);
+
+    if (dErr) {
+      return { error: dErr.message };
+    }
+
+    const nowIso = new Date().toISOString();
+    const { error: uErr } = await adminClient
+      .from("sessions")
+      .update({ tutor_hidden_at: nowIso, studio_package_withdrawn_at: nowIso })
+      .eq("id", validSessionId)
+      .eq("tutor_id", targetTutorId);
+
+    if (uErr) {
+      return { error: uErr.message };
+    }
+
+    revalidatePath("/tutor/sessions-ai");
+    revalidatePath("/student");
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof Error) {
+      return { error: err.message };
+    }
+    return { error: "Something went wrong" };
+  }
+}
+
+/**
  * Get the AI package for a session. Caller must be the session's student or tutor.
  */
 export async function getSessionPackage(
   sessionId: string
-): Promise<{ package: SessionAiPackage | null } | { error: string }> {
+): Promise<
+  | { package: SessionAiPackage | null; studioPackageWithdrawn?: boolean }
+  | { error: string }
+> {
   try {
     const user = await requireAuth();
     const validSessionId = validateUUID(sessionId);
@@ -1269,7 +1349,7 @@ export async function getSessionPackage(
 
     const { data: session, error: sessionError } = await supabase
       .from("sessions")
-      .select("id, student_id, tutor_id")
+      .select("id, student_id, tutor_id, studio_package_withdrawn_at")
       .eq("id", validSessionId)
       .maybeSingle();
 
@@ -1299,7 +1379,27 @@ export async function getSessionPackage(
       return { error: pkgError.message };
     }
 
-    return { package: (pkg as SessionAiPackage | null) ?? null };
+    const packageRow = (pkg as SessionAiPackage | null) ?? null;
+
+    const adminClient = createAdminClient();
+    const { data: anyPkgRow } = await adminClient
+      .from("session_ai_packages")
+      .select("session_id")
+      .eq("session_id", validSessionId)
+      .maybeSingle();
+
+    // Withdrawn = guide removed the package row entirely, not "draft exists but learner can't see it yet".
+    const studioPackageWithdrawn =
+      isStudent &&
+      !isAdmin &&
+      !packageRow &&
+      session.studio_package_withdrawn_at != null &&
+      !anyPkgRow;
+
+    return {
+      package: packageRow,
+      ...(studioPackageWithdrawn ? { studioPackageWithdrawn: true as const } : {}),
+    };
   } catch (err) {
     if (err instanceof Error) {
       if (err.message === "Unauthorized") {
@@ -1315,8 +1415,9 @@ export async function getSessionPackage(
 }
 
 /**
- * Auto-generate published Studio packages for completed sessions that do not have one yet.
- * Intended for cron flows after sessions end.
+ * Auto-generate draft Studio packages for completed sessions that do not have one yet.
+ * Packages stay unpublished until the guide publishes from Studio (email fires on publish).
+ * Used by cron, session timing enforcement, and learner rating finalization.
  */
 export async function autoGenerateStudioPackagesForCompletedSessions(
   sessionIds: string[],
@@ -1406,12 +1507,11 @@ export async function autoGenerateStudioPackagesForCompletedSessions(
       }
 
       const norm = aiResult as NormalizedStudioPackage;
-      const nowIso = new Date().toISOString();
       const rowPayload = normalizedToDbRow(
         sessionId,
         norm,
         session.tutor_id,
-        nowIso,
+        null,
         0,
       );
 
@@ -1426,8 +1526,9 @@ export async function autoGenerateStudioPackagesForCompletedSessions(
         continue;
       }
 
+      await clearStudioPackageWithdrawnAt(adminClient, sessionId);
+
       generated += 1;
-      void sendStudioPackageReadyEmail(adminClient, sessionId, session.course, inserted as SessionAiPackage);
     } catch {
       failed += 1;
     }

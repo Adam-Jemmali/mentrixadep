@@ -26,7 +26,7 @@ export default function OfflinePage() {
       <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">No connection</p>
       <h1 className="mt-3 text-2xl font-semibold text-slate-900 tracking-tight">You&apos;re offline</h1>
       <p className="mt-2 max-w-md text-sm text-slate-600 leading-relaxed">
-        Your streak is safe — we keep progress on the server when you&apos;re back online. Reconnect to sync quests,
+        Your streak is safe, we keep progress on the server when you&apos;re back online. Reconnect to sync quests,
         sessions, and duels.
       </p>
       {xp && (

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { gsap } from "gsap";
 import {
+  deleteStudioPackage,
   publishStudioPackage,
   saveStudioPackageDraft,
   type TutorSessionWithPackage,
@@ -23,9 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MessageSquare, Copy, Save, Send, CheckCircle2 } from "lucide-react";
+import { Loader2, MessageSquare, Copy, Save, Send, CheckCircle2, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
+import { Typewriter } from "@/components/ui/typewriter";
+import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
 
 const STREAM_END = "\n__MENTRIXA_STUDIO_END__";
 
@@ -67,6 +70,7 @@ const playTypeSound = () => {
 };
 
 type PackageFilter = "all" | "generated" | "pending";
+type StudioSort = "newest" | "oldest" | "student_az" | "course_az";
 
 type DraftEdit = {
   summary: string;
@@ -104,6 +108,8 @@ export function TutorStudioClient({
   const [query, setQuery] = useState("");
   const [packageFilter, setPackageFilter] = useState<PackageFilter>("all");
   const [courseFilter, setCourseFilter] = useState("all");
+  const [studentFilter, setStudentFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<StudioSort>("newest");
   const [openRowId, setOpenRowId] = useState<string | null>(null);
   const [closingRowId, setClosingRowId] = useState<string | null>(null);
   const [contextBySession, setContextBySession] = useState<Record<string, string>>({});
@@ -116,6 +122,7 @@ export function TutorStudioClient({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const { viewingAsUserId } = useAdminViewContext();
   const router = useRouter();
 
@@ -130,21 +137,52 @@ export function TutorStudioClient({
     [rows],
   );
 
+  const students = useMemo(() => {
+    const labels = rows.map((row) =>
+      row.student_display_name?.trim() ||
+      row.student_email ||
+      (row.student_id ? `${row.student_id.slice(0, 8)}…` : "—"),
+    );
+    return Array.from(new Set(labels)).sort((a, b) => a.localeCompare(b));
+  }, [rows]);
+
   const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter((row) => {
+    const base = rows.filter((row) => {
       const hasPkg = row.aiPackage !== null;
       const published = Boolean(row.aiPackage?.package_published_at);
       if (packageFilter === "generated" && (!hasPkg || !published)) return false;
       if (packageFilter === "pending" && hasPkg) return false;
       if (courseFilter !== "all" && row.course !== courseFilter) return false;
+      const learnerLabel =
+        row.student_display_name?.trim() ||
+        row.student_email ||
+        (row.student_id ? `${row.student_id.slice(0, 8)}…` : "—");
+      if (studentFilter !== "all" && learnerLabel !== studentFilter) return false;
       if (!q) return true;
       const name = (row.student_display_name ?? "").toLowerCase();
       const learner = (row.student_email ?? row.student_id ?? "").toLowerCase();
       const courseStr = (row.course ?? "").toLowerCase();
       return courseStr.includes(q) || learner.includes(q) || name.includes(q);
     });
-  }, [rows, query, packageFilter, courseFilter]);
+
+    const sorted = [...base];
+    sorted.sort((a, b) => {
+      if (sortBy === "newest") {
+        return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
+      }
+      if (sortBy === "oldest") {
+        return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+      }
+      if (sortBy === "student_az") {
+        const aLabel = (a.student_display_name?.trim() || a.student_email || "").toLowerCase();
+        const bLabel = (b.student_display_name?.trim() || b.student_email || "").toLowerCase();
+        return aLabel.localeCompare(bLabel);
+      }
+      return a.course.localeCompare(b.course);
+    });
+    return sorted;
+  }, [rows, query, packageFilter, courseFilter, studentFilter, sortBy]);
 
   useEffect(() => {
     if (!openRowId || !expandedRowRef.current) return;
@@ -293,6 +331,27 @@ export function TutorStudioClient({
     }
   };
 
+  const handleRemoveStudioRow = async (sessionId: string) => {
+    const ok = window.confirm(
+      "Remove this row from Studio? Any draft or published package will be deleted and the session will disappear from this list. Your learner will lose access to a published package until you generate and publish a new one.",
+    );
+    if (!ok) return;
+
+    setRemovingId(sessionId);
+    setErrorByRow((prev) => ({ ...prev, [sessionId]: "" }));
+    const res = await deleteStudioPackage(sessionId, viewingAsUserId ?? undefined);
+    setRemovingId(null);
+
+    if ("error" in res) {
+      setErrorByRow((prev) => ({ ...prev, [sessionId]: res.error }));
+      return;
+    }
+
+    setOpenRowId((current) => (current === sessionId ? null : current));
+    setRows((prev) => prev.filter((row) => row.id !== sessionId));
+    router.refresh();
+  };
+
   if (!rows.length) {
     return (
       <div className="rounded-md border border-dashed border-slate-200 p-10 text-center text-sm text-slate-500">
@@ -302,59 +361,125 @@ export function TutorStudioClient({
   }
 
   return (
-    <section>
-      <div className="mb-5 flex flex-wrap gap-3">
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by course or learner…"
-          className="h-9 min-w-[200px] flex-1 text-xs"
-        />
+    <section className="relative overflow-hidden rounded-3xl border border-indigo-100/80 bg-white px-4 py-5 shadow-[0_20px_55px_-36px_rgba(67,56,202,0.45)] md:px-5">
+      <div className="pointer-events-none absolute -top-24 -left-24 h-56 w-56 rounded-full bg-indigo-500/8 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -right-24 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl" />
+      <header className="relative mb-6 flex flex-col items-center gap-5 border-b border-indigo-100 pb-6 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end">
+        <div className="flex w-full items-center gap-4 md:justify-start">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50">
+            <Image src="/icons/guide.svg" alt="" width={28} height={28} className="opacity-90" />
+          </div>
+          <div className="space-y-1 text-left">
+            <div className="h-5 overflow-hidden">
+              <Typewriter
+                text="Mentrixa Studio"
+                speed={65}
+                waitTime={7000}
+                className="text-[10px] font-black uppercase tracking-[0.32em] text-indigo-500"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="h-[62px] w-[320px] max-w-[78vw]">
+          <ParticleTextEffect
+            words={["STUDIO SESSIONS"]}
+            tone="onLight"
+            className="h-full w-full"
+          />
+        </div>
+        <div className="flex w-full justify-center gap-10 text-center md:justify-end md:text-right">
+          <div>
+            <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Published</p>
+            <p className="text-4xl font-black italic tracking-tighter text-indigo-700">{publishedCount}</p>
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Past Sessions</p>
+            <p className="text-4xl font-black italic tracking-tighter text-violet-600">{rows.length}</p>
+          </div>
+        </div>
+      </header>
 
-        <Select
-          value={packageFilter}
-          onValueChange={(value) => setPackageFilter(value as PackageFilter)}
-        >
-          <SelectTrigger className="h-9 w-[140px] text-xs">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All sessions</SelectItem>
-            <SelectItem value="generated">Published</SelectItem>
-            <SelectItem value="pending">No package yet</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="relative mb-6 rounded-2xl border border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.65)_0%,rgba(255,255,255,1)_100%)] px-4 py-4 shadow-[0_10px_30px_-24px_rgba(79,70,229,0.6)]">
+        <div className="flex flex-wrap gap-3">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by course or learner…"
+            className="h-10 min-w-[220px] flex-1 border-indigo-100 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:border-indigo-300 focus-visible:ring-indigo-200"
+          />
 
-        <Select value={courseFilter} onValueChange={setCourseFilter}>
-          <SelectTrigger className="h-9 w-[160px] text-xs">
-            <SelectValue placeholder="Course" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All courses</SelectItem>
-            {courses.map((course) => (
-              <SelectItem key={course} value={course}>
-                {course}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select
+            value={packageFilter}
+            onValueChange={(value) => setPackageFilter(value as PackageFilter)}
+          >
+            <SelectTrigger className="h-10 w-[150px] border-indigo-100 bg-white text-xs text-slate-700 focus-visible:border-indigo-300 focus-visible:ring-indigo-200">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sessions</SelectItem>
+              <SelectItem value="generated">Published</SelectItem>
+              <SelectItem value="pending">No package yet</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={courseFilter} onValueChange={setCourseFilter}>
+            <SelectTrigger className="h-10 w-[170px] border-indigo-100 bg-white text-xs text-slate-700 focus-visible:border-indigo-300 focus-visible:ring-indigo-200">
+              <SelectValue placeholder="Course" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All courses</SelectItem>
+              {courses.map((course) => (
+                <SelectItem key={course} value={course}>
+                  {course}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={studentFilter} onValueChange={setStudentFilter}>
+            <SelectTrigger className="h-10 w-[190px] border-indigo-100 bg-white text-xs text-slate-700 focus-visible:border-indigo-300 focus-visible:ring-indigo-200">
+              <SelectValue placeholder="Learner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All learners</SelectItem>
+              {students.map((student) => (
+                <SelectItem key={student} value={student}>
+                  {student}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as StudioSort)}>
+            <SelectTrigger className="h-10 w-[180px] border-indigo-100 bg-white text-xs text-slate-700 focus-visible:border-indigo-300 focus-visible:ring-indigo-200">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest sessions</SelectItem>
+              <SelectItem value="oldest">Oldest sessions</SelectItem>
+              <SelectItem value="student_az">Learner A to Z</SelectItem>
+              <SelectItem value="course_az">Course A to Z</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <table className="mentrixa-table">
-        <thead>
-          <tr>
-            <th>Course</th>
-            <th>Learner</th>
-            <th>Date</th>
-            <th>Duration</th>
-            <th>Studio</th>
-            <th className="w-[200px]">Action</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div className="overflow-hidden rounded-2xl border border-indigo-100/90 bg-white shadow-[0_16px_48px_-34px_rgba(67,56,202,0.55)]">
+        <table className="min-w-full text-xs">
+          <thead className="border-b border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.85)_0%,rgba(255,255,255,1)_100%)] text-slate-700">
+            <tr>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Course</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Learner</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Date</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Duration</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Studio</th>
+              <th className="min-w-[260px] px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Action</th>
+            </tr>
+          </thead>
+          <tbody>
           {filteredRows.length === 0 && (
             <tr>
-              <td colSpan={6} className="py-10 text-center text-sm text-slate-500">
+              <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">
                 No sessions match your filters.
               </td>
             </tr>
@@ -377,31 +502,31 @@ export function TutorStudioClient({
             return (
               <Fragment key={session.id}>
                 <tr
-                  className="studio-row mentrixa-interactive"
+                  className="studio-row mentrixa-interactive border-b border-indigo-50/90 transition-colors hover:bg-indigo-50/30"
                   onClick={() => {
                     if (hasPackage) toggleExpanded(session.id);
                   }}
                 >
-                  <td>
-                    <Badge variant="outline" className="text-[11px] font-medium">
+                  <td className="px-4 py-3 align-middle">
+                    <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-[11px] font-bold text-indigo-900">
                       {session.course}
                     </Badge>
                   </td>
-                  <td className="text-sm text-slate-700">{learnerLabel}</td>
-                  <td className="text-sm text-slate-500">{formatDate(session.start_time)}</td>
-                  <td className="font-mono text-xs text-slate-400">
+                  <td className="px-4 py-3 align-middle text-sm font-bold text-slate-900">{learnerLabel}</td>
+                  <td className="px-4 py-3 align-middle text-sm text-slate-600">{formatDate(session.start_time)}</td>
+                  <td className="px-4 py-3 align-middle font-mono text-xs text-slate-500">
                     {getDurationLabel(session.start_time, session.end_time)}
                   </td>
-                  <td>
+                  <td className="px-4 py-3 align-middle">
                     {!hasPackage ? (
-                      <span className="font-mono text-[11px] text-slate-400">—</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-mono text-[11px] text-slate-500">None</span>
                     ) : published ? (
-                      <span className="font-mono text-[11px] text-slate-600">Published</span>
+                      <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-mono text-[11px] text-indigo-700">Published</span>
                     ) : (
-                      <span className="font-mono text-[11px] text-amber-700">Draft</span>
+                      <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[11px] text-amber-700">Draft</span>
                     )}
                   </td>
-                  <td>
+                  <td className="px-4 py-3 align-middle">
                     <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                       {!hasPackage ? (
                         <>
@@ -415,40 +540,78 @@ export function TutorStudioClient({
                               }))
                             }
                             onClick={(e) => e.stopPropagation()}
-                            className="min-h-[56px] max-w-[280px] resize-y text-xs"
+                            className="min-h-[56px] max-w-[280px] resize-y border-indigo-100 bg-white text-xs text-slate-700 placeholder:text-slate-400 focus-visible:border-indigo-300 focus-visible:ring-indigo-200"
                           />
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            disabled={isStreaming}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void handleGenerate(session.id);
-                            }}
-                            className="h-8 shrink-0 text-xs"
-                          >
-                            {isStreaming ? (
-                              <>
-                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                                Generating…
-                              </>
-                            ) : (
-                              "Generate study package"
-                            )}
-                          </Button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              disabled={isStreaming}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleGenerate(session.id);
+                              }}
+                              className="h-8 shrink-0 border-0 bg-indigo-600 text-xs text-white hover:bg-indigo-500"
+                            >
+                              {isStreaming ? (
+                                <>
+                                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                  Generating…
+                                </>
+                              ) : (
+                                "Generate study package"
+                              )}
+                            </Button>
+                            <button
+                              type="button"
+                              disabled={removingId === session.id || isStreaming}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleRemoveStudioRow(session.id);
+                              }}
+                              title="Remove this session from Studio"
+                            >
+                              {removingId === session.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                              )}
+                              Remove
+                            </button>
+                          </div>
                         </>
                       ) : (
-                        <button
-                          type="button"
-                          className="text-left text-xs font-medium text-slate-700 hover:text-slate-900"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpanded(session.id);
-                          }}
-                        >
-                          {isOpen ? "Close" : published ? "View / edit" : "Review draft"}
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            className="text-left text-xs font-medium text-indigo-700 hover:text-indigo-900"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpanded(session.id);
+                            }}
+                          >
+                            {isOpen ? "Close" : published ? "View / edit" : "Review draft"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={removingId === session.id}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleRemoveStudioRow(session.id);
+                            }}
+                            title="Remove this row from Studio"
+                          >
+                            {removingId === session.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                            )}
+                            Remove
+                          </button>
+                        </div>
                       )}
                     </div>
                   </td>
@@ -456,11 +619,11 @@ export function TutorStudioClient({
 
                 {isStreaming && streamPreviewBySession[session.id] ? (
                   <tr>
-                    <td colSpan={6} className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
-                      <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    <td colSpan={6} className="border-b border-indigo-100 bg-indigo-50/40 px-4 py-3">
+                      <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-indigo-500">
                         Model output (streaming preview)
                       </p>
-                      <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md border border-slate-200 bg-white p-3 font-mono text-[11px] leading-relaxed text-slate-600">
+                      <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md border border-indigo-100 bg-white p-3 font-mono text-[11px] leading-relaxed text-slate-700">
                         {streamPreviewBySession[session.id]}
                       </pre>
                     </td>
@@ -530,7 +693,7 @@ export function TutorStudioClient({
 
                 {errorByRow[session.id] ? (
                   <tr>
-                    <td colSpan={6} className="py-2 text-xs text-red-600">
+                    <td colSpan={6} className="px-4 py-2 text-xs text-red-600">
                       {errorByRow[session.id]}
                     </td>
                   </tr>
@@ -538,8 +701,9 @@ export function TutorStudioClient({
               </Fragment>
             );
           })}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
       <p className="mt-3 font-mono text-[11px] text-slate-400">
         {publishedCount} published · {rows.length} past sessions
@@ -563,9 +727,9 @@ function StudioSection({
     <motion.section
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+      whileHover={{ y: -4 }}
       transition={{ delay, duration: 0.4, type: "spring", bounce: 0.3 }}
-      className={`${mentrixTutor.card} p-5 overflow-hidden group border-2 border-transparent hover:border-blue-100 transition-all`}
+      className={`${mentrixTutor.card} p-5 overflow-hidden group border-2 border-transparent transition-shadow duration-300 hover:border-blue-100 hover:shadow-[0_20px_25px_-5px_rgb(0_0_0_/_0.1),0_8px_10px_-6px_rgb(0_0_0_/_0.1)]`}
     >
       <div className="mb-4 flex items-center gap-2.5">
         <motion.div 
@@ -713,7 +877,7 @@ function SessionPackageEditor({
                 {streaming ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Image src="/icons/mentrixer.svg" alt="" width={16} height={16} className="mr-2 h-4 w-4" />
+                  <Image src="/icons/mentrixer.svg" alt="" width={16} height={16} className="mr-2" />
                 )}
                 Regenerate ({regenLeft})
               </Button>
@@ -798,7 +962,7 @@ function SessionPackageEditor({
                           {card.q}
                         </p>
                         <div className="absolute bottom-2 right-3">
-                          <Image src="/icons/guide.svg" alt="" width={12} height={12} className="h-3 w-3 opacity-40" />
+                          <Image src="/icons/guide.svg" alt="" width={12} height={12} className="opacity-40" />
                         </div>
                       </div>
                       <div className="card-face card-face--back bg-blue-600 rounded-2xl shadow-xl flex items-center justify-center p-4 border-2 border-blue-500">

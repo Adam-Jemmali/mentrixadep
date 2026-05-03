@@ -22,7 +22,11 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
-import { stopMediaStream } from "@/lib/webrtc";
+import {
+  stopMediaStream,
+  isMediaPermissionDenied,
+  mapMediaStreamError,
+} from "@/lib/webrtc";
 import { BubbleText } from "@/components/ui/bubble-text";
 import { Typewriter } from "@/components/ui/typewriter";
 import Image from "next/image";
@@ -259,7 +263,24 @@ export function PreCallLobby({
             : false,
         };
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const fallbackConstraints: MediaStreamConstraints = {
+          audio: audioEnabled
+            ? { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+            : false,
+          video: videoEnabled
+            ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
+            : false,
+        };
+
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (firstErr) {
+          if (isMediaPermissionDenied(firstErr)) {
+            throw firstErr;
+          }
+          stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+        }
         streamRef.current = stream;
 
         if (videoPreviewRef.current) {
@@ -279,9 +300,13 @@ export function PreCallLobby({
 
         setStreamReady(true);
       } catch (err) {
-        setPermissionError(
-          err instanceof Error ? err.message : "Could not access camera/microphone."
-        );
+        const msg =
+          isMediaPermissionDenied(err)
+            ? mapMediaStreamError(err).message
+            : err instanceof Error
+              ? err.message
+              : "Could not access camera/microphone.";
+        setPermissionError(msg);
         setStreamReady(false);
       }
     },
@@ -311,14 +336,22 @@ export function PreCallLobby({
 
   const toggleAudio = useCallback(() => {
     const track = streamRef.current?.getAudioTracks()[0];
-    if (track) track.enabled = !track.enabled;
-    setAudioEnabled((v) => !v);
+    if (track) {
+      track.enabled = !track.enabled;
+      setAudioEnabled(track.enabled);
+    } else {
+      setAudioEnabled((v) => !v);
+    }
   }, []);
 
   const toggleVideo = useCallback(() => {
     const track = streamRef.current?.getVideoTracks()[0];
-    if (track) track.enabled = !track.enabled;
-    setVideoEnabled((v) => !v);
+    if (track) {
+      track.enabled = !track.enabled;
+      setVideoEnabled(track.enabled);
+    } else {
+      setVideoEnabled((v) => !v);
+    }
   }, []);
 
   const partnerKind = userRole === "student" ? "Guide" : "Mentrixer";
@@ -350,13 +383,16 @@ export function PreCallLobby({
     if (!canJoinNow) return;
     setIsJoining(true);
 
-    // Hand off stream ownership to the VideoCall component.
-    onJoin({
-      audioEnabled,
-      videoEnabled,
-      audioDeviceId: audioDeviceId || undefined,
-      videoDeviceId: videoDeviceId || undefined,
-    });
+    try {
+      onJoin({
+        audioEnabled,
+        videoEnabled,
+        audioDeviceId: audioDeviceId || undefined,
+        videoDeviceId: videoDeviceId || undefined,
+      });
+    } catch {
+      setIsJoining(false);
+    }
   }, [onJoin, audioEnabled, videoEnabled, audioDeviceId, videoDeviceId, canJoinNow, isJoining]);
 
   const handleBack = useCallback(() => {
@@ -366,18 +402,27 @@ export function PreCallLobby({
   }, [onBack]);
 
   return (
-    <div className="min-h-screen bg-[#0a0b0e] flex items-start justify-center px-4 py-6 overflow-y-auto">
-      <div className="w-full max-w-4xl">
+    <div className="min-h-screen bg-[#0a0b0e] flex items-start justify-center overflow-y-auto px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
+      <div
+        className="w-full max-w-[1120px] mx-auto"
+        style={{
+          paddingLeft: "max(0px, env(safe-area-inset-left))",
+          paddingRight: "max(0px, env(safe-area-inset-right))",
+          paddingTop: "max(0px, env(safe-area-inset-top))",
+          paddingBottom: "max(0px, env(safe-area-inset-bottom))",
+        }}
+      >
 
         {/* Header */}
-        <div className="mb-8 text-center flex flex-col items-center">
-          <div className="w-full flex justify-start mb-6">
+        <div className="mb-5 text-center flex flex-col items-center">
+          <div className="w-full flex justify-start mb-4 px-1 sm:px-0">
             <button
+              type="button"
               onClick={handleBack}
               className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 hover:bg-white/10 hover:text-white transition-all active:scale-95 flex items-center gap-2"
             >
               <ChevronDown size={14} className="rotate-90" />
-              Back to dashboard
+              Cancel
             </button>
           </div>
 
@@ -406,14 +451,14 @@ export function PreCallLobby({
                 Waiting for {partnerLabel}
               </span>
             </div>
-            <span className="text-xs opacity-20">({partnerKind})</span>
+            <span className="text-xs text-purple-400 opacity-70">{partnerKind}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4">
+        <div className="grid grid-cols-1 gap-3 lg:gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
 
           {/* Camera preview */}
-          <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/8">
+          <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/8 mx-1 sm:mx-0">
             <video
               ref={videoPreviewRef}
               autoPlay
@@ -474,7 +519,7 @@ export function PreCallLobby({
           </div>
 
           {/* Settings panel */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 mx-1 sm:mx-0 md:max-h-[calc(100vh-220px)] md:overflow-y-auto md:pr-1">
 
             {/* Connection quality */}
             <div className="rounded-lg border border-white/8 bg-white/3 px-4 py-3">
@@ -552,9 +597,10 @@ export function PreCallLobby({
             </div>
 
             {/* Join button */}
-            <div>
+            <div className="mt-auto sticky bottom-0 z-10 rounded-lg border border-white/10 bg-[#0a0b0e]/95 p-2 backdrop-blur-sm">
               {joinHint ? <p className="text-center text-xs text-white/30 mb-2">{joinHint}</p> : null}
               <button
+                type="button"
                 onClick={handleJoin}
                 disabled={!canJoinNow || isJoining}
                 className={`w-full rounded-lg py-3 text-sm font-medium transition-all duration-200 ${
@@ -587,7 +633,7 @@ export function PreCallLobby({
         </div>
 
         {/* Waiting room banner — shown when other party hasn't joined */}
-        <div className="mt-8 flex flex-col items-center justify-center gap-4 py-6 border-t border-white/5">
+        <div className="mt-4 hidden lg:flex flex-col items-center justify-center gap-3 py-3 border-t border-white/5 px-2 sm:px-0">
           <div className="flex gap-2">
             {[0, 1, 2].map((i) => (
               <div

@@ -21,8 +21,14 @@ const pricingHighlights = [
     buttonText: "Start Learning",
     buttonLink: "/auth/signup",
     icon: (
-      <div className="relative w-6 h-6 flex items-center justify-center">
-        <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={24} height={24} className="object-contain" />
+      <div className="relative h-6 w-6 shrink-0">
+        <Image
+          src="/icons/mentrixer.svg"
+          alt="Mentrixer"
+          fill
+          className="object-contain"
+          sizes="24px"
+        />
       </div>
     ),
     features: [
@@ -59,8 +65,14 @@ const pricingHighlights = [
     buttonText: "Become a Guide",
     buttonLink: "/auth/signup",
     icon: (
-      <div className="relative w-6 h-6 flex items-center justify-center">
-        <Image src="/icons/guide.svg" alt="Guide" width={24} height={24} className="object-contain" />
+      <div className="relative h-6 w-6 shrink-0">
+        <Image
+          src="/icons/guide.svg"
+          alt="Guide"
+          fill
+          className="object-contain"
+          sizes="24px"
+        />
       </div>
     ),
     features: [

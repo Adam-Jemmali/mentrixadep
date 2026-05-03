@@ -1005,7 +1005,11 @@ export async function generateStudioSessionPackage(
   isRegen = false
 ): Promise<NormalizedStudioPackage | AiErrorResult> {
   try {
-    await enforceAiRateLimit(userId, "quest.ai");
+    await enforceSlidingRateLimit(
+      `${getRateLimitId(userId)}:studio-package`,
+      RATE_LIMITS.studioPackageAi,
+      "studio.package.generate",
+    );
 
     const action: DailyLimitAction = isRegen ? "session_package_regen" : "session_package_gen";
     const daily = await incrementDailyLimit(userId, action);
@@ -1054,7 +1058,9 @@ export async function* streamStudioSessionPackageText(
   tutorNotes: string | undefined,
   userId: string
 ): AsyncGenerator<string> {
-  await enforceAiRateLimit(userId, "quest.ai");
+  void userId;
+  // Per-user limit is enforced in `/api/tutor/studio-stream` (`studioPackageAi`); do not use
+  // `quest.ai` here or Studio burns the same bucket as quests and hits "Too many requests".
 
   if (isCircuitOpen()) {
     throw new Error(CIRCUIT_OPEN_ERROR);

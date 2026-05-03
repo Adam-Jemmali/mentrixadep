@@ -86,17 +86,13 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
 
   return (
     <motion.div
-      animate={{
-        backdropFilter: visible ? "blur(10px)" : "none",
-        boxShadow: visible
-          ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
-          : "none",
-      }}
       transition={{ type: "spring", stiffness: 200, damping: 50 }}
       style={{ minWidth: "min(980px, 94vw)", width, y, scale }}
       className={cn(
-        "relative z-[60] mx-auto hidden flex-row items-center justify-between self-start rounded-full border border-white/10 bg-slate-950/45 px-6 py-2 text-white lg:flex",
-        visible && "bg-slate-950/55 shadow-[0_18px_42px_-28px_rgba(2,6,23,0.45)]",
+        "relative z-[60] mx-auto hidden flex-row items-center justify-between self-start rounded-full border border-white/10 px-6 py-2 text-white transition-[background-color,backdrop-filter,box-shadow] duration-300 ease-out lg:flex",
+        visible
+          ? "bg-slate-950/55 backdrop-blur-[10px] shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset]"
+          : "bg-slate-950/45 shadow-none backdrop-blur-none",
         className,
       )}
     >
@@ -150,10 +146,6 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   return (
     <motion.div
       animate={{
-        backdropFilter: "none",
-        boxShadow: visible
-          ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
-          : "none",
         paddingRight: visible ? "12px" : "0px",
         paddingLeft: visible ? "12px" : "0px",
         borderRadius: visible ? "4px" : "2rem",
@@ -161,8 +153,10 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
       transition={{ type: "spring", stiffness: 200, damping: 50 }}
       style={{ width, y }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-transparent px-0 py-2 text-white lg:hidden",
-        visible && "bg-slate-950/55",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between px-0 py-2 text-white transition-[background-color,box-shadow] duration-300 ease-out lg:hidden",
+        visible
+          ? "bg-slate-950/55 shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset]"
+          : "bg-transparent shadow-none",
         className,
       )}
     >
@@ -221,7 +215,8 @@ export const MobileNavToggle = ({ isOpen, onClick }: { isOpen: boolean; onClick:
 export const NavbarLogo = () => {
   return (
     <a href="/" className="flex items-center gap-2.5 text-white">
-      <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
+      {/* Avoid `priority` here: marketing shell mounts this nav late; preload of logo.png was unused and spammed the console. */}
+      <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" />
       <MentrixaWordmark trixaClassName="text-white" />
     </a>
   );

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  enforceSlidingRateLimit,
+  checkSlidingWindowRateLimit,
   RATE_LIMITS,
   getRateLimitId,
   validateUUID,
@@ -23,11 +23,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await enforceSlidingRateLimit(
-    getRateLimitId(user.id),
-    RATE_LIMITS.questAi,
-    "tutor.studio-stream"
+  const studioRateKey = `${getRateLimitId(user.id)}:studio-package`;
+  const studioLimit = RATE_LIMITS.studioPackageAi;
+  const { allowed, retryAfterSeconds } = await checkSlidingWindowRateLimit(
+    studioRateKey,
+    studioLimit.maxRequests,
+    studioLimit.windowMs,
   );
+  if (!allowed) {
+    return NextResponse.json(
+      {
+        error: `Studio generation rate limit reached. Try again in about ${retryAfterSeconds}s.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds) },
+      },
+    );
+  }
 
   let body: {
     sessionId?: string;

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getSessionPackage } from "@/app/actions/autoPilot";
 import type { SessionAiPackage } from "@/lib/database.types";
 
-type Phase = "loading" | "ready" | "empty" | "error";
+type Phase = "loading" | "ready" | "empty" | "withdrawn" | "error";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -70,6 +70,11 @@ export function StudyPackagePanel({
         setPackageData(null);
         return;
       }
+      if ("studioPackageWithdrawn" in result && result.studioPackageWithdrawn) {
+        setPackageData(null);
+        setPhase("withdrawn");
+        return;
+      }
       const pkg = result.package;
       // If student (which this panel is for), pkg will be null if not published yet due to server-side filter
       if (!pkg || !pkg.package_published_at) {
@@ -122,6 +127,14 @@ export function StudyPackagePanel({
           </Button>
         </div>
       </div>
+    );
+  }
+
+  if (phase === "withdrawn") {
+    return (
+      <p className="text-sm text-slate-500 text-center py-4">
+        Study package is no longer available for this session.
+      </p>
     );
   }
 

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import { HomePageClient } from "@/components/home-page-client";
 import { FirstSequenceHeroContent } from "@/components/first-sequence-hero-content";
@@ -10,13 +9,10 @@ import { FourthStaticFlowContent } from "@/components/fourth-static-flow-content
 import { FourthStaticSidesCarouselContent } from "@/components/fourth-static-sides-carousel-content";
 import { LandingStoryBridge } from "@/components/landing-story-bridge";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
-
-const ScrollSequence = dynamic(() => import("@/components/scroll-sequence-wrapper"), {
-  ssr: false,
-});
+import { MarketingScrollSequenceDynamic as ScrollSequence } from "@/components/marketing-scroll-sequence-dynamic";
 
 export const metadata: Metadata = {
-  title: `${SITE_NAME} — Live tutoring, quests & divisions`,
+  title: `${SITE_NAME}, Live tutoring, quests & divisions`,
   description: SITE_DESCRIPTION,
   alternates: {
     canonical: getSiteUrl(),

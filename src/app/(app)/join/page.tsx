@@ -19,13 +19,14 @@ export const metadata: Metadata = {
 export default async function JoinPage({
   searchParams,
 }: {
-  searchParams?: { email?: string };
+  searchParams: Promise<{ email?: string }>;
 }) {
   if (!isWaitlistEnabled()) {
     redirect("/auth/signin");
   }
 
-  const email = (searchParams?.email ?? "").trim().toLowerCase();
+  const { email: emailParam } = await searchParams;
+  const email = (emailParam ?? "").trim().toLowerCase();
   if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const admin = createAdminClient();
     const waitlistRow = await fetchRegistrationRequestRow(admin, email);

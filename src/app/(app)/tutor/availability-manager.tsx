@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { formatInTimeZone } from "date-fns-tz";
 import { deleteAvailability, setAvailabilityActive } from "@/app/actions/tutor";
 import { useAdminViewContext } from "@/components/admin-view-context";
@@ -117,16 +116,16 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       {error && <div className="mb-3 text-xs text-red-600">{error}</div>}
 
       {rows.length === 0 ? (
-        <p className="text-xs text-slate-400 py-2">No upcoming open slots.</p>
+        <p className="py-2 text-sm font-medium text-slate-600">No upcoming open slots.</p>
       ) : (
         <div className="space-y-6">
           {grouped.map(({ course, dayOrder, byDay }) => (
             <div key={course}>
-              <h3 className="text-xs font-medium text-slate-900 mb-2">{course}</h3>
-              <div className="space-y-4 border-l border-slate-200 pl-3">
+              <h3 className="mb-2 text-sm font-bold tracking-tight text-slate-900">{course}</h3>
+              <div className="space-y-4 border-l-2 border-indigo-200 pl-3">
                 {dayOrder.map((day) => (
                   <div key={day}>
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-2">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-700">
                       {day}
                     </p>
                     <ul className="space-y-2">
@@ -138,31 +137,31 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                         return (
                           <li
                             key={slot.id}
-                            className="flex flex-col gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                            className="flex flex-col gap-2 rounded-lg border-2 border-slate-300 bg-white px-3 py-2.5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                           >
                             <div className="min-w-0">
-                              <p className="text-sm text-slate-900 tabular-nums">
+                              <p className="text-sm font-bold tabular-nums text-slate-900">
                                 {formatTimeRangeInZone(slot.start_time, slot.end_time, displayTimezone)}
                               </p>
                               <div className="mt-1 flex flex-wrap items-center gap-2">
-                                <span className="text-xs text-slate-500">
-                                  ${(cents / 100).toFixed(2)}
+                                <span className="text-xs font-bold tabular-nums text-slate-800">
+                                  ${(cents / 100).toFixed(2)} CAD
                                 </span>
                                 {pending > 0 && (
-                                  <Badge variant="outline" className="text-[10px] font-normal bg-slate-50">
+                                  <Badge variant="outline" className="border-amber-400 bg-amber-50 text-[10px] font-semibold text-amber-950">
                                     {pending} pending booking{pending === 1 ? "" : "s"}
                                   </Badge>
                                 )}
                                 {!active && (
-                                  <Badge variant="outline" className="text-[10px] text-slate-500">
+                                  <Badge variant="outline" className="border-slate-400 text-[10px] font-semibold text-slate-800">
                                     Hidden from learners
                                   </Badge>
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-slate-500">Active</span>
+                            <div className="flex shrink-0 items-center gap-3">
+                              <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-700">Active</span>
                                 <Switch
                                   checked={active}
                                   onCheckedChange={(v) => handleToggle(slot.id, v)}
@@ -177,7 +176,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                                 onClick={() => setDeleteId(slot.id)}
                               >
                                 <span className="inline-flex items-center gap-1.5">
-                                  <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3" />
+                                  <img src="/icons/mentrixer.svg" alt="" width={12} height={12} className="shrink-0" />
                                   Delete
                                 </span>
                               </Button>
@@ -212,7 +211,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" size="sm" onClick={() => setDeleteId(null)}>
               <span className="inline-flex items-center gap-1.5">
-                <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3" />
+                <img src="/icons/mentrixer.svg" alt="" width={12} height={12} className="shrink-0" />
                 Cancel
               </span>
             </Button>
@@ -224,7 +223,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
               onClick={() => void confirmDelete()}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3" />
+                <img src="/icons/mentrixer.svg" alt="" width={12} height={12} className="shrink-0" />
                 Delete slot
               </span>
             </Button>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { formatSlotRangeInZone, formatTimeInZone } from "@/lib/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
@@ -10,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,15 +66,11 @@ export function AvailabilityBrowser({
   syncCourseFilter,
   displayTimeZone = "UTC",
 }: AvailabilityBrowserProps) {
-  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>(
     studentCourseNames.length > 0 ? (studentCourseNames[0] ?? "all") : "all",
   );
   const [selectedSlot, setSelectedSlot] = useState<Availability | null>(null);
-  const [waitlistEmail, setWaitlistEmail] = useState("");
-  const [waitlistBusy, setWaitlistBusy] = useState(false);
-  const [waitlistMessage, setWaitlistMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (syncCourseFilter == null || syncCourseFilter === undefined) return;
@@ -137,43 +134,6 @@ export function AvailabilityBrowser({
       .filter((g) => g.slots.length > 0);
   }, [availability, query, courseFilter]);
 
-  const activeCourseName = courseFilter === "all" ? "" : courseFilter;
-
-  async function submitWaitlistRequest() {
-    const email = waitlistEmail.trim().toLowerCase();
-    if (!email) {
-      setWaitlistMessage("Enter your email so we can notify you.");
-      return;
-    }
-
-    setWaitlistBusy(true);
-    setWaitlistMessage(null);
-    try {
-      const response = await fetch("/api/waitlist/guides", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          email,
-          courseName: activeCourseName || undefined,
-          pagePath: pathname,
-        }),
-      });
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setWaitlistMessage(body.error ?? "Could not save your request right now.");
-        return;
-      }
-
-      setWaitlistMessage("You are on the notify list. We will email you when a guide joins.");
-      setWaitlistEmail("");
-    } catch {
-      setWaitlistMessage("Could not save your request right now.");
-    } finally {
-      setWaitlistBusy(false);
-    }
-  }
-
   return (
     <aside>
       <h2 className="mb-1 text-sm font-medium text-slate-900 h-[20px]">
@@ -205,107 +165,79 @@ export function AvailabilityBrowser({
         </SelectContent>
       </Select>
 
-      <div className="divide-y divide-slate-200 border-y border-slate-200 bg-white rounded-lg">
-        {guides.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-sm font-medium text-slate-800">
-              No guides {activeCourseName ? `in ${activeCourseName}` : "available"} yet.
-            </p>
-            <p className="mt-1 text-xs text-slate-600">
-              Join the waitlist and we will notify you as soon as a guide is available.
-            </p>
-            <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
-              <Input
-                type="email"
-                value={waitlistEmail}
-                onChange={(e) => setWaitlistEmail(e.target.value)}
-                placeholder="you@school.edu or personal email"
-                className="h-8 w-full max-w-xs text-xs bg-white border-slate-200"
-              />
-              <Button
-                type="button"
-                size="sm"
-                disabled={waitlistBusy || !waitlistEmail.trim()}
-                onClick={() => void submitWaitlistRequest()}
-                className="h-8"
-              >
-                {waitlistBusy ? "Saving..." : "Notify me"}
-              </Button>
-            </div>
-            {waitlistMessage ? <p className="mt-2 text-xs text-slate-600">{waitlistMessage}</p> : null}
-          </div>
-        ) : (
-          guides.map((guide, idx) => {
+      {guides.length > 0 ? (
+        <div className="divide-y divide-slate-200 border-y border-slate-200 bg-white rounded-lg">
+          {guides.map((guide, idx) => {
             const tutorId = guide.slots[0]?.tutor_id ?? "";
             const expertise = tutorId ? (tutorExpertise[tutorId] ?? []) : [];
             const hasVerifiedCourse = expertise.some((e) => e.verified);
 
             return (
-            <div
-              key={idx}
-              className="cursor-pointer space-y-1.5 px-3 py-4 transition-colors duration-200 hover:bg-slate-50"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="relative h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
-                    {guide.avatarUrl ? (
-                      <Image
-                        src={guide.avatarUrl}
-                        alt={guide.name}
-                        width={32}
-                        height={32}
-                        unoptimized
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-600">
-                        {guide.name.slice(0, 1).toUpperCase()}
-                      </div>
+              <div
+                key={idx}
+                className="cursor-pointer space-y-1.5 px-3 py-4 transition-colors duration-200 hover:bg-slate-50"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                      {guide.avatarUrl ? (
+                        <Image
+                          src={guide.avatarUrl}
+                          alt={guide.name}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                          sizes="32px"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-slate-600">
+                          {guide.name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-slate-900">{guide.name}</span>
+                      <span className="block truncate text-xs text-slate-500">{guide.email}</span>
+                    </div>
+                    {hasVerifiedCourse && (
+                      <Badge
+                        variant="outline"
+                        className="border-slate-200 bg-slate-50 px-1.5 py-0 text-[10px] font-medium text-slate-700"
+                      >
+                        Verified
+                      </Badge>
                     )}
                   </div>
-                  <div className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-slate-900">{guide.name}</span>
-                    <span className="block truncate text-xs text-slate-500">{guide.email}</span>
+                  <div className="shrink-0 text-right text-sm font-medium tabular-nums text-slate-900">
+                    {formatUsdFromCents(splitSessionPriceCents(guide.priceCents).totalCents)}
+                    <span className="block text-[10px] font-normal text-slate-500">incl. fee</span>
                   </div>
-                  {hasVerifiedCourse && (
-                    <Badge
+                </div>
+                <div className="mt-0.5 text-xs text-slate-600">
+                  {guide.rating.toFixed(1)} rating · {guide.sessions} sessions
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {guide.slots.map((slot) => (
+                    <Button
+                      key={slot.id}
                       variant="outline"
-                      className="border-slate-200 bg-slate-50 px-1.5 py-0 text-[10px] font-medium text-slate-700"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedSlot(slot);
+                      }}
+                      className="h-7 border-slate-200 bg-white px-2 text-[10px] hover:border-slate-300"
                     >
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-                <div className="shrink-0 text-right text-sm font-medium text-slate-900 tabular-nums">
-                  {formatUsdFromCents(splitSessionPriceCents(guide.priceCents).totalCents)}
-                  <span className="block text-[10px] font-normal text-slate-500">incl. fee</span>
+                      {slot.course} · {formatTimeInZone(slot.start_time, displayTimeZone)}
+                    </Button>
+                  ))}
                 </div>
               </div>
-              <div className="text-xs text-slate-600 mt-0.5">
-                {guide.rating.toFixed(1)} rating · {guide.sessions} sessions
-              </div>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {guide.slots.map((slot) => (
-                  <Button
-                    key={slot.id}
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelectedSlot(slot);
-                    }}
-                    className="h-7 px-2 text-[10px] border-slate-200 hover:border-slate-300 bg-white"
-                  >
-                    {slot.course} · {formatTimeInZone(slot.start_time, displayTimeZone)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          );
-          })
-        )}
-      </div>
+            );
+          })}
+        </div>
+      ) : null}
 
       <BookingDialog
         slot={selectedSlot}
@@ -329,8 +261,10 @@ function BookingDialog({
   displayTimeZone?: string;
 }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   useEffect(() => {
     setCheckoutBusy(false);
+    setCheckoutError(null);
   }, [slot?.id]);
   if (!slot) return null;
 
@@ -341,10 +275,13 @@ function BookingDialog({
   const courseExpertise = expertise.find(
     (e) => e.course_name.toLowerCase() === slot.course.toLowerCase(),
   );
+  const tutorName =
+    slot.tutor?.display_name?.trim() ?? slot.tutor?.email?.split("@")[0] ?? "Guide";
 
   async function handleBook() {
     if (!slot) return;
     setCheckoutBusy(true);
+    setCheckoutError(null);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -353,11 +290,19 @@ function BookingDialog({
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
-        throw new Error(data.error ?? "Failed to start checkout");
+        setCheckoutError(
+          data.error ??
+            (res.status === 409
+              ? "This slot was just booked or another learner is checking out. Please pick a different time."
+              : "Failed to start checkout"),
+        );
+        setCheckoutBusy(false);
+        return;
       }
       window.location.href = data.url;
     } catch (err) {
       console.error(err);
+      setCheckoutError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setCheckoutBusy(false);
     }
   }
@@ -365,8 +310,14 @@ function BookingDialog({
   return (
     <Dialog open={!!slot} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[95vh] max-w-lg overflow-y-auto p-0 border-none bg-transparent shadow-none">
+        <DialogTitle className="sr-only">
+          Book session — {tutorName} · {slot.course}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          {scheduleLine}. Confirm to open secure checkout. You can cancel from this dialog.
+        </DialogDescription>
         <BookingConfirmationCard
-          tutorName={slot.tutor?.display_name?.trim() ?? slot.tutor?.email?.split("@")[0] ?? "Guide"}
+          tutorName={tutorName}
           tutorEmail={slot.tutor?.email ?? ""}
           tutorAvatarUrl={slot.tutor?.avatar_url}
           courseName={slot.course}
@@ -376,6 +327,7 @@ function BookingDialog({
           onConfirm={handleBook}
           onCancel={() => onOpenChange(false)}
           loading={checkoutBusy}
+          errorMessage={checkoutError}
         />
       </DialogContent>
     </Dialog>

@@ -10,6 +10,7 @@ import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
 import { Typewriter } from "@/components/ui/typewriter";
 
 import { StudioGuideBounce } from "@/components/tutor/studio-guide-bounce";
+import { TutorStudioRealtimeRefresh } from "@/components/tutor-studio-realtime-refresh";
 
 export const metadata = { title: "Tutor Studio · Mentrixa" };
 
@@ -89,6 +90,11 @@ export default async function TutorStudioPage({ searchParams }: StudioPageProps)
       </header>
 
       <div>
+        {user.role === "tutor" ? (
+          <TutorStudioRealtimeRefresh tutorId={user.id} />
+        ) : tutorId ? (
+          <TutorStudioRealtimeRefresh tutorId={tutorId} />
+        ) : null}
         {fetchError ? (
           <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {fetchError}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, useEffect } from "react";
+import Image from "next/image";
 
 import { motion } from "framer-motion";
 import type { ReferralDashboardData } from "@/app/actions/referral";
@@ -67,7 +68,14 @@ export function ReferralProgramSection({ initial }: { initial: ReferralDashboard
             {displayTotal.toLocaleString()} XP
           </motion.p>
         </div>
-        <img src="/icons/mentrixer.svg" alt="" className="h-11 w-11 opacity-80" />
+        <Image
+          src="/icons/mentrixer.svg"
+          alt=""
+          width={44}
+          height={44}
+          unoptimized
+          className="h-11 w-11 opacity-80"
+        />
       </div>
 
       {/* ── Invitation Hub ── */}
@@ -138,7 +146,14 @@ export function ReferralProgramSection({ initial }: { initial: ReferralDashboard
         
         {initial.referrals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center rounded-[2.5rem] border-2 border-dashed border-indigo-50 bg-indigo-50/10">
-             <img src="/icons/mentrixer.svg" alt="" className="h-10 w-10 opacity-10 grayscale" />
+             <Image
+               src="/icons/mentrixer.svg"
+               alt=""
+               width={40}
+               height={40}
+               unoptimized
+               className="h-10 w-10 opacity-10 grayscale"
+             />
              <p className="mt-4 text-[10px] font-black text-indigo-200 uppercase tracking-widest">No recruits active</p>
           </div>
         ) : (

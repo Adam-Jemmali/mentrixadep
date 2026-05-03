@@ -12,6 +12,8 @@ declare global {
             callback: (response: { credential: string; select_by?: string }) => void;
             auto_select?: boolean;
             cancel_on_tap_outside?: boolean;
+            /** When true, Chrome uses FedCM for the button UX; false avoids FedCM-only messaging paths. */
+            use_fedcm_for_button?: boolean;
           }) => void;
           renderButton: (parent: HTMLElement, options: GsiButtonOptions) => void;
           prompt: (momentNotification?: (notification: unknown) => void) => void;

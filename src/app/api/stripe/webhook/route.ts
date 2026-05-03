@@ -47,6 +47,7 @@ async function unlockSlot(availabilityId: string) {
       booking_status: "available",
       locked_until: null,
       locked_by: null,
+      stripe_checkout_session_id: null,
     })
     .eq("id", availabilityId)
     .eq("booking_status", "pending_payment");
@@ -131,29 +132,41 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Mark slot as booked (prevents new checkout sessions for this slot)
-  await markSlotBooked(availabilityId, session.id);
+  // Smoke tests bypass Stripe verification — claim runs inside bookSessionAsUser only for live checkouts.
+  if (isSmokeTest) {
+    await markSlotBooked(availabilityId, session.id);
+  }
 
-  // Create session_request (idempotent — returns existing if already present)
+  let sendCheckoutConfirmationEmail = false;
   try {
     await bookSessionAsUser(availabilityId, studentId, {
       stripeCheckoutSessionId: session.id,
       skipStripeVerification: isSmokeTest,
     });
+    sendCheckoutConfirmationEmail = true;
     console.log(`[webhook] booking created: availability=${availabilityId} student=${studentId}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message.toLowerCase() : "";
+    if (msg.includes("another learner")) {
+      console.log(`[webhook] stale checkout payer refunded: session=${session.id}`);
+      return;
+    }
     const isIdempotent =
       msg.includes("already have") || msg.includes("pending request");
     if (isIdempotent) {
       console.log(`[webhook] idempotent: checkout ${session.id} already booked`);
+      sendCheckoutConfirmationEmail = true;
     } else {
       captureStripeWebhookError("booking", err, { availabilityId, studentId });
       console.error("[webhook] bookSessionAsUser failed:", err);
     }
   }
 
-  // Send confirmation emails
+  if (!sendCheckoutConfirmationEmail) {
+    return;
+  }
+
+  // Send confirmation emails (only after a successful or idempotent booking)
   try {
     if (!tutorId) return;
     const avail = await fetchAvailabilityDetails(availabilityId);

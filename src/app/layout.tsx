@@ -82,8 +82,66 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              function isExtensionNoListenerNoise(value) {
+                var text = String(value || "");
+                return text.includes("tabs:outgoing.message.ready") || (text.includes("No Listener") && text.includes("tabs:outgoing.message.ready"));
+              }
+              function stringifyReasonChain(reason, depth) {
+                if (depth === undefined) depth = 0;
+                if (depth > 6) return "";
+                if (reason == null) return "";
+                if (typeof reason === "string") return reason;
+                if (reason instanceof Error) {
+                  var base = String(reason.message || "") + "\\n" + String(reason.stack || "");
+                  var c = reason.cause;
+                  return c != null ? base + "\\n" + stringifyReasonChain(c, depth + 1) : base;
+                }
+                if (typeof reason === "object") {
+                  try {
+                    var msg = reason.message != null ? String(reason.message) : "";
+                    var stack = reason.stack != null ? String(reason.stack) : "";
+                    var cause = reason.cause;
+                    return msg + "\\n" + stack + "\\n" + (cause != null ? stringifyReasonChain(cause, depth + 1) : "");
+                  } catch (e) {
+                    return String(reason);
+                  }
+                }
+                return String(reason);
+              }
+              function isExtensionRuntimeNoise(reason) {
+                var text = stringifyReasonChain(reason);
+                return text.includes("chrome-extension://") || text.includes("moz-extension://") || text.includes("safari-web-extension://");
+              }
+              function shouldSuppressRejection(reason) {
+                return isExtensionNoListenerNoise(reason) || isExtensionRuntimeNoise(reason) || isExtensionNoListenerNoise(stringifyReasonChain(reason));
+              }
               window.addEventListener("unhandledrejection", function(event) {
-                if (event.reason && typeof event.reason.message === "string" && event.reason.message.includes("tabs:outgoing.message.ready")) {
+                var reason = event.reason;
+                var message = reason && typeof reason === "object" ? reason.message : "";
+                var cause = reason && typeof reason === "object" ? reason.cause : "";
+                if (
+                  shouldSuppressRejection(reason) ||
+                  isExtensionNoListenerNoise(message) ||
+                  isExtensionNoListenerNoise(cause) ||
+                  isExtensionRuntimeNoise(message) ||
+                  isExtensionRuntimeNoise(cause)
+                ) {
+                  event.preventDefault();
+                }
+              });
+              window.addEventListener("error", function(event) {
+                var fromExtensionFile =
+                  typeof event.filename === "string" &&
+                  (event.filename.includes("chrome-extension://") ||
+                    event.filename.includes("moz-extension://") ||
+                    event.filename.includes("safari-web-extension://"));
+                if (
+                  fromExtensionFile ||
+                  isExtensionNoListenerNoise(event.message) ||
+                  isExtensionNoListenerNoise(event.error) ||
+                  isExtensionRuntimeNoise(event.error) ||
+                  isExtensionRuntimeNoise(event.message)
+                ) {
                   event.preventDefault();
                 }
               });

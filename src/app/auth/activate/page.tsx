@@ -42,9 +42,9 @@ async function authUserExistsByEmail(email: string): Promise<boolean> {
 export default async function ActivatePage({
   searchParams,
 }: {
-  searchParams?: { email?: string };
+  searchParams: Promise<{ email?: string }>;
 }) {
-  const email = normalizeEmail(searchParams?.email);
+  const email = normalizeEmail((await searchParams).email);
   if (!isValidEmail(email)) {
     redirect("/auth/signin");
   }

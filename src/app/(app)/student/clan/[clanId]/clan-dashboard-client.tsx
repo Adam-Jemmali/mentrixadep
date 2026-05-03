@@ -141,12 +141,17 @@ export function ClanDashboardClient({
             />
             <div className="space-y-1">
               <div className="h-6 overflow-hidden">
-                <Typewriter text={clan.tag} speed={80} className="text-xs font-bold tracking-[0.3em] uppercase text-slate-300" />
+                <Typewriter
+                  text={clan.tag}
+                  speed={80}
+                  className="text-xs font-bold tracking-[0.3em] uppercase text-slate-600"
+                />
               </div>
               <div className="h-[80px] md:h-[100px] flex items-center">
                 <ParticleTextEffect
                   words={[clan.name.toUpperCase()]}
                   className="text-left font-black"
+                  tone="onLight"
                 />
               </div>
             </div>
@@ -223,7 +228,14 @@ export function ClanDashboardClient({
                   <div className="text-[100px] font-black italic tracking-tighter text-white select-none">WAR</div>
                 </motion.div>
                 <div className="relative h-32 w-32 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-700">
-                   <img src="/icons/mentrixer.svg" alt="Mentrixer" className="absolute inset-0 w-full h-full object-contain" />
+                  <Image
+                    src="/icons/mentrixer.svg"
+                    alt="Mentrixer"
+                    width={128}
+                    height={128}
+                    unoptimized
+                    className="absolute inset-0 h-full w-full object-contain"
+                  />
                 </div>
               </div>
             </div>

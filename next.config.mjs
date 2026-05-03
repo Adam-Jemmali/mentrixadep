@@ -1,4 +1,8 @@
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -70,10 +74,9 @@ const nextConfig = {
   },
 
   compress: true,
-  swcMinify: true,
 
-  experimental: {
-    instrumentationHook: true,
+  turbopack: {
+    root: projectRoot,
   },
 
   onDemandEntries: {

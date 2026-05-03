@@ -90,6 +90,55 @@ export function checkMediaDevicesSupport(): {
   return { supported: true };
 }
 
+/** User dismissed or blocked camera/microphone (or screen capture) in the browser prompt. */
+export function isMediaPermissionDenied(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const name = (err as { name?: string }).name;
+  return (
+    name === "NotAllowedError" ||
+    name === "PermissionDeniedError" ||
+    name === "AbortError"
+  );
+}
+
+/**
+ * Turn getUserMedia / getDisplayMedia failures into a single Error suitable for UI and logging.
+ */
+export function mapMediaStreamError(err: unknown): Error {
+  if (!(err instanceof Error)) {
+    return new Error("Could not access camera or microphone.");
+  }
+  const errorName = err.name;
+
+  if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      return new Error(
+        "Camera/microphone permission denied. In Safari, allow Camera and Microphone for this site in settings, or enable Develop → Allow Media Capture on Insecure Sites on localhost.",
+      );
+    }
+    return new Error(
+      "Camera/microphone permission denied. Click the lock or site icon in the address bar, set Camera and Microphone to Allow, then try again.",
+    );
+  }
+
+  if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
+    return new Error("No camera or microphone found. Please connect a device and try again.");
+  }
+
+  if (errorName === "NotReadableError" || errorName === "TrackStartError") {
+    return new Error(
+      "Camera or microphone is being used by another application. Close other apps using it and try again.",
+    );
+  }
+
+  if (errorName === "AbortError") {
+    return new Error("The media request was cancelled.");
+  }
+
+  return new Error(`Could not access camera or microphone: ${err.message}`);
+}
+
 /**
  * Check current permissions for camera and microphone
  */
@@ -211,35 +260,23 @@ export async function getUserMedia(
     // Handle specific error types
     if (error instanceof Error) {
       const errorName = error.name;
-      
+
       if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
-        // Try to provide helpful guidance
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        if (isSafari) {
-          throw new Error(
-            "Camera/microphone permission denied. In Safari, go to Develop menu > " +
-            "'Allow Media Capture on Insecure Sites' if using http://localhost"
-          );
-        }
-        throw new Error(
-          "Camera/microphone permission denied. Please:\n" +
-          "1. Click the lock/info icon in your browser's address bar\n" +
-          "2. Set Camera and Microphone to 'Allow'\n" +
-          "3. Refresh the page"
-        );
-      } 
-      
+        throw mapMediaStreamError(error);
+      }
+
       if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
-        throw new Error("No camera/microphone found. Please connect a camera and microphone device.");
-      } 
-      
+        throw mapMediaStreamError(error);
+      }
+
       if (errorName === "NotReadableError" || errorName === "TrackStartError") {
-        throw new Error(
-          "Camera/microphone is being used by another application. " +
-          "Please close other apps using your camera/microphone and try again."
-        );
-      } 
-      
+        throw mapMediaStreamError(error);
+      }
+
+      if (errorName === "AbortError") {
+        throw mapMediaStreamError(error);
+      }
+
       if (errorName === "OverconstrainedError") {
         // Fallback to basic constraints
         console.warn("Ideal constraints failed, trying basic constraints");
@@ -260,30 +297,20 @@ export async function getUserMedia(
           
           return fallbackStream;
         } catch (fallbackError) {
-          // If fallback also fails, provide helpful error
-          if (fallbackError instanceof Error && fallbackError.name === "NotAllowedError") {
-            throw new Error(
-              "Permission denied. Please allow camera/microphone access in your browser settings."
-            );
+          if (isMediaPermissionDenied(fallbackError)) {
+            throw mapMediaStreamError(fallbackError);
           }
           throw new Error(
             `Could not access camera/microphone: ${error.message}. ` +
-            "Please check your device connections and browser permissions."
+              "Please check your device connections and browser permissions.",
           );
         }
       }
-      
-      // Generic error handling
-      throw new Error(
-        `Failed to access camera/microphone: ${error.message}. ` +
-        "Please check your browser permissions and device connections."
-      );
+
+      throw mapMediaStreamError(error);
     }
-    
-    // Unknown error type
-    throw new Error(
-      "Failed to access camera/microphone. Please check your browser settings and device connections."
-    );
+
+    throw new Error("Failed to access camera/microphone. Please check your browser settings and device connections.");
   }
 }
 

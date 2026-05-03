@@ -7,9 +7,10 @@ export default async function InstitutionLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { institutionId: string };
+  params: Promise<{ institutionId: string }>;
 }) {
-  const institution = await getInstitutionById(params.institutionId);
+  const { institutionId } = await params;
+  const institution = await getInstitutionById(institutionId);
 
   if (!institution) {
     redirect("/");

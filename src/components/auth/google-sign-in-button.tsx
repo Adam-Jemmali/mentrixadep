@@ -146,8 +146,18 @@ export function GoogleSignInButton({
         }
         await supabase.auth.getSession();
         const next = await getPostOAuthRedirectPath();
+        if (!next || typeof next !== "object") {
+          setError("Could not determine where to send you after sign-in. Please try again.");
+          await supabase.auth.signOut();
+          return;
+        }
         if ("error" in next) {
           setError(next.error);
+          await supabase.auth.signOut();
+          return;
+        }
+        if (!("path" in next) || typeof next.path !== "string" || !next.path) {
+          setError("Could not determine where to send you after sign-in. Please try again.");
           await supabase.auth.signOut();
           return;
         }
@@ -177,6 +187,8 @@ export function GoogleSignInButton({
           if (!g.__mxGsiInitialized) {
             window.google.accounts.id.initialize({
               client_id: clientId,
+              // Prefer classic button flow; FedCM + strict COOP has caused postMessage failures for some setups.
+              use_fedcm_for_button: false,
               callback: (r) => {
                 void onCredential(r);
               },

@@ -446,7 +446,7 @@ export function TutorProfileClient({
           asChild
         >
           <Link href="/tutor" className="inline-flex items-center gap-1.5">
-            <Image src="/icons/guide.svg" alt="" width={12} height={12} className="h-3 w-3 opacity-60" />
+            <Image src="/icons/guide.svg" alt="" width={12} height={12} className="opacity-60" />
             Back to dashboard
           </Link>
         </Button>

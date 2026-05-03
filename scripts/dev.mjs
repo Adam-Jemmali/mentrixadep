@@ -45,7 +45,12 @@ if (process.platform === "win32") freePortWindows();
 else freePortUnix();
 
 const nextBin = join(root, "node_modules", "next", "dist", "bin", "next");
-const args = ["dev", "-p", String(PORT), ...(turbo ? ["--turbo"] : [])];
+const args = [
+  "dev",
+  "-p",
+  String(PORT),
+  ...(turbo ? ["--turbo"] : ["--webpack"]),
+];
 
 const child = spawn(process.execPath, [nextBin, ...args], {
   cwd: root,

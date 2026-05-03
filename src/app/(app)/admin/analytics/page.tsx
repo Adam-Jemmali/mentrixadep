@@ -14,9 +14,10 @@ export const revalidate = 300; // 5 min cache
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: { days?: string };
+  searchParams: Promise<{ days?: string }>;
 }) {
-  const rawDays = Number(searchParams.days ?? "7");
+  const { days: daysParam } = await searchParams;
+  const rawDays = Number(daysParam ?? "7");
   const days: 7 | 30 = rawDays === 30 ? 30 : 7;
 
   const [kpis, eventCounts, funnel, subjects, revenue, dailySignups, dailyQuests] =

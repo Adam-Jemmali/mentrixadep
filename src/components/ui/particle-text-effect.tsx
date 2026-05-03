@@ -109,14 +109,29 @@ class Particle {
   }
 }
 
+export type ParticleTextTone = "onLight" | "onDark"
+
 interface ParticleTextEffectProps {
   words?: string[]
   className?: string
+  /**
+   * `onLight`: particle text is dark (for white / pale backgrounds).
+   * `onDark`: particle text is light (for dark gradients / hero footers).
+   */
+  tone?: ParticleTextTone
 }
 
 const DEFAULT_WORDS = ["HELLO", "21st.dev", "ParticleTextEffect", "BY", "KAINXU"]
 
-export function ParticleTextEffect({ words = DEFAULT_WORDS, className }: ParticleTextEffectProps) {
+/** Default mask color for non–record-match words: readable on pale UI. */
+const MASK_FILL_ON_LIGHT = "#0f172a" // slate-900
+const MASK_FILL_ON_DARK = "#ffffff"
+
+export function ParticleTextEffect({
+  words = DEFAULT_WORDS,
+  className,
+  tone = "onLight",
+}: ParticleTextEffectProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
   const particlesRef = useRef<Particle[]>([])
@@ -147,6 +162,8 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS, className }: Particl
       y: y + direction.y,
     }
   }, [])
+
+  const maskFillDefault = tone === "onDark" ? MASK_FILL_ON_DARK : MASK_FILL_ON_LIGHT
 
   const nextWord = useCallback((word: string, canvas: HTMLCanvasElement, immediate = false) => {
     // Create off-screen canvas for text rendering
@@ -205,8 +222,8 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS, className }: Particl
         offscreenCtx.fillText(drawPart, xOffset, canvas.height / 2);
       }
     } else {
-      // Default rendering - Centered
-      offscreenCtx.fillStyle = "white";
+      // Default rendering - Centered (mask color becomes particle target color)
+      offscreenCtx.fillStyle = maskFillDefault;
       const fontSize = word.length > 15 ? 50 : word.length > 10 ? 70 : 100;
       offscreenCtx.font = `bold ${fontSize}px Arial`;
       offscreenCtx.textAlign = "center";
@@ -246,8 +263,8 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS, className }: Particl
         const g = pixels[pixelIndex + 1] ?? 255
         const b = pixels[pixelIndex + 2] ?? 255
 
-        // Skip dark pixels to avoid "black particles" from anti-aliasing
-        if (r < 50 && g < 50 && b < 50) continue;
+        // Skip near-black pixels (anti-aliasing fringes around *light* glyph masks). Must not exclude slate-900 (#0f172a) used for onLight tone.
+        if (r + g + b < 28) continue;
 
         const x = (pixelIndex / 4) % canvas.width
         const y = Math.floor(pixelIndex / 4 / canvas.width)
@@ -307,7 +324,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS, className }: Particl
     for (let i = particleIndex; i < particles.length; i++) {
       particles[i]?.kill()
     }
-  }, [pixelSteps, generateRandomPos])
+  }, [pixelSteps, generateRandomPos, maskFillDefault])
 
   const animate = useCallback(() => {
     const canvas = canvasRef.current
@@ -423,7 +440,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS, className }: Particl
       canvas.removeEventListener("mousemove", handleMouseMove)
       canvas.removeEventListener("contextmenu", handleContextMenu)
     }
-  }, [words, animate, nextWord])
+  }, [words, animate, nextWord, tone])
 
   return (
     <div className={cn("flex flex-col items-center justify-center w-full", className)}>

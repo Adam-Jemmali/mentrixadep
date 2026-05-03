@@ -15,6 +15,7 @@ import {
 import { buildSlotCandidates, type SlotCandidate } from "@/lib/availability-slot-builder";
 import {
   sendSessionApprovedEmail,
+  sendSessionConfirmedTutorEmail,
   type SessionEmailDetails,
 } from "@/lib/email";
 import { createRefundForRejectedRequest } from "@/lib/stripe-session-booking";
@@ -1252,20 +1253,22 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
     console.error("[approveSessionRequest] ledger creation failed:", err);
   });
 
-  // Fire-and-forget email to student
+  // Fire-and-forget emails: learner confirmation + guide calendar notification
   try {
-    const [studentAuthData, settingsResult] = await Promise.all([
+    const [studentAuthData, tutorAuthData, settingsResult] = await Promise.all([
       adminClient.auth.admin.getUserById(session.student_id),
+      adminClient.auth.admin.getUserById(session.tutor_id),
       adminClient
         .from("user_settings")
         .select("user_id, display_name")
         .in("user_id", [session.student_id, session.tutor_id]),
     ]);
     const studentEmail = studentAuthData.data?.user?.email;
+    const tutorEmail = tutorAuthData.data?.user?.email;
     const nameByUser = Object.fromEntries(
       (settingsResult.data ?? []).map((r) => [r.user_id, r.display_name as string | null])
     );
-    if (studentEmail && session) {
+    if (session) {
       const sessionDetails: SessionEmailDetails = {
         sessionId: session.id,
         course: session.course,
@@ -1275,7 +1278,12 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
         tutorDisplayName: nameByUser[session.tutor_id] ?? null,
         priceCents: session.price_per_session ?? null,
       };
-      void sendSessionApprovedEmail(studentEmail, sessionDetails);
+      if (studentEmail) {
+        void sendSessionApprovedEmail(studentEmail, sessionDetails);
+      }
+      if (tutorEmail) {
+        void sendSessionConfirmedTutorEmail(tutorEmail, sessionDetails);
+      }
     }
   } catch (emailErr) {
     console.error("[approveSessionRequest] email notification failed:", emailErr);

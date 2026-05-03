@@ -13,12 +13,13 @@ import { GlassTimeCard } from "@/components/ui/glass-time-card";
 import { CheckCircle2, ChevronRight } from "lucide-react";
 
 interface PageProps {
-  searchParams?: { request?: string };
+  searchParams: Promise<{ request?: string }>;
 }
 
 export default async function BookingConfirmedPage({ searchParams }: PageProps) {
   const user = await requireRole(["student", "admin"]);
-  const requestId = searchParams?.request?.trim();
+  const sp = await searchParams;
+  const requestId = sp.request?.trim();
   if (!requestId) {
     notFound();
   }
@@ -129,8 +130,15 @@ export default async function BookingConfirmedPage({ searchParams }: PageProps) 
               />
             </div>
             <Button asChild size="lg" className="flex-1 w-full font-bold group">
-              <Link href="/student" className="flex items-center justify-center gap-2">
-                Back to dashboard
+              <Link
+                href={
+                  sr.status === "approved"
+                    ? "/student?sessionsTab=upcoming#sessions-history"
+                    : "/student?sessionsTab=requests#sessions-history"
+                }
+                className="flex items-center justify-center gap-2"
+              >
+                {sr.status === "approved" ? "View upcoming session" : "Back to dashboard"}
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>

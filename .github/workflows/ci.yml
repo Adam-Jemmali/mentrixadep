@@ -36,7 +36,10 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci --legacy-peer-deps
+        run: npm ci
+
+      - name: npm audit (critical only; see .npmrc audit-level)
+        run: npm run audit:ci
 
       - name: Secret scan (gitleaks)
         uses: gitleaks/gitleaks-action@v2

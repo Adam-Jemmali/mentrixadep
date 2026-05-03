@@ -86,6 +86,12 @@ export interface Session {
   /** Set when status becomes cancelled */
   cancelled_at?: string | null;
   cancelled_by_role?: "student" | "tutor" | "admin" | null;
+  /** Tutor hid this session from their Studio / history lists only (see supabase/057). */
+  tutor_hidden_at?: string | null;
+  /** Set when tutor removes the AI package; student must not see "pending" copy (see supabase/078). */
+  studio_package_withdrawn_at?: string | null;
+  /** Student hid this session from their history list only. */
+  student_hidden_at?: string | null;
 }
 
 export interface Rating {

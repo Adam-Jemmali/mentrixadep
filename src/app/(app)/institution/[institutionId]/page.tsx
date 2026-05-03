@@ -5,12 +5,13 @@ import { InstitutionOverviewClient } from "./overview-client";
 export default async function InstitutionOverviewPage({
   params,
 }: {
-  params: { institutionId: string };
+  params: Promise<{ institutionId: string }>;
 }) {
+  const { institutionId } = await params;
   const [institution, usage, members] = await Promise.all([
-    getInstitutionById(params.institutionId),
-    getInstitutionMonthlyUsage(params.institutionId),
-    getInstitutionMembers(params.institutionId),
+    getInstitutionById(institutionId),
+    getInstitutionMonthlyUsage(institutionId),
+    getInstitutionMembers(institutionId),
   ]);
 
   if (!institution) redirect("/");

@@ -31,6 +31,8 @@ const publicRoutes = new Set([
   "/api/auth/signin",
   "/api/auth/signup",
   "/api/auth/request-password-reset",
+  /** Stripe redirects here when Checkout is cancelled — unlock slot without requiring session cookie. */
+  "/api/stripe/checkout/cancel-return",
   "/api/guest-practice",
   "/auth/signin",
   "/auth/signup",
@@ -121,8 +123,15 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
     pathname === "/auth/callback" ||
     pathname === "/auth/signup" ||
     pathname === "/auth/session-sync";
+  /**
+   * Google Identity Services (FedCM / Sign in with Google) uses cross-origin messaging.
+   * Sending COOP on auth routes has triggered postMessage failures in Chrome alongside GIS.
+   * Rest of the app keeps `same-origin-allow-popups`.
+   */
+  const skipCoopForAuthSection = pathname != null && pathname.startsWith("/auth/");
 
   Object.entries(securityHeaders).forEach(([key, value]) => {
+    if (skipCoopForAuthSection && key === "Cross-Origin-Opener-Policy") return;
     if (allowFramedAuthEntryPaths && key === "X-Frame-Options") return;
     if (isDev && key === "Content-Security-Policy") return;
 
@@ -195,7 +204,14 @@ export async function middleware(request: NextRequest) {
 
   // Handle accidental POSTs to auth page routes (extensions / stale forms) to avoid 405.
   // Real sign-in/up logic uses /api/auth/*.
-  if (method === "POST" && publicAuthPageOptions204.has(pathname)) {
+  // Never short-circuit Next.js Server Actions: they POST with `next-action` and must get
+  // an RSC (`text/x-component`) response — otherwise the client throws "An unexpected
+  // response was received from the server." (e.g. GoogleSignInButton → getPostOAuthRedirectPath).
+  if (
+    method === "POST" &&
+    publicAuthPageOptions204.has(pathname) &&
+    !request.headers.get("next-action")
+  ) {
     return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
   }
 

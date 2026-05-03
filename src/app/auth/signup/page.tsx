@@ -7,12 +7,13 @@ import { SignupFormClient } from "@/components/auth/signup-form-client";
  * Uses HTTP redirects so email clients and in-app browsers follow reliably;
  * approved users land on `/auth/activate` to finish account creation.
  */
-export default function SignUpPage({
+export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams?: { email?: string };
+  searchParams: Promise<{ email?: string }>;
 }) {
-  const email = (searchParams?.email ?? "").trim().toLowerCase();
+  const { email: emailParam } = await searchParams;
+  const email = (emailParam ?? "").trim().toLowerCase();
   if (email) {
     redirect(`/auth/activate?email=${encodeURIComponent(email)}`);
   }

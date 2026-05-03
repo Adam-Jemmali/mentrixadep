@@ -113,7 +113,7 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
               href="/"
               className="rounded-xl outline-none ring-offset-2 ring-offset-[#FAFAFA] focus-visible:ring-2 focus-visible:ring-blue-500/40"
             >
-              <MentrixaLogoMark size={isSelectRole ? "md" : "lg"} />
+              <MentrixaLogoMark size={isSelectRole ? "md" : "lg"} priority />
             </Link>
           </div>
           {children}

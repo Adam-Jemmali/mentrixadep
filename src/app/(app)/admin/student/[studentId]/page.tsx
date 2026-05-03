@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getStudentDashboardForAdmin } from "@/app/actions/student";
 import { SessionsList } from "@/app/(app)/student/sessions-list";
 import { AvailabilityBrowser } from "@/app/(app)/student/availability-browser";
@@ -63,18 +64,20 @@ export default async function AdminStudentDashboardPage({ params }: Props) {
         </div>
 
         <AdminViewProvider userId={studentId}>
-          <SessionsList
-            upcomingSessions={data.upcomingSessions}
-            pastSessions={data.pastSessions}
-            totalXp={data.totalXp}
-            streak={data.streak}
-          >
-            <AvailabilityBrowser
-              availability={data.availability}
-              courses={data.courses}
-              displayTimeZone={data.displayTimeZone}
-            />
-          </SessionsList>
+          <Suspense fallback={<div className="min-h-[12rem] rounded-xl border border-slate-200 bg-white" />}>
+            <SessionsList
+              upcomingSessions={data.upcomingSessions}
+              pastSessions={data.pastSessions}
+              totalXp={data.totalXp}
+              streak={data.streak}
+            >
+              <AvailabilityBrowser
+                availability={data.availability}
+                courses={data.courses}
+                displayTimeZone={data.displayTimeZone}
+              />
+            </SessionsList>
+          </Suspense>
         </AdminViewProvider>
       </main>
     </div>

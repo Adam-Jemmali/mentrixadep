@@ -20,6 +20,8 @@ interface BookingConfirmationCardProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
+  /** Shown above footer actions when checkout start fails (e.g. slot locked by another learner). */
+  errorMessage?: string | null;
   className?: string;
   enableAnimations?: boolean;
 }
@@ -35,6 +37,7 @@ export function BookingConfirmationCard({
   onConfirm,
   onCancel,
   loading = false,
+  errorMessage = null,
   className,
   enableAnimations = true,
 }: BookingConfirmationCardProps) {
@@ -153,6 +156,14 @@ export function BookingConfirmationCard({
           </div>
         </motion.div>
       </div>
+
+      {errorMessage ? (
+        <div className="px-6 pb-1">
+          <p className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2.5 text-sm leading-snug text-amber-100">
+            {errorMessage}
+          </p>
+        </div>
+      ) : null}
 
       {/* Footer Actions */}
       <div className="p-6 bg-slate-900/50 border-t border-slate-800 flex flex-col sm:flex-row gap-3">

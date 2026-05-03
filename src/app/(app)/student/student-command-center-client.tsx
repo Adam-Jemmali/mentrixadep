@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollRevealCard } from "@/components/ui/card";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
@@ -19,7 +18,8 @@ type Upcoming = {
   course: string;
   start_time: string;
   end_time: string;
-  tutor_email_prefix: string;
+  tutor_name: string;
+  tutor_avatar_url: string | null;
 };
 
 type TutorExpertiseEntry = { course_name: string; proof_description: string; verified: boolean };
@@ -68,7 +68,6 @@ export function StudentCommandCenterClient({
   displayTimeZone?: string;
 }) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const normalizedInitial = (searchParams.get("subject") ?? "").trim().toLowerCase();
   const initialSelection = studentCourses.some(
     (c) => c.course_name.trim().toLowerCase() === normalizedInitial,
@@ -77,31 +76,6 @@ export function StudentCommandCenterClient({
         ?.course_name ?? "all"
     : "all";
   const [selectedCourse, setSelectedCourse] = useState<string | "all">(initialSelection);
-
-  // ELITE REALTIME SYNC: Listen for availability changes and refresh the dashboard instantly
-  useEffect(() => {
-    const supabase = createClient();
-    
-    const channel = supabase
-      .channel("availability-updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "availability",
-        },
-        () => {
-          // Revalidate the server-side data without a full page reload
-          router.refresh();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [router]);
 
   const filteredUpcoming = useMemo(() => {
     if (selectedCourse === "all") return upcomingSessions;
@@ -168,8 +142,22 @@ export function StudentCommandCenterClient({
                       <td className="px-4 py-3 font-semibold text-slate-900">{s.course}</td>
                       <td className="px-4 py-3 text-slate-700">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 opacity-50" />
-                          <span>{s.tutor_email_prefix}</span>
+                          <div className="relative h-6 w-6 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shrink-0">
+                            {s.tutor_avatar_url ? (
+                              <Image
+                                src={s.tutor_avatar_url}
+                                alt={s.tutor_name}
+                                fill
+                                unoptimized
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-slate-600">
+                                {s.tutor_name.slice(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <span>{s.tutor_name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-slate-600 tabular-nums">

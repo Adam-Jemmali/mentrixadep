@@ -260,6 +260,8 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
 
   if (!user || !isStudent || !user.approved) return null;
 
+  if (pathname.startsWith("/video/")) return null;
+
   return (
     <>
       {streakBanner && showStreak ? (
@@ -488,27 +490,33 @@ export function RootLayoutClient({
       <ClickSoundProvider />
       <ShellEffects />
       <AppNavOrNothing user={user} />
-      <FloatingXpAnimations />
-      {isApprovedStudent && user && !isQuestOnboarding ? <StudentNavbar user={user} /> : null}
-      {isApprovedTutor && user && <TutorNavbar user={user} />}
+      {!isVideoRoute ? <FloatingXpAnimations /> : null}
+      {isApprovedStudent && user && !isQuestOnboarding && !isVideoRoute ? (
+        <StudentNavbar user={user} />
+      ) : null}
+      {isApprovedTutor && user && !isVideoRoute ? <TutorNavbar user={user} /> : null}
       <LevelUpExperience user={user} />
       {isApprovedStudent && user ? (
         <PushNotificationOptIn />
       ) : null}
       {user && user.approved && !isVideoRoute ? <FeedbackWidget /> : null}
-      <CookieConsentBanner />
+      {!isVideoRoute ? <CookieConsentBanner /> : null}
       <main
         suppressHydrationWarning
         className={cn(
           "relative min-h-screen",
+          isVideoRoute && "min-h-0 h-[100dvh] overflow-hidden p-0 m-0 bg-black text-white",
           isHome && "bg-[#0B1120]",
-          !isHome && !isTutorProfileRoute && "bg-mentrixa-app text-slate-100",
+          !isHome && !isTutorProfileRoute && !isVideoRoute && "bg-mentrixa-app text-slate-100",
           isTutorProfileRoute && "bg-white text-slate-900",
-          isApprovedStudent && !isQuestOnboarding && "pt-24 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
-          isApprovedTutor && "pt-24",
+          isApprovedStudent &&
+            !isQuestOnboarding &&
+            !isVideoRoute &&
+            "pt-24 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
+          isApprovedTutor && !isVideoRoute && "pt-24",
         )}
       >
-        {!isHome ? (
+        {!isHome && !isVideoRoute ? (
           <>
             <AppBackgroundLogos />
             {!isTutorProfileRoute ? (

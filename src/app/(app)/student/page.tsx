@@ -1,9 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Suspense } from "react";
 import { StudentHeroGreeting } from "@/components/student/student-hero-greeting";
 
 import { requireRole } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getTutorAvailability,
   getStudentHubSnapshot,
@@ -27,6 +26,7 @@ import { Typewriter } from "@/components/ui/typewriter";
 import { SessionsList } from "./sessions-list";
 import { StudentStatStripMotion } from "./student-stat-strip-motion";
 import { StudentCommandCenterClient } from "./student-command-center-client";
+import { StudentStudyPackageNotifier } from "./student-study-package-notifier";
 import {
   firstNameFromDisplayName,
   getLocalHour,
@@ -39,35 +39,19 @@ import { PreSessionBriefCard } from "@/components/pre-session-brief-card";
 import { TopRivalCard } from "@/components/top-rival-card";
 import { Button } from "@/components/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 
 interface StudentPageProps {
-  searchParams?: {
+  searchParams: Promise<{
     booking?: string;
     reason?: string;
-  };
-}
-
-async function tutorEmailPrefixByTutorId(tutorIds: string[]): Promise<Map<string, string>> {
-  if (tutorIds.length === 0) return new Map();
-  
-  const adminClient = createAdminClient();
-  const map = new Map<string, string>();
-  
-  // ELITE SPEED: Fetch all profiles in ONE batch query instead of a slow loop
-  const { data: profiles } = await adminClient
-    .from("profiles")
-    .select("id, display_name")
-    .in("id", tutorIds);
-
-  tutorIds.forEach(id => {
-    const profile = profiles?.find(p => p.id === id);
-    map.set(id, profile?.display_name ? profile.display_name.split(" ")[0]! : "Guide");
-  });
-  
-  return map;
+    openStudyPackage?: string;
+    sessionsTab?: string;
+  }>;
 }
 
 export default async function StudentPage({ searchParams }: StudentPageProps) {
+  const query = await searchParams;
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
@@ -84,7 +68,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const { upcomingSessions, pastSessions } = sessionsBundle;
 
   const userXp = (snapshot.user_xp as UserXp | null) ?? null;
-  const hasPendingRequests = snapshot.has_pending_requests;
   const studentCourses = snapshot.student_courses as unknown as StudentCourse[];
   const tutorExpertise = snapshot.tutor_expertise;
   const courses = snapshot.available_courses;
@@ -138,15 +121,24 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const leaderboardTop = await getDivisionLeaderboard(focusedDivisionKey, user.id);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tutorIds = Array.from(new Set(upcomingSessions.map((s: any) => s.tutor_id))) as string[];
-  const prefixByTutor = await tutorEmailPrefixByTutorId(tutorIds);
+  const studyPackageSnapshots = [...pastSessions, ...upcomingSessions].map((s: any) => ({
+    sessionId: s.id as string,
+    course: s.course as string,
+    publishedAt: (s.ai_package?.package_published_at as string | null | undefined) ?? null,
+  }));
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upcomingForClient = upcomingSessions.map((s: any) => ({
     id: s.id,
     course: s.course,
     start_time: s.start_time,
     end_time: s.end_time,
-    tutor_email_prefix: prefixByTutor.get(s.tutor_id) ?? "Guide",
+    tutor_name:
+      s.tutor?.display_name?.trim() ||
+      (typeof s.tutor?.email === "string" && s.tutor.email.includes("@")
+        ? s.tutor.email.split("@")[0]
+        : "Guide"),
+    tutor_avatar_url: s.tutor?.avatar_url ?? null,
   }));
 
   const recommendedGuides = rankRecommendedGuides(
@@ -159,6 +151,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
   return (
     <div className={mentrixStudent.pageBg}>
+      <StudentHubRealtimeRefresh userId={user.id} />
       <main className={mentrixStudent.main}>
         <div className={`${mentrixStudent.heroGradient} mb-8 p-6 sm:p-8 relative overflow-hidden`}>
           <MentrixHeroDecor />
@@ -210,19 +203,19 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" className="h-8 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
                   <Link href={`/student/${user.id}`} className="inline-flex items-center gap-1.5">
-                    <Image src="/icons/mentrixer.svg" alt="" width={14} height={14} className="h-3.5 w-3.5 opacity-80" />
+                    <img src="/icons/mentrixer.svg" alt="" width={14} height={14} className="opacity-80 shrink-0" />
                     Profile & Settings
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" className="h-8 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
                   <Link href="/student/quest" className="inline-flex items-center gap-1.5 text-white">
-                    <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
+                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" />
                     Daily quest
                   </Link>
                 </Button>
                 <Button size="sm" className="h-8 text-xs bg-white text-slate-900 hover:bg-slate-100" asChild>
                   <Link href="#browse-guides" className="inline-flex items-center gap-1.5">
-                    <Image src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4" />
+                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" />
                     Book session
                   </Link>
                 </Button>
@@ -240,30 +233,42 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           questAccuracy={questAccuracy}
         />
 
-        {searchParams?.booking === "success" && (
+        {query.booking === "success" && (
           <div className="mt-8 mb-2 rounded-2xl border border-emerald-200/80 bg-white px-5 py-4 text-sm text-emerald-900 shadow-sm">
             <p className="font-medium">Payment received</p>
             <p className="mt-1 text-emerald-900/90">
-              {hasPendingRequests
-                ? "Your session request was sent to the Guide for approval."
-                : "Session booked see upcoming."}
+              {query.reason === "approved"
+                ? "You have been accepted by Guide and are being redirected to your upcoming guide calls."
+                : "Waiting on your Guide to accept. You are being redirected to your upcoming guide calls."}
             </p>
             <p className="mt-3 text-xs text-emerald-800/80">
-              <Link href={`/student/${user.id}`} className="underline font-medium hover:text-emerald-950">
-                Profile settings
+              <Link
+                href="/student?sessionsTab=upcoming#sessions-history"
+                className="underline font-medium hover:text-emerald-950"
+              >
+                Open upcoming guide calls
               </Link>
             </p>
           </div>
         )}
-        {searchParams?.booking === "cancelled" && (
+        {query.booking === "cancelled" && (
           <div className="mt-8 mb-2 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 text-sm text-slate-700 shadow-sm">
             Checkout was cancelled. No charge was made.
           </div>
         )}
-        {searchParams?.booking === "error" && (
+        {query.booking === "error" && query.reason === "slot_unavailable" && (
+          <div className="mt-8 mb-2 rounded-2xl border border-amber-200/90 bg-amber-50/90 px-5 py-4 text-sm text-amber-950 shadow-sm">
+            <p className="font-medium">That time was booked by another learner first</p>
+            <p className="mt-1 text-amber-950/90">
+              While you were in checkout, someone else finished paying for this slot. Your payment was refunded
+              automatically (typically 5–10 business days). Please choose another open time.
+            </p>
+          </div>
+        )}
+        {query.booking === "error" && query.reason !== "slot_unavailable" && (
           <div className="mt-8 mb-2 rounded-2xl border border-red-200/80 bg-white px-5 py-4 text-sm text-red-700 shadow-sm">
             Payment succeeded but booking sync failed. Please refresh once or contact support.
-            {searchParams.reason ? ` (${searchParams.reason})` : ""}
+            {query.reason ? ` (${query.reason})` : ""}
           </div>
         )}
 
@@ -296,6 +301,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Live coaching</p>
             <h2 className="mt-1 text-lg font-bold text-slate-900">Sessions</h2>
             <p className="mt-1 mb-5 text-sm text-slate-600">Upcoming past guide calls.</p>
+            <StudentStudyPackageNotifier snapshots={studyPackageSnapshots} />
+            <Suspense fallback={<div className="min-h-[12rem] rounded-2xl border border-slate-100 bg-slate-50/50" />}>
               <SessionsList
                 upcomingSessions={upcomingSessions}
                 pastSessions={pastSessions}
@@ -305,7 +312,20 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 displayTimeZone={timeZone}
                 weekRange={weekRange}
                 showHeroStats={false}
+                initialOpenStudyPackageId={
+                  typeof query.openStudyPackage === "string" ? query.openStudyPackage : ""
+                }
+                initialSessionsTab={
+                  query.booking === "success"
+                    ? "upcoming"
+                    : query.sessionsTab === "past"
+                      ? "past"
+                      : query.sessionsTab === "upcoming"
+                        ? "upcoming"
+                        : undefined
+                }
               />
+            </Suspense>
           </div>
         </div>
       </main>

@@ -13,13 +13,17 @@
  * sendTutorCancelledEmail, sendVerification* …
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { getResendApiKey } from "@/lib/env";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
-import { getSiteUrl } from "@/lib/site";
+import { getSiteUrl, getEmailPublicAssetOrigin } from "@/lib/site";
 
 const FROM_ADDRESS = "Mentrixa <updates@mentrixa.one>";
 const WAITLIST_FROM_ADDRESS = "Mentrixa <noreply@mentrixa.one>";
 const APP_URL = getSiteUrl();
+/** Public HTTPS host for `/public` images in email HTML (not APP_URL when it is localhost). */
+const EMAIL_ASSET_ORIGIN = getEmailPublicAssetOrigin();
 const DEV_EMAIL_OVERRIDE: string | null = null;
 
 /** Session + optional person names + optional AI package stats for richer emails */
@@ -119,9 +123,76 @@ function formatTimeOnly(iso: string): string {
 }
 
 const MENTRIXER_LINE =
-  'On Mentrixa, learners and tutors are <strong style="color:#e5e5e5;">Mentrixers & Guides</strong>  one community built for depth.';
+  'On Mentrixa, learners and Guides are <strong style="color:#e5e5e5;">Mentrixers & Guides</strong>  one community built for depth.';
 
-const HEADER_LOGO_SRC = `${APP_URL}/mentrixalogo/logo.png`;
+/** Resend inline attachment `content_id` — must match `<img src="cid:…">`. */
+const HEADER_LOGO_CONTENT_ID = "mentrixa-header-logo";
+
+type ResendInlineAttachment = {
+  filename: string;
+  /** Raw base64 (no data: URL prefix). */
+  content: string;
+  content_id: string;
+  content_type?: string;
+};
+
+let cachedHeaderLogo:
+  | { kind: "cid"; base64: string }
+  | { kind: "url"; href: string }
+  | undefined;
+
+/**
+ * Prefer embedding `public/mentrixalogo/logo.png` as a CID attachment so the logo renders
+ * from localhost, Vercel, and production without relying on a fetchable absolute URL.
+ * Falls back to HTTPS URL when the file is not on disk (e.g. mis-cwd).
+ */
+function resolveHeaderLogoForEmail():
+  | { imgSrc: string; inlineAttachments: ResendInlineAttachment[] }
+  | { imgSrc: string; inlineAttachments: [] } {
+  if (cachedHeaderLogo === undefined) {
+    try {
+      const logoPath = join(process.cwd(), "public", "mentrixalogo", "logo.png");
+      if (existsSync(logoPath)) {
+        const buf = readFileSync(logoPath);
+        if (buf.length > 0 && buf.length < 900_000) {
+          cachedHeaderLogo = { kind: "cid", base64: buf.toString("base64") };
+        } else {
+          cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.png` };
+        }
+      } else {
+        cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.png` };
+      }
+    } catch {
+      cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.png` };
+    }
+  }
+
+  if (cachedHeaderLogo.kind === "cid") {
+    return {
+      imgSrc: `cid:${HEADER_LOGO_CONTENT_ID}`,
+      inlineAttachments: [
+        {
+          filename: "mentrixa-logo.png",
+          content: cachedHeaderLogo.base64,
+          content_id: HEADER_LOGO_CONTENT_ID,
+          content_type: "image/png",
+        },
+      ],
+    };
+  }
+  return {
+    imgSrc: cachedHeaderLogo.href,
+    inlineAttachments: [],
+  };
+}
+
+function headerLogoImgSrc(): string {
+  return resolveHeaderLogoForEmail().imgSrc;
+}
+
+function headerLogoInlineAttachments(): ResendInlineAttachment[] {
+  return resolveHeaderLogoForEmail().inlineAttachments;
+}
 
 function googleCalendarTemplateUrl(params: {
   title: string;
@@ -158,6 +229,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
     const recipient = DEV_EMAIL_OVERRIDE ?? to;
     const devNote =
       DEV_EMAIL_OVERRIDE && DEV_EMAIL_OVERRIDE !== to ? ` [DEV: originally to ${to}]` : "";
+    const attachments = headerLogoInlineAttachments();
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -169,6 +241,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         to: recipient,
         subject: subject + devNote,
         html,
+        ...(attachments.length > 0 ? { attachments } : {}),
       }),
     });
     if (!res.ok) {
@@ -189,6 +262,7 @@ async function sendEmailFrom(from: string, to: string, subject: string, html: st
     const recipient = DEV_EMAIL_OVERRIDE ?? to;
     const devNote =
       DEV_EMAIL_OVERRIDE && DEV_EMAIL_OVERRIDE !== to ? ` [DEV: originally to ${to}]` : "";
+    const attachments = headerLogoInlineAttachments();
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -200,6 +274,7 @@ async function sendEmailFrom(from: string, to: string, subject: string, html: st
         to: recipient,
         subject: subject + devNote,
         html,
+        ...(attachments.length > 0 ? { attachments } : {}),
       }),
     });
     if (!res.ok) {
@@ -241,7 +316,7 @@ function baseTemplate(title: string, bodyContent: string): string {
         <table width="600" cellpadding="0" cellspacing="0" style="background:#111;border:1px solid #262626;border-radius:12px;overflow:hidden;max-width:600px;width:100%;">
           <tr>
             <td style="background:#0c0c0c;padding:24px 36px;border-bottom:1px solid #1f1f1f;">
-              <img src="${HEADER_LOGO_SRC}" alt="Mentrixa" width="140" height="32" style="display:inline-block;height:auto;max-width:140px;vertical-align:middle;" />
+              <img src="${headerLogoImgSrc()}" alt="Mentrixa" width="140" height="32" border="0" style="display:inline-block;height:auto;max-width:140px;vertical-align:middle;border:0;outline:none;text-decoration:none;" />
               <span style="display:inline-block;margin-left:10px;vertical-align:middle;color:#f5f5f5;font-size:16px;font-weight:700;letter-spacing:0.08em;">MENTRIXA</span>
               <p style="margin:12px 0 0;color:#a3a3a3;font-size:12px;line-height:1.5;">
                 Real tutors. Top Mentrixers. Live now. Book in 3 minutes.
@@ -333,19 +408,19 @@ export async function sendSessionBookedEmail(
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">A learner on Mentrixa${studentNamed ? ` (${escapeHtml(studentNamed)})` : ""} requested this session. You’re their guide — approve or decline from your tutor home.</p>
     <p style="color:#999;font-size:13px;line-height:1.55;margin:0;">Times and duration match the availability block they picked.</p>`;
 
-  const studentBody = `${studentIntro}${sessionFactsTable(session, { includePrice: true, includePartner: "tutor" })}${ctaButton(`${APP_URL}/student`, "Open my sessions")}`;
+  const studentBody = `${studentIntro}${sessionFactsTable(session, { includePrice: true, includePartner: "tutor" })}${ctaButton(`${APP_URL}/student#sessions-history`, "Open my sessions")}`;
   const tutorBody = `${tutorIntro}${sessionFactsTable(session, { includePrice: true, includePartner: "student" })}${ctaButton(`${APP_URL}/tutor`, "Review session request")}`;
 
   await Promise.all([
     sendEmail(
       studentEmail,
-      `${stuHi}, your ${session.course} request is in — Mentrixa`,
-      baseTemplate("Request received — we’ve got it", studentBody)
+      `${stuHi}, your ${session.course} request is in `,
+      baseTemplate("Request received, we’ve got it", studentBody)
     ),
     sendEmail(
       tutorEmail,
-      `${tutHi}, new Mentrixa session request — ${session.course}`,
-      baseTemplate("A learner chose you", tutorBody)
+      `${tutHi}, new Mentrixa session request , ${session.course}`,
+      baseTemplate("A Mentrixer chose you", tutorBody)
     ),
   ]);
 }
@@ -374,20 +449,20 @@ export async function sendSessionConfirmedStudentEmail(
         <ul style="margin:0;padding-left:18px;color:#a3a3a3;font-size:14px;line-height:1.55;">
           <li style="margin:0 0 6px;">Use a quiet spot and stable connection.</li>
           <li style="margin:0 0 6px;">Bring one concrete goal for the hour.</li>
-          <li style="margin:0;">Your Pre‑Session Brief lands on your dashboard before the session — use it as a warm‑up.</li>
+          <li style="margin:0;">Your Post‑Session Brief lands on your History Dashboard after the session, use it and lock in.</li>
         </ul>
       </td>
     </tr>
   </table>`;
 
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
-    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">You’re confirmed. When it’s time, you and your Guide join the same Mentrixa room — same course, same clock.</p>
+    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">You’re confirmed. When it’s time, you and your Guide join the same Mentrixa room, same course, same clock.</p>
     ${guide ? `<p style="color:#999;font-size:14px;line-height:1.6;margin:0 0 12px;">Guide: <strong style="color:#ddd;">${escapeHtml(guide)}</strong></p>` : ""}
     ${sessionFactsTable(session, { includePrice: true, includePartner: "tutor" })}
     ${tips}
     <p style="margin:0 0 8px;color:#737373;font-size:12px;">Add to Google Calendar</p>
     <p style="margin:0;">${secondaryLink(calUrl, "Open Google Calendar template")}</p>
-    ${ctaButton(`${APP_URL}/student`, "View session & join link")}`;
+    ${ctaButton(`${APP_URL}/student?sessionsTab=upcoming#sessions-history`, "View session & join link")}`;
 
   await sendEmail(
     studentEmail,
@@ -415,7 +490,7 @@ export async function sendSessionConfirmedTutorEmail(
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">New booking confirmed${learner ? ` for <strong style="color:#eee;">${escapeHtml(learner)}</strong>` : ""}. Review details and prep before you meet.</p>
     ${sessionFactsTable(session, { includePrice: true, includePartner: "student" })}
-    ${ctaButton(`${APP_URL}/tutor`, "Open tutor home")}`;
+    ${ctaButton(`${APP_URL}/tutor#week-schedule`, "View week schedule")}`;
 
   await sendEmail(
     tutorEmail,
@@ -596,7 +671,7 @@ export async function sendPreSessionBriefEmail(
 
   await sendEmail(
     studentEmail,
-    `${hi}, your ${data.course} session is in 2 hours — see your brief`,
+    `${hi}, your ${data.course} session is in 2 hours, see your brief`,
     baseTemplate("Your Pre-Session Brief is ready", body)
   );
 }
@@ -626,7 +701,7 @@ export async function sendAiPackageReadyEmail(
     : "";
 
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
-    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your  study package for <strong style="color:#eee;">${escapeHtml(session.course)}</strong> is ready — built from your real session, not generic filler. ${statsLine ? `Inside: <strong style="color:#ddd;">${escapeHtml(statsLine)}</strong>.` : "Open it for the full summary, cards, and quests."}</p>
+    <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Your  study package for <strong style="color:#eee;">${escapeHtml(session.course)}</strong> is ready, built from your real session, not generic filler. ${statsLine ? `Inside: <strong style="color:#ddd;">${escapeHtml(statsLine)}</strong>.` : "Open it for the full summary, cards, and quests."}</p>
     ${previewBlock}
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0 0;border-collapse:collapse;">
       ${detailRow("Course", escapeHtml(session.course))}
@@ -816,7 +891,7 @@ export interface LevelUpEmailProps {
 /** level_up */
 export async function sendLevelUpEmail(email: string, props: LevelUpEmailProps): Promise<void> {
   const hi = greetingFirstName(props.displayName, email);
-  const badgeSrc = props.badgeImageUrl ?? `${APP_URL}/mentrixa-checkout-icon.svg`;
+  const badgeSrc = props.badgeImageUrl ?? `${EMAIL_ASSET_ORIGIN}/mentrixa-checkout-icon.svg`;
 
   const body = `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 16px;">You reached <strong style="color:#eee;">${escapeHtml(props.newLevelTitle)}</strong> — ${props.totalXp.toLocaleString("en-US")} total XP. Keep the streak going.</p>
@@ -1479,6 +1554,7 @@ export async function sendContactFeedbackInbound(params: {
     `;
 
   try {
+    const attachments = headerLogoInlineAttachments();
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -1491,6 +1567,7 @@ export async function sendContactFeedbackInbound(params: {
         reply_to: params.fromEmail,
         subject,
         html: baseTemplate("Feedback from mentrixa.one", body),
+        ...(attachments.length > 0 ? { attachments } : {}),
       }),
     });
     if (!res.ok) {

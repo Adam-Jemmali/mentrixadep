@@ -38,6 +38,8 @@ interface CreateAvailabilityCardProps {
   defaultTimezone: string;
   className?: string;
   enableAnimations?: boolean;
+  /** Called after slots are created successfully (e.g. close a dialog before refresh). */
+  onSlotsCreated?: () => void;
 }
 
 export function CreateAvailabilityCard({
@@ -45,6 +47,7 @@ export function CreateAvailabilityCard({
   defaultTimezone,
   className,
   enableAnimations = true,
+  onSlotsCreated,
 }: CreateAvailabilityCardProps) {
   // Form State
   const [course, setCourse] = useState(tutorCourseNames[0] || "");
@@ -143,10 +146,12 @@ export function CreateAvailabilityCard({
       timezone,
     };
 
+    let created = false;
     try {
       const res = await createAvailabilitySlots(payload, viewingAsUserId ?? undefined);
       if (!res.success) throw new Error(res.error);
-      
+      created = true;
+
       // Reset and success
       setWeekdays(new Set());
       setPrice("25");
@@ -156,6 +161,9 @@ export function CreateAvailabilityCard({
       setError(err instanceof Error ? err.message : "Failed to create availability");
     } finally {
       setLoading(false);
+    }
+    if (created) {
+      queueMicrotask(() => onSlotsCreated?.());
     }
   };
 
@@ -184,7 +192,7 @@ export function CreateAvailabilityCard({
       initial={shouldAnimate ? "hidden" : "visible"}
       animate="visible"
       className={cn(
-        "bg-[#0F172A] rounded-xl border border-slate-800 shadow-2xl overflow-hidden max-w-2xl relative w-full",
+        "rounded-xl border-2 border-slate-300 bg-white text-slate-900 shadow-xl shadow-slate-200/80 overflow-hidden max-w-2xl relative w-full",
         className
       )}
     >
@@ -201,22 +209,22 @@ export function CreateAvailabilityCard({
           className="w-full"
         >
           {/* Header */}
-          <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-6 pb-6 border-b border-slate-800">
+          <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-6 pb-6 border-b-2 border-slate-200 bg-slate-50/80">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30">
-                <Image src={MENTRIXA_LOGO_PNG} alt="Mentrixa" width={24} height={24} className="brightness-0 invert" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-indigo-200 bg-white shadow-sm">
+                <Image src={MENTRIXA_LOGO_PNG} alt="Mentrixa" width={28} height={28} className="object-contain" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">Create Availability</h2>
-                <p className="text-sm text-slate-400">Set your schedule and expertise</p>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">Create availability</h2>
+                <p className="text-sm font-medium text-slate-600">Set your schedule and pricing</p>
               </div>
             </div>
           </motion.div>
 
           {/* Subject Selector */}
           <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-6 pb-4 z-50 relative">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Select Subject
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">
+              Subject
             </label>
             <div className="relative" ref={dropdownRef}>
               <Button
@@ -224,12 +232,13 @@ export function CreateAvailabilityCard({
                 onClick={() => hasCourses && setIsSubjectDropdownOpen(!isSubjectDropdownOpen)}
                 disabled={!hasCourses}
                 className={cn(
-                  "w-full flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-slate-500 transition-colors h-auto",
-                  !hasCourses && "opacity-50 cursor-not-allowed"
+                  "h-auto w-full justify-between rounded-lg border-2 border-slate-300 bg-white p-3 text-left font-semibold text-slate-900 shadow-sm hover:border-indigo-400 hover:bg-indigo-50/40",
+                  isSubjectDropdownOpen && "border-indigo-500 ring-2 ring-indigo-200",
+                  !hasCourses && "cursor-not-allowed opacity-50"
                 )}
               >
-                <span className="text-slate-100">{course || "Add subjects first"}</span>
-                <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isSubjectDropdownOpen && "rotate-180")} />
+                <span>{course || "Add subjects first"}</span>
+                <ChevronDown className={cn("h-4 w-4 shrink-0 text-slate-600 transition-transform", isSubjectDropdownOpen && "rotate-180")} />
               </Button>
               <AnimatePresence>
                 {isSubjectDropdownOpen && (
@@ -237,13 +246,17 @@ export function CreateAvailabilityCard({
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[100] overflow-hidden"
+                    className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-lg border-2 border-slate-300 bg-white shadow-xl"
                   >
                     {tutorCourseNames.map((name) => (
                       <button
                         key={name}
+                        type="button"
                         onClick={() => { setCourse(name); setIsSubjectDropdownOpen(false); }}
-                        className="w-full text-left p-3 hover:bg-slate-800 transition-colors text-slate-200"
+                        className={cn(
+                          "w-full border-b border-slate-100 p-3 text-left text-sm font-semibold text-slate-900 transition-colors last:border-b-0",
+                          name === course ? "bg-indigo-100 text-indigo-950" : "bg-white hover:bg-indigo-50"
+                        )}
                       >
                         {name}
                       </button>
@@ -256,8 +269,8 @@ export function CreateAvailabilityCard({
 
           {/* Days Selection */}
           <motion.div variants={shouldAnimate ? itemVariants : {}} className="px-6 pb-6">
-            <label className="block text-sm font-medium text-slate-300 mb-3">
-              Days
+            <label className="mb-3 block text-xs font-bold uppercase tracking-wide text-slate-700">
+              Days <span className="font-normal normal-case text-slate-500">(tap to toggle)</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {WEEKDAYS.map((d) => {
@@ -265,13 +278,14 @@ export function CreateAvailabilityCard({
                 return (
                   <Button
                     key={d.value}
-                    variant={isActive ? "default" : "outline"}
+                    type="button"
+                    variant="outline"
                     onClick={() => toggleDay(d.value)}
                     className={cn(
-                      "px-4 py-2 rounded-lg border transition-all duration-200 text-sm font-medium h-auto",
-                      isActive 
-                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                        : "bg-slate-800/50 border-slate-700 text-slate-400 hover:border-slate-500"
+                      "h-auto rounded-lg border-2 px-4 py-2.5 text-sm font-bold transition-all duration-200",
+                      isActive
+                        ? "border-indigo-700 bg-indigo-600 text-white shadow-md ring-2 ring-indigo-600 ring-offset-2 ring-offset-white hover:bg-indigo-700"
+                        : "border-slate-300 bg-white text-slate-800 shadow-sm hover:border-slate-400 hover:bg-slate-50"
                     )}
                   >
                     {d.label}
@@ -282,59 +296,63 @@ export function CreateAvailabilityCard({
           </motion.div>
 
           {/* Time & Price Section */}
-          <motion.div variants={shouldAnimate ? itemVariants : {}} className="px-6 pb-6 space-y-4">
+          <motion.div variants={shouldAnimate ? itemVariants : {}} className="space-y-4 px-6 pb-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Start Time</label>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Start time</label>
                 <div className="relative">
                   <select 
                     value={startTime} 
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full p-2.5 bg-slate-800/50 rounded-lg border border-slate-700 text-slate-200 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className="w-full appearance-none rounded-lg border-2 border-slate-300 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 [&>option]:bg-white [&>option]:text-slate-900"
                   >
-                    {times.map(t => <option key={t} value={t} className="bg-slate-900">{t}</option>)}
+                    {times.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
-                  <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <Clock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">End Time</label>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">End time</label>
                 <div className="relative">
                   <select 
                     value={endTime} 
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full p-2.5 bg-slate-800/50 rounded-lg border border-slate-700 text-slate-200 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className="w-full appearance-none rounded-lg border-2 border-slate-300 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 [&>option]:bg-white [&>option]:text-slate-900"
                   >
-                    {times.map(t => <option key={t} value={t} className="bg-slate-900">{t}</option>)}
+                    {times.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
-                  <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <Clock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Price (CAD/Session)</label>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Price (CAD / session)</label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                   <input 
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    className="w-full p-2.5 pl-9 bg-slate-800/50 rounded-lg border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className="w-full rounded-lg border-2 border-slate-300 bg-white p-2.5 pl-9 font-bold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Timezone</label>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Timezone</label>
                 <div className="relative" ref={timezoneRef}>
                   <Button
+                    type="button"
                     variant="outline"
                     onClick={() => setIsTimezoneDropdownOpen(!isTimezoneDropdownOpen)}
-                    className="w-full flex items-center justify-between p-2.5 bg-slate-800/50 rounded-lg border border-slate-700 text-slate-200 h-auto"
+                    className={cn(
+                      "h-auto w-full justify-between rounded-lg border-2 border-slate-300 bg-white p-2.5 text-left font-semibold text-slate-900 shadow-sm hover:bg-slate-50",
+                      isTimezoneDropdownOpen && "border-indigo-500 ring-2 ring-indigo-200"
+                    )}
                   >
                     <span className="truncate text-xs">{timezone}</span>
-                    <Globe className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                    <Globe className="ml-1 h-4 w-4 shrink-0 text-slate-600" />
                   </Button>
                   <AnimatePresence>
                     {isTimezoneDropdownOpen && (
@@ -342,13 +360,17 @@ export function CreateAvailabilityCard({
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 5 }}
-                        className="absolute bottom-full left-0 right-0 mb-2 max-h-48 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[100]"
+                        className="absolute bottom-full left-0 right-0 z-[100] mb-2 max-h-48 overflow-y-auto rounded-lg border-2 border-slate-300 bg-white shadow-xl"
                       >
                         {APP_TIMEZONES.map((tz) => (
                           <button
                             key={tz}
+                            type="button"
                             onClick={() => { setTimezone(tz); setIsTimezoneDropdownOpen(false); }}
-                            className="w-full text-left p-2 text-xs hover:bg-slate-800 transition-colors text-slate-200"
+                            className={cn(
+                              "w-full border-b border-slate-100 p-2 text-left text-xs font-medium transition-colors last:border-b-0",
+                              tz === timezone ? "bg-indigo-100 text-indigo-950" : "bg-white text-slate-900 hover:bg-indigo-50"
+                            )}
                           >
                             {tz}
                           </button>
@@ -362,22 +384,23 @@ export function CreateAvailabilityCard({
           </motion.div>
 
           {/* Recurring Toggle */}
-          <motion.div variants={shouldAnimate ? itemVariants : {}} className="mx-6 p-4 bg-slate-800/30 rounded-lg border border-slate-700 mb-6">
-            <div className="flex items-center justify-between">
+          <motion.div variants={shouldAnimate ? itemVariants : {}} className="mx-6 mb-6 rounded-lg border-2 border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="font-semibold text-sm text-slate-100">Repeat weekly</p>
-                <p className="text-xs text-slate-400">Keep these slots open for multiple weeks</p>
+                <p className="text-sm font-bold text-slate-900">Repeat weekly</p>
+                <p className="text-xs font-medium text-slate-600">Keep these slots open for multiple weeks</p>
               </div>
               <button
                 type="button"
                 onClick={() => setRecurring(!recurring)}
                 className={cn(
-                  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200",
-                  recurring ? "bg-primary" : "bg-slate-700"
+                  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 transition-colors duration-200",
+                  recurring ? "border-indigo-800 bg-indigo-600" : "border-slate-300 bg-slate-200"
                 )}
+                aria-pressed={recurring}
               >
                 <span className={cn(
-                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200",
+                  "inline-block h-4 w-4 transform rounded-full border border-slate-300 bg-white shadow transition-transform duration-200",
                   recurring ? "translate-x-6" : "translate-x-1"
                 )} />
               </button>
@@ -390,15 +413,15 @@ export function CreateAvailabilityCard({
                   exit={{ height: 0, opacity: 0, marginTop: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-400">Repeat for</span>
+                  <div className="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+                    <span className="text-xs font-bold uppercase tracking-wide text-slate-600">Repeat for</span>
                     <input 
                       type="number" 
                       value={recurringWeeks}
                       onChange={(e) => setRecurringWeeks(e.target.value)}
-                      className="w-16 p-1 text-center bg-slate-900 border border-slate-700 rounded text-sm text-slate-200"
+                      className="w-16 rounded border-2 border-slate-300 bg-white p-1.5 text-center text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-                    <span className="text-xs text-slate-400">weeks</span>
+                    <span className="text-xs font-semibold text-slate-700">weeks</span>
                   </div>
                 </motion.div>
               )}
@@ -412,7 +435,7 @@ export function CreateAvailabilityCard({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="mx-6 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-sm"
+                className="mx-6 mb-4 flex items-center gap-2 rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-900"
               >
                 <AlertCircle className="w-4 h-4" />
                 {error}
@@ -420,15 +443,19 @@ export function CreateAvailabilityCard({
             )}
           </AnimatePresence>
 
-          <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-6 border-t border-slate-800">
+          <motion.div variants={shouldAnimate ? itemVariants : {}} className="border-t-2 border-slate-200 bg-slate-50/90 p-6">
             <Button
+              type="button"
               onClick={handleNext}
               disabled={!hasCourses || weekdays.size === 0}
               size="lg"
-              className="w-full font-bold"
+              className="h-12 w-full border-2 border-indigo-800 bg-indigo-600 text-base font-bold text-white shadow-md hover:bg-indigo-700 disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             >
-              Preview & Create
+              Preview &amp; create
             </Button>
+            <p className="mt-2 text-center text-xs font-medium text-slate-600">
+              Next step: review everything you chose, then confirm.
+            </p>
           </motion.div>
         </motion.div>
 
@@ -440,73 +467,79 @@ export function CreateAvailabilityCard({
             opacity: showConfirmationView ? 1 : 0 
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.8 }}
-          className="absolute top-0 left-0 w-full h-full bg-[#0F172A] z-[60]"
+          className="absolute left-0 top-0 z-[60] h-full w-full border-l-4 border-indigo-600 bg-white"
         >
-          <div className="p-6 space-y-6 h-full flex flex-col">
-            <div className="flex items-center justify-between">
+          <div className="flex h-full flex-col space-y-6 p-6">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b-2 border-slate-200 pb-4">
               <Button 
+                type="button"
                 variant="outline" 
                 size="sm"
                 onClick={() => setShowConfirmationView(false)} 
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors border-slate-700"
+                className="justify-self-start flex items-center gap-2 border-2 border-slate-400 bg-white font-bold text-slate-900 shadow-sm hover:bg-slate-100"
               >
-                <ChevronLeft className="w-4 h-4" />
-                <span className="text-sm font-medium">Back</span>
+                <ChevronLeft className="h-4 w-4" />
+                <span className="text-sm">Back to edit</span>
               </Button>
-              <h3 className="text-lg font-semibold text-white">Review Slots</h3>
-              <div className="w-8" />
+              <h3 className="text-center text-lg font-bold tracking-tight text-slate-900">Review &amp; confirm</h3>
+              <span className="justify-self-end" aria-hidden />
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-              <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl space-y-3">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-bold text-lg text-purple-400 text-primary">{course}</h4>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-white">${price}</p>
-                    <p className="text-[10px] text-slate-400 uppercase">Per Session</p>
+            <div className="flex flex-1 flex-col space-y-4 overflow-y-auto pr-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-indigo-700">You selected</p>
+              <div className="space-y-4 rounded-xl border-2 border-indigo-300 bg-indigo-50 p-4 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <h4 className="text-xl font-extrabold tracking-tight text-slate-900">{course}</h4>
+                  <div className="rounded-lg border-2 border-slate-900 bg-white px-3 py-2 text-right shadow-sm">
+                    <p className="text-2xl font-black tabular-nums text-slate-900">${price}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">CAD / session</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2 text-slate-300">
-                    <Clock className="w-4 h-4 text-slate-500" />
-                    <span>{startTime} - {endTime}</span>
+                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-900">
+                    <Clock className="h-4 w-4 shrink-0 text-indigo-600" />
+                    <span className="tabular-nums">{startTime} – {endTime}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-300">
-                    <Calendar className="w-4 h-4 text-slate-500" />
-                    <span>{recurring ? `${recurringWeeks} weeks` : "Once"}</span>
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-900">
+                    <Calendar className="h-4 w-4 shrink-0 text-indigo-600" />
+                    <span>{recurring ? `${recurringWeeks} weeks (recurring)` : "One week only"}</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-slate-500 mb-3 uppercase tracking-wider">Days selected</p>
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-700">Days included</p>
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAYS.filter(d => weekdays.has(d.value)).map(d => (
-                    <div key={d.value} className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-sm text-slate-200 flex items-center gap-2">
-                      <Check className="w-3 h-3 text-emerald-400" />
+                    <div
+                      key={d.value}
+                      className="flex items-center gap-2 rounded-full border-2 border-emerald-700 bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-950"
+                    >
+                      <Check className="h-3.5 w-3.5 text-emerald-700" strokeWidth={3} />
                       {d.full}
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-700">
-                <p className="text-xs text-slate-400 italic leading-relaxed">
-                  These slots will be created in your timezone ({timezone}). 
-                  Learners will see them converted to their local time.
+              <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
+                <p className="text-xs font-semibold leading-relaxed text-amber-950">
+                  <span className="font-black uppercase tracking-wide text-amber-900">Timezone: </span>
+                  {timezone}. Learners see these times converted to their own zone.
                 </p>
               </div>
             </div>
 
             <Button
+              type="button"
               onClick={handleSubmit}
               disabled={loading}
               size="lg"
-              className="w-full py-7 text-lg font-bold"
+              className="h-14 w-full border-2 border-emerald-900 bg-emerald-600 text-base font-black uppercase tracking-wide text-white shadow-md hover:bg-emerald-700 disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             >
               <span className="flex items-center justify-center gap-2">
-                {loading ? "CREATING SLOTS..." : "CONFIRM & CREATE"}
-                {!loading && <Check className="w-5 h-5" />}
+                {loading ? "Creating slots…" : "Confirm & create slots"}
+                {!loading && <Check className="h-5 w-5 stroke-[3]" />}
               </span>
             </Button>
           </div>

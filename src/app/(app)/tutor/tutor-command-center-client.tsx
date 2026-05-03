@@ -1,10 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { ScrollRevealCard } from "@/components/ui/card";
 import type { TutorCommandCenterPayload } from "@/app/actions/tutor";
 import { SessionRequestsList } from "./session-requests-list";
@@ -29,6 +28,7 @@ import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
 import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
 import { TutorHeroDecor } from "@/components/tutor/tutor-hero-decor";
 import { HeroGuideBounce } from "@/components/tutor/hero-guide-bounce";
+import { TutorHubRealtimeRefresh } from "@/components/tutor-hub-realtime-refresh";
 
 const TutorEarningsChart = dynamic(
   () => import("./tutor-earnings-chart").then((m) => m.TutorEarningsChart),
@@ -58,14 +58,45 @@ export function TutorCommandCenterClient({
 }) {
 
   const [addOpen, setAddOpen] = useState(false);
+  const [slotsCreatedNotice, setSlotsCreatedNotice] = useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const connectParam = searchParams.get("connect");
+
+  useEffect(() => {
+    if (!slotsCreatedNotice) return;
+    router.refresh();
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById("tutor-availability-slots")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 200);
+    const hideTimer = window.setTimeout(() => setSlotsCreatedNotice(false), 5200);
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(hideTimer);
+    };
+  }, [slotsCreatedNotice, router]);
 
   const { metrics, earningsLast30Days, lateCancellationAlerts, sessionRequests, calendar } = data;
   const pending = metrics.pendingRequestCount;
 
   return (
     <div className={mentrixTutor.pageBg}>
+    <TutorHubRealtimeRefresh tutorId={data.tutorId} />
+    {slotsCreatedNotice ? (
+      <div
+        role="alert"
+        aria-live="polite"
+        className="pointer-events-none fixed bottom-6 left-1/2 z-[200] w-[min(92vw,24rem)] -translate-x-1/2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-center shadow-lg"
+      >
+        <p className="text-sm font-semibold text-slate-900">Slots created</p>
+        <p className="mt-1 text-xs text-slate-600">
+          Taking you to your availability slots…
+        </p>
+      </div>
+    ) : null}
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <header className={`${mentrixTutor.heroGradient} mb-10 p-6 sm:p-8 relative overflow-hidden`}>
         <TutorHeroDecor />
@@ -98,19 +129,19 @@ export function TutorCommandCenterClient({
               }}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
                 Manage Courses
               </span>
             </Button>
             <Button variant="outline" size="sm" className="h-9 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
               <Link href={`/tutor/${data.tutorId}`} className="inline-flex items-center gap-1.5">
-                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
                 Edit Profile & Settings
               </Link>
             </Button>
             <Button type="button" size="sm" className="h-9 text-xs bg-white text-slate-900 hover:bg-slate-100" onClick={() => setAddOpen(true)}>
               <span className="inline-flex items-center gap-1.5">
-                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
                 Add availability
               </span>
             </Button>
@@ -129,6 +160,10 @@ export function TutorCommandCenterClient({
           <CreateAvailabilityCard
             tutorCourseNames={data.tutorCourses.map((c) => c.course_name)}
             defaultTimezone={data.tutorTimezone}
+            onSlotsCreated={() => {
+              setAddOpen(false);
+              setSlotsCreatedNotice(true);
+            }}
           />
         </DialogContent>
       </Dialog>
@@ -218,8 +253,8 @@ export function TutorCommandCenterClient({
         <section className="lg:col-span-7 min-w-0">
           <ScrollRevealCard className={mentrixTutor.card + " p-5 h-full"}>
             <div className="mb-4">
-              <h2 className="text-sm font-bold text-slate-900">Action items</h2>
-              <p className="text-[11px] text-slate-500 font-medium">Declining a paid request refunds the learner</p>
+              <h2 className="text-sm font-bold text-slate-900">Requested booked sessions</h2>
+            
             </div>
             <SessionRequestsList sessionRequests={sessionRequests} displayTimezone={data.tutorTimezone} />
           </ScrollRevealCard>
@@ -239,7 +274,7 @@ export function TutorCommandCenterClient({
       </div>
 
       {/* Calendar */}
-      <section className="mt-8 min-w-0">
+      <section id="week-schedule" className="mt-8 min-w-0 scroll-mt-24">
         <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -254,7 +289,7 @@ export function TutorCommandCenterClient({
               onClick={() => setAddOpen(true)}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
                 Add availability
               </span>
             </Button>
@@ -268,14 +303,14 @@ export function TutorCommandCenterClient({
         <section className="lg:col-span-6 min-w-0">
           <CourseManager courses={data.tutorCourses} />
         </section>
-        <section className="lg:col-span-6 min-w-0">
+        <section id="tutor-availability-slots" className="scroll-mt-24 lg:col-span-6 min-w-0">
           <h2 className="mb-3 text-sm font-medium text-slate-900">Open slots</h2>
           <div className="rounded-md border border-slate-200 bg-white p-4">
             <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <p className="text-sm text-slate-700">Auto-approve bookings</p>
               <AutoApproveToggle initialValue={data.autoApprove} />
             </div>
-            <div className="max-h-[28rem] overflow-y-auto">
+            <div className="max-h-[28rem] overflow-y-auto rounded-md border border-slate-100 bg-slate-50/90 p-2">
               <AvailabilityManager
                 availability={data.availability}
                 displayTimezone={data.tutorTimezone}

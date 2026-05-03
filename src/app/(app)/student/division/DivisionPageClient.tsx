@@ -195,7 +195,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
     if (value !== "leaderboard" && value !== "my-divisions" && value !== "history") return;
     const nextTab = value as "leaderboard" | "my-divisions" | "history";
     // Radix Tabs can fire onValueChange during mount; avoid setState while a subtree
-    // (e.g. division picker) is still rendering — same tab is a no-op.
+    // (e.g. division picker) is still rendering  same tab is a no-op.
     if (nextTab === activeTab) return;
     if (!tabContentRef.current) {
       setActiveTab(nextTab);

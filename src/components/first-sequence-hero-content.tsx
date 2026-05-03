@@ -42,7 +42,6 @@ function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; class
       height={16}
       unoptimized
       className={`block ${className}`}
-      style={{ height: "auto" }}
       aria-hidden
     />
   );
@@ -460,6 +459,7 @@ export function FirstSequenceHeroContent() {
           key={JSON.stringify(["PROVE WHAT YOU KNOW", "MENTRIXA"])}
           words={["PROVE WHAT YOU KNOW", "MENTRIXA", "CLIMB", "SOLVE", "WIN"]} 
           className="w-full h-full opacity-60"
+          tone="onDark"
         />
       </div>
     </div>

@@ -1,0 +1,82 @@
+# Manual / scheduled integration test: tutor open slots → student Stripe Checkout (test card)
+# → tutor Accept (if not auto-approved) → both dashboards show **Join session** on the weekly view.
+#
+# Required GitHub Actions secrets (repository → Settings → Secrets and variables → Actions):
+#   E2E_TUTOR_EMAIL, E2E_TUTOR_PASSWORD
+#   E2E_STUDENT_EMAIL, E2E_STUDENT_PASSWORD
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+#   SUPABASE_SERVICE_ROLE_KEY
+#   STRIPE_SECRET_KEY (must be sk_test_…), STRIPE_WEBHOOK_SECRET
+#   NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_SITE_URL (origin Stripe redirects back to, e.g. https://your-preview.vercel.app)
+#   CRON_SECRET, GEMINI_API_KEY (or other placeholders your next build validates — match ci.yml)
+#
+# Optional variables:
+#   E2E_TUTOR_TIMEZONE   (default America/Toronto — used to pick “tomorrow” weekday for slots)
+#   E2E_BOOKING_COURSE   (exact tutor course name to book; default = first subject in tutor dropdown)
+#
+# The Playwright spec is skipped unless all core secrets are present and Stripe is in test mode.
+
+name: E2E Booking & Video Prep
+
+on:
+  workflow_dispatch:
+
+jobs:
+  booking-video-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      CRON_ALLOWED_IPS: "127.0.0.1"
+      GEMINI_API_KEY: ci-gemini-placeholder
+      RESEND_API_KEY: re_placeholder
+      WAITLIST_ENABLED: "false"
+      E2E_TUTOR_EMAIL: ${{ secrets.E2E_TUTOR_EMAIL }}
+      E2E_TUTOR_PASSWORD: ${{ secrets.E2E_TUTOR_PASSWORD }}
+      E2E_STUDENT_EMAIL: ${{ secrets.E2E_STUDENT_EMAIL }}
+      E2E_STUDENT_PASSWORD: ${{ secrets.E2E_STUDENT_PASSWORD }}
+      E2E_TUTOR_TIMEZONE: ${{ vars.E2E_TUTOR_TIMEZONE }}
+      E2E_BOOKING_COURSE: ${{ vars.E2E_BOOKING_COURSE }}
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+      PLAYWRIGHT_NO_WEBSERVER: "1"
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start server & run booking E2E
+        run: |
+          npm run start &
+          for i in $(seq 1 90); do
+            if curl -sf "http://127.0.0.1:3000/api/health" >/dev/null; then
+              echo "Server is up"
+              break
+            fi
+            sleep 2
+          done
+          curl -sf "http://127.0.0.1:3000/api/health" >/dev/null
+          npx playwright test -c playwright.booking.config.ts --reporter=line
+        env:
+          PORT: "3000"
+          HOSTNAME: "127.0.0.1"

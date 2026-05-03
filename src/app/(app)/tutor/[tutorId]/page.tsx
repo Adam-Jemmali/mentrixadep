@@ -12,7 +12,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tutorId } = await params;
   const profile = await getTutorPublicProfile(tutorId);
-  if (!profile) return { title: "Tutor not found — Mentrixa" };
+  if (!profile) return { title: "Tutor not found, Mentrixa" };
   const title = `${profile.name} - Mentrixa Guide`;
   const description = `Book a session with ${profile.name} on Mentrixa.`;
   const canonical = `${getSiteUrl()}/tutor/${tutorId}`;

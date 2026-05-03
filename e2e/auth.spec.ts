@@ -1,17 +1,17 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 test.setTimeout(60_000);
 
-function passwordField(page: Parameters<typeof test>[0]["page"]) {
+function passwordField(page: Page) {
   return page.locator('input[name="password"]');
 }
 
-function confirmPasswordField(page: Parameters<typeof test>[0]["page"]) {
+function confirmPasswordField(page: Page) {
   return page.locator('input[name="confirmPassword"]');
 }
 
 async function mockSupabaseSignUp(
-  page: Parameters<typeof test>[0]["page"],
+  page: Page,
   options: { email: string; withSession: boolean },
 ) {
   await page.route("**/api/auth/signup**", async (route) => {

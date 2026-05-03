@@ -31,7 +31,7 @@ describe("fee parity (checkout vs payout)", () => {
     for (const amount of testAmounts) {
       const checkoutFee = splitSessionPriceCents(amount).platformFeeCents;
       const payoutFee = payoutPlatformFeeCents(amount);
-      expect(payoutFee).toBe(checkoutFee, `Fee mismatch at amount ${amount}: checkout=${checkoutFee}, payout=${payoutFee}`);
+      expect(payoutFee).toBe(checkoutFee);
     }
   });
 

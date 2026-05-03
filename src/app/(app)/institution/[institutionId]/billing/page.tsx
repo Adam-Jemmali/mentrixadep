@@ -2,10 +2,15 @@ import { redirect } from "next/navigation";
 import { getInstitutionById, getInstitutionMonthlyUsage } from "@/app/actions/institution";
 import { BillingClient } from "./billing-client";
 
-export default async function BillingPage({ params }: { params: { institutionId: string } }) {
+export default async function BillingPage({
+  params,
+}: {
+  params: Promise<{ institutionId: string }>;
+}) {
+  const { institutionId } = await params;
   const [institution, usage] = await Promise.all([
-    getInstitutionById(params.institutionId),
-    getInstitutionMonthlyUsage(params.institutionId),
+    getInstitutionById(institutionId),
+    getInstitutionMonthlyUsage(institutionId),
   ]);
 
   if (!institution) redirect("/");

@@ -8,17 +8,12 @@ import {
 } from "@/lib/stripe-booking-sync";
 import { trackEvent } from "@/lib/analytics";
 
-function redirectToConfirmed(req: NextRequest, requestId: string) {
-  const url = new URL(`/student/booking/confirmed`, req.url);
-  url.searchParams.set("request", requestId);
-  return NextResponse.redirect(url);
-}
-
 function redirectToStudent(req: NextRequest, booking: string, reason?: string) {
   const url = new URL(`/student?booking=${booking}`, req.url);
   if (reason) url.searchParams.set("reason", reason);
   if (booking === "success") {
-    url.hash = "sessions";
+    url.searchParams.set("sessionsTab", "upcoming");
+    url.hash = "sessions-history";
   }
   return NextResponse.redirect(url);
 }
@@ -59,24 +54,28 @@ export async function GET(req: NextRequest) {
           amount_cents: checkoutSession.amount_total ?? 0,
         },
       });
-      return redirectToConfirmed(req, result.request.id);
+      const status =
+        typeof result.request?.status === "string"
+          ? result.request.status.toLowerCase()
+          : "pending";
+      return redirectToStudent(req, "success", status === "approved" ? "approved" : "pending");
     } catch (err) {
       const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      if (err instanceof Error && msg.includes("another learner")) {
+        return redirectToStudent(req, "error", "slot_unavailable");
+      }
       if (
         err instanceof Error &&
         (msg.includes("pending request") || msg.includes("already have"))
       ) {
-        const reqId = await getSessionRequestIdByStripeCheckout(checkoutSession.id);
-        if (reqId) return redirectToConfirmed(req, reqId);
-        return redirectToStudent(req, "success");
+        return redirectToStudent(req, "success", "pending");
       }
       if (
         err instanceof Error &&
         (await hasBookingSyncedForCheckout(availabilityId, studentId, tutorId))
       ) {
         const reqId = await getSessionRequestIdByStripeCheckout(checkoutSession.id);
-        if (reqId) return redirectToConfirmed(req, reqId);
-        return redirectToStudent(req, "success");
+        return redirectToStudent(req, "success", reqId ? "approved" : "pending");
       }
       throw err;
     }

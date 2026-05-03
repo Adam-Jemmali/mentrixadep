@@ -10,6 +10,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type MutableRefObject,
 } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Send } from "lucide-react";
@@ -36,19 +37,53 @@ interface ChatPayload {
 function isChatPayload(value: unknown): value is ChatPayload {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<ChatPayload>;
+  const sentAtOk =
+    typeof candidate.sentAt === "number" ||
+    (typeof candidate.sentAt === "string" && Number.isFinite(Number(candidate.sentAt)));
   return (
     typeof candidate.id === "string" &&
     typeof candidate.authorId === "string" &&
     typeof candidate.authorLabel === "string" &&
     typeof candidate.text === "string" &&
-    typeof candidate.sentAt === "number"
+    sentAtOk
   );
+}
+
+function normalizeChatPayload(value: unknown): ChatPayload | null {
+  if (!isChatPayload(value)) return null;
+  const c = value as Partial<ChatPayload>;
+  const sentAt =
+    typeof c.sentAt === "number" ? c.sentAt : Number(c.sentAt);
+  if (!Number.isFinite(sentAt)) return null;
+  return {
+    id: c.id!,
+    authorId: c.authorId!,
+    authorLabel: c.authorLabel!,
+    text: c.text!,
+    sentAt,
+  };
+}
+
+/** Realtime wrappers can be nested (`{ payload: { payload: ... } }`) depending on sender/runtime. */
+function extractChatPayload(raw: unknown): ChatPayload | null {
+  let current: unknown = raw;
+  for (let i = 0; i < 4; i += 1) {
+    const normalized = normalizeChatPayload(current);
+    if (normalized) return normalized;
+    if (!current || typeof current !== "object") return null;
+    current = (current as { payload?: unknown }).payload;
+  }
+  return null;
 }
 
 interface InSessionChatProps {
   channel: RealtimeChannel | null;
+  /** Set by parent; incoming "chat" broadcasts are dispatched here from the shared signaling channel. */
+  broadcastHandlerRef: MutableRefObject<((raw: unknown) => void) | null>;
   userId: string;
   userLabel: string;
+  /** When true, blocks sends (e.g. call teardown) to avoid realtime errors. */
+  sendDisabled?: boolean;
   onMessagesChange?: (messages: Array<{
     authorId: string;
     authorLabel: string;
@@ -69,24 +104,23 @@ function formatTime(ts: number): string {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function InSessionChat({ channel, userId, userLabel, onMessagesChange }: InSessionChatProps) {
+export function InSessionChat({
+  channel,
+  broadcastHandlerRef,
+  userId,
+  userLabel,
+  sendDisabled = false,
+  onMessagesChange,
+}: InSessionChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Subscribe to incoming messages
+  // Register with parent so `video-call` dispatches "chat" broadcasts (same listener lifecycle as signaling).
   useEffect(() => {
-    if (!channel) return;
-
     const appendIncomingMessage = (rawMessage: unknown) => {
-      // Realtime payload shape can vary by sender/runtime; accept both wrapped and flat formats.
-      const wrapped = rawMessage as { payload?: unknown } | null;
-      const payload = isChatPayload(wrapped?.payload)
-        ? wrapped.payload
-        : isChatPayload(rawMessage)
-          ? rawMessage
-          : null;
+      const payload = extractChatPayload(rawMessage);
 
       if (!payload) {
         console.warn("[InSessionChat] Ignoring malformed chat payload", rawMessage);
@@ -108,15 +142,11 @@ export function InSessionChat({ channel, userId, userLabel, onMessagesChange }: 
       });
     };
 
-    channel.on(
-      "broadcast",
-      { event: "chat" },
-      (message: unknown) => {
-        appendIncomingMessage(message);
-      },
-    );
-    // Do not unsubscribe the shared channel here. Video signaling uses the same channel.
-  }, [channel, userId]);
+    broadcastHandlerRef.current = appendIncomingMessage;
+    return () => {
+      broadcastHandlerRef.current = null;
+    };
+  }, [broadcastHandlerRef, userId]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -136,7 +166,8 @@ export function InSessionChat({ channel, userId, userLabel, onMessagesChange }: 
     );
   }, [messages, onMessagesChange]);
 
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
+    if (sendDisabled) return;
     const text = draft.trim();
     if (!text || !channel) return;
 
@@ -155,14 +186,47 @@ export function InSessionChat({ channel, userId, userLabel, onMessagesChange }: 
     setDraft("");
     inputRef.current?.focus();
 
-    void channel.send({ type: "broadcast", event: "chat", payload });
-  }, [draft, channel, userId, userLabel]);
+    try {
+      const ch = channel as RealtimeChannel & {
+        /** REST broadcast: `(eventName, payload)` — not the same shape as `send()`. */
+        httpSend?: (
+          event: string,
+          payload: unknown,
+          opts?: { timeout?: number },
+        ) => Promise<unknown>;
+      };
+
+      const retryDelay = () => new Promise<void>((r) => setTimeout(r, 120));
+
+      if (typeof ch.httpSend === "function") {
+        try {
+          await ch.httpSend("chat", payload);
+        } catch {
+          await retryDelay();
+          await ch.httpSend("chat", payload);
+        }
+      } else {
+        const envelope = {
+          type: "broadcast" as const,
+          event: "chat",
+          payload,
+        };
+        let status = await ch.send(envelope);
+        if (status !== "ok") {
+          await retryDelay();
+          status = await ch.send(envelope);
+        }
+      }
+    } catch (err) {
+      console.error("[InSessionChat] send failed:", err);
+    }
+  }, [draft, channel, userId, userLabel, sendDisabled]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        sendMessage();
+        void sendMessage();
       }
     },
     [sendMessage]
@@ -221,15 +285,18 @@ export function InSessionChat({ channel, userId, userLabel, onMessagesChange }: 
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message…"
+          placeholder={sendDisabled ? "Leaving session…" : "Message…"}
           maxLength={500}
-          className="flex-1 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors"
+          disabled={sendDisabled}
+          className="flex-1 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors disabled:opacity-40"
         />
         <button
-          onClick={sendMessage}
-          disabled={!draft.trim()}
+          onClick={() => {
+            void sendMessage();
+          }}
+          disabled={sendDisabled || !draft.trim()}
           className={`flex h-8 w-8 items-center justify-center rounded-md transition-all duration-150 ${
-            draft.trim()
+            !sendDisabled && draft.trim()
               ? "bg-white/15 text-white hover:bg-white/20"
               : "bg-transparent text-white/20 cursor-not-allowed"
           }`}

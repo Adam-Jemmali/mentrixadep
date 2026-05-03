@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 export function TutorHeroDecor() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>

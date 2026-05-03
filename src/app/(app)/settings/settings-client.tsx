@@ -174,7 +174,7 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             onClick={() => router.back()}
           >
             <span className="inline-flex items-center gap-1.5">
-              <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="h-3 w-3 opacity-60" />
+              <Image src="/icons/mentrixer.svg" alt="" width={12} height={12} className="opacity-60" />
               Back
             </span>
           </Button>

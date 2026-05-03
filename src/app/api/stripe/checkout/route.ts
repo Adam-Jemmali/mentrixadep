@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -292,7 +293,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "This slot was just taken by another learner. Please choose a different time.",
+            "Another learner is checking out this slot or already booked it. Please choose a different time.",
         },
         { status: 409 }
       );
@@ -337,7 +338,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "This slot was just taken by another learner. Please choose a different time.",
+            "Another learner is checking out this slot or already booked it. Please choose a different time.",
         },
         { status: 409 }
       );
@@ -367,7 +368,7 @@ export async function POST(req: NextRequest) {
     const appOrigin = resolveAppOrigin(req);
     const branding = mentrixaCheckoutBrandingWithAssets(appOrigin);
     const successUrl = `${appOrigin}/api/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${appOrigin}/student?booking=cancelled`;
+    const cancelUrl = `${appOrigin}/api/stripe/checkout/cancel-return?session_id={CHECKOUT_SESSION_ID}`;
 
     const sessionDate = new Date(availability.start_time).toLocaleDateString(
       "en-US",
@@ -418,7 +419,8 @@ export async function POST(req: NextRequest) {
       tutorId: availability.tutor_id,
     };
 
-    const idempotencyKey = `checkout_${availability.id}_${user.id}`;
+    // Unique per attempt so cancel-and-retry or parameter changes never collide with Stripe idempotency.
+    const idempotencyKey = `checkout_${availability.id}_${user.id}_${randomUUID()}`;
 
     let session: Stripe.Checkout.Session;
     try {
@@ -477,9 +479,11 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[stripe/checkout] error:", err);
     captureUnexpectedError("stripe-checkout-create", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
-      { status: 500 }
-    );
+    let message = err instanceof Error ? err.message : "Internal server error";
+    if (message.includes("Keys for idempotent requests")) {
+      message =
+        "Checkout could not be started because an earlier attempt is still processing. Please wait a moment and try again.";
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

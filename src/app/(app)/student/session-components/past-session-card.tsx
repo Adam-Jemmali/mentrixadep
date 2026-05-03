@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { TutorAvatar } from "./tutor-avatar";
 import { StudyPackagePanel } from "./study-package-panel";
@@ -38,18 +38,30 @@ type Session = {
   tutor?: StudentSessionTutorProfile;
   ratings?: RatingRow[];
   ai_package?: SessionAiPackage | null;
+  /** Set when tutor removed the Studio package; learner should not see "pending" copy. */
+  studio_package_withdrawn_at?: string | null;
+  /** True when an unpublished Studio package row exists (guide still editing). */
+  has_studio_package_draft?: boolean;
 };
 
 export function PastSessionCard({ 
   session, 
-  displayTimeZone = "UTC" 
+  displayTimeZone = "UTC",
+  autoExpandStudyPackage = false,
 }: { 
   session: Session;
   displayTimeZone?: string;
+  /** Open the study package section (e.g. deep link from “package ready” alert). */
+  autoExpandStudyPackage?: boolean;
 }) {
   const router = useRouter();
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
+
+  useEffect(() => {
+    if (!autoExpandStudyPackage) return;
+    setPackageOpen(true);
+  }, [autoExpandStudyPackage]);
 
   const emailPrefix = session.tutor?.email?.split("@")[0] ?? "Guide";
   const name = session.tutor?.display_name?.trim() || emailPrefix;
@@ -61,7 +73,17 @@ export function PastSessionCard({
   const sessionDoneForUi = isCompleted || sessionEndedBySchedule;
   const hasTutor = !!(session.tutor_id ?? session.tutor?.id);
   const canRate = !hasRating && statusLower !== "cancelled" && hasTutor;
+  const isCancelled = statusLower === "cancelled";
+  /** Cancelled sessions can be removed without rating; completed/ended need a rating when a tutor was present (same as canRate). */
+  const canRemoveFromHistory =
+    isCancelled || hasRating || !hasTutor;
   const pkg = session.ai_package ?? null;
+  const studioPackageWithdrawnFlag =
+    session.studio_package_withdrawn_at != null && session.studio_package_withdrawn_at !== "";
+  const hasDraft = session.has_studio_package_draft === true;
+  /** Only when the package was actually removed, not while a draft exists unseen to the learner. */
+  const studioPackageWithdrawnUi =
+    studioPackageWithdrawnFlag && !pkg && !hasDraft;
 
   const handleQuestClick = (prompt: string) => {
     router.push("/student/quest?prompt=" + encodeURIComponent(prompt));
@@ -134,38 +156,50 @@ export function PastSessionCard({
 
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
           {sessionDoneForUi ? (
-            <Collapsible open={packageOpen} onOpenChange={setPackageOpen}>
-              <CollapsibleTrigger asChild>
-                <Button type="button" size="sm" variant="outline" className="gap-1 text-black">
-                  <Image src="/images/package.png" alt="Package" width={16} height={16} />
-                  View Study Package
-                  <Image
-                    src="/images/pending.png"
-                    alt="Toggle"
-                    width={16}
-                    height={16}
-                    className={`transition ${packageOpen ? "rotate-180" : ""}`}
+            studioPackageWithdrawnUi ? (
+              <span className="text-xs text-slate-500">
+                Study package is no longer available for this session.
+              </span>
+            ) : (
+              <Collapsible open={packageOpen} onOpenChange={setPackageOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button type="button" size="sm" variant="outline" className="gap-1 text-black">
+                    <Image src="/images/package.png" alt="Package" width={16} height={16} />
+                    View Study Package
+                    <Image
+                      src="/images/pending.png"
+                      alt="Toggle"
+                      width={16}
+                      height={16}
+                      className={`transition ${packageOpen ? "rotate-180" : ""}`}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-4">
+                  <StudyPackagePanel
+                    sessionId={session.id}
+                    initialPackage={pkg}
+                    onQuestClick={handleQuestClick}
                   />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3 rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-4">
-                <StudyPackagePanel
-                  sessionId={session.id}
-                  initialPackage={pkg}
-                  onQuestClick={handleQuestClick}
-                />
-              </CollapsibleContent>
-            </Collapsible>
+                </CollapsibleContent>
+              </Collapsible>
+            )
           ) : (
             <span className="text-xs text-slate-500">Studio output pending session completion.</span>
           )}
 
-          <div className="ml-auto">
-            <DeletePastSessionButton
-              sessionId={session.id}
-              endTime={session.end_time}
-              allowRemoveBeforeScheduledEnd={isCompleted || session.status === "cancelled"}
-            />
+          <div className="ml-auto flex flex-col items-end gap-1">
+            {canRemoveFromHistory ? (
+              <DeletePastSessionButton
+                sessionId={session.id}
+                endTime={session.end_time}
+                allowRemoveBeforeScheduledEnd={isCompleted || isCancelled}
+              />
+            ) : (
+              <span className="text-[10px] text-slate-500 text-right max-w-[11rem] leading-tight">
+                Rate this session to remove it from history.
+              </span>
+            )}
           </div>
         </div>
       </article>
