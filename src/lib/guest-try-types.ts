@@ -102,6 +102,27 @@ function clampPrompt(s: string, max: number) {
   return s.trim().slice(0, max);
 }
 
+/**
+ * Marketing Try Quest: models often emit `[Biology] …` or wrap stems in `[ … ]`.
+ * KaTeX elsewhere also treats `$…$` oddly — guest prompts forbid LaTeX, so we normalize here.
+ */
+export function stripGuestTryPromptDecorators(raw: string): string {
+  let s = raw.trim().replace(/\$/g, "");
+  for (let i = 0; i < 12; i++) {
+    const next = s.replace(/^\[[^\]]{1,180}\]\s*/, "").trim();
+    if (next === s) break;
+    s = next;
+  }
+  const t = s.trim();
+  if (t.startsWith("[") && t.endsWith("]")) {
+    const inner = t.slice(1, -1).trim();
+    if (inner.length >= 10 && !/\[[^\]]+\]/.test(inner)) {
+      s = inner;
+    }
+  }
+  return s.trim();
+}
+
 function readCorrectIndex(row: Record<string, unknown>, maxIdx: number): number | null {
   const c = row.correctIndex ?? row.answerIndex;
   let ci = -1;
@@ -129,7 +150,8 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
   const o = row as Record<string, unknown>;
   const id = typeof o.id === "string" ? o.id.slice(0, 80) : `q${fallbackIndex}`;
   const kindRaw = typeof o.kind === "string" ? o.kind.trim().toLowerCase().replace(/\s+/g, "_") : "";
-  const prompt = typeof o.prompt === "string" ? clampPrompt(o.prompt, 4000) : "";
+  const promptRaw = typeof o.prompt === "string" ? clampPrompt(o.prompt, 4000) : "";
+  const prompt = stripGuestTryPromptDecorators(promptRaw);
   const explanation = typeof o.explanation === "string" ? clampPrompt(o.explanation, 2000) : "";
   if (prompt.length < 8 || explanation.length < 4) return null;
 

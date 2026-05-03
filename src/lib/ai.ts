@@ -2162,7 +2162,8 @@ Tone: confident and playful difficulty—reward sharp readers; avoid fluff study
     const jsonSafetyBlock = `
 JSON reliability (critical):
 - Return exactly one JSON object, no markdown fences, no commentary outside JSON.
-- Plain UTF-8 strings only: NO LaTeX, NO backslashes, NO double-quote characters inside string values (use simple wording).
+- Plain UTF-8 strings only: NO LaTeX, NO backslashes, NO dollar signs $ anywhere, NO double-quote characters inside string values (use simple wording like x squared or x³ Unicode).
+- NEVER wrap prompts in square brackets and NEVER start a prompt with [Discipline] — use the discipline prefix format below instead.
 - Do NOT include promptImageUrl or optionImageUrls — the server attaches safe images when needed.
 - short_answer.referenceAnswer may embed alternate acceptable answers separated ONLY by pipe | when genuinely synonymous (example: n log n | O(n log n)).
 `;
@@ -2186,12 +2187,12 @@ ${n > 8 ? `- q8 … q${n - 1}: kind "mcq" — four text options each, correctInd
       ? `
 MIXED STEM MODE (General / mixed):
 - Rotate disciplines across items: mix biology/chemistry/physics/math/cs reasoning (no repeating the same narrow subtopic twice).
-- Prefix each prompt with a tag like [Biology], [Chemistry], [Physics], [Mathematics], or [Computer science] matching the item.
+- Begin each prompt with a plain discipline prefix and an em dash, example: Biology — rest of question text (no square brackets anywhere).
 `
       : `
 SUBJECT MODE ("${subject}"):
 - Every item tests real ${subject} content at tier "${diff}".
-- Prefix each prompt with [${subject.slice(0, 48)}].
+- Begin each prompt with ${subject.slice(0, 48)} — rest of question text (no square brackets).
 `;
 
     const systemPrompt = `You write short assessment items for a marketing demo. Return ONLY valid JSON:

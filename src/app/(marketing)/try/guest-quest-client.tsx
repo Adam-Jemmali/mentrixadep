@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { PromptWithMath } from "@/components/quest/prompt-with-math";
 import { XP } from "@/lib/xp-constants";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { TiltCard } from "@/components/ui/tilt-card";
@@ -21,6 +20,7 @@ import {
   gradeGuestShortAnswer,
   guestTryKindUi,
   isPlayableGuestTryQuestion,
+  stripGuestTryPromptDecorators,
   type GuestTryQuestion,
 } from "@/lib/guest-try-types";
 
@@ -384,6 +384,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     const progress = ((qIndex + 1) / questions.length) * 100;
     const kindUi = guestTryKindUi(q.kind);
     const streakNow = answered ? streakFromEnd(results) : 0;
+    const promptDisplay = stripGuestTryPromptDecorators(q.prompt);
 
     return (
       <AnimatePresence mode="wait">
@@ -427,6 +428,12 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
 
           {/* Question card */}
           <TiltCard tiltLimit={2} className="rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)] p-6 sm:p-8 block">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                Topic · {subjectName}
+              </span>
+            </div>
+
             {q.promptImageUrl ? (
               <div className="relative mb-6 h-44 w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50 sm:h-52">
                 <Image
@@ -440,7 +447,9 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
               </div>
             ) : null}
 
-            <PromptWithMath text={q.prompt} />
+            <div className="text-slate-900 text-base sm:text-[17px] leading-relaxed whitespace-pre-wrap font-medium">
+              {promptDisplay}
+            </div>
 
             {isShort ? (
               <motion.div
