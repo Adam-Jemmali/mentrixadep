@@ -1,13 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { WaitlistRole } from "@/lib/waitlist-role";
 
-type WaitlistRole = "student" | "tutor";
-
-export function WaitlistJoinForm({ initialEmail = "" }: { initialEmail?: string }) {
+export function WaitlistJoinForm({
+  initialEmail = "",
+  initialRole = "student",
+}: {
+  initialEmail?: string;
+  /** Defaults to Mentrixer (student) when omitted. */
+  initialRole?: WaitlistRole;
+}) {
   const [email, setEmail] = useState(initialEmail);
-  const [role, setRole] = useState<WaitlistRole>("student");
+  const [role, setRole] = useState<WaitlistRole>(() => initialRole);
+
+  useEffect(() => {
+    setRole(initialRole);
+  }, [initialRole]);
+
+  useEffect(() => {
+    setEmail(initialEmail);
+  }, [initialEmail]);
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

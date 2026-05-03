@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { isWaitlistEnabled } from "@/lib/flags";
+import { waitlistRoleFromQuery } from "@/lib/waitlist-role";
 import { SignupFormClient } from "@/components/auth/signup-form-client";
 
 /**
@@ -10,15 +11,16 @@ import { SignupFormClient } from "@/components/auth/signup-form-client";
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; role?: string }>;
 }) {
-  const { email: emailParam } = await searchParams;
+  const { email: emailParam, role: roleParam } = await searchParams;
   const email = (emailParam ?? "").trim().toLowerCase();
   if (email) {
     redirect(`/auth/activate?email=${encodeURIComponent(email)}`);
   }
   if (isWaitlistEnabled()) {
-    redirect("/join");
+    const waitlistRole = waitlistRoleFromQuery(roleParam);
+    redirect(`/join?role=${waitlistRole}`);
   }
   
   return <SignupFormClient />;

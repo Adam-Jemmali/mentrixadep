@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSiteUrl } from "@/lib/site";
 import { WaitlistJoinForm } from "@/components/waitlist-join-form";
+import { waitlistRoleFromQuery } from "@/lib/waitlist-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
@@ -19,14 +20,15 @@ export const metadata: Metadata = {
 export default async function JoinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; role?: string }>;
 }) {
   if (!isWaitlistEnabled()) {
     redirect("/auth/signin");
   }
 
-  const { email: emailParam } = await searchParams;
+  const { email: emailParam, role: roleParam } = await searchParams;
   const email = (emailParam ?? "").trim().toLowerCase();
+  const initialRole = waitlistRoleFromQuery(roleParam);
   if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     const admin = createAdminClient();
     const waitlistRow = await fetchRegistrationRequestRow(admin, email);
@@ -44,7 +46,7 @@ export default async function JoinPage({
           We&apos;re currently accepting new members! Enter your email to join the waitlist!
         </p>
       </div>
-      <WaitlistJoinForm initialEmail={email} />
+      <WaitlistJoinForm initialEmail={email} initialRole={initialRole} />
     </div>
   );
 }
