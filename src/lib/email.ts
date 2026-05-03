@@ -3,6 +3,10 @@
  * Copy leans on Mentrixa’s Mentrixer identity — learners and guides on one serious-learning platform.
  * All functions are fire-and-forget — they log errors but never throw.
  *
+ * **URLs:** `APP_URL` / asset origin come from `getEmailAppBaseUrl()` and `getEmailPublicAssetOrigin()`
+ * in `src/lib/site.ts` — development uses your real dev origin (e.g. localhost); production never
+ * emits localhost in links or `<img src>` (see `isProductionOutboundEmail` there).
+ *
  * Transactional suite (HTML via `baseTemplate`): sendWelcomeStudentEmail, sendWelcomeTutorEmail,
  * sendSessionConfirmedStudentEmail, sendSessionConfirmedTutorEmail, sendSessionReminderStudentEmail,
  * sendSessionReminderTutorEmail, sendSessionCancelledStudentEmail, sendSessionCompletedStudentEmail,

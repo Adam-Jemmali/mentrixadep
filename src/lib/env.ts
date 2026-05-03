@@ -23,6 +23,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z.string().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().optional(),
+  /** Optional: production email link base if `getSiteUrl()` would wrongly be localhost. */
+  NEXT_PUBLIC_EMAIL_APP_URL: z.string().optional(),
 });
 
 const result = envSchema.safeParse(process.env);

@@ -1,7 +1,12 @@
 import { env } from "@/lib/env";
 
-/** Primary public domain when env does not define a reachable origin (e.g. email from dev). */
+/** Primary public domain when production email links cannot use the resolved site (e.g. mis-set localhost). */
 const EMAIL_ASSET_FALLBACK = "https://mentrixa.one";
+
+/** Outbound email uses public URLs only (never localhost in links/assets). Local dev uses your real `getSiteUrl()` including localhost. */
+function isProductionOutboundEmail(): boolean {
+  return env.server.nodeEnv === "production";
+}
 
 /**
  * Canonical site origin for metadata, sitemap, JSON-LD, and absolute URLs.
@@ -37,38 +42,57 @@ export function getSiteUrl(): string {
 
 /**
  * Base URL for links inside transactional email (`<a href>`).
- * Recipients cannot open `localhost`; fall back to the public production host.
+ *
+ * - **Development / test:** same as `getSiteUrl()` (typically `http://localhost:3000`) so Mailhog
+ *   and local flows match your dev server.
+ * - **Production:** never `localhost` — uses `getSiteUrl()` when it is already public; otherwise
+ *   `NEXT_PUBLIC_EMAIL_APP_URL` or the primary public fallback host.
  */
 export function getEmailAppBaseUrl(): string {
   const site = getSiteUrl().replace(/\/$/, "");
+
+  if (!isProductionOutboundEmail()) {
+    if (!site.startsWith("http")) return "http://localhost:3000";
+    return site;
+  }
+
   if (!site.startsWith("http")) {
-    return EMAIL_ASSET_FALLBACK;
+    const override = (process.env.NEXT_PUBLIC_EMAIL_APP_URL ?? "").trim().replace(/\/$/, "");
+    return override || EMAIL_ASSET_FALLBACK;
   }
   try {
     const { hostname } = new URL(site);
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
-      return EMAIL_ASSET_FALLBACK;
+      const override = (process.env.NEXT_PUBLIC_EMAIL_APP_URL ?? "").trim().replace(/\/$/, "");
+      return override || EMAIL_ASSET_FALLBACK;
     }
     return site;
   } catch {
-    return EMAIL_ASSET_FALLBACK;
+    const override = (process.env.NEXT_PUBLIC_EMAIL_APP_URL ?? "").trim().replace(/\/$/, "");
+    return override || EMAIL_ASSET_FALLBACK;
   }
 }
 
 /**
  * Absolute origin for static assets embedded in HTML email (`<img src>`).
- * Inbox clients fetch these without your session cookies; `localhost` and plain HTTP
- * origins are replaced with the production HTTPS host so logos load reliably.
  *
- * Optional override: `NEXT_PUBLIC_EMAIL_ASSET_ORIGIN` (e.g. CDN or primary marketing domain).
+ * - **Development / test:** same as `getSiteUrl()` so images point at your dev server.
+ * - **Production:** never `localhost` for images (inbox clients cannot reach your laptop).
+ *   Uses HTTPS site, optional `NEXT_PUBLIC_EMAIL_ASSET_ORIGIN`, then {@link EMAIL_ASSET_FALLBACK}.
  */
 export function getEmailPublicAssetOrigin(): string {
+  const site = getSiteUrl().replace(/\/$/, "");
+
+  if (!isProductionOutboundEmail()) {
+    if (!site.startsWith("http")) return "http://localhost:3000";
+    return site;
+  }
+
   const override = process.env.NEXT_PUBLIC_EMAIL_ASSET_ORIGIN?.trim().replace(/\/$/, "");
   if (override && override.startsWith("https://")) {
     return override;
   }
 
-  const site = getSiteUrl().replace(/\/$/, "");
   if (site.startsWith("https://")) {
     try {
       const { hostname } = new URL(site);
