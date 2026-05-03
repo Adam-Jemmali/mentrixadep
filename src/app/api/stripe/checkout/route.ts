@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { env } from "@/lib/env";
 import { getStripeServer } from "@/lib/stripe-server";
 import { getSiteUrl } from "@/lib/site";
 import { mentrixaCheckoutBrandingWithAssets } from "@/lib/stripe-checkout-copy";
@@ -47,7 +46,7 @@ function normalizeHttpOrigin(value: string | undefined): string | null {
 }
 
 function resolveAppOrigin(req: NextRequest): string {
-  const fromEnv = normalizeHttpOrigin(env.public.appUrl);
+  const fromEnv = normalizeHttpOrigin(getSiteUrl());
   if (fromEnv) {
     return fromEnv;
   }

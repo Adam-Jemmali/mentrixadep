@@ -41,7 +41,7 @@ export default async function JoinPage({
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-blue-900 mb-2">Join Mentrixa</h1>
         <p className="text-sm text-slate-600">
-          We&apos;re currently accepting new members. Enter your email to join the waitlist.
+          We&apos;re currently accepting new members! Enter your email to join the waitlist!
         </p>
       </div>
       <WaitlistJoinForm initialEmail={email} />

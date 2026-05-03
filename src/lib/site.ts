@@ -1,18 +1,58 @@
 import { env } from "@/lib/env";
 
+/** Primary public domain when env does not define a reachable origin (e.g. email from dev). */
+const EMAIL_ASSET_FALLBACK = "https://mentrixa.one";
+
 /**
  * Canonical site origin for metadata, sitemap, JSON-LD, and absolute URLs.
- * Set `NEXT_PUBLIC_SITE_URL` in production if the default should differ.
+ *
+ * Resolution order:
+ * 1. `NEXT_PUBLIC_APP_URL` or `NEXT_PUBLIC_SITE_URL` (trimmed), if set
+ * 2. On Vercel: `VERCEL_URL` / `NEXT_PUBLIC_VERCEL_URL` as `https://…`
+ * 3. Local dev fallback: `http://localhost:3000`
+ *
+ * Do not bake `localhost` into `env.public.appUrl` when vars are unset — that would block (2)
+ * and break production emails and redirects.
  */
 export function getSiteUrl(): string {
-  const fromEnv = env.public.appUrl?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  const fromEnv =
+    (process.env.NEXT_PUBLIC_APP_URL ?? "").trim() ||
+    (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim() ||
+    (env.public.appUrl ?? "").trim();
 
-  // Vercel deployment URL
+  if (fromEnv) {
+    return fromEnv.replace(/\/$/, "");
+  }
+
   const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL;
-  if (vercelUrl) return `https://${vercelUrl}`;
+  if (vercelUrl) {
+    const host = vercelUrl.replace(/^https?:\/\//i, "").split("/")[0]?.trim();
+    if (host) {
+      return `https://${host.replace(/\/$/, "")}`;
+    }
+  }
 
   return "http://localhost:3000";
+}
+
+/**
+ * Base URL for links inside transactional email (`<a href>`).
+ * Recipients cannot open `localhost`; fall back to the public production host.
+ */
+export function getEmailAppBaseUrl(): string {
+  const site = getSiteUrl().replace(/\/$/, "");
+  if (!site.startsWith("http")) {
+    return EMAIL_ASSET_FALLBACK;
+  }
+  try {
+    const { hostname } = new URL(site);
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+      return EMAIL_ASSET_FALLBACK;
+    }
+    return site;
+  } catch {
+    return EMAIL_ASSET_FALLBACK;
+  }
 }
 
 /**
@@ -22,8 +62,6 @@ export function getSiteUrl(): string {
  *
  * Optional override: `NEXT_PUBLIC_EMAIL_ASSET_ORIGIN` (e.g. CDN or primary marketing domain).
  */
-const EMAIL_ASSET_FALLBACK = "https://mentrixa.one";
-
 export function getEmailPublicAssetOrigin(): string {
   const override = process.env.NEXT_PUBLIC_EMAIL_ASSET_ORIGIN?.trim().replace(/\/$/, "");
   if (override && override.startsWith("https://")) {

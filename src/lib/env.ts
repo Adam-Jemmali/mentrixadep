@@ -21,6 +21,7 @@ const envSchema = z.object({
 
   // App Metadata
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NEXT_PUBLIC_APP_URL: z.string().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().optional(),
 });
 
@@ -32,8 +33,13 @@ export const env = {
   public: {
     supabaseUrl: data.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     supabaseAnonKey: data.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-    siteUrl: data.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-    appUrl: data.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    siteUrl: data.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "",
+    appUrl:
+      data.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      data.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "",
   },
   server: {
     supabaseServiceRoleKey: data.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",

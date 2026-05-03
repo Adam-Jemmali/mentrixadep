@@ -200,9 +200,7 @@ function NavigationInner({ user }: NavigationProps) {
 
           {isJoinPage && (
             <div className="ml-4 pl-4 border-l border-white/10 hidden sm:block">
-              <p className="text-[12px] font-medium text-slate-200 tracking-tight leading-none">
-                Join Mentrixa. <span className="text-white/40 font-normal">We&apos;re currently accepting new members.</span>
-              </p>
+            
             </div>
           )}
         </div>

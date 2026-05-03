@@ -17,11 +17,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getResendApiKey } from "@/lib/env";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
-import { getSiteUrl, getEmailPublicAssetOrigin } from "@/lib/site";
+import { getEmailAppBaseUrl, getEmailPublicAssetOrigin } from "@/lib/site";
 
 const FROM_ADDRESS = "Mentrixa <updates@mentrixa.one>";
 const WAITLIST_FROM_ADDRESS = "Mentrixa <noreply@mentrixa.one>";
-const APP_URL = getSiteUrl();
+const APP_URL = getEmailAppBaseUrl();
 /** Public HTTPS host for `/public` images in email HTML (not APP_URL when it is localhost). */
 const EMAIL_ASSET_ORIGIN = getEmailPublicAssetOrigin();
 const DEV_EMAIL_OVERRIDE: string | null = null;
@@ -1073,7 +1073,7 @@ export async function sendWaitlistDecisionEmail(
         Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
       </p>
       <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
-        Great news — your waitlist access as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> is approved.
+        Great news ! your waitlist access as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> is approved.
         You can now sign up / sign in to Mentrixa with this email.
       </p>
       ${ctaButton(`${APP_URL}/auth/signup?email=${encodeURIComponent(email)}`, "Continue to Mentrixa", {
