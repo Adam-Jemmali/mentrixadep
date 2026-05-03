@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getStripeSecretKey, getStripeWebhookSecret } from "@/lib/env";
+import { getStripeWebhookSecret } from "@/lib/env";
+import { getStripeServer } from "@/lib/stripe-server";
 import { getSiteUrl } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bookSessionAsUser } from "@/app/actions/student";
@@ -20,7 +21,7 @@ import {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const stripe = new Stripe(getStripeSecretKey());
+const stripe = getStripeServer();
 
 /**
  * Idempotency guard: returns true if this event was already processed.

@@ -11,10 +11,9 @@
  * cross-table writes that bypass RLS. Auth is validated first via requireRole().
  */
 
-import Stripe from "stripe";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripeSecretKey } from "@/lib/env";
+import { getStripeServer } from "@/lib/stripe-server";
 import { revalidatePath } from "next/cache";
 import { applyXpAward } from "@/app/actions/xp";
 import {
@@ -49,7 +48,7 @@ async function issueFullRefund(
   paymentIntentId: string,
   idempotencyKey: string
 ): Promise<{ refundId: string; amountCents: number }> {
-  const stripe = new Stripe(getStripeSecretKey());
+  const stripe = getStripeServer();
   const refund = await stripe.refunds.create(
     { payment_intent: paymentIntentId, reason: "requested_by_customer" },
     { idempotencyKey }

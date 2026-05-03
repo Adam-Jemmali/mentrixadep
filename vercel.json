@@ -12,6 +12,12 @@
     "src/app/api/cron/process-recording-transcriptions/route.ts": {
       "maxDuration": 60
     },
+    "src/app/api/stripe/connect/create/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/guest-practice/route.ts": {
+      "maxDuration": 60
+    },
     "src/app/api/**/route.ts": {
       "maxDuration": 10
     }

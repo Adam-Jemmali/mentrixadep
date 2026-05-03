@@ -411,8 +411,7 @@ async function generateJson(
       },
     });
     const result = await Promise.race([requestPromise, timeoutPromise]);
-    const text = typeof (result as { text?: string }).text === "string" ? (result as { text: string }).text : "";
-    return text.trim();
+    return extractGeminiResponseText(result);
   });
 }
 
@@ -442,6 +441,31 @@ function stripMarkdownJson(raw: string): string {
 
 function stripBom(s: string): string {
   return s.charCodeAt(0) === 0xfeff ? s.slice(1) : s;
+}
+
+/** Gemini SDK may expose text on the result object or only under candidates[].content.parts[]. */
+function extractGeminiResponseText(result: unknown): string {
+  if (result == null || typeof result !== "object") return "";
+  const r = result as Record<string, unknown>;
+  const direct = r.text;
+  if (typeof direct === "string" && direct.trim().length > 0) {
+    return direct.trim();
+  }
+  const candidates = r.candidates;
+  if (!Array.isArray(candidates) || candidates.length === 0) return "";
+  const first = candidates[0];
+  if (first == null || typeof first !== "object") return "";
+  const content = (first as Record<string, unknown>).content as Record<string, unknown> | undefined;
+  if (content == null || typeof content !== "object") return "";
+  const parts = content.parts;
+  if (!Array.isArray(parts)) return "";
+  let out = "";
+  for (const p of parts) {
+    if (p != null && typeof p === "object" && typeof (p as Record<string, unknown>).text === "string") {
+      out += (p as Record<string, unknown>).text as string;
+    }
+  }
+  return out.trim();
 }
 
 /** First top-level `{ ... }` with string-aware brace matching. */
@@ -528,6 +552,40 @@ function repairInvalidBackslashesInJsonStrings(json: string): string {
   return out;
 }
 
+/** MCQ rows from Gemini sometimes use `choices` or string correctIndex. */
+function readMcqFields(row: Record<string, unknown>): {
+  options: string[];
+  correctIndex: number;
+  prompt: string;
+  explanation: string;
+} | null {
+  const rawOpts = Array.isArray(row.options)
+    ? row.options
+    : Array.isArray(row.choices)
+      ? row.choices
+      : null;
+  if (!rawOpts) return null;
+  const options = rawOpts.filter((x) => typeof x === "string").map((x) => String(x).slice(0, 500));
+  const c = row.correctIndex ?? row.answerIndex;
+  let ci = -1;
+  if (typeof c === "number" && Number.isFinite(c)) {
+    ci = Math.floor(c);
+  } else if (typeof c === "string" && /^\s*-?\d+\s*$/.test(c)) {
+    ci = parseInt(c.trim(), 10);
+  }
+  const prompt = typeof row.prompt === "string" ? row.prompt : "";
+  const explanation = typeof row.explanation === "string" ? row.explanation : "";
+  if (options.length !== 4 || ci < 0 || ci > 3 || prompt.length < 4) return null;
+  return { options, correctIndex: ci, prompt, explanation };
+}
+
+function normalizePracticeKind(raw: unknown, pack: PracticePackType): string {
+  if (typeof raw !== "string") return "";
+  const k = raw.trim().toLowerCase().replace(/\s+/g, "_");
+  if (pack === "mcq" && (k === "multiple_choice" || k === "multichoice")) return "mcq";
+  return k;
+}
+
 function parseModelJson<T>(raw: string): { ok: true; value: T } | { ok: false } {
   const cleaned = stripBom(stripMarkdownJson(raw.trim()));
   const candidates: string[] = [cleaned];
@@ -544,6 +602,22 @@ function parseModelJson<T>(raw: string): { ok: true; value: T } | { ok: false } 
       }
     }
   }
+
+  // Some models return a bare JSON array of questions instead of { "questions": [...] }.
+  const trimmed = stripBom(stripMarkdownJson(raw.trim()));
+  if (trimmed.startsWith("[")) {
+    for (const v of [trimmed, repairInvalidBackslashesInJsonStrings(trimmed)]) {
+      try {
+        const arr = JSON.parse(v) as unknown;
+        if (Array.isArray(arr)) {
+          return { ok: true, value: { questions: arr } as T };
+        }
+      } catch {
+        /* try next */
+      }
+    }
+  }
+
   return { ok: false };
 }
 
@@ -1308,24 +1382,20 @@ Generate ${n} questions.`;
       if (!o || typeof o !== "object") continue;
       const row = o as Record<string, unknown>;
       const id = typeof row.id === "string" ? row.id : `q${i}`;
-      const kind = row.kind as string;
+      const kind = normalizePracticeKind(row.kind, pack);
 
-      if (pack === "mcq" && kind === "mcq") {
-        const options = Array.isArray(row.options)
-          ? row.options.filter((x) => typeof x === "string").map((x) => String(x).slice(0, 500))
-          : [];
-        const ci = typeof row.correctIndex === "number" ? Math.floor(row.correctIndex) : -1;
-        const prompt = typeof row.prompt === "string" ? row.prompt : "";
-        const explanation = typeof row.explanation === "string" ? row.explanation : "";
-        if (options.length !== 4 || ci < 0 || ci > 3 || prompt.length < 4) continue;
-        questions.push({
-          id,
-          kind: "mcq",
-          prompt: prompt.slice(0, 4000),
-          options,
-          correctIndex: ci,
-          explanation: explanation.slice(0, 2000),
-        });
+      if (pack === "mcq" && (kind === "mcq" || kind === "")) {
+        const mcq = readMcqFields(row);
+        if (mcq) {
+          questions.push({
+            id,
+            kind: "mcq",
+            prompt: mcq.prompt.slice(0, 4000),
+            options: mcq.options,
+            correctIndex: mcq.correctIndex,
+            explanation: mcq.explanation.slice(0, 2000),
+          });
+        }
       } else if (pack === "short_answer" && kind === "short_answer") {
         const prompt = typeof row.prompt === "string" ? row.prompt : "";
         const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
@@ -1432,8 +1502,8 @@ export async function generateMistakeReview(
       })
     );
 
-    const text = (res as { text?: string }).text;
-    if (typeof text !== "string" || !text.trim()) {
+    const text = extractGeminiResponseText(res);
+    if (!text.trim()) {
       return { error: true, message: "Empty explanation." };
     }
 
@@ -1725,24 +1795,20 @@ Do not include markdown fences or commentary.`;
       if (!o || typeof o !== "object") continue;
       const row = o as Record<string, unknown>;
       const id = typeof row.id === "string" ? row.id : `q${i}`;
-      const kind = row.kind as string;
+      const kind = normalizePracticeKind(row.kind, pack);
 
-      if (pack === "mcq" && kind === "mcq") {
-        const options = Array.isArray(row.options)
-          ? row.options.filter((x) => typeof x === "string").map((x) => String(x).slice(0, 500))
-          : [];
-        const ci = typeof row.correctIndex === "number" ? Math.floor(row.correctIndex) : -1;
-        const prompt = typeof row.prompt === "string" ? row.prompt : "";
-        const explanation = typeof row.explanation === "string" ? row.explanation : "";
-        if (options.length !== 4 || ci < 0 || ci > 3 || prompt.length < 4) continue;
-        questions.push({
-          id,
-          kind: "mcq",
-          prompt: prompt.slice(0, 4000),
-          options,
-          correctIndex: ci,
-          explanation: explanation.slice(0, 2000),
-        } as PracticeQuestion);
+      if (pack === "mcq" && (kind === "mcq" || kind === "")) {
+        const mcq = readMcqFields(row);
+        if (mcq) {
+          questions.push({
+            id,
+            kind: "mcq",
+            prompt: mcq.prompt.slice(0, 4000),
+            options: mcq.options,
+            correctIndex: mcq.correctIndex,
+            explanation: mcq.explanation.slice(0, 2000),
+          } as PracticeQuestion);
+        }
       } else if (pack === "short_answer" && kind === "short_answer") {
         const prompt = typeof row.prompt === "string" ? row.prompt : "";
         const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
@@ -1874,7 +1940,7 @@ Recording source: ${input.fileUri ? "Gemini file URI" : "inline base64"}`;
           setTimeout(() => reject(err), SESSION_PACKAGE_TIMEOUT_MS);
         }),
       ]);
-      return typeof (response as { text?: string }).text === "string" ? (response as { text: string }).text : "";
+      return extractGeminiResponseText(response);
     });
 
     if (containsPii(raw)) {
@@ -1963,24 +2029,20 @@ Generate ${n} questions.`;
       if (!o || typeof o !== "object") continue;
       const row = o as Record<string, unknown>;
       const id = typeof row.id === "string" ? row.id : `q${i}`;
-      const kind = row.kind as string;
+      const kind = normalizePracticeKind(row.kind, pack);
 
-      if (pack === "mcq" && kind === "mcq") {
-        const options = Array.isArray(row.options)
-          ? row.options.filter((x) => typeof x === "string").map((x) => String(x).slice(0, 500))
-          : [];
-        const ci = typeof row.correctIndex === "number" ? Math.floor(row.correctIndex) : -1;
-        const prompt = typeof row.prompt === "string" ? row.prompt : "";
-        const explanation = typeof row.explanation === "string" ? row.explanation : "";
-        if (options.length !== 4 || ci < 0 || ci > 3 || prompt.length < 4) continue;
-        questions.push({
-          id,
-          kind: "mcq",
-          prompt: prompt.slice(0, 4000),
-          options,
-          correctIndex: ci,
-          explanation: explanation.slice(0, 2000),
-        });
+      if (pack === "mcq" && (kind === "mcq" || kind === "")) {
+        const mcq = readMcqFields(row);
+        if (mcq) {
+          questions.push({
+            id,
+            kind: "mcq",
+            prompt: mcq.prompt.slice(0, 4000),
+            options: mcq.options,
+            correctIndex: mcq.correctIndex,
+            explanation: mcq.explanation.slice(0, 2000),
+          });
+        }
       } else if (pack === "short_answer" && kind === "short_answer") {
         const prompt = typeof row.prompt === "string" ? row.prompt : "";
         const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";

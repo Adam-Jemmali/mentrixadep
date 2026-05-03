@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-import { getStripeSecretKey } from "@/lib/env";
+import { getStripeServer } from "@/lib/stripe-server";
 import { bookSessionAsUser } from "@/app/actions/student";
 import {
   getSessionRequestIdByStripeCheckout,
@@ -25,7 +24,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const stripe = new Stripe(getStripeSecretKey());
+    const stripe = getStripeServer();
     const checkoutSession = await stripe.checkout.sessions.retrieve(checkoutSessionId);
 
     if (checkoutSession.payment_status !== "paid") {

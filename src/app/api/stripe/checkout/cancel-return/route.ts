@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import Stripe from "stripe";
-import { getStripeSecretKey } from "@/lib/env";
+import { getStripeServer } from "@/lib/stripe-server";
 import { releaseAvailabilityPendingPaymentForCheckoutSession } from "@/lib/stripe-booking-sync";
 
 function redirectToStudentCancelled(req: NextRequest) {
@@ -21,7 +20,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const stripe = new Stripe(getStripeSecretKey());
+    const stripe = getStripeServer();
     const session = await stripe.checkout.sessions.retrieve(checkoutSessionId.trim());
 
     if (session.payment_status === "paid") {

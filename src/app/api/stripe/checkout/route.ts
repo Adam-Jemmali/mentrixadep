@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripeSecretKey, env } from "@/lib/env";
+import { env } from "@/lib/env";
+import { getStripeServer } from "@/lib/stripe-server";
 import { getSiteUrl } from "@/lib/site";
 import { mentrixaCheckoutBrandingWithAssets } from "@/lib/stripe-checkout-copy";
 import { splitSessionPriceCents } from "@/lib/booking-pricing";
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     );
 
     const adminClient = createAdminClient();
-    const stripe = new Stripe(getStripeSecretKey());
+    const stripe = getStripeServer();
 
     const { data: availability, error: availError } = await adminClient
       .from("availability")

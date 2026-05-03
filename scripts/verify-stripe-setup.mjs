@@ -115,7 +115,9 @@ async function main() {
   }
 
   const webhookUrl = `${appOrigin}/api/stripe/webhook`;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    httpClient: Stripe.createFetchHttpClient(),
+  });
 
   const check = await verifyWebhookEndpoint(stripe, webhookUrl);
 

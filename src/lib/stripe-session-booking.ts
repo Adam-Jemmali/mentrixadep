@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { getStripeSecretKey } from "@/lib/env";
+import { getStripeServer } from "@/lib/stripe-server";
 
 /**
  * Resolve PaymentIntent id from a completed Checkout Session and verify metadata matches the booking.
@@ -13,7 +13,7 @@ export async function getVerifiedPaymentIntentForBooking(
   /** Connect destination charge: tutor net settled on charge (no separate Transfer). */
   destinationCharge: boolean;
 }> {
-  const stripe = new Stripe(getStripeSecretKey());
+  const stripe = getStripeServer();
   const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
 
   if (session.payment_status !== "paid") {
@@ -49,7 +49,7 @@ export async function getVerifiedPaymentIntentForBooking(
  * Idempotent per checkout session id.
  */
 export async function refundPaidCheckoutSession(checkoutSessionId: string): Promise<void> {
-  const stripe = new Stripe(getStripeSecretKey());
+  const stripe = getStripeServer();
   const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
   if (session.payment_status !== "paid") {
     return;
@@ -81,7 +81,7 @@ export async function createRefundForRejectedRequest(
   paymentIntentId: string,
   requestId: string
 ): Promise<Stripe.Refund> {
-  const stripe = new Stripe(getStripeSecretKey());
+  const stripe = getStripeServer();
   return stripe.refunds.create(
     {
       payment_intent: paymentIntentId,

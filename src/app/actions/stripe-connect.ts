@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripeSecretKey } from "@/lib/env";
+import { getStripeServer } from "@/lib/stripe-server";
 import { getSiteUrl } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
@@ -28,7 +29,7 @@ type StripeAccountRow = {
 type StripeAccountMode = "test" | "live";
 
 function getStripe(): Stripe {
-  return new Stripe(getStripeSecretKey());
+  return getStripeServer();
 }
 
 function isLiveStripeMode(): boolean {
