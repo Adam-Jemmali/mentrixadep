@@ -199,8 +199,8 @@ export function DuelHub({
     audio.play().catch(() => { });
   }, []);
 
-  const showMatchIntroAndNavigate = useCallback(async (duelId: string) => {
-    if (transitioningRef.current) return;
+  const showMatchIntroAndNavigate = useCallback(async (duelId: string): Promise<boolean> => {
+    if (transitioningRef.current) return false;
     transitioningRef.current = true;
     stopAudio();
     playMatchFoundStinger();
@@ -213,7 +213,7 @@ export function DuelHub({
       const resp = await getDuelMatchupPreview(duelId);
       if (!resp.success) {
         fallbackPush();
-        return;
+        return true;
       }
 
       const preview = resp.preview;
@@ -240,39 +240,60 @@ export function DuelHub({
         },
       });
       setMatchPhase("preview");
+      return true;
     } catch {
       fallbackPush();
+      return true;
+    } finally {
+      transitioningRef.current = false;
     }
   }, [router, divisions, stopAudio, playMatchFoundStinger]);
 
   const attemptResolveQueuedMatch = useCallback(async (): Promise<boolean> => {
-    if (!divisionKey || matchIntroRef.current || transitioningRef.current) return false;
+    if (!divisionKey) return false;
+    if (matchIntroRef.current) return true;
     if (queueResolveLockRef.current) return false;
     queueResolveLockRef.current = true;
     try {
       const p = await pollDuelQueue(divisionKey);
       if (p?.state === "matched" && p.duelId) {
-        await showMatchIntroAndNavigate(p.duelId);
-        return true;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          if (await showMatchIntroAndNavigate(p.duelId)) return true;
+          await new Promise((r) => setTimeout(r, 280));
+        }
+        setQueueError(
+          "A human match was found but the intro did not open. Check “Your duels” below and tap Open, or cancel and try again."
+        );
+        return false;
       }
       const r = await createAiDuelFromQueue(divisionKey);
       if (r.success) {
-        await showMatchIntroAndNavigate(r.duelId);
-        return true;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          if (await showMatchIntroAndNavigate(r.duelId)) return true;
+          await new Promise((res) => setTimeout(res, 280));
+        }
+        setQueueError(
+          "Mentrixa Quest duel was created but the intro did not open. Open it from “Your duels” below."
+        );
+        router.refresh();
+        return false;
       }
       setQueueError(r.error);
       return false;
     } finally {
       queueResolveLockRef.current = false;
     }
-  }, [divisionKey, showMatchIntroAndNavigate]);
+  }, [divisionKey, showMatchIntroAndNavigate, router]);
 
   useEffect(() => {
     if (queuePhase !== "waiting" || !divisionKey || matchIntro) return;
     const tick = async () => {
       const p = await pollDuelQueue(divisionKey);
       if (p?.state === "matched" && p.duelId) {
-        await showMatchIntroAndNavigate(p.duelId);
+        if (!(await showMatchIntroAndNavigate(p.duelId))) {
+          await new Promise((r) => setTimeout(r, 350));
+          await showMatchIntroAndNavigate(p.duelId);
+        }
       }
     };
     const id = setInterval(() => void tick(), 2000);
@@ -301,7 +322,13 @@ export function DuelHub({
     setQueueError(null);
     setInstantSparringLoading(true);
     try {
-      await attemptResolveQueuedMatch();
+      const ok = await attemptResolveQueuedMatch();
+      if (!ok) {
+        setQueueError((prev) =>
+          prev ??
+          "Could not start Mentrixa Quest. Wait a moment and tap again, or cancel search and press Start Duel."
+        );
+      }
     } finally {
       setInstantSparringLoading(false);
     }
@@ -325,7 +352,11 @@ export function DuelHub({
         return;
       }
       if (r.state === "matched" && "duelId" in r && r.duelId) {
-        await showMatchIntroAndNavigate(r.duelId);
+        const started = await showMatchIntroAndNavigate(r.duelId);
+        if (!started) {
+          stopAudio();
+          setQueueError("Could not open match preview. Try again from Your duels.");
+        }
         return;
       }
       setQueueStartedAtMs(Date.now());
@@ -341,6 +372,7 @@ export function DuelHub({
   async function cancelQueue() {
     stopAudio();
     setQueueLoading(true);
+    setQueueError(null);
     await leaveDuelQueue();
     setQueueLoading(false);
     setQueueStartedAtMs(null);
@@ -425,10 +457,14 @@ export function DuelHub({
                     onClick={() => void playSparringQuestNow()}
                     className="h-10 w-full max-w-[220px] rounded-xl bg-violet-600 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-violet-900/40 hover:bg-violet-500 disabled:opacity-50"
                   >
-                    <Image src="/mentrixalogo/logo.png" alt="Bot" width={16} height={16} />
-                    {instantSparringLoading ? "Starting…" : "Play against Mentrixa Quest "}
+                    <Image src="/mentrixalogo/logo.png" alt="" width={16} height={16} className="mr-2 shrink-0 rounded-sm" />
+                    {instantSparringLoading ? "Starting…" : "Play against Mentrixa Quest"}
                   </Button>
-              
+                  {queueError ? (
+                    <p className="max-w-[280px] text-center text-[11px] font-medium leading-snug text-amber-200/95">
+                      {queueError}
+                    </p>
+                  ) : null}
                 </div>
               </motion.div>
             </div>
