@@ -142,7 +142,10 @@ function extractFallbackAnswerCandidates(input: string): string[] {
 
   const isSplit = base.split(/\bis\b/).map((p) => p.trim()).filter(Boolean);
   if (isSplit.length >= 2) {
-    candidates.add(isSplit[isSplit.length - 1]);
+    const lastPart = isSplit[isSplit.length - 1];
+    if (lastPart) {
+      candidates.add(lastPart);
+    }
   }
 
   const tailMath = base.match(/([a-z0-9+\-*/^=θπ∞%]+(?:\s*[a-z0-9+\-*/^=θπ∞%]+)*)$/i);
