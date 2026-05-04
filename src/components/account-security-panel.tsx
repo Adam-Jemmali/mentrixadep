@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updatePassword, deleteAccount } from "@/app/actions/settings";
+import { isNextRedirectError } from "@/lib/is-next-redirect-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -57,8 +58,8 @@ export function AccountSecurityPanel({ className }: { className?: string }) {
     setDeleting(true);
     try {
       await deleteAccount();
-      window.location.assign("https://mentrixa.one");
     } catch (e) {
+      if (isNextRedirectError(e)) throw e;
       setDeleting(false);
       setDeleteError(e instanceof Error ? e.message : "Failed to delete account. Please try again.");
     }

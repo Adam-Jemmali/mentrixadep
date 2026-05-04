@@ -28,7 +28,7 @@ export function PendingApprovalContent({ role, registrationStatus }: Props) {
       ? "Thanks for applying to teach on Mentrixa. Our team usually reviews Guide profiles within 24 hours. While your request is pending, app access stays locked."
       : "Your account is waiting for admin approval. While your request is pending, app access stays locked.";
   const liveHint =
-    "When you’re approved, this page updates automatically — no refresh needed. You’ll land on your dashboard with the guided tour.";
+    "When approved, You’ll land on your Mentrixer dashboard with our guided tour!";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-surface-soft">

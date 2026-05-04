@@ -8,6 +8,7 @@ import {
   deleteAccount,
   type UserSettings,
 } from "@/app/actions/settings";
+import { isNextRedirectError } from "@/lib/is-next-redirect-error";
 import { createClient } from "@/lib/supabase/client";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { Button } from "@/components/ui/button";
@@ -99,8 +100,8 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
     setDeleting(true);
     try {
       await deleteAccount();
-      window.location.assign("https://mentrixa.one");
     } catch (e) {
+      if (isNextRedirectError(e)) throw e;
       setDeleting(false);
       setDeleteError(e instanceof Error ? e.message : "Failed to delete account. Please try again.");
     }

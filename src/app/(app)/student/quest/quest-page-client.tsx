@@ -29,7 +29,7 @@ export function QuestPageClient({
       <div className={`${mentrixStudent.pageBg} min-h-screen`}>
         <div className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6">
           <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm leading-relaxed text-indigo-950 shadow-sm">
-            Welcome to Mentrixa. This is a Quest — AI-generated practice for your subject. Finish this one and earn your first 75 XP.
+             This is the Quest workspace. Where you can practice and build your skills and be #1 in the leaderboard. 
           </div>
         </div>
         <QuestPracticeWorkspace subjectOptions={subjectOptions} onboardingMode />

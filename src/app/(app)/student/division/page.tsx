@@ -19,7 +19,7 @@ export default async function DivisionsHubPage() {
               Divisions
             </h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
-              Join subject communities, climb the weekly XP board (resets Monday UTC), and coordinate with other Mentrixers. Set a focus division for nav and duels.
+              Join subject communities, climb the weekly XP board , and coordinate with other Mentrixers. Set a focus division.
             </p>
           </div>
         </div>

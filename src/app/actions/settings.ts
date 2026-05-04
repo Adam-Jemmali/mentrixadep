@@ -1,10 +1,12 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { deleteRegistrationRequestsByIdentityEmail } from "@/lib/delete-registration-requests-by-email";
+import { getSiteUrl } from "@/lib/site";
 
 export interface UserSettings {
   display_name: string | null;
@@ -186,5 +188,6 @@ export async function deleteAccount() {
     // Ignore: auth record is already deleted.
   }
 
-  return { success: true };
+  /** Full navigation — avoids RSC refetch of the current page after the user row is gone (prod error #441). */
+  redirect(getSiteUrl(), "replace");
 }
