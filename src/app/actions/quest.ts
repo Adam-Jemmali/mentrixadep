@@ -123,6 +123,44 @@ function buildQuestFallbackResponse(
   };
 }
 
+function normalizeAnswerForFallback(s: string): string {
+  return s
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:()[\]{}]/g, "")
+    .replace(/\s*=\s*/g, "=")
+    .trim();
+}
+
+/** Non-AI backup grading when evaluator is temporarily unavailable. */
+function fallbackEvaluateQuestAnswer(
+  userAnswer: string,
+  correctAnswer: string,
+): { correct: boolean; feedback: string } {
+  const u = normalizeAnswerForFallback(userAnswer);
+  const c = normalizeAnswerForFallback(correctAnswer);
+  if (!u || !c) {
+    return {
+      correct: false,
+      feedback: "Could not grade right now. Please try again with a clearer final answer line.",
+    };
+  }
+
+  if (u === c || c.includes(u) || u.includes(c)) {
+    return {
+      correct: true,
+      feedback: "Looks correct. Great work — your final result matches the expected answer.",
+    };
+  }
+
+  return {
+    correct: false,
+    feedback:
+      "Your answer does not match the expected result yet. Check the final simplified result and submit again.",
+  };
+}
+
 // ============================================================
 // DIVISION HELPERS
 // ============================================================
@@ -331,11 +369,19 @@ export async function submitQuestAnswer(
       user.id
     );
 
+    let graded: EvaluateAnswerResponse;
     if ("error" in evalResult && evalResult.error) {
-      return { error: true, message: evalResult.message };
+      if (!isAiUnavailableMessage(evalResult.message)) {
+        return { error: true, message: evalResult.message };
+      }
+      const fallback = fallbackEvaluateQuestAnswer(validated.userAnswer, quest.solution);
+      graded = {
+        correct: fallback.correct,
+        feedback: fallback.feedback,
+      };
+    } else {
+      graded = evalResult as EvaluateAnswerResponse;
     }
-
-    const graded = evalResult as EvaluateAnswerResponse;
 
     if (!graded.correct) {
       return {
