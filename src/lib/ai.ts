@@ -295,6 +295,43 @@ async function incrementDailyLimit(
   }
 }
 
+/** Read today's usage without incrementing (for paths that should only charge quota after a successful AI result). */
+async function peekDailyLimit(
+  userId: string,
+  action: DailyLimitAction
+): Promise<{ count: number; allowed: boolean }> {
+  const limits: Record<DailyLimitAction, number> = {
+    quest_gen: 10,
+    duel_questions: 20,
+    session_package_gen: 5,
+    session_package_regen: 3,
+  };
+  const max = limits[action];
+
+  try {
+    const supabase = createClient(
+      env.public.supabaseUrl,
+      env.server.supabaseServiceRoleKey!
+    );
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from("ai_rate_limits")
+      .select("count")
+      .eq("user_id", userId)
+      .eq("action", action)
+      .eq("date", today)
+      .maybeSingle();
+
+    if (error) {
+      return { count: 0, allowed: false };
+    }
+    const currentCount = (data?.count ?? 0) as number;
+    return { count: currentCount, allowed: currentCount < max };
+  } catch {
+    return { count: 0, allowed: false };
+  }
+}
+
 async function enforceAiRateLimit(userId: string, action: string): Promise<void> {
   await enforceSlidingRateLimit(
     getRateLimitId(userId),
@@ -1222,8 +1259,8 @@ export async function generateDuelQuestions(
   try {
     await enforceAiRateLimit(userId, "duel.questions");
 
-    const daily = await incrementDailyLimit(userId, "duel_questions");
-    if (!daily.allowed) {
+    const dailyPeek = await peekDailyLimit(userId, "duel_questions");
+    if (!dailyPeek.allowed) {
       return { error: true, message: "Daily duel question limit reached (20/day). Come back tomorrow!" };
     }
 
@@ -1260,7 +1297,7 @@ Formatting:
 - Fair stems—reward careful reading of the described diagram/scenario.
 - correctIndex is always 0-based index into the choices array for that question.`;
 
-    const raw = await generateJson(
+    const raw = await generateJsonRetryOnTimeout(
       systemPrompt,
       `Generate exactly ${n} questions with the required type mix.`,
       SESSION_PACKAGE_TIMEOUT_MS
@@ -1311,6 +1348,7 @@ Formatting:
     if (questions.length < 3) {
       return { error: true, message: "Could not generate enough valid questions. Try again." };
     }
+    await incrementDailyLimit(userId, "duel_questions");
     return { questions };
   } catch (err) {
     return handleAiError(err, "generateDuelQuestions", divisionName.slice(0, 80));

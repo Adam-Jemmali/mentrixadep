@@ -18,9 +18,32 @@ import { recordClanDuelWin } from "@/app/actions/clan-dashboard";
 import { applyXpAward } from "@/app/actions/xp";
 import { XP } from "@/lib/xp-constants";
 import { DUEL_QUESTION_COUNT } from "@/lib/duel-constants";
+import { buildSkillDuelFallbackPack } from "@/lib/duel-fallback-questions";
 import { applyDuelMetaRewards } from "@/lib/duel-reward";
 
 type MatchSource = "direct" | "clan" | "queue";
+
+/** Prefer AI-generated duel items; on any failure use offline pack so Sparring Quest always starts. */
+async function resolveDuelQuestionPack(
+  divisionName: string,
+  divisionKey: string,
+  userId: string
+): Promise<SkillDuelQuestion[]> {
+  const gen = await generateDuelQuestions(
+    divisionName,
+    divisionKey,
+    userId,
+    DUEL_QUESTION_COUNT
+  );
+  if ("error" in gen && gen.error) {
+    return buildSkillDuelFallbackPack(divisionName, divisionKey, DUEL_QUESTION_COUNT);
+  }
+  const list = (gen as { questions: SkillDuelQuestion[] }).questions;
+  if (!Array.isArray(list) || list.length < 3) {
+    return buildSkillDuelFallbackPack(divisionName, divisionKey, DUEL_QUESTION_COUNT);
+  }
+  return list;
+}
 
 function scoreAnswers(
   questions: SkillDuelQuestion[],
@@ -487,18 +510,11 @@ export async function activateSkillDuelSession(
       .eq("key", duel.division_key)
       .maybeSingle();
 
-    const gen = await generateDuelQuestions(
+    const questions = await resolveDuelQuestionPack(
       div?.name ?? duel.division_key,
       duel.division_key,
-      user.id,
-      DUEL_QUESTION_COUNT
+      user.id
     );
-
-    if ("error" in gen && gen.error) {
-      return { success: false, error: gen.message };
-    }
-
-    const questions = (gen as { questions: SkillDuelQuestion[] }).questions;
 
     const { data: updated, error: upErr } = await admin
       .from("skill_duels")
@@ -593,25 +609,11 @@ export async function createAiDuelFromQueue(
 
     await admin.from("duel_queue").delete().eq("user_id", user.id);
 
-    const gen = await generateDuelQuestions(
+    const questions = await resolveDuelQuestionPack(
       div.name ?? div.key,
       div.key,
-      user.id,
-      DUEL_QUESTION_COUNT
+      user.id
     );
-
-    if ("error" in gen && gen.error) {
-      await admin.from("duel_queue").upsert(
-        {
-          user_id: user.id,
-          division_key: div.key,
-        },
-        { onConflict: "user_id" }
-      );
-      return { success: false, error: gen.message };
-    }
-
-    const questions = (gen as { questions: SkillDuelQuestion[] }).questions;
     const opponentAnswers = questions.map((q) =>
       Math.floor(Math.random() * Math.max(1, q.choices.length))
     );

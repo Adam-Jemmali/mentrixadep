@@ -323,7 +323,9 @@ export function DuelHub({
     setInstantSparringLoading(true);
     try {
       const ok = await attemptResolveQueuedMatch();
-      if (!ok) {
+      if (ok) {
+        setQueueError(null);
+      } else {
         setQueueError((prev) =>
           prev ??
           "Could not start Mentrixa Quest. Wait a moment and tap again, or cancel search and press Start Duel."
