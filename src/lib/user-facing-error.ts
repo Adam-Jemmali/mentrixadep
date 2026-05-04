@@ -48,7 +48,7 @@ export function toUserFacingAiError(input: unknown): string {
           : "";
 
   const normalized = message.toLowerCase();
-  if (!normalized) return "Quest is temporarily unavailable. Please try again soon.";
+  if (!normalized) return "AI temporarily unavailable, try again soon.";
   if (normalized.includes("rate limit") || normalized.includes("too many requests")) {
     return "Too many requests right now. Please wait a moment and try again.";
   }
@@ -56,7 +56,7 @@ export function toUserFacingAiError(input: unknown): string {
     return "This took too long to process. Please try again.";
   }
   if (normalized.includes("temporarily unavailable") || normalized.includes("service unavailable")) {
-    return "Quest is temporarily unavailable. Please try again soon.";
+    return "AI temporarily unavailable, try again soon.";
   }
   if (normalized.includes("parse") || normalized.includes("invalid json")) {
     return "The response could not be processed. Please retry.";

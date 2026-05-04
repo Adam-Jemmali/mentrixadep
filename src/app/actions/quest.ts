@@ -50,6 +50,79 @@ export interface SubmitQuestError {
   message: string;
 }
 
+const QUEST_AI_UNAVAILABLE_MESSAGE = "AI temporarily unavailable, try again soon.";
+
+function normalizeQuestSolverErrorMessage(input: unknown): string {
+  const raw =
+    typeof input === "string"
+      ? input
+      : input instanceof Error
+        ? input.message
+        : input && typeof input === "object" && "message" in input
+          ? String((input as { message: unknown }).message ?? "")
+          : "";
+  const msg = raw.trim();
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes("temporarily unavailable") ||
+    lower.includes("service unavailable") ||
+    lower.includes("quest is temporarily unavailable")
+  ) {
+    return QUEST_AI_UNAVAILABLE_MESSAGE;
+  }
+  return msg || "Something went wrong.";
+}
+
+function isAiUnavailableMessage(input: unknown): boolean {
+  const msg =
+    typeof input === "string"
+      ? input
+      : input instanceof Error
+        ? input.message
+        : input && typeof input === "object" && "message" in input
+          ? String((input as { message: unknown }).message ?? "")
+          : "";
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("temporarily unavailable") ||
+    lower.includes("service unavailable") ||
+    lower.includes("quest is temporarily unavailable")
+  );
+}
+
+function buildQuestFallbackResponse(
+  prompt: string,
+  goal: QuestGoal,
+  mode: QuestMode
+): QuestExplanationResponse {
+  const trimmed = prompt.trim();
+  const compactPrompt = trimmed.length > 240 ? `${trimmed.slice(0, 240)}...` : trimmed;
+  const goalLabel =
+    goal === "exam" ? "exam prep" : goal === "interview" ? "interview prep" : "assignment help";
+
+  const hints = [
+    `Start by restating the problem in your own words and list all given facts from: ${compactPrompt}`,
+    "Identify what the final target is (value, explanation, algorithm, or proof step) before calculating anything.",
+    "Break the task into 2-4 smaller checkpoints and solve each checkpoint in order.",
+    "Validate units/definitions and test edge cases to confirm your final result is logically consistent.",
+  ];
+
+  const reasoning =
+    `Fallback guidance (${goalLabel}): ` +
+    "The AI generator is temporarily busy, so this response uses a reliable structured method. " +
+    "First isolate known information, then map it to the governing concept or formula, then execute step-by-step, and finally verify with a quick sanity check.";
+
+  const finalAnswer =
+    "Structured fallback answer: define knowns, apply the core rule, compute or justify each step, and verify against constraints. " +
+    "If you share the exact intermediate step where you are stuck, Quest can continue from that point immediately.";
+
+  return {
+    hints,
+    reasoning: mode === "exam" ? "" : reasoning,
+    finalAnswer,
+  };
+}
+
 // ============================================================
 // DIVISION HELPERS
 // ============================================================
@@ -97,16 +170,22 @@ export async function submitQuest(
   try {
     const validated = submitQuestSchema.parse({ prompt, goal, mode });
     const user = await requireRole(["student", "admin"]);
-    const result = await generateExplanation(
+    const generated = await generateExplanation(
       { prompt: validated.prompt, goal: validated.goal, mode: validated.mode },
       user.id
     );
 
-    if ("error" in result && result.error) {
-      return { error: true, message: result.message };
+    let result: QuestExplanationResponse;
+    if ("error" in generated && generated.error) {
+      if (!isAiUnavailableMessage(generated.message)) {
+        return { error: true, message: normalizeQuestSolverErrorMessage(generated.message) };
+      }
+      result = buildQuestFallbackResponse(validated.prompt, validated.goal, validated.mode);
+    } else {
+      result = generated as QuestExplanationResponse;
     }
 
-    const { hints, reasoning, finalAnswer } = result as QuestExplanationResponse;
+    const { hints, reasoning, finalAnswer } = result;
 
     if (!hints.length) {
       return {
@@ -169,7 +248,7 @@ export async function submitQuest(
     if (err && typeof err === "object" && "digest" in err) throw err;
     return {
       error: true,
-      message: err instanceof Error ? err.message : "Something went wrong.",
+      message: normalizeQuestSolverErrorMessage(err),
     };
   }
 }
