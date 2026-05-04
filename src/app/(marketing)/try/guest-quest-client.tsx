@@ -428,9 +428,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
           {/* Question card */}
           <TiltCard tiltLimit={2} className="rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)] p-6 sm:p-8 block">
             <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                Topic · {subjectName}
-              </span>
+             
             </div>
 
             {q.promptImageUrl ? (
@@ -650,7 +648,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                       }`}
                     >
                       <p className={`font-semibold mb-1 ${wasCorrect ? "text-blue-900" : "text-slate-900"}`}>
-                        {wasCorrect ? "✓ Crushed it!" : "→ Close — read the breakdown"}
+                        {wasCorrect ? "✓ Crushed it!" : " Close..read the breakdown"}
                       </p>
                       <p className={`text-sm ${wasCorrect ? "text-blue-800" : "text-slate-800"}`}>{q.explanation}</p>
                       {isShort && q.referenceAnswer ? (

@@ -135,6 +135,81 @@ export async function approveRegistrationRequest(requestId: string) {
     void sendWaitlistDecisionEmail(request.email, request.role, "approved");
 
     revalidatePath("/admin");
+    revalidatePath("/admin/registrations");
+    return { success: true };
+  } catch (error) {
+    throw new Error(sanitizeError(error));
+  }
+}
+
+/** Lift a rejected waitlist row back to approved so the email can sign up / use the waitlist like after a normal approval (works even if the auth account was removed on rejection). */
+export async function reinstateRejectedRegistrationRequest(requestId: string) {
+  try {
+    const user = await requireRole("admin");
+    const adminClient = createAdminClient();
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.adminAction,
+      "reinstate rejected registration"
+    );
+
+    const validRequestId = validateUUID(requestId);
+
+    const { data: request, error: requestError } = await adminClient
+      .from("registration_requests")
+      .select("*")
+      .eq("id", validRequestId)
+      .single();
+
+    if (requestError || !request) {
+      throw new Error("Registration request not found");
+    }
+
+    if (request.status !== "rejected") {
+      throw new Error("Only rejected registrations can be reinstated");
+    }
+
+    const authUser = await findAuthUserByEmail(request.email);
+
+    if (authUser) {
+      const { error: updateError } = await adminClient
+        .from("users")
+        .update({
+          role: request.role,
+          approved: true,
+          status: "approved",
+        })
+        .eq("id", authUser.id);
+
+      if (updateError) {
+        throw new Error(`Failed to update user: ${updateError.message}`);
+      }
+    }
+
+    const requestPatch: Record<string, unknown> = {
+      status: "approved",
+      updated_at: new Date().toISOString(),
+    };
+    if (authUser) {
+      requestPatch.account_linked_at = new Date().toISOString();
+    } else {
+      requestPatch.account_linked_at = null;
+    }
+
+    const { error: requestUpdateError } = await adminClient
+      .from("registration_requests")
+      .update(requestPatch)
+      .eq("id", validRequestId);
+
+    if (requestUpdateError) {
+      throw new Error(`Failed to update request status: ${sanitizeError(requestUpdateError)}`);
+    }
+
+    void sendWaitlistDecisionEmail(request.email, request.role, "approved");
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/registrations");
     return { success: true };
   } catch (error) {
     throw new Error(sanitizeError(error));
@@ -199,6 +274,7 @@ export async function rejectRegistrationRequest(requestId: string) {
     }
 
     revalidatePath("/admin");
+    revalidatePath("/admin/registrations");
     return { success: true };
   } catch (error) {
     throw new Error(sanitizeError(error));

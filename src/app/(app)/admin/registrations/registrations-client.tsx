@@ -11,11 +11,13 @@ import {
 import {
   approveRegistrationRequest,
   rejectRegistrationRequest,
+  reinstateRejectedRegistrationRequest,
   toggleAutoApproveRegistrations,
   approveAllPendingRegistrations,
 } from "@/app/actions/admin";
 import type { RegistrationRequest } from "@/lib/database.types";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 interface Props {
   requests: RegistrationRequest[];
@@ -60,6 +62,8 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
     all: requests.length,
   }), [requests]);
 
+  const showActionsColumn = filter !== "approved";
+
   useEffect(() => {
     const rows = document.querySelectorAll(".reg-row");
     if (!rows.length) return;
@@ -99,6 +103,28 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
         router.refresh();
       });
     } catch { setLoadingId(null); }
+  };
+
+  const handleReinstateRejected = async (id: string) => {
+    if (loadingId) return;
+    setLoadingId(id);
+    try {
+      await reinstateRejectedRegistrationRequest(id);
+      const applySuccess = () => {
+        setRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status: "approved" as const } : r)),
+        );
+        setLoadingId(null);
+        router.refresh();
+      };
+      if (filter === "rejected") {
+        collapseRow(id, applySuccess);
+      } else {
+        applySuccess();
+      }
+    } catch {
+      setLoadingId(null);
+    }
   };
 
   const handleToggleAutoApprove = async () => {
@@ -222,7 +248,7 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
                 <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Role</th>
                 <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Status</th>
                 <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Submitted</th>
-                {filter === "pending" && (
+                {showActionsColumn && (
                   <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Actions</th>
                 )}
               </tr>
@@ -260,9 +286,9 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
                     </div>
                   </td>
                   <td className="py-3 px-4 text-[12px] text-slate-500">{relativeTime(req.created_at)}</td>
-                  {filter === "pending" && (
+                  {showActionsColumn && (
                     <td className="py-3 px-4">
-                      {req.status === "pending" && (
+                      {(filter === "pending" || filter === "all") && req.status === "pending" && (
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleApprove(req.id)}
@@ -281,6 +307,22 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
                             Reject
                           </button>
                         </div>
+                      )}
+                      {(filter === "rejected" || filter === "all") && req.status === "rejected" && (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={false}
+                            disabled={loadingId === req.id}
+                            onCheckedChange={(on) => {
+                              if (on) void handleReinstateRejected(req.id);
+                            }}
+                            aria-label={`Allow waitlist access for ${req.email}`}
+                          />
+                          <span className="text-[11px] text-slate-500 whitespace-nowrap">Approve access</span>
+                        </div>
+                      )}
+                      {filter === "all" && req.status === "approved" && (
+                        <span className="text-[12px] text-slate-300">—</span>
                       )}
                     </td>
                   )}
