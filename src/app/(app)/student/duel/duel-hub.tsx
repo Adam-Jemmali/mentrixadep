@@ -13,7 +13,7 @@ import {
 } from "@/app/actions/duel";
 import { DUEL_AI_QUEUE_WAIT_MS } from "@/lib/duel-constants";
 import { Button } from "@/components/ui/button";
-import { Info, Users } from "lucide-react";
+import { Bot, Info, Users } from "lucide-react";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { getDivisionTheme } from "@/lib/division-ui";
@@ -101,10 +101,15 @@ export function DuelHub({
     Math.ceil(DUEL_AI_QUEUE_WAIT_MS / 1000)
   );
   const [queueLoading, setQueueLoading] = useState(false);
+  const [instantSparringLoading, setInstantSparringLoading] = useState(false);
   const [queueError, setQueueError] = useState<string | null>(null);
   const [matchIntro, setMatchIntro] = useState<MatchIntro | null>(null);
   const [matchPhase, setMatchPhase] = useState<MatchPhase | null>(null);
 
+  const matchIntroRef = useRef<MatchIntro | null>(null);
+  matchIntroRef.current = matchIntro;
+
+  const queueResolveLockRef = useRef(false);
 
   useEffect(() => {
     if (queuePhase !== "waiting") {
@@ -240,6 +245,28 @@ export function DuelHub({
     }
   }, [router, divisions, stopAudio, playMatchFoundStinger]);
 
+  const attemptResolveQueuedMatch = useCallback(async (): Promise<boolean> => {
+    if (!divisionKey || matchIntroRef.current || transitioningRef.current) return false;
+    if (queueResolveLockRef.current) return false;
+    queueResolveLockRef.current = true;
+    try {
+      const p = await pollDuelQueue(divisionKey);
+      if (p?.state === "matched" && p.duelId) {
+        await showMatchIntroAndNavigate(p.duelId);
+        return true;
+      }
+      const r = await createAiDuelFromQueue(divisionKey);
+      if (r.success) {
+        await showMatchIntroAndNavigate(r.duelId);
+        return true;
+      }
+      setQueueError(r.error);
+      return false;
+    } finally {
+      queueResolveLockRef.current = false;
+    }
+  }, [divisionKey, showMatchIntroAndNavigate]);
+
   useEffect(() => {
     if (queuePhase !== "waiting" || !divisionKey || matchIntro) return;
     const tick = async () => {
@@ -261,22 +288,24 @@ export function DuelHub({
     const t = setTimeout(() => {
       void (async () => {
         if (cancelled) return;
-        const p = await pollDuelQueue(divisionKey);
-        if (p?.state === "matched" && p.duelId) {
-          await showMatchIntroAndNavigate(p.duelId);
-          return;
-        }
-        const r = await createAiDuelFromQueue(divisionKey);
-        if (!cancelled && r.success) {
-          await showMatchIntroAndNavigate(r.duelId);
-        }
+        await attemptResolveQueuedMatch();
       })();
     }, DUEL_AI_QUEUE_WAIT_MS);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [queuePhase, divisionKey, matchIntro, showMatchIntroAndNavigate]);
+  }, [queuePhase, divisionKey, matchIntro, attemptResolveQueuedMatch]);
+
+  async function playSparringQuestNow() {
+    setQueueError(null);
+    setInstantSparringLoading(true);
+    try {
+      await attemptResolveQueuedMatch();
+    } finally {
+      setInstantSparringLoading(false);
+    }
+  }
 
   async function findMatch() {
     if (!divisionKey) return;
@@ -330,6 +359,10 @@ export function DuelHub({
   }
 
   if (queuePhase === "waiting" && !matchIntro) {
+    const queueDivisionLabel =
+      divisions.find((d) => d.key === divisionKey)?.name?.replace(/\s+Division$/i, "").trim() ??
+      divisionKey;
+
     return (
       <div className="fixed inset-0 z-[110] overflow-hidden bg-[#09162c]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_42%),radial-gradient(circle_at_50%_15%,rgba(148,163,184,0.08),transparent_28%),linear-gradient(180deg,#0c1a33_0%,#09162c_100%)]" />
@@ -385,6 +418,20 @@ export function DuelHub({
                   {formatCountdown(queueCountdownSec)}
                 </p>
                 <p className="mt-2 text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em]">Live Matchmaking</p>
+                <div className="mt-5 flex w-full flex-col items-center gap-2 px-1">
+                  <Button
+                    type="button"
+                    disabled={queueLoading || instantSparringLoading}
+                    onClick={() => void playSparringQuestNow()}
+                    className="h-10 w-full max-w-[220px] rounded-xl bg-violet-600 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-violet-900/40 hover:bg-violet-500 disabled:opacity-50"
+                  >
+                    <Bot className="mr-2 h-4 w-4 shrink-0" aria-hidden />
+                    {instantSparringLoading ? "Starting…" : "Play Sparring Quest now"}
+                  </Button>
+                  <p className="max-w-[240px] text-center text-[9px] font-medium leading-snug text-slate-500">
+                    Skip the timer — same Sparring Quest bot you get when matchmaking finds no human opponent.
+                  </p>
+                </div>
               </motion.div>
             </div>
 
@@ -426,7 +473,8 @@ export function DuelHub({
           </div>
 
           {/* VS ANIMATION */}
-          <div className="mt-12 flex items-center justify-center">
+          <div className="mt-12 flex flex-col items-center justify-center gap-5">
+            <ArenaQueueMatchHeadline divisionLabel={queueDivisionLabel} />
             <motion.div
               initial={{ opacity: 0, scale: 0, rotate: -180 }}
               animate={{ 
@@ -451,16 +499,12 @@ export function DuelHub({
             </motion.div>
           </div>
 
-          <div className="mt-12 flex flex-col items-center gap-2">
-           
-          </div>
-
-          <div className="mt-10">
+          <div className="mt-8">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              disabled={queueLoading}
+              disabled={queueLoading || instantSparringLoading}
               className="text-indigo-600 hover:text-purple-500 hover:bg-black transition-all"
               onClick={() => void cancelQueue()}
             >
@@ -684,6 +728,52 @@ export function DuelHub({
           );
         })}
       </motion.ul>
+    </div>
+  );
+}
+
+/** Division name + “MATCH” typed out above the VS lockup while queued. */
+function ArenaQueueMatchHeadline({ divisionLabel }: { divisionLabel: string }) {
+  const fullText = useMemo(
+    () => `${divisionLabel.trim()} MATCH`.replace(/\s+/g, " ").toUpperCase(),
+    [divisionLabel]
+  );
+  const [len, setLen] = useState(0);
+
+  useEffect(() => {
+    setLen(0);
+    if (!fullText.length) return;
+
+    let i = 0;
+    const msPerChar = 38;
+    const id = window.setInterval(() => {
+      i += 1;
+      setLen(Math.min(i, fullText.length));
+      if (i >= fullText.length) {
+        window.clearInterval(id);
+      }
+    }, msPerChar);
+
+    return () => window.clearInterval(id);
+  }, [fullText]);
+
+  const visible = fullText.slice(0, len);
+  const typing = len < fullText.length;
+
+  return (
+    <div className="flex flex-col items-center px-4 text-center">
+      <p
+        className="max-w-[min(100%,36rem)] font-mono text-[11px] font-black uppercase tracking-[0.28em] text-white sm:text-[13px] sm:tracking-[0.32em]"
+        aria-label={fullText}
+      >
+        {visible}
+        {typing ? (
+          <span
+            className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[0.15em] bg-white/75 align-middle animate-pulse"
+            aria-hidden
+          />
+        ) : null}
+      </p>
     </div>
   );
 }

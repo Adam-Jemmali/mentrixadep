@@ -1231,7 +1231,7 @@ export async function generateDuelQuestions(
     const safeDivisionName = sanitizeForPrompt(divisionName).slice(0, 80);
     const safeDivisionKey = sanitizeForPrompt(divisionKey).slice(0, 40);
 
-    const systemPrompt = `You write duel questions for tutoring (two humans compete on the same items). Return JSON only:
+    const systemPrompt = `You write duel questions for tutoring (two learners compete on the same items). There are NO embedded images—everything must be readable from plain text. Return JSON only:
 { "questions": [ {
   "type": "mcq" | "tf" | "flashcard",
   "prompt": string,
@@ -1242,12 +1242,22 @@ export async function generateDuelQuestions(
 Types:
 - "mcq": standard multiple choice — exactly 4 distinct choices; correctIndex 0–3.
 - "tf": exactly two choices, which must be the strings "True" and "False" only; correctIndex 0 or 1.
-- "flashcard": prompt is a term or concept; choices are exactly 4 short plausible definitions (one correct); correctIndex 0–3.
+- "flashcard": prompt leads with the scenario line below, then names the term or asks which definition fits; choices are exactly 4 short plausible definitions (one correct); correctIndex 0–3.
 
-Rules:
-- Exactly ${n} questions about ${safeDivisionName} (key: ${safeDivisionKey}) at undergraduate intro level.
-- Include a mix: at least one "tf", at least one "flashcard", rest "mcq" if ${n} >= 3.
-- No trick wording; fair for both participants.
+Challenge level:
+- Target AP / honors / early undergrad rigor for "${safeDivisionName}". Wrong answers must be plausible partial-understanding traps—not jokes or unrelated fillers.
+
+Visual reasoning (required for EVERY question — prompts are text-only so depict figures in words):
+- Each prompt MUST start with exactly one of these openings (pick whichever fits best): "Scenario sketch — " OR "Diagram described — "
+  Then give a vivid 1–3 sentence verbal depiction learners can picture: axes and curve shapes for math/economics; cell/organelle membranes and compartments for biology; apparatus or energy diagrams for physics/chemistry; logic flows or graphs for CS—matched to "${safeDivisionName}" (division key: ${safeDivisionKey}).
+- After the depiction, ask the MCQ, true/false statement to judge, or flashcard term/definition task so the scenario is NECESSARY to answer correctly.
+- Examples of intent (do not copy verbatim): math → piecewise graph landmarks, intercepts, increasing intervals in words; biology → labeled organelles in a cartoon described verbally; economics → supply/demand shifts with axes named and curves qualified.
+
+Formatting:
+- Use Unicode for powers where helpful (x², x³, θ). Do NOT use LaTeX or dollar signs.
+- Exactly ${n} questions total about "${safeDivisionName}".
+- Include a mix: at least one "tf", at least one "flashcard", remainder "mcq" when ${n} >= 3.
+- Fair stems—reward careful reading of the described diagram/scenario.
 - correctIndex is always 0-based index into the choices array for that question.`;
 
     const raw = await generateJson(
@@ -2150,11 +2160,15 @@ export async function generateGuestTryQuestPack(params: {
     const mixedGeneral = isGeneralMixedGuestSubject(subject);
 
     const rigorBlock = `
-Try Quest is an elite 8-round guest gauntlet—it must feel challenging and fair, not a trivia lightning round:
+Try Quest is an elite guest gauntlet—it must feel challenging and fair, not a trivia lightning round:
 - Target difficulty: AP / honors / early undergrad reasoning—students should need ~25–70 seconds of careful thinking per item.
 - Wrong MCQ answers must be LOOK-alikes: tight wording traps, almost-right formulas, correct vocabulary applied to the wrong setting.
 - True/false: craft stems that reward precise logic—test absolute qualifiers (always/never/necessary/sufficient), boundary cases, and subtle reversals.
-- image_mcq prompts must clearly describe which visual to choose (shapes are fixed icons on the client).
+
+VISUAL / DIAGRAM-FIRST STEMS (no real images in JSON—describe figures in words so readers imagine them):
+- Every prompt MUST begin with the discipline prefix required below, immediately followed by either "Scenario sketch — " OR "Diagram described — ", then a 1–3 sentence verbal depiction (graphs with named axes and qualitative curve shapes for math/econ; cell/organelle layouts or pathways for biology; circuits, rays, or reaction profiles for physics/chemistry; structures or traces for CS)—THEN the actual question stem.
+- Apply subject-authentic visuals: math → functions, slopes, areas, sequences plotted in words; biology → cells, membranes, genetics schematics; economics → markets, surpluses, constraint diagrams described verbally.
+- image_mcq: still follow that prefix + sketch opening, then tie which geometric icon matches (the four fixed shape labels) using a non-trivial clue grounded in the scenario—not generic riddles.
 
 Tone: confident and playful difficulty—reward sharp readers; avoid fluff study-skills questions unless the subject truly is study skills.
 `;
@@ -2186,13 +2200,13 @@ ${n > 8 ? `- q8 … q${n - 1}: kind "mcq" — four text options each, correctInd
     const domainBlock = mixedGeneral
       ? `
 MIXED STEM MODE (General / mixed):
-- Rotate disciplines across items: mix biology/chemistry/physics/math/cs reasoning (no repeating the same narrow subtopic twice).
-- Begin each prompt with a plain discipline prefix and an em dash, example: Biology — rest of question text (no square brackets anywhere).
+- Rotate disciplines across items: mix biology/chemistry/physics/math/economics/cs reasoning (no repeating the same narrow subtopic twice).
+- Begin each prompt with a plain discipline prefix and an em dash, immediately followed by Scenario sketch — or Diagram described — , example: Biology — Scenario sketch — …rest of question (no square brackets anywhere).
 `
       : `
 SUBJECT MODE ("${subject}"):
 - Every item tests real ${subject} content at tier "${diff}".
-- Begin each prompt with ${subject.slice(0, 48)} — rest of question text (no square brackets).
+- Begin each prompt with ${subject.slice(0, 48)} — then Scenario sketch — or Diagram described — before the depicted scenario and stem (no square brackets).
 `;
 
     const systemPrompt = `You write short assessment items for a marketing demo. Return ONLY valid JSON:
