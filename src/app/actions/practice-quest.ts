@@ -30,6 +30,212 @@ import type {
 const PRACTICE_PACKS_DAILY = 10;
 const DEFAULT_TIME_SEC = 15 * 60;
 
+function isPracticeHardLimitMessage(input: unknown): boolean {
+  const msg =
+    typeof input === "string"
+      ? input
+      : input instanceof Error
+        ? input.message
+        : input && typeof input === "object" && "message" in input
+          ? String((input as { message: unknown }).message ?? "")
+          : "";
+  const lower = msg.toLowerCase();
+  return lower.includes("daily limit reached") || lower.includes("too many requests");
+}
+
+function normalizeFallbackAnswer(s: string): string {
+  return s
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:()[\]{}]/g, "")
+    .replace(/\s*=\s*/g, "=")
+    .trim();
+}
+
+function fallbackGradeWritten(
+  userAnswer: string,
+  referenceAnswer: string,
+): { pass: boolean; feedback: string } {
+  const u = normalizeFallbackAnswer(userAnswer);
+  const r = normalizeFallbackAnswer(referenceAnswer);
+  if (!u || !r) {
+    return {
+      pass: false,
+      feedback: "Please provide a clearer final answer so it can be graded.",
+    };
+  }
+  if (u === r || r.includes(u) || u.includes(r)) {
+    return {
+      pass: true,
+      feedback: "Looks correct. Your final answer matches the expected result.",
+    };
+  }
+  const eqIdx = u.lastIndexOf("=");
+  if (eqIdx >= 0) {
+    const right = u.slice(eqIdx + 1).trim();
+    if (right && (right === r || r.includes(right) || right.includes(r))) {
+      return {
+        pass: true,
+        feedback: "Looks correct. Your final simplified value matches.",
+      };
+    }
+  }
+  return {
+    pass: false,
+    feedback: "Not quite yet. Re-check your final simplified answer and submit again.",
+  };
+}
+
+function buildPracticeFallbackQuestions(
+  subject: string,
+  packType: PracticePackType,
+  count: number,
+): PracticeQuestion[] {
+  const n = Math.min(10, Math.max(5, Math.floor(count)));
+  const s = subject.trim() || "General";
+  if (packType === "mcq") {
+    const bank: PracticeQuestion[] = [
+      {
+        id: "q0",
+        kind: "mcq",
+        prompt: `${s} — Scenario sketch: a graph rises steadily, then flattens. Which statement is most consistent with this trend?`,
+        options: ["Rate is positive but slowing", "Rate is negative and accelerating", "Value is constant throughout", "Trend is purely random"],
+        correctIndex: 0,
+        explanation: "A rising curve that flattens indicates continued growth with a smaller slope.",
+      },
+      {
+        id: "q1",
+        kind: "mcq",
+        prompt: `${s} — Which step is best before applying a formula to a new problem?`,
+        options: ["Define knowns and target unknown", "Skip straight to substitution", "Memorize one example only", "Ignore units"],
+        correctIndex: 0,
+        explanation: "Setting knowns/unknowns first avoids formula misuse and sign mistakes.",
+      },
+      {
+        id: "q2",
+        kind: "mcq",
+        prompt: `${s} — If two choices look similar, what is the strongest discriminator?`,
+        options: ["Check boundary conditions", "Pick the longest option", "Pick the first option", "Choose by wording style"],
+        correctIndex: 0,
+        explanation: "Boundary checks often expose almost-correct distractors.",
+      },
+      {
+        id: "q3",
+        kind: "mcq",
+        prompt: `${s} — A quantity doubles each step. After three steps, the multiplier is:`,
+        options: ["8", "6", "3", "9"],
+        correctIndex: 0,
+        explanation: "Doubling three times is 2 × 2 × 2 = 8.",
+      },
+      {
+        id: "q4",
+        kind: "mcq",
+        prompt: `${s} — Best quick validation after solving:`,
+        options: ["Plug result back into constraints", "Delete intermediate work", "Round everything to zero", "Assume first attempt is right"],
+        correctIndex: 0,
+        explanation: "Constraint checks catch arithmetic and logic slips quickly.",
+      },
+    ];
+    const out: PracticeQuestion[] = [];
+    for (let i = 0; i < n; i++) {
+      const base = bank[i % bank.length] as PracticeQuestion;
+      out.push({ ...base, id: `q${i}` });
+    }
+    return out;
+  }
+
+  if (packType === "short_answer") {
+    const bank: PracticeQuestion[] = [
+      {
+        id: "q0",
+        kind: "short_answer",
+        prompt: `${s} — In one sentence, state the first step before solving a multi-step problem.`,
+        referenceAnswer: "Identify known values and the target unknown",
+        explanation: "Good solutions start by organizing givens and target.",
+      },
+      {
+        id: "q1",
+        kind: "short_answer",
+        prompt: `${s} — What should you do after obtaining a final result to verify it?`,
+        referenceAnswer: "Check the answer against constraints",
+        explanation: "Verification prevents hidden sign/unit mistakes.",
+      },
+      {
+        id: "q2",
+        kind: "short_answer",
+        prompt: `${s} — Name one reason distractor choices can look correct.`,
+        referenceAnswer: "They encode common misconceptions",
+        explanation: "Strong distractors mirror partial understanding.",
+      },
+      {
+        id: "q3",
+        kind: "short_answer",
+        prompt: `${s} — If your result conflicts with given conditions, what should you do next?`,
+        referenceAnswer: "Re-check assumptions and recompute key steps",
+        explanation: "Conflicts indicate a step or assumption needs revision.",
+      },
+      {
+        id: "q4",
+        kind: "short_answer",
+        prompt: `${s} — What does a clear final-answer line usually include?`,
+        referenceAnswer: "The final value with correct units/context",
+        explanation: "A complete final line improves correctness and grading clarity.",
+      },
+    ];
+    const out: PracticeQuestion[] = [];
+    for (let i = 0; i < n; i++) {
+      const base = bank[i % bank.length] as PracticeQuestion;
+      out.push({ ...base, id: `q${i}` });
+    }
+    return out;
+  }
+
+  const bank: PracticeQuestion[] = [
+    {
+      id: "q0",
+      kind: "problem_solving",
+      prompt: `${s} — Solve: simplify 3x + 2x and state the final expression.`,
+      referenceAnswer: "5x",
+      explanation: "Like terms add by coefficients.",
+    },
+    {
+      id: "q1",
+      kind: "problem_solving",
+      prompt: `${s} — Solve for y: y + 7 = 15.`,
+      referenceAnswer: "8",
+      explanation: "Subtract 7 from both sides.",
+    },
+    {
+      id: "q2",
+      kind: "problem_solving",
+      prompt: `${s} — Compute: 4^2 - 3.`,
+      referenceAnswer: "13",
+      explanation: "4 squared is 16, then subtract 3.",
+    },
+    {
+      id: "q3",
+      kind: "problem_solving",
+      prompt: `${s} — Differentiate with respect to z: z^2.`,
+      referenceAnswer: "2z",
+      explanation: "Power rule: d/dz(z^n)=n z^(n-1).",
+    },
+    {
+      id: "q4",
+      kind: "problem_solving",
+      prompt: `${s} — Evaluate: (6 + 2) / 4.`,
+      referenceAnswer: "2",
+      explanation: "Add first, then divide.",
+    },
+  ];
+  const out: PracticeQuestion[] = [];
+  for (let i = 0; i < n; i++) {
+    const base = bank[i % bank.length] as PracticeQuestion;
+    out.push({ ...base, id: `q${i}` });
+  }
+  return out;
+}
+
 function utcDayStartIso(): string {
   const d = new Date();
   d.setUTCHours(0, 0, 0, 0);
@@ -103,11 +309,20 @@ export async function createPracticeQuest(
       user.id,
     );
 
-    if ("error" in gen && gen.error) {
-      return { success: false, error: gen.message };
-    }
+    const questions =
+      "error" in gen && gen.error
+        ? isPracticeHardLimitMessage(gen.message)
+          ? null
+          : buildPracticeFallbackQuestions(subject, input.packType, qc)
+        : (gen as { questions: PracticeQuestion[] }).questions;
 
-    const questions = (gen as { questions: PracticeQuestion[] }).questions;
+    if (!questions || !questions.length) {
+      return {
+        success: false,
+        error:
+          "error" in gen && gen.error ? gen.message : "Could not generate practice pack.",
+      };
+    }
     const meta: PracticePackMetadata = {
       questKind: "practice_pack",
       subject,
@@ -343,8 +558,13 @@ export async function submitPracticeWritten(
     },
     user.id,
   );
-  if ("error" in g && g.error) return { error: g.message };
-  const graded = g as { pass: boolean; feedback: string };
+  const graded =
+    "error" in g && g.error
+      ? isPracticeHardLimitMessage(g.message)
+        ? null
+        : fallbackGradeWritten(userAnswer, q.referenceAnswer)
+      : (g as { pass: boolean; feedback: string });
+  if (!graded) return { error: "error" in g && g.error ? g.message : "Could not grade answer." };
   const correct = graded.pass;
   const ans: PracticeSessionAnswer = {
     questionId: q.id,

@@ -73,7 +73,7 @@ function normalizeQuestSolverErrorMessage(input: unknown): string {
   return msg || "Something went wrong.";
 }
 
-function isAiUnavailableMessage(input: unknown): boolean {
+function isQuestHardLimitMessage(input: unknown): boolean {
   const msg =
     typeof input === "string"
       ? input
@@ -83,11 +83,7 @@ function isAiUnavailableMessage(input: unknown): boolean {
           ? String((input as { message: unknown }).message ?? "")
           : "";
   const lower = msg.toLowerCase();
-  return (
-    lower.includes("temporarily unavailable") ||
-    lower.includes("service unavailable") ||
-    lower.includes("quest is temporarily unavailable")
-  );
+  return lower.includes("daily quest limit reached") || lower.includes("too many requests");
 }
 
 function buildQuestFallbackResponse(
@@ -133,21 +129,49 @@ function normalizeAnswerForFallback(s: string): string {
     .trim();
 }
 
+function extractFallbackAnswerCandidates(input: string): string[] {
+  const base = normalizeAnswerForFallback(input);
+  if (!base) return [];
+
+  const candidates = new Set<string>([base]);
+
+  const eqIdx = base.lastIndexOf("=");
+  if (eqIdx >= 0 && eqIdx < base.length - 1) {
+    candidates.add(base.slice(eqIdx + 1).trim());
+  }
+
+  const isSplit = base.split(/\bis\b/).map((p) => p.trim()).filter(Boolean);
+  if (isSplit.length >= 2) {
+    candidates.add(isSplit[isSplit.length - 1]);
+  }
+
+  const tailMath = base.match(/([a-z0-9+\-*/^=θπ∞%]+(?:\s*[a-z0-9+\-*/^=θπ∞%]+)*)$/i);
+  if (tailMath?.[1]) {
+    candidates.add(tailMath[1].trim());
+  }
+
+  return Array.from(candidates).filter((c) => c.length > 0);
+}
+
 /** Non-AI backup grading when evaluator is temporarily unavailable. */
 function fallbackEvaluateQuestAnswer(
   userAnswer: string,
   correctAnswer: string,
 ): { correct: boolean; feedback: string } {
-  const u = normalizeAnswerForFallback(userAnswer);
-  const c = normalizeAnswerForFallback(correctAnswer);
-  if (!u || !c) {
+  const userCandidates = extractFallbackAnswerCandidates(userAnswer);
+  const correctCandidates = extractFallbackAnswerCandidates(correctAnswer);
+  if (!userCandidates.length || !correctCandidates.length) {
     return {
       correct: false,
       feedback: "Could not grade right now. Please try again with a clearer final answer line.",
     };
   }
 
-  if (u === c || c.includes(u) || u.includes(c)) {
+  const matched = userCandidates.some((u) =>
+    correctCandidates.some((c) => u === c || c.includes(u) || u.includes(c))
+  );
+
+  if (matched) {
     return {
       correct: true,
       feedback: "Looks correct. Great work — your final result matches the expected answer.",
@@ -159,6 +183,25 @@ function fallbackEvaluateQuestAnswer(
     feedback:
       "Your answer does not match the expected result yet. Check the final simplified result and submit again.",
   };
+}
+
+function buildQuestFallbackVariants(basePrompt: string): QuestVariant[] {
+  const p = basePrompt.trim();
+  const short = p.length > 220 ? `${p.slice(0, 220)}...` : p;
+  return [
+    {
+      prompt: `${short}\n\nVariant A: keep the same concept but change one numeric value and solve again.`,
+      metadata: { source: "fallback", kind: "nearby" },
+    },
+    {
+      prompt: `${short}\n\nVariant B: solve the same concept under a boundary/edge-case assumption.`,
+      metadata: { source: "fallback", kind: "edge_case" },
+    },
+    {
+      prompt: `${short}\n\nVariant C: reframe the problem to solve for a different unknown.`,
+      metadata: { source: "fallback", kind: "reframed" },
+    },
+  ];
 }
 
 // ============================================================
@@ -215,7 +258,7 @@ export async function submitQuest(
 
     let result: QuestExplanationResponse;
     if ("error" in generated && generated.error) {
-      if (!isAiUnavailableMessage(generated.message)) {
+      if (isQuestHardLimitMessage(generated.message)) {
         return { error: true, message: normalizeQuestSolverErrorMessage(generated.message) };
       }
       result = buildQuestFallbackResponse(validated.prompt, validated.goal, validated.mode);
@@ -299,16 +342,22 @@ export async function generateQuestVariants(
     const user = await requireRole(["student", "admin"]);
     const result = await generateVariants(prompt.trim(), user.id);
     if ("error" in result && result.error) {
-      return { error: true, message: result.message };
+      if (isQuestHardLimitMessage(result.message)) {
+        return { error: true, message: result.message };
+      }
+      return buildQuestFallbackVariants(prompt.trim()).map((v) => ({
+        prompt: v.prompt,
+        metadata: v.metadata ?? {},
+      }));
     }
     const variants = result as QuestVariant[];
     return variants.map((v) => ({ prompt: v.prompt, metadata: v.metadata }));
   } catch (err) {
     if (err && typeof err === "object" && "digest" in err) throw err;
-    return {
-      error: true,
-      message: err instanceof Error ? err.message : "Something went wrong.",
-    };
+    return buildQuestFallbackVariants(prompt.trim()).map((v) => ({
+      prompt: v.prompt,
+      metadata: v.metadata ?? {},
+    }));
   }
 }
 
@@ -371,7 +420,7 @@ export async function submitQuestAnswer(
 
     let graded: EvaluateAnswerResponse;
     if ("error" in evalResult && evalResult.error) {
-      if (!isAiUnavailableMessage(evalResult.message)) {
+      if (isQuestHardLimitMessage(evalResult.message)) {
         return { error: true, message: evalResult.message };
       }
       const fallback = fallbackEvaluateQuestAnswer(validated.userAnswer, quest.solution);
