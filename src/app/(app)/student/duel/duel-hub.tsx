@@ -13,7 +13,7 @@ import {
 } from "@/app/actions/duel";
 import { DUEL_AI_QUEUE_WAIT_MS } from "@/lib/duel-constants";
 import { Button } from "@/components/ui/button";
-import { Bot, Info, Users } from "lucide-react";
+import {  Info, Users } from "lucide-react";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { getDivisionTheme } from "@/lib/division-ui";
@@ -425,12 +425,10 @@ export function DuelHub({
                     onClick={() => void playSparringQuestNow()}
                     className="h-10 w-full max-w-[220px] rounded-xl bg-violet-600 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-violet-900/40 hover:bg-violet-500 disabled:opacity-50"
                   >
-                    <Bot className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-                    {instantSparringLoading ? "Starting…" : "Play Sparring Quest now"}
+                    <Image src="/mentrixalogo/logo.png" alt="Bot" width={16} height={16} />
+                    {instantSparringLoading ? "Starting…" : "Play against Mentrixa Quest "}
                   </Button>
-                  <p className="max-w-[240px] text-center text-[9px] font-medium leading-snug text-slate-500">
-                    Skip the timer — same Sparring Quest bot you get when matchmaking finds no human opponent.
-                  </p>
+              
                 </div>
               </motion.div>
             </div>
