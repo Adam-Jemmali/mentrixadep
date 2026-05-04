@@ -163,39 +163,43 @@ function TutorProfileFormSection({
   const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
   const BUFFER_OPTIONS = [0, 5, 10, 15, 30, 60] as const;
 
+  const inputClasses = "mt-1.5 border-indigo-100 bg-slate-50/50 text-indigo-900 placeholder:text-slate-400 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl";
+
   return (
-    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 mb-1">Edit Profile & Settings</h2>
-      <p className="text-sm text-slate-500 mb-6">Update your identity and teaching preferences.</p>
+    <section className="mt-8 overflow-hidden rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-[0_20px_50px_-12px_rgba(79,70,229,0.08)]">
+      <div className="mb-8 flex items-center gap-3">
+        <h2 className="text-xs font-black uppercase tracking-[0.25em] text-indigo-950">Guide Control Center</h2>
+      </div>
+      <p className="mb-6 text-sm text-slate-500">Update your public guide identity and teaching defaults.</p>
 
       <div className="space-y-6">
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Display name</Label>
+          <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Display Name</Label>
           <Input 
             value={form.display_name ?? ""} 
             onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
-            className="mt-1.5"
+            className={inputClasses}
             placeholder="Your name for learners"
           />
         </div>
 
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Bio</Label>
+          <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Guide Bio</Label>
           <Textarea 
             value={form.bio ?? ""} 
             onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-            className="mt-1.5 resize-none"
+            className={cn(inputClasses, "resize-none")}
             rows={4}
             placeholder="Tell learners about your style and expertise..."
           />
         </div>
 
         <div>
-          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Timezone</Label>
+          <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Timezone</Label>
           <select
             value={form.timezone}
             onChange={e => setForm(f => ({ ...f, timezone: e.target.value }))}
-            className="mt-1.5 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className={cn(inputClasses, "flex h-11 w-full rounded-xl border px-4 text-sm focus-visible:outline-none focus-visible:ring-2")}
           >
             {APP_TIMEZONES.map(tz => (
               <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
@@ -203,15 +207,15 @@ function TutorProfileFormSection({
           </select>
         </div>
 
-        <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-bold text-slate-900 mb-3">Teaching Defaults</h3>
+        <div className="border-t border-indigo-50 pt-8">
+          <h3 className="mb-6 text-[10px] font-black uppercase tracking-widest text-indigo-400">Teaching Defaults</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs text-slate-500">Default duration</Label>
               <select
                 value={form.session_default_duration}
                 onChange={e => setForm(f => ({ ...f, session_default_duration: Number(e.target.value) }))}
-                className="mt-1.5 flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900"
+                className="mt-1.5 flex h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-xs text-indigo-900"
               >
                 {DURATION_OPTIONS.map(d => (
                   <option key={d} value={d}>{d} minutes</option>
@@ -223,7 +227,7 @@ function TutorProfileFormSection({
               <select
                 value={form.session_buffer_minutes}
                 onChange={e => setForm(f => ({ ...f, session_buffer_minutes: Number(e.target.value) }))}
-                className="mt-1.5 flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900"
+                className="mt-1.5 flex h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-xs text-indigo-900"
               >
                 {BUFFER_OPTIONS.map(b => (
                   <option key={b} value={b}>{b === 0 ? "No buffer" : `${b} minutes`}</option>
@@ -233,8 +237,8 @@ function TutorProfileFormSection({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-bold text-slate-900 mb-2">Notifications</h3>
+        <div className="border-t border-indigo-50 pt-8">
+          <h3 className="mb-2 text-[10px] font-black uppercase tracking-widest text-indigo-400">Notifications</h3>
           <ProfileToggle 
             label="Session reminders" 
             description="1 hour before a session starts." 
@@ -255,15 +259,15 @@ function TutorProfileFormSection({
           />
         </div>
 
-        {error && <p className="text-sm font-medium text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
+        {error && <p className="rounded-xl border border-red-100 bg-red-50 px-5 py-4 text-xs font-bold uppercase italic tracking-widest text-red-600">{error}</p>}
 
         <Button 
           type="button" 
           onClick={handleSave} 
           disabled={saving}
-          className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white"
+          className="h-14 min-w-[200px] rounded-2xl bg-indigo-600 text-sm font-black uppercase italic tracking-[0.2em] text-white shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.02] hover:bg-indigo-500"
         >
-          {saving ? "Saving..." : "Save all changes"}
+          {saving ? "Synchronizing..." : "Update Identity"}
         </Button>
       </div>
     </section>
@@ -437,166 +441,253 @@ export function TutorProfileClient({
         : "$26.25";
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="mb-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 -ml-3 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-          asChild
-        >
-          <Link href="/tutor" className="inline-flex items-center gap-1.5">
-            <Image src="/icons/guide.svg" alt="" width={12} height={12} className="opacity-60" />
-            Back to dashboard
-          </Link>
-        </Button>
-      </div>
+    <div className="min-h-screen bg-slate-50 pb-24 text-indigo-950">
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.06),transparent_40%),radial-gradient(circle_at_100%_100%,rgba(59,130,246,0.04),transparent_35%)]" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:120px_120px] bg-repeat opacity-[0.03]" />
 
-      {/* ── PROFILE HEADER ────────────────────────────────────────────────── */}
-      <div className="border-b border-[#E2E8F0] pb-8 mb-8">
-
-        {/* Name — GSAP word clip-reveal */}
-        <h1
-          ref={nameRef}
-          className="font-extrabold text-[#0F172A] tracking-[-0.04em] leading-none"
-          style={{ fontSize: "clamp(36px,5vw,72px)" }}
-        >
-          {profile.name.split(" ").map((word, i) => (
-            <span key={i} className="inline-block overflow-hidden mr-[0.25em] align-bottom">
-              <span className="word-inner inline-block">{word}</span>
-            </span>
-          ))}
-        </h1>
-
-        {/* Course tags */}
-        {profile.courses.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {profile.courses.map((c) => (
-              <span
-                key={c}
-                className="border border-[#E2E8F0] px-2.5 py-1 rounded text-xs font-mono text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 transition-colors duration-150 cursor-default"
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Bio placeholder */}
-        <p className="text-slate-500 text-sm leading-relaxed mt-4 max-w-lg">
-          {profile.email} · Mentrixa verified guide
-        </p>
-
-        {isOwnProfile && (
-          <div className="mt-3">
-            <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700 border border-blue-100">
-              Your public profile
-            </span>
-          </div>
-        )}
-
-        {/* Stat bar */}
-        <div className="mentrixa-stat-row mt-6">
-          <div className="mentrixa-stat-cell">
-            <span
-              ref={(el) => { if (el) statRefs.current[0] = el; }}
-              className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]"
-            >
-              {profile.sessionCount}
-            </span>
-            <span className="text-xs text-slate-400 mt-0.5 block">Sessions taught</span>
-          </div>
-          <div className="mentrixa-stat-cell">
-            <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
-              {profile.avgRating !== null ? profile.avgRating.toFixed(1) : "—"}
-            </span>
-            <span className="text-xs text-slate-400 mt-0.5 block">Avg rating / 5</span>
-          </div>
-          <div className="mentrixa-stat-cell">
-            <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">~2h</span>
-            <span className="text-xs text-slate-400 mt-0.5 block">Response time</span>
-          </div>
-          <div className="mentrixa-stat-cell">
-            <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
-              {priceDisplay}
-            </span>
-            <span className="text-xs text-slate-400 mt-0.5 block">Per session (incl. fee)</span>
-          </div>
+      <main className="relative z-10 mx-auto max-w-6xl px-4 pt-10 sm:px-6">
+        <div className="mb-12 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 rounded-2xl border border-indigo-100 bg-white px-5 text-[10px] font-black uppercase tracking-widest text-indigo-400 shadow-sm hover:bg-indigo-50 hover:text-indigo-600"
+            asChild
+          >
+            <Link href="/tutor" className="flex items-center gap-2">
+              <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4 opacity-60" />
+              Guide Dashboard
+            </Link>
+          </Button>
         </div>
 
-      </div>
-
-
-
-      {/* ── REVIEWS ───────────────────────────────────────────────────────── */}
-      <section className="border-t border-[#E2E8F0] pt-8 mt-8">
-        <h2 className="text-[18px] font-semibold text-slate-900 mb-6 h-[28px]">
-          <Typewriter text="Reviews" speed={70} waitTime={8000} />
-        </h2>
-
-        {profile.ratingCount === 0 ? (
-          <p className="text-sm text-slate-400">No reviews yet.</p>
-        ) : (
-          <>
-            {/* Rating summary */}
-            <div className="flex items-end gap-6 mb-8">
-              <span className="text-5xl font-bold text-slate-900 tracking-[-0.04em]">
-                {profile.avgRating?.toFixed(1) ?? "—"}
-              </span>
-              <div className="flex-1">
-                {profile.ratingDistribution.map((dist, i) => (
-                  <div key={dist.star} className="flex items-center gap-3 mb-1">
-                    <span className="text-xs font-mono text-slate-400 w-14 shrink-0">
-                      {dist.star} star
-                    </span>
-                    <div className="progress-track flex-1 h-1 bg-slate-100 rounded overflow-hidden">
-                      <div
-                        ref={(el) => { if (el) ratingBarRefs.current[i] = el; }}
-                        className="h-full bg-[#2563EB] rounded origin-left"
-                        style={{ transform: "scaleX(0)" }}
-                      />
-                    </div>
-                    <span className="text-xs font-mono text-slate-400 w-4 text-right shrink-0">
-                      {dist.count}
-                    </span>
-                  </div>
+        <div className="relative overflow-hidden rounded-[3rem] border border-indigo-100 bg-white p-10 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.1)]">
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex min-w-0 flex-1 flex-col gap-6">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400">
+                Verified Mentrixa Guide
+              </p>
+              <h1
+                ref={nameRef}
+                className="font-extrabold tracking-[-0.04em] leading-none text-indigo-950"
+                style={{ fontSize: "clamp(36px,5vw,72px)" }}
+              >
+                {profile.name.split(" ").map((word, i) => (
+                  <span key={i} className="mr-[0.25em] inline-block overflow-hidden align-bottom">
+                    <span className="word-inner inline-block">{word}</span>
+                  </span>
                 ))}
+              </h1>
+              <p className="max-w-xl text-sm leading-relaxed text-slate-500">
+                {profile.email} · Teaching excellence through live Mentrixa sessions.
+              </p>
+              {isOwnProfile ? (
+                <div>
+                  <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-bold text-indigo-700">
+                    Your public guide profile
+                  </span>
+                </div>
+              ) : null}
+
+              {profile.courses.length > 0 ? (
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {profile.courses.map((c) => (
+                    <span
+                      key={c}
+                      className="cursor-default rounded border border-indigo-100 bg-slate-50/40 px-2.5 py-1 text-xs font-mono text-slate-500 transition-colors duration-150 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="mentrixa-stat-row mt-4">
+                <div className="mentrixa-stat-cell">
+                  <span
+                    ref={(el) => {
+                      if (el) statRefs.current[0] = el;
+                    }}
+                    className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]"
+                  >
+                    {profile.sessionCount}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Sessions taught</span>
+                </div>
+                <div className="mentrixa-stat-cell">
+                  <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
+                    {profile.avgRating !== null ? profile.avgRating.toFixed(1) : "—"}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Avg rating / 5</span>
+                </div>
+                <div className="mentrixa-stat-cell">
+                  <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">~2h</span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Response time</span>
+                </div>
+                <div className="mentrixa-stat-cell">
+                  <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
+                    {priceDisplay}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Per session (incl. fee)</span>
+                </div>
               </div>
             </div>
 
-            {/* Review list */}
-            <div>
-              {profile.reviews.map((review, i) => (
-                <div
-                  key={i}
-                  ref={(el) => { if (el) reviewRefs.current[i] = el; }}
-                  className="border-b border-[#F1F5F9] py-5 last:border-b-0"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm text-slate-400">{review.rating} / 5</span>
-                    <span className="text-xs text-slate-300">{relativeDate(review.created_at)}</span>
-                  </div>
-                  {review.comment && (
-                    <p className="text-slate-600 text-sm leading-relaxed mt-2">{review.comment}</p>
-                  )}
+            <div className="flex w-full flex-col gap-8 lg:w-80 lg:shrink-0">
+              <div className="rounded-[2rem] border border-indigo-50 bg-indigo-50/20 p-6 backdrop-blur-sm">
+                <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-indigo-300">Guide Snapshot</p>
+                <p className="text-sm font-medium italic leading-relaxed text-indigo-800">
+                  &quot;Teaching {profile.courses.length > 0 ? profile.courses.slice(0, 2).join(" • ") : "multi-subject sessions"} with clarity, structure, and momentum.&quot;
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-2xl border border-indigo-50 bg-white p-5 text-center shadow-sm">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Reviews</p>
+                  <p className="mt-1 font-mono text-2xl font-black text-indigo-900">{profile.ratingCount}</p>
                 </div>
-              ))}
+                <div className="rounded-2xl border border-indigo-50 bg-white p-5 text-center shadow-sm">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Courses</p>
+                  <p className="mt-1 font-mono text-2xl font-black text-indigo-900">{profile.courses.length}</p>
+                </div>
+              </div>
             </div>
-          </>
-        )}
-      </section>
+          </div>
+        </div>
 
-      {isOwnProfile && profile.privateSettings && (
-        <TutorProfileFormSection 
-          initial={profile.privateSettings} 
-          onSaved={() => {
-            router.refresh();
-            // Optional: add a global toast here if available
-          }}
-        />
-      )}
+        <div className="mt-12 grid gap-10 lg:grid-cols-3">
+          <div className="space-y-10 lg:col-span-2">
+            <section className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
+              <h2 className="mb-6 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">
+                Availability Grid
+              </h2>
+              {filteredSlots.length === 0 ? (
+                <p className="rounded-2xl border-2 border-dashed border-indigo-50 py-4 text-center text-xs italic text-slate-400">
+                  No open slots in the next 14 days.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {filteredSlots.map((slot) => (
+                    <li
+                      key={slot.id}
+                      className="avail-row flex flex-col gap-3 rounded-2xl border border-indigo-50 bg-slate-50/30 p-4 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-sm font-black italic tracking-tight text-indigo-900">{slot.course}</p>
+                        <p className="text-xs text-slate-500">
+                          {formatSlotRangeInZone(slot.start_time, slot.end_time, profile.tutorTimezone)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-black uppercase tracking-widest text-indigo-500">
+                          {formatPriceFromBaseSessionCents(slot.price_per_session)}
+                        </span>
+                        {(!isOwnProfile && viewerRole !== "tutor") ? (
+                          <Button
+                            type="button"
+                            onClick={() => setDialogSlot(slot)}
+                            className="h-9 rounded-xl bg-indigo-600 px-4 text-[10px] font-black uppercase tracking-wider text-white hover:bg-indigo-500"
+                          >
+                            Book
+                          </Button>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
 
-      {isOwnProfile && <AccountSecurityPanel className="mt-8" />}
+            <section className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
+              <h2 className="mb-6 h-[28px] text-[18px] font-semibold text-slate-900">
+                <Typewriter text="Reviews" speed={70} waitTime={8000} />
+              </h2>
+
+              {profile.ratingCount === 0 ? (
+                <p className="text-sm text-slate-400">No reviews yet.</p>
+              ) : (
+                <>
+                  <div className="mb-8 flex items-end gap-6">
+                    <span className="text-5xl font-bold tracking-[-0.04em] text-slate-900">
+                      {profile.avgRating?.toFixed(1) ?? "—"}
+                    </span>
+                    <div className="flex-1">
+                      {profile.ratingDistribution.map((dist, i) => (
+                        <div key={dist.star} className="mb-1 flex items-center gap-3">
+                          <span className="w-14 shrink-0 text-xs font-mono text-slate-400">
+                            {dist.star} star
+                          </span>
+                          <div className="progress-track h-1 flex-1 overflow-hidden rounded bg-slate-100">
+                            <div
+                              ref={(el) => {
+                                if (el) ratingBarRefs.current[i] = el;
+                              }}
+                              className="h-full origin-left rounded bg-[#2563EB]"
+                              style={{ transform: "scaleX(0)" }}
+                            />
+                          </div>
+                          <span className="w-4 shrink-0 text-right text-xs font-mono text-slate-400">
+                            {dist.count}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    {profile.reviews.map((review, i) => (
+                      <div
+                        key={i}
+                        ref={(el) => {
+                          if (el) reviewRefs.current[i] = el;
+                        }}
+                        className="border-b border-[#F1F5F9] py-5 last:border-b-0"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-mono text-slate-400">{review.rating} / 5</span>
+                          <span className="text-xs text-slate-300">{relativeDate(review.created_at)}</span>
+                        </div>
+                        {review.comment ? (
+                          <p className="mt-2 text-sm leading-relaxed text-slate-600">{review.comment}</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+
+            {isOwnProfile && profile.privateSettings ? (
+              <TutorProfileFormSection
+                initial={profile.privateSettings}
+                onSaved={() => {
+                  router.refresh();
+                }}
+              />
+            ) : null}
+
+            {isOwnProfile ? <AccountSecurityPanel className="mt-8" /> : null}
+          </div>
+
+          <div className="space-y-10">
+            <div className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
+              <h2 className="mb-8 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">Course Arsenal</h2>
+              {profile.courses.length === 0 ? (
+                <p className="rounded-2xl border-2 border-dashed border-indigo-50 py-4 text-center text-xs italic text-slate-400">
+                  No subjects listed yet.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {profile.courses.map((course) => (
+                    <li key={course} className="rounded-2xl border border-indigo-50 bg-slate-50/30 p-4 text-sm font-bold text-indigo-900">
+                      {course}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+
+      </main>
 
       {/* ── BOOKING DIALOG ────────────────────────────────────────────────── */}
       <Dialog open={!!dialogSlot} onOpenChange={(open) => { if (!open) setDialogSlot(null); }}>

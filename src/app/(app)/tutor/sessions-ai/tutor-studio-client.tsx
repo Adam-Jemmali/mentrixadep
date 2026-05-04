@@ -965,8 +965,8 @@ function SessionPackageEditor({
                           <Image src="/icons/guide.svg" alt="" width={12} height={12} className="opacity-40" />
                         </div>
                       </div>
-                      <div className="card-face card-face--back bg-blue-600 rounded-2xl shadow-xl flex items-center justify-center p-4 border-2 border-blue-500">
-                        <p className="text-xs font-medium text-center leading-relaxed text-blue-50">
+                      <div className="card-face card-face--back bg-gradient-to-br from-white to-blue-50/30 border-2 border-blue-100 rounded-2xl shadow-sm flex items-center justify-center p-4">
+                        <p className="text-xs font-bold text-center leading-relaxed text-slate-700">
                           {card.a}
                         </p>
                       </div>
