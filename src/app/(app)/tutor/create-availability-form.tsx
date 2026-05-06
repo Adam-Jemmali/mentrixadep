@@ -62,6 +62,9 @@ export function CreateAvailabilityForm({
   const { viewingAsUserId } = useAdminViewContext();
 
   const times = useMemo(() => timeOptions(), []);
+  const endTimes = useMemo(() => {
+    return times.filter((t) => t > startTime);
+  }, [times, startTime]);
   const triggerClass =
     "mt-1.5 h-9 border-slate-300 bg-white text-slate-950 data-[placeholder]:text-slate-500";
   const contentClass = "z-[120] max-h-56 border-slate-300 bg-white text-slate-950 shadow-xl";
@@ -87,6 +90,11 @@ export function CreateAvailabilityForm({
     }
     if (weekdays.size === 0) {
       setError("Select at least one day");
+      setLoading(false);
+      return;
+    }
+    if (endTime <= startTime) {
+      setError("End time must be after start time on the same day");
       setLoading(false);
       return;
     }
@@ -195,7 +203,16 @@ export function CreateAvailabilityForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-slate-900">Start</Label>
-            <Select value={startTime} onValueChange={setStartTime}>
+            <Select
+              value={startTime}
+              onValueChange={(value) => {
+                setStartTime(value);
+                if (endTime <= value) {
+                  const nextIndex = times.indexOf(value) + 1;
+                  setEndTime(times[nextIndex] ?? value);
+                }
+              }}
+            >
               <SelectTrigger className={triggerClass}>
                 <SelectValue />
               </SelectTrigger>
@@ -215,7 +232,7 @@ export function CreateAvailabilityForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className={contentClass}>
-                {times.map((t) => (
+                {endTimes.map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
                   </SelectItem>

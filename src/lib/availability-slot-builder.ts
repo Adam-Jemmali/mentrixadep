@@ -19,12 +19,9 @@ function timeToMinutes(hhmm: string): number {
 
 function endUtcForYmd(ymd: string, tz: string, startTime: string, endTime: string): Date {
   const startUtc = toDate(`${ymd}T${startTime}:00`, { timeZone: tz });
-  let endUtc = toDate(`${ymd}T${endTime}:00`, { timeZone: tz });
-  if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
-    endUtc = addDays(endUtc, 1);
-  }
-  if (endUtc <= startUtc) {
-    endUtc = addDays(endUtc, 1);
+  const endUtc = toDate(`${ymd}T${endTime}:00`, { timeZone: tz });
+  if (timeToMinutes(endTime) <= timeToMinutes(startTime) || endUtc <= startUtc) {
+    throw new Error("End time must be after start time on the same day");
   }
   return endUtc;
 }

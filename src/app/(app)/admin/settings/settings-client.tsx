@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { updateSystemSetting } from "@/app/actions/admin";
 import type { SystemSettings } from "@/app/actions/admin";
+import { createClient } from "@/lib/supabase/client";
 
 
 
@@ -101,6 +102,123 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
   const [settings, setSettings] = useState(initialSettings);
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const supabase = useMemo(() => createClient(), []);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaMessage, setMfaMessage] = useState<string | null>(null);
+  const [enrolledFactorId, setEnrolledFactorId] = useState<string | null>(null);
+  const [pendingFactorId, setPendingFactorId] = useState<string | null>(null);
+  const [pendingFactorQrSvg, setPendingFactorQrSvg] = useState<string | null>(null);
+  const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(null);
+  const [verifyCode, setVerifyCode] = useState("");
+
+  async function refreshMfaState() {
+    setMfaError(null);
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) {
+      setMfaError(error.message);
+      return;
+    }
+    const verifiedTotp = (data.totp ?? []).find((f) => f.status === "verified");
+    const unverifiedTotp = (data.totp ?? []).find((f) => f.status !== "verified");
+    setEnrolledFactorId(verifiedTotp?.id ?? null);
+    setPendingFactorId(unverifiedTotp?.id ?? null);
+  }
+
+  useEffect(() => {
+    void refreshMfaState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function startMfaSetup() {
+    setMfaLoading(true);
+    setMfaError(null);
+    setMfaMessage(null);
+    setPendingFactorQrSvg(null);
+    setPendingChallengeId(null);
+    try {
+      const list = await supabase.auth.mfa.listFactors();
+      if (list.error) throw list.error;
+      const existingUnverified = (list.data.totp ?? []).find((f) => f.status !== "verified");
+      if (existingUnverified) {
+        await supabase.auth.mfa.unenroll({ factorId: existingUnverified.id });
+      }
+
+      const enrolled = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: "Mentrixa Admin",
+      });
+      if (enrolled.error) throw enrolled.error;
+
+      const factorId = enrolled.data.id;
+      const qrSvg = enrolled.data.totp.qr_code;
+      setPendingFactorId(factorId);
+      setPendingFactorQrSvg(qrSvg ?? null);
+
+      const challenged = await supabase.auth.mfa.challenge({ factorId });
+      if (challenged.error) throw challenged.error;
+      setPendingChallengeId(challenged.data.id);
+      setMfaMessage("Scan the QR code, then enter the 6-digit code to verify.");
+    } catch (error) {
+      setMfaError(error instanceof Error ? error.message : "Failed to start 2FA setup.");
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function verifyMfaSetup() {
+    if (!pendingFactorId || !pendingChallengeId) {
+      setMfaError("Start setup first to generate a verification challenge.");
+      return;
+    }
+    const code = verifyCode.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setMfaError("Enter a valid 6-digit authenticator code.");
+      return;
+    }
+
+    setMfaLoading(true);
+    setMfaError(null);
+    setMfaMessage(null);
+    try {
+      const verified = await supabase.auth.mfa.verify({
+        factorId: pendingFactorId,
+        challengeId: pendingChallengeId,
+        code,
+      });
+      if (verified.error) throw verified.error;
+      setVerifyCode("");
+      setPendingFactorQrSvg(null);
+      setPendingChallengeId(null);
+      setMfaMessage("2FA is enabled for your admin account.");
+      await refreshMfaState();
+    } catch (error) {
+      setMfaError(error instanceof Error ? error.message : "Invalid code. Try again.");
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function disableMfa() {
+    if (!enrolledFactorId) return;
+    setMfaLoading(true);
+    setMfaError(null);
+    setMfaMessage(null);
+    try {
+      const result = await supabase.auth.mfa.unenroll({ factorId: enrolledFactorId });
+      if (result.error) throw result.error;
+      setMfaMessage("2FA disabled for your admin account.");
+      setVerifyCode("");
+      setPendingFactorId(null);
+      setPendingFactorQrSvg(null);
+      setPendingChallengeId(null);
+      await refreshMfaState();
+    } catch (error) {
+      setMfaError(error instanceof Error ? error.message : "Failed to disable 2FA.");
+    } finally {
+      setMfaLoading(false);
+    }
+  }
 
   const save = (key: string, value: Record<string, unknown>) => {
     startTransition(async () => {
@@ -213,6 +331,81 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       </section>
 
       {/* Feature flags section */}
+      <section className="mb-6">
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <Image src="/images/admin.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Admin Security</p>
+        </div>
+        <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
+          <SettingRow
+            label="Admin 2FA (Authenticator app)"
+            description="Protect your admin account with one-time codes from an authenticator app."
+            img="/images/admin.webp"
+          >
+            <div className="flex items-center gap-3">
+              <span className={`text-[11px] font-medium ${enrolledFactorId ? "text-emerald-600" : "text-slate-500"}`}>
+                {enrolledFactorId ? "Enabled" : "Not enabled"}
+              </span>
+            </div>
+          </SettingRow>
+          <div className="px-5 py-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={startMfaSetup}
+                disabled={mfaLoading}
+                className="px-3 py-2 text-[12px] rounded-lg border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {mfaLoading ? "Working..." : enrolledFactorId ? "Reset setup" : "Set up 2FA"}
+              </button>
+              {enrolledFactorId ? (
+                <button
+                  type="button"
+                  onClick={disableMfa}
+                  disabled={mfaLoading}
+                  className="px-3 py-2 text-[12px] rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50"
+                >
+                  Disable 2FA
+                </button>
+              ) : null}
+            </div>
+
+            {pendingFactorQrSvg ? (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[12px] text-slate-700 mb-2">Scan this code in Google Authenticator, 1Password, Authy, or similar:</p>
+                <div
+                  className="inline-block rounded bg-white p-2 border border-slate-200"
+                  dangerouslySetInnerHTML={{ __html: pendingFactorQrSvg }}
+                />
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="w-28 px-3 py-2 text-[12px] rounded-lg border border-slate-300 bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={verifyMfaSetup}
+                    disabled={mfaLoading}
+                    className="px-3 py-2 text-[12px] rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    Verify code
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {mfaError ? <p className="mt-3 text-[12px] text-red-600">{mfaError}</p> : null}
+            {mfaMessage ? <p className="mt-3 text-[12px] text-emerald-600">{mfaMessage}</p> : null}
+          </div>
+        </div>
+      </section>
+
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
           <Image src="/images/sword.webp" alt="" width={14} height={14} className="object-contain opacity-60" />

@@ -41,8 +41,15 @@ export const createAvailabilitySlotsSchema = z
     }
     const startMin = sh * 60 + sm;
     const endMin = eh * 60 + em;
-    // Support overnight slots (e.g. 23:00 -> 00:00) by treating end <= start as next day.
-    const dur = endMin <= startMin ? endMin + 24 * 60 - startMin : endMin - startMin;
+    if (endMin <= startMin) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End time must be after start time on the same day",
+        path: ["endTime"],
+      });
+      return;
+    }
+    const dur = endMin - startMin;
     if (dur < 15 || dur > 480) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

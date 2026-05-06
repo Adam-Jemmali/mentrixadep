@@ -384,13 +384,6 @@ async function runSupabaseAuthGuard(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: maintenanceSetting } = await supabase
-    .from("system_settings")
-    .select("value")
-    .eq("key", "maintenance_mode")
-    .maybeSingle();
-  const maintenanceMode = maintenanceSetting?.value?.enabled === true;
-
   let cachedUserData:
     | { status?: string | null; approved?: boolean | null; role?: string | null; is_blacklisted?: boolean | null }
     | null
@@ -406,6 +399,38 @@ async function runSupabaseAuthGuard(
     cachedUserData = data;
     return data;
   };
+
+  let maintenanceMode = false;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (serviceRoleKey) {
+    try {
+      const maintenanceRes = await fetch(
+        `${supabaseUrl}/rest/v1/system_settings?key=eq.maintenance_mode&select=value&limit=1`,
+        {
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        },
+      );
+      if (maintenanceRes.ok) {
+        const rows: Array<{ value?: { enabled?: boolean } }> = await maintenanceRes.json();
+        maintenanceMode = rows[0]?.value?.enabled === true;
+      }
+    } catch (err) {
+      console.error("[middleware] service-role maintenance fetch failed:", err);
+    }
+  }
+  if (!maintenanceMode) {
+    const { data: maintenanceSetting } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "maintenance_mode")
+      .maybeSingle();
+    maintenanceMode = maintenanceSetting?.value?.enabled === true;
+  }
 
   if (
     maintenanceMode &&
@@ -427,6 +452,21 @@ async function runSupabaseAuthGuard(
       url.search = "";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
+  }
+
+  if (!maintenanceMode && pathname === maintenanceRoute) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      url.search = "";
+      return finalizeResponse(NextResponse.redirect(url), request, null);
+    }
+    const userData = await getUserData();
+    const role = userData?.role;
+    const url = request.nextUrl.clone();
+    url.pathname = role ? getRoleHomePath(role) : "/auth/select-role";
+    url.search = "";
+    return finalizeResponse(NextResponse.redirect(url), request, user.id);
   }
 
   const publicOk = isPublicRoute(pathname) || isPublicPrefixPath(pathname);
