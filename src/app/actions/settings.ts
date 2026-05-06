@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { deleteRegistrationRequestsByIdentityEmail } from "@/lib/delete-registration-requests-by-email";
 import { getSiteUrl } from "@/lib/site";
+import { assertNoBlockedLanguage } from "@/lib/security";
 
 export interface UserSettings {
   display_name: string | null;
@@ -109,6 +110,15 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
     ) {
       throw new Error("Avatar must use the app's profile-pics storage bucket");
     }
+    assertNoBlockedLanguage(u, "avatar");
+  }
+
+  if (typeof validated.data.display_name === "string") {
+    assertNoBlockedLanguage(validated.data.display_name, "display name");
+  }
+
+  if (typeof validated.data.bio === "string") {
+    assertNoBlockedLanguage(validated.data.bio, "bio");
   }
 
   const { error } = await supabase

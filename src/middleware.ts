@@ -45,6 +45,7 @@ const publicRoutes = new Set([
   "/auth/callback",
   /** Server redirect: sync waitlist approval then send users to dashboard (avoids stuck on pending). */
   "/auth/session-sync",
+  "/maintenance",
   "/offline",
   "/sw.js",
   "/manifest.json",
@@ -68,6 +69,7 @@ const authRoutesForRateLimit = ["/auth/signin", "/auth/signup"];
 
 const authRoutes = ["/auth/signin", "/auth/signup"];
 const pendingApprovalRoute = "/pending-approval";
+const maintenanceRoute = "/maintenance";
 
 /** App Router pages do not handle OPTIONS; extensions / probes get 405. Reply 204 early for public auth entry paths. */
 const publicAuthPageOptions204 = new Set([
@@ -382,6 +384,51 @@ async function runSupabaseAuthGuard(
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { data: maintenanceSetting } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "maintenance_mode")
+    .maybeSingle();
+  const maintenanceMode = maintenanceSetting?.value?.enabled === true;
+
+  let cachedUserData:
+    | { status?: string | null; approved?: boolean | null; role?: string | null; is_blacklisted?: boolean | null }
+    | null
+    | undefined;
+  const getUserData = async () => {
+    if (!user) return null;
+    if (cachedUserData !== undefined) return cachedUserData;
+    const { data } = await supabase
+      .from("users")
+      .select("status, approved, role, is_blacklisted")
+      .eq("id", user.id)
+      .maybeSingle();
+    cachedUserData = data;
+    return data;
+  };
+
+  if (
+    maintenanceMode &&
+    !pathname.startsWith("/api/") &&
+    pathname !== maintenanceRoute &&
+    !pathname.startsWith("/admin")
+  ) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = maintenanceRoute;
+      url.search = "";
+      return finalizeResponse(NextResponse.redirect(url), request, null);
+    }
+
+    const userData = await getUserData();
+    if (userData?.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = maintenanceRoute;
+      url.search = "";
+      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    }
+  }
+
   const publicOk = isPublicRoute(pathname) || isPublicPrefixPath(pathname);
 
   if (!user && !publicOk) {
@@ -392,11 +439,7 @@ async function runSupabaseAuthGuard(
 
   if (user && authRoutes.includes(pathname)) {
     // Always prefer DB role/approval over auth metadata to avoid stale redirects.
-    const { data: userData } = await supabase
-      .from("users")
-      .select("status, approved, role, is_blacklisted")
-      .eq("id", user.id)
-      .maybeSingle();
+    const userData = await getUserData();
 
     const role = userData?.role;
     const accessStatus = normalizeAccessStatus(userData);
@@ -424,11 +467,7 @@ async function runSupabaseAuthGuard(
 
   if (user && !publicOk) {
     // Always prefer DB role/approval over auth metadata to avoid stale route guards.
-    const { data: userData } = await supabase
-      .from("users")
-      .select("status, approved, role, is_blacklisted")
-      .eq("id", user.id)
-      .maybeSingle();
+    const userData = await getUserData();
 
     const role = userData?.role;
     const accessStatus = normalizeAccessStatus(userData);

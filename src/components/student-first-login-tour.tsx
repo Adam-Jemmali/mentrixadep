@@ -187,37 +187,37 @@ export function StudentFirstLoginTour({ user }: { user: AuthUser }) {
           <div className="shrink-0 rounded-lg border border-white/10 bg-white/10 p-1.5">
             <Image src={step.icon} alt="" width={22} height={22} className="h-[22px] w-[22px]" />
           </div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/65">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70">
             Step {currentStep + 1}/{steps.length}
           </p>
         </div>
         <button
           type="button"
           onClick={finalizeTour}
-          className="shrink-0 rounded-md px-2 py-0.5 text-[10px] font-medium text-purple-600 hover:bg-white/10 hover:text-purple-600"
+          className="shrink-0 rounded-md px-2 py-0.5 text-[10px] font-medium text-cyan-200 hover:bg-white/12 hover:text-cyan-100"
         >
           Skip
         </button>
       </div>
 
-      <h2 id="student-tour-title" className="text-base font-semibold leading-snug text-blue-900">
+      <h2 id="student-tour-title" className="text-base font-semibold leading-snug text-white">
         {step.title}
       </h2>
-      <p className="mt-1.5 text-[11px] leading-relaxed text-black">{step.description}</p>
+      <p className="mt-1.5 text-[11px] leading-relaxed text-slate-100">{step.description}</p>
 
       {isProfileStep && !isOnStepPage ? (
-        <p className="mt-2 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-[10px] leading-snug text-white/75">
+        <p className="mt-2 rounded-lg border border-white/14 bg-white/[0.06] px-2 py-1.5 text-[10px] leading-snug text-slate-100">
           Taking you to your profile. Complete and confirm your profile below.
         </p>
       ) : null}
 
       {needsProfileCheckbox ? (
-        <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-white/12 bg-white/[0.05] p-2 text-[11px] text-purple-600">
+        <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-white/16 bg-white/[0.08] p-2 text-[11px] text-slate-100">
           <input
             type="checkbox"
             checked={profileConfirmed}
             onChange={(event) => setProfileConfirmed(event.target.checked)}
-            className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-blue-400/30 bg-transparent accent-white"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-white/30 bg-transparent accent-cyan-200"
           />
           <span>I saved my profile. Continue to the next step </span>
         </label>
@@ -228,7 +228,7 @@ export function StudentFirstLoginTour({ user }: { user: AuthUser }) {
           type="button"
           disabled={currentStep === 0}
           onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
-          className="rounded-lg border border-white/18 px-3 py-1.5 text-[11px] font-medium text-slate-900/85 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg border border-white/25 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Back
         </button>
@@ -251,7 +251,7 @@ export function StudentFirstLoginTour({ user }: { user: AuthUser }) {
               router.push(`${target.href}?onboarding=true`);
             }
           }}
-          className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-cyan-200 px-3 py-1.5 text-[11px] font-semibold text-slate-950 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {primaryLabel}
         </button>

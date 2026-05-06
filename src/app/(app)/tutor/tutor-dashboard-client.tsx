@@ -389,11 +389,16 @@ export function TutorDashboardClient({
 
             <div className="mt-6">
               <CreateAvailabilityCard
-                tutorCourseNames={tutorCourses.map((c) => c.course_name)}
+                tutorCourseNames={tutorCourses.filter((c) => c.verified).map((c) => c.course_name)}
                 defaultTimezone={tutorTimezone}
                 className="border-none shadow-none bg-transparent max-w-full"
                 onSlotsCreated={() => setSlotsCreatedNotice(true)}
               />
+              {tutorCourses.some((c) => !c.verified) ? (
+                <p className="mt-3 text-[11px] text-amber-700">
+                  Some subjects are pending admin review and are hidden from availability until verified.
+                </p>
+              ) : null}
             </div>
           </ScrollRevealCard>
 

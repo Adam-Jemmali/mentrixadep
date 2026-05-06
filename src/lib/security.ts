@@ -71,6 +71,85 @@ export function sanitizeString(input: string): string {
     .replace(/on\w+=/gi, ""); // Remove event handlers
 }
 
+// ============================================
+// CONTENT MODERATION
+// ============================================
+
+const LEETSPEAK_NORMALIZATION: Record<string, string> = {
+  "0": "o",
+  "1": "i",
+  "3": "e",
+  "4": "a",
+  "5": "s",
+  "7": "t",
+  "@": "a",
+  "$": "s",
+  "!": "i",
+};
+
+const BLOCKED_LANGUAGE_PATTERNS: RegExp[] = [
+  // Common profanity / insults
+  /\bf+u+c*k+\b/i,
+  /\bs+h+i+t+\b/i,
+  /\bb+i+t+c+h+\b/i,
+  /\ba+s+s+h+o+l+e+\b/i,
+  /\bb+a+s+t+a+r+d+\b/i,
+  /\bi+d+i+o+t+\b/i,
+  /\bm+o+r+o+n+\b/i,
+  /\bd+u+m+b+\b/i,
+  /\bs+t+u+p+i+d+\b/i,
+
+  // Sexual / explicit terms
+  /\bs+e+x+\b/i,
+  /\bp+o+r+n+\b/i,
+  /\bn+u+d+e+\b/i,
+  /\bn+u+d+i+t+y+\b/i,
+  /\bs+l+u+t+\b/i,
+  /\bw+h+o+r+e+\b/i,
+  /\br+a+p+e+\b/i,
+  /\bf+e+t+i+s+h+\b/i,
+  /\bp+e+n+i+s+\b/i,
+  /\bv+a+g+i+n+a+\b/i,
+
+  // Explicit discriminatory slur family (compact stem-based guard)
+  /\bn+i+g+g+e+r+\b/i,
+  /\bf+a+g+g+o+t+\b/i,
+  /\bk+i+k+e+\b/i,
+  /\bc+h+i+n+k+\b/i,
+  /\bs+p+i+c+\b/i,
+];
+
+function normalizeForModeration(input: string): string {
+  const lowered = input.toLowerCase();
+  const leetNormalized = lowered
+    .split("")
+    .map((ch) => LEETSPEAK_NORMALIZATION[ch] ?? ch)
+    .join("");
+  return leetNormalized
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function containsBlockedLanguage(input: string): boolean {
+  if (!input.trim()) return false;
+  const normalized = normalizeForModeration(input);
+  if (!normalized) return false;
+  return BLOCKED_LANGUAGE_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+export function assertNoBlockedLanguage(input: string, fieldName = "text"): void {
+  if (containsBlockedLanguage(input)) {
+    logSecurityEvent("blocked_language_rejected", {
+      field: fieldName,
+      sample: input.slice(0, 160),
+    });
+    throw new Error(
+      `Please remove abusive, sexual, discriminatory, or inappropriate language from ${fieldName}.`,
+    );
+  }
+}
+
 const SQL_INJECTION_PATTERNS: RegExp[] = [
   /(\bunion\b\s+\bselect\b)/i,
   /(\bselect\b.+\bfrom\b)/i,
@@ -131,14 +210,18 @@ export function sanitizeInput(input: unknown, fieldName = "input"): string {
  * Sanitize course name
  */
 export function sanitizeCourseName(course: string): string {
-  return sanitizeString(course).slice(0, 100);
+  const value = sanitizeString(course).slice(0, 100);
+  assertNoBlockedLanguage(value, "course name");
+  return value;
 }
 
 /**
  * Sanitize comment text
  */
 export function sanitizeComment(comment: string): string {
-  return sanitizeString(comment).slice(0, 1000);
+  const value = sanitizeString(comment).slice(0, 1000);
+  assertNoBlockedLanguage(value, "comment");
+  return value;
 }
 
 export const MAX_UPLOAD_BYTES_DEFAULT = 10 * 1024 * 1024; // 10MB

@@ -3,7 +3,7 @@
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { parseUUID } from "@/lib/security";
+import { assertNoBlockedLanguage, parseUUID } from "@/lib/security";
 import { getUtcWeekMondayString } from "@/lib/division-week";
 import {
   CLAN_QUEST_CHALLENGE_BONUS_XP,
@@ -359,6 +359,7 @@ export async function postClanMessage(
     if (body.length < 1) {
       return { success: false, error: "Message cannot be empty." };
     }
+    assertNoBlockedLanguage(body, "clan chat message");
 
     const admin = createAdminClient();
     if (!(await assertClanMember(admin, user.id, id.id))) {

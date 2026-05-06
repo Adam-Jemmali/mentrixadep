@@ -480,13 +480,7 @@ export function TutorProfileClient({
               <p className="max-w-xl text-sm leading-relaxed text-slate-500">
                 {profile.email} · Teaching excellence through live Mentrixa sessions.
               </p>
-              {isOwnProfile ? (
-                <div>
-                  <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-bold text-indigo-700">
-                    Your public guide profile
-                  </span>
-                </div>
-              ) : null}
+              
 
               {profile.courses.length > 0 ? (
                 <div className="mt-1 flex flex-wrap gap-2">

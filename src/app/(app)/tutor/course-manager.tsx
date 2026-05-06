@@ -26,6 +26,7 @@ interface CourseManagerProps {
 export function CourseManager({ courses }: CourseManagerProps) {
   const [courseName, setCourseName] = useState("");
   const [proof, setProof] = useState("");
+  const [evidenceLink, setEvidenceLink] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -33,16 +34,17 @@ export function CourseManager({ courses }: CourseManagerProps) {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!courseName.trim() || !proof.trim()) {
-      setError("Course name and qualifications are required");
+    if (!courseName.trim() || !proof.trim() || !evidenceLink.trim()) {
+      setError("Course name, mastery proof, and evidence link are required");
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      await addTutorCourse(courseName, proof, viewingAsUserId ?? undefined);
+      await addTutorCourse(courseName, proof, evidenceLink, viewingAsUserId ?? undefined);
       setCourseName("");
       setProof("");
+      setEvidenceLink("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add course");
@@ -114,6 +116,11 @@ export function CourseManager({ courses }: CourseManagerProps) {
                     {c.verified && (
                       <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                     )}
+                    {!c.verified && (
+                      <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                        Pending admin review
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity">
                     {c.proof_description}
@@ -154,6 +161,23 @@ export function CourseManager({ courses }: CourseManagerProps) {
                 className="w-full h-28 text-sm rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-mentrixa-500/10 focus:border-mentrixa-500 transition-all font-semibold"
                 maxLength={500}
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
+                Physical evidence link
+              </label>
+              <Input
+                value={evidenceLink}
+                onChange={(e) => setEvidenceLink(e.target.value)}
+                placeholder="https://... (certificate, transcript, portfolio, publication)"
+                className="h-12 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-mentrixa-500 focus:ring-mentrixa-500/10 rounded-xl font-semibold"
+                maxLength={500}
+                type="url"
+              />
+              <p className="text-[11px] text-slate-500">
+                Admin reviews this evidence before proficiency is established.
+              </p>
             </div>
 
             {error && <p className="text-xs font-bold text-red-500 bg-red-50 px-4 py-3 rounded-xl border border-red-200">{error}</p>}

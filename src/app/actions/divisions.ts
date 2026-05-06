@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUtcWeekMondayString } from "@/lib/division-week";
 import { getDivisionTierFromXp } from "@/lib/levels";
+import { assertNoBlockedLanguage } from "@/lib/security";
 import {
   getDivisionKeyForCourse,
   getDivisionsCatalog,
@@ -451,6 +452,7 @@ export async function postDivisionMessage(
     if (text.length < 1 || text.length > 4000) {
       return { success: false, error: "Message must be 1–4000 characters." };
     }
+    assertNoBlockedLanguage(text, "division chat message");
 
     const { data: mem } = await admin
       .from("user_divisions")

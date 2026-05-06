@@ -23,6 +23,13 @@ type UnverifiedCourse = {
   created_at: string;
 };
 
+function splitProofAndEvidence(raw: string): { proof: string; evidence: string | null } {
+  const marker = /\n?Evidence:\s*/i;
+  const parts = raw.split(marker);
+  if (parts.length < 2) return { proof: raw, evidence: null };
+  return { proof: parts[0]?.trim() ?? raw, evidence: parts.slice(1).join(" ").trim() || null };
+}
+
 interface Props {
   users: AdminUser[];
   unverifiedCourses: UnverifiedCourse[];
@@ -283,6 +290,7 @@ export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initi
                   <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Guide</th>
                   <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Course</th>
                   <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Qualification notes</th>
+                  <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Evidence</th>
                   <th className="py-3 px-4 text-left text-[11px] font-medium text-slate-500 uppercase tracking-wide">Action</th>
                 </tr>
               </thead>
@@ -291,7 +299,23 @@ export function AdminUsersClient({ users: initialUsers, unverifiedCourses: initi
                   <tr key={c.id} className="hover:bg-[#FAFAFA] transition-colors">
                     <td className="py-3 px-4 text-[13px] font-medium text-slate-900">{c.tutor_email ?? c.tutor_id.slice(0, 8)}</td>
                     <td className="py-3 px-4 text-[13px] text-slate-700">{c.course_name}</td>
-                    <td className="py-3 px-4 text-[12px] text-slate-500 max-w-xs truncate">{c.proof_description}</td>
+                    <td className="py-3 px-4 text-[12px] text-slate-500 max-w-xs truncate">{splitProofAndEvidence(c.proof_description).proof}</td>
+                    <td className="py-3 px-4 text-[12px] text-slate-500 max-w-xs">
+                      {(() => {
+                        const evidence = splitProofAndEvidence(c.proof_description).evidence;
+                        if (!evidence) return <span className="text-slate-400">—</span>;
+                        return (
+                          <a
+                            href={evidence}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                          >
+                            Open evidence
+                          </a>
+                        );
+                      })()}
+                    </td>
                     <td className="py-3 px-4">
                       <Button
                         size="sm"

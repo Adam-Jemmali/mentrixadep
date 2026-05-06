@@ -32,6 +32,7 @@ import {
   enforceRateLimit,
   RATE_LIMITS,
   getRateLimitId,
+  assertNoBlockedLanguage,
 } from "@/lib/security";
 import type { PayoutDashboardData } from "@/app/actions/stripe-connect";
 import { sanitizeForRsc } from "@/lib/rsc-serialize";
@@ -545,6 +546,31 @@ async function assertAvailabilityWindowAllowed(
   ]);
 }
 
+async function assertTutorCourseApproved(
+  adminClient: ReturnType<typeof createAdminClient>,
+  tutorId: string,
+  courseName: string,
+): Promise<void> {
+  const { data: row, error } = await adminClient
+    .from("tutor_courses")
+    .select("id, verified")
+    .eq("tutor_id", tutorId)
+    .eq("course_name", courseName)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to verify course: ${error.message}`);
+  }
+  if (!row) {
+    throw new Error("Add this subject under My expertise before creating open slots.");
+  }
+  if (!row.verified) {
+    throw new Error(
+      "This subject is pending admin review. Your proficiency is established only after approval.",
+    );
+  }
+}
+
 /** One DB read for existing rows + O(n) checks — avoids N round-trips when creating many recurring slots. */
 async function assertBatchAvailabilityWindows(
   adminClient: ReturnType<typeof createAdminClient>,
@@ -664,19 +690,7 @@ export async function createAvailabilitySlots(
 
     const validCourse = sanitizeCourseName(validateCourse(input.course));
 
-    const { data: courseProof, error: courseErr } = await adminClient
-      .from("tutor_courses")
-      .select("id")
-      .eq("tutor_id", actingAsId)
-      .eq("course_name", validCourse)
-      .maybeSingle();
-
-    if (courseErr) {
-      throw new Error(`Failed to verify course: ${courseErr.message}`);
-    }
-    if (!courseProof) {
-      throw new Error("Add this subject under My expertise before creating open slots.");
-    }
+    await assertTutorCourseApproved(adminClient, actingAsId, validCourse);
 
     const recurringWeeks = input.recurring ? (input.recurringWeeks ?? 12) : 1;
     const weeks = Math.min(52, Math.max(1, recurringWeeks));
@@ -866,6 +880,7 @@ export async function createAvailability(
     );
 
     const validCourse = sanitizeCourseName(validateCourse(course));
+    await assertTutorCourseApproved(adminClient, actingAsId, validCourse);
     const start = new Date(startTime);
     if (isNaN(start.getTime())) {
       throw new Error("Invalid date/time");
@@ -1832,6 +1847,7 @@ export async function getTutorCourses(onBehalfOfUserId?: string) {
 export async function addTutorCourse(
   courseName: string,
   proofDescription: string,
+  evidenceUrl: string,
   onBehalfOfUserId?: string,
 ) {
   const user = await requireRole(["tutor", "admin"]);
@@ -1840,12 +1856,22 @@ export async function addTutorCourse(
 
   const validName = sanitizeCourseName(validateCourse(courseName));
   const validProof = proofDescription.trim().slice(0, 500);
+  const validEvidence = evidenceUrl.trim();
 
   if (!validProof) throw new Error("Please describe your qualifications for this course");
+  if (!validEvidence) throw new Error("Add a link to physical evidence (certificate, transcript, portfolio, or ID).");
+  if (!/^https?:\/\//i.test(validEvidence)) {
+    throw new Error("Evidence link must start with http:// or https://");
+  }
+  if (validEvidence.length > 500) throw new Error("Evidence link is too long.");
+  assertNoBlockedLanguage(validProof, "proof of mastery");
+  assertNoBlockedLanguage(validEvidence, "evidence link");
+
+  const proofPayload = `${validProof}\nEvidence: ${validEvidence}`;
 
   const { error } = await client
     .from("tutor_courses")
-    .insert({ tutor_id: actingAsId, course_name: validName, proof_description: validProof });
+    .insert({ tutor_id: actingAsId, course_name: validName, proof_description: proofPayload });
 
   if (error) {
     if (error.code === "23505") throw new Error("You already added this course");

@@ -54,6 +54,13 @@ type UnverifiedCourseEntry = {
   tutor_email: string | null;
 };
 
+function splitProofAndEvidence(raw: string): { proof: string; evidence: string | null } {
+  const marker = /\n?Evidence:\s*/i;
+  const parts = raw.split(marker);
+  if (parts.length < 2) return { proof: raw, evidence: null };
+  return { proof: parts[0]?.trim() ?? raw, evidence: parts.slice(1).join(" ").trim() || null };
+}
+
 interface AdminClientProps {
   pendingRequests: RegistrationRequest[];
   allRequests: RegistrationRequest[];
@@ -549,6 +556,9 @@ export function AdminClient({
                       Qualifications
                     </th>
                     <th className="py-2.5 px-4 text-left text-xs font-medium text-slate-500 border-b border-slate-200">
+                      Evidence
+                    </th>
+                    <th className="py-2.5 px-4 text-left text-xs font-medium text-slate-500 border-b border-slate-200">
                       Submitted
                     </th>
                     <th className="py-2.5 px-4 text-left text-xs font-medium text-slate-500 border-b border-slate-200">
@@ -576,7 +586,23 @@ export function AdminClient({
                         </div>
                       </td>
                       <td className="py-3 px-4 text-xs text-slate-500 max-w-xs truncate">
-                        {c.proof_description}
+                        {splitProofAndEvidence(c.proof_description).proof}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-500 max-w-xs">
+                        {(() => {
+                          const evidence = splitProofAndEvidence(c.proof_description).evidence;
+                          if (!evidence) return <span className="text-slate-400">—</span>;
+                          return (
+                            <a
+                              href={evidence}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              Open evidence
+                            </a>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4 font-mono text-xs text-slate-400">
                         {relativeTime(c.created_at)}

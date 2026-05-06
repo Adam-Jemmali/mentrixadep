@@ -10,6 +10,7 @@ import {
   getRateLimitId,
   parseUUID,
   sanitizeString,
+  assertNoBlockedLanguage,
 } from "@/lib/security";
 
 const INVITE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -148,6 +149,8 @@ export async function createClan(
     if (tag.length < 2) {
       return { success: false, error: "Tag must be 2–8 letters or numbers." };
     }
+    assertNoBlockedLanguage(name, "clan name");
+    assertNoBlockedLanguage(tag, "clan tag");
 
     const admin = createAdminClient();
 
@@ -185,6 +188,9 @@ export async function createClan(
     const desc = options?.description
       ? sanitizeString(options.description).slice(0, 500)
       : null;
+    if (desc) {
+      assertNoBlockedLanguage(desc, "clan description");
+    }
     const focus =
       typeof options?.focusDivisionKey === "string" &&
       options.focusDivisionKey.trim()
@@ -653,6 +659,7 @@ export async function uploadClanAvatar(
     if (!(file instanceof File) || file.size < 10) {
       return { success: false, error: "Choose an image file." };
     }
+    assertNoBlockedLanguage(file.name, "avatar filename");
     if (file.size > 900_000) {
       return { success: false, error: "Image must be under 900 KB." };
     }
