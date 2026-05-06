@@ -102,6 +102,8 @@ export function describeAvailabilityScheduleIssue(
   startTime: string,
   endTime: string,
   recurringWeeks: number,
+  /** Must match user_settings.session_default_duration (Teaching Defaults). */
+  requiredSessionMinutes: number,
 ): string | null {
   if (!isValidIanaTimeZone(tz)) {
     return "Choose a valid timezone from the list.";
@@ -111,8 +113,8 @@ export function describeAvailabilityScheduleIssue(
   if (![sh, sm, eh, em].every((n) => Number.isFinite(n))) {
     return "Pick valid start and end times.";
   }
-  if (sm % 30 !== 0 || em % 30 !== 0) {
-    return "Times must use 30-minute steps (:00 or :30 only).";
+  if (sm % 15 !== 0 || em % 15 !== 0) {
+    return "Times must use 15-minute steps (:00, :15, :30, :45).";
   }
   const startMin = sh * 60 + sm;
   const endMin = eh * 60 + em;
@@ -120,11 +122,11 @@ export function describeAvailabilityScheduleIssue(
     return "End time must be after start time on the same calendar day.";
   }
   const dur = endMin - startMin;
-  if (dur < 15 || dur > 480) {
-    return "Session length must be between 15 minutes and 8 hours.";
+  if (dur !== requiredSessionMinutes) {
+    return `Each opening must be exactly ${requiredSessionMinutes} minutes — your Teaching Default (Profile → Teaching Defaults). Pick a start time that fits before midnight, or change your default duration there.`;
   }
-  if (dur % 30 !== 0) {
-    return "Session length must be in 30-minute steps.";
+  if (dur % 15 !== 0) {
+    return "Session length must be a multiple of 15 minutes.";
   }
   if (!weekdaysMon0.length) {
     return "Select at least one weekday.";

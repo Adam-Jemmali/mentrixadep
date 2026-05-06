@@ -72,6 +72,8 @@ interface TutorDashboardClientProps {
   autoApprove: boolean;
   tutorCourses?: TutorCourseItem[];
   tutorTimezone?: string;
+  /** Teaching Defaults — fixed length for each opening created here. */
+  sessionDefaultDurationMinutes?: number;
   greeting?: string;
   firstName?: string;
 }
@@ -84,6 +86,7 @@ export function TutorDashboardClient({
   autoApprove,
   tutorCourses = [],
   tutorTimezone = "UTC",
+  sessionDefaultDurationMinutes = 60,
   greeting = "Good day",
   firstName = "Guide",
 }: TutorDashboardClientProps) {
@@ -391,6 +394,7 @@ export function TutorDashboardClient({
               <CreateAvailabilityCard
                 tutorCourseNames={tutorCourses.filter((c) => c.verified).map((c) => c.course_name)}
                 defaultTimezone={tutorTimezone}
+                sessionDefaultDurationMinutes={sessionDefaultDurationMinutes}
                 className="border-none shadow-none bg-transparent max-w-full"
                 onSlotsCreated={() => setSlotsCreatedNotice(true)}
               />

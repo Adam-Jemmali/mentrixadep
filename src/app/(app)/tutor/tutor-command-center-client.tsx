@@ -160,6 +160,7 @@ export function TutorCommandCenterClient({
           <CreateAvailabilityCard
             tutorCourseNames={data.tutorCourses.map((c) => c.course_name)}
             defaultTimezone={data.tutorTimezone}
+            sessionDefaultDurationMinutes={data.sessionDefaultDurationMinutes}
             onSlotsCreated={() => {
               setAddOpen(false);
               setSlotsCreatedNotice(true);

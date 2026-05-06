@@ -1,10 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { JoinVideoCallButton } from "@/components/join-video-call-button";
 import { formatTimeRangeInZone, getDayKeyInZone, formatDateInZone } from "@/lib/time-format";
 import { cn } from "@/lib/utils";
 import { TutorAvatar } from "../student/session-components/tutor-avatar";
+import { deleteAvailability } from "@/app/actions/tutor";
+import { useAdminViewContext } from "@/components/admin-view-context";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type CalendarPayload = {
   weekRange: { startIso: string; endIso: string };
@@ -15,6 +27,7 @@ type CalendarPayload = {
     end_time: string;
     active?: boolean | null;
     booking_status?: string | null;
+    pending_booking_count?: number;
   }>;
   sessions: Array<{
     id: string;
@@ -30,7 +43,15 @@ type CalendarPayload = {
 };
 
 type Slot =
-  | { kind: "available"; id: string; course: string; start: string; end: string; active: boolean }
+  | {
+      kind: "available";
+      id: string;
+      course: string;
+      start: string;
+      end: string;
+      active: boolean;
+      pendingBookingCount: number;
+    }
   | {
       kind: "booked";
       id: string;
@@ -49,11 +70,36 @@ export function TutorWeekCalendar({
   calendar: CalendarPayload;
   displayTimezone: string;
 }) {
+  const router = useRouter();
+  const { viewingAsUserId } = useAdminViewContext();
   const [now, setNow] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    course: string;
+    rangeLabel: string;
+    pending: number;
+  } | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     setNow(Date.now());
   }, []);
+
+  async function confirmDeleteAvailability() {
+    if (!deleteTarget) return;
+    setDeleteSubmitting(true);
+    setDeleteError(null);
+    try {
+      await deleteAvailability(deleteTarget.id, viewingAsUserId ?? undefined);
+      setDeleteTarget(null);
+      router.refresh();
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Could not delete this slot.");
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }
 
   const { dayKeys, labels, slotsByDay } = useMemo(() => {
     const start = new Date(calendar.weekRange.startIso);
@@ -114,6 +160,7 @@ export function TutorWeekCalendar({
         start: a.start_time,
         end: a.end_time,
         active: a.active !== false,
+        pendingBookingCount: a.pending_booking_count ?? 0,
       });
     }
 
@@ -214,6 +261,30 @@ export function TutorWeekCalendar({
                         />
                       </div>
                     ) : null}
+                    {slot.kind === "available" ? (
+                      <div className="mt-2 border-t border-slate-200/80 pt-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-full px-1 text-[10px] font-semibold text-slate-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() =>
+                            setDeleteTarget({
+                              id: slot.id,
+                              course: slot.course,
+                              rangeLabel: formatTimeRangeInZone(
+                                slot.start,
+                                slot.end,
+                                displayTimezone,
+                              ),
+                              pending: slot.pendingBookingCount,
+                            })
+                          }
+                        >
+                          Delete opening
+                        </Button>
+                      </div>
+                    ) : null}
                   </>
                 );
 
@@ -234,6 +305,63 @@ export function TutorWeekCalendar({
           </div>
         ))}
       </div>
+
+      <Dialog
+        open={deleteTarget != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete this opening?</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-sm text-slate-600">
+                {deleteTarget ? (
+                  <>
+                    <p>
+                      <span className="font-semibold text-slate-900">{deleteTarget.course}</span>
+                      {" · "}
+                      <span className="tabular-nums">{deleteTarget.rangeLabel}</span>
+                    </p>
+                    {deleteTarget.pending > 0 ? (
+                      <p className="text-amber-800">
+                        This slot has {deleteTarget.pending} pending learner request
+                        {deleteTarget.pending === 1 ? "" : "s"}. Decline those in Command center before
+                        deleting.
+                      </p>
+                    ) : (
+                      <p>Removes the slot from your calendar; learners will no longer see it.</p>
+                    )}
+                    {deleteError ? (
+                      <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-900">
+                        {deleteError}
+                      </p>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              disabled={deleteSubmitting || (deleteTarget?.pending ?? 0) > 0}
+              onClick={() => void confirmDeleteAvailability()}
+            >
+              {deleteSubmitting ? "Deleting…" : "Delete slot"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

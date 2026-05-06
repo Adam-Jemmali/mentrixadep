@@ -13,6 +13,7 @@ import {
   SESSION_PRICE_CAD_MIN,
 } from "@/lib/availability-schemas";
 import { buildSlotCandidates, type SlotCandidate } from "@/lib/availability-slot-builder";
+import { normalizeTeachingDefaultDurationMinutes } from "@/lib/teaching-defaults";
 import {
   sendSessionApprovedEmail,
   sendSessionConfirmedTutorEmail,
@@ -187,6 +188,8 @@ export type TutorCommandCenterPayload = {
   tutorCourses: Awaited<ReturnType<typeof getTutorCourses>>;
   autoApprove: boolean;
   tutorTimezone: string;
+  /** Teaching Defaults → session length for new openings (minutes). */
+  sessionDefaultDurationMinutes: number;
   /** Stripe Connect & payout data (null if loading fails gracefully) */
   payoutData: PayoutDashboardData | null;
 };
@@ -226,6 +229,7 @@ function fallbackTutorCommandCenterPayload(
     tutorCourses: [],
     autoApprove: false,
     tutorTimezone: "UTC",
+    sessionDefaultDurationMinutes: 60,
     payoutData: null,
   };
 }
@@ -306,7 +310,11 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         .gte("start_time", weekStart.toISOString())
         .lt("start_time", calendarEnd.toISOString()),
       supabase.from("availability").select("id").eq("tutor_id", tutorId),
-      supabase.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
+      supabase
+        .from("user_settings")
+        .select("timezone, session_default_duration")
+        .eq("user_id", tutorId)
+        .maybeSingle(),
     ]);
 
     const supabaseErrors = [
@@ -417,6 +425,25 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     }
     const enrichedCalSessions = await enrichTutorRowsWithStudentProfiles(calSessionsRes.data ?? []);
 
+    let calendarAvailability = calAvailRes.data ?? [];
+    const calAvailIds = calendarAvailability.map((a) => a.id);
+    if (calAvailIds.length > 0) {
+      const { data: calPendingRows } = await supabase
+        .from("session_requests")
+        .select("availability_id")
+        .in("availability_id", calAvailIds)
+        .eq("status", "pending");
+      const pendingByAvail = new Map<string, number>();
+      for (const p of calPendingRows ?? []) {
+        const aid = p.availability_id as string;
+        pendingByAvail.set(aid, (pendingByAvail.get(aid) ?? 0) + 1);
+      }
+      calendarAvailability = calendarAvailability.map((a) => ({
+        ...a,
+        pending_booking_count: pendingByAvail.get(a.id) ?? 0,
+      }));
+    }
+
     const payload: TutorCommandCenterPayload = {
       tutorId,
     guideProfile: {
@@ -436,7 +463,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       sessionRequests,
       calendar: {
         weekRange: { startIso: weekStart.toISOString(), endIso: calendarEnd.toISOString() },
-        availability: calAvailRes.data ?? [],
+        availability: calendarAvailability,
         sessions: enrichedCalSessions,
       },
       availability,
@@ -448,6 +475,9 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         typeof settingsTzRes.data?.timezone === "string" && settingsTzRes.data.timezone.length > 0
           ? settingsTzRes.data.timezone
           : "UTC",
+      sessionDefaultDurationMinutes: normalizeTeachingDefaultDurationMinutes(
+        settingsTzRes.data?.session_default_duration,
+      ),
       payoutData,
     };
 
@@ -701,6 +731,25 @@ export async function createAvailabilitySlots(
     const validCourse = sanitizeCourseName(validateCourse(input.course));
 
     await assertTutorCourseApproved(adminClient, actingAsId, validCourse);
+
+    const { data: tutorSettingsRow } = await adminClient
+      .from("user_settings")
+      .select("session_default_duration")
+      .eq("user_id", actingAsId)
+      .maybeSingle();
+
+    const requiredSessionMinutes = normalizeTeachingDefaultDurationMinutes(
+      tutorSettingsRow?.session_default_duration,
+    );
+
+    const [sh = 0, sm = 0] = input.startTime.split(":").map(Number);
+    const [eh = 0, em = 0] = input.endTime.split(":").map(Number);
+    const durMin = eh * 60 + em - (sh * 60 + sm);
+    if (durMin !== requiredSessionMinutes) {
+      throw new Error(
+        `Each opening must be exactly ${requiredSessionMinutes} minutes — your Teaching Default (Profile → Teaching Defaults).`,
+      );
+    }
 
     const recurringWeeks = input.recurring ? (input.recurringWeeks ?? 12) : 1;
     const weeks = Math.min(52, Math.max(1, recurringWeeks));
@@ -1717,7 +1766,11 @@ export async function getTutorDashboardForAdmin(tutorId: string) {
         .select("*")
         .eq("tutor_id", tutorId)
         .order("created_at", { ascending: true }),
-      adminClient.from("user_settings").select("timezone").eq("user_id", tutorId).maybeSingle(),
+      adminClient
+        .from("user_settings")
+        .select("timezone, session_default_duration")
+        .eq("user_id", tutorId)
+        .maybeSingle(),
     ]);
 
   const availabilityRaw = availResult.data ?? [];
@@ -1820,6 +1873,9 @@ export async function getTutorDashboardForAdmin(tutorId: string) {
       typeof tzResult.data?.timezone === "string" && tzResult.data.timezone.length > 0
         ? tzResult.data.timezone
         : "UTC",
+    sessionDefaultDurationMinutes: normalizeTeachingDefaultDurationMinutes(
+      tzResult.data?.session_default_duration,
+    ),
   };
 }
 

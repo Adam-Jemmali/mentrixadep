@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { updateUserSettings, type UserSettings } from "@/app/actions/settings";
 import { cn } from "@/lib/utils";
+import { TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES } from "@/lib/teaching-defaults";
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -162,7 +163,6 @@ function TutorProfileFormSection({
     }
   }
 
-  const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
   const BUFFER_OPTIONS = [0, 5, 10, 15, 30, 60] as const;
 
   const inputClasses = "mt-1.5 border-indigo-100 bg-slate-50/50 text-indigo-900 placeholder:text-slate-400 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl";
@@ -219,7 +219,7 @@ function TutorProfileFormSection({
                 onChange={e => setForm(f => ({ ...f, session_default_duration: Number(e.target.value) }))}
                 className="mt-1.5 flex h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-xs text-indigo-900"
               >
-                {DURATION_OPTIONS.map(d => (
+                {TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES.map((d) => (
                   <option key={d} value={d}>{d} minutes</option>
                 ))}
               </select>

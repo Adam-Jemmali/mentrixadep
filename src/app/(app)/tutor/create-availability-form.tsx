@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createAvailabilitySlots } from "@/app/actions/tutor";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/lib/availability-schemas";
 import { describeAvailabilityScheduleIssue } from "@/lib/availability-slot-builder";
+import { addMinutesToHHmm } from "@/lib/teaching-defaults";
 
 const WEEKDAYS: { value: number; label: string }[] = [
   { value: 0, label: "Mon" },
@@ -33,7 +34,7 @@ const WEEKDAYS: { value: number; label: string }[] = [
 function timeOptions(): string[] {
   const out: string[] = [];
   for (let h = 0; h < 24; h++) {
-    for (const m of [0, 30]) {
+    for (const m of [0, 15, 30, 45]) {
       out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
   }
@@ -43,16 +44,18 @@ function timeOptions(): string[] {
 interface CreateAvailabilityFormProps {
   tutorCourseNames: string[];
   defaultTimezone: string;
+  sessionDefaultDurationMinutes: number;
 }
 
 export function CreateAvailabilityForm({
   tutorCourseNames,
   defaultTimezone,
+  sessionDefaultDurationMinutes,
 }: CreateAvailabilityFormProps) {
   const [course, setCourse] = useState("");
   const [weekdays, setWeekdays] = useState<Set<number>>(new Set());
   const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("09:30");
+  const [endTime, setEndTime] = useState(() => addMinutesToHHmm("09:00", sessionDefaultDurationMinutes) ?? "10:00");
   const [recurring, setRecurring] = useState(false);
   const [recurringWeeks, setRecurringWeeks] = useState("12");
   const [price, setPrice] = useState("25");
@@ -63,6 +66,23 @@ export function CreateAvailabilityForm({
   const { viewingAsUserId } = useAdminViewContext();
 
   const times = useMemo(() => timeOptions(), []);
+
+  const startTimesValid = useMemo(
+    () => times.filter((t) => addMinutesToHHmm(t, sessionDefaultDurationMinutes) != null),
+    [times, sessionDefaultDurationMinutes],
+  );
+
+  useEffect(() => {
+    setStartTime((prev) =>
+      startTimesValid.includes(prev) ? prev : (startTimesValid[0] ?? prev),
+    );
+  }, [startTimesValid]);
+
+  useEffect(() => {
+    const end = addMinutesToHHmm(startTime, sessionDefaultDurationMinutes);
+    if (end) setEndTime(end);
+  }, [startTime, sessionDefaultDurationMinutes]);
+
   const recurringWeeksNum = useMemo(() => {
     const rw = Number.parseInt(recurringWeeks, 10);
     return Number.isFinite(rw) ? rw : 12;
@@ -77,12 +97,9 @@ export function CreateAvailabilityForm({
       startTime,
       endTime,
       recurring ? Math.min(52, Math.max(1, recurringWeeksNum)) : 1,
+      sessionDefaultDurationMinutes,
     );
-  }, [weekdays, timezone, startTime, endTime, recurring, recurringWeeksNum]);
-
-  const endTimes = useMemo(() => {
-    return times.filter((t) => t > startTime);
-  }, [times, startTime]);
+  }, [weekdays, timezone, startTime, endTime, recurring, recurringWeeksNum, sessionDefaultDurationMinutes]);
   const triggerClass =
     "mt-1.5 h-9 border-slate-300 bg-white text-slate-950 data-[placeholder]:text-slate-500";
   const contentClass = "z-[120] max-h-56 border-slate-300 bg-white text-slate-950 shadow-xl";
@@ -151,6 +168,7 @@ export function CreateAvailabilityForm({
       startTime,
       endTime,
       recurring ? rw : 1,
+      sessionDefaultDurationMinutes,
     );
     if (issue) {
       setError(issue);
@@ -229,21 +247,12 @@ export function CreateAvailabilityForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-slate-900">Start</Label>
-            <Select
-              value={startTime}
-              onValueChange={(value) => {
-                setStartTime(value);
-                if (endTime <= value) {
-                  const nextIndex = times.indexOf(value) + 1;
-                  setEndTime(times[nextIndex] ?? value);
-                }
-              }}
-            >
+            <Select value={startTime} onValueChange={setStartTime}>
               <SelectTrigger className={triggerClass}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className={contentClass}>
-                {times.map((t) => (
+                {(startTimesValid.length ? startTimesValid : times).map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
                   </SelectItem>
@@ -252,19 +261,13 @@ export function CreateAvailabilityForm({
             </Select>
           </div>
           <div>
-            <Label className="text-slate-900">End</Label>
-            <Select value={endTime} onValueChange={setEndTime}>
-              <SelectTrigger className={triggerClass}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className={contentClass}>
-                {endTimes.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-slate-900">Session end</Label>
+            <div className="mt-1.5 rounded-md border border-slate-300 bg-slate-50 px-3 py-2 tabular-nums text-slate-950">
+              <span className="font-semibold">{endTime}</span>
+              <p className="mt-1 text-[10px] text-slate-600">
+                Fixed {sessionDefaultDurationMinutes} min (Teaching Defaults).
+              </p>
+            </div>
           </div>
         </div>
 

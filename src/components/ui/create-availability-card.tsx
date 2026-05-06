@@ -13,6 +13,7 @@ import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/lib/availability-schemas";
 import { describeAvailabilityScheduleIssue } from "@/lib/availability-slot-builder";
+import { addMinutesToHHmm } from "@/lib/teaching-defaults";
 
 const WEEKDAYS: { value: number; label: string; full: string }[] = [
   { value: 0, label: "Mon", full: "Monday" },
@@ -27,39 +28,18 @@ const WEEKDAYS: { value: number; label: string; full: string }[] = [
 function timeOptions(): string[] {
   const out: string[] = [];
   for (let h = 0; h < 24; h++) {
-    for (const m of [0, 30]) {
+    for (const m of [0, 15, 30, 45]) {
       out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
   }
   return out;
 }
 
-function timeToMinutes(hhmm: string): number {
-  const [h = 0, m = 0] = hhmm.split(":").map(Number);
-  return h * 60 + m;
-}
-
-/** Next :00 or :30 strictly after start, same calendar day; null if impossible (e.g. start 23:30). */
-function minEndAfterStart(startHHmm: string): string | null {
-  const sm = timeToMinutes(startHHmm);
-  const next = sm + 30;
-  if (next >= 24 * 60) return null;
-  const h = Math.floor(next / 60);
-  const m = next % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-function ensureEndAfterStart(startHHmm: string, endHHmm: string): string {
-  if (timeToMinutes(endHHmm) <= timeToMinutes(startHHmm)) {
-    const bumped = minEndAfterStart(startHHmm);
-    if (bumped) return bumped;
-  }
-  return endHHmm;
-}
-
 interface CreateAvailabilityCardProps {
   tutorCourseNames: string[];
   defaultTimezone: string;
+  /** Teaching Defaults — each opening uses exactly this many minutes (start + duration = end). */
+  sessionDefaultDurationMinutes: number;
   className?: string;
   enableAnimations?: boolean;
   /** Called after slots are created successfully (e.g. close a dialog before refresh). */
@@ -69,6 +49,7 @@ interface CreateAvailabilityCardProps {
 export function CreateAvailabilityCard({
   tutorCourseNames,
   defaultTimezone,
+  sessionDefaultDurationMinutes,
   className,
   enableAnimations = true,
   onSlotsCreated,
@@ -77,7 +58,7 @@ export function CreateAvailabilityCard({
   const [course, setCourse] = useState(tutorCourseNames[0] || "");
   const [weekdays, setWeekdays] = useState<Set<number>>(new Set());
   const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("09:30");
+  const [endTime, setEndTime] = useState(() => addMinutesToHHmm("09:00", sessionDefaultDurationMinutes) ?? "10:00");
   const [recurring, setRecurring] = useState(false);
   const [recurringWeeks, setRecurringWeeks] = useState("12");
   const [price, setPrice] = useState("25");
@@ -100,6 +81,22 @@ export function CreateAvailabilityCard({
 
   const times = useMemo(() => timeOptions(), []);
 
+  const startTimesValid = useMemo(
+    () => times.filter((t) => addMinutesToHHmm(t, sessionDefaultDurationMinutes) != null),
+    [times, sessionDefaultDurationMinutes],
+  );
+
+  useEffect(() => {
+    setStartTime((prev) =>
+      startTimesValid.includes(prev) ? prev : (startTimesValid[0] ?? prev),
+    );
+  }, [startTimesValid]);
+
+  useEffect(() => {
+    const end = addMinutesToHHmm(startTime, sessionDefaultDurationMinutes);
+    if (end) setEndTime(end);
+  }, [startTime, sessionDefaultDurationMinutes]);
+
   const recurringWeeksNum = useMemo(() => {
     const rw = Number.parseInt(recurringWeeks, 10);
     return Number.isFinite(rw) ? rw : 12;
@@ -114,14 +111,16 @@ export function CreateAvailabilityCard({
       startTime,
       endTime,
       recurring ? Math.min(52, Math.max(1, recurringWeeksNum)) : 1,
+      sessionDefaultDurationMinutes,
     );
-  }, [weekdays, timezone, startTime, endTime, recurring, recurringWeeksNum]);
+  }, [weekdays, timezone, startTime, endTime, recurring, recurringWeeksNum, sessionDefaultDurationMinutes]);
 
   const timesLookInvalid =
     scheduleIssue !== null &&
     (scheduleIssue.includes("End time must be after") ||
-      scheduleIssue.includes("30-minute") ||
-      scheduleIssue.includes("Session length"));
+      scheduleIssue.includes("15-minute") ||
+      scheduleIssue.includes("Teaching Default") ||
+      scheduleIssue.includes("exactly"));
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -163,6 +162,7 @@ export function CreateAvailabilityCard({
       startTime,
       endTime,
       recurring ? Math.min(52, Math.max(1, Number.parseInt(recurringWeeks, 10) || 12)) : 1,
+      sessionDefaultDurationMinutes,
     );
     if (previewIssue) {
       setError(previewIssue);
@@ -215,6 +215,7 @@ export function CreateAvailabilityCard({
       startTime,
       endTime,
       recurring ? rw : 1,
+      sessionDefaultDurationMinutes,
     );
     if (confirmIssue) {
       setError(confirmIssue);
@@ -384,7 +385,6 @@ export function CreateAvailabilityCard({
                     onChange={(e) => {
                       const next = e.target.value;
                       setStartTime(next);
-                      setEndTime((prev) => ensureEndAfterStart(next, prev));
                       setError(null);
                       setSuccessMessage(null);
                     }}
@@ -394,31 +394,30 @@ export function CreateAvailabilityCard({
                       timesLookInvalid ? "border-amber-500 ring-amber-200 focus:ring-amber-400" : "border-slate-300 focus:ring-indigo-500",
                     )}
                   >
-                    {times.map(t => <option key={t} value={t}>{t}</option>)}
+                    {(startTimesValid.length ? startTimesValid : times).map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
                   </select>
                   <Clock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                 </div>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">End time</label>
-                <div className="relative">
-                  <select 
-                    value={endTime} 
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setEndTime(ensureEndAfterStart(startTime, next));
-                      setError(null);
-                      setSuccessMessage(null);
-                    }}
-                    aria-invalid={timesLookInvalid}
-                    className={cn(
-                      "w-full appearance-none rounded-lg border-2 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 [&>option]:bg-white [&>option]:text-slate-900",
-                      timesLookInvalid ? "border-amber-500 ring-amber-200 focus:ring-amber-400" : "border-slate-300 focus:ring-indigo-500",
-                    )}
-                  >
-                    {times.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <Clock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Session end</label>
+                <div
+                  className={cn(
+                    "rounded-lg border-2 bg-slate-50 p-2.5 font-semibold tabular-nums text-slate-900 shadow-inner",
+                    timesLookInvalid ? "border-amber-400" : "border-slate-200",
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 shrink-0 text-slate-500" />
+                    <span>{endTime}</span>
+                  </span>
+                  <p className="mt-1 text-[10px] font-medium leading-snug text-slate-600">
+                    Fixed {sessionDefaultDurationMinutes}-minute sessions (
+                    <span className="font-semibold text-slate-800">Teaching Defaults</span>). Change duration under
+                    Profile → Teaching Defaults.
+                  </p>
                 </div>
               </div>
             </div>
@@ -428,7 +427,8 @@ export function CreateAvailabilityCard({
               </p>
             ) : (
               <p className="text-xs font-medium text-slate-500">
-                Slots must end in the future; end time must be after start on the same day (:00 / :30 only).
+                Start times use 15-minute steps and must fit before midnight. Length always matches your Teaching Default (
+                {sessionDefaultDurationMinutes} min).
               </p>
             )}
 

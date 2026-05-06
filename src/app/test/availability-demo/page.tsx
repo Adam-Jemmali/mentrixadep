@@ -13,6 +13,7 @@ export default function AvailabilityDemoPage() {
         <CreateAvailabilityCard
           tutorCourseNames={dummyCourses}
           defaultTimezone={dummyTimezone}
+          sessionDefaultDurationMinutes={60}
         />
       </div>
     </div>

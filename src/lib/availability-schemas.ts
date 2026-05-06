@@ -36,10 +36,10 @@ export const createAvailabilitySlotsSchema = z
   .superRefine((data, ctx) => {
     const [sh = 0, sm = 0] = data.startTime.split(":").map(Number);
     const [eh = 0, em = 0] = data.endTime.split(":").map(Number);
-    if (sm % 30 !== 0 || em % 30 !== 0) {
+    if (sm % 15 !== 0 || em % 15 !== 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Use 30-minute increments (:00 or :30)",
+        message: "Use 15-minute increments (:00, :15, :30, :45)",
         path: ["startTime"],
       });
     }
@@ -54,17 +54,17 @@ export const createAvailabilitySlotsSchema = z
       return;
     }
     const dur = endMin - startMin;
-    if (dur < 15 || dur > 480) {
+    if (dur < 1 || dur > 480) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Session length must be 15–480 minutes",
+        message: "Session length must be between 1 and 480 minutes",
         path: ["endTime"],
       });
     }
-    if (dur % 30 !== 0) {
+    if (dur % 15 !== 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Duration must be in 30-minute steps",
+        message: "Session length must be a multiple of 15 minutes",
         path: ["endTime"],
       });
     }
