@@ -11,12 +11,16 @@ if (process.env.NODE_ENV !== "production" || process.env.VERCEL !== "1") {
   applyLocalEnvOverrides(root);
 }
 
+/**
+ * Production payments use Stripe Checkout (redirect) + server SDK — no publishable key in app code.
+ * Stripe Dashboard: live mode → Developers → Webhooks → endpoint `https://<domain>/api/stripe/webhook`
+ * with signing secret as STRIPE_WEBHOOK_SECRET (prefix whsec_). Use sk_live_* for STRIPE_SECRET_KEY.
+ */
 const requiredVars = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
   "NEXT_PUBLIC_APP_URL",
-  "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "GEMINI_API_KEY",
@@ -38,6 +42,14 @@ if (missing.length > 0) {
     console.error(` - ${name}`);
   }
   process.exit(1);
+}
+
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").trim().toLowerCase();
+const stripeKey = (process.env.STRIPE_SECRET_KEY || "").trim();
+if (appUrl.startsWith("https://") && stripeKey.startsWith("sk_test_")) {
+  console.warn(
+    "[env:warn] NEXT_PUBLIC_APP_URL looks like production but STRIPE_SECRET_KEY is test mode (sk_test_). Tutor payouts and checkout must use sk_live_ + live webhook secret.",
+  );
 }
 
 console.log("[env:verify] All required production environment variables are set.");

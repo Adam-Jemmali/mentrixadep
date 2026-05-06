@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
@@ -42,31 +43,44 @@ async function authUserExistsByEmail(email: string): Promise<boolean> {
 export default async function ActivatePage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; role?: string }>;
 }) {
-  const email = normalizeEmail((await searchParams).email);
+  const params = await searchParams;
+  const email = normalizeEmail(params.email);
+  const requestedRole = params.role === "tutor" ? "tutor" : "student";
   if (!isValidEmail(email)) {
     redirect("/auth/signin");
   }
 
   if (!isWaitlistEnabled()) {
+    const supabase = await createClient();
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    if (currentUser && (currentUser.email ?? "").trim().toLowerCase() === email) {
+      return <ActivateAuthClient email={email} role={requestedRole} />;
+    }
     const hasAccount = await authUserExistsByEmail(email);
     if (hasAccount) {
       redirect(`/auth/signin?email=${encodeURIComponent(email)}`);
     }
-    return <ActivateAuthClient email={email} role="student" />;
+    return <ActivateAuthClient email={email} role={requestedRole} />;
   }
 
   const admin = createAdminClient();
   const waitlistRow = await fetchRegistrationRequestRow(admin, email);
 
   if (!waitlistRow || waitlistRow.status !== "approved") {
-    redirect(`/join?email=${encodeURIComponent(email)}`);
+    redirect("/auth/signup");
   }
 
-  const hasAccount = await authUserExistsByEmail(email);
-  if (hasAccount) {
-    redirect(`/auth/signin?email=${encodeURIComponent(email)}`);
+  const supabase = await createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+  if (currentUser && (currentUser.email ?? "").trim().toLowerCase() === email) {
+    const role = waitlistRow.role === "tutor" ? "tutor" : "student";
+    return <ActivateAuthClient email={email} role={role} />;
   }
 
   const role = waitlistRow.role === "tutor" ? "tutor" : "student";

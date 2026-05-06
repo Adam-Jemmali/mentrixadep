@@ -4,6 +4,9 @@ import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
+import { isWaitlistEnabled } from "@/lib/flags";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 const OTP_TYPES = [
   "signup",
@@ -22,6 +25,7 @@ function isSupportedOtpType(value: string): value is SupportedOtpType {
 
 async function resolvePostAuthDestination(): Promise<string> {
   const supabase = await createClient();
+  const waitlistEnabled = isWaitlistEnabled();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -37,19 +41,39 @@ async function resolvePostAuthDestination(): Promise<string> {
     .select("role, status, approved, is_blacklisted")
     .eq("id", user.id)
     .maybeSingle();
-
-  if (!userRow?.role) {
+  let resolvedUserRow = userRow;
+  if (!resolvedUserRow?.role) {
     return "/auth/select-role";
   }
 
-  const accessStatus = normalizeAccessStatus(userRow);
+  let accessStatus = normalizeAccessStatus(resolvedUserRow);
+  if (waitlistEnabled && accessStatus !== "approved") {
+    const email = (user.email ?? "").trim().toLowerCase();
+    if (email) {
+      const admin = createAdminClient();
+      const regRow = await fetchRegistrationRequestRow(admin, email);
+      if (regRow?.status === "approved") {
+        await syncApprovedWaitlistToUserProfile(user.id, user.email);
+        const { data: refreshed } = await supabase
+          .from("users")
+          .select("role, status, approved, is_blacklisted")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (refreshed?.role) {
+          resolvedUserRow = refreshed;
+          accessStatus = normalizeAccessStatus(resolvedUserRow);
+        }
+      }
+    }
+  }
+
   if (accessStatus === "approved") {
-    return getPostApprovalRedirectPath({ userId: user.id, role: userRow.role });
+    return getPostApprovalRedirectPath({ userId: user.id, role: resolvedUserRow.role });
   }
   if (accessStatus === "suspended") {
     return "/suspended";
   }
-  return "/pending-approval";
+  return "/auth/session-sync";
 }
 
 export async function GET(request: Request) {

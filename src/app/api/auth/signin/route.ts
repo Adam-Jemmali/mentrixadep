@@ -10,6 +10,7 @@ import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
+import { identityEmailKey } from "@/lib/email-identity";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +33,30 @@ type SignInBody = {
   email?: string;
   password?: string;
   captchaToken?: string;
+  roleHint?: "student" | "tutor";
 };
 
 function jsonError(message: string, status = 400, extra?: Record<string, unknown>) {
   return NextResponse.json({ ok: false, error: message, ...extra }, { status });
+}
+
+async function authUserExistsByEmail(email: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const key = identityEmailKey(email);
+  const perPage = 200;
+  for (let page = 1; page <= 10; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error("[auth/signin] listUsers failed:", error.message);
+      return false;
+    }
+    const users = data?.users ?? [];
+    if (users.some((u) => identityEmailKey((u.email ?? "").trim()) === key)) {
+      return true;
+    }
+    if (users.length < perPage) return false;
+  }
+  return false;
 }
 
 export async function POST(req: Request) {
@@ -45,6 +66,8 @@ export async function POST(req: Request) {
     const body = (await req.json().catch(() => ({}))) as SignInBody;
     const email = validateEmail(body.email);
     const password = validatePassword(body.password);
+    const roleHint = body.roleHint === "tutor" ? "tutor" : "student";
+    let signupRoleHint: "student" | "tutor" = roleHint;
 
     const ipLimit = await checkSlidingWindowRateLimit(ipRateKey(ip), RATE_LIMITS.signInIpBurst.maxRequests, RATE_LIMITS.signInIpBurst.windowMs);
     if (!ipLimit.allowed) {
@@ -90,10 +113,13 @@ export async function POST(req: Request) {
     if (isWaitlistEnabled()) {
       const admin = createAdminClient();
       const waitlistRow = await fetchRegistrationRequestRow(admin, email);
+      if (waitlistRow?.role === "tutor" || waitlistRow?.role === "student") {
+        signupRoleHint = waitlistRow.role;
+      }
       if (waitlistRow?.status === "rejected") {
         await registerAuthFailure(lockKey);
         return jsonError(
-          "This email was rejected from the waitlist and cannot sign in. Please contact support@mentrixa.one if you believe this is a mistake.",
+          "This email was not approved for access and cannot sign in. Please contact support@mentrixa.one if this seems incorrect.",
           403,
           { waitlistStatus: "rejected" }
         );
@@ -101,7 +127,7 @@ export async function POST(req: Request) {
       if (waitlistRow?.status === "pending") {
         await registerAuthFailure(lockKey);
         return jsonError(
-          `This email is still on the waitlist as a ${waitlistRow.role === "tutor" ? "Guide" : "Mentrixer"}. Please wait for approval before signing in.`,
+          `This email is still pending ${waitlistRow.role === "tutor" ? "Guide" : "Mentrixer"} onboarding approval. Please wait before signing in.`,
           403,
           { waitlistStatus: "pending" }
         );
@@ -125,9 +151,14 @@ export async function POST(req: Request) {
 
       // Provide a more helpful message if email is not registered
       if (isUserNotFound) {
+        const exists = await authUserExistsByEmail(email);
+        if (exists) {
+          return jsonError("Incorrect email or password. Please try again.", 401);
+        }
         return jsonError(
-          "Email not registered. Please join the waitlist to get access.",
-          401
+          "Email not registered. Start onboarding first to get access.",
+          401,
+          { redirectToSignup: true, signupRole: signupRoleHint }
         );
       }
 
@@ -149,7 +180,25 @@ export async function POST(req: Request) {
       return jsonError("Sign in failed. Please contact support.", 403);
     }
 
-    const accessStatus = normalizeAccessStatus(userData);
+    let resolvedUserData = userData;
+    let accessStatus = normalizeAccessStatus(resolvedUserData);
+    if (accessStatus !== "approved" && isWaitlistEnabled()) {
+      const admin = createAdminClient();
+      const waitlistRow = await fetchRegistrationRequestRow(admin, email);
+      if (waitlistRow?.status === "approved") {
+        await syncApprovedWaitlistToUserProfile(signInData.user.id, signInData.user.email ?? email);
+        const { data: refreshedUserData } = await supabase
+          .from("users")
+          .select("approved, role, status, is_blacklisted")
+          .eq("id", signInData.user.id)
+          .single();
+        if (refreshedUserData) {
+          resolvedUserData = refreshedUserData;
+          accessStatus = normalizeAccessStatus(resolvedUserData);
+        }
+      }
+    }
+
     if (accessStatus === "suspended") {
       await clearAuthFailures(lockKey);
       return NextResponse.json({ ok: true, redirectTo: "/suspended" });
@@ -157,13 +206,13 @@ export async function POST(req: Request) {
 
     if (accessStatus !== "approved") {
       await clearAuthFailures(lockKey);
-      return NextResponse.json({ ok: true, redirectTo: "/pending-approval" });
+      return NextResponse.json({ ok: true, redirectTo: "/auth/session-sync" });
     }
 
     await clearAuthFailures(lockKey);
     const redirectTo = await getPostApprovalRedirectPath({
       userId: signInData.user.id,
-      role: userData.role,
+      role: resolvedUserData.role,
     });
     return NextResponse.json({ ok: true, redirectTo });
   } catch (error) {

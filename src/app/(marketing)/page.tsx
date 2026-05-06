@@ -37,7 +37,14 @@ export default function Home() {
         subtitle="You book quickly, meet a real Guide, and get momentum in one pass."
       />
 
-      <ScrollSequence sequenceId="secondseq" framePath="/sequences-webp/2ndseq" totalFrames={120} height={2.1}>
+      <ScrollSequence
+        sequenceId="secondseq"
+        framePath="/sequences-webp/2ndseq"
+        totalFrames={120}
+        height={2.6}
+        disableMotionSafety
+        eagerPreload
+      >
         <SecondSequenceOutcomeContent />
       </ScrollSequence>
 

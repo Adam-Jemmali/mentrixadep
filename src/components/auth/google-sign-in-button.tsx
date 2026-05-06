@@ -208,6 +208,10 @@ export function GoogleSignInButton({
           await supabase.auth.signOut();
           return;
         }
+        if (next.path.startsWith("/auth/session-sync")) {
+          window.location.assign(next.path);
+          return;
+        }
         router.push(next.path);
         router.refresh();
       } catch (err) {

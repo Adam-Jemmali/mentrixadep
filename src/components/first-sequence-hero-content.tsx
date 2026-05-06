@@ -7,27 +7,12 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
 import { GooeyText } from "@/components/ui/gooey-text-morphing";
-import { Typewriter } from "@/components/ui/typewriter";
 import { BubbleText } from "@/components/ui/bubble-text";
+import { Typewriter } from "@/components/ui/typewriter";
 import ParticleAnimation from "@/components/ui/particle-animation";
 import { useLowEndMode, useSectionScrollProgress } from "@/lib/landing-perf";
 
 const ICON_VERSION = "20260410";
-
-const WAITLIST_SLIDES = [
-  {
-    title: "Early access",
-   
-  },
-  {
-    title: "Priority onboarding",
-  
-  },
-  {
-    title: "Launch updates",
-   
-  },
-];
 
 const ArrowRight = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -52,15 +37,18 @@ function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; class
 
 function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mentrixerRef = useRef<HTMLDivElement | null>(null);
-  const guideRef = useRef<HTMLDivElement | null>(null);
+  const iconRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [iconsReady, setIconsReady] = useState(false);
+
+  useEffect(() => {
+    setIconsReady(true);
+  }, []);
 
   useEffect(() => {
     if (disabled) return;
     const container = containerRef.current;
-    const mentrixer = mentrixerRef.current;
-    const guide = guideRef.current;
-    if (!container || !mentrixer || !guide) return;
+    const icons = iconRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (!container || icons.length === 0) return;
 
     type IconParticle = {
       el: HTMLDivElement;
@@ -73,7 +61,7 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
     };
 
     const randomVelocity = () => {
-      const speed = 90 + Math.random() * 90;
+      const speed = 85 + Math.random() * 105;
       return (Math.random() > 0.5 ? 1 : -1) * speed;
     };
 
@@ -89,26 +77,15 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
       p.vy *= scale;
     };
 
-    const particles: IconParticle[] = [
-      {
-        el: mentrixer,
-        x: 0,
-        y: 0,
-        vx: randomVelocity(),
-        vy: randomVelocity(),
-        w: 0,
-        h: 0,
-      },
-      {
-        el: guide,
-        x: 0,
-        y: 0,
-        vx: randomVelocity(),
-        vy: randomVelocity(),
-        w: 0,
-        h: 0,
-      },
-    ];
+    const particles: IconParticle[] = icons.map((el) => ({
+      el,
+      x: 0,
+      y: 0,
+      vx: randomVelocity(),
+      vy: randomVelocity(),
+      w: 0,
+      h: 0,
+    }));
 
     const setInitialPositions = () => {
       const width = container.clientWidth;
@@ -198,16 +175,28 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
       window.cancelAnimationFrame(frameId);
       io?.disconnect();
     };
-  }, [disabled]);
+  }, [disabled, iconsReady]);
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
-      <div ref={mentrixerRef} className="absolute left-0 top-0 will-change-transform shadow-2xl rounded-full">
-        <RoleIcon role="mentrixer" className="h-11 w-11 opacity-85" />
-      </div>
-      <div ref={guideRef} className="absolute left-0 top-0 will-change-transform shadow-2xl rounded-full">
-        <RoleIcon role="guide" className="h-11 w-11 opacity-85" />
-      </div>
+      {[
+        { role: "mentrixer" as const, size: "h-11 w-11 opacity-90" },
+        { role: "guide" as const, size: "h-11 w-11 opacity-90" },
+        { role: "mentrixer" as const, size: "h-10 w-10 opacity-80" },
+        { role: "guide" as const, size: "h-10 w-10 opacity-80" },
+        { role: "mentrixer" as const, size: "h-12 w-12 opacity-75" },
+        { role: "guide" as const, size: "h-12 w-12 opacity-75" },
+      ].map((icon, idx) => (
+        <div
+          key={`${icon.role}-${idx}`}
+          ref={(el) => {
+            iconRefs.current[idx] = el;
+          }}
+          className="absolute left-0 top-0 will-change-transform rounded-full shadow-2xl"
+        >
+          <RoleIcon role={icon.role} className={icon.size} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -216,28 +205,63 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
 
 type WaitlistRole = "student" | "tutor";
 
+const ROLE_ONBOARDING_COPY: Record<
+  WaitlistRole,
+  {
+    headline: string;
+    cta: string;
+    slides: [string, string, string];
+  }
+> = {
+  student: {
+    headline: "Climb your courses as a Mentrixer",
+    cta: "Start Mentrixer climb",
+    slides: ["Rank your progress", "Spot weak topics fast", "Book a Guide when stuck"],
+  },
+  tutor: {
+    headline: "Lead wins as a Guide",
+    cta: "Start Guide climb",
+    slides: ["Coach high-impact sessions", "Deliver Quest-powered packages", "Grow your tutoring arena"],
+  },
+};
+
 
 export function FirstSequenceHeroContent() {
   const router = useRouter();
   const progress = useSectionScrollProgress("firstseq", 0.01);
   const lowEndMode = useLowEndMode();
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistRole, setWaitlistRole] = useState<WaitlistRole>("student");
   const [waitlistMsg, setWaitlistMsg] = useState<string | null>(null);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [slideIdx, setSlideIdx] = useState(0);
+  const roleCopy = ROLE_ONBOARDING_COPY[waitlistRole];
   const revealLeft = Math.min(1, Math.max(0.2, progress * 1.25));
   const revealRight = Math.min(1, Math.max(0.15, (progress - 0.08) * 1.3));
   const headlineY = 26 - progress * 54;
   const lineAOpacity = Math.min(1, 0.3 + progress * 1.5);
+  const cinematicMode = !lowEndMode || isMobileViewport;
+  const alwaysAnimateBouncers = true;
 
   useEffect(() => {
-    if (lowEndMode) return;
+    const update = () => setIsMobileViewport(window.innerWidth < 1024);
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    if (!cinematicMode) return;
     const id = window.setInterval(() => {
-      setSlideIdx((n) => (n + 1) % WAITLIST_SLIDES.length);
+      setSlideIdx((n) => (n + 1) % roleCopy.slides.length);
     }, 3500);
     return () => window.clearInterval(id);
-  }, [lowEndMode]);
+  }, [cinematicMode, roleCopy.slides.length]);
+
+  useEffect(() => {
+    setSlideIdx(0);
+  }, [waitlistRole]);
 
   useEffect(() => {
     router.prefetch("/auth/signup");
@@ -267,19 +291,29 @@ export function FirstSequenceHeroContent() {
       };
       if (!res.ok) {
         if (json.status === "pending") {
-          setWaitlistMsg("You have already applied to the waitlist. Please wait for an admin decision.");
+          setWaitlistMsg(
+            `Your ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review.`,
+          );
         } else if (json.status === "rejected") {
-          setWaitlistMsg("Your waitlist application was rejected. Contact support@mentrixa.one if you believe this is a mistake.");
+          setWaitlistMsg(
+            `Your ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"} access request was not approved. Contact support@mentrixa.one if this seems incorrect.`,
+          );
         } else {
-          setWaitlistMsg(json.error ?? "Could not join waitlist.");
+          setWaitlistMsg(json.error ?? "Could not start access request.");
         }
       } else if (json.approved) {
-        setWaitlistMsg(json.message ?? "You already applied and are approved. You can sign up now.");
+        setWaitlistMsg(
+          json.message ??
+            `You're already approved as a ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"}. Complete signup now.`,
+        );
       } else {
-        setWaitlistMsg(json.message ?? "You are on the waitlist. Check your email for confirmation.");
+        setWaitlistMsg(
+          json.message ??
+            `You're in onboarding as a ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"}. Check your email for next steps.`,
+        );
       }
     } catch {
-      setWaitlistMsg("Could not join waitlist.");
+      setWaitlistMsg("Could not start access request.");
     } finally {
       setWaitlistLoading(false);
     }
@@ -287,9 +321,9 @@ export function FirstSequenceHeroContent() {
 
   return (
     <div className="relative flex min-h-screen items-start justify-center overflow-hidden px-4 pb-8 pt-14 sm:px-5 sm:pt-16 md:items-center md:pt-14 md:pb-8 lg:pt-16 lg:pb-6" id="firstseq">
-      {lowEndMode ? null : <ParticleAnimation className="absolute inset-0 z-0 opacity-30" />}
-      <div className="hidden md:block">
-        <BouncingRoleIcons disabled={lowEndMode} />
+      {cinematicMode ? <ParticleAnimation className="absolute inset-0 z-0 opacity-30" /> : null}
+      <div className="block">
+        <BouncingRoleIcons disabled={!alwaysAnimateBouncers} />
       </div>
       <div
         className="pointer-events-none absolute inset-x-0 top-64 z-[100] block px-5 text-center md:top-80 lg:top-[26rem]"
@@ -299,7 +333,7 @@ export function FirstSequenceHeroContent() {
         }}
       >
         <div className="mx-auto h-40 w-full max-w-4xl mt-2">
-          {lowEndMode ? (
+          {!cinematicMode ? (
             <p className="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter">
               Compete. Climb. Improve.
             </p>
@@ -368,30 +402,35 @@ export function FirstSequenceHeroContent() {
             className="w-full pt-2 sm:pt-4 lg:pt-16"
             style={{ opacity: revealRight, transform: `translateY(${(1 - revealRight) * 16}px)` }}
           >
-            <div id="waitlist" className="relative mx-auto max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 p-2.5 text-left shadow-xl shadow-violet-950/45 backdrop-blur-md max-md:border-white/22 max-md:bg-slate-950/[0.96] sm:p-3 lg:ml-auto lg:w-full lg:max-w-[22rem] xl:-mr-12">
+            <div id="waitlist" className="relative mx-auto max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 p-2.5 text-left shadow-xl shadow-violet-950/45 backdrop-blur-md sm:p-3 lg:ml-auto lg:w-full lg:max-w-[22rem] xl:-mr-12">
   
               <h3 className="text-[15px] font-semibold tracking-tight text-white sm:text-base">
-                {lowEndMode ? "Apply for early access" : (
-                  <Typewriter text="Apply for early access" speed={70} waitTime={2500} cursorChar="_" />
-                )}
+                <span className="block h-6">
+                  <ParticleTextEffect
+                    key={JSON.stringify([roleCopy.headline.toUpperCase()])}
+                    words={[roleCopy.headline.toUpperCase()]}
+                    className="h-full w-full opacity-95"
+                    tone="onDark"
+                  />
+                </span>
               </h3>
 
               <div className="mt-2.5 grid gap-2 lg:grid-cols-[1fr_1.2fr] lg:gap-2">
                 <div className="min-h-[72px] rounded-xl border border-white/10 bg-black/55 p-2">
-                  {WAITLIST_SLIDES.map((s, i) => (
+                  {roleCopy.slides.map((title, i) => (
                     <div
-                      key={s.title}
+                      key={title}
                       className={cn(
                         "transition-all duration-300",
                         i === slideIdx ? "opacity-100 translate-x-0" : "hidden opacity-0 translate-x-2",
                       )}
                     >
-                      <p className="text-sm font-semibold text-white">{s.title}</p>
+                      <p className="text-sm font-semibold text-white">{title}</p>
                       
                     </div>
                   ))}
                   <div className="mt-2 flex gap-1.5">
-                    {WAITLIST_SLIDES.map((_, i) => (
+                    {roleCopy.slides.map((_, i) => (
                       <button
                         key={i}
                         type="button"
@@ -400,7 +439,7 @@ export function FirstSequenceHeroContent() {
                           "h-1.5 rounded-full transition-all",
                           i === slideIdx ? "w-7 bg-blue-500" : "w-3 bg-white/30",
                         )}
-                        aria-label={`Waitlist slide ${i + 1}`}
+                        aria-label={`Onboarding slide ${i + 1}`}
                       />
                     ))}
                   </div>
@@ -410,7 +449,7 @@ export function FirstSequenceHeroContent() {
                     type="email"
                     value={waitlistEmail}
                     onChange={(e) => setWaitlistEmail(e.target.value)}
-                    placeholder="your email "
+                    placeholder="your email"
                     className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500"
                   />
                   <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -443,7 +482,23 @@ export function FirstSequenceHeroContent() {
                     disabled={waitlistLoading}
                     className="mt-2.5 inline-flex min-h-8 w-full items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-60"
                   >
-                    {waitlistLoading ? "Submitting..." : "Join waitlist"}
+                    {waitlistLoading ? (
+                      "Submitting..."
+                    ) : (
+                      <span className="block min-h-5 w-full">
+                        <Typewriter
+                          key={roleCopy.cta}
+                          text={roleCopy.cta}
+                          speed={45}
+                          initialDelay={0}
+                          waitTime={1200}
+                          deleteSpeed={28}
+                          loop={true}
+                          showCursor={false}
+                          className="text-center text-sm font-semibold tracking-wide text-slate-900"
+                        />
+                      </span>
+                    )}
                   </button>
                   {waitlistMsg ? <p className="mt-2 text-xs text-blue-200">{waitlistMsg}</p> : null}
                 </div>
@@ -452,16 +507,6 @@ export function FirstSequenceHeroContent() {
           </div>
         </div>
       </div>
-      {lowEndMode ? null : (
-        <div className="absolute bottom-4 inset-x-0 h-16 w-full z-10 pointer-events-none md:bottom-8 lg:bottom-12">
-          <ParticleTextEffect
-            key={JSON.stringify(["PROVE WHAT YOU KNOW", "MENTRIXA"])}
-            words={["PROVE WHAT YOU KNOW", "MENTRIXA", "CLIMB", "SOLVE", "WIN"]}
-            className="w-full h-full opacity-60"
-            tone="onDark"
-          />
-        </div>
-      )}
     </div>
   );
 }

@@ -123,13 +123,19 @@ export async function approveRegistrationRequest(requestId: string) {
       requestPatch.account_linked_at = new Date().toISOString();
     }
 
-    const { error: requestUpdateError } = await adminClient
+    const { data: statusTransition, error: requestUpdateError } = await adminClient
       .from("registration_requests")
       .update(requestPatch)
-      .eq("id", validRequestId);
+      .eq("id", validRequestId)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
 
     if (requestUpdateError) {
       throw new Error(`Failed to update request status: ${sanitizeError(requestUpdateError)}`);
+    }
+    if (!statusTransition) {
+      throw new Error("Request is not pending");
     }
 
     void sendWaitlistDecisionEmail(request.email, request.role, "approved");
@@ -372,7 +378,15 @@ export async function approveAllPendingRegistrations(): Promise<{ count: number 
       batchPatch.account_linked_at = new Date().toISOString();
     }
 
-    await adminClient.from("registration_requests").update(batchPatch).eq("id", request.id);
+    const { data: transitioned, error: transitionErr } = await adminClient
+      .from("registration_requests")
+      .update(batchPatch)
+      .eq("id", request.id)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
+
+    if (transitionErr || !transitioned) continue;
 
     void sendWaitlistDecisionEmail(request.email, request.role, "approved");
     approved++;

@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     if (fetchError) {
       console.error("[waitlist/join] fetch error:", fetchError.message, fetchError.details);
-      return NextResponse.json({ error: "Could not check waitlist status. Please try again." }, { status: 500 });
+      return NextResponse.json({ error: "Could not check onboarding status. Please try again." }, { status: 500 });
     }
 
     if (existing?.status === "approved") {
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              `This email is already registered on the waitlist as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. Please use the same role or contact support@mentrixa.one if this is incorrect.`,
+              `This email is already approved as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. Please continue with that role or contact support@mentrixa.one if this is incorrect.`,
             status: "approved",
           },
           { status: 409 }
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         ok: true,
         approved: true,
         status: "approved",
-        message: "You already applied and your waitlist access has been approved.",
+        message: "You are already approved. Continue with account setup using this email.",
       });
     }
 
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              `This email was rejected from the waitlist as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot rejoin with the same email. Please contact support@mentrixa.one if you believe this is a mistake.`,
+              `This email was not approved as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot submit another access request with this email. Contact support@mentrixa.one if this seems incorrect.`,
             status: "rejected",
           },
           { status: 403 }
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json(
         {
-          error: "Sorry, you have been rejected and cannot join the waitlist again with this email. Please contact support@mentrixa.one if you believe this is a mistake.",
+          error: "This access request was not approved, and this email cannot submit another one. Contact support@mentrixa.one if this seems incorrect.",
           status: "rejected",
         },
         { status: 403 }
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              `This email is already on the waitlist as a ${existing.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot apply again as a different role. Please wait for an admin decision.`,
+              `This email already has a pending ${existing.role === "tutor" ? "Guide" : "Mentrixer"} onboarding request. You cannot switch roles until review is complete.`,
             status: "pending",
           },
           { status: 409 }
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json(
         {
-          error: "You have already applied to the waitlist. Please wait for an admin decision.",
+          error: "You already have a pending onboarding request. Please wait for admin review.",
           status: "pending",
         },
         { status: 409 }
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
             return NextResponse.json(
               {
                 error:
-                  `This email is already registered on the waitlist as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. Please use the same role or contact support@mentrixa.one if this is incorrect.`,
+                  `This email is already approved as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. Please continue with that role or contact support@mentrixa.one if this is incorrect.`,
                 status: "approved",
               },
               { status: 409 }
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
             ok: true,
             approved: true,
             status: "approved",
-            message: "You already applied and your waitlist access has been approved.",
+            message: "You are already approved. Continue with account setup using this email.",
           });
         }
         if (raced?.status === "rejected") {
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
             return NextResponse.json(
               {
                 error:
-                  `This email was rejected from the waitlist as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot rejoin with the same email. Please contact support@mentrixa.one if you believe this is a mistake.`,
+                  `This email was not approved as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot submit another access request with this email. Contact support@mentrixa.one if this seems incorrect.`,
                 status: "rejected",
               },
               { status: 403 }
@@ -139,7 +139,7 @@ export async function POST(req: Request) {
           }
           return NextResponse.json(
             {
-              error: "Sorry, you have been rejected and cannot join the waitlist again with this email. Please contact support@mentrixa.one if you believe this is a mistake.",
+              error: "This access request was not approved, and this email cannot submit another one. Contact support@mentrixa.one if this seems incorrect.",
               status: "rejected",
             },
             { status: 403 }
@@ -149,7 +149,7 @@ export async function POST(req: Request) {
           return NextResponse.json(
             {
               error:
-                `This email is already on the waitlist as a ${raced.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot apply again as a different role. Please wait for an admin decision.`,
+                `This email already has a pending ${raced.role === "tutor" ? "Guide" : "Mentrixer"} onboarding request. You cannot switch roles until review is complete.`,
               status: "pending",
             },
             { status: 409 }
@@ -157,14 +157,14 @@ export async function POST(req: Request) {
         }
         return NextResponse.json(
           {
-            error: "You have already applied to the waitlist. Please wait for an admin decision.",
+            error: "You already have a pending onboarding request. Please wait for admin review.",
             status: "pending",
           },
           { status: 409 }
         );
       }
       console.error("[waitlist/join] insert error:", insertError.message, insertError.details, insertError.code);
-      return NextResponse.json({ error: "Could not add to waitlist. Please try again." }, { status: 500 });
+      return NextResponse.json({ error: "Could not start onboarding request. Please try again." }, { status: 500 });
     }
 
     const emailed = await sendWaitlistReceivedEmail(email, role);
@@ -177,8 +177,8 @@ export async function POST(req: Request) {
       approved: false,
       status: "pending",
       message: emailed
-        ? "You are on the waitlist. Check your email for confirmation."
-        : "You are on the waitlist. Confirmation email is delayed; please check back shortly.",
+        ? `You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for confirmation.`
+        : `Your ${role === "tutor" ? "Guide" : "Mentrixer"} onboarding request is saved. Confirmation email is delayed; please check back shortly.`,
     });
   } catch (e) {
     console.error("[waitlist/join] unexpected error:", e);

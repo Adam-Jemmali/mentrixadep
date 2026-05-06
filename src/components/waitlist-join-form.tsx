@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { WaitlistRole } from "@/lib/waitlist-role";
+
+const ICON_VERSION = "20260410";
 
 export function WaitlistJoinForm({
   initialEmail = "",
@@ -49,21 +52,29 @@ export function WaitlistJoinForm({
 
       if (!res.ok) {
         if (json.status === "pending") {
-          setMsg("You have already applied to the waitlist. Please wait for an admin decision.");
+          setMsg(
+            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review.`,
+          );
         } else if (json.status === "rejected") {
-          setMsg("Your waitlist application was rejected. Contact support@mentrixa.one if you believe this is a mistake.");
+          setMsg(
+            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request was not approved. Contact support@mentrixa.one if this seems incorrect.`,
+          );
         } else {
-          setMsg(json.error ?? "Could not join waitlist. Please try again.");
+          setMsg(json.error ?? "Could not start access request. Please try again.");
         }
       } else if (json.approved) {
-        setMsg("✓ You are already approved! You can now sign in with your credentials.");
+        setMsg(
+          `✓ You are already approved as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Continue to sign in or create your account.`,
+        );
       } else {
-        setMsg("✓ Success! Check your email for confirmation. We'll notify you once you're approved.");
+        setMsg(
+          `✓ You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for confirmation.`,
+        );
       }
       setEmail("");
     } catch (err) {
-      setMsg("Could not join waitlist. Please try again.");
-      console.error("Waitlist error:", err);
+      setMsg("Could not start access request. Please try again.");
+      console.error("Access request error:", err);
     } finally {
       setLoading(false);
     }
@@ -104,7 +115,13 @@ export function WaitlistJoinForm({
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               )}
             >
-              <span className="h-4 w-4">👤</span>
+              <Image
+                src={`/icons/mentrixer.svg?v=${ICON_VERSION}`}
+                alt=""
+                width={16}
+                height={16}
+                className="h-4 w-4 shrink-0"
+              />
               Mentrixer (Student)
             </button>
             <button
@@ -118,7 +135,13 @@ export function WaitlistJoinForm({
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               )}
             >
-              <span className="h-4 w-4">🎓</span>
+              <Image
+                src={`/icons/guide.svg?v=${ICON_VERSION}`}
+                alt=""
+                width={16}
+                height={16}
+                className="h-4 w-4 shrink-0"
+              />
               Guide (Tutor)
             </button>
           </div>
@@ -131,7 +154,7 @@ export function WaitlistJoinForm({
           disabled={loading || !email.trim()}
           className="w-full inline-flex items-center justify-center rounded-lg bg-mentrixa-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-mentrixa-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Submitting..." : "Join Waitlist"}
+          {loading ? "Submitting..." : "Get Instant Access"}
         </button>
 
         {/* Message */}

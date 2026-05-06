@@ -242,7 +242,7 @@ function NavigationInner({ user }: NavigationProps) {
           {!isJoinPage && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="flex items-center gap-2 rounded-full px-1.5 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+                className="hidden md:flex items-center gap-2 rounded-full px-1.5 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
                 aria-label="Open account menu"
               >
                 <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
@@ -390,14 +390,14 @@ function NavigationInner({ user }: NavigationProps) {
                       <Link
                         href={profileHref}
                         onClick={() => setMobileOpen(false)}
-                        className="py-2.5 text-sm font-medium text-slate-200 hover:text-white"
+                        className="rounded-lg px-2 py-3 text-sm font-medium text-slate-200 transition-colors hover:bg-white/5 hover:text-white"
                       >
                         Profile
                       </Link>
                     ) : null}
                     <button
                       type="button"
-                      className="py-2.5 text-left text-sm font-medium text-red-400 hover:text-red-300"
+                      className="rounded-lg px-2 py-3 text-left text-sm font-medium text-red-400 transition-colors hover:bg-red-950/30 hover:text-red-300"
                       onClick={async () => {
                         setMobileOpen(false);
                         await signOut();

@@ -24,7 +24,7 @@ export default async function SuspendedPage() {
     redirect(getRoleHomePath(userRow.role));
   }
   if (accessStatus !== "suspended") {
-    redirect("/pending-approval");
+    redirect("/auth/signin?error=approval_required");
   }
 
   return (

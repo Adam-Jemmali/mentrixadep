@@ -76,6 +76,18 @@ export async function applyRoleAndSyncProfile(
   const waitlistStatus = waitlist.status;
   const waitlistRole = waitlist.role;
 
+  if (waitlistEnabled && waitlistStatus !== "approved") {
+    const admin = createAdminClient();
+    try {
+      await admin.auth.admin.deleteUser(userId);
+    } catch (e) {
+      console.error("[applyRoleAndSyncProfile] failed to delete non-approved waitlist user from auth:", e);
+    }
+    throw new Error(
+      "This email is not approved yet. Complete onboarding approval first, then continue account activation.",
+    );
+  }
+
   if (waitlistEnabled && waitlistRole && waitlistRole !== role) {
     const admin = createAdminClient();
     try {
@@ -84,7 +96,7 @@ export async function applyRoleAndSyncProfile(
       console.error("[applyRoleAndSyncProfile] failed to delete mismatched-role user from auth:", e);
     }
     throw new Error(
-      `This email is already registered on the waitlist as a ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"}. Please use the same role or contact support@mentrixa.one if this is incorrect.`
+      `This email is already approved as a ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"}. Please continue with the same role or contact support@mentrixa.one if this is incorrect.`
     );
   }
 
@@ -96,7 +108,7 @@ export async function applyRoleAndSyncProfile(
     } catch (e) {
       console.error("[applyRoleAndSyncProfile] failed to delete rejected user from auth:", e);
     }
-    throw new Error("Your application was not approved. Contact support@mentrixa.one for assistance.");
+    throw new Error("Your access request was not approved. Contact support@mentrixa.one for assistance.");
   }
 
   const approved = !waitlistEnabled || waitlistStatus === "approved" || (role === "student" && autoApprove);
@@ -126,26 +138,23 @@ export async function applyRoleAndSyncProfile(
     console.error("[applyRoleAndSyncProfile] auth update:", authErr);
   }
 
-  const status = !waitlistEnabled
-    ? "approved"
-    : waitlistStatus === "approved"
-      ? "approved"
-      : role === "student" && autoApprove
-        ? "approved"
-        : "pending";
   const normEmail = email?.trim().toLowerCase();
   if (normEmail) {
     const admin = createAdminClient();
-    const { error: rErr } = await admin.from("registration_requests").upsert(
-      {
-        email: normEmail,
+    const linkedAt = new Date().toISOString();
+    const rQuery = admin
+      .from("registration_requests")
+      .update({
         role,
-        status,
-        updated_at: new Date().toISOString(),
-        account_linked_at: new Date().toISOString(),
-      },
-      { onConflict: "email" }
-    );
+        ...(waitlistEnabled ? {} : { status: "approved" }),
+        updated_at: linkedAt,
+        account_linked_at: linkedAt,
+      })
+      .eq("email", normEmail);
+    if (waitlistEnabled) {
+      rQuery.eq("status", "approved");
+    }
+    const { error: rErr } = await rQuery;
     if (rErr) {
       console.error("[applyRoleAndSyncProfile] registration_requests:", rErr);
     }
@@ -267,20 +276,36 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
     .select("role, approved, status, is_blacklisted")
     .eq("id", user.id)
     .maybeSingle();
-
-  if (!userData?.role) {
+  let resolvedUserData = userData;
+  if (!resolvedUserData?.role) {
     return "/auth/select-role";
   }
 
-  const accessStatus = normalizeAccessStatus(userData);
+  let accessStatus = normalizeAccessStatus(resolvedUserData);
+  if (waitlistEnabled && accessStatus !== "approved") {
+    const latestWaitlist = await getRegistrationRequestStatus(user.email ?? undefined);
+    if (latestWaitlist.status === "approved") {
+      await syncApprovedWaitlistToUserProfile(user.id, user.email);
+      const { data: refreshed } = await supabase
+        .from("users")
+        .select("role, approved, status, is_blacklisted")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (refreshed?.role) {
+        resolvedUserData = refreshed;
+        accessStatus = normalizeAccessStatus(resolvedUserData);
+      }
+    }
+  }
+
   if (accessStatus === "suspended") {
     return "/suspended";
   }
   if (accessStatus !== "approved") {
-    return "/pending-approval";
+    return "/auth/session-sync";
   }
 
-  return getPostApprovalRedirectPath({ userId: user.id, role: userData.role });
+  return getPostApprovalRedirectPath({ userId: user.id, role: resolvedUserData.role });
 }
 
 /** After GIS `signInWithIdToken` (no Supabase OAuth redirect). */

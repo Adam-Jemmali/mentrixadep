@@ -15,6 +15,9 @@ import {
   getRateLimitId,
 } from "@/lib/security";
 
+export const runtime = "nodejs";
+export const maxDuration = 30;
+
 const SLOT_LOCK_MINUTES = 30;
 
 function lockedUntilIso(): string {

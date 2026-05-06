@@ -8,6 +8,8 @@ import { reportSecurityRateLimitDenied } from "@/lib/observability";
 import { isDisposableEmail } from "@/lib/disposable-email";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
+import { getSiteUrl } from "@/lib/site";
+import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,7 @@ type SignUpBody = {
   password?: string;
   role?: Role;
   ageConfirmed?: boolean;
+  requestActivation?: boolean;
 };
 
 function jsonError(message: string, status = 400, extra?: Record<string, unknown>) {
@@ -28,10 +31,10 @@ export async function POST(req: Request) {
     const ip = getClientIpFromRequest({ headers: req.headers });
     const body = (await req.json().catch(() => ({}))) as SignUpBody;
     const email = validateEmail(body.email);
-    const password = validatePassword(body.password);
     if (isDisposableEmail(email)) return jsonError("Temporary email addresses are not allowed. Please use a real email.", 400);
     const role: Role = body.role === "tutor" ? "tutor" : "student";
     if (!body.ageConfirmed) return jsonError("Please confirm you are 13 years old or older.");
+    const requestActivation = body.requestActivation === true;
 
     const ipLimit = await checkSlidingWindowRateLimit(ipRateKey(ip), RATE_LIMITS.signUpIpBurst.maxRequests, RATE_LIMITS.signUpIpBurst.windowMs);
     if (!ipLimit.allowed) {
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
       const reqRow = await fetchRegistrationRequestRow(admin, email);
       if (reqRow?.status === "rejected") {
         return jsonError(
-          "Your waitlist application was rejected. Please contact support@mentrixa.one if this seems incorrect.",
+          "Your access request was not approved. Please contact support@mentrixa.one if this seems incorrect.",
           403,
           { waitlistStatus: "rejected" }
         );
@@ -62,31 +65,54 @@ export async function POST(req: Request) {
       if (reqRow?.status === "pending") {
         if (reqRow.role && reqRow.role !== role) {
           return jsonError(
-            `This email is already on the waitlist as a ${reqRow.role === "tutor" ? "Guide" : "Mentrixer"}. You cannot sign up as a different role until that waitlist request is approved.`,
+            `This email already has a pending ${reqRow.role === "tutor" ? "Guide" : "Mentrixer"} onboarding request. You cannot sign up as a different role until review is complete.`,
             403,
             { waitlistStatus: "pending" }
           );
         }
         return jsonError(
-          "You have already applied to the waitlist. Please wait for admin approval before signing up.",
+          "You already have a pending onboarding request. Please wait for admin approval before signing up.",
           403,
           { waitlistStatus: "pending" }
         );
       }
       if (!reqRow || reqRow.status !== "approved") {
         return jsonError(
-          "Join the waitlist first using your email, then complete signup after approval.",
+          "Start onboarding with your email first, then complete signup after approval.",
           403,
           { waitlistStatus: "missing" }
         );
       }
       if (reqRow.role && reqRow.role !== role) {
         return jsonError(
-          `This email is already approved on the waitlist as a ${reqRow.role === "tutor" ? "Guide" : "Mentrixer"}. You must sign up with the same role or contact support@mentrixa.one if this is incorrect.`,
+          `This email is already approved as a ${reqRow.role === "tutor" ? "Guide" : "Mentrixer"}. You must sign up with the same role or contact support@mentrixa.one if this is incorrect.`,
           403,
           { waitlistStatus: "approved" }
         );
       }
+    }
+
+    const supabase = await createClient();
+    const admin = createAdminClient();
+
+    if (requestActivation) {
+      const nextPath = `/auth/activate?email=${encodeURIComponent(email)}&role=${role}`;
+      const emailRedirectTo = `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo,
+          shouldCreateUser: true,
+        },
+      });
+      if (otpError) {
+        return jsonError(sanitizeError(otpError), 400);
+      }
+      return NextResponse.json({
+        ok: true,
+        sessionEstablished: false,
+        message: "Activation link sent.",
+      });
     }
 
     const store = await cookies();
@@ -99,39 +125,50 @@ export async function POST(req: Request) {
       return v.length === 8 ? v : undefined;
     })();
 
-    const supabase = await createClient();
-    const admin = createAdminClient();
+    const password = validatePassword(body.password);
     const userMetadata = {
       role,
       age_confirmed_13_or_older: true,
       ...(refCookie ? { referral_code: refCookie } : {}),
     };
+    const {
+      data: { user: sessionUser },
+    } = await supabase.auth.getUser();
 
-    const createRes = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: userMetadata,
-    });
+    if (sessionUser && (sessionUser.email ?? "").toLowerCase() === email) {
+      const { error: updError } = await admin.auth.admin.updateUserById(sessionUser.id, {
+        password,
+        email_confirm: true,
+        user_metadata: userMetadata,
+      });
+      if (updError) {
+        return jsonError(sanitizeError(updError), 400);
+      }
+    } else {
+      const createRes = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: userMetadata,
+      });
 
-    if (createRes.error) {
-      const msg = sanitizeError(createRes.error);
-      const duplicateLike =
-        msg.toLowerCase().includes("already") ||
-        msg.toLowerCase().includes("exists") ||
-        msg.toLowerCase().includes("registered");
-      if (!duplicateLike) {
-        return jsonError(msg, 400);
+      if (createRes.error) {
+        const msg = sanitizeError(createRes.error);
+        const duplicateLike =
+          msg.toLowerCase().includes("already") ||
+          msg.toLowerCase().includes("exists") ||
+          msg.toLowerCase().includes("registered");
+        if (!duplicateLike) {
+          return jsonError(msg, 400);
+        }
       }
     }
 
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) return jsonError(sanitizeError(signInError), 400);
 
-    if (signInError) {
-      return jsonError(sanitizeError(signInError), 400);
+    if (signInData.user?.id) {
+      await syncApprovedWaitlistToUserProfile(signInData.user.id, signInData.user.email ?? email);
     }
 
     return NextResponse.json({

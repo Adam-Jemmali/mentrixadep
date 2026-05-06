@@ -19,9 +19,15 @@ import {
   type SessionEmailDetails,
 } from "@/lib/email";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+export const runtime = "nodejs";
+/** Vercel + Next — webhook runs DB + emails; allow headroom beyond default 10s cap. */
+export const maxDuration = 60;
 
-const stripe = getStripeServer();
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Lazy-init: avoid touching Stripe at module load (build/analyze / missing env edge cases).
+function stripe(): Stripe {
+  return getStripeServer();
+}
 
 /**
  * Idempotency guard: returns true if this event was already processed.
@@ -353,7 +359,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    event = stripe().webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     console.error("[webhook] signature verification failed:", err);
     captureStripeWebhookError("verify", err);
@@ -407,7 +413,7 @@ export async function POST(req: NextRequest) {
         let charge: Stripe.Charge | null = null;
         if (typeof refund.charge === "string") {
           try {
-            charge = await stripe.charges.retrieve(refund.charge);
+            charge = await stripe().charges.retrieve(refund.charge);
           } catch {
             // Non-critical
           }

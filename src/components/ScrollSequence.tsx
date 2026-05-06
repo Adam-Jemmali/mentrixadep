@@ -9,6 +9,8 @@ type ScrollSequenceProps = {
   children?: ReactNode;
   sequenceId?: string;
   fit?: "cover" | "contain";
+  disableMotionSafety?: boolean;
+  eagerPreload?: boolean;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -50,7 +52,16 @@ function getCanvasDpr(dprCap = 2): number {
   return Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.5 : dprCap);
 }
 
-export default function ScrollSequence({ framePath, totalFrames, height, children, sequenceId, fit = "cover" }: ScrollSequenceProps) {
+export default function ScrollSequence({
+  framePath,
+  totalFrames,
+  height,
+  children,
+  sequenceId,
+  fit = "cover",
+  disableMotionSafety = false,
+  eagerPreload = false,
+}: ScrollSequenceProps) {
   const containerRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -140,7 +151,9 @@ export default function ScrollSequence({ framePath, totalFrames, height, childre
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
     const updateCanAnimate = () => {
-      canAnimateRef.current = !media.matches && !connection?.saveData && !document.hidden;
+      canAnimateRef.current = disableMotionSafety
+        ? !document.hidden
+        : !media.matches && !connection?.saveData && !document.hidden;
       if (canAnimateRef.current) scheduleDraw();
     };
     updateCanAnimate();
@@ -151,13 +164,15 @@ export default function ScrollSequence({ framePath, totalFrames, height, childre
       media.removeEventListener("change", updateCanAnimate);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [scheduleDraw]);
+  }, [disableMotionSafety, scheduleDraw]);
 
   useEffect(() => {
     if (totalFrames <= 0) return;
     const images: HTMLImageElement[] = new Array(totalFrames);
     imagesRef.current = images;
-    const batchSize = perfProfileRef.current.batchSizeOverride ?? getBatchSize();
+    const batchSize = eagerPreload
+      ? Math.max(36, perfProfileRef.current.batchSizeOverride ?? getBatchSize())
+      : perfProfileRef.current.batchSizeOverride ?? getBatchSize();
     let cancelled = false;
 
     const loadBatch = (start: number, end: number) => {
@@ -178,8 +193,9 @@ export default function ScrollSequence({ framePath, totalFrames, height, childre
 
     loadBatch(0, batchSize);
     let batch = 1;
-    const schedule =
-      typeof requestIdleCallback !== "undefined"
+    const schedule = eagerPreload
+      ? (cb: () => void) => setTimeout(cb, 8)
+      : typeof requestIdleCallback !== "undefined"
         ? (cb: () => void) => requestIdleCallback(cb, { timeout: 120 })
         : (cb: () => void) => setTimeout(cb, 24);
 
@@ -198,7 +214,7 @@ export default function ScrollSequence({ framePath, totalFrames, height, childre
 
     loadRemaining();
     return () => { cancelled = true; };
-  }, [frameSrc, scheduleDraw, totalFrames]);
+  }, [eagerPreload, frameSrc, scheduleDraw, totalFrames]);
 
   useEffect(() => {
     const section = containerRef.current;

@@ -157,7 +157,7 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
             {counts.pending} pending · {counts.approved} approved · {counts.rejected} rejected
           </p>
           <p className="text-[12px] text-slate-400 mt-1">
-            This queue is also used for landing-page waitlist approvals.
+            This queue is also used for landing-page onboarding approvals.
           </p>
         </div>
 
@@ -316,7 +316,7 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
                             onCheckedChange={(on) => {
                               if (on) void handleReinstateRejected(req.id);
                             }}
-                            aria-label={`Allow waitlist access for ${req.email}`}
+                            aria-label={`Allow onboarding access for ${req.email}`}
                           />
                           <span className="text-[11px] text-slate-500 whitespace-nowrap">Approve access</span>
                         </div>

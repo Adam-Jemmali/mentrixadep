@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 type Props = {
   role: "student" | "tutor" | "admin" | null;
-  /** From `registration_requests.status` — rejected users see a dedicated screen and cannot re-join the waitlist with the same email. */
+  /** From `registration_requests.status` — rejected users see a dedicated screen and cannot submit a new request with the same email. */
   registrationStatus: "pending" | "rejected";
 };
 
@@ -23,7 +23,7 @@ export function PendingApprovalContent({ role, registrationStatus }: Props) {
       : "Almost there";
 
   const subtext = rejected
-    ? "Your request was reviewed and not approved. App access stays locked for this account. You cannot join the waitlist again with this email. If you believe this is a mistake, contact support@mentrixa.one."
+    ? "Your request was reviewed and not approved. App access stays locked for this account. You cannot submit another access request with this email. If you believe this is a mistake, contact support@mentrixa.one."
     : isGuide
       ? "Thanks for applying to teach on Mentrixa. Our team usually reviews Guide profiles within 24 hours. While your request is pending, app access stays locked."
       : "Your account is waiting for admin approval. While your request is pending, app access stays locked.";

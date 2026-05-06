@@ -115,7 +115,7 @@ export async function requireRole(role: UserRole | UserRole[]): Promise<AuthUser
       redirect("/suspended");
     }
     if (!hasActiveVerification) {
-      redirect("/pending-approval");
+      redirect("/auth/session-sync");
     }
     // Active verification: allow through (full access)
   }

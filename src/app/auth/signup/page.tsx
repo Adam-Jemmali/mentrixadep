@@ -15,13 +15,15 @@ export default async function SignUpPage({
 }) {
   const { email: emailParam, role: roleParam } = await searchParams;
   const email = (emailParam ?? "").trim().toLowerCase();
+  const waitlistRole = waitlistRoleFromQuery(roleParam);
   if (email) {
-    redirect(`/auth/activate?email=${encodeURIComponent(email)}`);
+    redirect(`/auth/activate?email=${encodeURIComponent(email)}&role=${waitlistRole}`);
   }
-  if (isWaitlistEnabled()) {
-    const waitlistRole = waitlistRoleFromQuery(roleParam);
-    redirect(`/join?role=${waitlistRole}`);
-  }
-  
-  return <SignupFormClient />;
+
+  return (
+    <SignupFormClient
+      initialRole={waitlistRole}
+      waitlistEnabled={isWaitlistEnabled()}
+    />
+  );
 }

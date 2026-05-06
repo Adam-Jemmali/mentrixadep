@@ -94,6 +94,15 @@ async function main() {
     process.exit(1);
   }
 
+  const sk = (process.env.STRIPE_SECRET_KEY || "").trim();
+  const appForMode =
+    (readArgValue("--app-url") || process.env.STRIPE_VERIFY_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "").trim();
+  if (sk.startsWith("sk_test_") && appForMode && /^https:\/\//i.test(appForMode) && !/localhost/i.test(appForMode)) {
+    console.warn(
+      "Warning: STRIPE_SECRET_KEY is test mode but app URL looks like production. Live deploys need sk_live_ and the matching live webhook signing secret.",
+    );
+  }
+
   if (!isLikelyWebhookSecret(process.env.STRIPE_WEBHOOK_SECRET)) {
     console.error("STRIPE_WEBHOOK_SECRET does not look valid (expected prefix whsec_)");
     process.exit(1);

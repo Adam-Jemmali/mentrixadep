@@ -26,6 +26,7 @@ export default function SignInPage() {
   const passwordReset = searchParams.get("reset") === "1";
   const authError = searchParams.get("error");
   const emailPrefill = searchParams.get("email")?.trim().toLowerCase() ?? "";
+  const desiredRole = searchParams.get("role") === "tutor" ? "tutor" : "student";
 
   useEffect(() => {
     const wrapper = document.getElementById("auth-form-wrapper");
@@ -43,7 +44,13 @@ export default function SignInPage() {
   useEffect(() => {
     if (authError === "waitlist_rejected") {
       setError(
-        "Your waitlist application was rejected. You cannot sign in with this email. Please contact support@mentrixa.one if you believe this is a mistake."
+        "Your access request was not approved. You cannot sign in with this email. Please contact support@mentrixa.one if this seems incorrect."
+      );
+      return;
+    }
+    if (authError === "approval_required") {
+      setError(
+        "Your onboarding approval is still required for this account. Use the approved onboarding email link, then continue with Google or set your password."
       );
     }
   }, [authError]);
@@ -84,15 +91,26 @@ export default function SignInPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, roleHint: desiredRole }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
         redirectTo?: string;
+        redirectToSignup?: boolean;
+        signupRole?: "student" | "tutor";
       };
+      if (body.redirectToSignup) {
+        const signupRole = body.signupRole === "tutor" ? "tutor" : desiredRole;
+        router.push(`/auth/signup?role=${signupRole}`);
+        return;
+      }
       if (!res.ok || !body.ok || !body.redirectTo) {
         setError(toUserFacingAuthError(body.error ?? "Sign in failed. Please try again."));
+        return;
+      }
+      if (body.redirectTo.startsWith("/auth/session-sync")) {
+        window.location.assign(body.redirectTo);
         return;
       }
       router.push(body.redirectTo);
@@ -120,8 +138,8 @@ export default function SignInPage() {
       </h1>
       <p className="text-sm text-slate-500 mb-5">
         New to Mentrixa?{" "}
-        <Link href="/join" className="text-mentrixa-600 hover:underline">
-          Join the waitlist
+        <Link href="/auth/signup" className="text-mentrixa-600 hover:underline">
+          Get instant access
         </Link>
       </p>
 

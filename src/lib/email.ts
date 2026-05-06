@@ -1048,7 +1048,7 @@ export async function sendWaitlistReceivedEmail(
       Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
     </p>
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
-      You are on the Mentrixa waitlist as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong>.
+      You're in Mentrixa onboarding as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong>.
       We will email you as soon as an admin approves your access.
     </p>
     <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0 0 20px;">
@@ -1058,8 +1058,8 @@ export async function sendWaitlistReceivedEmail(
   `;
   return sendWaitlistEmailWithFallback(
     email,
-    `${hi}, you are on the Mentrixa waitlist`,
-    baseTemplate("Waitlist confirmed", body),
+    `${hi}, your Mentrixa onboarding request is received`,
+    baseTemplate("Onboarding request received", body),
   );
 }
 
@@ -1077,10 +1077,10 @@ export async function sendWaitlistDecisionEmail(
         Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
       </p>
       <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
-        Great news! Your waitlist access as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> is approved.
-        You can now sign up / sign in to Mentrixa with this email.
+        Great news! Your access as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> is approved.
+        You can now sign up or sign in to Mentrixa with this email.
       </p>
-      ${ctaButton(`${APP_URL}/auth/signup?email=${encodeURIComponent(email)}`, "Continue to Mentrixa", {
+      ${ctaButton(`${APP_URL}/auth/signup?email=${encodeURIComponent(email)}&role=${role === "tutor" ? "tutor" : "student"}`, "Continue to Mentrixa", {
         openInNewTab: true,
       })}
     `
@@ -1089,7 +1089,7 @@ export async function sendWaitlistDecisionEmail(
         Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,
       </p>
       <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
-        Your waitlist request as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> was not approved.
+        Your access request as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong> was not approved.
       </p>
       <p style="color:#737373;font-size:13px;line-height:1.55;margin:0 0 20px;">
         If you believe this is a mistake, please contact us at <a href="mailto:support@mentrixa.one" style="color:#60a5fa;">support@mentrixa.one</a>.
@@ -1099,9 +1099,9 @@ export async function sendWaitlistDecisionEmail(
   return sendWaitlistEmailWithFallback(
     email,
     approved
-      ? `${hi}, your Mentrixa waitlist access is approved`
-      : `${hi}, update on your Mentrixa waitlist request`,
-    baseTemplate(approved ? "Waitlist approved" : "Waitlist update", body),
+      ? `${hi}, your Mentrixa access is approved`
+      : `${hi}, update on your Mentrixa access request`,
+    baseTemplate(approved ? "Access approved" : "Access update", body),
   );
 }
 

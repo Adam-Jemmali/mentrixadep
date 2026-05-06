@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
 import type { AuthUser } from "@/lib/auth";
@@ -84,8 +84,11 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const onboardingTour = searchParams.get("onboarding") === "true";
   const isStudioRoute =
     pathname === "/tutor/sessions-ai" || pathname.startsWith("/tutor/sessions-ai/");
+  const solidBlackShell = isStudioRoute || onboardingTour;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -111,10 +114,10 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
 
   const initials = user ? getInitials(user.displayName, user.email) : "G";
   const profileHref = user ? `/tutor/${user.id}` : "/tutor";
-  const studioDesktopNavClass = isStudioRoute
+  const studioDesktopNavClass = solidBlackShell
     ? "bg-black/90 supports-[backdrop-filter]:bg-black/85 shadow-[0_10px_36px_rgba(0,0,0,0.45)]"
     : undefined;
-  const studioMobileNavClass = isStudioRoute
+  const studioMobileNavClass = solidBlackShell
     ? "bg-black/70 shadow-[0_10px_30px_rgba(0,0,0,0.38)]"
     : undefined;
 

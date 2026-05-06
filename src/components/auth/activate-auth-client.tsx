@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ export function ActivateAuthClient({
   email: string;
   role: "student" | "tutor";
 }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -67,7 +65,7 @@ export function ActivateAuthClient({
       }
 
       if (body.sessionEstablished) {
-        router.replace("/auth/session-sync");
+        window.location.assign("/auth/session-sync");
         return;
       }
 
@@ -83,7 +81,7 @@ export function ActivateAuthClient({
     <div className="mx-auto max-w-md px-4 py-12">
       <h1 className="text-2xl font-bold text-slate-900">Activate your Mentrixa access</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Your waitlist is approved. Continue with Google or create a password for {email}.
+        Your onboarding approval is confirmed. Continue with Google or create a password for {email}.
       </p>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 flex items-center gap-3">

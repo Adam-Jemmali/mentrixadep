@@ -12,7 +12,6 @@ const publicPaths = [
   "/auth/reset-password",
   "/terms",
   "/privacy",
-  "/join",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

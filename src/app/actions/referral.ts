@@ -21,7 +21,7 @@ function hashIp(ip: string): string {
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex");
 }
 
-/** Public site URL for /join?ref= */
+/** Public site URL for /auth/signup?ref= */
 export async function getReferralInviteUrl(): Promise<string | null> {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -30,7 +30,7 @@ export async function getReferralInviteUrl(): Promise<string | null> {
   const code = data?.referral_code;
   if (!code || typeof code !== "string") return null;
   const base = getSiteUrl();
-  return `${base}/join?ref=${encodeURIComponent(code)}`;
+  return `${base}/auth/signup?ref=${encodeURIComponent(code)}`;
 }
 
 export type ReferralListItem = {

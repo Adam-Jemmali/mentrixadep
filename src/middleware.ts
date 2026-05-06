@@ -51,7 +51,6 @@ const publicRoutes = new Set([
   "/manifest.json",
   "/robots.txt",
   "/sitemap.xml",
-  "/join",
   "/tutor/stripe/refresh",
   "/tutor/stripe/success",
   /** Marketing / legal — no session required (same route group as landing links in footer). */
@@ -68,8 +67,57 @@ const publicPrefixes = ["/tutor/"];
 const authRoutesForRateLimit = ["/auth/signin", "/auth/signup"];
 
 const authRoutes = ["/auth/signin", "/auth/signup"];
-const pendingApprovalRoute = "/pending-approval";
 const maintenanceRoute = "/maintenance";
+
+async function hasApprovedRegistrationByEmail(
+  supabaseUrl: string,
+  serviceRoleKey: string | null | undefined,
+  email: string | null | undefined,
+): Promise<boolean> {
+  const normEmail = (email ?? "").trim().toLowerCase();
+  const serviceKey = serviceRoleKey?.trim();
+  if (!normEmail || !serviceKey) return false;
+  try {
+    const rpcRes = await fetch(`${supabaseUrl}/rest/v1/rpc/registration_request_by_identity_email`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ p_email: normEmail }),
+      cache: "no-store",
+    });
+    if (rpcRes.ok) {
+      const rpcData: unknown = await rpcRes.json();
+      const row =
+        Array.isArray(rpcData) && rpcData.length > 0
+          ? (rpcData[0] as { status?: string | null })
+          : ((rpcData ?? null) as { status?: string | null } | null);
+      if (row && (row.status ?? "").toLowerCase() === "approved") {
+        return true;
+      }
+    }
+
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/registration_requests?select=status&email=eq.${encodeURIComponent(normEmail)}&limit=1`,
+      {
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return false;
+    const rows: Array<{ status?: string | null }> = await res.json();
+    return (rows[0]?.status ?? "").toLowerCase() === "approved";
+  } catch {
+    return false;
+  }
+}
 
 /** App Router pages do not handle OPTIONS; extensions / probes get 405. Reply 204 early for public auth entry paths. */
 const publicAuthPageOptions204 = new Set([
@@ -79,7 +127,6 @@ const publicAuthPageOptions204 = new Set([
   "/auth/reset-password",
   "/auth/confirm-reset",
   "/auth/activate",
-  "/join",
 ]);
 
 const routeRoleMap: Record<string, string[]> = {
@@ -216,15 +263,6 @@ export async function middleware(request: NextRequest) {
     return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
   }
 
-  // Handle accidental POSTs to auth page routes (extensions / stale forms) to avoid 405.
-  // Real sign-in/up logic uses /api/auth/*.
-  // Never short-circuit Next.js Server Actions: they POST with `next-action` and must get
-  // an RSC (`text/x-component`) response — otherwise the client throws "An unexpected
-  // response was received from the server." (e.g. GoogleSignInButton → getPostOAuthRedirectPath).
-  if (method === "POST" && publicAuthPageOptions204.has(pathname) && !isLikelyNextjsServerActionPost(request)) {
-    return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
-  }
-
   // Referral link ?ref=CODE — persist cookie and strip query (clean URLs).
   const refRaw = request.nextUrl.searchParams.get("ref");
   if (refRaw && method === "GET") {
@@ -236,9 +274,6 @@ export async function middleware(request: NextRequest) {
     if (normalized.length === 8) {
       const url = request.nextUrl.clone();
       url.searchParams.delete("ref");
-      if (pathname === "/join") {
-        url.pathname = "/auth/signup";
-      }
       const res = NextResponse.redirect(url);
       res.cookies.set({
         name: REFERRAL_COOKIE_NAME,
@@ -487,10 +522,21 @@ async function runSupabaseAuthGuard(
     }
 
     if (accessStatus !== "approved") {
-      const url = request.nextUrl.clone();
-      url.pathname = pendingApprovalRoute;
-      url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      const isApprovedInOnboarding = await hasApprovedRegistrationByEmail(
+        supabaseUrl,
+        serviceRoleKey,
+        user.email,
+      );
+      if (isApprovedInOnboarding) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/auth/session-sync";
+        url.search = "";
+        return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      }
+      // Not approved and not in onboarding: let the auth page render as-is.
+      // Redirecting to /auth/signin?error=... would loop because /auth/signin
+      // is itself an authRoute and would trigger this block again infinitely.
+      return finalizeResponse(supabaseResponse, request, user.id);
     }
 
     const url = request.nextUrl.clone();
@@ -529,12 +575,20 @@ async function runSupabaseAuthGuard(
     }
 
     if (accessStatus !== "approved") {
-      if (pathname === pendingApprovalRoute) {
-        return finalizeResponse(supabaseResponse, request, user.id);
+      const isApprovedInOnboarding = await hasApprovedRegistrationByEmail(
+        supabaseUrl,
+        serviceRoleKey,
+        user.email,
+      );
+      if (isApprovedInOnboarding) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/auth/session-sync";
+        url.search = "";
+        return finalizeResponse(NextResponse.redirect(url), request, user.id);
       }
       const url = request.nextUrl.clone();
-      url.pathname = pendingApprovalRoute;
-      url.search = "";
+      url.pathname = "/auth/signin";
+      url.search = "?error=approval_required";
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 

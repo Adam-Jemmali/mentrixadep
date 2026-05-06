@@ -75,7 +75,7 @@ export function FirstLoginTourPanel({ titleId, children, className }: Props) {
   }, [clampOffset]);
 
   return (
-    <div className="fixed inset-0 z-[120] pointer-events-none">
+    <div className="fixed inset-0 z-[35] pointer-events-none">
       <div
         role="dialog"
         aria-modal="false"
@@ -83,7 +83,7 @@ export function FirstLoginTourPanel({ titleId, children, className }: Props) {
         className={cn(
           "pointer-events-auto fixed bottom-4 left-4 right-4 mx-auto flex max-h-[min(58vh,340px)] flex-col sm:left-auto sm:right-4 sm:mx-0",
           "w-full max-w-[min(100%-2rem,268px)] sm:max-w-[268px]",
-          "rounded-xl border border-white/12 bg-[#0e162f]/92 backdrop-blur-md shadow-lg shadow-black/30",
+          "rounded-xl border border-slate-700 bg-slate-950/98 backdrop-blur-md shadow-xl shadow-black/45",
           "text-slate-100",
           className,
         )}
@@ -92,7 +92,7 @@ export function FirstLoginTourPanel({ titleId, children, className }: Props) {
         }}
       >
         <div
-          className="flex shrink-0 cursor-grab touch-none items-center justify-center gap-1 rounded-t-xl border-b border-white/10 bg-white/[0.06] py-1 text-white/45 active:cursor-grabbing"
+          className="flex shrink-0 cursor-grab touch-none items-center justify-center gap-1 rounded-t-xl border-b border-slate-700 bg-slate-900/95 py-1 text-slate-300 active:cursor-grabbing"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
@@ -103,7 +103,9 @@ export function FirstLoginTourPanel({ titleId, children, className }: Props) {
           <GripVertical className="h-4 w-4 shrink-0" aria-hidden strokeWidth={2} />
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">Drag</span>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-950/98 p-3">
+          {children}
+        </div>
       </div>
     </div>
   );

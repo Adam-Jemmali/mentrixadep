@@ -11,9 +11,9 @@ import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
 const PHRASES = [
-  "Your grades are not your ceiling.",
-  "Every session makes the next one easier.",
-  "The best Guides are already here.",
+  "Mentrixers level up through quests, XP and progress through divisions.",
+  "Stuck on a topic? Book a Guide and leave with your next customized Quest Package.",
+  "Guides don’t just teach sessions  they unlock momentum after every call.",
 ] as const;
 
 export default function AuthLayoutShell({ children }: { children: ReactNode }) {

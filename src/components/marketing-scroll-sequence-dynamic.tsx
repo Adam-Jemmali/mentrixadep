@@ -14,6 +14,8 @@ export type MarketingScrollSequenceDynamicProps = {
   children?: ReactNode;
   sequenceId?: string;
   fit?: "cover" | "contain";
+  disableMotionSafety?: boolean;
+  eagerPreload?: boolean;
 };
 
 export function MarketingScrollSequenceDynamic(props: MarketingScrollSequenceDynamicProps) {
