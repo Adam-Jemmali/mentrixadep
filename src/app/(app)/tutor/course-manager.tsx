@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addTutorCourse, removeTutorCourse } from "@/app/actions/tutor";
+import { addTutorCourse, removeTutorCourse, uploadTutorCourseEvidence } from "@/app/actions/tutor";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
   const [courseName, setCourseName] = useState("");
   const [proof, setProof] = useState("");
   const [evidenceLink, setEvidenceLink] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -34,17 +35,38 @@ export function CourseManager({ courses }: CourseManagerProps) {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!courseName.trim() || !proof.trim() || !evidenceLink.trim()) {
-      setError("Course name, mastery proof, and evidence link are required");
+    if (!courseName.trim() || !proof.trim()) {
+      setError("Course name and mastery proof are required");
+      return;
+    }
+    if (!evidenceLink.trim() && !evidenceFile) {
+      setError("Add either an evidence link or upload an evidence file");
+      return;
+    }
+    if (evidenceLink.trim() && evidenceFile) {
+      setError("Choose one evidence source: link or file upload, not both");
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      await addTutorCourse(courseName, proof, evidenceLink, viewingAsUserId ?? undefined);
+      let finalEvidence = evidenceLink.trim();
+
+      if (evidenceFile) {
+        const fd = new FormData();
+        fd.set("file", evidenceFile);
+        const uploaded = await uploadTutorCourseEvidence(fd, viewingAsUserId ?? undefined);
+        if (!uploaded.success) {
+          throw new Error(uploaded.error);
+        }
+        finalEvidence = uploaded.url;
+      }
+
+      await addTutorCourse(courseName, proof, finalEvidence, viewingAsUserId ?? undefined);
       setCourseName("");
       setProof("");
       setEvidenceLink("");
+      setEvidenceFile(null);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add course");
@@ -165,7 +187,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
-                Physical evidence link
+                Physical evidence
               </label>
               <Input
                 value={evidenceLink}
@@ -174,9 +196,29 @@ export function CourseManager({ courses }: CourseManagerProps) {
                 className="h-12 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-mentrixa-500 focus:ring-mentrixa-500/10 rounded-xl font-semibold"
                 maxLength={500}
                 type="url"
+                disabled={Boolean(evidenceFile)}
               />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-slate-500">or upload file:</span>
+                <input
+                  type="file"
+                  accept=".pdf,image/png,image/jpeg"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setEvidenceFile(file);
+                    if (file) setEvidenceLink("");
+                  }}
+                  className="text-[11px] text-slate-600 file:mr-2 file:rounded file:border file:border-slate-300 file:bg-white file:px-2 file:py-1 file:text-[11px] file:text-slate-700"
+                  disabled={Boolean(evidenceLink.trim())}
+                />
+              </div>
+              {evidenceFile ? (
+                <p className="text-[11px] text-slate-600">
+                  Selected: {evidenceFile.name} ({Math.max(1, Math.round(evidenceFile.size / 1024))} KB)
+                </p>
+              ) : null}
               <p className="text-[11px] text-slate-500">
-                Admin reviews this evidence before proficiency is established.
+                Admin reviews this evidence before proficiency is established. Files are restricted to PDF/JPG/PNG and checked for unsafe or mismatched file signatures.
               </p>
             </div>
 

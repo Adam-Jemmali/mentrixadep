@@ -33,6 +33,7 @@ import {
   RATE_LIMITS,
   getRateLimitId,
   assertNoBlockedLanguage,
+  validateUploadedFile,
 } from "@/lib/security";
 import type { PayoutDashboardData } from "@/app/actions/stripe-connect";
 import { sanitizeForRsc } from "@/lib/rsc-serialize";
@@ -1880,6 +1881,87 @@ export async function addTutorCourse(
 
   revalidatePath("/tutor");
   return { success: true };
+}
+
+function evidenceExtFromMime(mimeType: string): "pdf" | "jpg" | "png" {
+  if (mimeType === "application/pdf") return "pdf";
+  if (mimeType === "image/png") return "png";
+  return "jpg";
+}
+
+function pdfStructureLooksSafe(bytes: Buffer): boolean {
+  if (bytes.length < 8) return false;
+  const start = bytes.subarray(0, 5).toString("utf8");
+  if (start !== "%PDF-") return false;
+  const tail = bytes.subarray(Math.max(0, bytes.length - 2048)).toString("utf8");
+  return tail.includes("%%EOF");
+}
+
+export async function uploadTutorCourseEvidence(
+  formData: FormData,
+  onBehalfOfUserId?: string,
+): Promise<{ success: true; url: string } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["tutor", "admin"]);
+    if (user.role === "admin" && !onBehalfOfUserId) {
+      return { success: false, error: "Invalid admin context for evidence upload." };
+    }
+    const actingAsId =
+      user.role === "admin" && onBehalfOfUserId ? onBehalfOfUserId : user.id;
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.createAvailability,
+      "upload tutor evidence",
+    );
+
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size <= 0) {
+      return { success: false, error: "Choose a file to upload." };
+    }
+
+    const validation = await validateUploadedFile(file, {
+      allowedMimeTypes: ["image/jpeg", "image/png", "application/pdf"],
+      maxBytes: 8 * 1024 * 1024,
+    });
+    if (!validation.ok) {
+      return { success: false, error: validation.error };
+    }
+
+    const bytes = Buffer.from(await file.arrayBuffer());
+    if (validation.mimeType === "application/pdf" && !pdfStructureLooksSafe(bytes)) {
+      return {
+        success: false,
+        error: "PDF appears corrupted or unsafe. Export a clean PDF and try again.",
+      };
+    }
+
+    const ext = evidenceExtFromMime(validation.mimeType);
+    const path = `${actingAsId}/${randomUUID()}.${ext}`;
+    const admin = createAdminClient();
+    const { error: uploadErr } = await admin.storage
+      .from("tutor-evidence")
+      .upload(path, bytes, {
+        contentType: validation.mimeType,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadErr) {
+      return {
+        success: false,
+        error:
+          uploadErr.message.includes("Bucket") || uploadErr.message.includes("not found")
+            ? "Tutor evidence storage is not configured yet."
+            : `Evidence upload failed: ${uploadErr.message}`,
+      };
+    }
+
+    const { data: pub } = admin.storage.from("tutor-evidence").getPublicUrl(path);
+    return { success: true, url: pub.publicUrl };
+  } catch (e) {
+    return { success: false, error: sanitizeError(e) };
+  }
 }
 
 export async function removeTutorCourse(courseId: string, onBehalfOfUserId?: string) {

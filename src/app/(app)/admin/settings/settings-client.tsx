@@ -12,6 +12,8 @@ interface Props {
   settings: SystemSettings;
 }
 
+type TotpFactor = { id: string; status?: string | null };
+
 function Toggle({
   checked,
   onChange,
@@ -119,8 +121,9 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       setMfaError(error.message);
       return;
     }
-    const verifiedTotp = (data.totp ?? []).find((f) => f.status === "verified");
-    const unverifiedTotp = (data.totp ?? []).find((f) => f.status !== "verified");
+    const factors = (data.totp ?? []) as TotpFactor[];
+    const verifiedTotp = factors.find((f: TotpFactor) => f.status === "verified");
+    const unverifiedTotp = factors.find((f: TotpFactor) => f.status !== "verified");
     setEnrolledFactorId(verifiedTotp?.id ?? null);
     setPendingFactorId(unverifiedTotp?.id ?? null);
   }
@@ -139,7 +142,8 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
     try {
       const list = await supabase.auth.mfa.listFactors();
       if (list.error) throw list.error;
-      const existingUnverified = (list.data.totp ?? []).find((f) => f.status !== "verified");
+      const factors = (list.data.totp ?? []) as TotpFactor[];
+      const existingUnverified = factors.find((f: TotpFactor) => f.status !== "verified");
       if (existingUnverified) {
         await supabase.auth.mfa.unenroll({ factorId: existingUnverified.id });
       }
