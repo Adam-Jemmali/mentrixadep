@@ -143,21 +143,27 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       const list = await supabase.auth.mfa.listFactors();
       if (list.error) throw list.error;
       const factors = (list.data.totp ?? []) as TotpFactor[];
+      let factorId: string | null = null;
+      let qrSvg: string | null = null;
+
       const existingUnverified = factors.find((f: TotpFactor) => f.status !== "verified");
       if (existingUnverified) {
-        await supabase.auth.mfa.unenroll({ factorId: existingUnverified.id });
+        factorId = existingUnverified.id;
+      } else {
+        const enrolled = await supabase.auth.mfa.enroll({
+          factorType: "totp",
+          friendlyName: "Mentrixa Admin",
+        });
+        if (enrolled.error) throw enrolled.error;
+        factorId = enrolled.data.id;
+        qrSvg = enrolled.data.totp.qr_code ?? null;
       }
 
-      const enrolled = await supabase.auth.mfa.enroll({
-        factorType: "totp",
-        friendlyName: "Mentrixa Admin",
-      });
-      if (enrolled.error) throw enrolled.error;
-
-      const factorId = enrolled.data.id;
-      const qrSvg = enrolled.data.totp.qr_code;
+      if (!factorId) {
+        throw new Error("Could not initialize 2FA setup.");
+      }
       setPendingFactorId(factorId);
-      setPendingFactorQrSvg(qrSvg ?? null);
+      setPendingFactorQrSvg(qrSvg);
 
       const challenged = await supabase.auth.mfa.challenge({ factorId });
       if (challenged.error) throw challenged.error;
@@ -165,6 +171,27 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       setMfaMessage("Scan the QR code, then enter the 6-digit code to verify.");
     } catch (error) {
       setMfaError(error instanceof Error ? error.message : "Failed to start 2FA setup.");
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function cancelMfaSetup() {
+    if (!pendingFactorId) return;
+    setMfaLoading(true);
+    setMfaError(null);
+    setMfaMessage(null);
+    try {
+      const result = await supabase.auth.mfa.unenroll({ factorId: pendingFactorId });
+      if (result.error) throw result.error;
+      setPendingFactorId(null);
+      setPendingFactorQrSvg(null);
+      setPendingChallengeId(null);
+      setVerifyCode("");
+      setMfaMessage("2FA setup cancelled.");
+      await refreshMfaState();
+    } catch (error) {
+      setMfaError(error instanceof Error ? error.message : "Failed to cancel setup.");
     } finally {
       setMfaLoading(false);
     }
@@ -360,8 +387,18 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
                 disabled={mfaLoading}
                 className="px-3 py-2 text-[12px] rounded-lg border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 disabled:opacity-50"
               >
-                {mfaLoading ? "Working..." : enrolledFactorId ? "Reset setup" : "Set up 2FA"}
+                {mfaLoading ? "Working..." : pendingFactorId ? "Restart setup" : enrolledFactorId ? "Reset setup" : "Set up 2FA"}
               </button>
+              {pendingFactorId ? (
+                <button
+                  type="button"
+                  onClick={cancelMfaSetup}
+                  disabled={mfaLoading}
+                  className="px-3 py-2 text-[12px] rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel setup
+                </button>
+              ) : null}
               {enrolledFactorId ? (
                 <button
                   type="button"

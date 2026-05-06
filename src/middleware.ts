@@ -432,19 +432,16 @@ async function runSupabaseAuthGuard(
     maintenanceMode = maintenanceSetting?.value?.enabled === true;
   }
 
+  const publicOk = isPublicRoute(pathname) || isPublicPrefixPath(pathname);
+
   if (
     maintenanceMode &&
-    !pathname.startsWith("/api/") &&
+    user &&
+    !publicOk &&
     pathname !== maintenanceRoute &&
-    !pathname.startsWith("/admin")
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/api/")
   ) {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = maintenanceRoute;
-      url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, null);
-    }
-
     const userData = await getUserData();
     if (userData?.role !== "admin") {
       const url = request.nextUrl.clone();
@@ -468,8 +465,6 @@ async function runSupabaseAuthGuard(
     url.search = "";
     return finalizeResponse(NextResponse.redirect(url), request, user.id);
   }
-
-  const publicOk = isPublicRoute(pathname) || isPublicPrefixPath(pathname);
 
   if (!user && !publicOk) {
     const url = request.nextUrl.clone();
