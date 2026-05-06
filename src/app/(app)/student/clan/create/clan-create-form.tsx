@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClan } from "@/app/actions/clan";
 import { CLAN_AVATAR_PRESETS } from "@/lib/clan-constants";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,10 @@ export function ClanCreateForm({ divisions }: { divisions: Div[] }) {
   const [preset, setPreset] = useState<string>("shield");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    router.prefetch("/student/clan");
+  }, [router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

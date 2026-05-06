@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/images/Mentrixa.png",
+        url: "/images/Mentrixa.webp",
         width: 1200,
         height: 630,
         alt: `${SITE_NAME} — live tutoring and learning platform`,
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${SITE_NAME} — Live tutoring, quests & divisions`,
     description: SITE_DESCRIPTION,
-    images: ["/images/Mentrixa.png"],
+    images: ["/images/Mentrixa.webp"],
   },
 };
 
@@ -73,10 +73,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="google-site-verification" content="7qMsPjvmHXjq4yWwD5z0HMpqJuyTBlhpDONtfRfh9dk" />
-        {/* Favicons: versioned ICO first to bust stale crawler caches, PNGs for modern clients. */}
+        {/* Favicons: versioned ICO first to bust stale crawler caches, SVG for modern clients. */}
         <link rel="icon" href="/favicon-mentrixa.ico?v=20260417" type="image/x-icon" sizes="any" />
-        <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
-        <link rel="icon" href="/icon.png" type="image/png" />
+        <link rel="icon" href="/mentrixa-checkout-icon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon-mentrixa.ico?v=20260417" type="image/x-icon" />
         <link rel="manifest" href="/manifest.json" />
         <script

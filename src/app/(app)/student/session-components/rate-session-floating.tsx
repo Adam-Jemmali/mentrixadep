@@ -50,7 +50,7 @@ export function RateSessionFloating({
             </p>
             <p className="mt-0.5 text-sm font-medium text-slate-900">{session.course}</p>
           </div>
-          <Image src="/images/xp.png" alt="Rating" width={16} height={16} className="shrink-0 opacity-70" />
+          <Image src="/images/xp.webp" alt="Rating" width={16} height={16} className="shrink-0 opacity-70" />
         </div>
         <RateSessionForm
           sessionId={session.id}

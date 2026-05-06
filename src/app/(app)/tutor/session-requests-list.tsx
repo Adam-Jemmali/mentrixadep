@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
@@ -41,6 +41,8 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
 
   const [rows, setRows] = useState(sessionRequests);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [pendingActionById, setPendingActionById] = useState<Record<string, "approve" | "reject">>({});
+  const [isRefreshing, startTransition] = useTransition();
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
@@ -76,11 +78,20 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
   }, [focusedId, rows]);
 
   const handleApprove = async (id: string) => {
+    setPendingActionById((current) => ({ ...current, [id]: "approve" }));
     const rowEl = rowRefs.current[id];
     if (!rowEl) {
-      await approveSessionRequest(id, viewingAsUserId ?? undefined);
-      goToWeekSchedule();
-      router.refresh();
+      try {
+        await approveSessionRequest(id, viewingAsUserId ?? undefined);
+        goToWeekSchedule();
+        startTransition(() => router.refresh());
+      } finally {
+        setPendingActionById((current) => {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
+      }
       return;
     }
     gsap.to(rowEl, {
@@ -92,19 +103,36 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
       ease: "power2.in",
       onComplete: () => {
         setRows((current) => current.filter((r) => r.id !== id));
-        approveSessionRequest(id, viewingAsUserId ?? undefined).then(() => {
-          goToWeekSchedule();
-          router.refresh();
-        });
+        approveSessionRequest(id, viewingAsUserId ?? undefined)
+          .then(() => {
+            goToWeekSchedule();
+            startTransition(() => router.refresh());
+          })
+          .finally(() => {
+            setPendingActionById((current) => {
+              const next = { ...current };
+              delete next[id];
+              return next;
+            });
+          });
       },
     });
   };
 
   const handleReject = async (id: string) => {
+    setPendingActionById((current) => ({ ...current, [id]: "reject" }));
     const rowEl = rowRefs.current[id];
     if (!rowEl) {
-      await rejectSessionRequest(id, viewingAsUserId ?? undefined);
-      router.refresh();
+      try {
+        await rejectSessionRequest(id, viewingAsUserId ?? undefined);
+        startTransition(() => router.refresh());
+      } finally {
+        setPendingActionById((current) => {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
+      }
       return;
     }
     gsap.to(rowEl, {
@@ -116,7 +144,15 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
       ease: "power2.in",
       onComplete: () => {
         setRows((current) => current.filter((r) => r.id !== id));
-        rejectSessionRequest(id, viewingAsUserId ?? undefined).then(() => router.refresh());
+        rejectSessionRequest(id, viewingAsUserId ?? undefined)
+          .then(() => startTransition(() => router.refresh()))
+          .finally(() => {
+            setPendingActionById((current) => {
+              const next = { ...current };
+              delete next[id];
+              return next;
+            });
+          });
       },
     });
   };
@@ -124,7 +160,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
   return (
     <div>
       <div className="text-xs text-slate-400 text-right mb-2 space-y-0.5">
-      
+        {isRefreshing ? <p className="text-slate-400">Syncing updates…</p> : null}
         <p className="text-slate-500">
           Declining a paid request refunds the Mentrixer
         </p>
@@ -245,8 +281,14 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                     </td>
                     <td className="py-2.5 px-3 align-middle">
                       <div className="flex items-center gap-2">
+                        {pendingActionById[request.id] ? (
+                          <span className="text-[11px] font-medium text-slate-500">
+                            {pendingActionById[request.id] === "approve" ? "Accepting…" : "Declining…"}
+                          </span>
+                        ) : null}
                         <Button
                           size="sm"
+                          disabled={Boolean(pendingActionById[request.id])}
                           onClick={() => handleApprove(request.id)}
                         >
                           <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
@@ -255,6 +297,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={Boolean(pendingActionById[request.id])}
                           onClick={() => handleReject(request.id)}
                         >
                           <img src="/icons/mentrixer.svg" alt="" width={16} height={16} className="shrink-0" />

@@ -5,7 +5,8 @@
   "scripts": {
     "clean": "node scripts/clean.mjs",
     "dev": "node scripts/dev.mjs",
-    "dev:turbo": "node scripts/dev.mjs --turbo",
+    "dev:turbo": "node scripts/dev.mjs",
+    "dev:webpack": "node scripts/dev.mjs --webpack",
     "dev:clean": "npm run clean && node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "start": "next start",

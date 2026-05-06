@@ -123,7 +123,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
 
                 {/* DECORATIVE LOGO */}
                 <div className="absolute -bottom-2 -right-2 p-2 opacity-[0.02] grayscale pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-                   <Image src="/mentrixalogo/logo.png" alt="" width={80} height={80} />
+                   <Image src="/mentrixalogo/logo.webp" alt="" width={80} height={80} />
                 </div>
               </div>
             </motion.li>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { BubbleText } from "@/components/ui/bubble-text";
 import { Typewriter } from "@/components/ui/typewriter";
+import { useLowEndMode } from "@/lib/landing-perf";
 
 const ICON_VERSION = "20260410";
 
@@ -50,38 +51,41 @@ const Check = ({ className = "" }: { className?: string }) => (
 
 function RoleIcon({ role, className = "" }: { role: "Mentrixer" | "Guide"; className?: string }) {
   return (
-    <Image
-      src={role === "Mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
-      alt=""
-      width={16}
-      height={16}
-      unoptimized
-      className={`block ${className}`}
-      aria-hidden
-    />
+    <span className={`relative inline-block h-4 w-4 shrink-0 ${className}`} aria-hidden>
+      <Image
+        src={role === "Mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
+        alt=""
+        fill
+        unoptimized
+        className="object-contain"
+        sizes="16px"
+      />
+    </span>
   );
 }
 
 function WatermarkRoleIcon({ role }: { role: "Mentrixer" | "Guide" }) {
   return (
-    <Image
-      src={role === "Mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
-      alt=""
-      width={132}
-      height={132}
-      unoptimized
-      aria-hidden
-      className="h-20 w-20 object-contain opacity-12 blur-[1px] brightness-125"
-    />
+    <span className="relative inline-block h-20 w-20 opacity-12 blur-[1px] brightness-125" aria-hidden>
+      <Image
+        src={role === "Mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
+        alt=""
+        fill
+        unoptimized
+        className="object-contain"
+        sizes="80px"
+      />
+    </span>
   );
 }
 
-function BouncingRoleIconsLayer() {
+function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mentrixerRef = useRef<HTMLDivElement | null>(null);
   const guideRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (disabled) return;
     const container = containerRef.current;
     const mentrixer = mentrixerRef.current;
     const guide = guideRef.current;
@@ -138,8 +142,19 @@ function BouncingRoleIconsLayer() {
 
     let frameId = 0;
     let lastTs = performance.now();
+    let isVisible = true;
+    let io: IntersectionObserver | null = null;
+    const minFrameMs = 1000 / 30;
 
     const step = (ts: number) => {
+      if (!isVisible || document.hidden) {
+        frameId = window.requestAnimationFrame(step);
+        return;
+      }
+      if (ts - lastTs < minFrameMs) {
+        frameId = window.requestAnimationFrame(step);
+        return;
+      }
       const dt = Math.min((ts - lastTs) / 1000, 0.033);
       lastTs = ts;
       const width = container.clientWidth;
@@ -182,14 +197,20 @@ function BouncingRoleIconsLayer() {
     };
 
     frameId = window.requestAnimationFrame(step);
+    io = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      isVisible = Boolean(entry?.isIntersecting);
+    }, { threshold: 0.1 });
+    io.observe(container);
     const handleResize = () => setInitialPositions();
     window.addEventListener("resize", handleResize, { passive: true });
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frameId);
+      io?.disconnect();
     };
-  }, []);
+  }, [disabled]);
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
@@ -205,6 +226,7 @@ function BouncingRoleIconsLayer() {
 
 export function FourthStaticSidesCarouselContent() {
   const [selectedRole, setSelectedRole] = useState<"Mentrixer" | "Guide">("Mentrixer");
+  const lowEndMode = useLowEndMode();
 
   return (
     <section id="fourthstatic" className="relative min-h-[84vh] overflow-hidden">
@@ -218,17 +240,17 @@ export function FourthStaticSidesCarouselContent() {
           priority
         />
         <div className="absolute inset-0 bg-slate-950/45" aria-hidden />
-        <BouncingRoleIconsLayer />
+        <BouncingRoleIconsLayer disabled={lowEndMode} />
 
         <div className="relative z-10 mx-auto flex min-h-[84vh] w-full max-w-7xl flex-col px-5 py-8 md:px-8 md:py-10">
           <div className="mx-auto mb-5 max-w-3xl text-center">
             <h2 id="path" className="text-[clamp(22px,3.2vw,34px)] font-bold tracking-[-0.03em] text-white h-[40px]">
-              <Typewriter text="Which side of the session are you on?" speed={50} waitTime={4000} />
+              {lowEndMode ? "Which side of the session are you on?" : <Typewriter text="Which side of the session are you on?" speed={50} waitTime={4000} />}
             </h2>
             <p className="mt-2 text-[13px] text-slate-200/80">Choose a side and start there.</p>
           </div>
 
-          <div className="mx-auto mb-5 inline-flex rounded-xl border border-white/20 bg-black/30 p-1 backdrop-blur-sm">
+          <div className="mx-auto mb-5 inline-flex rounded-xl border border-white/20 bg-black/30 p-1 backdrop-blur-sm max-md:bg-black/60">
             {SIDES.map((side) => {
               const active = selectedRole === side.role;
               return (
@@ -261,8 +283,8 @@ export function FourthStaticSidesCarouselContent() {
                     "relative cursor-pointer overflow-hidden rounded-2xl border p-6 backdrop-blur-sm transition-all duration-500",
                     active ? "scale-[1.01] ring-1 ring-white/30" : "scale-[0.98] opacity-80",
                     isMentrixer
-                      ? "border-blue-400/35 bg-gradient-to-br from-blue-950/55 via-slate-950/45 to-slate-900/55 shadow-2xl shadow-blue-950/30"
-                      : "border-violet-400/35 bg-gradient-to-br from-violet-950/55 via-violet-900/45 to-slate-950/55 shadow-2xl shadow-violet-950/30"
+                      ? "border-blue-400/35 bg-gradient-to-br from-blue-950/55 via-slate-950/45 to-slate-900/55 shadow-2xl shadow-blue-950/30 max-md:from-blue-950/72 max-md:via-slate-950/58 max-md:to-slate-900/65"
+                      : "border-violet-400/35 bg-gradient-to-br from-violet-950/55 via-violet-900/45 to-slate-950/55 shadow-2xl shadow-violet-950/30 max-md:from-violet-950/72 max-md:via-violet-900/58 max-md:to-slate-950/65"
                   )}
                 >
                   <div className="pointer-events-none absolute -right-8 -top-6 opacity-25">
@@ -274,11 +296,14 @@ export function FourthStaticSidesCarouselContent() {
                       isMentrixer ? "text-blue-300" : "text-violet-300"
                     )}
                   >
-                    <RoleIcon role={side.role} className={cn("h-3 w-3", isMentrixer ? "" : "brightness-0 invert")} />
+                    <RoleIcon
+                      role={side.role}
+                      className="h-3 w-3 brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
+                    />
                     {side.role}
                   </p>
                   <h3 className="mt-2 text-[19px] font-bold text-white h-[56px]">
-                    <Typewriter text={side.title} speed={40} waitTime={5000} />
+                    {lowEndMode ? side.title : <Typewriter text={side.title} speed={40} waitTime={5000} />}
                   </h3>
                   <ul className="mt-4 space-y-2.5 text-[13px] text-slate-200/95">
                     {side.points.map((point) => (

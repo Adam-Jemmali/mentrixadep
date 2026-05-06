@@ -33,7 +33,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-slate-100">
-        <Image src="/images/book.png" alt="Book" width={20} height={20} className="opacity-80" />
+        <Image src="/images/book.webp" alt="Book" width={20} height={20} className="opacity-80" />
       </div>
       <h2 className="text-sm font-medium text-slate-800">No learning data yet</h2>
       <p className="mt-1.5 max-w-xs text-sm text-slate-600 leading-relaxed">
@@ -43,7 +43,7 @@ function EmptyState() {
         href="/student/quest"
         className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-colors hover:bg-indigo-500"
       >
-        <Image src="/images/quest.png" alt="Quest" width={14} height={14} />
+        <Image src="/images/quest.webp" alt="Quest" width={14} height={14} />
         Start a Quest
       </Link>
     </div>
@@ -67,7 +67,7 @@ function RecommendationCard({ rec }: { rec: NextStepRecommendation }) {
   const status = pct >= 80 ? "proficient" : pct >= 40 ? "learning" : "locked" as const;
 
   return (
-    <TiltCard tiltLimit={5} scale={1.02} className={cn("group flex flex-col gap-2.5 rounded-2xl border bg-white p-4 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 block")}>
+    <TiltCard tiltLimit={5} scale={1.02} className={cn("group flex flex-col gap-2.5 rounded-2xl border bg-white p-4 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1")}>
       <Link href="/student/quest" className="flex flex-col gap-2.5 w-full">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -97,7 +97,7 @@ function RecommendationCard({ rec }: { rec: NextStepRecommendation }) {
       <div className="flex items-center justify-between">
         <span className="text-xs text-slate-500">Go practice</span>
         <Image
-          src="/images/quest.png"
+          src="/images/quest.webp"
           alt="Go"
           width={13}
           height={13}
@@ -217,7 +217,7 @@ function TopicRow({ topic }: { topic: SubjectEntry["topics"][number] }) {
             </span>
           </div>
           <Image
-            src="/images/pending.png"
+            src="/images/pending.webp"
             alt="Toggle"
             width={13}
             height={13}
@@ -461,7 +461,7 @@ export function LearningPathClient({ nodes, tree, recommendations }: Props) {
             {recommendations.length > 0 && (
               <div className="rounded-lg border border-slate-200 bg-white p-3">
                 <div className="flex items-center gap-2 mb-3">
-                  <Image src="/images/xp.png" alt="Trend" width={13} height={13} className="opacity-80" />
+                  <Image src="/images/xp.webp" alt="Trend" width={13} height={13} className="opacity-80" />
                   <p className="text-sm font-medium text-slate-800">Next steps</p>
                 </div>
                 <BouncingMentrixer />

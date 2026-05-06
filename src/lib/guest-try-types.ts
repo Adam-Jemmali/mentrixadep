@@ -9,21 +9,17 @@ export type GuestTryQuestion = {
   explanation: string;
   /** Optional illustration shown above the prompt (same-origin or approved remote). */
   promptImageUrl?: string | null;
+  /** Optional model instruction used server-side to generate promptImageUrl dynamically. */
+  promptImagePrompt?: string | null;
   /** Text choices (always present for selectable kinds). */
   options?: string[];
   /** Parallel to options for image_mcq — same length as options when kind is image_mcq. */
   optionImageUrls?: string[];
+  /** Optional model instructions used server-side to generate optionImageUrls dynamically. */
+  optionImagePrompts?: string[];
   correctIndex?: number;
   referenceAnswer?: string;
 };
-
-/** Curated shapes for image_pick — never trust model URLs for binaries. */
-export const GUEST_TRY_IMAGE_OPTIONS = [
-  "/guest-quest/shape-square.svg",
-  "/guest-quest/shape-circle.svg",
-  "/guest-quest/shape-triangle.svg",
-  "/guest-quest/shape-star.svg",
-] as const;
 
 /** Normalize common math typings so 3x^2, 3*x**2, and 3x² all align for grading. */
 function normalizeGuestAnswerTokens(s: string): string {
@@ -122,11 +118,17 @@ export function isPlayableGuestTryQuestion(q: GuestTryQuestion): boolean {
         q.correctIndex < q.options.length
       );
     case "image_mcq":
+      const hasRenderedOptionImages =
+        Array.isArray(q.optionImageUrls) &&
+        q.optionImageUrls.length === 4;
+      const hasImagePrompts =
+        Array.isArray(q.optionImagePrompts) &&
+        q.optionImagePrompts.length === 4 &&
+        q.optionImagePrompts.every((x) => typeof x === "string" && x.trim().length >= 8);
       return (
         Array.isArray(q.options) &&
         q.options.length === 4 &&
-        Array.isArray(q.optionImageUrls) &&
-        q.optionImageUrls.length === 4 &&
+        (hasRenderedOptionImages || hasImagePrompts) &&
         typeof q.correctIndex === "number" &&
         q.correctIndex >= 0 &&
         q.correctIndex < 4
@@ -191,11 +193,15 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
   const explanation = typeof o.explanation === "string" ? clampPrompt(o.explanation, 2000) : "";
   if (prompt.length < 8 || explanation.length < 4) return null;
 
+  const promptImagePrompt =
+    typeof o.promptImagePrompt === "string" && o.promptImagePrompt.trim().length >= 8
+      ? o.promptImagePrompt.trim().slice(0, 500)
+      : null;
   let promptImageUrl: string | null =
-    typeof o.promptImageUrl === "string" && o.promptImageUrl.startsWith("/guest-quest/")
-      ? o.promptImageUrl.slice(0, 200)
-      : typeof o.promptImageUrl === "string" && o.promptImageUrl.startsWith("https://images.unsplash.com/")
-        ? o.promptImageUrl.split("?")[0]?.slice(0, 300) ?? null
+    typeof o.promptImageUrl === "string" && o.promptImageUrl.startsWith("/")
+      ? o.promptImageUrl.slice(0, 500)
+      : typeof o.promptImageUrl === "string" && o.promptImageUrl.startsWith("https://")
+        ? o.promptImageUrl.slice(0, 1000)
         : null;
 
   if (kindRaw === "short_answer") {
@@ -210,6 +216,7 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
       prompt,
       explanation,
       promptImageUrl,
+      promptImagePrompt,
       referenceAnswer: ref,
     };
   }
@@ -238,6 +245,7 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
       prompt,
       explanation,
       promptImageUrl,
+      promptImagePrompt,
       options: ["True", "False"],
       correctIndex: ci,
     };
@@ -250,15 +258,28 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
       if (ic.length === 4) captions = ic;
     }
     const ci = readCorrectIndex(o, 3);
+    const optionImagePrompts = Array.isArray(o.optionImagePrompts)
+      ? o.optionImagePrompts
+          .filter((x) => typeof x === "string")
+          .map((x) => String(x).trim().slice(0, 500))
+      : [];
+    const optionImageUrls = Array.isArray(o.optionImageUrls)
+      ? o.optionImageUrls
+          .filter((x) => typeof x === "string")
+          .map((x) => String(x).trim().slice(0, 1000))
+      : [];
     if (!captions || ci == null) return null;
+    if (optionImagePrompts.length !== 4 && optionImageUrls.length !== 4) return null;
     return {
       id,
       kind: "image_mcq",
       prompt,
       explanation,
       promptImageUrl,
+      promptImagePrompt,
       options: captions,
-      optionImageUrls: [...GUEST_TRY_IMAGE_OPTIONS],
+      optionImageUrls: optionImageUrls.length === 4 ? optionImageUrls : undefined,
+      optionImagePrompts: optionImagePrompts.length === 4 ? optionImagePrompts : undefined,
       correctIndex: ci,
     };
   }
@@ -273,6 +294,7 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
       prompt,
       explanation,
       promptImageUrl,
+      promptImagePrompt,
       options,
       correctIndex: ci,
     };
@@ -288,6 +310,7 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
       prompt,
       explanation,
       promptImageUrl,
+      promptImagePrompt,
       options,
       correctIndex: ci,
     };

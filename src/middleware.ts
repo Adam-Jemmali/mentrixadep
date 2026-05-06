@@ -30,6 +30,8 @@ const publicRoutes = new Set([
   "/api/referral/finalize",
   "/api/auth/signin",
   "/api/auth/signup",
+  /** POST: JSON next path after GIS `signInWithIdToken` (session in cookies; handler validates). */
+  "/api/auth/oauth-next",
   "/api/auth/request-password-reset",
   /** Stripe redirects here when Checkout is cancelled — unlock slot without requiring session cookie. */
   "/api/stripe/checkout/cancel-return",
@@ -113,6 +115,16 @@ function isPublicPrefixPath(pathname: string): boolean {
   return publicPrefixes.some(
     (prefix) => pathname.startsWith(prefix) && pathname !== prefix.slice(0, -1)
   );
+}
+
+/** Server Actions POST as non-HTML; header names vary by Next / Turbopack version. */
+function isLikelyNextjsServerActionPost(request: NextRequest): boolean {
+  const h = request.headers;
+  if (h.get("next-action") || h.get("Next-Action")) return true;
+  const accept = h.get("accept") ?? "";
+  if (accept.includes("text/x-component")) return true;
+  if (h.get("RSC") === "1") return true;
+  return false;
 }
 
 function applySecurityHeaders(res: NextResponse, pathname?: string): NextResponse {
@@ -207,11 +219,7 @@ export async function middleware(request: NextRequest) {
   // Never short-circuit Next.js Server Actions: they POST with `next-action` and must get
   // an RSC (`text/x-component`) response — otherwise the client throws "An unexpected
   // response was received from the server." (e.g. GoogleSignInButton → getPostOAuthRedirectPath).
-  if (
-    method === "POST" &&
-    publicAuthPageOptions204.has(pathname) &&
-    !request.headers.get("next-action")
-  ) {
+  if (method === "POST" && publicAuthPageOptions204.has(pathname) && !isLikelyNextjsServerActionPost(request)) {
     return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
   }
 

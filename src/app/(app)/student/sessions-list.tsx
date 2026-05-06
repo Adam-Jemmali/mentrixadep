@@ -21,6 +21,8 @@ import type { SessionAiPackage } from "@/lib/database.types";
 import { countUp as gsapCountUp } from "@/lib/gsap";
 import { useLevelInfo } from "@/lib/mentrixa-ranks";
 import { formatSlotRangeInZone } from "@/lib/time-format";
+import { readUiPerfTier } from "@/lib/ui-performance";
+import { useUiPerfTier } from "@/lib/use-ui-perf-tier";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
 
@@ -100,6 +102,7 @@ export function SessionsList({
   initialOpenStudyPackageId = "",
   initialSessionsTab,
 }: SessionsListProps) {
+  const uiPerfTier = useUiPerfTier();
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialPkg = (initialOpenStudyPackageId ?? "").trim();
@@ -236,6 +239,20 @@ export function SessionsList({
 
   useEffect(() => {
     if (!showHeroStats) return;
+    const lite = readUiPerfTier() === "lite";
+    if (lite) {
+      if (totalXpRef.current) totalXpRef.current.textContent = String(totalXp);
+      if (streakRef.current) streakRef.current.textContent = String(streak);
+      if (sessionsRef.current) sessionsRef.current.textContent = String(sessionsCompleted);
+      if (ratingRef.current)
+        ratingRef.current.textContent = String(Math.round(avgRating * 10) / 10);
+      if (xpFillRef.current) {
+        const ratio = Math.min(Math.max(progressPercent / 100, 0), 1);
+        xpFillRef.current.style.transformOrigin = "left center";
+        xpFillRef.current.style.transform = `scaleX(${ratio})`;
+      }
+      return;
+    }
     if (totalXpRef.current) gsapCountUp(totalXpRef.current, totalXp);
     if (streakRef.current) gsapCountUp(streakRef.current, streak);
     if (sessionsRef.current) gsapCountUp(sessionsRef.current, sessionsCompleted);
@@ -255,6 +272,7 @@ export function SessionsList({
 
   useEffect(() => {
     if (!showHeroStats) return;
+    if (readUiPerfTier() === "lite") return;
     const cells = document.querySelectorAll(".mentrixa-stat-cell");
     if (cells.length === 0) return;
     gsap.from(cells, {
@@ -267,6 +285,7 @@ export function SessionsList({
   }, [showHeroStats]);
 
   const animateCards = useCallback(() => {
+    if (readUiPerfTier() === "lite") return;
     const panel = document.querySelector(`[data-student-sessions-tab="${activeTab}"]`);
     const cards = panel?.querySelectorAll(".session-card") ?? [];
     if (cards.length === 0) return;
@@ -366,23 +385,27 @@ export function SessionsList({
       <div className={`lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}`}>
         <div className="lg:col-span-2">
           <section className="relative overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,#182846_0%,#12223e_46%,#0d1c35_100%)] p-4 text-white shadow-[0_14px_38px_-24px_rgba(15,23,42,0.65)] sm:p-6">
-            <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:106px_106px] bg-repeat opacity-[0.055]" />
-            <Image
-              src="/icons/mentrixer.svg"
-              alt=""
-              width={18}
-              height={18}
-              unoptimized
-              className="pointer-events-none absolute right-5 top-4 h-[18px] w-[18px] opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
-            />
-            <Image
-              src="/icons/mentrixer.svg"
-              alt=""
-              width={16}
-              height={16}
-              unoptimized
-              className="pointer-events-none absolute right-20 bottom-5 h-4 w-4 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
-            />
+            {uiPerfTier === "full" ? (
+              <>
+                <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:106px_106px] bg-repeat opacity-[0.055]" />
+                <Image
+                  src="/icons/mentrixer.svg"
+                  alt=""
+                  width={18}
+                  height={18}
+                  unoptimized
+                  className="pointer-events-none absolute right-5 top-4 h-[18px] w-[18px] opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
+                />
+                <Image
+                  src="/icons/mentrixer.svg"
+                  alt=""
+                  width={16}
+                  height={16}
+                  unoptimized
+                  className="pointer-events-none absolute right-20 bottom-5 h-4 w-4 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
+                />
+              </>
+            ) : null}
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
               <TabsList className="mb-5 flex h-auto w-full gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 overflow-x-auto">

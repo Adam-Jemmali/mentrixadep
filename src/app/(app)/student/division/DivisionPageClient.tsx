@@ -237,7 +237,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
         className={`
           relative mb-8 overflow-hidden block
           ${mentrixStudent.card}
-          before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.png')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']
+          before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']
         `}
       >
         <div className="relative px-5 py-6 sm:px-8 sm:py-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

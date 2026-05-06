@@ -3,7 +3,7 @@ const VERSION = "mentrixa-sw-v3";
 const STATIC_CACHE = `${VERSION}-static`;
 const API_CACHE = `${VERSION}-api`;
 
-const PRECACHE_URLS = ["/offline", "/icons/icon-192.png", "/mentrixa-checkout-logo.svg"];
+const PRECACHE_URLS = ["/offline", "/mentrixa-checkout-logo.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

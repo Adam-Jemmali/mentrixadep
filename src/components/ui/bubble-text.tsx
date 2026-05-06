@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useUiPerfTier } from "@/lib/use-ui-perf-tier";
 
 interface BubbleTextProps {
   text: string;
@@ -16,7 +17,12 @@ export const BubbleText = ({
   activeColor = "text-white",
   neighborColor = "text-white/70"
 }: BubbleTextProps) => {
+  const tier = useUiPerfTier();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  if (tier === "lite") {
+    return <span className={cn("inline-flex font-medium", className)}>{text}</span>;
+  }
 
   return (
     <span

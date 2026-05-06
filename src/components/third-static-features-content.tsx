@@ -1,75 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useSectionScrollProgress } from "@/lib/landing-perf";
 
 const FEATURE_ITEMS = [
   {
     title: "Live sessions",
-    icon: "/images/live.png",
+    icon: "/images/live.webp",
     hoverColor: "hover:bg-indigo-500/20",
     body: "A real expert on your exact course, live on screen, while the problem is still fresh. Not a chatbot. Not a YouTube video.",
   },
   {
     title: "Practice quests",
-    icon: "/images/quest.png",
+    icon: "/images/quest.webp",
     hoverColor: "hover:bg-violet-500/20",
     body: "Quest generates practice problems from your actual session. Not generic. Not a textbook chapter.",
   },
   {
     title: "Skill duels",
-    icon: "/images/sword.png",
+    icon: "/images/sword.webp",
     hoverColor: "hover:bg-purple-500/20",
     body: "Head-to-head quizzes against other students in your subject. If you can beat them under pressure, you can beat the exam question on paper.",
   },
   {
     title: "Divisions & XP",
-    icon: "/images/xp.png",
+    icon: "/images/xp.webp",
     hoverColor: "hover:bg-indigo-500/20",
     body: "Every session, quest, and duel earns XP. You rank in your subject's division. When you can see you're improving, you don't stop.",
   },
   {
     title: "Instant booking",
-    icon: "/images/book.png",
+    icon: "/images/book.webp",
     hoverColor: "hover:bg-violet-500/20",
     body: "You land a time without the scheduling thread - the real cost was always the messages before the calendar opened.",
   },
   {
     title: "Session packages",
-    icon: "/images/package.png",
+    icon: "/images/package.webp",
     hoverColor: "hover:bg-purple-500/20",
     body: "You walk away with something you can reopen - the call fades; your summaries, cards, and follow-ups do not.",
   },
 ];
 
-function useSectionProgress(sectionId: string) {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const update = () => {
-      const section = document.getElementById(sectionId);
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      const scrollable = Math.max(section.scrollHeight - window.innerHeight, 1);
-      const next = Math.min(Math.max(-rect.top / scrollable, 0), 1);
-      setProgress(next);
-    };
-
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [sectionId]);
-
-  return progress;
-}
-
 export function ThirdStaticFeaturesContent() {
-  const progress = useSectionProgress("thirdstatic");
+  const progress = useSectionScrollProgress("thirdstatic", 0.015);
   const headingOpacity = Math.min(1, Math.max(0.15, progress * 1.15));
   const cardsOpacity = Math.min(1, Math.max(0.1, (progress - 0.08) * 1.25));
 

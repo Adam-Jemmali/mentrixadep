@@ -1,5 +1,5 @@
-/** Primary PNG mark — also at `/mentrixalogo.png` (duplicate). */
-export const MENTRIXA_LOGO_PNG = "/mentrixalogo/logo.png";
+/** Primary logo mark for UI surfaces. */
+export const MENTRIXA_LOGO_PNG = "/mentrixalogo/logo.webp";
 
 /**
  * Default public feedback address for contact copy.

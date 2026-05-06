@@ -92,15 +92,13 @@ export default function PricingSection() {
     visible: (i: number) => ({
       y: 0,
       opacity: 1,
-      filter: "blur(0px)",
       transition: {
-        delay: i * 0.2,
-        duration: 0.5,
+        delay: i * 0.12,
+        duration: 0.36,
       },
     }),
     hidden: {
-      filter: "blur(10px)",
-      y: -20,
+      y: 12,
       opacity: 0,
     },
   };
@@ -113,8 +111,8 @@ export default function PricingSection() {
     >
       {/* Background Decor */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-orange-500/5 rounded-full blur-[120px]" />
+        <div className="absolute top-1/4 left-1/4 w-[440px] h-[440px] rounded-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.10),transparent_72%)]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[440px] h-[440px] rounded-full bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.10),transparent_72%)]" />
       </div>
 
       <article className="text-center mb-16 space-y-6 max-w-3xl mx-auto">
@@ -123,12 +121,12 @@ export default function PricingSection() {
           animationNum={0}
           timelineRef={pricingRef}
           customVariants={revealVariants}
-          className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600"
+          className="text-xs font-bold uppercase tracking-[0.2em] text-purple-600"
         >
           Pricing Model
         </TimelineContent>
 
-        <h2 className="md:text-6xl text-4xl font-bold text-slate-900 tracking-tight leading-tight">
+        <h2 className="md:text-6xl text-4xl font-bold text-blue-600 tracking-tight leading-tight">
           <VerticalCutReveal
             splitBy="words"
             staggerDuration={0.1}
@@ -171,7 +169,7 @@ export default function PricingSection() {
                 "h-full relative border border-slate-200 transition-all duration-300",
                 highlight.popular
                   ? "ring-2 ring-blue-500 bg-white shadow-2xl shadow-blue-500/10"
-                  : "bg-white/50 backdrop-blur-sm hover:shadow-xl"
+                  : "bg-white hover:shadow-xl"
               )}
             >
               <CardHeader className="text-left pb-4">
@@ -245,7 +243,7 @@ export default function PricingSection() {
             <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
               <ShieldCheck size={24} />
             </div>
-            <h4 className="text-xl font-bold text-slate-900">Secure & Trusted</h4>
+            <h4 className="text-xl font-bold text-blue-600">Secure & Trusted</h4>
           </div>
           <p className="text-slate-600 leading-relaxed">
             Checkout is handled via Stripe. Your card data never touches our servers. 
@@ -258,7 +256,7 @@ export default function PricingSection() {
             <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
               <Wallet size={24} />
             </div>
-            <h4 className="text-xl font-bold text-slate-900">Platform Transparency</h4>
+            <h4 className="text-xl font-bold text-blue-600">Platform Transparency</h4>
           </div>
           <p className="text-slate-600 leading-relaxed">
             The 15% platform fee is already baked into the price you see on every Guide&apos;s profile. 

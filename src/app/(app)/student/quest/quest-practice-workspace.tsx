@@ -33,7 +33,11 @@ const PACK_TYPES: { value: PracticePackType; label: string; desc: string }[] = [
     label: "Short answer",
     desc: "Written response with feedback on your reasoning",
   },
-  { value: "problem_solving", label: "Problem solving", desc: "Math & notation (LaTeX)" },
+  {
+    value: "problem_solving",
+    label: "Problem solving",
+    desc: "Deeper prompts graded against a model answer (math may use LaTeX)",
+  },
 ];
 
 type Phase = "wizard" | "run" | "done";
@@ -268,7 +272,23 @@ export function QuestPracticeWorkspace({
 
   if (phase === "wizard") {
     return (
-      <div className="max-w-xl mx-auto py-10 px-4">
+      <div className="relative max-w-xl mx-auto py-10 px-4">
+        {busy ? (
+          <div
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm supports-[backdrop-filter]:bg-white/65"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <div
+              className="h-9 w-9 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent motion-reduce:animate-none motion-reduce:border-indigo-400"
+              aria-hidden
+            />
+            <p className="mt-4 text-sm font-semibold text-slate-800">Building your pack…</p>
+            <p className="mt-1 max-w-[14rem] text-center text-xs text-slate-500">
+              AI may take a few seconds — hang tight.
+            </p>
+          </div>
+        ) : null}
         <div className="mb-6">
           <BackButton />
         </div>

@@ -2,7 +2,8 @@
  * Frees TCP port 3000 (stale `next dev` / other listeners), then runs `next dev -p 3000`.
  * Avoids "Port 3000 is in use, trying 3001" and keeps OAuth / app URL on a single port.
  *
- * Default is the webpack dev server. Pass `--turbo` for Turbopack (`npm run dev:turbo`).
+ * Default is the Turbopack dev server for faster incremental compiles.
+ * Pass `--webpack` only if you need webpack-specific compatibility.
  */
 import { execFileSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -13,7 +14,7 @@ import { applyLocalEnvOverrides } from "./load-local-env.mjs";
 const PORT = 3000;
 // import.meta.url is .../scripts/dev.mjs — one dirname = scripts/, two = repo root
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const turbo = process.argv.includes("--turbo");
+const useWebpack = process.argv.includes("--webpack");
 
 applyLocalEnvOverrides(root);
 
@@ -49,7 +50,7 @@ const args = [
   "dev",
   "-p",
   String(PORT),
-  ...(turbo ? ["--turbo"] : ["--webpack"]),
+  ...(useWebpack ? ["--webpack"] : ["--turbo"]),
 ];
 
 const child = spawn(process.execPath, [nextBin, ...args], {

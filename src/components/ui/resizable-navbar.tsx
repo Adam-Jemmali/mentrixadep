@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AnimatePresence,
   motion,
-  useMotionValueEvent,
-  useScroll,
-  useSpring,
-  useTransform,
 } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { BubbleText } from "@/components/ui/bubble-text";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useUiPerfTier } from "@/lib/use-ui-perf-tier";
 
 type NavbarProps = {
   children: React.ReactNode;
@@ -54,15 +53,32 @@ type MobileNavMenuProps = {
 };
 
 export const Navbar = ({ children, className }: NavbarProps) => {
-  const { scrollY } = useScroll();
   const [visible, setVisible] = useState(false);
 
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setVisible(latest > 8);
-  });
+  useEffect(() => {
+    let raf = 0;
+    let lastVisible = false;
+    const onScroll = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        const nextVisible = window.scrollY > 8;
+        if (nextVisible !== lastVisible) {
+          lastVisible = nextVisible;
+          setVisible(nextVisible);
+        }
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, []);
 
   return (
-    <motion.div
+    <div
       className={cn("sticky inset-x-0 top-20 z-40 w-full", className)}
     >
       {React.Children.map(children, (child) => {
@@ -71,97 +87,86 @@ export const Navbar = ({ children, className }: NavbarProps) => {
         if (typeof child.type === "string") return child;
         return React.cloneElement(child as React.ReactElement<{ visible?: boolean }>, { visible });
       })}
-    </motion.div>
+    </div>
   );
 };
 
 export const NavBody = ({ children, className, visible }: NavBodyProps) => {
-  const { scrollY } = useScroll();
-  const widthRaw = useTransform(scrollY, [0, 260], ["100%", "74%"]);
-  const yRaw = useTransform(scrollY, [0, 260], [0, 10]);
-  const scaleRaw = useTransform(scrollY, [0, 260], [1, 0.995]);
-  const width = useSpring(widthRaw, { stiffness: 220, damping: 34 });
-  const y = useSpring(yRaw, { stiffness: 220, damping: 34 });
-  const scale = useSpring(scaleRaw, { stiffness: 220, damping: 34 });
-
   return (
-    <motion.div
-      transition={{ type: "spring", stiffness: 200, damping: 50 }}
-      style={{ minWidth: "min(980px, 94vw)", width, y, scale }}
+    <div
       className={cn(
-        "relative z-[60] mx-auto hidden flex-row items-center justify-between self-start rounded-full border border-white/10 px-6 py-2 text-white transition-[background-color,backdrop-filter,box-shadow] duration-300 ease-out lg:flex",
+        "relative z-[60] mx-auto hidden min-w-[min(980px,94vw)] w-full flex-row items-center justify-between self-start rounded-full border border-white/10 px-6 py-2 text-white transition-[background-color,box-shadow,transform,max-width] duration-300 ease-out lg:flex",
         visible
-          ? "bg-slate-950/55 backdrop-blur-[10px] shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset]"
-          : "bg-slate-950/45 shadow-none backdrop-blur-none",
+          ? "max-w-[74%] translate-y-[10px] scale-[0.995] bg-slate-950/82 shadow-[0_10px_36px_rgba(2,6,23,0.22)] supports-[backdrop-filter]:bg-slate-950/72 supports-[backdrop-filter]:backdrop-blur-sm"
+          : "max-w-full translate-y-0 scale-100 bg-slate-950/68 shadow-none supports-[backdrop-filter]:backdrop-blur-0",
         className,
       )}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 
 export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
+  const router = useRouter();
+  const tier = useUiPerfTier();
 
-  return (
-    <motion.div
-      onMouseLeave={() => setHovered(null)}
-      className={cn(
-        "hidden flex-1 flex-row items-center justify-center gap-1 text-sm font-medium text-white/70 transition duration-200 hover:text-white lg:flex",
-        className,
-      )}
+  const navItemClass =
+    "hidden flex-1 flex-row items-center justify-center gap-1 text-sm font-medium text-white/70 transition-colors duration-150 ease-out hover:text-white lg:flex";
+
+  const links = items.map((item, idx) => (
+    <Link
+      key={item.link}
+      href={item.link}
+      prefetch
+      onMouseEnter={() => {
+        setHovered(idx);
+        router.prefetch(item.link);
+      }}
+      onClick={onItemClick}
+      className="relative px-4 py-2 text-[13px] text-current transition-opacity duration-150 ease-out hover:opacity-100"
     >
-      {items.map((item, idx) => (
-        <a
-          key={`link-${idx}`}
-          href={item.link}
-          onMouseEnter={() => setHovered(idx)}
-          onClick={onItemClick}
-          className="relative px-4 py-2 text-[13px] text-current"
-        >
-          {hovered === idx && (
-            <motion.div
-              layoutId="hovered"
-              className="absolute inset-0 h-full w-full rounded-full bg-white/10"
-            />
-          )}
-          <span className="relative z-20">
-            <BubbleText text={item.name} className="text-current" />
-          </span>
-        </a>
-      ))}
+      {hovered === idx &&
+        (tier === "lite" ? (
+          <span className="absolute inset-0 h-full w-full rounded-full bg-white/10" />
+        ) : (
+          <motion.div
+            layoutId="hovered"
+            transition={{ type: "spring", stiffness: 420, damping: 32 }}
+            className="absolute inset-0 h-full w-full rounded-full bg-white/10"
+          />
+        ))}
+      <span className="relative z-20">
+        <BubbleText text={item.name} className="text-current" />
+      </span>
+    </Link>
+  ));
+
+  return tier === "lite" ? (
+    <div className={cn(navItemClass, className)} onMouseLeave={() => setHovered(null)}>
+      {links}
+    </div>
+  ) : (
+    <motion.div className={cn(navItemClass, className)} onMouseLeave={() => setHovered(null)}>
+      {links}
     </motion.div>
   );
 };
 
 export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
-  const { scrollY } = useScroll();
-  const widthRaw = useTransform(scrollY, [0, 220], ["100%", "92%"]);
-  // Keep mobile navbar text crisp by avoiding Y transforms on the container.
-  const yRaw = useTransform(scrollY, [0, 220], [0, 0]);
-  const width = useSpring(widthRaw, { stiffness: 220, damping: 34 });
-  const y = useSpring(yRaw, { stiffness: 220, damping: 34 });
-
   return (
-    <motion.div
-      animate={{
-        paddingRight: visible ? "12px" : "0px",
-        paddingLeft: visible ? "12px" : "0px",
-        borderRadius: visible ? "4px" : "2rem",
-      }}
-      transition={{ type: "spring", stiffness: 200, damping: 50 }}
-      style={{ width, y }}
+    <div
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between px-0 py-2 text-white transition-[background-color,box-shadow] duration-300 ease-out lg:hidden",
+        "relative z-50 mx-auto flex w-full flex-col items-center justify-between py-2 text-white transition-[background-color,box-shadow,max-width,padding,border-radius] duration-300 ease-out lg:hidden",
         visible
-          ? "bg-slate-950/55 shadow-[0_0_24px_rgba(34,42,53,0.06),0_1px_1px_rgba(0,0,0,0.05),0_0_0_1px_rgba(34,42,53,0.04),0_0_4px_rgba(34,42,53,0.08),0_16px_68px_rgba(47,48,55,0.05),0_1px_0_rgba(255,255,255,0.1)_inset]"
-          : "bg-transparent shadow-none",
+          ? "max-w-[92%] rounded px-3 bg-slate-950/55 shadow-[0_10px_30px_rgba(2,6,23,0.24)]"
+          : "max-w-[calc(100vw-2rem)] rounded-[2rem] px-0 bg-transparent shadow-none",
         className,
       )}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 
@@ -169,7 +174,7 @@ export const MobileNavHeader = ({ children, className }: MobileNavHeaderProps) =
   return (
     <div
       className={cn(
-        "flex w-full flex-row items-center justify-between rounded-2xl border border-white/20 bg-slate-950/88 px-4 py-3 text-white",
+        "flex w-full flex-row items-center justify-between rounded-2xl border border-white/22 bg-slate-950/[0.94] px-4 py-3 text-white max-md:shadow-[0_8px_24px_rgba(2,6,23,0.55)] md:border-white/20 md:bg-slate-950/88 md:shadow-none",
         className,
       )}
     >
@@ -214,11 +219,11 @@ export const MobileNavToggle = ({ isOpen, onClick }: { isOpen: boolean; onClick:
 
 export const NavbarLogo = () => {
   return (
-    <a href="/" className="flex items-center gap-2.5 text-white">
-      {/* Avoid `priority` here: marketing shell mounts this nav late; preload of logo.png was unused and spammed the console. */}
+    <Link href="/" className="flex items-center gap-2.5 text-white">
+      {/* Avoid `priority` here: marketing shell mounts this nav late; preload ofg was unused and spammed the console. */}
       <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" />
       <MentrixaWordmark trixaClassName="text-white" />
-    </a>
+    </Link>
   );
 };
 

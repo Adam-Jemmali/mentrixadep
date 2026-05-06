@@ -117,7 +117,7 @@ export function StudentStatStripMotion({
         >
           <span className="flex items-center gap-2">
             <Image
-              src="/images/live.png"
+              src="/images/live.webp"
               alt="Streak"
               width={20}
               height={20}

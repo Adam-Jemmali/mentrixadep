@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { gsap } from "gsap";
 import type { AuthUser } from "@/lib/auth";
 import { signOut } from "@/app/actions/auth";
@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { staggerIn } from "@/lib/gsap";
+import { readUiPerfTier } from "@/lib/ui-performance";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 
 const STUDENT_LINKS = [
@@ -116,6 +117,7 @@ interface NavigationProps {
  * keeps the lazy boundary isolated and prevents root hydration failures.
  */
 function NavigationInner({ user }: NavigationProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const navRef = useRef<HTMLElement | null>(null);
@@ -166,16 +168,24 @@ function NavigationInner({ user }: NavigationProps) {
   }, [pathname, searchParams]);
 
   useEffect(() => {
+    router.prefetch(logoHref);
+    for (const item of navItems) router.prefetch(item.href);
+    if (profileHref) router.prefetch(profileHref);
+    router.prefetch("/auth/signin");
+    router.prefetch("/auth/signup");
+  }, [router, logoHref, navItems, profileHref]);
+
+  useEffect(() => {
     if (!navRef.current) return;
     gsap.fromTo(
       navRef.current,
-      { y: -56 },
-      { y: 0, duration: 0.5, ease: "power3.out", delay: 0.1 },
+      { y: -48 },
+      { y: 0, duration: 0.26, ease: "power2.out", delay: 0.04 },
     );
   }, []);
 
   useEffect(() => {
-    if (mobileOpen && mobileLinkRefs.current.length > 0) {
+    if (mobileOpen && mobileLinkRefs.current.length > 0 && readUiPerfTier() !== "lite") {
       staggerIn(mobileLinkRefs.current);
     }
   }, [mobileOpen]);
@@ -183,14 +193,14 @@ function NavigationInner({ user }: NavigationProps) {
   return (
     <nav
       ref={navRef}
-      className="fixed top-0 left-0 right-0 z-50 h-14 bg-slate-900/90 backdrop-blur-md border-b border-white/[0.06]"
+      className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-white/[0.06] bg-slate-950/95 supports-[backdrop-filter]:bg-slate-950/88 supports-[backdrop-filter]:backdrop-blur-sm"
     >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         <div className="flex items-center gap-2 shrink-0">
           <Link href={logoHref} className="flex items-center gap-2">
             {showRoleLogo && (
               <Image
-                src="/mentrixalogo/logo.png"
+                src="/mentrixalogo/logo.webp"
                 alt="Mentrixa"
                 width={32}
                 height={32}
@@ -216,7 +226,7 @@ function NavigationInner({ user }: NavigationProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium transition-colors border-b-2",
+                  "px-3 py-1.5 text-sm font-medium transition-colors duration-150 ease-out border-b-2",
                   active
                     ? "text-white border-cyan-400/80 font-semibold"
                     : "text-slate-400 border-transparent hover:text-white"

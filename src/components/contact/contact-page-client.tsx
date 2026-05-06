@@ -56,6 +56,12 @@ export function ContactPageClient({ feedbackEmail }: Props) {
   if (done) {
     return (
       <div className="lp-root">
+        <div className="mx-auto mb-6 flex w-full max-w-2xl items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 backdrop-blur-sm">
+          <span className="text-sm font-semibold tracking-wide text-slate-100">Mentrixa Contact</span>
+          <Link href="/" className="text-sm font-medium text-indigo-200 hover:text-indigo-100">
+            Back to homepage
+          </Link>
+        </div>
         <section className="lp-band-contact py-12 md:py-16">
           <div className="max-w-lg mx-auto text-center py-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600">
@@ -77,10 +83,16 @@ export function ContactPageClient({ feedbackEmail }: Props) {
 
   return (
     <div className="lp-root">
+      <div className="mx-auto mb-6 flex w-full max-w-2xl items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 backdrop-blur-sm">
+        <span className="text-sm font-semibold tracking-wide text-slate-100">Mentrixa Contact</span>
+        <Link href="/" className="text-sm font-medium text-indigo-200 hover:text-indigo-100">
+          Back to homepage
+        </Link>
+      </div>
       <section className="lp-band-contact py-12 md:py-16">
         <div className="max-w-2xl mx-auto space-y-10 pb-12 px-4 sm:px-6">
       <div className="space-y-3 text-white">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">Contact</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">Contact</p>
         <h1 className="text-3xl font-bold tracking-[-0.04em] text-white md:text-4xl">Talk to us</h1>
         <p className="text-base text-slate-200 leading-relaxed max-w-xl">
           You&apos;re the reason we ship. Mentrixers and Guides who speak up shape what we are building.
@@ -101,36 +113,52 @@ export function ContactPageClient({ feedbackEmail }: Props) {
 
       
 
-      <form onSubmit={onSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8 space-y-5">
+      <form
+        onSubmit={onSubmit}
+        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm md:p-8"
+      >
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="contact-name">Name</Label>
-            <Input id="contact-name" name="name" required placeholder="Your name" className="h-11" autoComplete="name" />
+            <Label htmlFor="contact-name" className="text-slate-800">
+              Name
+            </Label>
+            <Input
+              id="contact-name"
+              name="name"
+              required
+              placeholder="Your name"
+              className="h-11 text-slate-900 placeholder:text-slate-500"
+              autoComplete="name"
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contact-email">Email</Label>
+            <Label htmlFor="contact-email" className="text-slate-800">
+              Email
+            </Label>
             <Input
               id="contact-email"
               name="email"
               type="email"
               required
               placeholder="you@example.com"
-              className="h-11"
+              className="h-11 text-slate-900 placeholder:text-slate-500"
               autoComplete="email"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="contact-category">What&apos;s this about?</Label>
+          <Label htmlFor="contact-category" className="text-slate-800">
+            What&apos;s this about?
+          </Label>
           <select
             id="contact-category"
             name="category"
             required
             className={cn(
-              "flex h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm",
+              "flex h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900",
               "ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:ring-offset-2",
             )}
             defaultValue="feedback"
@@ -144,14 +172,16 @@ export function ContactPageClient({ feedbackEmail }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="contact-message">Your message</Label>
+          <Label htmlFor="contact-message" className="text-slate-800">
+            Your message
+          </Label>
           <Textarea
             id="contact-message"
             name="message"
             required
             rows={6}
             placeholder="Share feedback, ideas, or what we should fix. The more specific, the faster we can help."
-            className="min-h-[140px] resize-y"
+            className="min-h-[140px] resize-y text-slate-900 placeholder:text-slate-500"
           />
         </div>
 
@@ -167,9 +197,9 @@ export function ContactPageClient({ feedbackEmail }: Props) {
           </Button>
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-black/80">
             <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-black/5">
-              <Image src="/mentrixalogo/logo.png" alt="Mentrixa" width={45} height={45} />
+              <Image src="/mentrixalogo/logo.webp" alt="Mentrixa" width={45} height={45} />
             </span>
-            
+            Return to homepage
           </Link>
         </div>
       </form>

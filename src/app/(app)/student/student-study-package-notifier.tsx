@@ -165,7 +165,7 @@ export function StudentStudyPackageNotifier({ snapshots }: { snapshots: Snapshot
               className="inline-flex items-center gap-2"
               onClick={() => dismiss(banner.sessionId, banner.publishedAt)}
             >
-              <Image src="/images/package.png" alt="" width={16} height={16} />
+              <Image src="/images/package.webp" alt="" width={16} height={16} />
               View in history
             </Link>
           </Button>

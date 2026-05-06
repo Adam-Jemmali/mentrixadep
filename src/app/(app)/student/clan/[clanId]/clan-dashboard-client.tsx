@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -56,8 +56,19 @@ export function ClanDashboardClient({
   const { clan, memberCount, weeklyClanXp, challenge, members, trophies } = data;
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
   const [focusSelection, setFocusSelection] = useState<string>(clan.focus_division_key ?? "__none__");
   const [focusError, setFocusError] = useState<string | null>(null);
+
+  useEffect(() => {
+    router.prefetch("/student/duel");
+  }, [router]);
+
+  function refreshSoftly() {
+    startTransition(() => {
+      router.refresh();
+    });
+  }
 
   const ch = challenge;
   const target = ch?.quest_target ?? 20;
@@ -69,21 +80,21 @@ export function ClanDashboardClient({
     setBusy(requestId);
     await approveJoinRequest(requestId);
     setBusy(null);
-    window.location.reload();
+    refreshSoftly();
   }
 
   async function onReject(requestId: string) {
     setBusy(requestId);
     await rejectJoinRequest(requestId);
     setBusy(null);
-    window.location.reload();
+    refreshSoftly();
   }
 
   async function onPreset(key: string) {
     setBusy("preset");
     await setClanAvatarPreset(clan.id, key);
     setBusy(null);
-    window.location.reload();
+    refreshSoftly();
   }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -94,7 +105,7 @@ export function ClanDashboardClient({
     fd.set("file", f);
     await uploadClanAvatar(clan.id, fd);
     setBusy(null);
-    window.location.reload();
+    refreshSoftly();
   }
 
   async function onSaveFocus() {
@@ -107,7 +118,7 @@ export function ClanDashboardClient({
       setFocusError(res.error);
       return;
     }
-    window.location.reload();
+    refreshSoftly();
   }
 
   async function onDuel(opponentId: string) {
@@ -210,6 +221,8 @@ export function ClanDashboardClient({
                   Represent <span className="text-white font-bold">{clan.name}</span> in the Global Arena. Defeat rival clans to earn massive Clan XP and climb the World Standings.
                 </p>
                 <Button
+                  onMouseEnter={() => router.prefetch("/student/duel")}
+                  onTouchStart={() => router.prefetch("/student/duel")}
                   onClick={() => router.push('/student/duel')}
                   className="h-16 px-12 rounded-2xl bg-white hover:bg-indigo-50 text-slate-900 font-black italic uppercase tracking-widest text-sm shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-all hover:scale-[1.05] active:scale-[0.95]"
                 >

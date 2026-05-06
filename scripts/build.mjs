@@ -9,7 +9,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 applyLocalEnvOverrides(root);
 
 const nextBin = join(root, "node_modules", "next", "dist", "bin", "next");
-const child = spawn(process.execPath, [nextBin, "build", "--webpack"], {
+const child = spawn(process.execPath, [nextBin, "build"], {
   cwd: root,
   stdio: "inherit",
   env: process.env,

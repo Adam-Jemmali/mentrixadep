@@ -82,13 +82,13 @@ export function InstitutionSettingsClient({ institution }: { institution: Instit
             Logo URL
           </label>
           <p className="text-[11px] text-slate-400 mb-2">
-            Paste a direct link to your institution logo (PNG or SVG, square preferred). Shown on tutor session cards.
+            Paste a direct link to your institution logo (SVG or WebP, square preferred). Shown on tutor session cards.
           </p>
           <input
             type="url"
             value={logoUrl}
             onChange={(e) => setLogoUrl(e.target.value)}
-            placeholder="https://your-institution.edu/logo.png"
+            placeholder="https://your-institution.edu/logo.svg"
             className="w-full h-9 px-3 text-[13px] border border-[#E5E7EB] rounded-md bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
           />
 

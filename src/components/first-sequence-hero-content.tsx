@@ -3,12 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
 import { GooeyText } from "@/components/ui/gooey-text-morphing";
 import { Typewriter } from "@/components/ui/typewriter";
 import { BubbleText } from "@/components/ui/bubble-text";
 import ParticleAnimation from "@/components/ui/particle-animation";
+import { useLowEndMode, useSectionScrollProgress } from "@/lib/landing-perf";
 
 const ICON_VERSION = "20260410";
 
@@ -35,24 +37,26 @@ const ArrowRight = () => (
 
 function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
   return (
-    <Image
-      src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
-      alt=""
-      width={16}
-      height={16}
-      unoptimized
-      className={`block ${className}`}
-      aria-hidden
-    />
+    <span className={`relative inline-block h-4 w-4 shrink-0 ${className}`} aria-hidden>
+      <Image
+        src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
+        alt=""
+        fill
+        unoptimized
+        className="object-contain"
+        sizes="16px"
+      />
+    </span>
   );
 }
 
-function BouncingRoleIcons() {
+function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mentrixerRef = useRef<HTMLDivElement | null>(null);
   const guideRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (disabled) return;
     const container = containerRef.current;
     const mentrixer = mentrixerRef.current;
     const guide = guideRef.current;
@@ -125,8 +129,19 @@ function BouncingRoleIcons() {
 
     let frameId = 0;
     let lastTs = performance.now();
+    let isVisible = true;
+    let io: IntersectionObserver | null = null;
+    const minFrameMs = 1000 / 30;
 
     const step = (ts: number) => {
+      if (!isVisible || document.hidden) {
+        frameId = window.requestAnimationFrame(step);
+        return;
+      }
+      if (ts - lastTs < minFrameMs) {
+        frameId = window.requestAnimationFrame(step);
+        return;
+      }
       const dt = Math.min((ts - lastTs) / 1000, 0.033);
       lastTs = ts;
       const width = container.clientWidth;
@@ -170,14 +185,20 @@ function BouncingRoleIcons() {
     };
 
     frameId = window.requestAnimationFrame(step);
+    io = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      isVisible = Boolean(entry?.isIntersecting);
+    }, { threshold: 0.1 });
+    io.observe(container);
     const handleResize = () => setInitialPositions();
     window.addEventListener("resize", handleResize, { passive: true });
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frameId);
+      io?.disconnect();
     };
-  }, []);
+  }, [disabled]);
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
@@ -196,48 +217,10 @@ function BouncingRoleIcons() {
 type WaitlistRole = "student" | "tutor";
 
 
-function useSequenceProgress(sequenceId: string) {
-  const [progress, setProgress] = useState(0);
-  const rafRef = useRef<number | null>(null);
-  const lastProgressRef = useRef(0);
-
-  useEffect(() => {
-    const update = () => {
-      const section = document.getElementById(sequenceId);
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      const scrollable = Math.max(section.scrollHeight - window.innerHeight, 1);
-      const next = Math.min(Math.max(-rect.top / scrollable, 0), 1);
-      
-      // Only update if change > 0.01 threshold for fewer re-renders
-      if (Math.abs(next - lastProgressRef.current) > 0.01) {
-        lastProgressRef.current = next;
-        setProgress(next);
-      }
-    };
-
-    const handleScroll = () => {
-      if (rafRef.current !== null) return;
-      rafRef.current = requestAnimationFrame(() => {
-        update();
-        rafRef.current = null;
-      });
-    };
-
-    update();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [sequenceId]);
-
-  return progress;
-}
 export function FirstSequenceHeroContent() {
-  const progress = useSequenceProgress("firstseq");
+  const router = useRouter();
+  const progress = useSectionScrollProgress("firstseq", 0.01);
+  const lowEndMode = useLowEndMode();
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistRole, setWaitlistRole] = useState<WaitlistRole>("student");
   const [waitlistMsg, setWaitlistMsg] = useState<string | null>(null);
@@ -249,11 +232,18 @@ export function FirstSequenceHeroContent() {
   const lineAOpacity = Math.min(1, 0.3 + progress * 1.5);
 
   useEffect(() => {
+    if (lowEndMode) return;
     const id = window.setInterval(() => {
       setSlideIdx((n) => (n + 1) % WAITLIST_SLIDES.length);
     }, 3500);
     return () => window.clearInterval(id);
-  }, []);
+  }, [lowEndMode]);
+
+  useEffect(() => {
+    router.prefetch("/auth/signup");
+    router.prefetch("/auth/signup?role=tutor");
+    router.prefetch("/try");
+  }, [router]);
 
   const submitWaitlist = useCallback(async () => {
     setWaitlistMsg(null);
@@ -297,9 +287,9 @@ export function FirstSequenceHeroContent() {
 
   return (
     <div className="relative flex min-h-screen items-start justify-center overflow-hidden px-4 pb-8 pt-14 sm:px-5 sm:pt-16 md:items-center md:pt-14 md:pb-8 lg:pt-16 lg:pb-6" id="firstseq">
-      <ParticleAnimation className="absolute inset-0 z-0 opacity-30" />
+      {lowEndMode ? null : <ParticleAnimation className="absolute inset-0 z-0 opacity-30" />}
       <div className="hidden md:block">
-        <BouncingRoleIcons />
+        <BouncingRoleIcons disabled={lowEndMode} />
       </div>
       <div
         className="pointer-events-none absolute inset-x-0 top-64 z-[100] block px-5 text-center md:top-80 lg:top-[26rem]"
@@ -309,17 +299,23 @@ export function FirstSequenceHeroContent() {
         }}
       >
         <div className="mx-auto h-40 w-full max-w-4xl mt-2">
-          <GooeyText 
-            texts={[
-              "Compete. Climb. Improve.", 
-              "Meet live.", 
-              "Book a Guide."
-            ]} 
-            morphTime={2.5}
-            cooldownTime={3}
-            textClassName="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter"
-            className="h-full"
-          />
+          {lowEndMode ? (
+            <p className="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter">
+              Compete. Climb. Improve.
+            </p>
+          ) : (
+            <GooeyText
+              texts={[
+                "Compete. Climb. Improve.",
+                "Meet live.",
+                "Book a Guide."
+              ]}
+              morphTime={2.5}
+              cooldownTime={3}
+              textClassName="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter"
+              className="h-full"
+            />
+          )}
         </div>
       </div>
 
@@ -356,7 +352,7 @@ export function FirstSequenceHeroContent() {
                 href="/auth/signup?role=tutor"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-slate-100 transition-colors hover:bg-white/[0.06] sm:w-auto sm:px-7 sm:py-3.5"
               >
-                <RoleIcon role="guide" className="h-3.5 w-3.5" />
+                <RoleIcon role="guide" className="h-3.5 w-3.5 brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]" />
                 Become a Guide
               </Link>
               <Link
@@ -372,10 +368,12 @@ export function FirstSequenceHeroContent() {
             className="w-full pt-2 sm:pt-4 lg:pt-16"
             style={{ opacity: revealRight, transform: `translateY(${(1 - revealRight) * 16}px)` }}
           >
-            <div id="waitlist" className="relative mx-auto max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 p-2.5 text-left shadow-xl shadow-violet-950/45 backdrop-blur-md sm:p-3 lg:ml-auto lg:w-full lg:max-w-[22rem] xl:-mr-12">
+            <div id="waitlist" className="relative mx-auto max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950/78 p-2.5 text-left shadow-xl shadow-violet-950/45 backdrop-blur-md max-md:border-white/22 max-md:bg-slate-950/[0.96] sm:p-3 lg:ml-auto lg:w-full lg:max-w-[22rem] xl:-mr-12">
   
               <h3 className="text-[15px] font-semibold tracking-tight text-white sm:text-base">
-                <Typewriter text="Apply for early access" speed={70} waitTime={2500} cursorChar="_" />
+                {lowEndMode ? "Apply for early access" : (
+                  <Typewriter text="Apply for early access" speed={70} waitTime={2500} cursorChar="_" />
+                )}
               </h3>
 
               <div className="mt-2.5 grid gap-2 lg:grid-cols-[1fr_1.2fr] lg:gap-2">
@@ -412,7 +410,7 @@ export function FirstSequenceHeroContent() {
                     type="email"
                     value={waitlistEmail}
                     onChange={(e) => setWaitlistEmail(e.target.value)}
-                    placeholder="personal  "
+                    placeholder="your email "
                     className="w-full rounded-lg border border-white/20 bg-white/95 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500"
                   />
                   <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -454,14 +452,16 @@ export function FirstSequenceHeroContent() {
           </div>
         </div>
       </div>
-      <div className="absolute bottom-4 inset-x-0 h-16 w-full z-10 pointer-events-none md:bottom-8 lg:bottom-12">
-        <ParticleTextEffect 
-          key={JSON.stringify(["PROVE WHAT YOU KNOW", "MENTRIXA"])}
-          words={["PROVE WHAT YOU KNOW", "MENTRIXA", "CLIMB", "SOLVE", "WIN"]} 
-          className="w-full h-full opacity-60"
-          tone="onDark"
-        />
-      </div>
+      {lowEndMode ? null : (
+        <div className="absolute bottom-4 inset-x-0 h-16 w-full z-10 pointer-events-none md:bottom-8 lg:bottom-12">
+          <ParticleTextEffect
+            key={JSON.stringify(["PROVE WHAT YOU KNOW", "MENTRIXA"])}
+            words={["PROVE WHAT YOU KNOW", "MENTRIXA", "CLIMB", "SOLVE", "WIN"]}
+            className="w-full h-full opacity-60"
+            tone="onDark"
+          />
+        </div>
+      )}
     </div>
   );
 }

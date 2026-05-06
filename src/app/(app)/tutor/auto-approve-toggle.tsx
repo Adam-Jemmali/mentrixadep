@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toggleAutoApprove } from "@/app/actions/tutor";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
@@ -12,21 +12,25 @@ interface AutoApproveToggleProps {
 export function AutoApproveToggle({ initialValue }: AutoApproveToggleProps) {
   const [enabled, setEnabled] = useState(initialValue);
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
 
   async function handleToggle() {
     const newValue = !enabled;
+    const previousValue = enabled;
+    setEnabled(newValue);
     setLoading(true);
     setError(null);
 
     try {
       await toggleAutoApprove(newValue, viewingAsUserId ?? undefined);
-      setEnabled(newValue);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
+      setEnabled(previousValue);
       setError(err instanceof Error ? err.message : "Failed to update setting");
+    } finally {
       setLoading(false);
     }
   }
@@ -37,10 +41,10 @@ export function AutoApproveToggle({ initialValue }: AutoApproveToggleProps) {
         htmlFor="auto-approve"
         className={`relative inline-block w-10 h-5 rounded-full transition-colors ${
           enabled ? "bg-[#2563EB]" : "bg-[#E2E8F0]"
-        } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        } ${loading || isRefreshing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
         onClick={(e) => {
           e.preventDefault();
-          if (!loading) {
+          if (!loading && !isRefreshing) {
             handleToggle();
           }
         }}

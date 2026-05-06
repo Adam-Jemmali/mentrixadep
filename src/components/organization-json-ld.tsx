@@ -16,7 +16,7 @@ export function OrganizationJsonLd() {
         description: SITE_DESCRIPTION,
         logo: {
           "@type": "ImageObject",
-          url: `${siteUrl}/mentrixalogo/logo.png`,
+          url: `${siteUrl}/mentrixalogo/logo.webp`,
         },
         sameAs: [
           process.env.NEXT_PUBLIC_SOCIAL_DISCORD_URL,

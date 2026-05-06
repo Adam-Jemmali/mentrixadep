@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addStudentCourse, removeStudentCourse } from "@/app/actions/student";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,14 @@ export function StudentCourseChips({
 }) {
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [localCourses, setLocalCourses] = useState(courses);
+  const [isRefreshing, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setLocalCourses(courses);
+  }, [courses]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -31,12 +37,19 @@ export function StudentCourseChips({
     }
     setLoading(true);
     setError(null);
+    const nextCourseName = courseName.trim();
+    const optimisticCourse: StudentCourseChip = {
+      id: `temp-${Date.now()}`,
+      course_name: nextCourseName,
+    };
+    setLocalCourses((current) => [...current, optimisticCourse]);
     try {
-      await addStudentCourse(courseName);
+      await addStudentCourse(nextCourseName);
       setCourseName("");
       onSelectCourse("all");
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
+      setLocalCourses((current) => current.filter((c) => c.id !== optimisticCourse.id));
       setError(err instanceof Error ? err.message : "Failed to add course");
     } finally {
       setLoading(false);
@@ -44,11 +57,14 @@ export function StudentCourseChips({
   }
 
   async function handleRemove(courseId: string) {
+    const prev = localCourses;
+    setLocalCourses((current) => current.filter((c) => c.id !== courseId));
     try {
       await removeStudentCourse(courseId);
       onSelectCourse("all");
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
+      setLocalCourses(prev);
       setError(err instanceof Error ? err.message : "Failed to remove course");
     }
   }
@@ -76,7 +92,7 @@ export function StudentCourseChips({
         >
           All
         </button>
-        {courses.map((c) => (
+        {localCourses.map((c) => (
           <button
             key={c.id}
             type="button"
@@ -127,6 +143,7 @@ export function StudentCourseChips({
           {loading ? "Adding…" : "Add"}
         </Button>
       </form>
+      {isRefreshing ? <p className="mt-2 text-xs text-slate-500">Syncing courses…</p> : null}
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
     </div>
   );

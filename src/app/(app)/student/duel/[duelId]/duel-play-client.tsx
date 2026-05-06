@@ -19,6 +19,7 @@ import {
   DUEL_QUESTION_COUNT,
 } from "@/lib/duel-constants";
 import { XP } from "@/lib/xp-constants";
+import { useRealtimeRouterRefresh } from "@/hooks/use-realtime-router-refresh";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -69,8 +70,24 @@ export function DuelPlayClient({ duel, side }: Props) {
     ? duel.opponent_answers
     : duel.student_answers;
 
+  useEffect(() => {
+    router.prefetch("/student/duel");
+  }, [router]);
+
   const myLen = myAnswers?.length ?? 0;
   const theirLen = theirAnswers?.length ?? 0;
+
+  useRealtimeRouterRefresh(
+    `skill-duel-${duel.id}`,
+    [
+      {
+        table: "skill_duels",
+        event: "UPDATE",
+        filter: `id=eq.${duel.id}`,
+      },
+    ],
+    500,
+  );
 
   const currentIndex = myLen;
   const total = duel.questions.length || DUEL_QUESTION_COUNT;
@@ -98,24 +115,12 @@ export function DuelPlayClient({ duel, side }: Props) {
     };
   }, [duel.id, duel.status, duel.match_source, router]);
 
-  /** Realtime: refresh when the duel row updates */
+  /** Realtime diagnostics only (actual refresh handled by debounced hook). */
   useEffect(() => {
     if (duel.status !== "active" && duel.status !== "pending") return;
     const supabase = createClient();
     const channel = supabase
-      .channel(`skill-duel-${duel.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "skill_duels",
-          filter: `id=eq.${duel.id}`,
-        },
-        () => {
-          router.refresh();
-        }
-      )
+      .channel(`skill-duel-${duel.id}-status`)
       .subscribe((status: RealtimeSubscribeStatus) => {
         if (status === "SUBSCRIBED") {
           trackClientEvent("realtime_reconnect", {
@@ -136,12 +141,16 @@ export function DuelPlayClient({ duel, side }: Props) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [duel.id, duel.status, router]);
+  }, [duel.id, duel.status]);
 
-  /** If Realtime publication is not enabled for skill_duels, polling still syncs scores */
+  /** Fallback polling if realtime misses updates (slower interval to reduce UI churn). */
   useEffect(() => {
     if (duel.status !== "active") return;
-    const id = setInterval(() => router.refresh(), 4000);
+    const tick = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      router.refresh();
+    };
+    const id = setInterval(tick, 8000);
     return () => clearInterval(id);
   }, [duel.status, router]);
 
@@ -197,6 +206,10 @@ export function DuelPlayClient({ duel, side }: Props) {
     myLen >= total &&
     theirLen < total &&
     !duel.is_ai_opponent;
+
+  const prefetchDuelHub = () => {
+    router.prefetch("/student/duel");
+  };
 
   async function pickAnswer(ci: number) {
     if (duel.status !== "active") return;
@@ -292,6 +305,8 @@ export function DuelPlayClient({ duel, side }: Props) {
           variant="outline"
           size="sm"
           disabled={listActionLoading}
+          onMouseEnter={prefetchDuelHub}
+          onTouchStart={prefetchDuelHub}
           onClick={() => {
             setListActionLoading(true);
             setError(null);
@@ -322,6 +337,8 @@ export function DuelPlayClient({ duel, side }: Props) {
           variant="outline"
           size="sm"
           disabled={listActionLoading}
+          onMouseEnter={prefetchDuelHub}
+          onTouchStart={prefetchDuelHub}
           onClick={() => {
             setListActionLoading(true);
             setError(null);
@@ -428,6 +445,8 @@ export function DuelPlayClient({ duel, side }: Props) {
             variant="outline"
             size="sm"
             disabled={listActionLoading}
+            onMouseEnter={prefetchDuelHub}
+            onTouchStart={prefetchDuelHub}
             onClick={() => {
               setListActionLoading(true);
               setError(null);

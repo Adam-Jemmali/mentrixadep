@@ -2,14 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
-import { gsap } from "gsap";
 import { toUserFacingAuthError } from "@/lib/user-facing-error";
+
+const GoogleSignInButton = dynamic(
+  () => import("@/components/auth/google-sign-in-button").then((m) => m.GoogleSignInButton),
+  {
+    loading: () => <div className="h-11 w-full animate-pulse rounded-xl border border-slate-200 bg-slate-100" />,
+  },
+);
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +31,13 @@ export default function SignInPage() {
     const wrapper = document.getElementById("auth-form-wrapper");
     if (!wrapper) return;
     const children = Array.from(wrapper.children);
-    gsap.fromTo(
-      children,
-      { y: 16, opacity: 0 },
-      { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
-    );
+    void import("gsap").then(({ gsap }) => {
+      gsap.fromTo(
+        children,
+        { y: 16, opacity: 0 },
+        { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
+      );
+    });
   }, []);
 
   useEffect(() => {

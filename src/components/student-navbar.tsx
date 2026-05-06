@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
 import { onXpAward } from "@/lib/xp-events";
@@ -86,6 +86,7 @@ interface StudentNavbarProps {
 }
 
 export function StudentNavbar({ user }: StudentNavbarProps) {
+  const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [totalXp, setTotalXp] = useState(0);
@@ -147,15 +148,21 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
   const initials = user ? getInitials(user.displayName, user.email) : "M";
   const profileHref = user ? `/student/${user.id}` : "/student";
 
+  useEffect(() => {
+    router.prefetch("/student");
+    for (const item of STUDENT_NAV_ITEMS) router.prefetch(item.link);
+    if (user?.id) router.prefetch(`/student/${user.id}`);
+  }, [router, user?.id]);
+
   return (
     <Navbar className="student-nav fixed top-3 left-0 right-0 z-40 px-3 sm:px-5">
       <div className="relative w-full">
         {/* Desktop Navbar */}
         <NavBody>
-          <a href="/student" className="flex items-center gap-2.5 shrink-0">
+          <Link href="/student" className="flex items-center gap-2.5 shrink-0">
             <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
             <MentrixaWordmark trixaClassName="text-white" />
-          </a>
+          </Link>
           
           <NavItems 
             items={STUDENT_NAV_ITEMS}
@@ -216,10 +223,10 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
         <MobileNav>
           <div className="relative w-full">
             <MobileNavHeader>
-              <a href="/student" className="flex items-center gap-2.5 shrink-0">
+              <Link href="/student" className="flex items-center gap-2.5 shrink-0">
                 <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
                 <MentrixaWordmark trixaClassName="text-white" />
-              </a>
+              </Link>
               <div className="relative z-[70] flex items-center gap-2">
                 <button
                   type="button"

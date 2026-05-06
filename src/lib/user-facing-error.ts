@@ -34,6 +34,10 @@ export function toUserFacingAuthError(input: unknown): string {
     return "Network issue detected. Check your connection and try again.";
   }
 
+  if (normalized.includes("unexpected response")) {
+    return "Sign-in hit a browser/server mismatch. Refresh the page and try again, or use “Continue with Google (via Supabase)” below.";
+  }
+
   return "Something went wrong. Please try again.";
 }
 

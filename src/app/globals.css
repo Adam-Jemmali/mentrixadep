@@ -36,43 +36,24 @@
 .section-container { max-width: 80rem; margin-left: auto; margin-right: auto; width: 100%; }
 * { box-sizing: border-box; touch-action: pan-y; }
 html { scroll-behavior: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
 body { background:#FAFAFA; color:#0F172A; font-family:'Geist',system-ui,sans-serif; -webkit-font-smoothing:antialiased; -webkit-touch-callout:none; }
 
+/* One paint-friendly stack (multiple gradients on a single element beat several full-screen overlay divs + animations). */
 .bg-mentrixa-app {
   background:
-    radial-gradient(1200px 520px at 8% -12%, rgba(139, 92, 246, 0.12), transparent 55%),
-    radial-gradient(1000px 420px at 92% -8%, rgba(79, 70, 229, 0.15), transparent 52%),
-    radial-gradient(900px 360px at 50% 108%, rgba(99, 102, 241, 0.10), transparent 56%),
+    radial-gradient(1200px 520px at 8% -12%, rgba(139, 92, 246, 0.1), transparent 55%),
+    radial-gradient(1000px 420px at 92% -8%, rgba(79, 70, 229, 0.12), transparent 52%),
+    radial-gradient(900px 360px at 50% 108%, rgba(99, 102, 241, 0.08), transparent 56%),
+    radial-gradient(circle at center, transparent 35%, rgba(2, 6, 23, 0.62) 100%),
     linear-gradient(180deg, #050811 0%, #080f21 48%, #070e1d 100%);
 }
 
-.bg-mentrixa-noise {
-  opacity: 0.16;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 0.5px, transparent 0.5px);
-  background-size: 2px 2px;
-}
-
-.bg-mentrixa-logo-grid {
-  opacity: 0.055;
-  background-image: url('/mentrixalogo/logo.png');
-  background-size: 120px 120px;
-  background-repeat: repeat;
-  filter: grayscale(1) brightness(1.4);
-}
-
-.bg-mentrixa-vignette {
-  background: radial-gradient(circle at center, transparent 35%, rgba(2, 6, 23, 0.72) 100%);
-}
-
-.bg-mentrixa-logo-drift {
-  animation: mentrixaLogoDrift 24s ease-in-out infinite;
-}
-
-.bg-mentrixa-logo-drift--reverse {
-  animation-direction: reverse;
-  animation-duration: 30s;
-}
-
+/* Used by arbitrary `animate-[mentrixaLogoDrift_…]` utilities (e.g. sessions header accents). */
 @keyframes mentrixaLogoDrift {
   0%,
   100% {
@@ -324,10 +305,41 @@ button, [role="button"], a { -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
 .no-scrollbar::-webkit-scrollbar { display:none; }
 .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
 
-.page-fade { animation: pageFadeIn 0.25s ease-out; }
+.page-fade { animation: pageFadeIn 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes pageFadeIn {
-  from { opacity:0; transform:translateY(6px); }
+  from { opacity:0; transform:translateY(4px); }
   to { opacity:1; transform:translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-fade {
+    animation: none !important;
+  }
+}
+
+@keyframes navRouteProgress {
+  0% { transform: scaleX(0); opacity: 1; }
+  40% { transform: scaleX(0.62); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+.nav-route-progress {
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, #22d3ee, #6366f1, #a78bfa);
+  will-change: transform, opacity;
+  animation: navRouteProgress 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-route-progress {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+html[data-mentrixa-perf="lite"] .nav-route-progress {
+  animation-duration: 0.22s;
+}
+html[data-mentrixa-perf="lite"] .page-fade {
+  animation-duration: 0.12s;
 }
 
 .studio-generate-loading {
@@ -555,6 +567,7 @@ button, [role="button"], a { -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
 .lp-root {
   position: relative;
   overflow-x: hidden;
+  background: #0b1120;
 }
 
 /* Climb up and reset layout wrappers so landing goes edge-to-edge */
@@ -726,6 +739,17 @@ main:has(.lp-root) > div {
 }
 .lp-cta-pulse {
   animation: lpPulseRing 2.8s ease-in-out infinite;
+}
+
+/* Low-end + mobile: disable expensive backdrop blur and extra effects on landing */
+@media (max-width: 900px) {
+  .lp-root .backdrop-blur-md,
+  .lp-root .backdrop-blur-sm,
+  .lp-root .backdrop-blur-\[6px\],
+  .lp-root .backdrop-blur-\[10px\] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* ─── Mentrixa logo — optimized for performance ─── */

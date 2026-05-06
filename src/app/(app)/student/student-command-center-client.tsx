@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScrollRevealCard } from "@/components/ui/card";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
@@ -67,6 +67,7 @@ export function StudentCommandCenterClient({
   /** Profile timezone. Slots display in this zone. */
   displayTimeZone?: string;
 }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const normalizedInitial = (searchParams.get("subject") ?? "").trim().toLowerCase();
   const initialSelection = studentCourses.some(
@@ -85,6 +86,13 @@ export function StudentCommandCenterClient({
 
   const syncFilter = selectedCourse === "all" ? "all" : selectedCourse;
 
+  useEffect(() => {
+    router.prefetch("/student/quest");
+    router.prefetch("/student/duel");
+    router.prefetch("/student/division");
+    router.prefetch("/student/learning-path");
+  }, [router]);
+
   return (
     <div className="space-y-8">
       <StudentCourseChips
@@ -98,7 +106,7 @@ export function StudentCommandCenterClient({
      
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-        <ScrollRevealCard className={`${mentrixStudent.card} p-5 sm:p-6`}>
+        <ScrollRevealCard className={`${mentrixStudent.card} min-h-[22rem] p-5 sm:p-6`}>
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Today</p>
@@ -181,9 +189,9 @@ export function StudentCommandCenterClient({
         </ScrollRevealCard>
 
         <div className="space-y-6">
-          <ScrollRevealCard className={`${mentrixStudent.card} p-5`}>
+          <ScrollRevealCard className={`${mentrixStudent.card} min-h-[14rem] p-5`}>
             <div className="mb-3 flex items-center gap-2 text-slate-800">
-              <Image src="/images/xp.png" alt="Rank" width={16} height={16} />
+              <Image src="/images/xp.webp" alt="Rank" width={16} height={16} />
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Rank snapshot</span>
             </div>
             <p className="mb-1 truncate text-xs font-medium text-slate-500" title={divisionName}>
@@ -221,20 +229,20 @@ export function StudentCommandCenterClient({
             </div>
           </ScrollRevealCard>
 
-          <ScrollRevealCard className={`${mentrixStudent.card} p-5`}>
+          <ScrollRevealCard className={`${mentrixStudent.card} min-h-[11rem] p-5`}>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Quick actions</p>
             <div className="mt-3 space-y-2">
               <Link href="/student/quest" className="flex min-h-10 items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
-                <span className="inline-flex items-center gap-2"><Image src="/images/quest.png" alt="Quest" width={16} height={16} /> Start daily quest</span>
-                <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
+                <span className="inline-flex items-center gap-2"><Image src="/images/quest.webp" alt="Quest" width={16} height={16} /> Start daily quest</span>
+                <Image src="/images/live.webp" alt="Open" width={16} height={16} className="opacity-60" />
               </Link>
               <Link href="/student/duel" className="flex min-h-10 items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
-                <span className="inline-flex items-center gap-2"><Image src="/images/sword.png" alt="Duel" width={16} height={16} /> Find duel</span>
-                <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
+                <span className="inline-flex items-center gap-2"><Image src="/images/sword.webp" alt="Duel" width={16} height={16} /> Find duel</span>
+                <Image src="/images/live.webp" alt="Open" width={16} height={16} className="opacity-60" />
               </Link>
               <a href="#browse-guides" className="flex min-h-10 items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
-                <span className="inline-flex items-center gap-2"><Image src="/images/book.png" alt="Book" width={16} height={16} /> Book a guide</span>
-                <Image src="/images/live.png" alt="Open" width={16} height={16} className="opacity-60" />
+                <span className="inline-flex items-center gap-2"><Image src="/images/book.webp" alt="Book" width={16} height={16} /> Book a guide</span>
+                <Image src="/images/live.webp" alt="Open" width={16} height={16} className="opacity-60" />
               </a>
             </div>
           </ScrollRevealCard>

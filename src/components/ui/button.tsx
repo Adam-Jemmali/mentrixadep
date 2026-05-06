@@ -5,6 +5,7 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+import { useUiPerfTier } from "@/lib/use-ui-perf-tier"
 
 /* ────────────────────────────────────────────────────────
  * Mentrixa Liquid-Glass Button
@@ -17,7 +18,7 @@ import { cn } from "@/lib/utils"
  * ──────────────────────────────────────────────────────── */
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center cursor-pointer gap-2 whitespace-nowrap rounded-full text-sm font-semibold tracking-tight transition-[color,box-shadow,transform] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center cursor-pointer gap-2 whitespace-nowrap rounded-full text-sm font-semibold tracking-tight transition-[color,box-shadow,transform] duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -139,43 +140,72 @@ interface LiquidGlassWrapperProps {
 }
 
 function LiquidGlassWrapper({ children, variant, size, className }: LiquidGlassWrapperProps) {
+  const tier = useUiPerfTier()
   const wrapperRef = React.useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = React.useState({ x: 50, y: 50 })
   const [isHovered, setIsHovered] = React.useState(false)
+  const rafMoveRef = React.useRef<number | null>(null)
+  const pendingMoveRef = React.useRef({ x: 50, y: 50 })
 
-  const handleMouseMove = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
-    setMouse({ x, y })
-  }, [])
+  React.useEffect(
+    () => () => {
+      if (rafMoveRef.current != null) {
+        cancelAnimationFrame(rafMoveRef.current)
+      }
+    },
+    [],
+  )
+
+  const handleMouseMove = React.useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (tier === "lite") return
+      const rect = e.currentTarget.getBoundingClientRect()
+      const x = ((e.clientX - rect.left) / rect.width) * 100
+      const y = ((e.clientY - rect.top) / rect.height) * 100
+      pendingMoveRef.current = { x, y }
+      if (rafMoveRef.current != null) return
+      rafMoveRef.current = requestAnimationFrame(() => {
+        rafMoveRef.current = null
+        setMouse(pendingMoveRef.current)
+      })
+    },
+    [tier],
+  )
 
   const handleMouseEnter = React.useCallback(() => setIsHovered(true), [])
   const handleMouseLeave = React.useCallback(() => {
     setIsHovered(false)
     setMouse({ x: 50, y: 50 })
+    pendingMoveRef.current = { x: 50, y: 50 }
+    if (rafMoveRef.current != null) {
+      cancelAnimationFrame(rafMoveRef.current)
+      rafMoveRef.current = null
+    }
   }, [])
 
-  /* The zigzag gradient follows the mouse using conic-gradient
-     with the Mentrixa color stops rotating around the cursor position */
-  const liquidGradient = isHovered
-    ? `conic-gradient(from ${(mouse.x * 3.6)}deg at ${mouse.x}% ${mouse.y}%, ${MENTRIXA_COLORS.join(", ")})`
-    : "none"
+  /* Full tier: conic follows cursor (throttled). Lite: static diagonal wash — no per-pixel React updates. */
+  const liquidGradient =
+    !isHovered
+      ? "none"
+      : tier === "lite"
+        ? "linear-gradient(135deg, rgba(37,99,235,0.28), rgba(139,92,246,0.22), rgba(6,182,212,0.18))"
+        : `conic-gradient(from ${(mouse.x * 3.6)}deg at ${mouse.x}% ${mouse.y}%, ${MENTRIXA_COLORS.join(", ")})`
 
   return (
     <div
       ref={wrapperRef}
       className={cn(
-        "group/glass relative inline-flex rounded-full transition-transform duration-200 hover:scale-[1.04] active:scale-[0.97]",
+        "group/glass relative inline-flex rounded-full transition-transform duration-150 ease-out hover:scale-[1.03] active:scale-[0.97]",
+        tier === "lite" && "hover:scale-[1.015]",
         buttonVariants({ variant, size, className }),
       )}
-      onMouseMove={handleMouseMove}
+      onMouseMove={tier === "lite" ? undefined : handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Static glass border — always visible */}
       <div
-        className="pointer-events-none absolute inset-0 z-0 rounded-full transition-shadow duration-300"
+        className="pointer-events-none absolute inset-0 z-0 rounded-full transition-shadow duration-200 ease-out"
         style={{
           boxShadow: isHovered
             ? "0 0 8px rgba(37,99,235,0.15), 0 2px 8px rgba(37,99,235,0.12), inset 2px 2px 1px -1px rgba(37,99,235,0.6), inset -2px -2px 1px -1px rgba(79,70,229,0.55), inset 1px 1px 1px -0.5px rgba(6,182,212,0.5), inset -1px -1px 1px -0.5px rgba(139,92,246,0.4), inset 0 0 8px 4px rgba(37,99,235,0.08), 0 0 20px rgba(37,99,235,0.18)"
@@ -183,18 +213,15 @@ function LiquidGlassWrapper({ children, variant, size, className }: LiquidGlassW
         }}
       />
 
-      {/* Mouse-tracking liquid color overlay — visible on hover */}
+      {/* Hover tint — full tier uses mix-blend + cursor-driven cone; lite uses simple gradient (no backdrop-blur). */}
       <div
-        className="pointer-events-none absolute inset-0 z-[1] rounded-full transition-opacity duration-300"
+        className="pointer-events-none absolute inset-0 z-[1] rounded-full transition-opacity duration-200 ease-out"
         style={{
           opacity: isHovered ? 1 : 0,
           background: liquidGradient,
-          mixBlendMode: "overlay",
+          mixBlendMode: tier === "lite" ? "normal" : "overlay",
         }}
       />
-
-      {/* Subtle glass backdrop blur */}
-      <div className="pointer-events-none absolute inset-0 z-[2] rounded-full backdrop-blur-[2px] backdrop-saturate-150" />
 
       {/* Child content (button or link) */}
       <div className="relative z-10 flex h-full w-full items-center justify-center gap-2">

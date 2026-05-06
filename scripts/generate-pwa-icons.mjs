@@ -1,6 +1,6 @@
 /**
- * Generates PNG icons for the web app manifest from public/mentrixa-checkout-icon.svg
- * Also writes public/favicon.ico (Google uses this) and src/app/icon.png (Next.js metadata).
+ * Generates favicon.ico and related icons for the web app manifest from public/mentrixa-checkout-icon.svg.
+ * PNG outputs are intended for local generation only and are not committed to the codebase.
  * Run: node scripts/generate-pwa-icons.mjs
  */
 import sharp from "sharp";

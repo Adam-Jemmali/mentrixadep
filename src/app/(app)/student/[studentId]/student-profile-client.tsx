@@ -410,7 +410,7 @@ export function StudentProfileClient({
     <div className="min-h-screen bg-slate-50 pb-24 text-indigo-950">
       {/* Cinematic Light Background Elements */}
       <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.06),transparent_40%),radial-gradient(circle_at_100%_100%,rgba(59,130,246,0.04),transparent_35%)]" />
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:120px_120px] bg-repeat opacity-[0.03]" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:120px_120px] bg-repeat opacity-[0.03]" />
 
       <main className="relative z-10 mx-auto max-w-6xl px-4 pt-10 sm:px-6">
         

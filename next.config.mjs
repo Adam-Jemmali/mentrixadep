@@ -26,6 +26,13 @@ const supabasePattern = supabaseStorageRemotePattern();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "@tabler/icons-react",
+      "framer-motion",
+    ],
+  },
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   async redirects() {
     return [
@@ -69,6 +76,16 @@ const nextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "quickchart.io",
+        pathname: "/**",
+      },
       ...(supabasePattern ? [supabasePattern] : []),
     ],
   },
@@ -80,8 +97,8 @@ const nextConfig = {
   },
 
   onDemandEntries: {
-    maxInactiveAge: 60 * 1000,
-    pagesBufferLength: 5,
+    maxInactiveAge: 5 * 60 * 1000,
+    pagesBufferLength: 20,
   },
 
   reactStrictMode: true,

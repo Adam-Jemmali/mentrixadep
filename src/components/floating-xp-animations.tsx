@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { onXpAward, type XpAwardEvent } from "@/lib/xp-events";
+import { useUiPerfTier } from "@/lib/use-ui-perf-tier";
 
 interface FloatingXpParticle {
   id: string;
@@ -12,6 +13,7 @@ interface FloatingXpParticle {
 }
 
 export function FloatingXpAnimations() {
+  const tier = useUiPerfTier();
   const [particles, setParticles] = useState<FloatingXpParticle[]>([]);
   const particleIdRef = useRef(0);
 
@@ -40,39 +42,57 @@ export function FloatingXpAnimations() {
       setParticles((prev) => [...prev, particle]);
 
       // Auto-remove after animation
+      const lingerMs = tier === "lite" ? 520 : 1200;
       setTimeout(() => {
         setParticles((prev) => prev.filter((p) => p.id !== particle.id));
-      }, 1200);
+      }, lingerMs);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [tier]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       <AnimatePresence>
-        {particles.map((particle) => (
-          <motion.div
-            key={particle.id}
-            initial={{ x: particle.startX, y: particle.startY, opacity: 1, scale: 1 }}
-            animate={{
-              x: window.innerWidth - 80,
-              y: 20,
-              opacity: 0,
-              scale: 0.8,
-            }}
-            transition={{
-              duration: 1,
-              ease: "easeOut",
-            }}
-            className="absolute text-base font-bold text-emerald-500"
-            style={{
-              textShadow: "0 0 8px rgba(16, 185, 129, 0.5)",
-            }}
-          >
-            +{particle.amount} XP
-          </motion.div>
-        ))}
+        {particles.map((particle, idx) =>
+          tier === "lite" ? (
+            <motion.div
+              key={particle.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="absolute right-4 rounded-full bg-emerald-950/85 px-3 py-1.5 text-sm font-bold text-emerald-400 shadow-lg ring-1 ring-emerald-500/25"
+              style={{
+                top: `calc(max(5rem, env(safe-area-inset-top)) + ${Math.min(idx, 6) * 44}px)`,
+                transform: "translateZ(0)",
+              }}
+            >
+              +{particle.amount} XP
+            </motion.div>
+          ) : (
+            <motion.div
+              key={particle.id}
+              initial={{ x: particle.startX, y: particle.startY, opacity: 1, scale: 1 }}
+              animate={{
+                x: typeof window !== "undefined" ? window.innerWidth - 80 : particle.startX,
+                y: 20,
+                opacity: 0,
+                scale: 0.8,
+              }}
+              transition={{
+                duration: 0.85,
+                ease: "easeOut",
+              }}
+              className="absolute text-base font-bold text-emerald-500 will-change-transform"
+              style={{
+                textShadow: "0 0 8px rgba(16, 185, 129, 0.5)",
+              }}
+            >
+              +{particle.amount} XP
+            </motion.div>
+          ),
+        )}
       </AnimatePresence>
     </div>
   );

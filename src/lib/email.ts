@@ -146,7 +146,7 @@ let cachedHeaderLogo:
   | undefined;
 
 /**
- * Prefer embedding `public/mentrixalogo/logo.png` as a CID attachment so the logo renders
+ * Prefer embedding `public/mentrixalogo/logo.webp` as a CID attachment so the logo renders
  * from localhost, Vercel, and production without relying on a fetchable absolute URL.
  * Falls back to HTTPS URL when the file is not on disk (e.g. mis-cwd).
  */
@@ -155,19 +155,19 @@ function resolveHeaderLogoForEmail():
   | { imgSrc: string; inlineAttachments: [] } {
   if (cachedHeaderLogo === undefined) {
     try {
-      const logoPath = join(process.cwd(), "public", "mentrixalogo", "logo.png");
+      const logoPath = join(process.cwd(), "public", "mentrixalogo", "logo.webp");
       if (existsSync(logoPath)) {
         const buf = readFileSync(logoPath);
         if (buf.length > 0 && buf.length < 900_000) {
           cachedHeaderLogo = { kind: "cid", base64: buf.toString("base64") };
         } else {
-          cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.png` };
+          cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.webp` };
         }
       } else {
-        cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.png` };
+        cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.webp` };
       }
     } catch {
-      cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.png` };
+      cachedHeaderLogo = { kind: "url", href: `${EMAIL_ASSET_ORIGIN}/mentrixalogo/logo.webp` };
     }
   }
 
@@ -176,10 +176,10 @@ function resolveHeaderLogoForEmail():
       imgSrc: `cid:${HEADER_LOGO_CONTENT_ID}`,
       inlineAttachments: [
         {
-          filename: "mentrixa-logo.png",
+          filename: "mentrixa-logo.webp",
           content: cachedHeaderLogo.base64,
           content_id: HEADER_LOGO_CONTENT_ID,
-          content_type: "image/png",
+          content_type: "image/webp",
         },
       ],
     };

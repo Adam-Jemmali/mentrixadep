@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setUserRole } from "@/app/actions/auth";
 import Image from "next/image";
@@ -12,15 +12,15 @@ import type { UserRole } from "@/lib/database.types";
 type Role = "student" | "tutor";
 
 const learnerBenefits = [
-  { icon: "/images/live.png", text: "Match with expert Guides in your Division" },
-  { icon: "/images/xp.png", text: "Earn XP, quests, and climb the leaderboard" },
-  { icon: "/images/book.png", text: "Session Studio output after each call" },
+  { icon: "/images/live.webp", text: "Match with expert Guides in your Division" },
+  { icon: "/images/xp.webp", text: "Earn XP, quests, and climb the leaderboard" },
+  { icon: "/images/book.webp", text: "Session Studio output after each call" },
 ];
 
 const guideBenefits = [
-  { icon: "/images/xp.png", text: "Set your own rates and availability" },
+  { icon: "/images/xp.webp", text: "Set your own rates and availability" },
   { icon: "/icons/guide.svg", text: "Build your reputation with verified courses" },
-  { icon: "/images/live.png", text: "Get paid for sessions you approve" },
+  { icon: "/images/live.webp", text: "Get paid for sessions you approve" },
 ];
 
 export default function SelectRolePage() {
@@ -29,6 +29,13 @@ export default function SelectRolePage() {
   const router = useRouter();
 
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    router.prefetch("/");
+    router.prefetch("/student");
+    router.prefetch("/tutor");
+    router.prefetch("/auth/signin");
+  }, [router]);
 
   async function choose(role: Role) {
     setLoading(true);
@@ -73,6 +80,8 @@ export default function SelectRolePage() {
           type="button"
           disabled={loading}
           onClick={() => choose("student")}
+          onMouseEnter={() => router.prefetch("/student")}
+          onTouchStart={() => router.prefetch("/student")}
           className="group relative flex flex-col items-stretch text-left p-8 sm:p-10 lg:p-12 bg-gradient-to-br from-blue-50/90 via-white to-slate-50/80 hover:from-blue-50 hover:to-blue-50/40 transition-colors border-b lg:border-b-0 lg:border-r border-slate-100 disabled:opacity-60 disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-inset"
           whileHover={{ scale: loading ? 1 : 1.01 }}
           whileTap={{ scale: loading ? 1 : 0.995 }}
@@ -115,6 +124,8 @@ export default function SelectRolePage() {
           type="button"
           disabled={loading}
           onClick={() => choose("tutor")}
+          onMouseEnter={() => router.prefetch("/tutor")}
+          onTouchStart={() => router.prefetch("/tutor")}
           className="group relative flex flex-col items-stretch text-left p-8 sm:p-10 lg:p-12 bg-gradient-to-br from-violet-50/90 via-white to-slate-50/80 hover:from-violet-50 hover:to-violet-50/40 transition-colors disabled:opacity-60 disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-inset"
           whileHover={{ scale: loading ? 1 : 1.01 }}
           whileTap={{ scale: loading ? 1 : 0.995 }}

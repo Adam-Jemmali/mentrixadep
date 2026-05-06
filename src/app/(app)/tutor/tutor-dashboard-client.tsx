@@ -192,6 +192,11 @@ export function TutorDashboardClient({
   };
 
   useEffect(() => {
+    router.prefetch("/tutor/sessions-ai");
+    router.prefetch("/tutor");
+  }, [router]);
+
+  useEffect(() => {
     if (!slotsCreatedNotice) return;
     router.refresh();
     const scrollTimer = window.setTimeout(() => {
@@ -322,7 +327,7 @@ export function TutorDashboardClient({
       <div className="grid lg:grid-cols-12 gap-8">
         {/* Main area */}
         <div className="lg:col-span-8">
-          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+          <ScrollRevealCard className={mentrixTutor.card + " min-h-[26rem] p-6"}>
           <Tabs defaultValue="requests" className="w-full">
             <TabsList className="h-auto bg-transparent border-b border-slate-200 rounded-none px-0 mb-4">
               <TabsTrigger
@@ -366,11 +371,11 @@ export function TutorDashboardClient({
 
         {/* Sidebar */}
         <aside className="lg:col-span-4 space-y-6">
-          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+          <ScrollRevealCard className={mentrixTutor.card + " min-h-[11rem] p-6"}>
             <CourseManager courses={tutorCourses} />
           </ScrollRevealCard>
 
-          <ScrollRevealCard id="tutor-availability-slots" className={`scroll-mt-24 ${mentrixTutor.card} p-6`}>
+          <ScrollRevealCard id="tutor-availability-slots" className={`scroll-mt-24 ${mentrixTutor.card} min-h-[18rem] p-6`}>
             <h2 className="text-sm font-bold text-slate-900 mb-3">Availability</h2>
 
             <div className="flex items-center justify-between py-3 border-b border-[#F1F5F9] mb-4">
@@ -403,12 +408,12 @@ export function TutorDashboardClient({
                   <p className="text-xs text-slate-500 font-medium">
                     {session.course} · {formatDate(session.start_time)}
                   </p>
-                  <a
+                  <Link
                     href={studioHref}
                     className="text-[11px] text-blue-600 font-bold hover:underline"
                   >
                     View
-                  </a>
+                  </Link>
                 </div>
               ))}
               {recentPackages.length === 0 && (

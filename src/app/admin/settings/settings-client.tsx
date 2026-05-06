@@ -127,14 +127,14 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       {/* Registration section */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/approved.png" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <Image src="/images/approved.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Registration</p>
         </div>
         <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
           <SettingRow
             label="Auto-approve registrations"
             description="When enabled, new learners and guides are approved instantly without manual review."
-            img="/images/approved.png"
+            img="/images/approved.webp"
           >
             <div className="flex items-center gap-3">
               {savedKey === "auto_approve_registrations" && (
@@ -153,14 +153,14 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       {/* Quests section */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/quest.png" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <Image src="/images/quest.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Quests</p>
         </div>
         <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
           <SettingRow
             label="Max quests per day"
             description="Limit how many AI-generated quests a learner can start per calendar day."
-            img="/images/quest.png"
+            img="/images/quest.webp"
           >
             <div className="flex items-center gap-3">
               {savedKey === "max_quests_per_day" && (
@@ -184,14 +184,14 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       {/* Payments section */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/admin.png" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <Image src="/images/admin.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Payments</p>
         </div>
         <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
           <SettingRow
             label="Platform fee percentage"
             description="Percentage of each session payment retained by Mentrixa before paying out guides."
-            img="/images/admin.png"
+            img="/images/admin.webp"
           >
             <div className="flex items-center gap-3">
               {savedKey === "platform_fee_percent" && (
@@ -215,14 +215,14 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       {/* Feature flags section */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/sword.png" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <Image src="/images/sword.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Feature Flags</p>
         </div>
         <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
           <SettingRow
             label="Skill duels"
             description="Allow learners to challenge each other to real-time quiz duels."
-            img="/images/sword.png"
+            img="/images/sword.webp"
           >
             <div className="flex items-center gap-3">
               {savedKey === "feature_duels_enabled" && (
@@ -238,7 +238,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <SettingRow
             label="Clans"
             description="Enable team-based communities where learners can form groups and compete."
-            img="/images/clan.png"
+            img="/images/clan.webp"
           >
             <div className="flex items-center gap-3">
               {savedKey === "feature_clans_enabled" && (
@@ -254,7 +254,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <SettingRow
             label="Mentrixa quests"
             description="Allow learners to generate AI-powered practice quests."
-            img="/images/quest.png"
+            img="/images/quest.webp"
           >
             <div className="flex items-center gap-3">
               {savedKey === "feature_ai_quests_enabled" && (
@@ -273,14 +273,14 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       {/* Danger zone */}
       <section>
         <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/pending.png" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <Image src="/images/pending.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-red-400 uppercase tracking-wider">Maintenance</p>
         </div>
         <div className="bg-white border border-red-100 rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
           <SettingRow
             label="Maintenance mode"
             description="When on, all non-admin users see a maintenance page. Use during deployments or critical fixes."
-            img="/images/pending.png"
+            img="/images/pending.webp"
             danger
           >
             <div className="flex items-center gap-3">
@@ -297,7 +297,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
         </div>
         {settings.maintenanceMode && (
           <div className="mt-3 flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-            <Image src="/images/pending.png" alt="" width={16} height={16} className="object-contain shrink-0" />
+            <Image src="/images/pending.webp" alt="" width={16} height={16} className="object-contain shrink-0" />
             <p className="text-[12px] text-amber-800 font-medium">
               Maintenance mode is active. Learners and guides cannot access the platform.
             </p>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 
-/** Client-side OG-style score card → PNG download. */
+/** Client-side OG-style score card → WebP download. */
 export function ShareScoreCardButton({
   title,
   scoreLine,
@@ -313,10 +313,10 @@ export function ShareScoreCardButton({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "mentrixa-quest-score.png";
+      a.download = "mentrixa-quest-score.webp";
       a.click();
       URL.revokeObjectURL(url);
-    }, "image/png");
+    }, "image/webp");
   };
 
   return (

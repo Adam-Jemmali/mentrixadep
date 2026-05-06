@@ -416,11 +416,30 @@ export async function pollDuelQueue(divisionKey: string): Promise<
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (qrow) {
-      if (qrow.division_key === key) {
-        return { state: "waiting" };
+    const queuedKey =
+      typeof qrow?.division_key === "string" ? qrow.division_key.trim() : "";
+
+    if (queuedKey) {
+      const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+      const { data: duelQueued } = await admin
+        .from("skill_duels")
+        .select("id")
+        .eq("match_source", "queue")
+        .in("status", ["pending", "active"])
+        .eq("division_key", queuedKey)
+        .gte("created_at", since)
+        .or(`student_id.eq.${user.id},opponent_student_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (duelQueued?.id) {
+        await activateSkillDuelSession(duelQueued.id);
+        return { state: "matched", duelId: duelQueued.id };
       }
-      return { state: "idle" };
+
+      return { state: "waiting" };
     }
 
     const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
@@ -556,8 +575,9 @@ export async function acceptSkillDuel(
  * After waiting in queue with no human match, play against a simulated opponent
  * (same question set; scores compared when you finish).
  */
+/** Sparring Quest after queue timeout — duel subject comes from `duel_queue`, not this hint. */
 export async function createAiDuelFromQueue(
-  divisionKey: string
+  _divisionKeyHint: string
 ): Promise<{ success: true; duelId: string } | { success: false; error: string }> {
   try {
     const user = await requireRole(["student", "admin"]);
@@ -586,25 +606,32 @@ export async function createAiDuelFromQueue(
       };
     }
 
-    const { data: div } = await admin
-      .from("divisions")
-      .select("key, name")
-      .eq("key", divisionKey.trim())
-      .eq("active", true)
-      .maybeSingle();
-
-    if (!div) {
-      return { success: false, error: "Invalid division." };
-    }
-
     const { data: qrow } = await admin
       .from("duel_queue")
       .select("division_key")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!qrow || qrow.division_key !== div.key) {
-      return { success: false, error: "Join the queue for this subject first." };
+    const queuedKey =
+      typeof qrow?.division_key === "string" ? qrow.division_key.trim() : "";
+
+    if (!queuedKey) {
+      return {
+        success: false,
+        error:
+          "Join matchmaking first (pick any subject arena and tap Start Duel).",
+      };
+    }
+
+    const { data: div } = await admin
+      .from("divisions")
+      .select("key, name")
+      .eq("key", queuedKey)
+      .eq("active", true)
+      .maybeSingle();
+
+    if (!div) {
+      return { success: false, error: "Invalid division." };
     }
 
     await admin.from("duel_queue").delete().eq("user_id", user.id);

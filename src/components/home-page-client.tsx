@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/resizable-navbar";
 import { ContactSocialLinks } from "@/components/contact/contact-social-links";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/lib/mentrixa-brand";
+import { markLandingSection, useLandingPerfMetrics, useLowEndMode } from "@/lib/landing-perf";
 
 const ICON_VERSION = "20260410";
 
@@ -61,15 +62,16 @@ const ArrowRight = memo(function ArrowRight() {
 
 const RoleIcon = memo(function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
   return (
-    <Image
-      src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
-      alt=""
-      width={16}
-      height={16}
-      unoptimized
-      className={`block ${className}`}
-      aria-hidden
-    />
+    <span className={`relative inline-block h-4 w-4 shrink-0 ${className}`} aria-hidden>
+      <Image
+        src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
+        alt=""
+        fill
+        unoptimized
+        className="object-contain"
+        sizes="16px"
+      />
+    </span>
   );
 });
 
@@ -89,6 +91,9 @@ export function HomePageClient() {
   const [contactRef, contactVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const track = useTrack();
+  const lowEndMode = useLowEndMode();
+  const enablePerfMetrics = process.env.NODE_ENV !== "production" && !lowEndMode;
+  useLandingPerfMetrics(enablePerfMetrics);
 
   useEffect(() => {
     track("page_view_landing");
@@ -129,6 +134,20 @@ export function HomePageClient() {
     }
   }, []);
 
+  useEffect(() => {
+    const cleanups = [
+      markLandingSection("firstseq", "hero-sequence"),
+      markLandingSection("secondseq", "outcome-sequence"),
+      markLandingSection("thirdstatic", "features"),
+      markLandingSection("fourthseq", "flow-sequence"),
+      markLandingSection("fourthstatic", "path-roles"),
+      markLandingSection("pricing", "pricing"),
+    ];
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
+  }, []);
+
   return (
     <div className="lp-root">
       <Navbar className="lp-nav fixed top-3 left-0 right-0 z-50 px-3 sm:px-5">
@@ -146,7 +165,7 @@ export function HomePageClient() {
                 Become a Guide
               </NavbarButton>
               <NavbarButton href="/auth/signup" variant="primary" className="hidden sm:inline-flex">
-                <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
+                <RoleIcon role="mentrixer" className="h-3.5 w-3.5 brightness-0 invert" />
                 Become a Mentrixer
               </NavbarButton>
             </div>
@@ -181,7 +200,7 @@ export function HomePageClient() {
                     Become a Guide
                   </NavbarButton>
                   <NavbarButton href="/auth/signup" variant="primary" className="w-full">
-                    <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
+                    <RoleIcon role="mentrixer" className="h-3.5 w-3.5 brightness-0 invert" />
                     Become a Mentrixer
                   </NavbarButton>
                 </div>
@@ -246,7 +265,7 @@ export function HomePageClient() {
           <h2 className="font-bold text-white text-[clamp(22px,6vw,32px)] tracking-[-0.03em] leading-tight sm:text-[clamp(22px,3.5vw,32px)]">
             You are why we ship
           </h2>
-          <p className="mt-4 text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+          <p className="mt-4 text-sm text-slate-200 max-w-xl mx-auto leading-relaxed">
             Questions, ideas, or a rant about your last session ? We read every message!
           </p>
           <div className="mt-8 flex justify-center">
@@ -277,10 +296,10 @@ export function HomePageClient() {
 
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center md:gap-10">
               <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px]">
-                <Link href="/privacy" className="text-indigo-200/55 hover:text-white transition-colors">
+                <Link href="/privacy" className="text-indigo-100/85 hover:text-white transition-colors">
                   Privacy
                 </Link>
-                <Link href="/terms" className="text-indigo-200/55 hover:text-white transition-colors">
+                <Link href="/terms" className="text-indigo-100/85 hover:text-white transition-colors">
                   Terms
                 </Link>
                 <Link
@@ -294,7 +313,7 @@ export function HomePageClient() {
           </div>
 
           <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[11px] text-slate-500 order-2 sm:order-1">
+            <p className="text-[11px] text-slate-300 order-2 sm:order-1">
               &copy; {new Date().getFullYear()} Mentrixa 
             </p>
             <span className="order-1 sm:order-2 text-[12px] text-indigo-300/70 sm:text-right">

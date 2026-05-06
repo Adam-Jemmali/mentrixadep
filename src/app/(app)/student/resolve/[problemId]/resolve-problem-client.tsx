@@ -97,7 +97,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
           </span>
           {ai.assignmentLikely && (
             <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-700">
-              <Image src="/images/pending.png" alt="Warning" width={12} height={12} />
+              <Image src="/images/pending.webp" alt="Warning" width={12} height={12} />
               Assignment-like
             </span>
           )}
@@ -193,7 +193,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <Image src="/images/approved.png" alt="Helpful" width={16} height={16} /> Helpful
+              <Image src="/images/approved.webp" alt="Helpful" width={16} height={16} /> Helpful
             </button>
             <button
               type="button"
@@ -205,7 +205,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <Image src="/images/pending.png" alt="Not helpful" width={16} height={16} /> Not really
+              <Image src="/images/pending.webp" alt="Not helpful" width={16} height={16} /> Not really
             </button>
           </div>
         </div>
@@ -220,7 +220,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
                 href="#hints"
                 className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
               >
-                Show hints <Image src="/images/book.png" alt="Open" width={14} height={14} />
+                Show hints <Image src="/images/book.webp" alt="Open" width={14} height={14} />
               </Link>
               <Link
                 href="#problem"
@@ -240,7 +240,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
               )}
               {escalated && (
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                  <Image src="/images/checks.png" alt="Saved" width={16} height={16} /> Escalation saved
+                  <Image src="/images/checks.webp" alt="Saved" width={16} height={16} /> Escalation saved
                 </span>
               )}
             </div>
@@ -254,7 +254,7 @@ export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }
             onClick={saveToNotes}
             className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
           >
-            <Image src="/images/book.png" alt="Notes" width={16} height={16} /> Save to Study Notes
+            <Image src="/images/book.webp" alt="Notes" width={16} height={16} /> Save to Study Notes
           </button>
           {saved && <p className="mt-2 text-xs text-emerald-700">Saved to your study notes.</p>}
           {saveError && <p className="mt-2 text-xs text-red-600">{saveError}</p>}

@@ -57,9 +57,10 @@ type SocialVariant = "default" | "dark" | "footer";
 const baseTile = {
   default:
     "inline-flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-all",
-  dark: "inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] text-slate-200 shadow-sm transition-all backdrop-blur-sm",
+  dark:
+    "inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/22 bg-slate-950/[0.94] text-white shadow-md transition-all backdrop-blur-sm md:border-white/15 md:bg-white/[0.06] md:text-slate-200 md:shadow-sm",
   footer:
-    "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 bg-white/[0.05] text-slate-300 transition-all hover:bg-white/10 hover:text-white",
+    "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/18 bg-slate-950/85 text-white transition-all hover:bg-white/12 hover:text-white md:border-white/12 md:bg-white/[0.05] md:text-slate-300",
 };
 
 export function ContactSocialLinks({

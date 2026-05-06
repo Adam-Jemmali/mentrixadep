@@ -8,7 +8,6 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
@@ -16,7 +15,6 @@ import { flushXpQueue } from "@/lib/pwa-xp-queue";
 import { trackClientEvent } from "@/lib/use-track";
 import type { AuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { StudentNavbar } from "@/components/student-navbar";
 import { TutorNavbar } from "@/components/tutor-navbar";
 import { FloatingXpAnimations } from "@/components/floating-xp-animations";
@@ -37,6 +35,8 @@ const Navigation = dynamic(
   () => import("@/components/navigation").then((m) => m.Navigation),
   { loading: () => null },
 );
+import { UiPerformanceBootstrap } from "@/components/ui-performance-bootstrap";
+import { NavigationProgress } from "@/components/navigation-progress";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { FeedbackWidget } from "@/components/feedback-widget";
@@ -454,22 +454,6 @@ function ShellEffects() {
   return null;
 }
 
-function AppBackgroundLogos() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <div className="bg-mentrixa-logo-drift absolute left-[8%] top-[14%] opacity-[0.08]">
-        <Image src={MENTRIXA_LOGO_PNG} alt="" width={180} height={180} className="h-[180px] w-[180px] object-contain" />
-      </div>
-      <div className="bg-mentrixa-logo-drift bg-mentrixa-logo-drift--reverse absolute left-[64%] top-[40%] opacity-[0.07]">
-        <Image src={MENTRIXA_LOGO_PNG} alt="" width={150} height={150} className="h-[150px] w-[150px] object-contain" />
-      </div>
-      <div className="bg-mentrixa-logo-drift absolute left-[22%] top-[72%] opacity-[0.06]" style={{ animationDelay: "-10s" }}>
-        <Image src={MENTRIXA_LOGO_PNG} alt="" width={126} height={126} className="h-[126px] w-[126px] object-contain" />
-      </div>
-    </div>
-  );
-}
-
 export function RootLayoutClient({
   user,
   children,
@@ -489,6 +473,8 @@ export function RootLayoutClient({
 
   return (
     <ErrorBoundary>
+      {!isVideoRoute ? <NavigationProgress /> : null}
+      <UiPerformanceBootstrap />
       <ClickSoundProvider />
       <ShellEffects />
       <AppNavOrNothing user={user} />
@@ -520,18 +506,7 @@ export function RootLayoutClient({
           isApprovedTutor && !isVideoRoute && "pt-24",
         )}
       >
-        {!isHome && !isVideoRoute ? (
-          <>
-            <AppBackgroundLogos />
-            {!isTutorProfileRoute ? (
-              <>
-                <div className="pointer-events-none absolute inset-0 bg-mentrixa-noise" aria-hidden />
-                <div className="pointer-events-none absolute inset-0 bg-mentrixa-logo-grid" aria-hidden />
-                <div className="pointer-events-none absolute inset-0 bg-mentrixa-vignette" aria-hidden />
-              </>
-            ) : null}
-          </>
-        ) : null}
+        {/* Background: single `.bg-mentrixa-app` layer only — avoids stacked full-viewport textures, repeating images, and CSS animations (major paint/GPU cost). */}
         {isHome ? (
           <PageFade>{children}</PageFade>
         ) : (

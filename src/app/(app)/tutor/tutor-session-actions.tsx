@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { completeSession } from "@/app/actions/tutor";
 import { tutorCancelSession } from "@/app/actions/cancellation";
@@ -13,14 +13,19 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
   const [loading, setLoading] = useState<"complete" | "cancel" | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isRefreshing, startTransition] = useTransition();
 
   async function onComplete() {
     setLoading("complete");
+    setStatusMessage("Completing session…");
     try {
       await completeSession(sessionId, viewingAsUserId ?? undefined);
-      router.refresh();
+      setStatusMessage("Session completed.");
+      startTransition(() => router.refresh());
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Could not complete session");
+      setStatusMessage(null);
     } finally {
       setLoading(null);
     }
@@ -29,14 +34,16 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
   async function onCancel() {
     if (!window.confirm("Cancel this session for the learner? They will receive a full refund and 500 XP compensation.")) return;
     setLoading("cancel");
+    setStatusMessage("Cancelling session…");
     try {
       const result = await tutorCancelSession(sessionId, viewingAsUserId ?? undefined);
       if (result.success) {
-        window.alert(`Session cancelled. Student refunded and awarded ${result.xpAwarded || 500} XP.`);
+        setStatusMessage(`Session cancelled. Refunded + ${result.xpAwarded || 500} XP awarded.`);
       }
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Could not cancel session");
+      setStatusMessage(null);
     } finally {
       setLoading(null);
     }
@@ -48,7 +55,7 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
         type="button"
         size="sm"
         className="text-xs h-8 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
-        disabled={loading !== null}
+        disabled={loading !== null || isRefreshing}
         onClick={() => void onComplete()}
       >
         {loading === "complete" ? (
@@ -65,7 +72,7 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
         size="sm"
         variant="ghost"
         className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-        disabled={loading !== null}
+        disabled={loading !== null || isRefreshing}
         onClick={() => void onCancel()}
       >
         {loading === "cancel" ? (
@@ -77,6 +84,7 @@ export function TutorSessionActions({ sessionId }: { sessionId: string }) {
           </span>
         )}
       </Button>
+      {statusMessage ? <span className="text-xs text-slate-600">{statusMessage}</span> : null}
     </div>
   );
 }

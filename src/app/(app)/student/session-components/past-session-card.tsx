@@ -63,6 +63,10 @@ export function PastSessionCard({
     setPackageOpen(true);
   }, [autoExpandStudyPackage]);
 
+  useEffect(() => {
+    router.prefetch("/student/quest");
+  }, [router]);
+
   const emailPrefix = session.tutor?.email?.split("@")[0] ?? "Guide";
   const name = session.tutor?.display_name?.trim() || emailPrefix;
   const statusLower = (session.status ?? "").toLowerCase();
@@ -132,7 +136,7 @@ export function PastSessionCard({
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Image
                     key={s}
-                    src={s <= (rating ?? 0) ? "/images/xp.png" : "/images/pending.png"}
+                    src={s <= (rating ?? 0) ? "/images/xp.webp" : "/images/pending.webp"}
                     alt="Star"
                     width={16}
                     height={16}
@@ -164,10 +168,10 @@ export function PastSessionCard({
               <Collapsible open={packageOpen} onOpenChange={setPackageOpen}>
                 <CollapsibleTrigger asChild>
                   <Button type="button" size="sm" variant="outline" className="gap-1 text-black">
-                    <Image src="/images/package.png" alt="Package" width={16} height={16} />
+                    <Image src="/images/package.webp" alt="Package" width={16} height={16} />
                     View Study Package
                     <Image
-                      src="/images/pending.png"
+                      src="/images/pending.webp"
                       alt="Toggle"
                       width={16}
                       height={16}

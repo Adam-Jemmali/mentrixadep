@@ -203,8 +203,8 @@ export function DivisionDetailClient({
             {/* QUICK STATS - Card Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-4 w-full lg:w-64">
               <StatCard icon={<Users className="w-4 h-4 text-white/70" />} label="Members" value={initial.memberCount} />
-              <StatCard icon={<Image src="/images/xp.png" alt="" width={16} height={16} unoptimized />} label="Weekly XP pool" value={initial.weeklyPoolXp} />
-              <StatCard icon={<Image src="/images/pending.png" alt="" width={16} height={16} unoptimized className="opacity-50 grayscale invert" />} label="Week start (UTC)" value={initial.weekStart} />
+              <StatCard icon={<Image src="/images/xp.webp" alt="" width={16} height={16} unoptimized />} label="Weekly XP pool" value={initial.weeklyPoolXp} />
+              <StatCard icon={<Image src="/images/pending.webp" alt="" width={16} height={16} unoptimized className="opacity-50 grayscale invert" />} label="Week start (UTC)" value={initial.weekStart} />
             </div>
           </div>
         </motion.header>
@@ -229,14 +229,14 @@ export function DivisionDetailClient({
             <div className="grid sm:grid-cols-2 gap-4">
                <ActionTile 
                  href="/student/duel"
-                 icon={<Image src="/images/sword.png" alt="Sword" width={32} height={32} unoptimized />}
+                 icon={<Image src="/images/sword.webp" alt="Sword" width={32} height={32} unoptimized />}
                  title="Skill duels"
                  description="Challenge others in real-time battles in your FOCUSED division "
                  color="bg-indigo-600"
                />
                <ActionTile 
                  href="/student/quest"
-                 icon={<Image src="/images/quest.png" alt="Quest" width={32} height={32} unoptimized />}
+                 icon={<Image src="/images/quest.webp" alt="Quest" width={32} height={32} unoptimized />}
                  title="Quest lab"
                  description="Experiment and master your skills"
                  color="bg-indigo-600"
@@ -289,7 +289,7 @@ export function DivisionDetailClient({
                         className="p-4 flex gap-3 hover:bg-slate-50 transition-colors"
                       >
                          <div className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                            <Image src="/images/xp.png" alt="" width={12} height={12} unoptimized />
+                            <Image src="/images/xp.webp" alt="" width={12} height={12} unoptimized />
                          </div>
                          <div className="min-w-0">
                             <p className="text-[11px] leading-tight text-slate-700">
@@ -408,7 +408,7 @@ function ActionTile({ href, icon, title, description, color }: { href: string; i
           <p className="text-[11px] font-medium text-slate-400">{description}</p>
         </div>
         <div className="absolute top-0 right-0 p-2 opacity-[0.03] grayscale pointer-events-none group-hover:opacity-[0.06] transition-opacity">
-           <Image src="/mentrixalogo/logo.png" alt="" width={60} height={60} />
+           <Image src="/mentrixalogo/logo.webp" alt="" width={60} height={60} />
         </div>
       </motion.div>
     </Link>

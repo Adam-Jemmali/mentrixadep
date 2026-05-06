@@ -4,15 +4,15 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 
 const WITHOUT_SYSTEM = [
-  "You spend the same hours studying and get the same result on the next exam.",
-  "You keep paying for Chegg, ChatGPT and apps that answer questions but don't fix why you keep asking the same ones.",
-  "The exam you're dreading doesn't get easier the longer you wait to start.",
+  "Keep searching for answers",
+  "Keep forgetting them",
+  "Keep starting over",
 ];
 
 const WHY_NOW = [
-  "You can book a verified Guide tonight and be in a live session before midnight.",
-  "The Quest study pack lands in your account within 10 minutes of the session ending.",
-  "Free to create an account. You only pay when you book a session.",
+  "Build understanding that sticks",
+  "Get and give guidance that actually adapts",
+  "Turn every session into momentum",
 ];
 
 export function ThirdSequenceWhyContent() {

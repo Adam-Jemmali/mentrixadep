@@ -109,7 +109,7 @@ export function StudyPackagePanel({
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           className="mb-4"
         >
-          <Image src="/images/pending.png" alt="Loading" width={32} height={32} />
+          <Image src="/images/pending.webp" alt="Loading" width={32} height={32} />
         </motion.div>
         <p className="text-sm font-medium text-slate-600">Retrieving your Studio insights...</p>
       </div>
@@ -142,7 +142,7 @@ export function StudyPackagePanel({
     return (
       <div className="p-8 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-6">
-          <Image src="/images/pending.png" alt="Pending" width={32} height={32} className="opacity-50" />
+          <Image src="/images/pending.webp" alt="Pending" width={32} height={32} className="opacity-50" />
         </div>
         <h3 className="text-lg font-bold text-slate-900 mb-2">Study Package Pending</h3>
         <p className="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
@@ -172,7 +172,7 @@ export function StudyPackagePanel({
         <motion.section variants={itemVariants} className="relative group">
           <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-mentrixa-500 to-transparent rounded-full opacity-40" />
           <div className="flex items-center gap-2 mb-3">
-            <Image src="/images/book.png" alt="Summary" width={16} height={16} />
+            <Image src="/images/book.webp" alt="Summary" width={16} height={16} />
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Session summary
             </h4>
@@ -187,7 +187,7 @@ export function StudyPackagePanel({
       {keyPoints.length > 0 && (
         <motion.section variants={itemVariants}>
           <div className="flex items-center gap-2 mb-4">
-            <Image src="/images/package.png" alt="Next Steps" width={16} height={16} />
+            <Image src="/images/package.webp" alt="Next Steps" width={16} height={16} />
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Recommended next steps
             </h4>
@@ -199,7 +199,7 @@ export function StudyPackagePanel({
                 whileHover={{ x: 4 }}
                 className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50/40 border border-emerald-100/50 text-slate-800 text-sm"
               >
-                <Image src="/images/checks.png" alt="Check" width={14} height={14} className="mt-0.5 shrink-0" />
+                <Image src="/images/checks.webp" alt="Check" width={14} height={14} className="mt-0.5 shrink-0" />
                 <span>{point}</span>
               </motion.div>
             ))}
@@ -224,7 +224,7 @@ export function StudyPackagePanel({
                 className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                  <Image src="/images/quest.png" alt="Quest" width={48} height={48} />
+                  <Image src="/images/quest.webp" alt="Quest" width={48} height={48} />
                 </div>
                 <div className="relative">
                   <span className="inline-block px-2 py-0.5 rounded-md bg-violet-100 text-violet-700 text-[10px] font-bold uppercase mb-3">
@@ -234,7 +234,7 @@ export function StudyPackagePanel({
                   <p className="text-sm text-slate-600 leading-relaxed mb-4">{ex.prompt}</p>
                   {ex.hint && (
                     <div className="mt-4 pt-4 border-t border-slate-50 flex items-start gap-2 text-xs text-slate-500">
-                      <Image src="/images/live.png" alt="Hint" width={14} height={14} className="mt-0.5 shrink-0" />
+                      <Image src="/images/live.webp" alt="Hint" width={14} height={14} className="mt-0.5 shrink-0" />
                       <p><span className="font-bold text-slate-600">Pro-tip: </span>{ex.hint}</p>
                     </div>
                   )}
@@ -250,7 +250,7 @@ export function StudyPackagePanel({
         <motion.section variants={itemVariants} className="pt-2">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Image src="/images/xp.png" alt="Flashcards" width={16} height={16} />
+              <Image src="/images/xp.webp" alt="Flashcards" width={16} height={16} />
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Active Recall Flashcards
               </h4>
@@ -296,12 +296,12 @@ export function StudyPackagePanel({
         <motion.section variants={itemVariants} className="pt-4">
           <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white overflow-hidden relative">
             <div className="absolute top-0 right-0 p-8 opacity-20">
-              <Image src="/images/quest.png" alt="Quest BG" width={96} height={96} />
+              <Image src="/images/quest.webp" alt="Quest BG" width={96} height={96} />
             </div>
             <div className="relative">
               <div className="flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-lg bg-mentrixa-500 flex items-center justify-center overflow-hidden">
-                  <Image src="/images/quest.png" alt="Quest" width={16} height={16} />
+                  <Image src="/images/quest.webp" alt="Quest" width={16} height={16} />
                 </div>
                 <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-mentrixa-200">
                   Quest practice
@@ -328,7 +328,7 @@ export function StudyPackagePanel({
                           {quest.difficulty}
                         </span>
                       )}
-                      <Image src="/images/package.png" alt="Arrow" width={12} height={12} className="opacity-50 group-hover:opacity-100 transition-opacity invert" />
+                      <Image src="/images/package.webp" alt="Arrow" width={12} height={12} className="opacity-50 group-hover:opacity-100 transition-opacity invert" />
                     </div>
                   </motion.button>
                 ))}
@@ -342,7 +342,7 @@ export function StudyPackagePanel({
       {followTopics.length > 0 && (
         <motion.section variants={itemVariants} className="pb-8">
           <div className="flex items-center gap-2 mb-4">
-            <Image src="/images/package.png" alt="Topic" width={12} height={12} />
+            <Image src="/images/package.webp" alt="Topic" width={12} height={12} />
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Further exploration
             </h4>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateGuestTryQuestPack } from "@/lib/ai";
+import { generateGuestTryQuestPack, hydrateGuestTryQuestionImages } from "@/lib/ai";
 import {
   isPlayableGuestTryQuestion,
   type GuestTryQuestion,
@@ -23,6 +23,7 @@ function todayIso() {
 }
 
 const TRY_QUEST_COUNT = 8;
+const ENFORCE_GUEST_DAILY_LIMIT = process.env.NODE_ENV === "production";
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     const today = todayIso();
     let count = 0;
     if (parsed.date === today) count = parsed.count;
-    if (count >= 3) {
+    if (ENFORCE_GUEST_DAILY_LIMIT && count >= 3) {
       return NextResponse.json(
         { success: false, error: "Daily demo limit reached (3). Try again tomorrow." },
         { status: 429 },
@@ -63,9 +64,11 @@ export async function POST(req: Request) {
     if (questions.length < TRY_QUEST_COUNT) {
       questions = buildGuestMixedFallbackPack(subjectTrim);
     }
+    const hydrated = await hydrateGuestTryQuestionImages(subjectTrim, questions);
+    const hydratedQuestions = "error" in hydrated ? questions : hydrated.questions;
 
-    const next = { date: today, count: count + 1 };
-    const res = NextResponse.json({ success: true, questions });
+    const next = { date: today, count: ENFORCE_GUEST_DAILY_LIMIT ? count + 1 : 0 };
+    const res = NextResponse.json({ success: true, questions: hydratedQuestions });
     res.headers.set(
       "Set-Cookie",
       `guest_quests=${encodeURIComponent(JSON.stringify(next))}; Path=/; Max-Age=86400; SameSite=Lax`,

@@ -4,7 +4,7 @@
  */
 export const mentrixStudent = {
   pageBg:
-    "relative min-h-screen isolate overflow-hidden bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.07),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.05),transparent_38%),linear-gradient(180deg,#ffffff_0%,#fbfaff_46%,#f5f3ff_100%)] text-slate-900 antialiased before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.png')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.085] before:content-['']",
+    "relative min-h-screen isolate overflow-hidden bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.07),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.05),transparent_38%),linear-gradient(180deg,#ffffff_0%,#fbfaff_46%,#f5f3ff_100%)] text-slate-900 antialiased before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.085] before:content-['']",
   main: "max-w-7xl mx-auto px-4 sm:px-6 py-8",
   mainWide: "max-w-6xl mx-auto px-4 sm:px-6 py-8",
   mainSlim: "max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10",
@@ -14,7 +14,7 @@ export const mentrixStudent = {
   cardMuted:
     "rounded-2xl border border-slate-200 bg-slate-50/70 shadow-[0_4px_14px_-10px_rgba(15,23,42,0.18)]",
   heroGradient:
-    "relative overflow-hidden rounded-3xl bg-[linear-gradient(160deg,#1e1b4b_0%,#312e81_45%,#1e1b4b_100%)] text-white shadow-[0_20px_44px_-26px_rgba(15,23,42,0.55)] before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.png')] before:bg-[length:118px_118px] before:bg-repeat before:opacity-[0.065] before:content-['']",
+    "relative overflow-hidden rounded-3xl bg-[linear-gradient(160deg,#1e1b4b_0%,#312e81_45%,#1e1b4b_100%)] text-white shadow-[0_20px_44px_-26px_rgba(15,23,42,0.55)] before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:118px_118px] before:bg-repeat before:opacity-[0.065] before:content-['']",
   sectionEyebrow: "text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400",
   pageTitle: "text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl",
   pageSubtitle: "mt-2 text-sm text-slate-600 max-w-xl leading-relaxed",

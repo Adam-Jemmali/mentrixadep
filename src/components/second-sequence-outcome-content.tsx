@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useSectionScrollProgress } from "@/lib/landing-perf";
 
 const OUTCOME_LINES = [
   "Within 10 minutes of every session, Quest drops your summary, flashcards, and practice problems.",
@@ -10,33 +10,8 @@ const OUTCOME_LINES = [
   "Guides set their rate ($15-$60 CAD per session). Stripe pays them automatically after every session.",
 ];
 
-function useSequenceProgress(sequenceId: string) {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const update = () => {
-      const section = document.getElementById(sequenceId);
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      const scrollable = Math.max(section.scrollHeight - window.innerHeight, 1);
-      const next = Math.min(Math.max(-rect.top / scrollable, 0), 1);
-      setProgress(next);
-    };
-
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [sequenceId]);
-
-  return progress;
-}
-
 export function SecondSequenceOutcomeContent() {
-  const progress = useSequenceProgress("secondseq");
+  const progress = useSectionScrollProgress("secondseq", 0.015);
   const headingOpacity = Math.min(1, Math.max(0.1, progress * 1.2));
   const leftOpacity = Math.min(1, Math.max(0.05, (progress - 0.06) * 1.35));
   const rightOpacity = Math.min(1, Math.max(0.05, (progress - 0.12) * 1.35));
@@ -48,7 +23,7 @@ export function SecondSequenceOutcomeContent() {
           className="mx-auto max-w-6xl text-center"
           style={{ opacity: headingOpacity, transform: `translateY(${(1 - headingOpacity) * 16}px)` }}
         >
-          <p className="mb-5 text-[10px] font-bold tracking-[0.2em] uppercase text-violet-200 md:mb-6">
+          <p className="mb-5 text-[10px] font-bold tracking-[0.2em] uppercase text-white md:mb-6">
             Here is exactly what you get.
           </p>
         </div>

@@ -1,68 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { TiltCard } from "@/components/ui/tilt-card";
+import { useSectionScrollProgress } from "@/lib/landing-perf";
 
 const FLOW_STEPS = [
   {
     number: "01",
-    icon: "/images/book.png",
+    icon: "/images/book.webp",
     title: "Book",
     line: " Search your course. Pick a verified Guide. Choose a slot. Pay.",
     hoverColor: "hover:bg-indigo-500/20",
   },
   {
     number: "02",
-    icon: "/images/live.png",
+    icon: "/images/live.webp",
     title: "Meet",
     line: " Show up live. Screen share your problem. Your Guide works through it with you in real time. Not a lecture. A solution.",
     hoverColor: "hover:bg-violet-500/20",
   },
   {
     number: "03",
-    icon: "/images/package.png",
+    icon: "/images/package.webp",
     title: "Unpack",
     line: " 1 second after you hang up, Quest drops your custom study pack.",
     hoverColor: "hover:bg-purple-500/20",
   },
   {
     number: "04",
-    icon: "/images/xp.png",
+    icon: "/images/xp.webp",
     title: "Climb",
     line: " You drill with Quest, compete in duels, climb your division. Progress compounds. You are not the same student you were before the first session.",
     hoverColor: "hover:bg-indigo-500/20",
   },
 ];
 
-function useSectionProgress(sectionId: string) {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const update = () => {
-      const section = document.getElementById(sectionId);
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      const scrollable = Math.max(section.scrollHeight - window.innerHeight, 1);
-      const next = Math.min(Math.max(-rect.top / scrollable, 0), 1);
-      setProgress(next);
-    };
-
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [sectionId]);
-
-  return progress;
-}
-
 export function FourthStaticFlowContent() {
-  const progress = useSectionProgress("fourthseq");
+  const progress = useSectionScrollProgress("fourthseq", 0.015);
   const headingOpacity = Math.min(1, Math.max(0.14, progress * 1.15));
   const cardsOpacity = Math.min(1, Math.max(0.1, (progress - 0.06) * 1.28));
 

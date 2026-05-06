@@ -134,6 +134,8 @@ export function ParticleTextEffect({
 }: ParticleTextEffectProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
+  const lastFrameTsRef = useRef(0)
+  const isVisibleRef = useRef(true)
   const particlesRef = useRef<Particle[]>([])
   const frameCountRef = useRef(0)
   const wordIndexRef = useRef(0)
@@ -250,7 +252,7 @@ export function ParticleTextEffect({
     }
 
     // INCREASE MAX PARTICLES HERE SO "PROVE WHAT YOU KNOW" is not cut off due to max limit
-    const MAX_PARTICLES = 3500;
+    const MAX_PARTICLES = 1800;
 
     for (const coordIndex of coordsIndexes) {
       if (particleIndex >= MAX_PARTICLES) break;
@@ -330,6 +332,13 @@ export function ParticleTextEffect({
     const canvas = canvasRef.current
     if (!canvas) return
 
+    const now = performance.now()
+    if (document.hidden || !isVisibleRef.current || now - lastFrameTsRef.current < 1000 / 30) {
+      animationRef.current = requestAnimationFrame(animate)
+      return
+    }
+    lastFrameTsRef.current = now
+
     const ctx = canvas.getContext("2d")!
     const particles = particlesRef.current
 
@@ -390,6 +399,11 @@ export function ParticleTextEffect({
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0]
+      isVisibleRef.current = Boolean(entry?.isIntersecting)
+    }, { threshold: 0.1 })
+    observer.observe(canvas)
 
     // Reduced height so the text fills the canvas vertically and isn't squished into a flat cloud
     canvas.width = 1000
@@ -435,6 +449,7 @@ export function ParticleTextEffect({
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
+      observer.disconnect()
       canvas.removeEventListener("mousedown", handleMouseDown)
       canvas.removeEventListener("mouseup", handleMouseUp)
       canvas.removeEventListener("mousemove", handleMouseMove)

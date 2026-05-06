@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { addStudentCourse, removeStudentCourse } from "@/app/actions/student";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,14 @@ interface CourseInterestsProps {
 export function CourseInterests({ courses }: CourseInterestsProps) {
   const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [localCourses, setLocalCourses] = useState(courses);
+  const [isRefreshing, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setLocalCourses(courses);
+  }, [courses]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -29,11 +35,18 @@ export function CourseInterests({ courses }: CourseInterestsProps) {
     }
     setLoading(true);
     setError(null);
+    const nextCourseName = courseName.trim();
+    const optimisticCourse: StudentCourseItem = {
+      id: `temp-${Date.now()}`,
+      course_name: nextCourseName,
+    };
+    setLocalCourses((current) => [...current, optimisticCourse]);
     try {
-      await addStudentCourse(courseName);
+      await addStudentCourse(nextCourseName);
       setCourseName("");
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
+      setLocalCourses((current) => current.filter((c) => c.id !== optimisticCourse.id));
       setError(err instanceof Error ? err.message : "Failed to add course");
     } finally {
       setLoading(false);
@@ -41,10 +54,13 @@ export function CourseInterests({ courses }: CourseInterestsProps) {
   }
 
   async function handleRemove(courseId: string) {
+    const previousCourses = localCourses;
+    setLocalCourses((current) => current.filter((c) => c.id !== courseId));
     try {
       await removeStudentCourse(courseId);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
+      setLocalCourses(previousCourses);
       setError(err instanceof Error ? err.message : "Failed to remove course");
     }
   }
@@ -56,9 +72,9 @@ export function CourseInterests({ courses }: CourseInterestsProps) {
         Add the courses you need help with. We&apos;ll show you matching tutors first.
       </p>
 
-      {courses.length > 0 && (
+      {localCourses.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
-          {courses.map((c) => (
+          {localCourses.map((c) => (
             <span
               key={c.id}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700"
@@ -88,6 +104,7 @@ export function CourseInterests({ courses }: CourseInterestsProps) {
           {loading ? "Adding..." : "Add"}
         </Button>
       </form>
+      {isRefreshing ? <p className="text-xs text-slate-500 mt-2">Syncing courses…</p> : null}
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
     </div>
   );

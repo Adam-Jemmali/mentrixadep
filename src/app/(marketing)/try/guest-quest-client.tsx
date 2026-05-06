@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -155,9 +156,11 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
   }, [phase, isPerfect]);
 
   useEffect(() => {
+    router.prefetch("/");
+    router.prefetch("/auth/signup");
     const picked = defaultSubjects.find((s) => s.key === subjectKey);
     if (picked) setSubjectName(picked.name.replace(/\s+Division$/i, "").trim());
-  }, [subjectKey, defaultSubjects]);
+  }, [subjectKey, defaultSubjects, router]);
 
   useEffect(() => {
     setShortAnswerText("");
@@ -434,12 +437,13 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
             {q.promptImageUrl ? (
               <div className="relative mb-6 h-44 w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50 sm:h-52">
                 <Image
+                  key={`guest-prompt-${qIndex}-${q.id}-${q.promptImageUrl}`}
                   src={q.promptImageUrl}
                   alt=""
                   fill
                   className="object-contain p-3"
                   sizes="(max-width: 768px) 100vw, 42rem"
-                  unoptimized={q.promptImageUrl.startsWith("/")}
+                  unoptimized={q.promptImageUrl.startsWith("data:")}
                 />
               </div>
             ) : null}
@@ -527,7 +531,15 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                       }`}
                     >
                       <div className="relative h-20 w-full">
-                        <Image src={url} alt="" fill className="object-contain p-1" unoptimized sizes="120px" />
+                        <Image
+                          key={`guest-opt-${qIndex}-${q.id}-${i}-${url}`}
+                          src={url}
+                          alt=""
+                          fill
+                          className="object-contain p-1"
+                          unoptimized={url.startsWith("data:")}
+                          sizes="120px"
+                        />
                       </div>
                       <span className="text-[11px] font-medium leading-snug text-slate-800">{opt}</span>
                     </motion.button>
@@ -804,9 +816,9 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                 asChild
                 className="h-14 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 text-lg font-black italic tracking-tight shadow-[0_0_30px_rgba(255,255,255,0.2)]"
               >
-                <a href="/auth/signup" onClick={() => playClickSound()}>
+                <Link href="/auth/signup" onClick={() => playClickSound()}>
                   CLAIM REWARDS NOW →
-                </a>
+                </Link>
               </Button>
               <div className="grid grid-cols-2 gap-3">
                 <Button
@@ -825,6 +837,8 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                 </Button>
                 <Button
                   variant="outline"
+                  onMouseEnter={() => router.prefetch("/")}
+                  onTouchStart={() => router.prefetch("/")}
                   onClick={() => router.push("/")}
                   className="h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest"
                 >

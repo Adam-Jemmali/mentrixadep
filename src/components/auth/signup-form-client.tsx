@@ -3,15 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { toUserFacingAuthError } from "@/lib/user-facing-error";
 import { cn } from "@/lib/utils";
 
 type Role = "student" | "tutor";
+
+const GoogleSignInButton = dynamic(
+  () => import("@/components/auth/google-sign-in-button").then((m) => m.GoogleSignInButton),
+  {
+    loading: () => <div className="h-11 w-full animate-pulse rounded-xl border border-slate-200 bg-slate-100" />,
+  },
+);
 
 export function SignupFormClient() {
   const router = useRouter();

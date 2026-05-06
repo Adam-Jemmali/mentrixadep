@@ -336,13 +336,15 @@ export function DuelHub({
     }
   }
 
-  async function findMatch() {
-    if (!divisionKey) return;
+  async function findMatch(explicitDivisionKey: string) {
+    const key = explicitDivisionKey.trim();
+    if (!key) return;
     playSuspense();
     setQueueLoading(true);
     setQueueError(null);
     try {
-      const r = await joinDuelQueue(divisionKey);
+      setDivisionKey(key);
+      const r = await joinDuelQueue(key);
       if (!r || typeof r !== "object" || !("success" in r)) {
         stopAudio();
         setQueueError("Matchmaking failed. Please try again.");
@@ -400,7 +402,7 @@ export function DuelHub({
     return (
       <div className="fixed inset-0 z-[110] overflow-hidden bg-[#09162c]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_42%),radial-gradient(circle_at_50%_15%,rgba(148,163,184,0.08),transparent_28%),linear-gradient(180deg,#0c1a33_0%,#09162c_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:118px_118px] bg-repeat opacity-[0.045]" />
+        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:118px_118px] bg-repeat opacity-[0.045]" />
 
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-8 text-white">
           {/* SEARCHING CONTAINER */}
@@ -459,7 +461,7 @@ export function DuelHub({
                     onClick={() => void playSparringQuestNow()}
                     className="h-10 w-full max-w-[220px] rounded-xl bg-violet-600 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-violet-900/40 hover:bg-violet-500 disabled:opacity-50"
                   >
-                    <Image src="/mentrixalogo/logo.png" alt="" width={16} height={16} className="mr-2 shrink-0 rounded-sm" />
+                    <Image src="/mentrixalogo/logo.webp" alt="" width={16} height={16} className="mr-2 shrink-0 rounded-sm" />
                     {instantSparringLoading ? "Starting…" : "Play against Mentrixa Quest"}
                   </Button>
                   {queueError ? (
@@ -556,7 +558,7 @@ export function DuelHub({
     return (
       <div className="fixed inset-0 z-[120] overflow-hidden bg-[#08172f]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(59,130,246,0.15),transparent_42%),linear-gradient(180deg,#0b1832_0%,#08172f_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:118px_118px] bg-repeat opacity-[0.04]" />
+        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:118px_118px] bg-repeat opacity-[0.04]" />
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -618,7 +620,7 @@ export function DuelHub({
     return (
       <div className="fixed inset-0 z-[130] overflow-hidden bg-[#071327]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(59,130,246,0.14),transparent_40%),linear-gradient(180deg,#09172c_0%,#071327_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.png')] bg-[length:118px_118px] bg-repeat opacity-[0.04]" />
+        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:118px_118px] bg-repeat opacity-[0.04]" />
 
         <motion.div
           initial={{ opacity: 0 }}
@@ -741,8 +743,7 @@ export function DuelHub({
                     disabled={queueLoading}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDivisionKey(d.key);
-                      void findMatch();
+                      void findMatch(d.key);
                     }}
                     className={cn(
                       "w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
@@ -757,7 +758,7 @@ export function DuelHub({
 
                 {/* DECORATIVE LOGO */}
                 <div className="absolute -bottom-2 -right-2 p-2 opacity-[0.02] grayscale pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-                   <Image src="/mentrixalogo/logo.png" alt="" width={80} height={80} />
+                   <Image src="/mentrixalogo/logo.webp" alt="" width={80} height={80} />
                 </div>
               </div>
             </motion.li>
