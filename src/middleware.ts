@@ -166,16 +166,6 @@ function isPublicPrefixPath(pathname: string): boolean {
   );
 }
 
-/** Server Actions POST as non-HTML; header names vary by Next / Turbopack version. */
-function isLikelyNextjsServerActionPost(request: NextRequest): boolean {
-  const h = request.headers;
-  if (h.get("next-action") || h.get("Next-Action")) return true;
-  const accept = h.get("accept") ?? "";
-  if (accept.includes("text/x-component")) return true;
-  if (h.get("RSC") === "1") return true;
-  return false;
-}
-
 function applySecurityHeaders(res: NextResponse, pathname?: string): NextResponse {
   const isDev = process.env.NODE_ENV === "development";
   /** Email clients / in-app browsers load links in iframes; skip DENY + relax CSP frame-ancestors (avoids ERR_BLOCKED_BY_RESPONSE). */
