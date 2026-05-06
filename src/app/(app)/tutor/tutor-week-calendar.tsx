@@ -13,6 +13,8 @@ type CalendarPayload = {
     course: string;
     start_time: string;
     end_time: string;
+    active?: boolean | null;
+    booking_status?: string | null;
   }>;
   sessions: Array<{
     id: string;
@@ -28,7 +30,7 @@ type CalendarPayload = {
 };
 
 type Slot =
-  | { kind: "available"; id: string; course: string; start: string; end: string }
+  | { kind: "available"; id: string; course: string; start: string; end: string; active: boolean }
   | {
       kind: "booked";
       id: string;
@@ -71,6 +73,20 @@ export function TutorWeekCalendar({
     }
 
     const combined: Slot[] = [];
+    const sessionsLive = calendar.sessions.filter(
+      (s) => (s.status ?? "").toLowerCase() !== "cancelled",
+    );
+
+    function overlapsBooked(avStart: string, avEnd: string): boolean {
+      const a0 = new Date(avStart).getTime();
+      const a1 = new Date(avEnd).getTime();
+      return sessionsLive.some((s) => {
+        const b0 = new Date(s.start_time).getTime();
+        const b1 = new Date(s.end_time).getTime();
+        return a0 < b1 && b0 < a1;
+      });
+    }
+
     for (const s of calendar.sessions) {
       if ((s.status ?? "").toLowerCase() === "cancelled") {
         continue;
@@ -86,6 +102,21 @@ export function TutorWeekCalendar({
         studentAvatar: s.student_profile?.avatar_url ?? null,
       });
     }
+
+    for (const a of calendar.availability) {
+      const bs = a.booking_status ?? "available";
+      if (bs === "booked") continue;
+      if (overlapsBooked(a.start_time, a.end_time)) continue;
+      combined.push({
+        kind: "available",
+        id: a.id,
+        course: a.course,
+        start: a.start_time,
+        end: a.end_time,
+        active: a.active !== false,
+      });
+    }
+
     combined.sort((x, y) => new Date(x.start).getTime() - new Date(y.start).getTime());
 
     const byDay = new Map<string, Slot[]>();
@@ -117,8 +148,17 @@ export function TutorWeekCalendar({
       };
     }
 
+    if (!slot.active) {
+      return {
+        className: "border border-dashed border-slate-300 bg-slate-50 text-slate-700",
+        label: isPast ? "Past · hidden" : "Hidden from learners",
+      };
+    }
+
     return {
-      className: "border-slate-200 bg-slate-100 text-slate-500",
+      className: isPast
+        ? "border-slate-200 bg-slate-100 text-slate-500"
+        : "border-indigo-200 bg-indigo-50 text-indigo-950",
       label: isPast ? "Past" : "Open",
     };
   }

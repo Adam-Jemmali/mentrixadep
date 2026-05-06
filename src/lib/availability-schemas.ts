@@ -15,7 +15,11 @@ const timeHHmmSchema = z
 export const createAvailabilitySlotsSchema = z
   .object({
     course: z.string().min(1).max(200),
-    weekdays: z.array(weekdayMon0Schema).min(1).max(7),
+    weekdays: z
+      .array(weekdayMon0Schema)
+      .min(1)
+      .max(7)
+      .transform((arr) => [...new Set(arr)].sort((a, b) => a - b)),
     startTime: timeHHmmSchema,
     endTime: timeHHmmSchema,
     recurring: z.boolean(),

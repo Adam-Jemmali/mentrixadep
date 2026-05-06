@@ -1,5 +1,6 @@
 import { addDays } from "date-fns/addDays";
 import { formatInTimeZone, toDate } from "date-fns-tz";
+import { isValidIanaTimeZone } from "@/lib/timezones";
 
 /** ISO weekday 1=Mon … 7=Sun → Mon=0 … Sun=6 */
 function isoWeekdayToMon0(isoDay: number): number {
@@ -88,4 +89,63 @@ export function buildSlotCandidates(
   }
 
   return out.sort((a, b) => a.startUtc.getTime() - b.startUtc.getTime());
+}
+
+/**
+ * Client/server-shared guard for tutor availability form.
+ * Returns a user-facing message when the schedule cannot produce slots, otherwise null.
+ */
+export function describeAvailabilityScheduleIssue(
+  nowUtc: Date,
+  tz: string,
+  weekdaysMon0: number[],
+  startTime: string,
+  endTime: string,
+  recurringWeeks: number,
+): string | null {
+  if (!isValidIanaTimeZone(tz)) {
+    return "Choose a valid timezone from the list.";
+  }
+  const [sh = NaN, sm = NaN] = startTime.split(":").map(Number);
+  const [eh = NaN, em = NaN] = endTime.split(":").map(Number);
+  if (![sh, sm, eh, em].every((n) => Number.isFinite(n))) {
+    return "Pick valid start and end times.";
+  }
+  if (sm % 30 !== 0 || em % 30 !== 0) {
+    return "Times must use 30-minute steps (:00 or :30 only).";
+  }
+  const startMin = sh * 60 + sm;
+  const endMin = eh * 60 + em;
+  if (endMin <= startMin) {
+    return "End time must be after start time on the same calendar day.";
+  }
+  const dur = endMin - startMin;
+  if (dur < 15 || dur > 480) {
+    return "Session length must be between 15 minutes and 8 hours.";
+  }
+  if (dur % 30 !== 0) {
+    return "Session length must be in 30-minute steps.";
+  }
+  if (!weekdaysMon0.length) {
+    return "Select at least one weekday.";
+  }
+
+  const weeks = Math.min(52, Math.max(1, recurringWeeks));
+  try {
+    const candidates = buildSlotCandidates(
+      nowUtc,
+      tz,
+      [...weekdaysMon0].sort((a, b) => a - b),
+      startTime,
+      endTime,
+      weeks,
+    );
+    if (candidates.length === 0) {
+      return "No upcoming slots could be created from this schedule. Choose later times or add more weekdays.";
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return msg || "Could not build slots from this schedule.";
+  }
+  return null;
 }

@@ -295,7 +295,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         .gte("end_time", thirtyDaysAgo.toISOString()),
       supabase
         .from("availability")
-        .select("id, course, start_time, end_time, price_per_session")
+        .select("id, course, start_time, end_time, price_per_session, active, booking_status")
         .eq("tutor_id", tutorId)
         .gte("start_time", weekStart.toISOString())
         .lt("start_time", calendarEnd.toISOString()),
@@ -481,8 +481,9 @@ export async function getTutorAvailability() {
       .gte("start_time", nowIso)
       .order("start_time", { ascending: true });
 
+    // Tutors manage inactive (“hidden”) slots too — do not filter on active here.
     if (withAvailabilityFilters) {
-      query = query.eq("active", true).or("booking_status.eq.available,booking_status.is.null");
+      query = query.or("booking_status.eq.available,booking_status.is.null");
     }
 
     return query;
@@ -535,6 +536,13 @@ function windowsOverlap(
   return a0 < b1 && b0 < a1;
 }
 
+/** Invalidate tutor dashboard, public guide profile slots, and learner marketplace-ish surfaces. */
+function revalidateTutorAvailabilitySurfaces(tutorUserId: string) {
+  revalidatePath("/tutor");
+  revalidatePath(`/tutor/${tutorUserId}`);
+  revalidatePath("/student");
+}
+
 async function assertAvailabilityWindowAllowed(
   adminClient: ReturnType<typeof createAdminClient>,
   actingAsId: string,
@@ -581,17 +589,18 @@ async function assertBatchAvailabilityWindows(
 ): Promise<void> {
   if (candidates.length === 0) return;
 
+  const nowIso = new Date().toISOString();
   const { data: allAvailability, error: fetchError } = await adminClient
     .from("availability")
     .select("start_time, end_time")
     .eq("tutor_id", actingAsId)
-    .eq("course", course);
+    .eq("course", course)
+    .gte("end_time", nowIso);
 
   if (fetchError) {
     throw new Error(`Could not verify your calendar: ${fetchError.message}`);
   }
 
-  const nowIso = new Date().toISOString();
   const { data: upcomingSessions, error: sessionCheckError } = await adminClient
     .from("sessions")
     .select("start_time, end_time")
@@ -785,7 +794,7 @@ export async function createAvailabilitySlots(
       }
     }
 
-    revalidatePath("/tutor");
+    revalidateTutorAvailabilitySurfaces(actingAsId);
     return { success: true, created: rows.length };
   } catch (error) {
     return { success: false as const, error: sanitizeError(error) };
@@ -839,13 +848,13 @@ export async function setAvailabilityActive(
 
     if (updateErr) {
       if (isMissingAvailabilityColumnsError(updateErr) || updateErr.message?.includes("schema cache")) {
-        revalidatePath("/tutor");
+        revalidateTutorAvailabilitySurfaces(actingAsId);
         return { success: true };
       }
       throw new Error(`Failed to update slot: ${updateErr.message}`);
     }
 
-    revalidatePath("/tutor");
+    revalidateTutorAvailabilitySurfaces(actingAsId);
     return { success: true };
   } catch (error) {
     return { success: false as const, error: sanitizeError(error) };
@@ -944,7 +953,7 @@ export async function createAvailability(
       throw new Error(`Failed to create availability: ${detail}`);
     }
 
-    revalidatePath("/tutor");
+    revalidateTutorAvailabilitySurfaces(actingAsId);
     return { success: true, availability: data };
   } catch (error) {
     throw new Error(sanitizeError(error));
@@ -998,7 +1007,7 @@ export async function deleteAvailability(availabilityId: string, onBehalfOfUserI
       throw new Error(`Failed to delete availability: ${sanitizeError(error)}`);
     }
 
-    revalidatePath("/tutor");
+    revalidateTutorAvailabilitySurfaces(actingAsId);
     return { success: true };
   } catch (error) {
     throw new Error(sanitizeError(error));
@@ -1615,16 +1624,20 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
 
   const autoApprove = (tutorMeta as { auto_approve?: boolean } | null)?.auto_approve ?? false;
 
-  const { data: tutorTzRow } = await adminClient
+  const { data: tutorSettingsRow } = await adminClient
     .from("user_settings")
-    .select("timezone")
+    .select("timezone, bio")
     .eq("user_id", tutorId)
     .maybeSingle();
 
   const tutorTimezone =
-    typeof tutorTzRow?.timezone === "string" && tutorTzRow.timezone.trim().length > 0
-      ? tutorTzRow.timezone.trim()
+    typeof tutorSettingsRow?.timezone === "string" && tutorSettingsRow.timezone.trim().length > 0
+      ? tutorSettingsRow.timezone.trim()
       : "UTC";
+
+  const bioRaw = tutorSettingsRow?.bio;
+  const bio =
+    typeof bioRaw === "string" && bioRaw.trim().length > 0 ? bioRaw.trim() : null;
 
   return {
     id: tutorId,
@@ -1639,6 +1652,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     availability,
     autoApprove,
     tutorTimezone,
+    bio,
   };
 }
 

@@ -218,7 +218,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
                 </p>
               ) : null}
               <p className="text-[11px] text-slate-500">
-                Admin reviews this evidence before proficiency is established. Files are restricted to PDF/JPG/PNG and checked for unsafe or mismatched file signatures.
+                Admin reviews this evidence before proficiency is established.
               </p>
             </div>
 

@@ -141,6 +141,9 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
   revalidatePath("/student/duel");
   revalidatePath(`/student/${user.id}`);
   revalidatePath("/", "layout");
+  if (user.role === "tutor") {
+    revalidatePath(`/tutor/${user.id}`);
+  }
   return { success: true };
 }
 

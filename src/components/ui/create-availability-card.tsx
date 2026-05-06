@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/lib/availability-schemas";
+import { describeAvailabilityScheduleIssue } from "@/lib/availability-slot-builder";
 
 const WEEKDAYS: { value: number; label: string; full: string }[] = [
   { value: 0, label: "Mon", full: "Monday" },
@@ -31,6 +32,29 @@ function timeOptions(): string[] {
     }
   }
   return out;
+}
+
+function timeToMinutes(hhmm: string): number {
+  const [h = 0, m = 0] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/** Next :00 or :30 strictly after start, same calendar day; null if impossible (e.g. start 23:30). */
+function minEndAfterStart(startHHmm: string): string | null {
+  const sm = timeToMinutes(startHHmm);
+  const next = sm + 30;
+  if (next >= 24 * 60) return null;
+  const h = Math.floor(next / 60);
+  const m = next % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function ensureEndAfterStart(startHHmm: string, endHHmm: string): string {
+  if (timeToMinutes(endHHmm) <= timeToMinutes(startHHmm)) {
+    const bumped = minEndAfterStart(startHHmm);
+    if (bumped) return bumped;
+  }
+  return endHHmm;
 }
 
 interface CreateAvailabilityCardProps {
@@ -65,6 +89,7 @@ export function CreateAvailabilityCard({
   const [showConfirmationView, setShowConfirmationView] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
@@ -74,6 +99,29 @@ export function CreateAvailabilityCard({
   const shouldAnimate = enableAnimations && !shouldReduceMotion;
 
   const times = useMemo(() => timeOptions(), []);
+
+  const recurringWeeksNum = useMemo(() => {
+    const rw = Number.parseInt(recurringWeeks, 10);
+    return Number.isFinite(rw) ? rw : 12;
+  }, [recurringWeeks]);
+
+  const scheduleIssue = useMemo(() => {
+    if (weekdays.size === 0 || !timezone.trim()) return null;
+    return describeAvailabilityScheduleIssue(
+      new Date(),
+      timezone,
+      Array.from(weekdays).sort((a, b) => a - b),
+      startTime,
+      endTime,
+      recurring ? Math.min(52, Math.max(1, recurringWeeksNum)) : 1,
+    );
+  }, [weekdays, timezone, startTime, endTime, recurring, recurringWeeksNum]);
+
+  const timesLookInvalid =
+    scheduleIssue !== null &&
+    (scheduleIssue.includes("End time must be after") ||
+      scheduleIssue.includes("30-minute") ||
+      scheduleIssue.includes("Session length"));
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -99,12 +147,25 @@ export function CreateAvailabilityCard({
   };
 
   const handleNext = () => {
+    setSuccessMessage(null);
     if (!course) {
       setError("Select a subject");
       return;
     }
     if (weekdays.size === 0) {
       setError("Select at least one day");
+      return;
+    }
+    const previewIssue = describeAvailabilityScheduleIssue(
+      new Date(),
+      timezone,
+      Array.from(weekdays).sort((a, b) => a - b),
+      startTime,
+      endTime,
+      recurring ? Math.min(52, Math.max(1, Number.parseInt(recurringWeeks, 10) || 12)) : 1,
+    );
+    if (previewIssue) {
+      setError(previewIssue);
       return;
     }
     setError(null);
@@ -114,6 +175,7 @@ export function CreateAvailabilityCard({
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     const parsedPrice = Number(price);
     if (!Number.isFinite(parsedPrice)) {
@@ -146,16 +208,32 @@ export function CreateAvailabilityCard({
       timezone,
     };
 
+    const confirmIssue = describeAvailabilityScheduleIssue(
+      new Date(),
+      timezone,
+      payload.weekdays,
+      startTime,
+      endTime,
+      recurring ? rw : 1,
+    );
+    if (confirmIssue) {
+      setError(confirmIssue);
+      setLoading(false);
+      return;
+    }
+
     let created = false;
     try {
       const res = await createAvailabilitySlots(payload, viewingAsUserId ?? undefined);
       if (!res.success) throw new Error(res.error);
       created = true;
+      const n = res.created;
 
       // Reset and success
       setWeekdays(new Set());
       setPrice("25");
       setShowConfirmationView(false);
+      setSuccessMessage(`Created ${n} availability slot${n === 1 ? "" : "s"}.`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create availability");
@@ -303,8 +381,18 @@ export function CreateAvailabilityCard({
                 <div className="relative">
                   <select 
                     value={startTime} 
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full appearance-none rounded-lg border-2 border-slate-300 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 [&>option]:bg-white [&>option]:text-slate-900"
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setStartTime(next);
+                      setEndTime((prev) => ensureEndAfterStart(next, prev));
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
+                    aria-invalid={timesLookInvalid}
+                    className={cn(
+                      "w-full appearance-none rounded-lg border-2 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 [&>option]:bg-white [&>option]:text-slate-900",
+                      timesLookInvalid ? "border-amber-500 ring-amber-200 focus:ring-amber-400" : "border-slate-300 focus:ring-indigo-500",
+                    )}
                   >
                     {times.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -316,8 +404,17 @@ export function CreateAvailabilityCard({
                 <div className="relative">
                   <select 
                     value={endTime} 
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full appearance-none rounded-lg border-2 border-slate-300 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 [&>option]:bg-white [&>option]:text-slate-900"
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setEndTime(ensureEndAfterStart(startTime, next));
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
+                    aria-invalid={timesLookInvalid}
+                    className={cn(
+                      "w-full appearance-none rounded-lg border-2 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 [&>option]:bg-white [&>option]:text-slate-900",
+                      timesLookInvalid ? "border-amber-500 ring-amber-200 focus:ring-amber-400" : "border-slate-300 focus:ring-indigo-500",
+                    )}
                   >
                     {times.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -325,6 +422,15 @@ export function CreateAvailabilityCard({
                 </div>
               </div>
             </div>
+            {scheduleIssue ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-950" role="status">
+                {scheduleIssue}
+              </p>
+            ) : (
+              <p className="text-xs font-medium text-slate-500">
+                Slots must end in the future; end time must be after start on the same day (:00 / :30 only).
+              </p>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -428,7 +534,7 @@ export function CreateAvailabilityCard({
             </AnimatePresence>
           </motion.div>
 
-          {/* Error Message */}
+          {/* Error / success */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -437,8 +543,19 @@ export function CreateAvailabilityCard({
                 exit={{ opacity: 0, y: 10 }}
                 className="mx-6 mb-4 flex items-center gap-2 rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-900"
               >
-                <AlertCircle className="w-4 h-4" />
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 {error}
+              </motion.div>
+            )}
+            {successMessage && !error && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="mx-6 mb-4 flex items-center gap-2 rounded-lg border-2 border-emerald-300 bg-emerald-50 p-3 text-sm font-semibold text-emerald-950"
+              >
+                <Check className="h-4 w-4 shrink-0 stroke-[3]" />
+                {successMessage}
               </motion.div>
             )}
           </AnimatePresence>
@@ -447,7 +564,7 @@ export function CreateAvailabilityCard({
             <Button
               type="button"
               onClick={handleNext}
-              disabled={!hasCourses || weekdays.size === 0}
+              disabled={!hasCourses || weekdays.size === 0 || Boolean(scheduleIssue)}
               size="lg"
               className="h-12 w-full border-2 border-indigo-800 bg-indigo-600 text-base font-bold text-white shadow-md hover:bg-indigo-700 disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             >
@@ -467,7 +584,10 @@ export function CreateAvailabilityCard({
             opacity: showConfirmationView ? 1 : 0 
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.8 }}
-          className="absolute left-0 top-0 z-[60] h-full w-full border-l-4 border-indigo-600 bg-white"
+          className={cn(
+            "absolute left-0 top-0 z-[60] h-full w-full border-l-4 border-indigo-600 bg-white",
+            showConfirmationView ? "pointer-events-auto" : "pointer-events-none",
+          )}
         >
           <div className="flex h-full flex-col space-y-6 p-6">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b-2 border-slate-200 pb-4">
@@ -475,7 +595,10 @@ export function CreateAvailabilityCard({
                 type="button"
                 variant="outline" 
                 size="sm"
-                onClick={() => setShowConfirmationView(false)} 
+                onClick={() => {
+                  setShowConfirmationView(false);
+                  setError(null);
+                }} 
                 className="justify-self-start flex items-center gap-2 border-2 border-slate-400 bg-white font-bold text-slate-900 shadow-sm hover:bg-slate-100"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -528,12 +651,19 @@ export function CreateAvailabilityCard({
                   {timezone}. Learners see these times converted to their own zone.
                 </p>
               </div>
+
+              {error ? (
+                <div className="flex items-start gap-2 rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-900">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  {error}
+                </div>
+              ) : null}
             </div>
 
             <Button
               type="button"
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={loading || Boolean(scheduleIssue)}
               size="lg"
               className="h-14 w-full border-2 border-emerald-900 bg-emerald-600 text-base font-black uppercase tracking-wide text-white shadow-md hover:bg-emerald-700 disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             >

@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/lib/availability-schemas";
+import { describeAvailabilityScheduleIssue } from "@/lib/availability-slot-builder";
 
 const WEEKDAYS: { value: number; label: string }[] = [
   { value: 0, label: "Mon" },
@@ -62,6 +63,23 @@ export function CreateAvailabilityForm({
   const { viewingAsUserId } = useAdminViewContext();
 
   const times = useMemo(() => timeOptions(), []);
+  const recurringWeeksNum = useMemo(() => {
+    const rw = Number.parseInt(recurringWeeks, 10);
+    return Number.isFinite(rw) ? rw : 12;
+  }, [recurringWeeks]);
+
+  const scheduleIssue = useMemo(() => {
+    if (weekdays.size === 0 || !timezone.trim()) return null;
+    return describeAvailabilityScheduleIssue(
+      new Date(),
+      timezone,
+      Array.from(weekdays).sort((a, b) => a - b),
+      startTime,
+      endTime,
+      recurring ? Math.min(52, Math.max(1, recurringWeeksNum)) : 1,
+    );
+  }, [weekdays, timezone, startTime, endTime, recurring, recurringWeeksNum]);
+
   const endTimes = useMemo(() => {
     return times.filter((t) => t > startTime);
   }, [times, startTime]);
@@ -93,12 +111,6 @@ export function CreateAvailabilityForm({
       setLoading(false);
       return;
     }
-    if (endTime <= startTime) {
-      setError("End time must be after start time on the same day");
-      setLoading(false);
-      return;
-    }
-
     const parsedPrice = Number(price);
     if (!Number.isFinite(parsedPrice)) {
       setError("Enter a valid price");
@@ -131,6 +143,20 @@ export function CreateAvailabilityForm({
       maxStudents: 1 as const,
       timezone,
     };
+
+    const issue = describeAvailabilityScheduleIssue(
+      new Date(),
+      timezone,
+      payload.weekdays,
+      startTime,
+      endTime,
+      recurring ? rw : 1,
+    );
+    if (issue) {
+      setError(issue);
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await createAvailabilitySlots(payload, viewingAsUserId ?? undefined);
@@ -328,9 +354,23 @@ export function CreateAvailabilityForm({
           </Select>
         </div>
 
+        {scheduleIssue ? (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-950">
+            {scheduleIssue}
+          </p>
+        ) : (
+          <p className="text-[11px] text-slate-600">
+            Slots must still be ending in the future; use :00 / :30 only. Learners only see active openings.
+          </p>
+        )}
+
         {error && <p className="text-xs font-medium text-red-600">{error}</p>}
 
-        <Button type="submit" className="w-full h-9 text-xs" disabled={loading || !hasCourses}>
+        <Button
+          type="submit"
+          className="w-full h-9 text-xs"
+          disabled={loading || !hasCourses || weekdays.size === 0 || Boolean(scheduleIssue)}
+        >
           {loading ? (
             "Creating…"
           ) : (

@@ -59,6 +59,8 @@ interface Profile {
   autoApprove: boolean;
   /** Same IANA zone as Guide settings — slot labels match times they chose when creating availability. */
   tutorTimezone: string;
+  /** Public guide bio from user_settings — shown in Guide Snapshot after “Update Identity”. */
+  bio?: string | null;
   privateSettings?: UserSettings;
 }
 
@@ -304,6 +306,12 @@ export function TutorProfileClient({
       ? bookableSlots
       : bookableSlots.filter((s) => getDayLabel(s.start_time) === selectedDay);
 
+  const trimmedGuideBio = (profile.bio ?? "").trim();
+  const guideSnapshotText =
+    trimmedGuideBio.length > 0
+      ? trimmedGuideBio
+      : `Teaching ${profile.courses.length > 0 ? profile.courses.slice(0, 2).join(" • ") : "multi-subject sessions"} with clarity, structure, and momentum.`;
+
   // Booking dialog
   const [dialogSlot, setDialogSlot] = useState<AvailabilitySlot | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -529,8 +537,13 @@ export function TutorProfileClient({
             <div className="flex w-full flex-col gap-8 lg:w-80 lg:shrink-0">
               <div className="rounded-[2rem] border border-indigo-50 bg-indigo-50/20 p-6 backdrop-blur-sm">
                 <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-indigo-300">Guide Snapshot</p>
-                <p className="text-sm font-medium italic leading-relaxed text-indigo-800">
-                  &quot;Teaching {profile.courses.length > 0 ? profile.courses.slice(0, 2).join(" • ") : "multi-subject sessions"} with clarity, structure, and momentum.&quot;
+                <p
+                  className={cn(
+                    "text-sm font-medium italic leading-relaxed text-indigo-800",
+                    trimmedGuideBio.length > 0 ? "whitespace-pre-wrap" : "",
+                  )}
+                >
+                  &quot;{guideSnapshotText}&quot;
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
