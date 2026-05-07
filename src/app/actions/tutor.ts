@@ -12,7 +12,11 @@ import {
   SESSION_PRICE_CAD_MAX,
   SESSION_PRICE_CAD_MIN,
 } from "@/lib/availability-schemas";
-import { buildSlotCandidates, type SlotCandidate } from "@/lib/availability-slot-builder";
+import {
+  buildSlotCandidates,
+  earliestFirstOccurrenceStartUtc,
+  type SlotCandidate,
+} from "@/lib/availability-slot-builder";
 import { normalizeTeachingDefaultDurationMinutes } from "@/lib/teaching-defaults";
 import {
   sendSessionApprovedEmail,
@@ -512,8 +516,9 @@ export async function getTutorAvailability() {
       .order("start_time", { ascending: true });
 
     // Tutors manage inactive (“hidden”) slots too — do not filter on active here.
+    // Treat bookable-ish rows only (exclude fully booked); migration default is `available`.
     if (withAvailabilityFilters) {
-      query = query.or("booking_status.eq.available,booking_status.is.null");
+      query = query.in("booking_status", ["available", "pending_payment"]);
     }
 
     return query;
@@ -542,7 +547,7 @@ export async function getTutorAvailability() {
     .eq("status", "pending");
 
   if (pendingErr) {
-    throw new Error(`Failed to fetch booking counts: ${pendingErr.message}`);
+    console.warn("[tutor] getTutorAvailability: pending request counts skipped:", pendingErr.message);
   }
 
   const count = new Map<string, number>();
@@ -748,6 +753,20 @@ export async function createAvailabilitySlots(
     if (durMin !== requiredSessionMinutes) {
       throw new Error(
         `Each opening must be exactly ${requiredSessionMinutes} minutes — your Teaching Default (Profile → Teaching Defaults).`,
+      );
+    }
+
+    const nowCreate = new Date();
+    const firstStartUtc = earliestFirstOccurrenceStartUtc(
+      nowCreate,
+      input.timezone,
+      input.weekdays,
+      input.startTime,
+      input.endTime,
+    );
+    if (!firstStartUtc || firstStartUtc.getTime() < nowCreate.getTime()) {
+      throw new Error(
+        "That start time is already in the past for your next opening. Pick a later start time.",
       );
     }
 

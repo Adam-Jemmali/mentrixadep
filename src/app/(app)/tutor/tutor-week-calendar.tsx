@@ -319,11 +319,11 @@ export function TutorWeekCalendar({
           <DialogHeader>
             <DialogTitle>Delete this opening?</DialogTitle>
             <DialogDescription asChild>
-              <div className="space-y-2 text-sm text-slate-600">
+              <div className="space-y-2 text-sm text-purple-600">
                 {deleteTarget ? (
                   <>
                     <p>
-                      <span className="font-semibold text-slate-900">{deleteTarget.course}</span>
+                      <span className="font-semibold text-blue-900">{deleteTarget.course}</span>
                       {" · "}
                       <span className="tabular-nums">{deleteTarget.rangeLabel}</span>
                     </p>

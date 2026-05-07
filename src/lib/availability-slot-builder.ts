@@ -92,6 +92,33 @@ export function buildSlotCandidates(
 }
 
 /**
+ * Earliest slot start (UTC) among selected weekdays for the first occurrence where the slot
+ * still ends after `nowUtc`. Used to disallow picking wall-clock starts already in the past.
+ */
+export function earliestFirstOccurrenceStartUtc(
+  nowUtc: Date,
+  tz: string,
+  weekdaysMon0: number[],
+  startTime: string,
+  endTime: string,
+): Date | null {
+  const sorted = [...weekdaysMon0].sort((a, b) => a - b);
+  let best: Date | null = null;
+  for (const wd of sorted) {
+    try {
+      const ymd = nextWeekdayYmd(nowUtc, tz, wd, startTime, endTime);
+      const startUtc = toDate(`${ymd}T${startTime}:00`, { timeZone: tz });
+      const endUtc = endUtcForYmd(ymd, tz, startTime, endTime);
+      if (endUtc <= nowUtc) continue;
+      if (!best || startUtc.getTime() < best.getTime()) best = startUtc;
+    } catch {
+      /* skip weekday */
+    }
+  }
+  return best;
+}
+
+/**
  * Client/server-shared guard for tutor availability form.
  * Returns a user-facing message when the schedule cannot produce slots, otherwise null.
  */
@@ -130,6 +157,20 @@ export function describeAvailabilityScheduleIssue(
   }
   if (!weekdaysMon0.length) {
     return "Select at least one weekday.";
+  }
+
+  const firstStart = earliestFirstOccurrenceStartUtc(
+    nowUtc,
+    tz,
+    [...weekdaysMon0].sort((a, b) => a - b),
+    startTime,
+    endTime,
+  );
+  if (firstStart == null) {
+    return "Could not resolve the next opening from this schedule.";
+  }
+  if (firstStart.getTime() < nowUtc.getTime()) {
+    return "That start time is already in the past for your next opening. Pick a later start time.";
   }
 
   const weeks = Math.min(52, Math.max(1, recurringWeeks));

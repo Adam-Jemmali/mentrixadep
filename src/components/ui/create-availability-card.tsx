@@ -12,7 +12,10 @@ import { Button } from "@/components/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/lib/availability-schemas";
-import { describeAvailabilityScheduleIssue } from "@/lib/availability-slot-builder";
+import {
+  describeAvailabilityScheduleIssue,
+  earliestFirstOccurrenceStartUtc,
+} from "@/lib/availability-slot-builder";
 import { addMinutesToHHmm } from "@/lib/teaching-defaults";
 
 const WEEKDAYS: { value: number; label: string; full: string }[] = [
@@ -81,10 +84,22 @@ export function CreateAvailabilityCard({
 
   const times = useMemo(() => timeOptions(), []);
 
-  const startTimesValid = useMemo(
-    () => times.filter((t) => addMinutesToHHmm(t, sessionDefaultDurationMinutes) != null),
-    [times, sessionDefaultDurationMinutes],
-  );
+  const startTimesValid = useMemo(() => {
+    const fitsDay = times.filter((t) => addMinutesToHHmm(t, sessionDefaultDurationMinutes) != null);
+    if (weekdays.size === 0 || !timezone.trim()) return fitsDay;
+    const wd = Array.from(weekdays).sort((a, b) => a - b);
+    const nowUtc = new Date();
+    return fitsDay.filter((st) => {
+      const et = addMinutesToHHmm(st, sessionDefaultDurationMinutes);
+      if (!et) return false;
+      try {
+        const first = earliestFirstOccurrenceStartUtc(nowUtc, timezone, wd, st, et);
+        return first != null && first.getTime() >= nowUtc.getTime();
+      } catch {
+        return false;
+      }
+    });
+  }, [times, sessionDefaultDurationMinutes, weekdays, timezone]);
 
   useEffect(() => {
     setStartTime((prev) =>
@@ -120,7 +135,8 @@ export function CreateAvailabilityCard({
     (scheduleIssue.includes("End time must be after") ||
       scheduleIssue.includes("15-minute") ||
       scheduleIssue.includes("Teaching Default") ||
-      scheduleIssue.includes("exactly"));
+      scheduleIssue.includes("exactly") ||
+      scheduleIssue.includes("already in the past"));
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -427,7 +443,7 @@ export function CreateAvailabilityCard({
               </p>
             ) : (
               <p className="text-xs font-medium text-slate-500">
-                Start times use 15-minute steps and must fit before midnight. Length always matches your Teaching Default (
+               Length always matches your Teaching Defaul (
                 {sessionDefaultDurationMinutes} min).
               </p>
             )}
