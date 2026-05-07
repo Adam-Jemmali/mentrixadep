@@ -329,33 +329,32 @@ export function FirstSequenceHeroContent() {
           <BouncingRoleIcons disabled={!cinematicMode} />
         </div>
       ) : null}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-64 z-[100] block px-5 text-center md:top-80 lg:top-[26rem]"
-        style={{ 
-          opacity: Math.min(1, revealLeft * 1.5),
-          willChange: 'opacity, transform',
-        }}
-      >
-        <div className="mx-auto h-40 w-full max-w-4xl mt-2">
-          {!cinematicMode ? (
-            <p className="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter">
-              Compete. Climb. Improve.
-            </p>
-          ) : (
-            <GooeyText
-              texts={[
-                "Compete. Climb. Improve.",
-                "Meet live.",
-                "Book a Guide."
-              ]}
-              morphTime={2.5}
-              cooldownTime={3}
-              textClassName="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter"
-              className="h-full"
-            />
-          )}
+      {/* Desktop: tagline floats over the hero art. Mobile: rendered in-flow below so CTAs never overlap. */}
+      {!isMobileViewport ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-64 z-[100] block px-5 text-center md:top-80 lg:top-[26rem]"
+          style={{
+            opacity: Math.min(1, revealLeft * 1.5),
+            willChange: "opacity, transform",
+          }}
+        >
+          <div className="mx-auto mt-2 h-40 w-full max-w-4xl">
+            {cinematicMode ? (
+              <GooeyText
+                texts={["Compete. Climb. Improve.", "Meet live.", "Book a Guide."]}
+                morphTime={2.5}
+                cooldownTime={3}
+                textClassName="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter"
+                className="h-full"
+              />
+            ) : (
+              <p className="text-2xl font-black italic tracking-tighter text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] md:text-4xl">
+                Compete. Climb. Improve.
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="relative z-10 w-full px-0 sm:px-5">
         <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 lg:grid lg:max-w-[90rem] lg:grid-cols-[1fr_1fr] lg:items-start lg:gap-12 lg:px-8 xl:px-16">
@@ -363,19 +362,29 @@ export function FirstSequenceHeroContent() {
             opacity: revealLeft,
             willChange: 'opacity, transform',
           }}>
+            {isMobileViewport ? (
+              <div className="mb-5 px-1 pt-1">
+                <p className="text-[clamp(1.375rem,5.5vw,1.75rem)] font-black italic leading-snug tracking-tighter text-white drop-shadow-[0_6px_14px_rgba(0,0,0,0.85)]">
+                  Compete. Climb. Improve.
+                </p>
+              </div>
+            ) : null}
+
             <div 
               style={{
                 opacity: lineAOpacity,
-                transform: `translate3d(0, ${headlineY * 1.1}px, 0)`,
+                transform: isMobileViewport
+                  ? undefined
+                  : `translate3d(0, ${headlineY * 1.1}px, 0)`,
               }}
               className="space-y-4"
             >
-              <div className="min-h-[60px] md:min-h-[40px]">
-                {/* GooeyText moved to laptop screen area above */}
+              <div className={cn(isMobileViewport ? "hidden" : "min-h-[60px] md:min-h-[40px]")}>
+                {/* GooeyText sits in the absolute layer above on lg+ */}
               </div>
             </div>
 
-            <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row lg:mt-6 lg:justify-start lg:gap-4">
+            <div className={cn("flex flex-col justify-center gap-3 sm:flex-row lg:mt-6 lg:justify-start lg:gap-4", isMobileViewport ? "mt-1" : "mt-5")}>
               <Link
                 href="/auth/signup"
                 className="lp-cta-pulse group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0B1120] shadow-lg shadow-indigo-500/10 transition-all hover:-translate-y-0.5 hover:shadow-indigo-500/20 sm:w-auto sm:px-7 sm:py-3.5"
@@ -397,7 +406,7 @@ export function FirstSequenceHeroContent() {
                 href="/try"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-medium text-white/95 transition-colors hover:bg-white/[0.04] sm:w-auto sm:px-7 sm:py-3.5"
               >
-                Try a  Quest 
+                Try a Quest
               </Link>
             </div>
           </div>

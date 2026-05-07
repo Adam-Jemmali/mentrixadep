@@ -82,8 +82,23 @@ export function FourthStaticFlowContent() {
                 transitionDelay: `${i * 70}ms`,
               }}
             >
-              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/25 bg-slate-900/80">
-                <Image src={step.icon} alt="" width={20} height={20} className="object-contain brightness-0 invert" />
+              <div
+                className={cn(
+                  "mb-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm",
+                  "border-white/25 bg-slate-900/80",
+                  "max-lg:border-slate-200 max-lg:bg-white max-lg:shadow-md max-lg:ring-1 max-lg:ring-black/10",
+                )}
+              >
+                <Image
+                  src={step.icon}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className={cn(
+                    "object-contain brightness-0 invert",
+                    "max-lg:brightness-100 max-lg:invert-0 max-lg:drop-shadow-sm",
+                  )}
+                />
               </div>
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-300">{step.number}</p>
               <h3 className="text-[15px] font-semibold text-white">{step.title}</h3>
