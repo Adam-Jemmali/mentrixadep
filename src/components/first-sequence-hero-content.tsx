@@ -237,12 +237,14 @@ export function FirstSequenceHeroContent() {
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [slideIdx, setSlideIdx] = useState(0);
   const roleCopy = ROLE_ONBOARDING_COPY[waitlistRole];
-  const revealLeft = Math.min(1, Math.max(0.2, progress * 1.25));
-  const revealRight = Math.min(1, Math.max(0.15, (progress - 0.08) * 1.3));
-  const headlineY = 26 - progress * 54;
-  const lineAOpacity = Math.min(1, 0.3 + progress * 1.5);
-  const cinematicMode = !lowEndMode || isMobileViewport;
-  const alwaysAnimateBouncers = true;
+  const effectiveProgress = isMobileViewport ? 1 : progress;
+  const revealLeft = Math.min(1, Math.max(0.2, effectiveProgress * 1.25));
+  const revealRight = Math.min(1, Math.max(0.15, (effectiveProgress - 0.08) * 1.3));
+  const headlineY = 26 - effectiveProgress * 54;
+  const lineAOpacity = Math.min(1, 0.3 + effectiveProgress * 1.5);
+  // Mobile should match the current simplified desktop marketing presentation:
+  // no particle backdrop, no bouncing icon layer, no morph/particle text effects.
+  const cinematicMode = !lowEndMode && !isMobileViewport;
 
   useEffect(() => {
     const update = () => setIsMobileViewport(window.innerWidth < 1024);
@@ -322,9 +324,11 @@ export function FirstSequenceHeroContent() {
   return (
     <div className="relative flex min-h-screen items-start justify-center overflow-hidden px-4 pb-8 pt-14 sm:px-5 sm:pt-16 md:items-center md:pt-14 md:pb-8 lg:pt-16 lg:pb-6" id="firstseq">
       {cinematicMode ? <ParticleAnimation className="absolute inset-0 z-0 opacity-30" /> : null}
-      <div className="block">
-        <BouncingRoleIcons disabled={!alwaysAnimateBouncers} />
-      </div>
+      {!isMobileViewport ? (
+        <div className="block">
+          <BouncingRoleIcons disabled={!cinematicMode} />
+        </div>
+      ) : null}
       <div
         className="pointer-events-none absolute inset-x-0 top-64 z-[100] block px-5 text-center md:top-80 lg:top-[26rem]"
         style={{ 
@@ -406,12 +410,18 @@ export function FirstSequenceHeroContent() {
   
               <h3 className="text-[15px] font-semibold tracking-tight text-white sm:text-base">
                 <span className="block h-6">
-                  <ParticleTextEffect
-                    key={JSON.stringify([roleCopy.headline.toUpperCase()])}
-                    words={[roleCopy.headline.toUpperCase()]}
-                    className="h-full w-full opacity-95"
-                    tone="onDark"
-                  />
+                  {cinematicMode ? (
+                    <ParticleTextEffect
+                      key={JSON.stringify([roleCopy.headline.toUpperCase()])}
+                      words={[roleCopy.headline.toUpperCase()]}
+                      className="h-full w-full opacity-95"
+                      tone="onDark"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-white">
+                      {roleCopy.headline.toUpperCase()}
+                    </span>
+                  )}
                 </span>
               </h3>
 

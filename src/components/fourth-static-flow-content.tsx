@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { TiltCard } from "@/components/ui/tilt-card";
@@ -38,8 +39,18 @@ const FLOW_STEPS = [
 
 export function FourthStaticFlowContent() {
   const progress = useSectionScrollProgress("fourthseq", 0.015);
-  const headingOpacity = Math.min(1, Math.max(0.14, progress * 1.15));
-  const cardsOpacity = Math.min(1, Math.max(0.1, (progress - 0.06) * 1.28));
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsMobileViewport(window.innerWidth < 1024);
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const effectiveProgress = isMobileViewport ? 1 : progress;
+  const headingOpacity = Math.min(1, Math.max(0.14, effectiveProgress * 1.15));
+  const cardsOpacity = Math.min(1, Math.max(0.1, (effectiveProgress - 0.06) * 1.28));
 
   return (
     <section id="flow" className="relative flex min-h-screen items-center justify-center px-5 py-10 md:px-8 md:py-12">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useSectionScrollProgress } from "@/lib/landing-perf";
 
@@ -12,9 +13,19 @@ const OUTCOME_LINES = [
 
 export function SecondSequenceOutcomeContent() {
   const progress = useSectionScrollProgress("secondseq", 0.015);
-  const headingOpacity = Math.min(1, Math.max(0.1, progress * 1.2));
-  const leftOpacity = Math.min(1, Math.max(0.05, (progress - 0.06) * 1.35));
-  const rightOpacity = Math.min(1, Math.max(0.05, (progress - 0.12) * 1.35));
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsMobileViewport(window.innerWidth < 1024);
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const effectiveProgress = isMobileViewport ? 1 : progress;
+  const headingOpacity = Math.min(1, Math.max(0.1, effectiveProgress * 1.2));
+  const leftOpacity = Math.min(1, Math.max(0.05, (effectiveProgress - 0.06) * 1.35));
+  const rightOpacity = Math.min(1, Math.max(0.05, (effectiveProgress - 0.12) * 1.35));
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden pt-14 pb-8 md:pt-16 md:pb-10 lg:pt-18 lg:pb-10">

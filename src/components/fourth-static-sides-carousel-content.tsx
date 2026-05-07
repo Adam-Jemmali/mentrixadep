@@ -227,6 +227,16 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
 export function FourthStaticSidesCarouselContent() {
   const [selectedRole, setSelectedRole] = useState<"Mentrixer" | "Guide">("Mentrixer");
   const lowEndMode = useLowEndMode();
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsMobileViewport(window.innerWidth < 1024);
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const cinematicMode = !lowEndMode && !isMobileViewport;
 
   return (
     <section id="fourthstatic" className="relative min-h-[84vh] overflow-hidden">
@@ -240,12 +250,16 @@ export function FourthStaticSidesCarouselContent() {
           priority
         />
         <div className="absolute inset-0 bg-slate-950/45" aria-hidden />
-        <BouncingRoleIconsLayer disabled={lowEndMode} />
+        <BouncingRoleIconsLayer disabled={!cinematicMode} />
 
         <div className="relative z-10 mx-auto flex min-h-[84vh] w-full max-w-7xl flex-col px-5 py-8 md:px-8 md:py-10">
           <div className="mx-auto mb-5 max-w-3xl text-center">
             <h2 id="path" className="text-[clamp(22px,3.2vw,34px)] font-bold tracking-[-0.03em] text-white h-[40px]">
-              {lowEndMode ? "Which side of the session are you on?" : <Typewriter text="Which side of the session are you on?" speed={50} waitTime={4000} />}
+              {cinematicMode ? (
+                <Typewriter text="Which side of the session are you on?" speed={50} waitTime={4000} />
+              ) : (
+                "Which side of the session are you on?"
+              )}
             </h2>
             <p className="mt-2 text-[13px] text-slate-200/80">Choose a side and start there.</p>
           </div>
@@ -264,7 +278,11 @@ export function FourthStaticSidesCarouselContent() {
                   )}
                 >
                   <RoleIcon role={side.role} className={cn("h-3 w-3", active ? "" : "brightness-0 invert")} />
-                  <BubbleText text={side.role} activeColor="text-current" neighborColor="text-current" />
+                  {cinematicMode ? (
+                    <BubbleText text={side.role} activeColor="text-current" neighborColor="text-current" />
+                  ) : (
+                    <span>{side.role}</span>
+                  )}
                 </button>
               );
             })}
@@ -303,7 +321,7 @@ export function FourthStaticSidesCarouselContent() {
                     {side.role}
                   </p>
                   <h3 className="mt-2 text-[19px] font-bold text-white h-[56px]">
-                    {lowEndMode ? side.title : <Typewriter text={side.title} speed={40} waitTime={5000} />}
+                    {cinematicMode ? <Typewriter text={side.title} speed={40} waitTime={5000} /> : side.title}
                   </h3>
                   <ul className="mt-4 space-y-2.5 text-[13px] text-slate-200/95">
                     {side.points.map((point) => (

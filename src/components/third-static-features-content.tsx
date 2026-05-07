@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useSectionScrollProgress } from "@/lib/landing-perf";
@@ -45,8 +46,18 @@ const FEATURE_ITEMS = [
 
 export function ThirdStaticFeaturesContent() {
   const progress = useSectionScrollProgress("thirdstatic", 0.015);
-  const headingOpacity = Math.min(1, Math.max(0.15, progress * 1.15));
-  const cardsOpacity = Math.min(1, Math.max(0.1, (progress - 0.08) * 1.25));
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsMobileViewport(window.innerWidth < 1024);
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const effectiveProgress = isMobileViewport ? 1 : progress;
+  const headingOpacity = Math.min(1, Math.max(0.15, effectiveProgress * 1.15));
+  const cardsOpacity = Math.min(1, Math.max(0.1, (effectiveProgress - 0.08) * 1.25));
 
   return (
     <section id="thirdstatic" className="relative h-[190vh]">
