@@ -317,7 +317,7 @@ export function TutorWeekCalendar({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete this opening?</DialogTitle>
+            <DialogTitle className="text-purple-600">Delete this opening?</DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-2 text-sm text-purple-600">
                 {deleteTarget ? (

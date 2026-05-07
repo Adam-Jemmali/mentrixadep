@@ -196,7 +196,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       <Dialog open={deleteId != null} onOpenChange={(o) => !o && setDeleteId(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete open slot?</DialogTitle>
+            <DialogTitle className="text-purple-600">Delete open slot?</DialogTitle>
             <DialogDescription>
               {pendingDel > 0 ? (
                 <span>
