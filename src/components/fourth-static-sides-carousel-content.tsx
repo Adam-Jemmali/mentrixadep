@@ -51,14 +51,14 @@ const Check = ({ className = "" }: { className?: string }) => (
 
 function RoleIcon({ role, className = "" }: { role: "Mentrixer" | "Guide"; className?: string }) {
   return (
-    <span className={`relative inline-block h-4 w-4 shrink-0 ${className}`} aria-hidden>
+    <span className={cn("relative inline-block shrink-0", className)} aria-hidden>
       <Image
         src={role === "Mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
         alt=""
         fill
         unoptimized
         className="object-contain"
-        sizes="16px"
+        sizes="48px"
       />
     </span>
   );
@@ -225,7 +225,7 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
   }, [disabled]);
 
   return (
-    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
+    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[25] overflow-hidden" aria-hidden>
       <div ref={mentrixerRef} className="absolute left-0 top-0 will-change-transform">
         <RoleIcon role="Mentrixer" className="h-11 w-11 opacity-85 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
       </div>

@@ -22,14 +22,14 @@ const ArrowRight = () => (
 
 function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
   return (
-    <span className={`relative inline-block h-4 w-4 shrink-0 ${className}`} aria-hidden>
+    <span className={cn("relative inline-block shrink-0", className)} aria-hidden>
       <Image
         src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
         alt=""
         fill
         unoptimized
         className="object-contain"
-        sizes="16px"
+        sizes="48px"
       />
     </span>
   );
@@ -190,7 +190,11 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
   }, [disabled, iconsReady]);
 
   return (
-    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
+    <div
+      ref={containerRef}
+      className="pointer-events-none absolute inset-0 z-[25] overflow-hidden"
+      aria-hidden
+    >
       {[
         { role: "mentrixer" as const, size: "h-11 w-11 opacity-90" },
         { role: "guide" as const, size: "h-11 w-11 opacity-90" },
@@ -204,7 +208,7 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
           ref={(el) => {
             iconRefs.current[idx] = el;
           }}
-          className="absolute left-0 top-0 will-change-transform rounded-full shadow-2xl"
+          className="absolute left-0 top-0 will-change-transform rounded-full shadow-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
         >
           <RoleIcon role={icon.role} className={icon.size} />
         </div>
