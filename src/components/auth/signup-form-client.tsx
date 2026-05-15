@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -12,6 +12,17 @@ import { toUserFacingAuthError } from "@/lib/user-facing-error";
 import { cn } from "@/lib/utils";
 
 type Role = "student" | "tutor";
+
+const WAITLIST_SNAPSHOT_KEY = "mentrixa_signup_waitlist_v1";
+const SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+type WaitlistSnapshot = {
+  email: string;
+  role: Role;
+  accessRequestMode: "new" | "pending_review";
+  accessRequestedMessage: string | null;
+  ts: number;
+};
 
 const GoogleSignInButton = dynamic(
   () => import("@/components/auth/google-sign-in-button").then((m) => m.GoogleSignInButton),
@@ -37,7 +48,70 @@ export function SignupFormClient({
   /** `new` = just submitted waitlist; `pending_review` = already waiting on admin */
   const [accessRequestMode, setAccessRequestMode] = useState<"new" | "pending_review" | null>(null);
   const [accessRequestedMessage, setAccessRequestedMessage] = useState<string | null>(null);
+  const [googleFlowBusy, setGoogleFlowBusy] = useState(false);
+  const outcomeTopRef = useRef<HTMLDivElement>(null);
+  const restoredSnapshotRef = useRef(false);
   const roleLabel = role === "tutor" ? "Guide" : "Mentrixer";
+
+  useEffect(() => {
+    if (!waitlistEnabled || restoredSnapshotRef.current) return;
+    try {
+      const raw = sessionStorage.getItem(WAITLIST_SNAPSHOT_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw) as Partial<WaitlistSnapshot>;
+      if (!data.email || typeof data.ts !== "number" || Date.now() - data.ts > SNAPSHOT_MAX_AGE_MS) {
+        sessionStorage.removeItem(WAITLIST_SNAPSHOT_KEY);
+        return;
+      }
+      restoredSnapshotRef.current = true;
+      setEmail(data.email);
+      setRole(data.role === "tutor" ? "tutor" : "student");
+      setAccessRequestMode(data.accessRequestMode === "pending_review" ? "pending_review" : "new");
+      setAccessRequestedMessage(
+        typeof data.accessRequestedMessage === "string" ? data.accessRequestedMessage : null,
+      );
+      setAccessRequested(true);
+    } catch {
+      try {
+        sessionStorage.removeItem(WAITLIST_SNAPSHOT_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [waitlistEnabled]);
+
+  useEffect(() => {
+    if (!waitlistEnabled || !accessRequested || !email) return;
+    try {
+      const payload: WaitlistSnapshot = {
+        email,
+        role,
+        accessRequestMode: accessRequestMode === "pending_review" ? "pending_review" : "new",
+        accessRequestedMessage,
+        ts: Date.now(),
+      };
+      sessionStorage.setItem(WAITLIST_SNAPSHOT_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [waitlistEnabled, accessRequested, email, role, accessRequestMode, accessRequestedMessage]);
+
+  useEffect(() => {
+    if (!success) return;
+    try {
+      sessionStorage.removeItem(WAITLIST_SNAPSHOT_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (!success && !accessRequested) return;
+    const id = requestAnimationFrame(() => {
+      outcomeTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [success, accessRequested]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -162,54 +236,59 @@ export function SignupFormClient({
 
   const handleGoogleSignupComplete = useCallback(
     async (googleEmail: string): Promise<"success" | "abort"> => {
-      setError(null);
-      if (!ageConfirmed) {
-        setError("Please confirm you are 13 years old or older and agree to the Terms of Service.");
-        return "abort";
-      }
-      const normalizedEmail = googleEmail.trim().toLowerCase();
-      setEmail(normalizedEmail);
-
-      if (waitlistEnabled) {
-        const access = await checkAccessAndMaybeRequest(normalizedEmail);
-        if (access !== "approved") {
-          return "abort";
-        }
-      }
-
+      setGoogleFlowBusy(true);
       try {
-        const res = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            email: normalizedEmail,
-            role,
-            ageConfirmed: true,
-            requestActivation: true,
-          }),
-        });
-        const body = (await res.json().catch(() => ({}))) as {
-          ok?: boolean;
-          error?: string;
-          sessionEstablished?: boolean;
-        };
-        if (!res.ok || !body.ok) {
-          setError(toUserFacingAuthError(body.error ?? "Could not send activation link."));
+        setError(null);
+        if (!ageConfirmed) {
+          setError("Please confirm you are 13 years old or older and agree to the Terms of Service.");
           return "abort";
         }
-        if (body.sessionEstablished) {
-          window.location.assign("/auth/session-sync");
-          return "success";
+        const normalizedEmail = googleEmail.trim().toLowerCase();
+        setEmail(normalizedEmail);
+
+        if (waitlistEnabled) {
+          const access = await checkAccessAndMaybeRequest(normalizedEmail);
+          if (access !== "approved") {
+            return "abort";
+          }
         }
-        setSuccess(true);
-        const supabase = createClient();
-        await new Promise<void>((r) => setTimeout(r, 0));
-        await supabase.auth.signOut();
-        return "success";
-      } catch (err) {
-        setError(toUserFacingAuthError(err));
-        return "abort";
+
+        try {
+          const res = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              email: normalizedEmail,
+              role,
+              ageConfirmed: true,
+              requestActivation: true,
+            }),
+          });
+          const body = (await res.json().catch(() => ({}))) as {
+            ok?: boolean;
+            error?: string;
+            sessionEstablished?: boolean;
+          };
+          if (!res.ok || !body.ok) {
+            setError(toUserFacingAuthError(body.error ?? "Could not send activation link."));
+            return "abort";
+          }
+          if (body.sessionEstablished) {
+            window.location.assign("/auth/session-sync");
+            return "success";
+          }
+          setSuccess(true);
+          const supabase = createClient();
+          await new Promise<void>((r) => setTimeout(r, 0));
+          await supabase.auth.signOut();
+          return "success";
+        } catch (err) {
+          setError(toUserFacingAuthError(err));
+          return "abort";
+        }
+      } finally {
+        setGoogleFlowBusy(false);
       }
     },
     [ageConfirmed, waitlistEnabled, role],
@@ -217,7 +296,13 @@ export function SignupFormClient({
 
   if (success) {
     return (
-      <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div
+        ref={outcomeTopRef}
+        className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500 scroll-mt-6"
+      >
+        <p className="mb-3 inline-flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+          Step complete — check your email
+        </p>
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Check your email to continue</h1>
         <p className="text-sm text-slate-600 mb-4">
           We&apos;ve sent an activation link for your <span className="font-semibold text-slate-900">{roleLabel}</span> setup to{" "}
@@ -245,7 +330,15 @@ export function SignupFormClient({
   if (accessRequested) {
     const awaitingAdmin = accessRequestMode === "pending_review";
     return (
-      <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div
+        ref={outcomeTopRef}
+        className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500 scroll-mt-6"
+      >
+        <p className="mb-3 inline-flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-900">
+          {awaitingAdmin
+            ? "Step complete — wait for admin approval"
+            : "Step complete — check your email for confirmation"}
+        </p>
         <h1 className="text-2xl font-bold text-slate-900 mb-2">
           {awaitingAdmin ? "Waiting for admin approval" : "Access request submitted"}
         </h1>
@@ -287,6 +380,18 @@ export function SignupFormClient({
           Sign in
         </Link>
       </p>
+
+      <ol className="mb-5 flex flex-wrap items-center gap-x-1 gap-y-1 text-[11px] font-medium text-slate-500">
+        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">1 · Role</li>
+        <li aria-hidden="true" className="text-slate-300">
+          →
+        </li>
+        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">2 · Terms</li>
+        <li aria-hidden="true" className="text-slate-300">
+          →
+        </li>
+        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">3 · Google or email</li>
+      </ol>
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <button
@@ -361,13 +466,37 @@ export function SignupFormClient({
         </Label>
       </div>
 
+      {googleFlowBusy ? (
+        <div
+          className="mb-3 rounded-lg border border-mentrixa-200 bg-mentrixa-50/80 px-3 py-2.5 text-xs text-mentrixa-900"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="font-semibold">Working on your signup…</span>{" "}
+          {waitlistEnabled
+            ? "Checking waitlist status or sending your activation email — stay on this page."
+            : "Sending your activation email — stay on this page."}
+        </div>
+      ) : null}
+
       <GoogleSignInButton
         variant="signup"
         oauthRole={role}
         onSignupGoogleComplete={handleGoogleSignupComplete}
       />
-      <p className="mt-2 text-xs text-slate-500">
-        Google: after you pick an account, we send the same activation email as below, then show next steps here.
+      <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+        {waitlistEnabled ? (
+          <>
+            After you choose Google, <span className="font-medium text-slate-700">stay on this page</span>. We show
+            waitlist status (for example waiting for admin approval) or &quot;check your email&quot; here — you do not
+            need to use the email field below unless you prefer email signup.
+          </>
+        ) : (
+          <>
+            After you choose Google, <span className="font-medium text-slate-700">stay on this page</span>. We show
+            &quot;check your email&quot; and next steps here — same flow as the button below.
+          </>
+        )}
       </p>
 
       <div className="relative my-6">
@@ -397,8 +526,9 @@ export function SignupFormClient({
         <Button type="submit" className="w-full h-11" disabled={loading}>
           {loading ? "Sending link..." : "Continue with email"}
         </Button>
-        <p className="text-xs text-slate-500">
-          Email button: sends activation link, then you finish setup with a password or Google as {roleLabel}.
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Sends the activation link to the address above. After you click the link in your inbox, finish setup with a
+          password or Google as {roleLabel}. You can use Google above instead — no need for both.
         </p>
       </form>
     </div>
