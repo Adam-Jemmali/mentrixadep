@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ export function SignupFormClient({
 }) {
   const [role, setRole] = useState<Role>(initialRole);
   const [email, setEmail] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -100,13 +102,14 @@ export function SignupFormClient({
     setError(null);
 
     try {
-      const formData = new FormData(e.currentTarget);
-      const ageConfirmed = formData.get("ageConfirmed") === "on";
       const normalizedEmail = email.trim().toLowerCase();
+      if (!ageConfirmed) {
+        setError("Please confirm you are 13 years old or older and agree to the Terms of Service.");
+        return;
+      }
       if (waitlistEnabled) {
         const access = await checkAccessAndMaybeRequest(normalizedEmail);
         if (access !== "approved") {
-          setLoading(false);
           return;
         }
       }
@@ -125,7 +128,6 @@ export function SignupFormClient({
       const body = await res.json();
       if (!res.ok || !body.ok) {
         setError(toUserFacingAuthError(body.error ?? "Signup failed."));
-        setLoading(false);
         return;
       }
 
@@ -137,9 +139,64 @@ export function SignupFormClient({
       setSuccess(true);
     } catch (err) {
       setError(toUserFacingAuthError(err));
+    } finally {
       setLoading(false);
     }
   }
+
+  const handleGoogleSignupComplete = useCallback(
+    async (googleEmail: string): Promise<"success" | "abort"> => {
+      setError(null);
+      if (!ageConfirmed) {
+        setError("Please confirm you are 13 years old or older and agree to the Terms of Service.");
+        return "abort";
+      }
+      const normalizedEmail = googleEmail.trim().toLowerCase();
+      setEmail(normalizedEmail);
+
+      if (waitlistEnabled) {
+        const access = await checkAccessAndMaybeRequest(normalizedEmail);
+        if (access !== "approved") {
+          return "abort";
+        }
+      }
+
+      try {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            email: normalizedEmail,
+            role,
+            ageConfirmed: true,
+            requestActivation: true,
+          }),
+        });
+        const body = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          error?: string;
+          sessionEstablished?: boolean;
+        };
+        if (!res.ok || !body.ok) {
+          setError(toUserFacingAuthError(body.error ?? "Could not send activation link."));
+          return "abort";
+        }
+        if (body.sessionEstablished) {
+          window.location.assign("/auth/session-sync");
+          return "success";
+        }
+        setSuccess(true);
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        return "success";
+      } catch (err) {
+        setError(toUserFacingAuthError(err));
+        return "abort";
+      }
+    },
+    [ageConfirmed, waitlistEnabled, role],
+  );
 
   if (success) {
     return (
@@ -253,9 +310,33 @@ export function SignupFormClient({
         You are signing up as <span className="font-semibold text-slate-800">{roleLabel}</span>
       </div>
 
-      <GoogleSignInButton variant="signup" oauthRole={role} />
+      {error ? (
+        <div className="rounded-lg bg-red-50 p-3 text-xs text-red-600 border border-red-100 mb-3">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="flex items-start gap-2 py-1 mb-3">
+        <input
+          id="ageConfirmed"
+          name="ageConfirmed"
+          type="checkbox"
+          checked={ageConfirmed}
+          onChange={(e) => setAgeConfirmed(e.target.checked)}
+          className="mt-1 h-4 w-4 rounded border-slate-300 text-mentrixa-600 focus:ring-mentrixa-500"
+        />
+        <Label htmlFor="ageConfirmed" className="text-xs text-slate-500 leading-normal font-normal">
+          I confirm that I am 13 years old or older and agree to the Terms of Service.
+        </Label>
+      </div>
+
+      <GoogleSignInButton
+        variant="signup"
+        oauthRole={role}
+        onSignupGoogleComplete={handleGoogleSignupComplete}
+      />
       <p className="mt-2 text-xs text-slate-500">
-        Google button: continues immediately with your selected role.
+        Google: after you pick an account, we send the same activation email as below, then show next steps here.
       </p>
 
       <div className="relative my-6">
@@ -281,25 +362,6 @@ export function SignupFormClient({
             className="input-premium"
           />
         </div>
-
-        <div className="flex items-start gap-2 py-1">
-          <input
-            id="ageConfirmed"
-            name="ageConfirmed"
-            type="checkbox"
-            required
-            className="mt-1 h-4 w-4 rounded border-slate-300 text-mentrixa-600 focus:ring-mentrixa-500"
-          />
-          <Label htmlFor="ageConfirmed" className="text-xs text-slate-500 leading-normal font-normal">
-            I confirm that I am 13 years old or older and agree to the Terms of Service.
-          </Label>
-        </div>
-
-        {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-xs text-red-600 border border-red-100">
-            {error}
-          </div>
-        )}
 
         <Button type="submit" className="w-full h-11" disabled={loading}>
           {loading ? "Sending link..." : "Continue with email"}

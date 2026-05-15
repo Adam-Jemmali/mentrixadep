@@ -125,9 +125,16 @@ export function GoogleSignInButton({
   variant = "signin",
   /** Selected role on signup before Google — persisted via OAuth cookies for callback / GIS. */
   oauthRole,
+  /**
+   * Signup only: after Google ID token sign-in, run this instead of `/api/auth/oauth-next`
+   * (e.g. send activation link + show “check your email” in the parent). Return `abort` if
+   * the parent cleared the flow — caller will sign out the fresh Google session.
+   */
+  onSignupGoogleComplete,
 }: {
   variant?: Variant;
   oauthRole?: "student" | "tutor";
+  onSignupGoogleComplete?: (email: string) => Promise<"success" | "abort">;
 }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -192,6 +199,27 @@ export function GoogleSignInButton({
           return;
         }
         await supabase.auth.getSession();
+
+        if (variant === "signup" && onSignupGoogleComplete) {
+          const email = (await supabase.auth.getUser()).data.user?.email?.trim();
+          if (!email) {
+            setError("Google did not return an email address. Try again or use email signup.");
+            await supabase.auth.signOut();
+            return;
+          }
+          try {
+            const outcome = await onSignupGoogleComplete(email);
+            if (outcome === "abort") {
+              await supabase.auth.signOut();
+            }
+          } catch (callbackErr) {
+            console.error("[GoogleSignInButton] signup activation callback:", callbackErr);
+            setError(toUserFacingAuthError(callbackErr));
+            await supabase.auth.signOut();
+          }
+          return;
+        }
+
         const next = await fetchPostOAuthRedirectWithRetry();
         if (!next || typeof next !== "object") {
           setError("Could not determine where to send you after sign-in. Please try again.");
@@ -272,7 +300,7 @@ export function GoogleSignInButton({
       else if (containerAtSetup) containerAtSetup.innerHTML = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- router.push stable; avoid re-running GSI init
-  }, [clientId, variant]);
+  }, [clientId, variant, onSignupGoogleComplete]);
 
   if (!clientId) {
     return (

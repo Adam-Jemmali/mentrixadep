@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -44,7 +44,7 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
     setIconsReady(true);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (disabled) return;
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
@@ -109,13 +109,11 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
 
     let frameId = 0;
     let lastTs = performance.now();
-    let isVisible = true;
-    let io: IntersectionObserver | null = null;
     let ro: ResizeObserver | null = null;
     const minFrameMs = 1000 / 30;
 
     const step = (ts: number) => {
-      if (!isVisible || document.hidden) {
+      if (document.hidden) {
         frameId = window.requestAnimationFrame(step);
         return;
       }
@@ -166,25 +164,20 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
     };
 
     frameId = window.requestAnimationFrame(step);
-    io = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        isVisible = entry ? entry.isIntersecting || entry.intersectionRatio > 0 : true;
-      },
-      { threshold: [0, 0.05, 0.1], rootMargin: "120px 0px 240px 0px" },
-    );
-    io.observe(container);
     const handleResize = () => setInitialPositions();
     window.addEventListener("resize", handleResize, { passive: true });
     if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => setInitialPositions());
+      ro = new ResizeObserver(() => {
+        setInitialPositions();
+      });
       ro.observe(container);
     }
+    // First paint can still report 0×0 before the scroll-sequence shell lays out — re-seed next frame.
+    requestAnimationFrame(() => setInitialPositions());
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frameId);
-      io?.disconnect();
       ro?.disconnect();
     };
   }, [disabled, iconsReady]);
@@ -192,7 +185,7 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
   return (
     <div
       ref={containerRef}
-      className="pointer-events-none absolute inset-0 z-[25] overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 bottom-0 top-20 z-[25] overflow-hidden sm:top-24"
       aria-hidden
     >
       {[
@@ -208,9 +201,12 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
           ref={(el) => {
             iconRefs.current[idx] = el;
           }}
-          className="absolute left-0 top-0 will-change-transform rounded-full shadow-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
+          className={cn(
+            "absolute left-0 top-0 will-change-transform rounded-full shadow-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]",
+            icon.size,
+          )}
         >
-          <RoleIcon role={icon.role} className={icon.size} />
+          <RoleIcon role={icon.role} className="h-full w-full" />
         </div>
       ))}
     </div>
@@ -340,7 +336,9 @@ export function FirstSequenceHeroContent() {
   }, [waitlistEmail, waitlistRole]);
 
   return (
-    <div className="relative flex min-h-screen items-start justify-center overflow-hidden px-4 pb-8 pt-14 sm:px-5 sm:pt-16 md:items-center md:pt-14 md:pb-8 lg:pt-16 lg:pb-6" id="firstseq">
+    <div
+      className="relative flex h-full min-h-0 w-full min-w-0 flex-col items-start justify-center overflow-hidden px-4 pb-8 pt-14 sm:px-5 sm:pt-16 md:items-center md:pt-14 md:pb-8 lg:pt-16 lg:pb-6"
+    >
       {cinematicMode ? <ParticleAnimation className="absolute inset-0 z-0 opacity-30" /> : null}
       {!isMobileViewport ? <BouncingRoleIcons disabled={!desktopFloatingIcons} /> : null}
       {/* Desktop: tagline floats over the hero art. Mobile: rendered in-flow below so CTAs never overlap. */}
@@ -370,7 +368,7 @@ export function FirstSequenceHeroContent() {
         </div>
       ) : null}
 
-      <div className="relative z-10 w-full px-0 sm:px-5">
+      <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col px-0 sm:px-5">
         <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 lg:grid lg:max-w-[90rem] lg:grid-cols-[1fr_1fr] lg:items-start lg:gap-12 lg:px-8 xl:px-16">
           <div className="relative mx-auto max-w-2xl text-center lg:mx-0 lg:max-w-lg lg:text-left lg:pt-16" style={{ 
             opacity: revealLeft,

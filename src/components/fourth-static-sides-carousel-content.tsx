@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -84,7 +84,7 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
   const mentrixerRef = useRef<HTMLDivElement | null>(null);
   const guideRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (disabled) return;
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
@@ -145,13 +145,11 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
 
     let frameId = 0;
     let lastTs = performance.now();
-    let isVisible = true;
-    let io: IntersectionObserver | null = null;
     let ro: ResizeObserver | null = null;
     const minFrameMs = 1000 / 30;
 
     const step = (ts: number) => {
-      if (!isVisible || document.hidden) {
+      if (document.hidden) {
         frameId = window.requestAnimationFrame(step);
         return;
       }
@@ -201,25 +199,17 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
     };
 
     frameId = window.requestAnimationFrame(step);
-    io = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        isVisible = entry ? entry.isIntersecting || entry.intersectionRatio > 0 : true;
-      },
-      { threshold: [0, 0.05, 0.1], rootMargin: "120px 0px 240px 0px" },
-    );
-    io.observe(container);
     const handleResize = () => setInitialPositions();
     window.addEventListener("resize", handleResize, { passive: true });
     if (typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(() => setInitialPositions());
       ro.observe(container);
     }
+    requestAnimationFrame(() => setInitialPositions());
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frameId);
-      io?.disconnect();
       ro?.disconnect();
     };
   }, [disabled]);

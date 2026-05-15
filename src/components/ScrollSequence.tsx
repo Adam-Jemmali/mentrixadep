@@ -284,7 +284,9 @@ export default function ScrollSequence({
         style={{ backgroundImage: `url("${posterFrameSrc}")` }}
       >
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full [contain:strict]" aria-hidden="true" />
-        {children ? <div className="absolute inset-0 z-10">{children}</div> : null}
+        {children ? (
+          <div className="absolute inset-0 z-10 h-full min-h-0 min-w-0">{children}</div>
+        ) : null}
       </div>
     </section>
   );
