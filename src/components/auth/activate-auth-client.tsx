@@ -86,9 +86,8 @@ export function ActivateAuthClient({
       <p className="mt-2 text-sm text-slate-600">
         {hidePasswordCompletion ? (
           <>
-            Your onboarding approval is confirmed. This account uses Google sign-in for{" "}
-            <span className="font-medium text-slate-800">{email}</span>. Use the button below on this device to
-            continue — you do not need a password.
+            This account uses Google sign-in for <span className="font-medium text-slate-800">{email}</span>. Use
+            Google below to finish — you do not need to create a password.
           </>
         ) : (
           <>

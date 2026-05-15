@@ -34,6 +34,8 @@ export function SignupFormClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [accessRequested, setAccessRequested] = useState(false);
+  /** `new` = just submitted waitlist; `pending_review` = already waiting on admin */
+  const [accessRequestMode, setAccessRequestMode] = useState<"new" | "pending_review" | null>(null);
   const [accessRequestedMessage, setAccessRequestedMessage] = useState<string | null>(null);
   const roleLabel = role === "tutor" ? "Guide" : "Mentrixer";
 
@@ -58,10 +60,13 @@ export function SignupFormClient({
       return "approved";
     }
     if (status === "pending") {
-      setError(
-        `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is still pending admin review.`,
+      setError(null);
+      setAccessRequestMode("pending_review");
+      setAccessRequested(true);
+      setAccessRequestedMessage(
+        `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is waiting for admin approval. Watch your inbox — we email you when you can finish setup (Google or password).`,
       );
-      return "blocked";
+      return "requested";
     }
     if (status === "rejected") {
       setError(
@@ -82,12 +87,23 @@ export function SignupFormClient({
       approved?: boolean;
     };
     if (!joinRes.ok) {
+      if (joinJson.status === "pending") {
+        setError(null);
+        setAccessRequestMode("pending_review");
+        setAccessRequested(true);
+        setAccessRequestedMessage(
+          joinJson.error ??
+            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} request is already pending admin review. Watch your email for updates.`,
+        );
+        return "requested";
+      }
       setError(joinJson.error ?? "Could not start access request.");
       return "blocked";
     }
     if (joinJson.approved || joinJson.status === "approved") {
       return "approved";
     }
+    setAccessRequestMode("new");
     setAccessRequested(true);
     setAccessRequestedMessage(
       joinJson.message ??
@@ -188,6 +204,7 @@ export function SignupFormClient({
         }
         setSuccess(true);
         const supabase = createClient();
+        await new Promise<void>((r) => setTimeout(r, 0));
         await supabase.auth.signOut();
         return "success";
       } catch (err) {
@@ -226,16 +243,30 @@ export function SignupFormClient({
   }
 
   if (accessRequested) {
+    const awaitingAdmin = accessRequestMode === "pending_review";
     return (
       <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Access request submitted</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">
+          {awaitingAdmin ? "Waiting for admin approval" : "Access request submitted"}
+        </h1>
         <p className="text-sm text-slate-600 mb-4">
           {accessRequestedMessage ??
             `We've received your ${role === "tutor" ? "Guide" : "Mentrixer"} onboarding request.`}
         </p>
         <div className="text-left text-xs text-slate-600 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1.5">
-          <p>We emailed next steps to <span className="font-semibold text-slate-900">{email}</span>.</p>
-          <p>Once approved, use the next activation email to finish setup (password or Google) and sign in as {roleLabel}.</p>
+          <p>
+            {awaitingAdmin ? (
+              <>
+                We&apos;ll use <span className="font-semibold text-slate-900">{email}</span> for status updates. If you
+                just joined, you should also get a confirmation email (check spam).
+              </>
+            ) : (
+              <>
+                We emailed next steps to <span className="font-semibold text-slate-900">{email}</span>.
+              </>
+            )}
+          </p>
+          <p>Once approved, use the activation email to finish setup (Google or password) and sign in as {roleLabel}.</p>
         </div>
         <Link
           href="/auth/signin"

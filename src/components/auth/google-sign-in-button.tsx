@@ -210,11 +210,14 @@ export function GoogleSignInButton({
           try {
             const outcome = await onSignupGoogleComplete(email);
             if (outcome === "abort") {
+              // Let parent React state (e.g. waitlist confirmation UI) commit before clearing the session.
+              await new Promise<void>((r) => setTimeout(r, 0));
               await supabase.auth.signOut();
             }
           } catch (callbackErr) {
             console.error("[GoogleSignInButton] signup activation callback:", callbackErr);
             setError(toUserFacingAuthError(callbackErr));
+            await new Promise<void>((r) => setTimeout(r, 0));
             await supabase.auth.signOut();
           }
           return;

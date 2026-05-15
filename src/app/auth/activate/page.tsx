@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 import { ActivateAuthClient } from "@/components/auth/activate-auth-client";
-import { authUserExistsByEmail, findAuthUserByEmail, isGoogleOnlyAuthUser } from "@/lib/auth-user-lookup";
+import { findAuthUserByEmail, isGoogleOnlyAuthUser } from "@/lib/auth-user-lookup";
 import { resolvePostAuthDestination } from "@/lib/post-auth-destination";
 
 function normalizeEmail(value: string | undefined): string {
@@ -27,6 +27,9 @@ export default async function ActivatePage({
     redirect("/auth/signin");
   }
 
+  const authUserForEmail = await findAuthUserByEmail(email);
+  const hidePasswordCompletion = authUserForEmail != null && isGoogleOnlyAuthUser(authUserForEmail);
+
   if (!isWaitlistEnabled()) {
     const supabase = await createClient();
     const {
@@ -36,13 +39,12 @@ export default async function ActivatePage({
       if (isGoogleOnlyAuthUser(currentUser)) {
         redirect(await resolvePostAuthDestination());
       }
-      return <ActivateAuthClient email={email} role={requestedRole} />;
+      return <ActivateAuthClient email={email} role={requestedRole} hidePasswordCompletion={hidePasswordCompletion} />;
     }
-    const hasAccount = await authUserExistsByEmail(email);
-    if (hasAccount) {
+    if (authUserForEmail != null) {
       redirect(`/auth/signin?email=${encodeURIComponent(email)}`);
     }
-    return <ActivateAuthClient email={email} role={requestedRole} />;
+    return <ActivateAuthClient email={email} role={requestedRole} hidePasswordCompletion={false} />;
   }
 
   const admin = createAdminClient();
@@ -62,13 +64,8 @@ export default async function ActivatePage({
     if (isGoogleOnlyAuthUser(currentUser)) {
       redirect(await resolvePostAuthDestination());
     }
-    return <ActivateAuthClient email={email} role={role} />;
+    return <ActivateAuthClient email={email} role={role} hidePasswordCompletion={hidePasswordCompletion} />;
   }
 
-  const authUser = await findAuthUserByEmail(email);
-  const hidePasswordCompletion = authUser != null && isGoogleOnlyAuthUser(authUser);
-
-  return (
-    <ActivateAuthClient email={email} role={role} hidePasswordCompletion={hidePasswordCompletion} />
-  );
+  return <ActivateAuthClient email={email} role={role} hidePasswordCompletion={hidePasswordCompletion} />;
 }
