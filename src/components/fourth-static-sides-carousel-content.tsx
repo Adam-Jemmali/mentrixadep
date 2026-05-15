@@ -86,6 +86,9 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
 
   useEffect(() => {
     if (disabled) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
     const container = containerRef.current;
     const mentrixer = mentrixerRef.current;
     const guide = guideRef.current;
@@ -144,6 +147,7 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
     let lastTs = performance.now();
     let isVisible = true;
     let io: IntersectionObserver | null = null;
+    let ro: ResizeObserver | null = null;
     const minFrameMs = 1000 / 30;
 
     const step = (ts: number) => {
@@ -197,18 +201,26 @@ function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
     };
 
     frameId = window.requestAnimationFrame(step);
-    io = new IntersectionObserver((entries) => {
-      const entry = entries[0];
-      isVisible = Boolean(entry?.isIntersecting);
-    }, { threshold: 0.1 });
+    io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        isVisible = entry ? entry.isIntersecting || entry.intersectionRatio > 0 : true;
+      },
+      { threshold: [0, 0.05, 0.1], rootMargin: "120px 0px 240px 0px" },
+    );
     io.observe(container);
     const handleResize = () => setInitialPositions();
     window.addEventListener("resize", handleResize, { passive: true });
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => setInitialPositions());
+      ro.observe(container);
+    }
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frameId);
       io?.disconnect();
+      ro?.disconnect();
     };
   }, [disabled]);
 
@@ -237,6 +249,7 @@ export function FourthStaticSidesCarouselContent() {
   }, []);
 
   const cinematicMode = !lowEndMode && !isMobileViewport;
+  const desktopFloatingIcons = !isMobileViewport;
 
   return (
     <section id="fourthstatic" className="relative min-h-[84vh] overflow-hidden">
@@ -250,7 +263,7 @@ export function FourthStaticSidesCarouselContent() {
           priority
         />
         <div className="absolute inset-0 bg-slate-950/45" aria-hidden />
-        <BouncingRoleIconsLayer disabled={!cinematicMode} />
+        <BouncingRoleIconsLayer disabled={!desktopFloatingIcons} />
 
         <div className="relative z-10 mx-auto flex min-h-[84vh] w-full max-w-7xl flex-col px-5 py-8 md:px-8 md:py-10">
           <div className="mx-auto mb-5 max-w-3xl text-center">

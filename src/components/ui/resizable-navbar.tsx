@@ -17,6 +17,8 @@ import { useUiPerfTier } from "@/lib/use-ui-perf-tier";
 type NavbarProps = {
   children: React.ReactNode;
   className?: string;
+  /** When true, do not change nav shell on scroll (keeps top-of-page colors on bright student pages). */
+  freezeScrollShell?: boolean;
 };
 
 type NavBodyProps = {
@@ -52,10 +54,12 @@ type MobileNavMenuProps = {
   onClose: () => void;
 };
 
-export const Navbar = ({ children, className }: NavbarProps) => {
+export const Navbar = ({ children, className, freezeScrollShell = false }: NavbarProps) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (freezeScrollShell) return;
+
     let raf = 0;
     let lastVisible = false;
     const onScroll = () => {
@@ -75,7 +79,9 @@ export const Navbar = ({ children, className }: NavbarProps) => {
       window.removeEventListener("scroll", onScroll);
       if (raf) window.cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [freezeScrollShell]);
+
+  const shellVisible = freezeScrollShell ? false : visible;
 
   return (
     <div
@@ -85,7 +91,9 @@ export const Navbar = ({ children, className }: NavbarProps) => {
         // Avoid passing custom props like `visible` to raw DOM nodes (<div/>, etc.).
         if (!React.isValidElement(child)) return child;
         if (typeof child.type === "string") return child;
-        return React.cloneElement(child as React.ReactElement<{ visible?: boolean }>, { visible });
+        return React.cloneElement(child as React.ReactElement<{ visible?: boolean }>, {
+          visible: shellVisible,
+        });
       })}
     </div>
   );

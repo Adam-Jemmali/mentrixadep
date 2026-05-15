@@ -152,8 +152,8 @@ export function SignupFormClient({
         <div className="text-left text-xs text-slate-600 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1.5">
           <p className="font-semibold text-slate-700">What to do next:</p>
           <p>1) Open the email and click the activation link.</p>
-          <p>2) Create your password on the activation page.</p>
-          <p>3) Sign in and continue as a {roleLabel}.</p>
+          <p>2) On the activation page, create a password or continue with Google (no password needed for Google).</p>
+          <p>3) Finish sign-in and continue as a {roleLabel}.</p>
           {role === "tutor" ? (
             <p className="text-slate-500">Note: Admin approval rules still apply for Guide onboarding.</p>
           ) : null}
@@ -178,7 +178,7 @@ export function SignupFormClient({
         </p>
         <div className="text-left text-xs text-slate-600 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1.5">
           <p>We emailed next steps to <span className="font-semibold text-slate-900">{email}</span>.</p>
-          <p>Once approved, use the next activation email to create your password and sign in as {roleLabel}.</p>
+          <p>Once approved, use the next activation email to finish setup (password or Google) and sign in as {roleLabel}.</p>
         </div>
         <Link
           href="/auth/signin"
@@ -305,7 +305,7 @@ export function SignupFormClient({
           {loading ? "Sending link..." : "Continue with email"}
         </Button>
         <p className="text-xs text-slate-500">
-          Email button: sends activation link, then you set password and sign in as {roleLabel}.
+          Email button: sends activation link, then you finish setup with a password or Google as {roleLabel}.
         </p>
       </form>
     </div>

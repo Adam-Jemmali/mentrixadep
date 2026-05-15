@@ -9,6 +9,7 @@ import { isDisposableEmail } from "@/lib/disposable-email";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 import { getSiteUrl } from "@/lib/site";
+import { findAuthUserByEmail, isGoogleOnlyAuthUser } from "@/lib/auth-user-lookup";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 
 export const dynamic = "force-dynamic";
@@ -160,6 +161,13 @@ export async function POST(req: Request) {
           msg.toLowerCase().includes("registered");
         if (!duplicateLike) {
           return jsonError(msg, 400);
+        }
+        const existing = await findAuthUserByEmail(email);
+        if (existing && isGoogleOnlyAuthUser(existing)) {
+          return jsonError(
+            "This email uses Google sign-in. Use Google on the activation page instead of a password.",
+            400,
+          );
         }
       }
     }

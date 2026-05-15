@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isWaitlistEnabled } from "@/lib/flags";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
-import { identityEmailKey } from "@/lib/email-identity";
 import { ActivateAuthClient } from "@/components/auth/activate-auth-client";
+import { authUserExistsByEmail, findAuthUserByEmail, isGoogleOnlyAuthUser } from "@/lib/auth-user-lookup";
+import { resolvePostAuthDestination } from "@/lib/post-auth-destination";
 
 function normalizeEmail(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
@@ -12,32 +13,6 @@ function normalizeEmail(value: string | undefined): string {
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-async function authUserExistsByEmail(email: string): Promise<boolean> {
-  const admin = createAdminClient();
-  const perPage = 200;
-  for (let page = 1; page <= 10; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) {
-      console.error("[auth/activate] listUsers failed:", error.message);
-      return false;
-    }
-
-    const users = data?.users ?? [];
-    if (
-      users.some(
-        (u) => identityEmailKey((u.email ?? "").trim()) === identityEmailKey(email),
-      )
-    ) {
-      return true;
-    }
-
-    if (users.length < perPage) {
-      return false;
-    }
-  }
-  return false;
 }
 
 export default async function ActivatePage({
@@ -58,6 +33,9 @@ export default async function ActivatePage({
       data: { user: currentUser },
     } = await supabase.auth.getUser();
     if (currentUser && (currentUser.email ?? "").trim().toLowerCase() === email) {
+      if (isGoogleOnlyAuthUser(currentUser)) {
+        redirect(await resolvePostAuthDestination());
+      }
       return <ActivateAuthClient email={email} role={requestedRole} />;
     }
     const hasAccount = await authUserExistsByEmail(email);
@@ -78,11 +56,19 @@ export default async function ActivatePage({
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
+  const role = waitlistRow.role === "tutor" ? "tutor" : "student";
+
   if (currentUser && (currentUser.email ?? "").trim().toLowerCase() === email) {
-    const role = waitlistRow.role === "tutor" ? "tutor" : "student";
+    if (isGoogleOnlyAuthUser(currentUser)) {
+      redirect(await resolvePostAuthDestination());
+    }
     return <ActivateAuthClient email={email} role={role} />;
   }
 
-  const role = waitlistRow.role === "tutor" ? "tutor" : "student";
-  return <ActivateAuthClient email={email} role={role} />;
+  const authUser = await findAuthUserByEmail(email);
+  const hidePasswordCompletion = authUser != null && isGoogleOnlyAuthUser(authUser);
+
+  return (
+    <ActivateAuthClient email={email} role={role} hidePasswordCompletion={hidePasswordCompletion} />
+  );
 }

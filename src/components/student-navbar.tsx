@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
 import { onXpAward } from "@/lib/xp-events";
@@ -23,11 +23,11 @@ import { XpCounter } from "@/components/xp-counter";
 import { BubbleText } from "@/components/ui/bubble-text";
 import { SecurityShield } from "@/components/security/SecurityShield";
 
-/** Same solid shell as tutor Studio — onboarding tours stay at scroll top so default nav would look washed over bright pages. */
-const ONBOARDING_SOLID_NAV_DESKTOP =
-  "bg-black/90 supports-[backdrop-filter]:bg-black/85 shadow-[0_10px_36px_rgba(0,0,0,0.45)]";
-const ONBOARDING_SOLID_NAV_MOBILE =
-  "bg-black/70 shadow-[0_10px_30px_rgba(0,0,0,0.38)]";
+/** Opaque shell so light page content never “bleeds through” the bar when scrolling. */
+const STUDENT_NAV_DESKTOP_SHELL =
+  "bg-zinc-950 shadow-[0_10px_36px_rgba(0,0,0,0.45)] backdrop-blur-none supports-[backdrop-filter]:backdrop-blur-none";
+const STUDENT_NAV_MOBILE_SHELL =
+  "bg-zinc-950/95 shadow-[0_10px_30px_rgba(0,0,0,0.38)] backdrop-blur-none supports-[backdrop-filter]:backdrop-blur-none";
 
 const STUDENT_NAV_ITEMS = [
   { name: "Sessions", link: "/student" },
@@ -98,8 +98,6 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
   const [totalXp, setTotalXp] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const onboardingTour = searchParams.get("onboarding") === "true";
 
   // Fetch current XP on mount
   useEffect(() => {
@@ -163,10 +161,13 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
   }, [router, user?.id]);
 
   return (
-    <Navbar className="student-nav fixed top-3 left-0 right-0 z-40 px-3 sm:px-5">
+    <Navbar
+      freezeScrollShell
+      className="student-nav fixed top-3 left-0 right-0 z-[100] px-3 sm:px-5"
+    >
       <div className="relative w-full">
         {/* Desktop Navbar */}
-        <NavBody className={onboardingTour ? ONBOARDING_SOLID_NAV_DESKTOP : undefined}>
+        <NavBody className={STUDENT_NAV_DESKTOP_SHELL}>
           <Link href="/student" className="flex items-center gap-2.5 shrink-0">
             <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
             <MentrixaWordmark trixaClassName="text-white" />
@@ -228,7 +229,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
         </NavBody>
 
         {/* Mobile Navbar */}
-        <MobileNav className={onboardingTour ? ONBOARDING_SOLID_NAV_MOBILE : undefined}>
+        <MobileNav className={STUDENT_NAV_MOBILE_SHELL}>
           <div className="relative w-full">
             <MobileNavHeader>
               <Link href="/student" className="flex items-center gap-2.5 shrink-0">

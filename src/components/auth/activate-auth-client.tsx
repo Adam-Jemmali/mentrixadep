@@ -13,9 +13,12 @@ import { toUserFacingAuthError } from "@/lib/user-facing-error";
 export function ActivateAuthClient({
   email,
   role,
+  hidePasswordCompletion = false,
 }: {
   email: string;
   role: "student" | "tutor";
+  /** When true, this email is a Google-only auth user — show Google sign-in only (e.g. different device). */
+  hidePasswordCompletion?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +84,17 @@ export function ActivateAuthClient({
     <div className="mx-auto max-w-md px-4 py-12">
       <h1 className="text-2xl font-bold text-slate-900">Activate your Mentrixa access</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Your onboarding approval is confirmed. Continue with Google or create a password for {email}.
+        {hidePasswordCompletion ? (
+          <>
+            Your onboarding approval is confirmed. This account uses Google sign-in for{" "}
+            <span className="font-medium text-slate-800">{email}</span>. Use the button below on this device to
+            continue — you do not need a password.
+          </>
+        ) : (
+          <>
+            Your onboarding approval is confirmed. Continue with Google or create a password for {email}.
+          </>
+        )}
       </p>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 flex items-center gap-3">
@@ -106,33 +119,37 @@ export function ActivateAuthClient({
         <GoogleSignInButton variant="signup" oauthRole={role} />
       </div>
 
-      <div className="my-5 flex items-center gap-3">
-        <span className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs text-slate-400">or</span>
-        <span className="h-px flex-1 bg-slate-200" />
-      </div>
+      {!hidePasswordCompletion ? (
+        <>
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs text-slate-400">or</span>
+            <span className="h-px flex-1 bg-slate-200" />
+          </div>
 
-      <form onSubmit={handleCreatePassword} className="space-y-4">
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" value={email} disabled className="mt-1" />
-        </div>
-        <div>
-          <Label htmlFor="password">Create password</Label>
-          <Input id="password" name="password" type="password" minLength={8} required className="mt-1" />
-        </div>
-        <div>
-          <Label htmlFor="confirmPassword">Confirm password</Label>
-          <Input id="confirmPassword" name="confirmPassword" type="password" minLength={8} required className="mt-1" />
-        </div>
+          <form onSubmit={handleCreatePassword} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" value={email} disabled className="mt-1" />
+            </div>
+            <div>
+              <Label htmlFor="password">Create password</Label>
+              <Input id="password" name="password" type="password" minLength={8} required className="mt-1" />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Input id="confirmPassword" name="confirmPassword" type="password" minLength={8} required className="mt-1" />
+            </div>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Creating account..." : "Create account"}
-        </Button>
-      </form>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Creating account..." : "Create account"}
+            </Button>
+          </form>
+        </>
+      ) : null}
 
       <p className="mt-4 text-center text-sm text-slate-600">
         Already have an account? <Link href={`/auth/signin?email=${encodeURIComponent(email)}`} className="text-mentrixa-600 hover:underline">Sign in</Link>
