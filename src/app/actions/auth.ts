@@ -30,6 +30,7 @@ import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
+import { sendWaitlistReceivedEmail } from "@/lib/email";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -239,6 +240,50 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
       await clearOAuthCookies();
     } else {
       await clearOAuthCookies();
+
+      // Brand-new Google user with no role yet. If waitlist is enabled and they
+      // have no approved row, join the waitlist now and send the confirmation email
+      // so the experience matches the manual-email flow on the landing page.
+      if (waitlistEnabled && waitlistStatus !== "approved") {
+        const email = (user.email ?? "").trim().toLowerCase();
+        if (email) {
+          await supabase.auth.signOut();
+
+          if (waitlistStatus === null) {
+            // Not on waitlist at all — insert a pending row then send email.
+            const role: "student" | "tutor" =
+              signupRoleFromCookie === "student" || signupRoleFromCookie === "tutor"
+                ? signupRoleFromCookie
+                : "student";
+            try {
+              const admin = createAdminClient();
+              await admin.from("registration_requests").insert({
+                email,
+                role,
+                status: "pending",
+              });
+            } catch (e) {
+              console.error("[resolveOAuthSessionRedirect] waitlist insert:", e);
+            }
+            await sendWaitlistReceivedEmail(email, signupRoleFromCookie === "tutor" ? "tutor" : "student");
+            return `/auth/signup?email=${encodeURIComponent(email)}&google_waitlisted=1`;
+          }
+
+          if (waitlistStatus === "pending") {
+            // Already pending — just resend the confirmation email.
+            const regRow = await fetchRegistrationRequestRow(createAdminClient(), email);
+            const role: "student" | "tutor" =
+              regRow?.role === "student" || regRow?.role === "tutor" ? regRow.role : "student";
+            await sendWaitlistReceivedEmail(email, role);
+            return `/auth/signup?email=${encodeURIComponent(email)}&google_waitlisted=1`;
+          }
+        }
+
+        return waitlistEnabled
+          ? `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`
+          : "/auth/select-role";
+      }
+
       await supabase.auth.signOut();
       return waitlistEnabled
         ? `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`

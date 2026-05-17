@@ -123,6 +123,31 @@ export function SignupFormClient({
     window.history.replaceState(window.history.state, "", nextUrl);
   }, [role]);
 
+  // When the server-side OAuth flow already joined the waitlist and sent the email,
+  // it redirects here with google_waitlisted=1. Show the "request received" screen
+  // immediately — same UX as typing an email manually.
+  useEffect(() => {
+    if (restoredSnapshotRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google_waitlisted") !== "1") return;
+    const googleEmail = params.get("email") ?? "";
+    const googleRole: Role = params.get("role") === "tutor" ? "tutor" : "student";
+    if (googleEmail) setEmail(googleEmail);
+    setRole(googleRole);
+    setAccessRequestMode("new");
+    setAccessRequested(true);
+    setAccessRequestedMessage(
+      `Your ${googleRole === "tutor" ? "Guide" : "Mentrixer"} access request has been received. ` +
+      `We sent "Onboarding request received" to ${googleEmail || "your inbox"} — check spam if you don't see it. ` +
+      `We'll email you again when an admin approves your access.`,
+    );
+    // Remove the query param so a refresh doesn't re-trigger.
+    params.delete("google_waitlisted");
+    const clean = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname;
+    window.history.replaceState(window.history.state, "", clean);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function checkAccessAndMaybeRequest(emailValue: string): Promise<"approved" | "blocked" | "requested"> {
     const statusRes = await fetch(`/api/waitlist/status?email=${encodeURIComponent(emailValue)}`);
     const statusJson = (await statusRes.json().catch(() => ({}))) as {
