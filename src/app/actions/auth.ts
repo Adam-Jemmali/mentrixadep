@@ -187,25 +187,19 @@ async function clearOAuthCookies(): Promise<void> {
 }
 
 /**
- * Create a pending waitlist row for a Google OAuth user who has no existing entry,
- * then fire-and-forget the "onboarding request received" email.
- * Safe to call even if a row already exists — the unique constraint is swallowed.
+ * Fire-and-forget "onboarding request received" email for a new Google OAuth user
+ * (sign-in page path).  Only sent once — on the very first sign-in (user.created_at
+ * is within the last 10 minutes).
  */
-async function ensureWaitlistEntryAndEmail(
+function maybeSendOnboardingEmail(
+  userCreatedAt: string | undefined,
   email: string,
   role: "student" | "tutor",
-): Promise<void> {
-  try {
-    const admin = createAdminClient();
-    const { error } = await admin
-      .from("registration_requests")
-      .insert({ email: email.trim().toLowerCase(), role, status: "pending" });
-    if (!error) {
-      void sendWaitlistReceivedEmail(email, role);
-    }
-    // If error === unique violation the row already exists — email was already sent; do nothing.
-  } catch (e) {
-    console.error("[ensureWaitlistEntryAndEmail] failed:", e);
+): void {
+  const createdMs = userCreatedAt ? new Date(userCreatedAt).getTime() : 0;
+  const isFirstSignin = createdMs > 0 && Date.now() - createdMs < 10 * 60 * 1000;
+  if (isFirstSignin) {
+    void sendWaitlistReceivedEmail(email, role);
   }
 }
 
@@ -262,30 +256,25 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
       await applyRoleAndSyncProfile(user.id, user.email ?? undefined, signupRoleFromCookie);
       await clearOAuthCookies();
     } else {
-      // New Google user with no role — gate them behind waitlist.
-      // If they have no pending row yet (e.g. came straight to sign-in with Google),
-      // create one now and send the "onboarding request received" email.
-      if (waitlistEnabled && waitlistStatus === null && user.email) {
-        const newRole = signupRoleFromCookie ?? "student";
-        await ensureWaitlistEntryAndEmail(user.email, newRole);
+      // New Google user with no role — they need admin approval before accessing the app.
+      // Happens when someone clicks Google on the sign-in page for the first time.
+      // Send the "onboarding request received" email once (on first ever sign-in),
+      // then redirect to the dedicated "request received" confirmation page.
+      const pendingEmail = (user.email ?? "").trim();
+      const pendingRole = signupRoleFromCookie ?? "student";
+      if (pendingEmail) {
+        maybeSendOnboardingEmail(user.created_at, pendingEmail, pendingRole);
       }
       await clearOAuthCookies();
       await supabase.auth.signOut();
-      return waitlistEnabled
-        ? `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`
-        : "/auth/select-role";
+      return pendingEmail
+        ? `/auth/request-received?email=${encodeURIComponent(pendingEmail)}&role=${pendingRole}`
+        : "/auth/signin";
     }
   }
 
   if (!existingApproved) {
     if (waitlistEnabled && waitlistStatus !== "approved") {
-      // User has a role in the DB but isn't approved yet.
-      // If there's no waitlist row (e.g. row was deleted, or migrated from pre-waitlist era),
-      // recreate it and send the email so they know they're in the queue.
-      if (waitlistStatus === null && user.email) {
-        const pendingRole = (existingRole as "student" | "tutor" | null) ?? signupRoleFromCookie ?? "student";
-        await ensureWaitlistEntryAndEmail(user.email, pendingRole);
-      }
       await clearOAuthCookies();
       await supabase.auth.signOut();
       return `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`;
