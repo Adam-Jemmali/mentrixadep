@@ -1,7 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useBouncingSprites } from "@/hooks/use-bouncing-sprites";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,66 +20,182 @@ const ArrowRight = () => (
   </svg>
 );
 
-function RoleIcon({
-  role,
-  className = "",
-  pixelSize,
-}: {
-  role: "mentrixer" | "guide";
-  className?: string;
-  pixelSize?: number;
-}) {
-  const src =
-    role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`;
-  if (pixelSize != null) {
-    return (
-      <Image
-        src={src}
-        alt=""
-        width={pixelSize}
-        height={pixelSize}
-        unoptimized
-        className={cn("block shrink-0 object-contain", className)}
-        aria-hidden
-      />
-    );
-  }
+function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
   return (
     <span className={cn("relative inline-block shrink-0", className)} aria-hidden>
-      <Image src={src} alt="" fill unoptimized className="object-contain" sizes="48px" />
+      <Image
+        src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
+        alt=""
+        fill
+        unoptimized
+        className="object-contain"
+        sizes="48px"
+      />
     </span>
   );
 }
 
-const HERO_BOUNCING_ICONS = [
-  { role: "mentrixer" as const, sizePx: 44, className: "opacity-90" },
-  { role: "guide" as const, sizePx: 44, className: "opacity-90" },
-  { role: "mentrixer" as const, sizePx: 40, className: "opacity-80" },
-  { role: "guide" as const, sizePx: 40, className: "opacity-80" },
-  { role: "mentrixer" as const, sizePx: 48, className: "opacity-75" },
-  { role: "guide" as const, sizePx: 48, className: "opacity-75" },
-] as const;
-
-const HERO_BOUNCING_SIZES = HERO_BOUNCING_ICONS.map((i) => i.sizePx);
-
 function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const iconRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const [iconsReady, setIconsReady] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    setIconsReady(true);
   }, []);
 
-  useBouncingSprites(containerRef, iconRefs, HERO_BOUNCING_SIZES, disabled || !mounted);
+  useLayoutEffect(() => {
+    if (disabled) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const container = containerRef.current;
+    const icons = iconRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (!container || icons.length === 0) return;
+
+    type IconParticle = {
+      el: HTMLDivElement;
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      w: number;
+      h: number;
+    };
+
+    const randomVelocity = () => {
+      const speed = 85 + Math.random() * 105;
+      return (Math.random() > 0.5 ? 1 : -1) * speed;
+    };
+
+    const randomNudge = () => (Math.random() - 0.5) * 26;
+
+    const normalizeSpeed = (p: IconParticle) => {
+      const speed = Math.hypot(p.vx, p.vy) || 1;
+      const minSpeed = 90;
+      const maxSpeed = 180;
+      const target = Math.max(minSpeed, Math.min(maxSpeed, speed));
+      const scale = target / speed;
+      p.vx *= scale;
+      p.vy *= scale;
+    };
+
+    const particles: IconParticle[] = icons.map((el) => ({
+      el,
+      x: 0,
+      y: 0,
+      vx: randomVelocity(),
+      vy: randomVelocity(),
+      w: 0,
+      h: 0,
+    }));
+
+    const setInitialPositions = () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      for (const p of particles) {
+        p.w = p.el.offsetWidth || 44;
+        p.h = p.el.offsetHeight || 44;
+        const maxX = Math.max(width - p.w, 0);
+        const maxY = Math.max(height - p.h, 0);
+        p.x = Math.random() * maxX;
+        p.y = Math.random() * maxY;
+        normalizeSpeed(p);
+        p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
+      }
+    };
+
+    setInitialPositions();
+
+    let frameId = 0;
+    let lastTs = performance.now();
+    let ro: ResizeObserver | null = null;
+    const minFrameMs = 1000 / 30;
+
+    const step = (ts: number) => {
+      if (document.hidden) {
+        frameId = window.requestAnimationFrame(step);
+        return;
+      }
+      if (ts - lastTs < minFrameMs) {
+        frameId = window.requestAnimationFrame(step);
+        return;
+      }
+      const dt = Math.min((ts - lastTs) / 1000, 0.033);
+      lastTs = ts;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      for (const p of particles) {
+        p.w = p.el.offsetWidth || 44;
+        p.h = p.el.offsetHeight || 44;
+        const maxX = Math.max(width - p.w, 0);
+        const maxY = Math.max(height - p.h, 0);
+
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        if (p.x <= 0) {
+          p.x = 0;
+          p.vx = Math.abs(p.vx);
+          p.vy += randomNudge();
+        } else if (p.x >= maxX) {
+          p.x = maxX;
+          p.vx = -Math.abs(p.vx);
+          p.vy += randomNudge();
+        }
+
+        if (p.y <= 0) {
+          p.y = 0;
+          p.vy = Math.abs(p.vy);
+          p.vx += randomNudge();
+        } else if (p.y >= maxY) {
+          p.y = maxY;
+          p.vy = -Math.abs(p.vy);
+          p.vx += randomNudge();
+        }
+
+        normalizeSpeed(p);
+
+        p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
+      }
+
+      frameId = window.requestAnimationFrame(step);
+    };
+
+    frameId = window.requestAnimationFrame(step);
+    const handleResize = () => setInitialPositions();
+    window.addEventListener("resize", handleResize, { passive: true });
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => {
+        setInitialPositions();
+      });
+      ro.observe(container);
+    }
+    // First paint can still report 0×0 before the scroll-sequence shell lays out — re-seed next frame.
+    requestAnimationFrame(() => setInitialPositions());
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.cancelAnimationFrame(frameId);
+      ro?.disconnect();
+    };
+  }, [disabled, iconsReady]);
 
   return (
     <div
       ref={containerRef}
-      className="pointer-events-none absolute inset-0 z-[30] overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 bottom-0 top-20 z-[25] overflow-hidden sm:top-24"
       aria-hidden
     >
-      {HERO_BOUNCING_ICONS.map((icon, idx) => (
+      {[
+        { role: "mentrixer" as const, size: "h-11 w-11 opacity-90" },
+        { role: "guide" as const, size: "h-11 w-11 opacity-90" },
+        { role: "mentrixer" as const, size: "h-10 w-10 opacity-80" },
+        { role: "guide" as const, size: "h-10 w-10 opacity-80" },
+        { role: "mentrixer" as const, size: "h-12 w-12 opacity-75" },
+        { role: "guide" as const, size: "h-12 w-12 opacity-75" },
+      ].map((icon, idx) => (
         <div
           key={`${icon.role}-${idx}`}
           ref={(el) => {
@@ -88,17 +203,15 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
           }}
           className={cn(
             "absolute left-0 top-0 will-change-transform rounded-full shadow-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]",
-            icon.className,
+            icon.size,
           )}
-          style={{ width: icon.sizePx, height: icon.sizePx }}
         >
-          <RoleIcon role={icon.role} pixelSize={icon.sizePx} className="h-full w-full" />
+          <RoleIcon role={icon.role} className="h-full w-full" />
         </div>
       ))}
     </div>
   );
 }
-
 
 // Letter-by-letter reveal component - memoized for scroll-based animation
 
@@ -148,7 +261,7 @@ export function FirstSequenceHeroContent() {
   const desktopFloatingIcons = !isMobileViewport;
 
   useEffect(() => {
-    const update = () => setIsMobileViewport(window.innerWidth < 768);
+    const update = () => setIsMobileViewport(window.innerWidth < 1024);
     update();
     window.addEventListener("resize", update, { passive: true });
     return () => window.removeEventListener("resize", update);
@@ -195,8 +308,7 @@ export function FirstSequenceHeroContent() {
       if (!res.ok) {
         if (json.status === "pending") {
           setWaitlistMsg(
-            json.message ??
-              `Your ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review. Check your email for confirmation.`,
+            `Your ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review.`,
           );
         } else if (json.status === "rejected") {
           setWaitlistMsg(

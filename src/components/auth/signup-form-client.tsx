@@ -123,31 +123,6 @@ export function SignupFormClient({
     window.history.replaceState(window.history.state, "", nextUrl);
   }, [role]);
 
-  // When the server-side OAuth flow already joined the waitlist and sent the email,
-  // it redirects here with google_waitlisted=1. Show the "request received" screen
-  // immediately — same UX as typing an email manually.
-  useEffect(() => {
-    if (restoredSnapshotRef.current) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("google_waitlisted") !== "1") return;
-    const googleEmail = params.get("email") ?? "";
-    const googleRole: Role = params.get("role") === "tutor" ? "tutor" : "student";
-    if (googleEmail) setEmail(googleEmail);
-    setRole(googleRole);
-    setAccessRequestMode("new");
-    setAccessRequested(true);
-    setAccessRequestedMessage(
-      `Your ${googleRole === "tutor" ? "Guide" : "Mentrixer"} access request has been received. ` +
-      `We sent "Onboarding request received" to ${googleEmail || "your inbox"} — check spam if you don't see it. ` +
-      `We'll email you again when an admin approves your access.`,
-    );
-    // Remove the query param so a refresh doesn't re-trigger.
-    params.delete("google_waitlisted");
-    const clean = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname;
-    window.history.replaceState(window.history.state, "", clean);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function checkAccessAndMaybeRequest(emailValue: string): Promise<"approved" | "blocked" | "requested"> {
     const statusRes = await fetch(`/api/waitlist/status?email=${encodeURIComponent(emailValue)}`);
     const statusJson = (await statusRes.json().catch(() => ({}))) as {
@@ -159,21 +134,11 @@ export function SignupFormClient({
       return "approved";
     }
     if (status === "pending") {
-      const joinRes = await fetch("/api/waitlist/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailValue, role }),
-      });
-      const joinJson = (await joinRes.json().catch(() => ({}))) as {
-        message?: string;
-        confirmationEmailSent?: boolean;
-      };
       setError(null);
       setAccessRequestMode("pending_review");
       setAccessRequested(true);
       setAccessRequestedMessage(
-        joinJson.message ??
-          `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is waiting for admin approval. We sent "Onboarding request received" to your inbox (check spam). We will email again when an admin approves your access.`,
+        `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is waiting for admin approval. Watch your inbox — we email you when you can finish setup (Google or password).`,
       );
       return "requested";
     }
@@ -194,7 +159,6 @@ export function SignupFormClient({
       message?: string;
       status?: "pending" | "approved" | "rejected";
       approved?: boolean;
-      confirmationEmailSent?: boolean;
     };
     if (!joinRes.ok) {
       if (joinJson.status === "pending") {
@@ -202,9 +166,8 @@ export function SignupFormClient({
         setAccessRequestMode("pending_review");
         setAccessRequested(true);
         setAccessRequestedMessage(
-          joinJson.message ??
-            joinJson.error ??
-            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} request is already pending admin review. Check your email for "Onboarding request received".`,
+          joinJson.error ??
+            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} request is already pending admin review. Watch your email for updates.`,
         );
         return "requested";
       }
@@ -387,14 +350,12 @@ export function SignupFormClient({
           <p>
             {awaitingAdmin ? (
               <>
-                Look for <span className="font-semibold text-slate-900">Onboarding request received</span> at{" "}
-                <span className="font-semibold text-slate-900">{email}</span> (check spam). After admin approval you
-                will get a second email to finish signup.
+                We&apos;ll use <span className="font-semibold text-slate-900">{email}</span> for status updates. If you
+                just joined, you should also get a confirmation email (check spam).
               </>
             ) : (
               <>
-                We sent <span className="font-semibold text-slate-900">Onboarding request received</span> to{" "}
-                <span className="font-semibold text-slate-900">{email}</span> (check spam).
+                We emailed next steps to <span className="font-semibold text-slate-900">{email}</span>.
               </>
             )}
           </p>

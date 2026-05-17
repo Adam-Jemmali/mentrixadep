@@ -186,6 +186,29 @@ async function clearOAuthCookies(): Promise<void> {
   store.delete(OAUTH_ROLE_COOKIE);
 }
 
+/**
+ * Create a pending waitlist row for a Google OAuth user who has no existing entry,
+ * then fire-and-forget the "onboarding request received" email.
+ * Safe to call even if a row already exists — the unique constraint is swallowed.
+ */
+async function ensureWaitlistEntryAndEmail(
+  email: string,
+  role: "student" | "tutor",
+): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("registration_requests")
+      .insert({ email: email.trim().toLowerCase(), role, status: "pending" });
+    if (!error) {
+      void sendWaitlistReceivedEmail(email, role);
+    }
+    // If error === unique violation the row already exists — email was already sent; do nothing.
+  } catch (e) {
+    console.error("[ensureWaitlistEntryAndEmail] failed:", e);
+  }
+}
+
 async function getWaitlistStatusByEmail(email: string | undefined): Promise<"pending" | "approved" | "rejected" | null> {
   const normEmail = email?.trim().toLowerCase();
   if (!normEmail) return null;
@@ -239,51 +262,14 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
       await applyRoleAndSyncProfile(user.id, user.email ?? undefined, signupRoleFromCookie);
       await clearOAuthCookies();
     } else {
-      await clearOAuthCookies();
-
-      // Brand-new Google user with no role yet. If waitlist is enabled and they
-      // have no approved row, join the waitlist now and send the confirmation email
-      // so the experience matches the manual-email flow on the landing page.
-      if (waitlistEnabled && waitlistStatus !== "approved") {
-        const email = (user.email ?? "").trim().toLowerCase();
-        if (email) {
-          await supabase.auth.signOut();
-
-          if (waitlistStatus === null) {
-            // Not on waitlist at all — insert a pending row then send email.
-            const role: "student" | "tutor" =
-              signupRoleFromCookie === "student" || signupRoleFromCookie === "tutor"
-                ? signupRoleFromCookie
-                : "student";
-            try {
-              const admin = createAdminClient();
-              await admin.from("registration_requests").insert({
-                email,
-                role,
-                status: "pending",
-              });
-            } catch (e) {
-              console.error("[resolveOAuthSessionRedirect] waitlist insert:", e);
-            }
-            await sendWaitlistReceivedEmail(email, signupRoleFromCookie === "tutor" ? "tutor" : "student");
-            return `/auth/signup?email=${encodeURIComponent(email)}&google_waitlisted=1`;
-          }
-
-          if (waitlistStatus === "pending") {
-            // Already pending — just resend the confirmation email.
-            const regRow = await fetchRegistrationRequestRow(createAdminClient(), email);
-            const role: "student" | "tutor" =
-              regRow?.role === "student" || regRow?.role === "tutor" ? regRow.role : "student";
-            await sendWaitlistReceivedEmail(email, role);
-            return `/auth/signup?email=${encodeURIComponent(email)}&google_waitlisted=1`;
-          }
-        }
-
-        return waitlistEnabled
-          ? `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`
-          : "/auth/select-role";
+      // New Google user with no role — gate them behind waitlist.
+      // If they have no pending row yet (e.g. came straight to sign-in with Google),
+      // create one now and send the "onboarding request received" email.
+      if (waitlistEnabled && waitlistStatus === null && user.email) {
+        const newRole = signupRoleFromCookie ?? "student";
+        await ensureWaitlistEntryAndEmail(user.email, newRole);
       }
-
+      await clearOAuthCookies();
       await supabase.auth.signOut();
       return waitlistEnabled
         ? `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`
@@ -293,6 +279,13 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
 
   if (!existingApproved) {
     if (waitlistEnabled && waitlistStatus !== "approved") {
+      // User has a role in the DB but isn't approved yet.
+      // If there's no waitlist row (e.g. row was deleted, or migrated from pre-waitlist era),
+      // recreate it and send the email so they know they're in the queue.
+      if (waitlistStatus === null && user.email) {
+        const pendingRole = (existingRole as "student" | "tutor" | null) ?? signupRoleFromCookie ?? "student";
+        await ensureWaitlistEntryAndEmail(user.email, pendingRole);
+      }
       await clearOAuthCookies();
       await supabase.auth.signOut();
       return `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`;
