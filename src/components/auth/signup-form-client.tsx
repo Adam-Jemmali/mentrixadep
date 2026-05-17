@@ -134,11 +134,21 @@ export function SignupFormClient({
       return "approved";
     }
     if (status === "pending") {
+      const joinRes = await fetch("/api/waitlist/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailValue, role }),
+      });
+      const joinJson = (await joinRes.json().catch(() => ({}))) as {
+        message?: string;
+        confirmationEmailSent?: boolean;
+      };
       setError(null);
       setAccessRequestMode("pending_review");
       setAccessRequested(true);
       setAccessRequestedMessage(
-        `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is waiting for admin approval. Watch your inbox — we email you when you can finish setup (Google or password).`,
+        joinJson.message ??
+          `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is waiting for admin approval. We sent "Onboarding request received" to your inbox (check spam). We will email again when an admin approves your access.`,
       );
       return "requested";
     }
@@ -159,6 +169,7 @@ export function SignupFormClient({
       message?: string;
       status?: "pending" | "approved" | "rejected";
       approved?: boolean;
+      confirmationEmailSent?: boolean;
     };
     if (!joinRes.ok) {
       if (joinJson.status === "pending") {
@@ -166,8 +177,9 @@ export function SignupFormClient({
         setAccessRequestMode("pending_review");
         setAccessRequested(true);
         setAccessRequestedMessage(
-          joinJson.error ??
-            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} request is already pending admin review. Watch your email for updates.`,
+          joinJson.message ??
+            joinJson.error ??
+            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} request is already pending admin review. Check your email for "Onboarding request received".`,
         );
         return "requested";
       }
@@ -350,12 +362,14 @@ export function SignupFormClient({
           <p>
             {awaitingAdmin ? (
               <>
-                We&apos;ll use <span className="font-semibold text-slate-900">{email}</span> for status updates. If you
-                just joined, you should also get a confirmation email (check spam).
+                Look for <span className="font-semibold text-slate-900">Onboarding request received</span> at{" "}
+                <span className="font-semibold text-slate-900">{email}</span> (check spam). After admin approval you
+                will get a second email to finish signup.
               </>
             ) : (
               <>
-                We emailed next steps to <span className="font-semibold text-slate-900">{email}</span>.
+                We sent <span className="font-semibold text-slate-900">Onboarding request received</span> to{" "}
+                <span className="font-semibold text-slate-900">{email}</span> (check spam).
               </>
             )}
           </p>

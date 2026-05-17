@@ -9,6 +9,52 @@ function normEmail(v: unknown): string {
   return String(v ?? "").trim().toLowerCase();
 }
 
+function roleLabel(role: "student" | "tutor"): string {
+  return role === "tutor" ? "Guide" : "Mentrixer";
+}
+
+/** Sends "Onboarding request received" whenever we surface a pending waitlist state. */
+async function sendPendingConfirmationEmail(
+  email: string,
+  role: "student" | "tutor",
+): Promise<boolean> {
+  const emailed = await sendWaitlistReceivedEmail(email, role);
+  if (!emailed) {
+    console.error("[waitlist/join] confirmation email failed after fallback", { email, role });
+  }
+  return emailed;
+}
+
+function pendingJoinResponse(
+  email: string,
+  role: "student" | "tutor",
+  opts: {
+    httpStatus: number;
+    error?: string;
+    ok?: boolean;
+    emailed: boolean;
+  },
+) {
+  const label = roleLabel(role);
+  const confirmationLine = opts.emailed
+    ? `We sent "Onboarding request received" to ${email}. Check spam if you do not see it.`
+    : `Your request is saved; confirmation email is delayed — check back shortly or contact support@mentrixa.one.`;
+
+  return NextResponse.json(
+    {
+      ok: opts.ok ?? false,
+      approved: false,
+      status: "pending" as const,
+      confirmationEmailSent: opts.emailed,
+      error: opts.error,
+      message: opts.error
+        ? `${opts.error} ${confirmationLine}`
+        : `You're in onboarding as a ${label}. ${confirmationLine} We will email again when an admin approves your access.`,
+    },
+    { status: opts.httpStatus },
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => ({}))) as { email?: string; role?: "student" | "tutor" };
@@ -76,23 +122,20 @@ export async function POST(req: Request) {
     }
 
     if (existing?.status === "pending") {
+      const pendingRole = existing.role === "tutor" ? "tutor" : "student";
+      const emailed = await sendPendingConfirmationEmail(email, pendingRole);
       if (existing.role && existing.role !== role) {
-        return NextResponse.json(
-          {
-            error:
-              `This email already has a pending ${existing.role === "tutor" ? "Guide" : "Mentrixer"} onboarding request. You cannot switch roles until review is complete.`,
-            status: "pending",
-          },
-          { status: 409 }
-        );
+        return pendingJoinResponse(email, pendingRole, {
+          httpStatus: 409,
+          emailed,
+          error: `This email already has a pending ${roleLabel(pendingRole)} onboarding request. You cannot switch roles until review is complete.`,
+        });
       }
-      return NextResponse.json(
-        {
-          error: "You already have a pending onboarding request. Please wait for admin review.",
-          status: "pending",
-        },
-        { status: 409 }
-      );
+      return pendingJoinResponse(email, pendingRole, {
+        httpStatus: 409,
+        emailed,
+        error: "You already have a pending onboarding request. Please wait for admin review.",
+      });
     }
 
     const { error: insertError } = await admin.from("registration_requests").insert({
@@ -145,40 +188,37 @@ export async function POST(req: Request) {
             { status: 403 }
           );
         }
-        if (raced?.status === "pending" && raced.role && raced.role !== role) {
-          return NextResponse.json(
-            {
-              error:
-                `This email already has a pending ${raced.role === "tutor" ? "Guide" : "Mentrixer"} onboarding request. You cannot switch roles until review is complete.`,
-              status: "pending",
-            },
-            { status: 409 }
-          );
-        }
-        return NextResponse.json(
-          {
+        if (raced?.status === "pending") {
+          const pendingRole = raced.role === "tutor" ? "tutor" : "student";
+          const emailed = await sendPendingConfirmationEmail(email, pendingRole);
+          if (raced.role && raced.role !== role) {
+            return pendingJoinResponse(email, pendingRole, {
+              httpStatus: 409,
+              emailed,
+              error: `This email already has a pending ${roleLabel(pendingRole)} onboarding request. You cannot switch roles until review is complete.`,
+            });
+          }
+          return pendingJoinResponse(email, pendingRole, {
+            httpStatus: 409,
+            emailed,
             error: "You already have a pending onboarding request. Please wait for admin review.",
-            status: "pending",
-          },
-          { status: 409 }
-        );
+          });
+        }
       }
       console.error("[waitlist/join] insert error:", insertError.message, insertError.details, insertError.code);
       return NextResponse.json({ error: "Could not start onboarding request. Please try again." }, { status: 500 });
     }
 
-    const emailed = await sendWaitlistReceivedEmail(email, role);
-    if (!emailed) {
-      console.error("[waitlist/join] confirmation email failed after fallback", { email, role });
-    }
+    const emailed = await sendPendingConfirmationEmail(email, role);
 
     return NextResponse.json({
       ok: true,
       approved: false,
       status: "pending",
+      confirmationEmailSent: emailed,
       message: emailed
-        ? `You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for confirmation.`
-        : `Your ${role === "tutor" ? "Guide" : "Mentrixer"} onboarding request is saved. Confirmation email is delayed; please check back shortly.`,
+        ? `You're in onboarding as a ${roleLabel(role)}. Check your email for "Onboarding request received" (and spam). We will email again when an admin approves your access.`
+        : `Your ${roleLabel(role)} onboarding request is saved. Confirmation email is delayed; please check back shortly.`,
     });
   } catch (e) {
     console.error("[waitlist/join] unexpected error:", e);

@@ -139,7 +139,7 @@ export default function SignInPage() {
       <p className="text-sm text-slate-500 mb-5">
         New to Mentrixa?{" "}
         <Link href="/auth/signup" className="text-mentrixa-600 hover:underline">
-          Get instant access
+          Sign up
         </Link>
       </p>
 

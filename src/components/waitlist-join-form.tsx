@@ -53,7 +53,8 @@ export function WaitlistJoinForm({
       if (!res.ok) {
         if (json.status === "pending") {
           setMsg(
-            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review.`,
+            json.message ??
+              `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review. Check your email for confirmation.`,
           );
         } else if (json.status === "rejected") {
           setMsg(
@@ -68,7 +69,9 @@ export function WaitlistJoinForm({
         );
       } else {
         setMsg(
-          `✓ You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for confirmation.`,
+          json.message
+            ? `✓ ${json.message}`
+            : `✓ You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for "Onboarding request received".`,
         );
       }
       setEmail("");
@@ -154,7 +157,7 @@ export function WaitlistJoinForm({
           disabled={loading || !email.trim()}
           className="w-full inline-flex items-center justify-center rounded-lg bg-mentrixa-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-mentrixa-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Submitting..." : "Get Instant Access"}
+          {loading ? "Submitting..." : "Sign up"}
         </button>
 
         {/* Message */}

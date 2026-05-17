@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useBouncingSprites } from "@/hooks/use-bouncing-sprites";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -79,149 +80,41 @@ function WatermarkRoleIcon({ role }: { role: "Mentrixer" | "Guide" }) {
   );
 }
 
+const SIDES_BOUNCING_SIZES = [44, 44] as const;
+
 function BouncingRoleIconsLayer({ disabled }: { disabled: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mentrixerRef = useRef<HTMLDivElement | null>(null);
-  const guideRef = useRef<HTMLDivElement | null>(null);
+  const iconRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [mounted, setMounted] = useState(false);
 
-  useLayoutEffect(() => {
-    if (disabled) return;
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    const container = containerRef.current;
-    const mentrixer = mentrixerRef.current;
-    const guide = guideRef.current;
-    if (!container || !mentrixer || !guide) return;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-    type IconParticle = {
-      el: HTMLDivElement;
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      w: number;
-      h: number;
-    };
-
-    const randomVelocity = () => {
-      const speed = 90 + Math.random() * 90;
-      return (Math.random() > 0.5 ? 1 : -1) * speed;
-    };
-
-    const randomNudge = () => (Math.random() - 0.5) * 26;
-
-    const normalizeSpeed = (p: IconParticle) => {
-      const speed = Math.hypot(p.vx, p.vy) || 1;
-      const minSpeed = 90;
-      const maxSpeed = 180;
-      const target = Math.max(minSpeed, Math.min(maxSpeed, speed));
-      const scale = target / speed;
-      p.vx *= scale;
-      p.vy *= scale;
-    };
-
-    const particles: IconParticle[] = [
-      { el: mentrixer, x: 0, y: 0, vx: randomVelocity(), vy: randomVelocity(), w: 0, h: 0 },
-      { el: guide, x: 0, y: 0, vx: randomVelocity(), vy: randomVelocity(), w: 0, h: 0 },
-    ];
-
-    const setInitialPositions = () => {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      for (const p of particles) {
-        p.w = p.el.offsetWidth || 44;
-        p.h = p.el.offsetHeight || 44;
-        const maxX = Math.max(width - p.w, 0);
-        const maxY = Math.max(height - p.h, 0);
-        p.x = Math.random() * maxX;
-        p.y = Math.random() * maxY;
-        normalizeSpeed(p);
-        p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
-      }
-    };
-
-    setInitialPositions();
-
-    let frameId = 0;
-    let lastTs = performance.now();
-    let ro: ResizeObserver | null = null;
-    const minFrameMs = 1000 / 30;
-
-    const step = (ts: number) => {
-      if (document.hidden) {
-        frameId = window.requestAnimationFrame(step);
-        return;
-      }
-      if (ts - lastTs < minFrameMs) {
-        frameId = window.requestAnimationFrame(step);
-        return;
-      }
-      const dt = Math.min((ts - lastTs) / 1000, 0.033);
-      lastTs = ts;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-
-      for (const p of particles) {
-        p.w = p.el.offsetWidth || 44;
-        p.h = p.el.offsetHeight || 44;
-        const maxX = Math.max(width - p.w, 0);
-        const maxY = Math.max(height - p.h, 0);
-
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-
-        if (p.x <= 0) {
-          p.x = 0;
-          p.vx = Math.abs(p.vx);
-          p.vy += randomNudge();
-        } else if (p.x >= maxX) {
-          p.x = maxX;
-          p.vx = -Math.abs(p.vx);
-          p.vy += randomNudge();
-        }
-
-        if (p.y <= 0) {
-          p.y = 0;
-          p.vy = Math.abs(p.vy);
-          p.vx += randomNudge();
-        } else if (p.y >= maxY) {
-          p.y = maxY;
-          p.vy = -Math.abs(p.vy);
-          p.vx += randomNudge();
-        }
-
-        normalizeSpeed(p);
-        p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
-      }
-
-      frameId = window.requestAnimationFrame(step);
-    };
-
-    frameId = window.requestAnimationFrame(step);
-    const handleResize = () => setInitialPositions();
-    window.addEventListener("resize", handleResize, { passive: true });
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(() => setInitialPositions());
-      ro.observe(container);
-    }
-    requestAnimationFrame(() => setInitialPositions());
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.cancelAnimationFrame(frameId);
-      ro?.disconnect();
-    };
-  }, [disabled]);
+  useBouncingSprites(containerRef, iconRefs, SIDES_BOUNCING_SIZES, disabled || !mounted);
 
   return (
-    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[25] overflow-hidden" aria-hidden>
-      <div ref={mentrixerRef} className="absolute left-0 top-0 will-change-transform">
-        <RoleIcon role="Mentrixer" className="h-11 w-11 opacity-85 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
-      </div>
-      <div ref={guideRef} className="absolute left-0 top-0 will-change-transform">
-        <RoleIcon role="Guide" className="h-11 w-11 opacity-85 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" />
-      </div>
+    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-[30] overflow-hidden" aria-hidden>
+      {(["Mentrixer", "Guide"] as const).map((role, idx) => (
+        <div
+          key={role}
+          ref={(el) => {
+            iconRefs.current[idx] = el;
+          }}
+          className="absolute left-0 top-0 will-change-transform opacity-85 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]"
+          style={{ width: 44, height: 44 }}
+        >
+          <Image
+            src={role === "Mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
+            alt=""
+            width={44}
+            height={44}
+            unoptimized
+            className="block h-full w-full object-contain"
+            aria-hidden
+          />
+        </div>
+      ))}
     </div>
   );
 }
