@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { submitOnboardingRequest } from "@/lib/onboarding-request-client";
+import { readEmailFromGoogleIdToken } from "@/lib/google-id-token";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,16 +28,9 @@ type OnboardingSnapshot = {
   ts: number;
 };
 
-const GoogleSignInButton = dynamic(
-  () => import("@/components/auth/google-sign-in-button").then((m) => m.GoogleSignInButton),
-  {
-    loading: () => <div className="h-11 w-full animate-pulse rounded-xl border border-slate-200 bg-slate-100" />,
-  },
-);
-
 function applyOnboardingOutcome(
   result: Awaited<ReturnType<typeof submitOnboardingRequest>>,
-  role: Role,
+  _role: Role,
   setters: {
     setError: (v: string | null) => void;
     setAccessRequestMode: (v: "new" | "pending_review" | null) => void;
@@ -63,10 +57,7 @@ function applyOnboardingOutcome(
   setError(null);
   setAccessRequestMode("new");
   setAccessRequested(true);
-  setAccessRequestedMessage(
-    result.message ??
-      `You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for "Onboarding request received" (and spam). We will email again when an admin approves your access.`,
-  );
+  setAccessRequestedMessage(result.message ?? null);
   return "requested";
 }
 
@@ -81,9 +72,11 @@ function persistOnboardingSnapshot(snapshot: OnboardingSnapshot): void {
 export function SignupFormClient({
   initialRole = "student",
   initialAccessSubmitted,
+  initialError = null,
 }: {
   initialRole?: Role;
-  initialAccessSubmitted?: { email: string; role: Role };
+  initialAccessSubmitted?: { email: string; role: Role; confirmationEmailSent?: boolean };
+  initialError?: string | null;
   /** @deprecated Onboarding join always runs; prop kept for call-site compatibility. */
   waitlistEnabled?: boolean;
 }) {
@@ -91,11 +84,15 @@ export function SignupFormClient({
   const [email, setEmail] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [success, setSuccess] = useState(false);
   const [accessRequested, setAccessRequested] = useState(false);
   const [accessRequestMode, setAccessRequestMode] = useState<"new" | "pending_review" | null>(null);
   const [accessRequestedMessage, setAccessRequestedMessage] = useState<string | null>(null);
+  const [confirmationEmailSent, setConfirmationEmailSent] = useState(true);
+  const [onboardingConfirming, setOnboardingConfirming] = useState(
+    () => !!initialAccessSubmitted,
+  );
   const [googleFlowBusy, setGoogleFlowBusy] = useState(false);
   const outcomeTopRef = useRef<HTMLDivElement>(null);
   const restoredSnapshotRef = useRef(false);
@@ -141,18 +138,29 @@ export function SignupFormClient({
     restoredSnapshotRef.current = true;
     setEmail(initEmail);
     setRole(initRole);
-    setAccessRequestMode("new");
-    setAccessRequested(true);
-    setAccessRequestedMessage(
-      `You're in onboarding as a ${initRole === "tutor" ? "Guide" : "Mentrixer"}. Check your email for "Onboarding request received" (and spam). We will email again when an admin approves your access.`,
-    );
-    persistOnboardingSnapshot({
-      email: initEmail,
-      role: initRole,
-      accessRequestMode: "new",
-      accessRequestedMessage: null,
-      ts: Date.now(),
-    });
+    setOnboardingConfirming(true);
+    setAccessRequested(false);
+
+    let cancelled = false;
+    void (async () => {
+      const result = await submitOnboardingRequest(initEmail, initRole);
+      if (cancelled) return;
+      setOnboardingConfirming(false);
+      if (result.outcome === "rejected" || result.outcome === "error") {
+        setError(result.error ?? "Could not start access request.");
+        return;
+      }
+      setConfirmationEmailSent(result.confirmationEmailSent === true);
+      applyOnboardingOutcome(result, initRole, onboardingSetters);
+      persistOnboardingSnapshot({
+        email: initEmail,
+        role: initRole,
+        accessRequestMode: result.outcome === "pending_review" ? "pending_review" : "new",
+        accessRequestedMessage: result.message ?? null,
+        ts: Date.now(),
+      });
+    })();
+
     const params = new URLSearchParams(window.location.search);
     params.delete("access");
     params.delete("email");
@@ -163,6 +171,10 @@ export function SignupFormClient({
       "",
       qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
     );
+
+    return () => {
+      cancelled = true;
+    };
   }, [initialAccessSubmitted]);
 
   useEffect(() => {
@@ -216,7 +228,12 @@ export function SignupFormClient({
     result: Awaited<ReturnType<typeof submitOnboardingRequest>>;
   }> {
     const result = await submitOnboardingRequest(emailValue, role);
-    const apply = () => applyOnboardingOutcome(result, role, onboardingSetters);
+    const apply = () => {
+      if (result.outcome === "requested" || result.outcome === "pending_review") {
+        setConfirmationEmailSent(result.confirmationEmailSent === true);
+      }
+      return applyOnboardingOutcome(result, role, onboardingSetters);
+    };
     if (syncUi) {
       let access: "approved" | "blocked" | "requested" = "blocked";
       flushSync(() => {
@@ -280,19 +297,48 @@ export function SignupFormClient({
   }
 
   const handleGoogleSignupComplete = useCallback(
-    async (googleEmail: string): Promise<"success" | "abort"> => {
+    async (googleCredential: string): Promise<"success" | "abort"> => {
       setGoogleFlowBusy(true);
       try {
         setError(null);
         if (!ageConfirmed) {
           setError("Please confirm you are 13 years old or older and agree to the Terms of Service.");
-          await signOutGoogleSession();
           return "abort";
         }
-        const normalizedEmail = googleEmail.trim().toLowerCase();
+
+        const normalizedEmail = readEmailFromGoogleIdToken(googleCredential);
+        if (!normalizedEmail) {
+          setError("Google did not return an email address. Try again or use email signup.");
+          return "abort";
+        }
         setEmail(normalizedEmail);
 
+        // 1) registration_requests row + "Onboarding request received" email (same as Continue with email).
         const { access, result } = await runOnboardingRequest(normalizedEmail, true);
+        if (access === "blocked") {
+          return "abort";
+        }
+
+        const supabase = createClient();
+        const { error: signError } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: googleCredential,
+        });
+        if (signError) {
+          setError(toUserFacingAuthError(signError));
+          if (access === "requested") {
+            persistOnboardingSnapshot({
+              email: normalizedEmail,
+              role,
+              accessRequestMode: result.outcome === "pending_review" ? "pending_review" : "new",
+              accessRequestedMessage:
+                typeof result.message === "string" ? result.message : null,
+              ts: Date.now(),
+            });
+          }
+          return "abort";
+        }
+
         if (access !== "approved") {
           persistOnboardingSnapshot({
             email: normalizedEmail,
@@ -373,11 +419,20 @@ export function SignupFormClient({
           ) : null}
         </div>
         <Link
-          href="/auth/signin"
+          href="/auth/signin?signin=1"
           className="text-sm font-semibold text-mentrixa-600 hover:underline"
         >
           Back to sign in
         </Link>
+      </div>
+    );
+  }
+
+  if (onboardingConfirming) {
+    return (
+      <div className="text-center py-10 animate-in fade-in duration-300">
+        <p className="text-sm font-medium text-slate-700">Submitting your onboarding request…</p>
+        <p className="mt-2 text-xs text-slate-500">Sending confirmation to your email.</p>
       </div>
     );
   }
@@ -390,6 +445,7 @@ export function SignupFormClient({
           roleLabel={roleLabel}
           message={accessRequestedMessage}
           awaitingAdmin={accessRequestMode === "pending_review"}
+          confirmationEmailSent={confirmationEmailSent}
         />
       </div>
     );
@@ -400,7 +456,7 @@ export function SignupFormClient({
       <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-1">Create your account</h1>
       <p className="text-sm text-slate-500 mb-6">
         Already have an account?{" "}
-        <Link href="/auth/signin" className="text-mentrixa-600 hover:underline">
+        <Link href="/auth/signin?signin=1" className="text-mentrixa-600 hover:underline">
           Sign in
         </Link>
       </p>

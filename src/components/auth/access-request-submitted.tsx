@@ -5,18 +5,22 @@ export function AccessRequestSubmitted({
   roleLabel,
   message,
   awaitingAdmin = false,
+  confirmationEmailSent = true,
 }: {
   email: string;
   roleLabel: string;
   message: string | null;
   awaitingAdmin?: boolean;
+  confirmationEmailSent?: boolean;
 }) {
   return (
     <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500 scroll-mt-6">
       <p className="mb-3 inline-flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-900">
         {awaitingAdmin
           ? "Step complete — wait for admin approval"
-          : "Step complete — check your email for confirmation"}
+          : confirmationEmailSent
+            ? "Check your email for confirmation"
+            : "Confirmation email pending"}
       </p>
       <h1 className="text-2xl font-bold text-slate-900 mb-2">
         {awaitingAdmin ? "Waiting for admin approval" : "Access request submitted"}
@@ -31,15 +35,21 @@ export function AccessRequestSubmitted({
               We&apos;ll use <span className="font-semibold text-slate-900">{email}</span> for status updates. If you
               just joined, you should also get a confirmation email (check spam).
             </>
-          ) : (
+          ) : confirmationEmailSent ? (
             <>
               We emailed next steps to <span className="font-semibold text-slate-900">{email}</span>.
             </>
+          ) : (
+            <>
+              Your onboarding request for <span className="font-semibold text-slate-900">{email}</span> is saved.
+              The confirmation email is delayed — refresh this page in a minute or contact support@mentrixa.one if it
+              does not arrive.
+            </>
           )}
         </p>
-        <p>Once approved, use the activation email to finish setup (Google or password) and sign in as {roleLabel}.</p>
+        <p>Once approved, use the activation email to finish setup as {roleLabel}.</p>
       </div>
-      <Link href="/auth/signin" className="text-sm font-semibold text-mentrixa-600 hover:underline">
+      <Link href="/auth/signin?signin=1" className="text-sm font-semibold text-mentrixa-600 hover:underline">
         Back to sign in
       </Link>
     </div>

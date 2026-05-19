@@ -30,7 +30,10 @@ import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
-import { submitRegistrationRequest } from "@/lib/registration-request-join";
+import {
+  resendOnboardingConfirmationEmail,
+  submitRegistrationRequest,
+} from "@/lib/registration-request-join";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -198,6 +201,56 @@ async function getWaitlistStatusByEmail(email: string | undefined): Promise<"pen
   }
 }
 
+function signupAccessSubmittedPath(
+  email: string,
+  role: "student" | "tutor",
+  confirmationEmailSent?: boolean,
+): string {
+  const base = `/auth/signup?access=submitted&email=${encodeURIComponent(email)}&role=${role}`;
+  return confirmationEmailSent === false ? `${base}&emailSent=0` : base;
+}
+
+/** Onboarding join + sign-out; approved users go to activate while still signed in. */
+async function resolveNewUserOnboardingRedirect(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  email: string,
+  role: "student" | "tutor",
+  existingRole: string | null,
+): Promise<string> {
+  let result = await submitRegistrationRequest(email, role);
+  if (
+    (result.outcome === "pending" || result.outcome === "approved") &&
+    result.confirmationEmailSent !== true
+  ) {
+    const resent = await resendOnboardingConfirmationEmail(email, role);
+    if (resent) {
+      result = { ...result, confirmationEmailSent: true };
+    }
+  }
+  await clearOAuthCookies();
+
+  if (result.outcome === "approved") {
+    if (!existingRole) {
+      await applyRoleAndSyncProfile(userId, email, role);
+    }
+    return `/auth/activate?email=${encodeURIComponent(email)}&role=${role}`;
+  }
+
+  if (result.outcome === "rejected") {
+    await supabase.auth.signOut();
+    return `/auth/signup?error=waitlist_rejected&role=${role}`;
+  }
+
+  if (result.outcome === "error") {
+    await supabase.auth.signOut();
+    return `/auth/signup?role=${role}`;
+  }
+
+  await supabase.auth.signOut();
+  return signupAccessSubmittedPath(email, role, result.confirmationEmailSent);
+}
+
 /**
  * Reads OAuth bridge cookies and applies signup role, then returns the next path.
  * Used after Google Identity Services and after email callback (via getPostOAuthRedirectPath).
@@ -231,34 +284,48 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
   if (waitlistEnabled && waitlistStatus === "rejected") {
     await clearOAuthCookies();
     await supabase.auth.signOut();
-    return "/auth/signin?error=waitlist_rejected";
+    return "/auth/signup?error=waitlist_rejected&role=student";
   }
 
   if (!existingRole) {
-    if (intent === "signup" && signupRoleFromCookie) {
-      await applyRoleAndSyncProfile(user.id, user.email ?? undefined, signupRoleFromCookie);
-      await clearOAuthCookies();
-    } else {
-      // New Google user with no role — register onboarding request + confirmation email,
-      // then show the same "Access request submitted" UI as signup (signed out).
-      const pendingEmail = (user.email ?? "").trim().toLowerCase();
-      const pendingRole = signupRoleFromCookie ?? "student";
-      if (pendingEmail) {
-        await submitRegistrationRequest(pendingEmail, pendingRole);
-      }
+    const pendingEmail = (user.email ?? "").trim().toLowerCase();
+    const pendingRole = signupRoleFromCookie ?? "student";
+    if (!pendingEmail) {
       await clearOAuthCookies();
       await supabase.auth.signOut();
-      return pendingEmail
-        ? `/auth/signup?access=submitted&email=${encodeURIComponent(pendingEmail)}&role=${pendingRole}`
-        : "/auth/signin";
+      return "/auth/signin";
     }
+    return resolveNewUserOnboardingRedirect(supabase, user.id, pendingEmail, pendingRole, null);
   }
 
   if (!existingApproved) {
-    if (waitlistEnabled && waitlistStatus !== "approved") {
+    const pendingEmail = (user.email ?? "").trim().toLowerCase();
+    const reg = await getRegistrationRequestStatus(user.email);
+    const pendingRole =
+      reg.role === "tutor" || reg.role === "student"
+        ? reg.role
+        : existingRole === "tutor" || existingRole === "student"
+          ? existingRole
+          : signupRoleFromCookie ?? "student";
+
+    if (waitlistEnabled && waitlistStatus === "approved" && pendingEmail) {
+      await clearOAuthCookies();
+      return `/auth/activate?email=${encodeURIComponent(pendingEmail)}&role=${pendingRole}`;
+    }
+
+    if (waitlistEnabled && waitlistStatus === "pending" && pendingEmail) {
+      const regResult = await submitRegistrationRequest(pendingEmail, pendingRole);
+      let emailed = regResult.confirmationEmailSent === true;
+      if (!emailed) {
+        emailed = await resendOnboardingConfirmationEmail(pendingEmail, pendingRole);
+      }
       await clearOAuthCookies();
       await supabase.auth.signOut();
-      return `/auth/activate?email=${encodeURIComponent(user.email ?? "")}`;
+      return signupAccessSubmittedPath(pendingEmail, pendingRole, emailed);
+    }
+
+    if (waitlistEnabled && waitlistStatus !== "approved" && pendingEmail) {
+      return resolveNewUserOnboardingRedirect(supabase, user.id, pendingEmail, pendingRole, existingRole);
     }
   }
 

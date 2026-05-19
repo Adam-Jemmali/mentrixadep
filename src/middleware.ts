@@ -15,6 +15,7 @@ import { reportMiddlewareHttpError } from "@/lib/observability";
 import { getRoleHomePath } from "@/lib/role-home";
 import { REFERRAL_COOKIE_NAME, REFERRAL_COOKIE_MAX_AGE_SEC } from "@/lib/referral-constants";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
+import { waitlistRoleFromQuery } from "@/lib/waitlist-role";
 
 /**
  * Exact paths that do not require a session (plus publicPrefixes below).
@@ -251,6 +252,24 @@ export async function middleware(request: NextRequest) {
   if (method === "OPTIONS" && publicAuthPageOptions204.has(pathname)) {
     // Reply 204 early for all OPTIONS probes to avoid 405 Method Not Allowed on page routes.
     return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
+  }
+
+  // New users choose role on signup first; /auth/signin?signin=1 is for returning sign-in only.
+  if (pathname === "/auth/signin" && method === "GET") {
+    const signinMode = searchParams.get("signin") === "1";
+    const passwordReset = searchParams.get("reset") === "1";
+    if (!signinMode && !passwordReset) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/signup";
+      url.search = "";
+      const role = waitlistRoleFromQuery(searchParams.get("role"));
+      url.searchParams.set("role", role);
+      for (const key of ["error", "email", "redirect"] as const) {
+        const value = searchParams.get(key);
+        if (value) url.searchParams.set(key, value);
+      }
+      return finalizeResponse(NextResponse.redirect(url), request, null);
+    }
   }
 
   // Referral link ?ref=CODE — persist cookie and strip query (clean URLs).

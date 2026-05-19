@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWaitlistReceivedEmail } from "@/lib/email";
 import { isDisposableEmail } from "@/lib/disposable-email";
+import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
 export type RegistrationJoinRole = "student" | "tutor";
 
@@ -19,15 +20,21 @@ function roleLabel(role: RegistrationJoinRole): string {
   return role === "tutor" ? "Guide" : "Mentrixer";
 }
 
-async function sendPendingConfirmationEmail(
+const EMAIL_RETRY_DELAYS_MS = [0, 400, 1200];
+
+async function sendOnboardingConfirmationEmailWithRetry(
   email: string,
   role: RegistrationJoinRole,
 ): Promise<boolean> {
-  const emailed = await sendWaitlistReceivedEmail(email, role);
-  if (!emailed) {
-    console.error("[registration-request-join] confirmation email failed", { email, role });
+  for (const delayMs of EMAIL_RETRY_DELAYS_MS) {
+    if (delayMs > 0) {
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+    const emailed = await sendWaitlistReceivedEmail(email, role);
+    if (emailed) return true;
   }
-  return emailed;
+  console.error("[registration-request-join] confirmation email failed after retries", { email, role });
+  return false;
 }
 
 function pendingMessage(
@@ -42,6 +49,10 @@ function pendingMessage(
     : `Your request is saved; confirmation email is delayed — check back shortly or contact support@mentrixa.one.`;
   const base = `You're in onboarding as a ${label}. ${confirmationLine} We will email again when an admin approves your access.`;
   return prefix ? `${prefix} ${confirmationLine}` : base;
+}
+
+function pendingRoleFromRow(role: string | null | undefined): RegistrationJoinRole {
+  return role === "tutor" ? "tutor" : "student";
 }
 
 /**
@@ -64,22 +75,14 @@ export async function submitRegistrationRequest(
   }
 
   const admin = createAdminClient();
-  const { data: existing, error: fetchError } = await admin
-    .from("registration_requests")
-    .select("id, status, role")
-    .eq("email", normalized)
-    .maybeSingle();
-
-  if (fetchError) {
-    console.error("[registration-request-join] fetch error:", fetchError.message, fetchError.details);
-    return { outcome: "error", error: "Could not check onboarding status. Please try again." };
-  }
+  const existing = await fetchRegistrationRequestRow(admin, normalized);
 
   if (existing?.status === "approved") {
-    if (existing.role && existing.role !== role) {
+    const existingRole = pendingRoleFromRow(existing.role);
+    if (existing.role && existingRole !== role) {
       return {
         outcome: "error",
-        error: `This email is already approved as a ${roleLabel(existing.role === "tutor" ? "tutor" : "student")}. Please continue with that role or contact support@mentrixa.one if this is incorrect.`,
+        error: `This email is already approved as a ${roleLabel(existingRole)}. Please continue with that role or contact support@mentrixa.one if this is incorrect.`,
       };
     }
     return {
@@ -97,9 +100,9 @@ export async function submitRegistrationRequest(
   }
 
   if (existing?.status === "pending") {
-    const pendingRole = existing.role === "tutor" ? "tutor" : "student";
-    const emailed = await sendPendingConfirmationEmail(normalized, pendingRole);
-    if (existing.role && existing.role !== role) {
+    const pendingRole = pendingRoleFromRow(existing.role);
+    const emailed = await sendOnboardingConfirmationEmailWithRetry(normalized, pendingRole);
+    if (existing.role && pendingRoleFromRow(existing.role) !== role) {
       return {
         outcome: "pending",
         alreadyPending: true,
@@ -133,11 +136,7 @@ export async function submitRegistrationRequest(
 
   if (insertError) {
     if (insertError.code === "23505") {
-      const { data: raced } = await admin
-        .from("registration_requests")
-        .select("status, role")
-        .eq("email", normalized)
-        .maybeSingle();
+      const raced = await fetchRegistrationRequestRow(admin, normalized);
       if (raced?.status === "approved") {
         return {
           outcome: "approved",
@@ -145,8 +144,8 @@ export async function submitRegistrationRequest(
         };
       }
       if (raced?.status === "pending") {
-        const pendingRole = raced.role === "tutor" ? "tutor" : "student";
-        const emailed = await sendPendingConfirmationEmail(normalized, pendingRole);
+        const pendingRole = pendingRoleFromRow(raced.role);
+        const emailed = await sendOnboardingConfirmationEmailWithRetry(normalized, pendingRole);
         return {
           outcome: "pending",
           alreadyPending: true,
@@ -159,10 +158,18 @@ export async function submitRegistrationRequest(
     return { outcome: "error", error: "Could not start onboarding request. Please try again." };
   }
 
-  const emailed = await sendPendingConfirmationEmail(normalized, role);
+  const emailed = await sendOnboardingConfirmationEmailWithRetry(normalized, role);
   return {
     outcome: "pending",
     confirmationEmailSent: emailed,
     message: pendingMessage(normalized, role, emailed),
   };
+}
+
+/** Resend "Onboarding request received" (e.g. after OAuth created the DB row via auth trigger). */
+export async function resendOnboardingConfirmationEmail(
+  email: string,
+  role: RegistrationJoinRole,
+): Promise<boolean> {
+  return sendOnboardingConfirmationEmailWithRetry(email.trim().toLowerCase(), role);
 }

@@ -11,6 +11,7 @@ export type OnboardingRequestResult = {
   outcome: OnboardingRequestOutcome;
   message?: string;
   error?: string;
+  confirmationEmailSent?: boolean;
 };
 
 type JoinJson = {
@@ -24,6 +25,13 @@ type JoinJson = {
 
 function roleLabel(role: OnboardingRole): string {
   return role === "tutor" ? "Guide" : "Mentrixer";
+}
+
+function defaultRequestedMessage(role: OnboardingRole, emailed: boolean, email: string): string {
+  if (emailed) {
+    return `You're in onboarding as a ${roleLabel(role)}. We sent "Onboarding request received" to ${email}. Check spam if you do not see it. We will email again when an admin approves your access.`;
+  }
+  return `You're in onboarding as a ${roleLabel(role)}. Your request is saved; confirmation email is delayed — check back shortly or contact support@mentrixa.one.`;
 }
 
 /**
@@ -46,15 +54,17 @@ export async function submitOnboardingRequest(
       body: JSON.stringify({ email: normalized, role }),
     });
     const json = (await res.json().catch(() => ({}))) as JoinJson;
+    const emailed = json.confirmationEmailSent === true;
 
     if (!res.ok) {
       if (json.status === "pending") {
         return {
           outcome: "pending_review",
+          confirmationEmailSent: emailed,
           message:
             json.message ??
             json.error ??
-            `Your ${roleLabel(role)} access request is already pending review. Check your email for "Onboarding request received".`,
+            defaultRequestedMessage(role, emailed, normalized),
         };
       }
       if (json.status === "rejected") {
@@ -82,9 +92,8 @@ export async function submitOnboardingRequest(
 
     return {
       outcome: "requested",
-      message:
-        json.message ??
-        `You're in onboarding as a ${roleLabel(role)}. Check your email for "Onboarding request received" (and spam). We will email again when an admin approves your access.`,
+      confirmationEmailSent: emailed,
+      message: json.message ?? defaultRequestedMessage(role, emailed, normalized),
     };
   } catch {
     return { outcome: "error", error: "Could not start access request. Please try again." };

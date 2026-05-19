@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import { validateUUID, sanitizeError, enforceRateLimit, RATE_LIMITS, getRateLimitId, emailSchema } from "@/lib/security";
 import { z } from "zod";
 import { sendWaitlistDecisionEmail } from "@/lib/email";
-import { logSensitiveAdminAction } from "@/lib/zero-trust";
 
 async function findAuthUserByEmail(email: string) {
   emailSchema.parse(email);
@@ -253,27 +252,8 @@ export async function rejectRegistrationRequest(requestId: string) {
       throw new Error(`Failed to reject request: ${sanitizeError(error)}`);
     }
 
-    // Remove the user entirely so they cannot access the app.
-    // We find their auth account by email, delete from users table, then from auth.users.
-    if (request?.email) {
-      try {
-        const authUser = await findAuthUserByEmail(request.email);
-        if (authUser) {
-          // Delete from users table first (FK may cascade, but be explicit)
-          await adminClient.from("users").delete().eq("id", authUser.id);
-          // Delete from Supabase auth entirely
-          await adminClient.auth.admin.deleteUser(authUser.id);
-
-          await logSensitiveAdminAction(user.id, "DELETE_USER_VIA_REJECTION", { 
-            targetUserId: authUser.id, 
-            requestEmail: request.email 
-          });
-        }
-      } catch (deleteErr) {
-        // Best-effort: log but don't fail the rejection
-        console.error("[rejectRegistrationRequest] failed to delete user account:", deleteErr);
-      }
-    }
+    // Keep the auth account; sign-in is blocked via registration_requests.status = rejected.
+    // Deleting the user in Supabase Auth removes the waitlist row (DB trigger 086).
 
     if (request?.email && request?.role) {
       void sendWaitlistDecisionEmail(request.email, request.role, "rejected");

@@ -15,12 +15,17 @@ function isValidEmail(email: string): boolean {
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; role?: string; access?: string }>;
+  searchParams: Promise<{ email?: string; role?: string; access?: string; error?: string; emailSent?: string }>;
 }) {
   const params = await searchParams;
   const email = (params.email ?? "").trim().toLowerCase();
   const waitlistRole = waitlistRoleFromQuery(params.role);
   const accessSubmitted = params.access === "submitted";
+  const confirmationEmailSent = params.emailSent !== "0";
+  const initialError =
+    params.error === "waitlist_rejected"
+      ? "Your access request was not approved. You cannot sign up with this email. Contact support@mentrixa.one if this seems incorrect."
+      : null;
 
   if (email && isValidEmail(email) && !accessSubmitted) {
     redirect(`/auth/activate?email=${encodeURIComponent(email)}&role=${waitlistRole}`);
@@ -28,13 +33,14 @@ export default async function SignUpPage({
 
   const initialAccessSubmitted =
     accessSubmitted && isValidEmail(email)
-      ? { email, role: waitlistRole }
+      ? { email, role: waitlistRole, confirmationEmailSent }
       : undefined;
 
   return (
     <SignupFormClient
       initialRole={waitlistRole}
       initialAccessSubmitted={initialAccessSubmitted}
+      initialError={initialError}
       waitlistEnabled={isWaitlistEnabled()}
     />
   );

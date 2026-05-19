@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { setOAuthCookiesClient } from "@/lib/oauth-auth";
@@ -134,7 +134,7 @@ export function GoogleSignInButton({
 }: {
   variant?: Variant;
   oauthRole?: "student" | "tutor";
-  onSignupGoogleComplete?: (email: string) => Promise<"success" | "abort">;
+  onSignupGoogleComplete?: (googleCredential: string) => Promise<"success" | "abort">;
 }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -143,6 +143,11 @@ export function GoogleSignInButton({
   const [gsiError, setGsiError] = useState<string | null>(null);
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
+
+  /** GSI `initialize` runs once per page load — keep latest handlers via refs. */
+  const onCredentialRef = useRef<(response: { credential?: string }) => void>(() => {});
+  const onSignupGoogleCompleteRef = useRef(onSignupGoogleComplete);
+  onSignupGoogleCompleteRef.current = onSignupGoogleComplete;
 
   async function signInWithSupabaseOAuth() {
     setBusy(true);
@@ -166,13 +171,8 @@ export function GoogleSignInButton({
     }
   }
 
-  useEffect(() => {
-    if (!clientId) return;
-
-    const cancelledRef = { cancelled: false };
-    let el: HTMLDivElement | null = null;
-
-    async function onCredential(response: { credential?: string }) {
+  const handleGoogleCredential = useCallback(
+    async (response: { credential?: string }) => {
       const token = response.credential;
       if (!token) {
         setError("Google did not return a sign-in token. Try again.");
@@ -189,6 +189,19 @@ export function GoogleSignInButton({
       setBusy(true);
       setError(null);
       try {
+        // Signup: join + confirmation email BEFORE Supabase auth (avoids trigger-only row with no email).
+        if (variant === "signup" && onSignupGoogleCompleteRef.current) {
+          try {
+            await onSignupGoogleCompleteRef.current(token);
+          } catch (callbackErr) {
+            console.error("[GoogleSignInButton] signup onboarding callback:", callbackErr);
+            setError(toUserFacingAuthError(callbackErr));
+            const supabase = createClient();
+            await supabase.auth.signOut();
+          }
+          return;
+        }
+
         const supabase = createClient();
         const { error: signError } = await supabase.auth.signInWithIdToken({
           provider: "google",
@@ -199,26 +212,6 @@ export function GoogleSignInButton({
           return;
         }
         await supabase.auth.getSession();
-
-        if (variant === "signup" && onSignupGoogleComplete) {
-          const email = (await supabase.auth.getUser()).data.user?.email?.trim();
-          if (!email) {
-            setError("Google did not return an email address. Try again or use email signup.");
-            await supabase.auth.signOut();
-            return;
-          }
-          try {
-            const outcome = await onSignupGoogleComplete(email);
-            if (outcome === "abort") {
-              // Parent signs out after committing onboarding confirmation UI.
-            }
-          } catch (callbackErr) {
-            console.error("[GoogleSignInButton] signup activation callback:", callbackErr);
-            setError(toUserFacingAuthError(callbackErr));
-            await supabase.auth.signOut();
-          }
-          return;
-        }
 
         const next = await fetchPostOAuthRedirectWithRetry();
         if (!next || typeof next !== "object") {
@@ -248,7 +241,19 @@ export function GoogleSignInButton({
       } finally {
         setBusy(false);
       }
-    }
+    },
+    [variant, oauthRole, router],
+  );
+
+  onCredentialRef.current = (response) => {
+    void handleGoogleCredential(response);
+  };
+
+  useEffect(() => {
+    if (!clientId) return;
+
+    const cancelledRef = { cancelled: false };
+    let el: HTMLDivElement | null = null;
 
     const timer = window.setTimeout(() => {
       el = containerRef.current;
@@ -269,7 +274,7 @@ export function GoogleSignInButton({
               // Prefer classic button flow; FedCM + strict COOP has caused postMessage failures for some setups.
               use_fedcm_for_button: false,
               callback: (r) => {
-                void onCredential(r);
+                onCredentialRef.current(r);
               },
             });
             g.__mxGsiInitialized = true;
@@ -299,8 +304,7 @@ export function GoogleSignInButton({
       if (el) el.innerHTML = "";
       else if (containerAtSetup) containerAtSetup.innerHTML = "";
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- router.push stable; avoid re-running GSI init
-  }, [clientId, variant, onSignupGoogleComplete]);
+  }, [clientId, variant]);
 
   if (!clientId) {
     return (

@@ -2,13 +2,25 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { identityEmailKey } from "@/lib/email-identity";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
 
-/** Deletes waitlist rows for every stored variant of this email (canonical Gmail identity + RPC lookup). */
+/** Deletes waitlist rows for every stored variant of this email (Gmail identity + exact matches). */
 export async function deleteRegistrationRequestsByIdentityEmail(
   admin: SupabaseClient,
   rawEmail: string | null | undefined,
 ): Promise<void> {
   const norm = rawEmail?.trim().toLowerCase();
   if (!norm) return;
+
+  const { error: rpcError } = await admin.rpc("delete_registration_requests_by_identity_email", {
+    p_email: norm,
+  });
+
+  if (!rpcError) return;
+
+  // Fallback when migration 086 is not applied yet.
+  console.warn(
+    "[delete-registration-requests-by-email] RPC failed, using direct delete:",
+    rpcError.message,
+  );
 
   const emails = new Set<string>();
   emails.add(norm);

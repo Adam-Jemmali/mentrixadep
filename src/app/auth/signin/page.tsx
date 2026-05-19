@@ -138,12 +138,12 @@ export default function SignInPage() {
       </h1>
       <p className="text-sm text-slate-500 mb-5">
         New to Mentrixa?{" "}
-        <Link href="/auth/signup" className="text-mentrixa-600 hover:underline">
+        <Link href={`/auth/signup?role=${desiredRole}`} className="text-mentrixa-600 hover:underline">
           Sign up
         </Link>
       </p>
 
-      <GoogleSignInButton variant="signin" />
+      <GoogleSignInButton variant="signin" oauthRole={desiredRole} />
 
       {passwordReset && (
         <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 text-center">
