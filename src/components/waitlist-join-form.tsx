@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { WaitlistRole } from "@/lib/waitlist-role";
+import { submitOnboardingRequest } from "@/lib/onboarding-request-client";
 
 const ICON_VERSION = "20260410";
 
@@ -38,39 +39,17 @@ export function WaitlistJoinForm({
 
     setLoading(true);
     try {
-      const res = await fetch("/api/waitlist/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, role }),
-      });
-      const json = (await res.json().catch(() => ({}))) as {
-        approved?: boolean;
-        error?: string;
-        message?: string;
-        status?: "pending" | "approved" | "rejected";
-      };
-
-      if (!res.ok) {
-        if (json.status === "pending") {
-          setMsg(
-            json.message ??
-              `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review. Check your email for confirmation.`,
-          );
-        } else if (json.status === "rejected") {
-          setMsg(
-            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request was not approved. Contact support@mentrixa.one if this seems incorrect.`,
-          );
-        } else {
-          setMsg(json.error ?? "Could not start access request. Please try again.");
-        }
-      } else if (json.approved) {
+      const result = await submitOnboardingRequest(trimmedEmail, role);
+      if (result.outcome === "error" || result.outcome === "rejected") {
+        setMsg(result.error ?? "Could not start access request. Please try again.");
+      } else if (result.outcome === "approved") {
         setMsg(
-          `✓ You are already approved as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Continue to sign in or create your account.`,
+          `✓ ${result.message ?? `You are already approved as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Continue to sign in or create your account.`}`,
         );
       } else {
         setMsg(
-          json.message
-            ? `✓ ${json.message}`
+          result.message
+            ? `✓ ${result.message}`
             : `✓ You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for "Onboarding request received".`,
         );
       }

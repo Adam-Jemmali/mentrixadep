@@ -30,7 +30,7 @@ import { isWaitlistEnabled } from "@/lib/flags";
 import { normalizeAccessStatus } from "@/lib/user-access-status";
 import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
 import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
-import { sendWaitlistReceivedEmail } from "@/lib/email";
+import { submitRegistrationRequest } from "@/lib/registration-request-join";
 
 async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
   try {
@@ -186,23 +186,6 @@ async function clearOAuthCookies(): Promise<void> {
   store.delete(OAUTH_ROLE_COOKIE);
 }
 
-/**
- * Fire-and-forget "onboarding request received" email for a new Google OAuth user
- * (sign-in page path).  Only sent once — on the very first sign-in (user.created_at
- * is within the last 10 minutes).
- */
-function maybeSendOnboardingEmail(
-  userCreatedAt: string | undefined,
-  email: string,
-  role: "student" | "tutor",
-): void {
-  const createdMs = userCreatedAt ? new Date(userCreatedAt).getTime() : 0;
-  const isFirstSignin = createdMs > 0 && Date.now() - createdMs < 10 * 60 * 1000;
-  if (isFirstSignin) {
-    void sendWaitlistReceivedEmail(email, role);
-  }
-}
-
 async function getWaitlistStatusByEmail(email: string | undefined): Promise<"pending" | "approved" | "rejected" | null> {
   const normEmail = email?.trim().toLowerCase();
   if (!normEmail) return null;
@@ -256,19 +239,17 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
       await applyRoleAndSyncProfile(user.id, user.email ?? undefined, signupRoleFromCookie);
       await clearOAuthCookies();
     } else {
-      // New Google user with no role — they need admin approval before accessing the app.
-      // Happens when someone clicks Google on the sign-in page for the first time.
-      // Send the "onboarding request received" email once (on first ever sign-in),
-      // then redirect to the dedicated "request received" confirmation page.
-      const pendingEmail = (user.email ?? "").trim();
+      // New Google user with no role — register onboarding request + confirmation email,
+      // then show the same "Access request submitted" UI as signup (signed out).
+      const pendingEmail = (user.email ?? "").trim().toLowerCase();
       const pendingRole = signupRoleFromCookie ?? "student";
       if (pendingEmail) {
-        maybeSendOnboardingEmail(user.created_at, pendingEmail, pendingRole);
+        await submitRegistrationRequest(pendingEmail, pendingRole);
       }
       await clearOAuthCookies();
       await supabase.auth.signOut();
       return pendingEmail
-        ? `/auth/request-received?email=${encodeURIComponent(pendingEmail)}&role=${pendingRole}`
+        ? `/auth/signup?access=submitted&email=${encodeURIComponent(pendingEmail)}&role=${pendingRole}`
         : "/auth/signin";
     }
   }

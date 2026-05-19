@@ -11,6 +11,7 @@ import { BubbleText } from "@/components/ui/bubble-text";
 import { Typewriter } from "@/components/ui/typewriter";
 import ParticleAnimation from "@/components/ui/particle-animation";
 import { useLowEndMode, useSectionScrollProgress } from "@/lib/landing-perf";
+import { submitOnboardingRequest } from "@/lib/onboarding-request-client";
 
 const ICON_VERSION = "20260410";
 
@@ -294,39 +295,13 @@ export function FirstSequenceHeroContent() {
     }
     setWaitlistLoading(true);
     try {
-      const res = await fetch("/api/waitlist/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role: waitlistRole }),
-      });
-      const json = (await res.json().catch(() => ({}))) as {
-        approved?: boolean;
-        error?: string;
-        message?: string;
-        status?: "pending" | "approved" | "rejected";
-      };
-      if (!res.ok) {
-        if (json.status === "pending") {
-          setWaitlistMsg(
-            `Your ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"} access request is already pending review.`,
-          );
-        } else if (json.status === "rejected") {
-          setWaitlistMsg(
-            `Your ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"} access request was not approved. Contact support@mentrixa.one if this seems incorrect.`,
-          );
-        } else {
-          setWaitlistMsg(json.error ?? "Could not start access request.");
-        }
-      } else if (json.approved) {
-        setWaitlistMsg(
-          json.message ??
-            `You're already approved as a ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"}. Complete signup now.`,
-        );
+      const result = await submitOnboardingRequest(email, waitlistRole);
+      if (result.outcome === "error" || result.outcome === "rejected") {
+        setWaitlistMsg(result.error ?? "Could not start access request.");
+      } else if (result.outcome === "approved") {
+        setWaitlistMsg(result.message ?? `You're already approved. Complete signup now.`);
       } else {
-        setWaitlistMsg(
-          json.message ??
-            `You're in onboarding as a ${waitlistRole === "tutor" ? "Guide" : "Mentrixer"}. Check your email for next steps.`,
-        );
+        setWaitlistMsg(result.message ?? `You're in onboarding. Check your email for next steps.`);
       }
     } catch {
       setWaitlistMsg("Could not start access request.");

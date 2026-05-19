@@ -1,22 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
+import { submitOnboardingRequest } from "@/lib/onboarding-request-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toUserFacingAuthError } from "@/lib/user-facing-error";
 import { cn } from "@/lib/utils";
+import { AccessRequestSubmitted } from "@/components/auth/access-request-submitted";
 
 type Role = "student" | "tutor";
 
-const WAITLIST_SNAPSHOT_KEY = "mentrixa_signup_waitlist_v1";
+const ONBOARDING_SNAPSHOT_KEY = "mentrixa_signup_onboarding_v1";
 const SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-type WaitlistSnapshot = {
+type OnboardingSnapshot = {
   email: string;
   role: Role;
   accessRequestMode: "new" | "pending_review";
@@ -31,11 +34,57 @@ const GoogleSignInButton = dynamic(
   },
 );
 
+function applyOnboardingOutcome(
+  result: Awaited<ReturnType<typeof submitOnboardingRequest>>,
+  role: Role,
+  setters: {
+    setError: (v: string | null) => void;
+    setAccessRequestMode: (v: "new" | "pending_review" | null) => void;
+    setAccessRequested: (v: boolean) => void;
+    setAccessRequestedMessage: (v: string | null) => void;
+  },
+): "approved" | "blocked" | "requested" {
+  const { setError, setAccessRequestMode, setAccessRequested, setAccessRequestedMessage } = setters;
+
+  if (result.outcome === "approved") {
+    return "approved";
+  }
+  if (result.outcome === "rejected" || result.outcome === "error") {
+    setError(result.error ?? "Could not start access request.");
+    return "blocked";
+  }
+  if (result.outcome === "pending_review") {
+    setError(null);
+    setAccessRequestMode("pending_review");
+    setAccessRequested(true);
+    setAccessRequestedMessage(result.message ?? null);
+    return "requested";
+  }
+  setError(null);
+  setAccessRequestMode("new");
+  setAccessRequested(true);
+  setAccessRequestedMessage(
+    result.message ??
+      `You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for "Onboarding request received" (and spam). We will email again when an admin approves your access.`,
+  );
+  return "requested";
+}
+
+function persistOnboardingSnapshot(snapshot: OnboardingSnapshot): void {
+  try {
+    sessionStorage.setItem(ONBOARDING_SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 export function SignupFormClient({
   initialRole = "student",
-  waitlistEnabled = false,
+  initialAccessSubmitted,
 }: {
   initialRole?: Role;
+  initialAccessSubmitted?: { email: string; role: Role };
+  /** @deprecated Onboarding join always runs; prop kept for call-site compatibility. */
   waitlistEnabled?: boolean;
 }) {
   const [role, setRole] = useState<Role>(initialRole);
@@ -45,7 +94,6 @@ export function SignupFormClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [accessRequested, setAccessRequested] = useState(false);
-  /** `new` = just submitted waitlist; `pending_review` = already waiting on admin */
   const [accessRequestMode, setAccessRequestMode] = useState<"new" | "pending_review" | null>(null);
   const [accessRequestedMessage, setAccessRequestedMessage] = useState<string | null>(null);
   const [googleFlowBusy, setGoogleFlowBusy] = useState(false);
@@ -53,14 +101,21 @@ export function SignupFormClient({
   const restoredSnapshotRef = useRef(false);
   const roleLabel = role === "tutor" ? "Guide" : "Mentrixer";
 
+  const onboardingSetters = {
+    setError,
+    setAccessRequestMode,
+    setAccessRequested,
+    setAccessRequestedMessage,
+  };
+
   useEffect(() => {
-    if (!waitlistEnabled || restoredSnapshotRef.current) return;
+    if (restoredSnapshotRef.current) return;
     try {
-      const raw = sessionStorage.getItem(WAITLIST_SNAPSHOT_KEY);
+      const raw = sessionStorage.getItem(ONBOARDING_SNAPSHOT_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw) as Partial<WaitlistSnapshot>;
+      const data = JSON.parse(raw) as Partial<OnboardingSnapshot>;
       if (!data.email || typeof data.ts !== "number" || Date.now() - data.ts > SNAPSHOT_MAX_AGE_MS) {
-        sessionStorage.removeItem(WAITLIST_SNAPSHOT_KEY);
+        sessionStorage.removeItem(ONBOARDING_SNAPSHOT_KEY);
         return;
       }
       restoredSnapshotRef.current = true;
@@ -73,33 +128,63 @@ export function SignupFormClient({
       setAccessRequested(true);
     } catch {
       try {
-        sessionStorage.removeItem(WAITLIST_SNAPSHOT_KEY);
+        sessionStorage.removeItem(ONBOARDING_SNAPSHOT_KEY);
       } catch {
         /* ignore */
       }
     }
-  }, [waitlistEnabled]);
+  }, []);
 
   useEffect(() => {
-    if (!waitlistEnabled || !accessRequested || !email) return;
+    if (!initialAccessSubmitted) return;
+    const { email: initEmail, role: initRole } = initialAccessSubmitted;
+    restoredSnapshotRef.current = true;
+    setEmail(initEmail);
+    setRole(initRole);
+    setAccessRequestMode("new");
+    setAccessRequested(true);
+    setAccessRequestedMessage(
+      `You're in onboarding as a ${initRole === "tutor" ? "Guide" : "Mentrixer"}. Check your email for "Onboarding request received" (and spam). We will email again when an admin approves your access.`,
+    );
+    persistOnboardingSnapshot({
+      email: initEmail,
+      role: initRole,
+      accessRequestMode: "new",
+      accessRequestedMessage: null,
+      ts: Date.now(),
+    });
+    const params = new URLSearchParams(window.location.search);
+    params.delete("access");
+    params.delete("email");
+    params.set("role", initRole);
+    const qs = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+    );
+  }, [initialAccessSubmitted]);
+
+  useEffect(() => {
+    if (!accessRequested || !email) return;
     try {
-      const payload: WaitlistSnapshot = {
+      const payload: OnboardingSnapshot = {
         email,
         role,
         accessRequestMode: accessRequestMode === "pending_review" ? "pending_review" : "new",
         accessRequestedMessage,
         ts: Date.now(),
       };
-      sessionStorage.setItem(WAITLIST_SNAPSHOT_KEY, JSON.stringify(payload));
+      sessionStorage.setItem(ONBOARDING_SNAPSHOT_KEY, JSON.stringify(payload));
     } catch {
       /* ignore quota / private mode */
     }
-  }, [waitlistEnabled, accessRequested, email, role, accessRequestMode, accessRequestedMessage]);
+  }, [accessRequested, email, role, accessRequestMode, accessRequestedMessage]);
 
   useEffect(() => {
     if (!success) return;
     try {
-      sessionStorage.removeItem(WAITLIST_SNAPSHOT_KEY);
+      sessionStorage.removeItem(ONBOARDING_SNAPSHOT_KEY);
     } catch {
       /* ignore */
     }
@@ -123,67 +208,28 @@ export function SignupFormClient({
     window.history.replaceState(window.history.state, "", nextUrl);
   }, [role]);
 
-  async function checkAccessAndMaybeRequest(emailValue: string): Promise<"approved" | "blocked" | "requested"> {
-    const statusRes = await fetch(`/api/waitlist/status?email=${encodeURIComponent(emailValue)}`);
-    const statusJson = (await statusRes.json().catch(() => ({}))) as {
-      approved?: boolean;
-      status?: "approved" | "pending" | "rejected" | "none" | "missing" | "error";
-    };
-    const status = statusJson.status;
-    if (status === "approved" || statusJson.approved) {
-      return "approved";
+  async function runOnboardingRequest(
+    emailValue: string,
+    syncUi = false,
+  ): Promise<{
+    access: "approved" | "blocked" | "requested";
+    result: Awaited<ReturnType<typeof submitOnboardingRequest>>;
+  }> {
+    const result = await submitOnboardingRequest(emailValue, role);
+    const apply = () => applyOnboardingOutcome(result, role, onboardingSetters);
+    if (syncUi) {
+      let access: "approved" | "blocked" | "requested" = "blocked";
+      flushSync(() => {
+        access = apply();
+      });
+      return { access, result };
     }
-    if (status === "pending") {
-      setError(null);
-      setAccessRequestMode("pending_review");
-      setAccessRequested(true);
-      setAccessRequestedMessage(
-        `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request is waiting for admin approval. Watch your inbox — we email you when you can finish setup (Google or password).`,
-      );
-      return "requested";
-    }
-    if (status === "rejected") {
-      setError(
-        `Your ${role === "tutor" ? "Guide" : "Mentrixer"} access request was not approved. Contact support@mentrixa.one if this seems incorrect.`,
-      );
-      return "blocked";
-    }
+    return { access: apply(), result };
+  }
 
-    const joinRes = await fetch("/api/waitlist/join", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailValue, role }),
-    });
-    const joinJson = (await joinRes.json().catch(() => ({}))) as {
-      error?: string;
-      message?: string;
-      status?: "pending" | "approved" | "rejected";
-      approved?: boolean;
-    };
-    if (!joinRes.ok) {
-      if (joinJson.status === "pending") {
-        setError(null);
-        setAccessRequestMode("pending_review");
-        setAccessRequested(true);
-        setAccessRequestedMessage(
-          joinJson.error ??
-            `Your ${role === "tutor" ? "Guide" : "Mentrixer"} request is already pending admin review. Watch your email for updates.`,
-        );
-        return "requested";
-      }
-      setError(joinJson.error ?? "Could not start access request.");
-      return "blocked";
-    }
-    if (joinJson.approved || joinJson.status === "approved") {
-      return "approved";
-    }
-    setAccessRequestMode("new");
-    setAccessRequested(true);
-    setAccessRequestedMessage(
-      joinJson.message ??
-        `You're in onboarding as a ${role === "tutor" ? "Guide" : "Mentrixer"}. Check your email for next steps.`,
-    );
-    return "requested";
+  async function signOutGoogleSession(): Promise<void> {
+    const supabase = createClient();
+    await supabase.auth.signOut();
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -197,11 +243,10 @@ export function SignupFormClient({
         setError("Please confirm you are 13 years old or older and agree to the Terms of Service.");
         return;
       }
-      if (waitlistEnabled) {
-        const access = await checkAccessAndMaybeRequest(normalizedEmail);
-        if (access !== "approved") {
-          return;
-        }
+
+      const { access } = await runOnboardingRequest(normalizedEmail);
+      if (access !== "approved") {
+        return;
       }
 
       const res = await fetch("/api/auth/signup", {
@@ -241,16 +286,24 @@ export function SignupFormClient({
         setError(null);
         if (!ageConfirmed) {
           setError("Please confirm you are 13 years old or older and agree to the Terms of Service.");
+          await signOutGoogleSession();
           return "abort";
         }
         const normalizedEmail = googleEmail.trim().toLowerCase();
         setEmail(normalizedEmail);
 
-        if (waitlistEnabled) {
-          const access = await checkAccessAndMaybeRequest(normalizedEmail);
-          if (access !== "approved") {
-            return "abort";
-          }
+        const { access, result } = await runOnboardingRequest(normalizedEmail, true);
+        if (access !== "approved") {
+          persistOnboardingSnapshot({
+            email: normalizedEmail,
+            role,
+            accessRequestMode: result.outcome === "pending_review" ? "pending_review" : "new",
+            accessRequestedMessage:
+              typeof result.message === "string" ? result.message : null,
+            ts: Date.now(),
+          });
+          await signOutGoogleSession();
+          return "abort";
         }
 
         try {
@@ -272,26 +325,28 @@ export function SignupFormClient({
           };
           if (!res.ok || !body.ok) {
             setError(toUserFacingAuthError(body.error ?? "Could not send activation link."));
+            await signOutGoogleSession();
             return "abort";
           }
           if (body.sessionEstablished) {
             window.location.assign("/auth/session-sync");
             return "success";
           }
-          setSuccess(true);
-          const supabase = createClient();
-          await new Promise<void>((r) => setTimeout(r, 0));
-          await supabase.auth.signOut();
+          flushSync(() => {
+            setSuccess(true);
+          });
+          await signOutGoogleSession();
           return "success";
         } catch (err) {
           setError(toUserFacingAuthError(err));
+          await signOutGoogleSession();
           return "abort";
         }
       } finally {
         setGoogleFlowBusy(false);
       }
     },
-    [ageConfirmed, waitlistEnabled, role],
+    [ageConfirmed, role],
   );
 
   if (success) {
@@ -328,45 +383,14 @@ export function SignupFormClient({
   }
 
   if (accessRequested) {
-    const awaitingAdmin = accessRequestMode === "pending_review";
     return (
-      <div
-        ref={outcomeTopRef}
-        className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500 scroll-mt-6"
-      >
-        <p className="mb-3 inline-flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-900">
-          {awaitingAdmin
-            ? "Step complete — wait for admin approval"
-            : "Step complete — check your email for confirmation"}
-        </p>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">
-          {awaitingAdmin ? "Waiting for admin approval" : "Access request submitted"}
-        </h1>
-        <p className="text-sm text-slate-600 mb-4">
-          {accessRequestedMessage ??
-            `We've received your ${role === "tutor" ? "Guide" : "Mentrixer"} onboarding request.`}
-        </p>
-        <div className="text-left text-xs text-slate-600 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1.5">
-          <p>
-            {awaitingAdmin ? (
-              <>
-                We&apos;ll use <span className="font-semibold text-slate-900">{email}</span> for status updates. If you
-                just joined, you should also get a confirmation email (check spam).
-              </>
-            ) : (
-              <>
-                We emailed next steps to <span className="font-semibold text-slate-900">{email}</span>.
-              </>
-            )}
-          </p>
-          <p>Once approved, use the activation email to finish setup (Google or password) and sign in as {roleLabel}.</p>
-        </div>
-        <Link
-          href="/auth/signin"
-          className="text-sm font-semibold text-mentrixa-600 hover:underline"
-        >
-          Back to sign in
-        </Link>
+      <div ref={outcomeTopRef}>
+        <AccessRequestSubmitted
+          email={email}
+          roleLabel={roleLabel}
+          message={accessRequestedMessage}
+          awaitingAdmin={accessRequestMode === "pending_review"}
+        />
       </div>
     );
   }
@@ -442,6 +466,7 @@ export function SignupFormClient({
           </span>
         </button>
       </div>
+
       <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
         You are signing up as <span className="font-semibold text-slate-800">{roleLabel}</span>
       </div>
@@ -472,10 +497,8 @@ export function SignupFormClient({
           role="status"
           aria-live="polite"
         >
-          <span className="font-semibold">Working on your signup…</span>{" "}
-          {waitlistEnabled
-            ? "Checking waitlist status or sending your activation email — stay on this page."
-            : "Sending your activation email — stay on this page."}
+          <span className="font-semibold">Working on your signup…</span> Submitting your onboarding request — stay on
+          this page.
         </div>
       ) : null}
 
@@ -485,18 +508,8 @@ export function SignupFormClient({
         onSignupGoogleComplete={handleGoogleSignupComplete}
       />
       <p className="mt-2 text-xs text-slate-500 leading-relaxed">
-        {waitlistEnabled ? (
-          <>
-            After you choose Google, <span className="font-medium text-slate-700">stay on this page</span>. We show
-            waitlist status (for example waiting for admin approval) or &quot;check your email&quot; here — you do not
-            need to use the email field below unless you prefer email signup.
-          </>
-        ) : (
-          <>
-            After you choose Google, <span className="font-medium text-slate-700">stay on this page</span>. We show
-            &quot;check your email&quot; and next steps here — same flow as the button below.
-          </>
-        )}
+        After you choose Google, <span className="font-medium text-slate-700">stay on this page</span>. We show access
+        request confirmation (same as email below) or, if you are already approved, next steps to activate your account.
       </p>
 
       <div className="relative my-6">
@@ -522,13 +535,12 @@ export function SignupFormClient({
             className="input-premium"
           />
         </div>
-
         <Button type="submit" className="w-full h-11" disabled={loading}>
           {loading ? "Sending link..." : "Continue with email"}
         </Button>
         <p className="text-xs text-slate-500 leading-relaxed">
-          Sends the activation link to the address above. After you click the link in your inbox, finish setup with a
-          password or Google as {roleLabel}. You can use Google above instead — no need for both.
+          Submits your onboarding request first, then sends an activation link if you are already approved. You can use
+          Google above instead — no need for both.
         </p>
       </form>
     </div>
