@@ -15,7 +15,7 @@ export default async function PendingApprovalPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
 
   const email = user.email?.trim().toLowerCase() ?? "";

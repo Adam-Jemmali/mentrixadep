@@ -10,7 +10,7 @@ export default async function SuspendedPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
 
   const { data: userRow } = await supabase
@@ -24,7 +24,7 @@ export default async function SuspendedPage() {
     redirect(getRoleHomePath(userRow.role));
   }
   if (accessStatus !== "suspended") {
-    redirect("/auth/signin?error=approval_required");
+    redirect("/auth/signin?signin=1&error=approval_required");
   }
 
   return (

@@ -81,7 +81,7 @@ const LANDING_NAV_ITEMS = [
   { name: "Flow", link: "#flow" },
   { name: "Pricing", link: "#pricing" },
   { name: "Contact", link: "#contact" },
-  { name: "Sign in", link: "/auth/signin" },
+  { name: "Sign in", link: "/auth/signin?signin=1" },
 ];
 
 const FEEDBACK_EMAIL = DEFAULT_PUBLIC_FEEDBACK_EMAIL;

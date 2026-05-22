@@ -29,7 +29,7 @@ export default async function ActivatePage({
   const requestedRole = params.role === "tutor" ? "tutor" : "student";
   const preferGoogleFinish = params.google === "1";
   if (!isValidEmail(email)) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
 
   const authUserForEmail = await findAuthUserByEmail(email);
@@ -49,7 +49,7 @@ export default async function ActivatePage({
       return <ActivateAuthClient email={email} role={requestedRole} googleSignInPreferred={googleSignInPreferred} />;
     }
     if (authUserForEmail != null) {
-      redirect(`/auth/signin?email=${encodeURIComponent(email)}`);
+      redirect(`/auth/signin?signin=1&email=${encodeURIComponent(email)}`);
     }
       return <ActivateAuthClient email={email} role={requestedRole} googleSignInPreferred={false} />;
   }

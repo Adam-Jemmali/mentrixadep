@@ -18,7 +18,7 @@ export async function resolvePostAuthDestination(): Promise<string> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return "/auth/signin";
+    return "/auth/signin?signin=1";
   }
 
   await syncApprovedWaitlistToUserProfile(user.id, user.email);

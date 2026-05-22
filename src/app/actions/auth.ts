@@ -262,7 +262,7 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return "/auth/signin";
+    return "/auth/signin?signin=1";
   }
 
   await syncApprovedWaitlistToUserProfile(user.id, user.email);
@@ -293,7 +293,7 @@ export async function resolveOAuthSessionRedirect(): Promise<string> {
     if (!pendingEmail) {
       await clearOAuthCookies();
       await supabase.auth.signOut();
-      return "/auth/signin";
+      return "/auth/signin?signin=1";
     }
     return resolveNewUserOnboardingRedirect(supabase, user.id, pendingEmail, pendingRole, null);
   }

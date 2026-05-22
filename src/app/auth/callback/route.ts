@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       if (otpTypeParam === "recovery") {
         redirect("/auth/forgot-password?error=expired");
       }
-      redirect("/auth/signin?error=oauth");
+      redirect("/auth/signin?signin=1&error=oauth");
     }
 
     {
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
       redirect(path);
     } catch (e) {
       console.error("[auth/callback] resolveOAuthSessionRedirect:", e);
-      redirect("/auth/signin?error=oauth");
+      redirect("/auth/signin?signin=1&error=oauth");
     }
   }
 
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
       if (otpTypeParam === "recovery") {
         redirect("/auth/forgot-password?error=expired");
       }
-      redirect("/auth/signin?error=confirm");
+      redirect("/auth/signin?signin=1&error=confirm");
     }
 
     {
@@ -124,7 +124,7 @@ export async function GET(request: Request) {
       redirect(path);
     } catch (e) {
       console.error("[auth/callback] resolveOAuthSessionRedirect:", e);
-      redirect("/auth/signin?error=confirm");
+      redirect("/auth/signin?signin=1&error=confirm");
     }
   }
 

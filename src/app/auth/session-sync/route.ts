@@ -24,7 +24,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
 
   const email = (user.email ?? "").trim().toLowerCase();
@@ -88,5 +88,5 @@ export async function GET() {
   }
 
   // ── Step 3: genuinely not approved yet — send back to sign-in ──────────────
-  redirect("/auth/signin");
+  redirect("/auth/signin?signin=1");
 }

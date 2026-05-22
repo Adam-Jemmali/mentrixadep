@@ -1383,7 +1383,7 @@ export async function sendVerificationRejectedEmail(
     <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0 0 20px;">
       If you believe this is an error or have updated information to provide, please reply to this email.
     </p>
-    ${ctaButton(`${APP_URL}/auth/signin`, "Sign in to Mentrixa")}
+    ${ctaButton(`${APP_URL}/auth/signin?signin=1`, "Sign in to Mentrixa")}
   `;
 
   await sendEmail(

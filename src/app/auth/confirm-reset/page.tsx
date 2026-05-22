@@ -75,7 +75,7 @@ export default function ConfirmResetPage() {
           If you use a school email, copy-paste the newest link into your browser or open it on your phone.
         </p>
         <p className="mt-6 text-center text-sm text-text-muted">
-          <Link href="/auth/signin" className="text-brand-600 hover:underline font-medium">
+          <Link href="/auth/signin?signin=1" className="text-brand-600 hover:underline font-medium">
             Back to Sign in
           </Link>
         </p>

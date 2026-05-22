@@ -364,7 +364,7 @@ export default function ResetPasswordPage() {
         )}
 
         <p className="mt-6 text-center text-sm text-text-muted">
-          <Link href="/auth/signin" className="text-brand-600 hover:underline font-medium">
+          <Link href="/auth/signin?signin=1" className="text-brand-600 hover:underline font-medium">
             Back to Sign in
           </Link>
         </p>

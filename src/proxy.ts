@@ -183,7 +183,11 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
   const skipCoopForAuthSection = pathname != null && pathname.startsWith("/auth/");
 
   Object.entries(securityHeaders).forEach(([key, value]) => {
-    if (skipCoopForAuthSection && key === "Cross-Origin-Opener-Policy") return;
+    if (skipCoopForAuthSection && key === "Cross-Origin-Opener-Policy") {
+      // Explicitly relax COOP on auth routes (GIS postMessage); omitting can leave a stricter CDN default.
+      res.headers.set(key, "unsafe-none");
+      return;
+    }
     if (allowFramedAuthEntryPaths && key === "X-Frame-Options") return;
     if (isDev && key === "Content-Security-Policy") return;
 
@@ -258,7 +262,11 @@ export async function proxy(request: NextRequest) {
   if (pathname === "/auth/signin" && method === "GET") {
     const signinMode = searchParams.get("signin") === "1";
     const passwordReset = searchParams.get("reset") === "1";
-    if (!signinMode && !passwordReset) {
+    const hasReturningSignInQuery =
+      searchParams.has("error") ||
+      searchParams.has("email") ||
+      searchParams.has("redirect");
+    if (!signinMode && !passwordReset && !hasReturningSignInQuery) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/signup";
       url.search = "";
@@ -387,6 +395,7 @@ export async function proxy(request: NextRequest) {
     console.error("[middleware] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
     const fallback = request.nextUrl.clone();
     fallback.pathname = "/auth/signin";
+    fallback.searchParams.set("signin", "1");
     return finalizeResponse(NextResponse.redirect(fallback), request, null);
   }
 
@@ -396,6 +405,7 @@ export async function proxy(request: NextRequest) {
     console.error("[middleware] auth guard failed:", err);
     const fallback = request.nextUrl.clone();
     fallback.pathname = "/auth/signin";
+    fallback.searchParams.set("signin", "1");
     return finalizeResponse(NextResponse.redirect(fallback), request, null);
   }
 }
@@ -513,6 +523,9 @@ async function runSupabaseAuthGuard(
   if (!user && !publicOk) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/signin";
+    if (!url.searchParams.has("signin")) {
+      url.searchParams.set("signin", "1");
+    }
     return finalizeResponse(NextResponse.redirect(url), request, null);
   }
 
@@ -597,7 +610,9 @@ async function runSupabaseAuthGuard(
       }
       const url = request.nextUrl.clone();
       url.pathname = "/auth/signin";
-      url.search = "?error=approval_required";
+      url.search = "";
+      url.searchParams.set("signin", "1");
+      url.searchParams.set("error", "approval_required");
       return finalizeResponse(NextResponse.redirect(url), request, user.id);
     }
 

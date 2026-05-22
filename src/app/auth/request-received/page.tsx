@@ -15,7 +15,7 @@ export default async function RequestReceivedPage({
   const role = params.role === "tutor" ? "tutor" : "student";
 
   if (!isValidEmail(email)) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
 
   redirect(

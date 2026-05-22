@@ -16,7 +16,7 @@ export default async function VideoSessionPage({
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
 
   const homeHref = getRoleHomePath(user.role);

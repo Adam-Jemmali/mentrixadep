@@ -155,7 +155,7 @@ export default function ForgotPasswordPage() {
               {loading ? "Resending…" : "Resend reset email"}
             </Button>
             <Button asChild className="w-full btn-primary py-3">
-              <Link href="/auth/signin">
+              <Link href="/auth/signin?signin=1">
                 Back to Sign in
                 <ArrowRight className="w-4 h-4 ml-2 inline" />
               </Link>
@@ -209,7 +209,7 @@ export default function ForgotPasswordPage() {
 
         <p className="mt-6 text-center text-sm text-text-muted">
           Remember your password?{" "}
-          <Link href="/auth/signin" className="text-brand-600 hover:underline font-medium">
+          <Link href="/auth/signin?signin=1" className="text-brand-600 hover:underline font-medium">
             Sign in
           </Link>
         </p>

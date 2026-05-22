@@ -424,7 +424,7 @@ export function TutorProfileClient({
       });
       if (res.status === 401) {
         const returnUrl = encodeURIComponent(window.location.pathname);
-        window.location.href = `/auth/signin?redirect=${returnUrl}`;
+        window.location.href = `/auth/signin?signin=1&redirect=${returnUrl}`;
         return;
       }
       const data = (await res.json()) as { url?: string; error?: string };

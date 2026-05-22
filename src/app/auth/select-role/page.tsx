@@ -34,7 +34,7 @@ export default function SelectRolePage() {
     router.prefetch("/");
     router.prefetch("/student");
     router.prefetch("/tutor");
-    router.prefetch("/auth/signin");
+    router.prefetch("/auth/signin?signin=1");
   }, [router]);
 
   async function choose(role: Role) {
@@ -58,7 +58,7 @@ export default function SelectRolePage() {
             "Your application is under review. You'll receive an email when it's approved. Signing you out now…"
           );
           setTimeout(() => {
-            router.push("/auth/signin");
+            router.push("/auth/signin?signin=1");
             router.refresh();
           }, 3000);
         }

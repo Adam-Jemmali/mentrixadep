@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
 
   if (user.role !== "admin") {

@@ -27,7 +27,7 @@ export function BookSessionButtonPublic({ availabilityId, onBusyChange }: BookSe
       if (res.status === 401) {
         onBusyChange?.(false);
         const returnUrl = encodeURIComponent(window.location.pathname);
-        window.location.href = `/auth/signin?redirect=${returnUrl}`;
+        window.location.href = `/auth/signin?signin=1&redirect=${returnUrl}`;
         return;
       }
 

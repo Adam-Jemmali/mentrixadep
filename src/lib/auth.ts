@@ -79,7 +79,7 @@ async function loadCurrentUser(): Promise<AuthUser | null> {
 export async function requireAuth(): Promise<AuthUser> {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/auth/signin");
+    redirect("/auth/signin?signin=1");
   }
   return user;
 }

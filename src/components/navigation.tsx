@@ -171,7 +171,7 @@ function NavigationInner({ user }: NavigationProps) {
     router.prefetch(logoHref);
     for (const item of navItems) router.prefetch(item.href);
     if (profileHref) router.prefetch(profileHref);
-    router.prefetch("/auth/signin");
+    router.prefetch("/auth/signin?signin=1");
     router.prefetch("/auth/signup");
   }, [router, logoHref, navItems, profileHref]);
 
@@ -295,7 +295,7 @@ function NavigationInner({ user }: NavigationProps) {
               {!["/privacy", "/terms"].includes(pathname) && (
                 <div className="hidden md:flex items-center gap-2">
                   <Link
-                    href="/auth/signin"
+                    href="/auth/signin?signin=1"
                     className="text-sm font-medium text-slate-400 hover:text-white px-3 py-1.5 transition-colors"
                   >
                     Sign in
@@ -410,7 +410,7 @@ function NavigationInner({ user }: NavigationProps) {
                 {!user && (
                   <div className="mt-6 flex flex-col gap-3">
                     <Link
-                      href="/auth/signin"
+                      href="/auth/signin?signin=1"
                       onClick={() => setMobileOpen(false)}
                       className="py-2 text-sm font-medium text-slate-400 hover:text-white"
                     >
