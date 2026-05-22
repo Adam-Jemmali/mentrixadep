@@ -19,7 +19,7 @@ import { waitlistRoleFromQuery } from "@/lib/waitlist-role";
 
 /**
  * Exact paths that do not require a session (plus publicPrefixes below).
- * Note: /api/stripe/webhook is also excluded from the middleware matcher so the route
+ * Note: /api/stripe/webhook is also excluded from the proxy matcher so the route
  * receives the raw body for signature verification — never add body limits there.
  */
 const publicRoutes = new Set([
@@ -219,7 +219,7 @@ function finalizeResponse(
   return applySecurityHeaders(response, request.nextUrl.pathname);
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const method = request.method;
 

@@ -95,7 +95,7 @@ mentrixa/
 │   │   ├── time-format.ts     # Date/time formatting helpers
 │   │   ├── utils.ts           # cn() utility (clsx + tailwind-merge)
 │   │   └── webrtc.ts          # WebRTC config, peer connection, media helpers
-│   └── middleware.ts          # Auth redirects, role gating, security headers
+│   └── proxy.ts               # Auth redirects, role gating, security headers (Next 16 proxy)
 ├── supabase/
 │   ├── 001-schema.sql         # Complete schema, RLS, triggers, indexes
 │   └── 002-seed-admin.sql     # Seed admin user after auth signup
