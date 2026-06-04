@@ -380,7 +380,7 @@ export function FallingRoleSliceArena({
       <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex flex-col items-center bg-gradient-to-b from-black/90 via-black/60 to-transparent px-3 pb-6 pt-3 text-center">
         {phase === "playing" ? (
           <>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-cyan-300/90">Slice the icons</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-cyan-300/90">Tap the icons</p>
             <p className="text-2xl font-black tabular-nums text-white">{secondsLeft}s</p>
             <div className="mt-1.5 flex gap-4 text-[11px] font-bold">
               <span className="text-indigo-200">
