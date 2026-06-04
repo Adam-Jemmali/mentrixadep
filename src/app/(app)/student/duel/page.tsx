@@ -1,11 +1,10 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getDuelHistorySummary, listStudentDuels, getLearnerPreview } from "@/app/actions/duel";
 import { getDivisionsCatalog } from "@/app/actions/quest";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Button } from "@/components/ui/button";
 import { DuelHub } from "./duel-hub";
-import { DuelRowActions } from "@/components/student/duel-row-actions";
+import { AccountRankLadder } from "@/components/student/account-rank-ladder";
+import { YourDuelsList } from "@/components/student/your-duels-list";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
@@ -79,28 +78,30 @@ export default async function StudentDuelsPage() {
 
   const stats = "error" in history ? null : history;
 
+  const { data: xpRow } = await admin
+    .from("user_xp")
+    .select("total_xp")
+    .eq("user_id", myId)
+    .maybeSingle();
+  const totalXp = typeof xpRow?.total_xp === "number" ? xpRow.total_xp : 0;
+
   return (
-    <div className={mentrixStudent.pageBg}>
+    <div className={mentrixStudent.pageBgArena}>
       <div className={mentrixStudent.mainWide}>
-        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className={mentrixStudent.sectionEyebrow}>PvP training & leagues</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-               Skill duels
-            </h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
-              Timed battles. Live scores. Challenge others in real-time or practice with sparring quests.
-            </p>
-          </div>
-          <Button variant="outline" size="sm" className="rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95" asChild>
-            <Link href="/student/duel/history">History &amp; stats</Link>
-          </Button>
+        <div className="mb-10">
+          <p className={mentrixStudent.sectionEyebrow}>PvP training & leagues</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
+            Skill duels
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
+            Timed battles. Live scores. Challenge others in real-time or practice with sparring quests.
+          </p>
         </div>
 
         {stats && stats.totalCompleted > 0 ? (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
                 Record
               </p>
               <div className="mt-1 h-12 w-full max-w-[200px]">
@@ -110,10 +111,10 @@ export default async function StudentDuelsPage() {
               </div>
             </TiltCard>
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
                 Duels XP
               </p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-900 tabular-nums">
+              <p className="mt-0.5 text-sm font-semibold text-zinc-900 tabular-nums">
                 {stats.xpFromDuels} XP
               </p>
             </TiltCard>
@@ -121,6 +122,7 @@ export default async function StudentDuelsPage() {
         ) : null}
 
         <div className="mt-8">
+          <AccountRankLadder totalXp={totalXp} variant="arena" className="mb-8" />
           <DuelHub
             divisions={divisions}
             preferredDivisionKey={preferredDuelDivision}
@@ -131,47 +133,10 @@ export default async function StudentDuelsPage() {
 
 
         <TiltCard tiltLimit={3} className={`${mentrixStudent.card} mt-8 overflow-hidden p-0 block`}>
-          <div className="border-b border-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+          <div className="border-b border-zinc-100 px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500">
             Your duels
           </div>
-          {rows.length === 0 ? (
-            <p className="px-4 py-10 text-sm text-slate-400 text-center">
-              No duels yet. Find a match above (your opponent must opt in under Settings).
-            </p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {rows.map((r) => {
-                const otherId = r.student_id === myId ? r.opponent_student_id : r.student_id;
-                const label =
-                  r.is_ai_opponent && r.student_id === myId
-                    ? "Sparring Quest"
-                    : otherId
-                      ? (nameById[otherId] ?? "Learner")
-                      : "Learner";
-                return (
-                <li key={r.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">vs {label}</p>
-                    <p className="text-xs text-slate-400 font-mono">{r.division_key}</p>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
-                    <span className="text-xs text-slate-500 capitalize">{r.status}</span>
-                    <DuelRowActions
-                      duelId={r.id}
-                      status={r.status}
-                      myId={myId}
-                      studentId={r.student_id}
-                      opponentStudentId={r.opponent_student_id}
-                    />
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href={`/student/duel/${r.id}`}>Open</Link>
-                    </Button>
-                  </div>
-                </li>
-              );
-              })}
-            </ul>
-          )}
+          <YourDuelsList initialRows={rows} myId={myId} nameById={nameById} />
         </TiltCard>
       </div>
     </div>

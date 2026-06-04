@@ -1,6 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
+import { playDuelSoundLoop, warmMentrixaSoundAssets } from "@/lib/mentrixa-sounds";
+
 export default function DuelSegmentLoading() {
+  useEffect(() => {
+    warmMentrixaSoundAssets();
+    playDuelSoundLoop();
+  }, []);
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

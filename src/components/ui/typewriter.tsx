@@ -21,6 +21,8 @@ interface TypewriterProps {
     animate: Variants["animate"]
   }
   cursorClassName?: string
+  /** Fires once when typing finishes and `loop` is false */
+  onComplete?: () => void
 }
 
 export const Typewriter = ({
@@ -35,6 +37,7 @@ export const Typewriter = ({
   hideCursorOnType = false,
   cursorChar = "|",
   cursorClassName = "ml-1",
+  onComplete,
   cursorAnimationVariants = {
     initial: { opacity: 0 },
     animate: {
@@ -56,6 +59,13 @@ export const Typewriter = ({
   const texts = useMemo(() => (Array.isArray(text) ? text : [text]), [text])
   const containerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(containerRef, { once: true, margin: "-10% 0px" })
+  const onCompleteRef = useRef(onComplete)
+  const completedFiredRef = useRef(false)
+  onCompleteRef.current = onComplete
+
+  useEffect(() => {
+    completedFiredRef.current = false
+  }, [text])
 
   useEffect(() => {
     // We removed the isInView check to ensure it starts immediately, especially for navbars
@@ -82,8 +92,19 @@ export const Typewriter = ({
       } else {
         if (currentText && currentIndex < currentText.length) {
           timeout = setTimeout(() => {
-            setDisplayText((prev) => prev + (currentText[currentIndex] || ""))
-            setCurrentIndex((prev) => prev + 1)
+            const nextIndex = currentIndex + 1
+            const nextDisplay = displayText + (currentText[currentIndex] || "")
+            setDisplayText(nextDisplay)
+            setCurrentIndex(nextIndex)
+            if (
+              !loop &&
+              nextIndex >= currentText.length &&
+              nextDisplay === currentText &&
+              !completedFiredRef.current
+            ) {
+              completedFiredRef.current = true
+              onCompleteRef.current?.()
+            }
           }, speed)
         } else if (texts.length > 1 || loop) {
           timeout = setTimeout(() => {

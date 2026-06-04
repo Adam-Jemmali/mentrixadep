@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
-import { onXpAward } from "@/lib/xp-events";
 import type { AuthUser } from "@/lib/auth";
 import {
   Navbar,
@@ -19,23 +19,50 @@ import {
 } from "@/components/ui/resizable-navbar";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
-import { XpCounter } from "@/components/xp-counter";
-import { BubbleText } from "@/components/ui/bubble-text";
-import { SecurityShield } from "@/components/security/SecurityShield";
+import { StudentNavRankStrip } from "@/components/student/student-nav-rank-strip";
+import { ArenaMusicMuteToggle } from "@/components/student/arena-music-mute-toggle";
+import {
+  bindDuelAudioElement,
+  DUEL_SOUND_SRC,
+  ensureDuelLoopPlaying,
+  isArenaPath,
+  preloadDuelSound,
+  startDuelLoopFromGesture,
+  stopDuelLoop,
+} from "@/lib/duel-audio-controller";
+import {
+  playMentrixaLoadingOnce,
+  unlockMentrixaAudioFromUserGesture,
+} from "@/lib/mentrixa-sounds";
 
-/** Opaque shell so light page content never “bleeds through” the bar when scrolling. */
+const BubbleText = dynamic(
+  () => import("@/components/ui/bubble-text").then((m) => ({ default: m.BubbleText })),
+  { ssr: false, loading: () => null },
+);
+const SecurityShield = dynamic(
+  () => import("@/components/security/SecurityShield").then((m) => ({ default: m.SecurityShield })),
+  { ssr: false, loading: () => null },
+);
+
+/** Solid shell — light profile/workbench pages must not bleed through the bar. */
 const STUDENT_NAV_DESKTOP_SHELL =
-  "bg-zinc-950 shadow-[0_10px_36px_rgba(0,0,0,0.45)] backdrop-blur-none supports-[backdrop-filter]:backdrop-blur-none";
-const STUDENT_NAV_MOBILE_SHELL =
-  "bg-zinc-950/95 shadow-[0_10px_30px_rgba(0,0,0,0.38)] backdrop-blur-none supports-[backdrop-filter]:backdrop-blur-none";
+  "!bg-slate-950 border-indigo-400/20 shadow-[0_14px_40px_-16px_rgba(2,6,23,0.75)]";
+const STUDENT_NAV_MOBILE_HEADER_SHELL =
+  "!bg-slate-950 border-white/15 shadow-[0_10px_30px_-16px_rgba(2,6,23,0.75)] md:!bg-slate-950";
+
+const ARENA_NAV_LINKS = new Set(["/student/duel", "/student/clan"]);
+
+function isArenaNavLink(link: string): boolean {
+  return ARENA_NAV_LINKS.has(link);
+}
 
 const STUDENT_NAV_ITEMS = [
-  { name: "Sessions", link: "/student" },
+  { name: "Home", link: "/student" },
   { name: "Quest", link: "/student/quest" },
   { name: "Path", link: "/student/learning-path" },
-  { name: "Division", link: "/student/division" },
-  { name: "Clan", link: "/student/clan" },
+  { name: "League", link: "/student/division" },
   { name: "Duels", link: "/student/duel" },
+  { name: "Clan", link: "/student/clan" },
 ];
 
 function getInitials(displayName: string | null | undefined, email?: string | null): string {
@@ -95,34 +122,17 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
   const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [totalXp, setTotalXp] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Fetch current XP on mount
-  useEffect(() => {
-    const fetchXp = async () => {
-      try {
-        const res = await fetch("/api/student/pwa-context", { credentials: "include" });
-        if (!res.ok) return;
-        const data = (await res.json()) as { totalXp?: number };
-        setTotalXp(data.totalXp ?? 0);
-      } catch (e) {
-        console.error("[StudentNavbar] failed to fetch XP", e);
-      }
-    };
-    void fetchXp();
-  }, []);
+  const bindDuelRef = (el: HTMLAudioElement | null) => {
+    bindDuelAudioElement(el);
+  };
 
-  // Listen for XP awards and update total
   useEffect(() => {
-    const unsubscribe = onXpAward((event) => {
-      if (event.totalXp != null) {
-        setTotalXp(event.totalXp);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+    if (isArenaPath(pathname)) ensureDuelLoopPlaying();
+    else stopDuelLoop();
+  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -151,6 +161,31 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
     setProfileMenuOpen((open) => !open);
   };
 
+  const playHomeLoadingSound = () => {
+    unlockMentrixaAudioFromUserGesture();
+    playMentrixaLoadingOnce();
+  };
+
+  const playArenaDuelSound = () => {
+    startDuelLoopFromGesture();
+  };
+
+  const handleArenaNavPointerDown = (item: { name: string; link: string }) => {
+    if (!isArenaNavLink(item.link)) return;
+    startDuelLoopFromGesture();
+  };
+
+  const handleArenaNavHover = (item: { name: string; link: string }) => {
+    if (!isArenaNavLink(item.link)) return;
+    preloadDuelSound();
+  };
+
+  const handleNavItemClick = (item: { name: string; link: string }) => {
+    setMobileNavOpen(false);
+    if (item.link === "/student") playHomeLoadingSound();
+    else if (isArenaNavLink(item.link)) playArenaDuelSound();
+  };
+
   const initials = user ? getInitials(user.displayName, user.email) : "M";
   const profileHref = user ? `/student/${user.id}` : "/student";
 
@@ -161,28 +196,39 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
   }, [router, user?.id]);
 
   return (
+    <>
+      <audio
+        ref={bindDuelRef}
+        src={DUEL_SOUND_SRC}
+        loop
+        preload="auto"
+        playsInline
+        className="hidden"
+        aria-hidden
+      />
     <Navbar
       freezeScrollShell
-      className="student-nav fixed top-3 left-0 right-0 z-[100] px-3 sm:px-5"
+      className="student-nav fixed top-0 left-0 right-0 z-[100] px-3 pb-3 pt-3 sm:px-5"
     >
       <div className="relative w-full">
         {/* Desktop Navbar */}
-        <NavBody className={STUDENT_NAV_DESKTOP_SHELL}>
-          <Link href="/student" className="flex items-center gap-2.5 shrink-0">
+        <NavBody solid className={STUDENT_NAV_DESKTOP_SHELL}>
+          <Link href="/student" className="flex items-center gap-2.5 shrink-0" onClick={playHomeLoadingSound}>
             <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
             <MentrixaWordmark trixaClassName="text-white" />
           </Link>
           
           <NavItems 
             items={STUDENT_NAV_ITEMS}
-            onItemClick={() => setMobileNavOpen(false)}
+            onItemClick={handleNavItemClick}
+            onItemPointerDown={handleArenaNavPointerDown}
+            onItemHover={handleArenaNavHover}
           />
 
-          {/* XP Counter & Security Status */}
-          <div className="ml-4 flex items-center gap-4">
-            <div className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition">
-              <XpCounter totalXp={totalXp} />
-            </div>
+          {/* Rank, XP, streak & security */}
+          <div className="ml-2 hidden items-center gap-2 sm:ml-4 md:flex">
+            <StudentNavRankStrip />
+            <ArenaMusicMuteToggle />
             <div className="hidden lg:block px-2 py-1 rounded-full bg-white/5 border border-white/5 hover:border-white/10 transition">
               <SecurityShield />
             </div>
@@ -213,6 +259,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 >
                   View Profile
                 </Link>
+                <ArenaMusicMuteToggle variant="menu" />
                 <button
                   type="button"
                   onClick={async () => {
@@ -229,14 +276,18 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
         </NavBody>
 
         {/* Mobile Navbar */}
-        <MobileNav className={STUDENT_NAV_MOBILE_SHELL}>
+        <MobileNav className="max-w-[calc(100vw-2rem)] bg-transparent shadow-none">
           <div className="relative w-full">
-            <MobileNavHeader>
-              <Link href="/student" className="flex items-center gap-2.5 shrink-0">
-                <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
+            <MobileNavHeader className={STUDENT_NAV_MOBILE_HEADER_SHELL}>
+              <Link href="/student" className="flex items-center gap-2.5 shrink-0" onClick={playHomeLoadingSound}>
+                <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" />
                 <MentrixaWordmark trixaClassName="text-white" />
               </Link>
               <div className="relative z-[70] flex items-center gap-2">
+                <ArenaMusicMuteToggle className="h-8 w-8 sm:hidden" />
+                <div className="flex shrink-0 sm:hidden scale-[0.92] origin-right">
+                  <StudentNavRankStrip />
+                </div>
                 <button
                   type="button"
                   onClick={toggleProfileMenu}
@@ -267,6 +318,9 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 >
                   View Profile
                 </Link>
+                <div className="border-t border-slate-100">
+                  <ArenaMusicMuteToggle variant="menu" />
+                </div>
                 <button
                   type="button"
                   onClick={async () => {
@@ -286,7 +340,9 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 <Link
                   key={item.link}
                   href={item.link}
-                  onClick={() => setMobileNavOpen(false)}
+                  onPointerDown={() => handleArenaNavPointerDown(item)}
+                  onMouseEnter={() => handleArenaNavHover(item)}
+                  onClick={() => handleNavItemClick(item)}
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive(item.link)
@@ -302,5 +358,6 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
         </MobileNav>
       </div>
     </Navbar>
+    </>
   );
 }

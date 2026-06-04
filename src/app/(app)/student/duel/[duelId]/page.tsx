@@ -29,16 +29,18 @@ export default async function DuelDetailPage({ params }: Props) {
     user.id === duel.opponent_student_id;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="max-w-2xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between gap-4 mb-6">
+    <div className="min-h-screen bg-slate-100">
+      <main className="mx-surface-light mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <BackButton />
-          <span className="text-xs font-mono text-slate-400 uppercase">
+          <span className="font-mono text-xs uppercase tracking-wide text-zinc-500">
             {duel.status}
           </span>
         </div>
-        <h1 className="text-xl font-bold text-slate-900">Skill duel</h1>
-        <p className="text-sm text-slate-500 mt-1 font-mono">{duel.division_key}</p>
+        <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+          Skill duel
+        </h1>
+        <p className="mt-1 font-mono text-sm text-zinc-600">{duel.division_key}</p>
 
         <div className="mt-8 space-y-6">
           {showInviteeActions && <DuelInviteeActions duelId={duel.id} />}

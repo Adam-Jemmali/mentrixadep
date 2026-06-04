@@ -75,7 +75,7 @@ export function WaitlistJoinForm({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@university.ca or personal email"
+            placeholder="you@university or personal email"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-mentrixa-500 focus:ring-1 focus:ring-mentrixa-500"
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             disabled={loading}

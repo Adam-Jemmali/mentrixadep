@@ -11,6 +11,10 @@ export interface XpAwardEvent {
   position?: { x: number; y: number };
   /** Total XP after award */
   totalXp?: number;
+  /** Optional retention hint shown after reward animation */
+  nextObjective?: string;
+  /** Optional semantic trigger for UI loop states */
+  trigger?: "quest" | "duel" | "streak" | "session" | "generic";
 }
 
 type XpAwardListener = (event: XpAwardEvent) => void;

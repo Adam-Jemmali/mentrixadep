@@ -23,7 +23,52 @@ import { applyDuelMetaRewards } from "@/lib/duel-reward";
 
 type MatchSource = "direct" | "clan" | "queue";
 
-/** Prefer AI-generated duel items; on any failure use offline pack so Sparring Quest always starts. */
+type QueueStyleSource = "queue" | "ai_queue";
+
+function isQueueStyleMatchSource(ms: string | null): ms is QueueStyleSource {
+  return ms === "queue" || ms === "ai_queue";
+}
+
+type DuelReadyRow = {
+  id: string;
+  student_id: string;
+  opponent_student_id: string | null;
+  status: string;
+  match_source: string | null;
+  is_ai_opponent: boolean;
+  student_ready_at: string | null;
+  opponent_ready_at: string | null;
+};
+
+function bothSidesReady(duel: DuelReadyRow): boolean {
+  return Boolean(duel.student_ready_at && duel.opponent_ready_at);
+}
+
+function randomAiOpponentAnswers(questions: SkillDuelQuestion[]): number[] {
+  return questions.map((q) =>
+    Math.floor(Math.random() * Math.max(1, q.choices.length))
+  );
+}
+
+async function tryActivateQueueMatchWhenReady(
+  admin: ReturnType<typeof createAdminClient>,
+  duelId: string
+): Promise<boolean> {
+  const { data: duel } = await admin
+    .from("skill_duels")
+    .select(
+      "id, student_id, opponent_student_id, status, division_key, match_source, is_ai_opponent, student_ready_at, opponent_ready_at"
+    )
+    .eq("id", duelId)
+    .maybeSingle();
+
+  if (!duel || duel.status !== "pending") return false;
+  if (!isQueueStyleMatchSource(duel.match_source as string | null)) return false;
+  if (!bothSidesReady(duel as DuelReadyRow)) return false;
+
+  const activate = await activateSkillDuelSession(duelId);
+  return activate.success;
+}
 async function resolveDuelQuestionPack(
   divisionName: string,
   divisionKey: string,
@@ -353,9 +398,6 @@ export async function joinDuelQueue(
     const { matched, duelId } = parseDuelQueueJoinRpc(rpcData);
 
     if (matched && duelId) {
-      // Queue matches should be immediately playable by both participants.
-      await activateSkillDuelSession(duelId);
-
       revalidatePath("/student/duel");
       return { success: true, state: "matched", duelId };
     }
@@ -435,7 +477,6 @@ export async function pollDuelQueue(divisionKey: string): Promise<
         .maybeSingle();
 
       if (duelQueued?.id) {
-        await activateSkillDuelSession(duelQueued.id);
         return { state: "matched", duelId: duelQueued.id };
       }
 
@@ -457,13 +498,264 @@ export async function pollDuelQueue(divisionKey: string): Promise<
       .maybeSingle();
 
     if (duel?.id) {
-      await activateSkillDuelSession(duel.id);
       return { state: "matched", duelId: duel.id };
     }
 
     return { state: "idle" };
   } catch {
     return { state: "idle" };
+  }
+}
+
+export type QueueMatchAcceptanceState = {
+  duelId: string;
+  status: string;
+  meAccepted: boolean;
+  opponentAccepted: boolean;
+  bothAccepted: boolean;
+  isAi: boolean;
+  terminal: boolean;
+  terminalReason: string | null;
+};
+
+export async function getQueueMatchAcceptance(
+  duelId: string
+): Promise<
+  { success: true; state: QueueMatchAcceptanceState } | { success: false; error: string }
+> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Not allowed." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    const admin = createAdminClient();
+    const { data: duel, error } = await admin
+      .from("skill_duels")
+      .select(
+        "id, student_id, opponent_student_id, status, match_source, is_ai_opponent, student_ready_at, opponent_ready_at"
+      )
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (error || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+
+    const ms = duel.match_source as string | null;
+    if (!isQueueStyleMatchSource(ms)) {
+      return { success: false, error: "Not a queue match." };
+    }
+
+    const isAi = duel.is_ai_opponent === true;
+    const isParticipant =
+      duel.student_id === user.id || (!isAi && duel.opponent_student_id === user.id);
+    if (!isParticipant) {
+      return { success: false, error: "Not a participant." };
+    }
+
+    const imStudent = user.id === duel.student_id;
+    const meAccepted = imStudent
+      ? Boolean(duel.student_ready_at)
+      : Boolean(duel.opponent_ready_at);
+    const opponentAccepted = isAi
+      ? Boolean(duel.opponent_ready_at)
+      : imStudent
+        ? Boolean(duel.opponent_ready_at)
+        : Boolean(duel.student_ready_at);
+
+    const terminal =
+      duel.status === "cancelled" ||
+      duel.status === "declined" ||
+      duel.status === "completed";
+    const bothAccepted =
+      duel.status === "active" ||
+      duel.status === "completed" ||
+      (duel.status === "pending" && Boolean(duel.student_ready_at && duel.opponent_ready_at));
+
+    return {
+      success: true,
+      state: {
+        duelId: duel.id,
+        status: duel.status,
+        meAccepted,
+        opponentAccepted,
+        bothAccepted,
+        isAi,
+        terminal,
+        terminalReason: terminal ? duel.status : null,
+      },
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to load match status.",
+    };
+  }
+}
+
+export async function acceptQueueMatch(
+  duelId: string
+): Promise<
+  | {
+      success: true;
+      state: QueueMatchAcceptanceState;
+      activated: boolean;
+    }
+  | { success: false; error: string }
+> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can accept a match." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    const admin = createAdminClient();
+    const { data: duel, error: fetchErr } = await admin
+      .from("skill_duels")
+      .select(
+        "id, student_id, opponent_student_id, status, match_source, is_ai_opponent, student_ready_at, opponent_ready_at"
+      )
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (fetchErr || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+
+    const ms = duel.match_source as string | null;
+    if (!isQueueStyleMatchSource(ms)) {
+      return { success: false, error: "Not a queue match." };
+    }
+
+    if (duel.status !== "pending" && duel.status !== "active") {
+      return { success: false, error: "This match is no longer available." };
+    }
+
+    const isAi = duel.is_ai_opponent === true;
+    const isStudent = user.id === duel.student_id;
+    const isOpponent = !isAi && user.id === duel.opponent_student_id;
+    if (!isStudent && !isOpponent) {
+      return { success: false, error: "Not a participant." };
+    }
+
+    const now = new Date().toISOString();
+    const patch: Record<string, string> = { updated_at: now };
+
+    if (isStudent && !duel.student_ready_at) {
+      patch.student_ready_at = now;
+    }
+    if (isOpponent && !duel.opponent_ready_at) {
+      patch.opponent_ready_at = now;
+    }
+    if (isAi && isStudent && !duel.opponent_ready_at) {
+      patch.opponent_ready_at = now;
+    }
+
+    if (Object.keys(patch).length > 1) {
+      const { error: upErr } = await admin
+        .from("skill_duels")
+        .update(patch)
+        .eq("id", id.id)
+        .eq("status", "pending");
+
+      if (upErr) {
+        return { success: false, error: upErr.message };
+      }
+    }
+
+    let activated = false;
+    if (duel.status === "pending") {
+      activated = await tryActivateQueueMatchWhenReady(admin, id.id);
+    }
+
+    const stateResp = await getQueueMatchAcceptance(duelId);
+    if (!stateResp.success) {
+      return { success: false, error: stateResp.error };
+    }
+
+    revalidatePath("/student/duel");
+    revalidatePath(`/student/duel/${id.id}`);
+
+    return {
+      success: true,
+      state: stateResp.state,
+      activated,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to accept match.",
+    };
+  }
+}
+
+export async function declineQueueMatch(
+  duelId: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can decline a match." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    const admin = createAdminClient();
+    const { data: duel, error: fetchErr } = await admin
+      .from("skill_duels")
+      .select("id, student_id, opponent_student_id, status, match_source, is_ai_opponent")
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (fetchErr || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+
+    const ms = duel.match_source as string | null;
+    if (!isQueueStyleMatchSource(ms)) {
+      return { success: false, error: "Not a queue match." };
+    }
+
+    if (duel.status !== "pending") {
+      return { success: false, error: "This match is no longer pending." };
+    }
+
+    const isAi = duel.is_ai_opponent === true;
+    const isParticipant =
+      duel.student_id === user.id || (!isAi && duel.opponent_student_id === user.id);
+    if (!isParticipant) {
+      return { success: false, error: "Not a participant." };
+    }
+
+    const { error } = await admin
+      .from("skill_duels")
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id.id)
+      .eq("status", "pending");
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/student/duel");
+    revalidatePath(`/student/duel/${id.id}`);
+    return { success: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to decline match.",
+    };
   }
 }
 
@@ -487,7 +779,7 @@ export async function activateSkillDuelSession(
     const { data: duel, error: fetchErr } = await admin
       .from("skill_duels")
       .select(
-        "id, student_id, opponent_student_id, status, division_key, match_source"
+        "id, student_id, opponent_student_id, status, division_key, match_source, is_ai_opponent, student_ready_at, opponent_ready_at"
       )
       .eq("id", id.id)
       .maybeSingle();
@@ -510,16 +802,25 @@ export async function activateSkillDuelSession(
 
     const ms = duel.match_source as string | null;
     const isQueue = ms === "queue";
+    const isAiQueue = ms === "ai_queue";
+    const isQueueStyle = isQueueStyleMatchSource(ms);
     const isParticipant =
       user.id === duel.student_id ||
       user.id === duel.opponent_student_id;
     if (!isParticipant) {
       return { success: false, error: "Not a participant." };
     }
-    if (!isQueue && user.id !== duel.opponent_student_id) {
+    if (!isQueue && !isAiQueue && user.id !== duel.opponent_student_id) {
       return {
         success: false,
         error: "Only the challenged learner can accept this duel.",
+      };
+    }
+
+    if (isQueueStyle && duel.status === "pending" && !bothSidesReady(duel as DuelReadyRow)) {
+      return {
+        success: false,
+        error: "Both players must accept the match before the duel starts.",
       };
     }
 
@@ -535,11 +836,15 @@ export async function activateSkillDuelSession(
       user.id
     );
 
+    const opponentAnswers =
+      duel.is_ai_opponent === true ? randomAiOpponentAnswers(questions) : null;
+
     const { data: updated, error: upErr } = await admin
       .from("skill_duels")
       .update({
         status: "active",
         questions: questions as unknown as Record<string, unknown>,
+        ...(opponentAnswers ? { opponent_answers: opponentAnswers } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", id.id)
@@ -636,15 +941,6 @@ export async function createAiDuelFromQueue(
 
     await admin.from("duel_queue").delete().eq("user_id", user.id);
 
-    const questions = await resolveDuelQuestionPack(
-      div.name ?? div.key,
-      div.key,
-      user.id
-    );
-    const opponentAnswers = questions.map((q) =>
-      Math.floor(Math.random() * Math.max(1, q.choices.length))
-    );
-
     const { data: inserted, error: insErr } = await admin
       .from("skill_duels")
       .insert({
@@ -652,10 +948,10 @@ export async function createAiDuelFromQueue(
         opponent_student_id: null,
         initiator_id: user.id,
         division_key: div.key,
-        status: "active",
-        questions: questions as unknown as Record<string, unknown>,
+        status: "pending",
+        questions: [] as unknown as Record<string, unknown>,
         student_answers: null,
-        opponent_answers: opponentAnswers,
+        opponent_answers: null,
         reward_amount_cents: 0,
         match_source: "ai_queue",
         is_ai_opponent: true,
@@ -790,7 +1086,10 @@ export async function withdrawPendingSkillDuel(
   }
 }
 
-/** Remove a finished duel from this learner’s list only; the other participant still sees it. */
+/**
+ * Remove a duel from this learner’s list (sets hidden_at).
+ * Sparring Quest / pending-as-challenger: also marks cancelled so stale active rows don’t linger.
+ */
 export async function hideSkillDuelFromList(
   duelId: string
 ): Promise<{ success: true } | { success: false; error: string }> {
@@ -823,23 +1122,53 @@ export async function hideSkillDuelFromList(
       return { success: false, error: "Not allowed." };
     }
 
-    const terminal = new Set(["completed", "declined", "cancelled"]);
-    if (!terminal.has(duel.status ?? "")) {
+    const status = duel.status ?? "";
+    if (status === "pending" && asOpponent && !isAi) {
       return {
         success: false,
-        error: "You can only remove finished duels from your list.",
+        error: "Decline the challenge first, or open it to respond.",
       };
     }
 
     const now = new Date().toISOString();
-    const patch = asChallenger
-      ? { challenger_hidden_at: now, updated_at: now }
-      : { opponent_hidden_at: now, updated_at: now };
+    const patch: Record<string, string> = {
+      updated_at: now,
+      ...(asChallenger
+        ? { challenger_hidden_at: now }
+        : { opponent_hidden_at: now }),
+    };
 
-    const { error } = await admin.from("skill_duels").update(patch).eq("id", id.id);
+    const shouldCancel =
+      (isAi && asChallenger && (status === "pending" || status === "active")) ||
+      (asChallenger && status === "pending");
+
+    if (shouldCancel) {
+      patch.status = "cancelled";
+    }
+
+    const { data: updated, error } = await admin
+      .from("skill_duels")
+      .update(patch)
+      .eq("id", id.id)
+      .select("id");
 
     if (error) {
+      const msg = error.message ?? "";
+      if (msg.includes("challenger_hidden_at") || msg.includes("opponent_hidden_at")) {
+        return {
+          success: false,
+          error:
+            "Duel list cleanup is not available yet. Run database migration 046-duel-per-user-hide-cancel.sql on Supabase.",
+        };
+      }
       return { success: false, error: error.message };
+    }
+
+    if (!updated?.length) {
+      return {
+        success: false,
+        error: "Could not remove this duel. Try refreshing the page.",
+      };
     }
 
     revalidatePath("/student/duel");
@@ -1211,6 +1540,14 @@ export type DuelPublicRow = {
   completed_at: string | null;
 };
 
+export type DuelParticipantClan = {
+  name: string;
+  tag: string;
+  avatarKind: "preset" | "custom";
+  presetKey: string | null;
+  avatarUrl: string | null;
+};
+
 export type DuelMatchupPreview = {
   duelId: string;
   divisionKey: string;
@@ -1220,7 +1557,7 @@ export type DuelMatchupPreview = {
     avatarUrl: string | null;
     bio: string | null;
     totalXp: number | null;
-    clan: { name: string; tag: string } | null;
+    clan: DuelParticipantClan | null;
   };
   opponent: {
     id: string | null;
@@ -1229,9 +1566,36 @@ export type DuelMatchupPreview = {
     bio: string | null;
     totalXp: number | null;
     isAi: boolean;
-    clan: { name: string; tag: string } | null;
+    clan: DuelParticipantClan | null;
   };
 };
+
+function mapClanRowForDuelPreview(
+  row: {
+    name: string;
+    tag: string;
+    avatar_kind?: string | null;
+    avatar_preset_key?: string | null;
+    avatar_url?: string | null;
+  } | null
+): DuelParticipantClan | null {
+  if (!row) return null;
+  const avatarUrl =
+    typeof row.avatar_url === "string" && row.avatar_url.trim().length > 0
+      ? row.avatar_url.trim()
+      : null;
+  return {
+    name: row.name,
+    tag: row.tag,
+    avatarKind:
+      row.avatar_kind === "custom" ? "custom" : "preset",
+    presetKey:
+      typeof row.avatar_preset_key === "string" && row.avatar_preset_key.trim()
+        ? row.avatar_preset_key.trim()
+        : null,
+    avatarUrl,
+  };
+}
 
 export async function getLearnerPreview(
   admin: ReturnType<typeof createAdminClient>,
@@ -1242,7 +1606,7 @@ export async function getLearnerPreview(
   avatarUrl: string | null; 
   bio: string | null; 
   totalXp: number | null;
-  clan: { name: string; tag: string } | null;
+  clan: DuelParticipantClan | null;
 }> {
   const { data: settings } = await admin
     .from("user_settings")
@@ -1262,16 +1626,14 @@ export async function getLearnerPreview(
     .eq("user_id", userId)
     .maybeSingle();
 
-  let clan: { name: string; tag: string } | null = null;
+  let clan: DuelParticipantClan | null = null;
   if (membership?.clan_id) {
     const { data: clanRow } = await admin
       .from("clans")
-      .select("name, tag")
+      .select("name, tag, avatar_kind, avatar_preset_key, avatar_url")
       .eq("id", membership.clan_id)
       .maybeSingle();
-    if (clanRow) {
-      clan = { name: clanRow.name, tag: clanRow.tag };
-    }
+    clan = mapClanRowForDuelPreview(clanRow);
   }
 
   const displayName =

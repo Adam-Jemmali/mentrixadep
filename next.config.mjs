@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,6 +32,15 @@ const nextConfig = {
       "lucide-react",
       "@tabler/icons-react",
       "framer-motion",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "@supabase/supabase-js",
+      "gsap",
+      "d3",
     ],
   },
   allowedDevOrigins: ["127.0.0.1", "localhost"],
@@ -61,6 +71,24 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/images/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/geo/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
     ];
   },
   poweredByHeader: false,
@@ -68,7 +96,7 @@ const nextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
@@ -119,4 +147,13 @@ const nextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+const finalConfig = withBundleAnalyzer(nextConfig);
+
+export default withSentryConfig(finalConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+});

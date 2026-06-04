@@ -6,6 +6,9 @@ import { TiltCard } from "@/components/ui/tilt-card";
 import { BubbleText } from "@/components/ui/bubble-text";
 
 import type { QuestAccuracyTrend } from "@/app/actions/quest";
+import type { AccountRankVisual } from "@/lib/rank-icons";
+import { RankBadge } from "@/components/student/rank-badge";
+import { normalizeRankTitle } from "@/lib/rank-icons";
 
 const container = {
   hidden: { opacity: 0 },
@@ -27,6 +30,7 @@ export function StudentStatStripMotion({
   avgRating,
   streakAtRisk,
   questAccuracy,
+  accountRank,
 }: {
   totalXp: number;
   streak: number;
@@ -34,12 +38,13 @@ export function StudentStatStripMotion({
   avgRating: number;
   streakAtRisk: boolean;
   questAccuracy: QuestAccuracyTrend | null;
+  accountRank: AccountRankVisual;
 }) {
   const ratingLabel =
     Number.isFinite(avgRating) && avgRating > 0 ? (Math.round(avgRating * 10) / 10).toFixed(1) : "-";
 
   const trendArrow = questAccuracy?.direction === "up" ? "↑" : questAccuracy?.direction === "down" ? "↓" : "";
-  const trendColor = questAccuracy?.direction === "up" ? "text-emerald-600" : questAccuracy?.direction === "down" ? "text-rose-600" : "text-slate-400";
+  const trendColor = questAccuracy?.direction === "up" ? "text-emerald-600" : questAccuracy?.direction === "down" ? "text-rose-600" : "text-zinc-500";
 
   return (
     <motion.div
@@ -52,14 +57,20 @@ export function StudentStatStripMotion({
         <TiltCard
           tiltLimit={12}
           scale={1.04}
-          className="flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5"
+          className="mx-surface-light flex flex-row items-center gap-3 rounded-2xl px-4 py-4 sm:px-5"
         >
-          <span className="text-2xl font-bold tabular-nums text-blue-700">
-            {totalXp.toLocaleString()}
-          </span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
-            <BubbleText text="Total XP" activeColor="text-blue-500" neighborColor="text-blue-400" />
-          </span>
+          <RankBadge rank={accountRank} size="md" active showGlow={accountRank.key === "mentrixer"} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold uppercase tracking-wide" style={{ color: accountRank.labelOnLight }}>
+              {normalizeRankTitle(accountRank.title)}
+            </p>
+            <span className="text-2xl font-bold tabular-nums text-blue-700">
+              {totalXp.toLocaleString()}
+            </span>
+            <span className="mt-0.5 block text-[11px] uppercase tracking-wide text-zinc-500">
+              <BubbleText text="Total XP" activeColor="text-blue-500" neighborColor="text-blue-400" />
+            </span>
+          </div>
         </TiltCard>
       </motion.div>
 
@@ -67,17 +78,17 @@ export function StudentStatStripMotion({
         <TiltCard
           tiltLimit={12}
           scale={1.04}
-          className="flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5"
+          className="mx-surface-light flex flex-col rounded-2xl px-4 py-4 sm:px-5"
         >
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold tabular-nums text-slate-900">
+            <span className="text-2xl font-bold tabular-nums text-zinc-900">
               {questAccuracy ? `${questAccuracy.accuracyPercent}%` : "—"}
             </span>
             {trendArrow && (
               <span className={`text-lg font-bold ${trendColor}`}>{trendArrow}</span>
             )}
           </div>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-slate-500 line-clamp-1">
+          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500 line-clamp-1">
             <BubbleText text={`${questAccuracy?.subject || "Quest"} Accuracy`} activeColor="text-blue-500" neighborColor="text-blue-400" />
           </span>
         </TiltCard>
@@ -87,10 +98,10 @@ export function StudentStatStripMotion({
         <TiltCard
           tiltLimit={12}
           scale={1.04}
-          className="flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5"
+          className="mx-surface-light flex flex-col rounded-2xl px-4 py-4 sm:px-5"
         >
-          <span className="text-2xl font-bold tabular-nums text-slate-900">{sessionsCompleted}</span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
+          <span className="text-2xl font-bold tabular-nums text-zinc-900">{sessionsCompleted}</span>
+          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
             <BubbleText text="Sessions completed" activeColor="text-blue-500" neighborColor="text-blue-400" />
           </span>
         </TiltCard>
@@ -99,10 +110,10 @@ export function StudentStatStripMotion({
         <TiltCard
           tiltLimit={12}
           scale={1.04}
-          className="flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5"
+          className="mx-surface-light flex flex-col rounded-2xl px-4 py-4 sm:px-5"
         >
-          <span className="text-2xl font-bold tabular-nums text-slate-900">{ratingLabel}</span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
+          <span className="text-2xl font-bold tabular-nums text-zinc-900">{ratingLabel}</span>
+          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
             <BubbleText text="Avg. session rating" activeColor="text-blue-500" neighborColor="text-blue-400" />
           </span>
         </TiltCard>
@@ -111,7 +122,7 @@ export function StudentStatStripMotion({
         <TiltCard
           tiltLimit={12}
           scale={1.04}
-          className={`flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5 ${
+          className={`flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5 ${
             streakAtRisk ? "ring-2 ring-amber-300/90" : ""
           }`}
         >
@@ -123,9 +134,9 @@ export function StudentStatStripMotion({
               height={20}
               className={`shrink-0 ${streakAtRisk ? "opacity-100" : "opacity-60"}`}
             />
-            <span className="text-2xl font-bold tabular-nums text-slate-900">{streak}</span>
+            <span className="text-2xl font-bold tabular-nums text-zinc-900">{streak}</span>
           </span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
+          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
             <BubbleText text={streakAtRisk ? "Streak · log today" : "Day streak"} activeColor="text-blue-500" neighborColor="text-blue-400" />
           </span>
         </TiltCard>

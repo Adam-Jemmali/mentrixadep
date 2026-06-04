@@ -24,7 +24,7 @@ import {
 import { formatDateInZone } from "@/lib/time-format";
 import { TutorPayoutDashboard } from "./payout-dashboard";
 import { Typewriter } from "@/components/ui/typewriter";
-import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
 import { TutorHeroDecor } from "@/components/tutor/tutor-hero-decor";
 import { HeroGuideBounce } from "@/components/tutor/hero-guide-bounce";
@@ -83,7 +83,7 @@ export function TutorCommandCenterClient({
   const pending = metrics.pendingRequestCount;
 
   return (
-    <div className={mentrixTutor.pageBg}>
+    <>
     <TutorHubRealtimeRefresh tutorId={data.tutorId} />
     {slotsCreatedNotice ? (
       <div
@@ -97,8 +97,8 @@ export function TutorCommandCenterClient({
         </p>
       </div>
     ) : null}
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <header className={`${mentrixTutor.heroGradient} mb-10 p-6 sm:p-8 relative overflow-hidden`}>
+    <main className={mentrixStudent.main}>
+      <header className={`${mentrixStudent.heroGradientLite} relative mb-8 overflow-hidden p-6 sm:p-8`}>
         <TutorHeroDecor />
         <HeroGuideBounce />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -171,50 +171,50 @@ export function TutorCommandCenterClient({
 
       {/* Metrics */}
       <section className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <div className={mentrixTutor.card + " p-5"}>
-          <div className={mentrixTutor.sectionEyebrow}>
+        <div className={mentrixStudent.card + " p-5"}>
+          <div className={mentrixStudent.sectionEyebrowOnLight}>
             This month&apos;s earnings
           </div>
-          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
+          <div className={`mt-2 text-2xl font-bold tabular-nums tracking-tight ${mentrixStudent.textOnLight}`}>
             {formatUsd(metrics.earningsThisMonthCents)}
           </div>
-          <p className="mt-2 text-[11px] leading-snug text-slate-500 font-medium">{metrics.stripePayoutCaption}</p>
+          <p className={`mt-2 text-[11px] leading-snug font-medium ${mentrixStudent.textMutedOnLight}`}>{metrics.stripePayoutCaption}</p>
         </div>
 
-        <div className={mentrixTutor.card + " p-5"}>
-          <div className={mentrixTutor.sectionEyebrow}>
+        <div className={mentrixStudent.card + " p-5"}>
+          <div className={mentrixStudent.sectionEyebrowOnLight}>
             Sessions this week
           </div>
-          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
+          <div className={`mt-2 text-2xl font-bold tabular-nums tracking-tight ${mentrixStudent.textOnLight}`}>
             {metrics.sessionsThisWeek}
           </div>
         </div>
 
-        <div className={mentrixTutor.card + " p-5"}>
-          <div className={mentrixTutor.sectionEyebrow}>
+        <div className={mentrixStudent.card + " p-5"}>
+          <div className={mentrixStudent.sectionEyebrowOnLight}>
             Average rating
           </div>
-          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
+          <div className={`mt-2 text-2xl font-bold tabular-nums tracking-tight ${mentrixStudent.textOnLight}`}>
             {metrics.avgRating != null ? metrics.avgRating.toFixed(1) : "—"}
           </div>
         </div>
 
-        <div className={mentrixTutor.card + " p-5"}>
-          <div className={mentrixTutor.sectionEyebrow}>
+        <div className={mentrixStudent.card + " p-5"}>
+          <div className={mentrixStudent.sectionEyebrowOnLight}>
             Response rate
           </div>
-          <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 tracking-tight">
+          <div className={`mt-2 text-2xl font-bold tabular-nums tracking-tight ${mentrixStudent.textOnLight}`}>
             {metrics.responseRatePercent != null ? `${metrics.responseRatePercent.toFixed(1)}%` : "—"}
           </div>
         </div>
 
         <div
-          className={`${mentrixTutor.card} p-5 ${
+          className={`${mentrixStudent.card} p-5 ${
             pending > 0 ? "border-red-200 bg-red-50/50" : ""
           }`}
         >
           <div
-            className={`${mentrixTutor.sectionEyebrow} ${
+            className={`${mentrixStudent.sectionEyebrowOnLight} ${
               pending > 0 ? "text-red-600" : ""
             }`}
           >
@@ -222,7 +222,7 @@ export function TutorCommandCenterClient({
           </div>
           <div
             className={`mt-2 text-2xl font-bold tabular-nums ${
-              pending > 0 ? "text-red-700" : "text-slate-900"
+              pending > 0 ? "text-red-700" : "text-zinc-950"
             } tracking-tight`}
           >
             {pending}
@@ -252,9 +252,9 @@ export function TutorCommandCenterClient({
       {/* Actions + chart */}
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="lg:col-span-7 min-w-0">
-          <ScrollRevealCard className={mentrixTutor.card + " p-5 h-full"}>
+          <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
             <div className="mb-4">
-              <h2 className="text-sm font-bold text-slate-900">Requested booked sessions</h2>
+              <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>Requested booked sessions</h2>
             
             </div>
             <SessionRequestsList sessionRequests={sessionRequests} displayTimezone={data.tutorTimezone} />
@@ -262,11 +262,11 @@ export function TutorCommandCenterClient({
         </section>
 
         <section className="lg:col-span-5 min-w-0">
-          <ScrollRevealCard className={mentrixTutor.card + " p-5 h-full"}>
-            <h2 className="mb-4 text-sm font-bold text-slate-900">Earnings (last 30 days)</h2>
-            <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+          <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
+            <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>Earnings (last 30 days)</h2>
+            <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
               <TutorEarningsChart data={earningsLast30Days} />
-              <p className="mt-3 text-[11px] text-slate-500 font-medium leading-relaxed">
+              <p className={`mt-3 text-[11px] font-medium leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
                 Totals from completed sessions (recognized when the session ends).
               </p>
             </div>
@@ -276,11 +276,11 @@ export function TutorCommandCenterClient({
 
       {/* Calendar */}
       <section id="week-schedule" className="mt-8 min-w-0 scroll-mt-24">
-        <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+        <ScrollRevealCard className={mentrixStudent.card + " p-6"}>
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Week&apos;s Schedule</h2>
-              <p className="text-[11px] text-slate-500 font-medium">View and manage your availability slots</p>
+              <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>Week&apos;s Schedule</h2>
+              <p className={`text-[11px] font-medium ${mentrixStudent.textMutedOnLight}`}>View and manage your availability slots</p>
             </div>
             <Button
               type="button"
@@ -305,13 +305,13 @@ export function TutorCommandCenterClient({
           <CourseManager courses={data.tutorCourses} />
         </section>
         <section id="tutor-availability-slots" className="scroll-mt-24 lg:col-span-6 min-w-0">
-          <h2 className="mb-3 text-sm font-medium text-slate-900">Open slots</h2>
-          <div className="rounded-md border border-slate-200 bg-white p-4">
-            <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <p className="text-sm text-slate-700">Auto-approve bookings</p>
+          <h2 className={`mb-3 text-sm font-medium ${mentrixStudent.textOnLight}`}>Open slots</h2>
+          <div className={`${mentrixStudent.card} p-4`}>
+            <div className="mb-4 flex items-center justify-between gap-3 border-b border-violet-100 pb-4">
+              <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>Auto-approve bookings</p>
               <AutoApproveToggle initialValue={data.autoApprove} />
             </div>
-            <div className="max-h-[28rem] overflow-y-auto rounded-md border border-slate-100 bg-slate-50/90 p-2">
+            <div className="max-h-[28rem] overflow-y-auto rounded-md border border-violet-100 bg-zinc-50/90 p-2">
               <AvailabilityManager
                 availability={data.availability}
                 displayTimezone={data.tutorTimezone}
@@ -323,14 +323,14 @@ export function TutorCommandCenterClient({
 
       {/* Payout dashboard */}
       {data.payoutData && (
-        <div className="mt-8">
+        <div id="payouts" className="mt-8 scroll-mt-24">
           <TutorPayoutDashboard
             data={data.payoutData}
             connectParam={connectParam}
           />
         </div>
       )}
-      </div>
-    </div>
+    </main>
+    </>
   );
 }

@@ -9,24 +9,25 @@ import {
   getStudentSessionsHubBundle,
 } from "@/app/actions/student";
 import { getTopRival } from "@/app/actions/top-rival";
-import { 
-  getStudentDivisionStats, 
-  getDivisionLeaderboard, 
-  getQuestAccuracyTrend 
-} from "@/app/actions/quest";
+import { getQuestAccuracyTrend } from "@/app/actions/quest";
 import type { StudentCourse, UserXp } from "@/lib/database.types";
 import { getAccountLevelFromTotalXp } from "@/lib/levels";
-
+import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/lib/rank-icons";
+import { RankBadge } from "@/components/student/rank-badge";
 
 import { getWeekRangeUTC } from "@/lib/time-format";
 import { MentrixHeroDecor } from "@/components/student/mentrix-hero-decor";
-import { HeroMentrixerBounce } from "@/components/student/hero-mentrixer-bounce";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { Typewriter } from "@/components/ui/typewriter";
-import { SessionsList } from "./sessions-list";
-import { StudentStatStripMotion } from "./student-stat-strip-motion";
-import { StudentCommandCenterClient } from "./student-command-center-client";
-import { StudentStudyPackageNotifier } from "./student-study-package-notifier";
+import {
+  DeferredAccountRankLadder,
+  DeferredHeroMentrixerBounce,
+  DeferredPreSessionBriefCard,
+  DeferredSessionsList,
+  DeferredStudentCommandCenterClient,
+  DeferredStudentStatStripMotion,
+  DeferredStudentStudyPackageNotifier,
+  DeferredTopRivalCard,
+} from "./student-dashboard-deferred";
 import {
   firstNameFromDisplayName,
   getLocalHour,
@@ -35,8 +36,7 @@ import {
   rankRecommendedGuides,
 } from "@/lib/student-dashboard-helpers";
 import { getUpcomingSessionBriefs } from "@/app/actions/pre-session-brief";
-import { PreSessionBriefCard } from "@/components/pre-session-brief-card";
-import { TopRivalCard } from "@/components/top-rival-card";
+import { hasStudentCompletedDiagnostic } from "@/app/actions/diagnostic-onboarding";
 import { Button } from "@/components/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
@@ -55,15 +55,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, divisionStats, sessionBriefs, availability, rivalData, questAccuracy] = await Promise.all([
-    getStudentHubSnapshot(),
-    getStudentSessionsHubBundle(),
-    getStudentDivisionStats(user.id),
-    getUpcomingSessionBriefs().catch(() => []),
-    getTutorAvailability(),
-    getTopRival(),
-    getQuestAccuracyTrend(user.id),
-  ]);
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, diagnosticCompleted] =
+    await Promise.all([
+      getStudentHubSnapshot(),
+      getStudentSessionsHubBundle(),
+      getUpcomingSessionBriefs().catch(() => []),
+      getTutorAvailability(),
+      getTopRival(),
+      getQuestAccuracyTrend(user.id),
+      hasStudentCompletedDiagnostic(user.id),
+    ]);
 
   const { upcomingSessions, pastSessions } = sessionsBundle;
 
@@ -83,6 +84,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const streakAtRisk = isStreakAtRisk18h(streak, lastActivityAt);
 
   const accountLevel = getAccountLevelFromTotalXp(totalXp);
+  const accountRank = getAccountRankFromTotalXp(totalXp);
   const levelProgressDenom =
     accountLevel.xpToNextLevel != null
       ? accountLevel.xpIntoLevel + accountLevel.xpToNextLevel
@@ -104,21 +106,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ? allRatings.reduce((acc: number, r: any) => acc + r.rating, 0) / allRatings.length
       : 0;
-
-  const sortedDivisions = [...divisionStats].sort((a, b) => b.xp - a.xp);
-  const focusedDivisionKey =
-    (typeof settingsRow?.focused_division_key === "string" && settingsRow.focused_division_key.trim()) ||
-    sortedDivisions[0]?.divisionKey ||
-    "general";
-
-  const divisionName =
-    sortedDivisions.find((d) => d.divisionKey === focusedDivisionKey)?.divisionName ??
-    focusedDivisionKey.replace(/-/g, " ");
-
-  const myRank =
-    sortedDivisions.find((d) => d.divisionKey === focusedDivisionKey)?.rank ?? null;
-
-  const leaderboardTop = await getDivisionLeaderboard(focusedDivisionKey, user.id);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const studyPackageSnapshots = [...pastSessions, ...upcomingSessions].map((s: any) => ({
@@ -150,31 +137,39 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const weekRange = getWeekRangeUTC(now);
 
   return (
-    <div className={mentrixStudent.pageBg}>
+    <div className={mentrixStudent.pageBgHub}>
       <StudentHubRealtimeRefresh userId={user.id} />
       <main className={mentrixStudent.main}>
-        <div className={`${mentrixStudent.heroGradient} mb-8 p-6 sm:p-8 relative overflow-hidden`}>
+        <div className={`${mentrixStudent.heroGradientLite} mb-8 p-6 sm:p-8 relative overflow-hidden`}>
           <MentrixHeroDecor />
-          <HeroMentrixerBounce />
+          <DeferredHeroMentrixerBounce />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-xl space-y-4">
               <div>
                 <StudentHeroGreeting greeting={greeting} firstName={firstName} />
-                <div className="mt-2 text-sm text-white/90 h-[20px]">
-                  <Typewriter text="Keep your streak. Keep proving what you know." speed={40} waitTime={5000} />
-                </div>
+                <p className="mt-2 h-[20px] text-sm text-white/90">
+                  Keep your streak. Keep proving what you know.
+                </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-full border border-amber-300/50 bg-amber-400/25 px-3 py-1 text-xs font-bold text-amber-50 shadow-sm backdrop-blur-sm">
-                  {accountLevel.title}
-                </span>
-                <span className="text-xs font-mono tabular-nums text-white/85">
-                  {totalXp.toLocaleString()} XP
-                  {accountLevel.xpToNextLevel != null
-                    ? ` · ${accountLevel.xpToNextLevel} to next level`
-                    : " · max level"}
-                </span>
+              <div className="flex flex-wrap items-center gap-4">
+                <RankBadge rank={accountRank} size="lg" active showGlow={accountRank.key === "mentrixer"} priority />
+                <div className="min-w-0">
+                  <p
+                    className="text-lg font-bold uppercase tracking-wide sm:text-xl"
+                    style={{ color: accountRank.labelOnDark }}
+                  >
+                    {normalizeRankTitle(accountRank.title)}
+                  </p>
+                  <p className="text-xs font-mono tabular-nums text-white/85">
+                    Rank {accountRank.level}
+                    <span className="text-white/50"> · </span>
+                    {totalXp.toLocaleString()} XP
+                    {accountLevel.xpToNextLevel != null
+                      ? ` · ${accountLevel.xpToNextLevel.toLocaleString()} to next`
+                      : " · max rank"}
+                  </p>
+                </div>
               </div>
 
               <div className="max-w-md space-y-2">
@@ -184,8 +179,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 </div>
                 <div className="h-2 w-full rounded-full bg-white/25">
                   <div
-                    className="h-full rounded-full bg-white transition-[width] duration-300 ease-out shadow-sm"
-                    style={{ width: `${tierProgressPct}%` }}
+                    className="h-full rounded-full transition-[width] duration-300 ease-out shadow-sm"
+                    style={{
+                      width: `${tierProgressPct}%`,
+                      background: `linear-gradient(90deg, ${accountRank.color}cc, ${accountRank.color})`,
+                      boxShadow: `0 0 12px ${accountRank.colorMuted}`,
+                    }}
                   />
                 </div>
               </div>
@@ -201,21 +200,55 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
             <div className="flex flex-col items-start gap-3 lg:items-end shrink-0">
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="h-8 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
-                  <Link href={`/student/${user.id}`} className="inline-flex items-center gap-1.5">
-                    <img src="/icons/mentrixer.svg" alt="" width={14} height={14} className="opacity-80 shrink-0" />
+                <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                  <Link
+                    href={`/student/${user.id}`}
+                    className="inline-flex min-h-11 items-center gap-1.5 px-3"
+                  >
+                    <img
+                      src="/icons/mentrixer.svg"
+                      alt=""
+                      width={14}
+                      height={14}
+                      className="size-3.5 shrink-0 opacity-80"
+                      aria-hidden
+                    />
                     Profile & Settings
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" className="h-8 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
-                  <Link href="/student/quest" className="inline-flex items-center gap-1.5 text-white">
-                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" />
+                <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                  <Link
+                    href="/student/progress"
+                    className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"
+                  >
+                    Progress
+                  </Link>
+                </Button>
+                {!diagnosticCompleted && (
+                  <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                    <Link
+                      href="/student/onboarding"
+                      className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"
+                    >
+                      Study plan
+                    </Link>
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                  <Link
+                    href="/student/quest"
+                    className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"
+                  >
+                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" aria-hidden />
                     Daily quest
                   </Link>
                 </Button>
-                <Button size="sm" className="h-8 text-xs bg-white text-slate-900 hover:bg-slate-100" asChild>
-                  <Link href="#browse-guides" className="inline-flex items-center gap-1.5">
-                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" />
+                <Button size="sm" className="min-h-11 text-xs bg-white text-zinc-900 hover:bg-slate-100" asChild>
+                  <Link
+                    href="#browse-guides"
+                    className="inline-flex min-h-11 items-center gap-1.5 px-3"
+                  >
+                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" aria-hidden />
                     Book session
                   </Link>
                 </Button>
@@ -224,14 +257,30 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         </div>
 
-        <StudentStatStripMotion
-          totalXp={totalXp}
-          streak={streak}
-          sessionsCompleted={sessionsCompleted}
-          avgRating={avgRating}
-          streakAtRisk={streakAtRisk}
-          questAccuracy={questAccuracy}
-        />
+        <div className="mt-8 space-y-6">
+          <DeferredAccountRankLadder totalXp={totalXp} variant="dashboard" />
+          <DeferredStudentStatStripMotion
+            totalXp={totalXp}
+            streak={streak}
+            sessionsCompleted={sessionsCompleted}
+            avgRating={avgRating}
+            streakAtRisk={streakAtRisk}
+            questAccuracy={questAccuracy}
+            accountRank={accountRank}
+          />
+        </div>
+
+        {!diagnosticCompleted && (
+          <div className="mt-8 mb-2 rounded-2xl border border-indigo-200/90 bg-indigo-50/95 px-5 py-4 text-sm text-indigo-950 shadow-sm">
+            <p className="font-semibold">Get your personalized study plan</p>
+            <p className="mt-1 text-indigo-900/90">
+              Answer a few quick questions and we&apos;ll build a study plan and your first practice quest.
+            </p>
+            <Button size="sm" className="mt-3 bg-indigo-600 text-white hover:bg-indigo-700" asChild>
+              <Link href="/student/onboarding">Start study plan quiz</Link>
+            </Button>
+          </div>
+        )}
 
         {query.booking === "success" && (
           <div className="mt-8 mb-2 rounded-2xl border border-emerald-200/80 bg-white px-5 py-4 text-sm text-emerald-900 shadow-sm">
@@ -252,7 +301,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         )}
         {query.booking === "cancelled" && (
-          <div className="mt-8 mb-2 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 text-sm text-slate-700 shadow-sm">
+          <div className="mt-8 mb-2 rounded-2xl border border-zinc-200/80 bg-white px-5 py-4 text-sm text-zinc-700 shadow-sm">
             Checkout was cancelled. No charge was made.
           </div>
         )}
@@ -276,34 +325,35 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           <div className="mt-6 space-y-3">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {sessionBriefs.map((brief: any) => (
-              <PreSessionBriefCard key={brief.id} brief={brief} />
+              <DeferredPreSessionBriefCard key={brief.id} brief={brief} />
             ))}
           </div>
         )}
 
         <div className="mt-10 space-y-10">
-          <TopRivalCard rivalData={rivalData} />
+          <DeferredTopRivalCard rivalData={rivalData} />
 
-          <StudentCommandCenterClient
+          <DeferredStudentCommandCenterClient
             studentCourses={studentCourses}
             upcomingSessions={upcomingForClient}
             availability={availability}
             availableCourses={courses}
             tutorExpertise={tutorExpertise}
-            divisionName={divisionName}
-            myRank={myRank}
-            leaderboardTop={leaderboardTop}
             recommendedGuides={recommendedGuides}
             displayTimeZone={timeZone}
           />
 
-          <div id="sessions-history" className="scroll-mt-24 border-t border-slate-200/80 pt-10">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Live coaching</p>
-            <h2 className="mt-1 text-lg font-bold text-slate-900">Sessions</h2>
-            <p className="mt-1 mb-5 text-sm text-slate-600">Upcoming past guide calls.</p>
-            <StudentStudyPackageNotifier snapshots={studyPackageSnapshots} />
-            <Suspense fallback={<div className="min-h-[12rem] rounded-2xl border border-slate-100 bg-slate-50/50" />}>
-              <SessionsList
+          <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">
+            <div className="mx-surface-light mb-6 rounded-2xl px-5 py-4">
+              <p className={mentrixStudent.sectionEyebrowOnLight}>Live coaching</p>
+              <h2 className={`mt-1 text-lg font-bold ${mentrixStudent.textOnLight}`}>Sessions</h2>
+              <p className={`mt-1 text-sm ${mentrixStudent.textMutedOnLight}`}>
+                Upcoming and past guide calls.
+              </p>
+            </div>
+            <DeferredStudentStudyPackageNotifier snapshots={studyPackageSnapshots} />
+            <Suspense fallback={<div className="min-h-[12rem] rounded-2xl border border-violet-200 bg-white" />}>
+              <DeferredSessionsList
                 upcomingSessions={upcomingSessions}
                 pastSessions={pastSessions}
                 sessionRequests={sessionsBundle.sessionRequests}

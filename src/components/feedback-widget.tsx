@@ -89,7 +89,7 @@ export function FeedbackWidget() {
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-white">Send feedback</DialogTitle>
               <DialogDescription>
-                Tell us what was confusing, broken, or missing. We read every submission.
+                Tell us what was confusing, broken or missing. We read every submission.
               </DialogDescription>
             </DialogHeader>
 
@@ -108,7 +108,7 @@ export function FeedbackWidget() {
             </div>
 
             <DialogFooter>
-              <Button type="button" className="text-white" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+              <Button type="button" className="text-white hover:text-black" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
                 Cancel  
               </Button>
               <Button type="submit" disabled={busy || !message.trim()}>

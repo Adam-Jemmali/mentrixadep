@@ -1,6 +1,12 @@
 "use client";
 
 import { DivisionPickerCards } from "@/components/student/division-picker-cards";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { cn } from "@/lib/utils";
+import {
+  arenaDivisionFocus,
+  arenaDivisionPanelClasses,
+} from "@/lib/arena-division-focus";
 
 interface Props {
   focusedDivisionKey: string | null;
@@ -16,26 +22,38 @@ export function FocusDivisionPicker({
   xpByKey,
 }: Props) {
   return (
-    <div className="mt-5 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 p-4 sm:p-5 shadow-sm">
-      <div className="mb-3">
-        <p className="text-sm font-semibold text-slate-900 tracking-tight">
-          Your home arena
-        </p>
-        <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">
-          Pick where you compete on the leaderboard, earn XP, and match duels.{" "}
-          <span className="text-slate-600">
-            Smart default follows your strongest subject
-            {currentDivisionKey ? ` (now ${currentDivisionKey.replace(/-/g, " ")})` : ""}.
-          </span>
-        </p>
+    <div className={cn(mentrixStudent.cardArena, arenaDivisionPanelClasses("mt-5"))}>
+      <p
+        className={cn(
+          "text-[10px] font-bold uppercase tracking-[0.22em]",
+          arenaDivisionFocus.eyebrow,
+        )}
+      >
+        Your home arena
+      </p>
+      <p className={cn("mt-1 max-w-2xl text-xs leading-relaxed", arenaDivisionFocus.hint)}>
+        Pick where you compete on the leaderboard, earn XP, and match duels.{" "}
+        <span className="font-semibold text-cyan-300">
+          Cyan outline
+        </span>{" "}
+        = active focus.
+        {currentDivisionKey ? (
+          <>
+            {" "}
+            Smart default follows your strongest subject (now{" "}
+            {currentDivisionKey.replace(/-/g, " ")}).
+          </>
+        ) : null}
+      </p>
+      <div className="mt-4">
+        <DivisionPickerCards
+          mode="focus"
+          divisions={divisionsCatalog}
+          selectedKey={focusedDivisionKey}
+          showAutomaticOption
+          xpByKey={xpByKey}
+        />
       </div>
-      <DivisionPickerCards
-        mode="focus"
-        divisions={divisionsCatalog}
-        selectedKey={focusedDivisionKey}
-        showAutomaticOption
-        xpByKey={xpByKey}
-      />
     </div>
   );
 }

@@ -11,15 +11,54 @@ import dynamic from "next/dynamic";
 import { usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fireLevelUpConfetti } from "@/lib/confetti-burst";
+import { playMentrixaRankUpOnce, ensureMentrixaAudioUnlocked, warmMentrixaSoundAssets } from "@/lib/mentrixa-sounds";
 import { flushXpQueue } from "@/lib/pwa-xp-queue";
 import { trackClientEvent } from "@/lib/use-track";
 import type { AuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { StudentNavbar } from "@/components/student-navbar";
 import { TutorNavbar } from "@/components/tutor-navbar";
-import { FloatingXpAnimations } from "@/components/floating-xp-animations";
-import { StudentFirstLoginTour } from "@/components/student-first-login-tour";
-import { TutorFirstLoginTour } from "@/components/tutor-first-login-tour";
+import { UiPerformanceBootstrap } from "@/components/ui-performance-bootstrap";
+import { NavigationProgress } from "@/components/navigation-progress";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+const Navigation = dynamic(
+  () => import("@/components/navigation").then((m) => ({ default: m.Navigation })),
+  { loading: () => null },
+);
+const FloatingXpAnimations = dynamic(
+  () => import("@/components/floating-xp-animations").then((m) => ({ default: m.FloatingXpAnimations })),
+  { ssr: false, loading: () => null },
+);
+const StudentFirstLoginTour = dynamic(
+  () => import("@/components/student-first-login-tour").then((m) => ({ default: m.StudentFirstLoginTour })),
+  { ssr: false, loading: () => null },
+);
+const TutorFirstLoginTour = dynamic(
+  () => import("@/components/tutor-first-login-tour").then((m) => ({ default: m.TutorFirstLoginTour })),
+  { ssr: false, loading: () => null },
+);
+const FeedbackWidget = dynamic(
+  () => import("@/components/feedback-widget").then((m) => ({ default: m.FeedbackWidget })),
+  { ssr: false, loading: () => null },
+);
+const CookieConsentBanner = dynamic(
+  () => import("@/components/cookie-consent-banner").then((m) => ({ default: m.CookieConsentBanner })),
+  { ssr: false, loading: () => null },
+);
+const ClickSoundProvider = dynamic(
+  () => import("@/components/ui/click-sound-provider").then((m) => ({ default: m.ClickSoundProvider })),
+  { ssr: false, loading: () => null },
+);
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -30,26 +69,6 @@ type UserAchievementsPayload = {
     title?: string | null;
   };
 };
-
-const Navigation = dynamic(
-  () => import("@/components/navigation").then((m) => m.Navigation),
-  { loading: () => null },
-);
-import { UiPerformanceBootstrap } from "@/components/ui-performance-bootstrap";
-import { NavigationProgress } from "@/components/navigation-progress";
-import { ErrorBoundary } from "@/components/error-boundary";
-import { CookieConsentBanner } from "@/components/cookie-consent-banner";
-import { FeedbackWidget } from "@/components/feedback-widget";
-import { Button } from "@/components/ui/button";
-import { ClickSoundProvider } from "@/components/ui/click-sound-provider";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 const XP_CACHE_KEY = "mentrixa-xp-cache";
 const PUSH_DISMISS_KEY = "mentrixa-push-prompt-dismissed";
@@ -145,6 +164,17 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
   const [payload, setPayload] = useState<LevelUpPayload | null>(null);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
   const celebrationTriggeredRef = useRef(false);
+  const rankSoundPlayedRef = useRef(false);
+
+  useEffect(() => {
+    if (!open || !payload) {
+      rankSoundPlayedRef.current = false;
+      return;
+    }
+    if (rankSoundPlayedRef.current) return;
+    rankSoundPlayedRef.current = true;
+    playMentrixaRankUpOnce();
+  }, [open, payload]);
 
   const uid = user?.id;
   const isStudent = user?.role === "student";
@@ -272,11 +302,11 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
           <button
             type="button"
             onClick={dismissStreakBanner}
-            className="shrink-0 rounded p-1 text-amber-800 transition hover:bg-amber-100 hover:text-amber-950"
+            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-amber-800 transition hover:bg-amber-100 hover:text-amber-950"
             aria-label="Dismiss streak reminder"
           >
-            <span className="block h-4 w-4 text-center text-sm leading-4" aria-hidden>
-              x
+            <span className="text-lg leading-none" aria-hidden>
+              ×
             </span>
           </button>
         </div>
@@ -454,6 +484,11 @@ function ShellEffects() {
   return null;
 }
 
+/** Stale Turbopack chunks may still reference this export — keep a no-op so dev HMR never crashes. */
+export function MentrixaAudioBootstrap() {
+  return null;
+}
+
 export function RootLayoutClient({
   user,
   children,
@@ -463,13 +498,29 @@ export function RootLayoutClient({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    warmMentrixaSoundAssets();
+    ensureMentrixaAudioUnlocked();
+  }, []);
   const isHome = pathname === "/";
   const isApprovedStudent = user?.role === "student" && user.approved === true;
   const isApprovedTutor = user?.role === "tutor" && user.approved === true;
   const isVideoRoute = pathname.startsWith("/video/");
+  const isStudentProfileRoute = /^\/student\/[^/]+\/?$/.test(pathname);
   const isTutorProfileRoute = /^\/tutor\/[^/]+\/?$/.test(pathname);
+  const isProfileRoute = isStudentProfileRoute || isTutorProfileRoute;
   const isQuestOnboarding =
     isApprovedStudent && pathname === "/student/quest" && searchParams.get("onboarding") === "true";
+  const isWorkbenchRoute =
+    pathname.includes("/quest") ||
+    pathname.includes("/resolve") ||
+    pathname.includes("/learning-path") ||
+    pathname.includes("/sessions-ai");
+  const isArenaRoute =
+    pathname.includes("/duel") ||
+    pathname.includes("/division") ||
+    pathname.includes("/clan");
 
   return (
     <ErrorBoundary>
@@ -477,6 +528,7 @@ export function RootLayoutClient({
       <UiPerformanceBootstrap />
       <ClickSoundProvider />
       <ShellEffects />
+      <MentrixaAudioBootstrap />
       <AppNavOrNothing user={user} />
       {!isVideoRoute ? <FloatingXpAnimations /> : null}
       {isApprovedStudent && user && !isQuestOnboarding && !isVideoRoute ? (
@@ -497,13 +549,29 @@ export function RootLayoutClient({
           "relative min-h-screen",
           isVideoRoute && "min-h-0 h-[100dvh] overflow-hidden p-0 m-0 bg-black text-white",
           isHome && "bg-[#0B1120]",
-          !isHome && !isTutorProfileRoute && !isVideoRoute && "bg-mentrixa-app text-slate-100",
-          isTutorProfileRoute && "bg-white text-slate-900",
+          !isHome &&
+            !isProfileRoute &&
+            !isVideoRoute &&
+            isWorkbenchRoute &&
+            "mx-shell-workbench text-slate-100",
+          !isHome &&
+            !isProfileRoute &&
+            !isVideoRoute &&
+            isArenaRoute &&
+            "mx-shell-arena text-slate-100",
+          !isHome &&
+            !isProfileRoute &&
+            !isVideoRoute &&
+            !isWorkbenchRoute &&
+            !isArenaRoute &&
+            "bg-mentrixa-app text-slate-100",
           isApprovedStudent &&
             !isQuestOnboarding &&
             !isVideoRoute &&
-            "pt-24 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
-          isApprovedTutor && !isVideoRoute && "pt-24",
+            "pt-[4.75rem] pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
+          isApprovedTutor &&
+            !isVideoRoute &&
+            "pt-[4.75rem] pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0",
         )}
       >
         {/* Background: single `.bg-mentrixa-app` layer only — avoids stacked full-viewport textures, repeating images, and CSS animations (major paint/GPU cost). */}

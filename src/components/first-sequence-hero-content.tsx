@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
@@ -21,15 +21,25 @@ const ArrowRight = () => (
   </svg>
 );
 
-function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
+function RoleIcon({
+  role,
+  className = "",
+  priority = false,
+}: {
+  role: "mentrixer" | "guide";
+  className?: string;
+  priority?: boolean;
+}) {
   return (
     <span className={cn("relative inline-block shrink-0", className)} aria-hidden>
       <Image
         src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
         alt=""
-        fill
+        width={48}
+        height={48}
+        priority={priority}
         unoptimized
-        className="object-contain"
+        className="size-full object-contain"
         sizes="48px"
       />
     </span>
@@ -207,7 +217,7 @@ function BouncingRoleIcons({ disabled }: { disabled: boolean }) {
             icon.size,
           )}
         >
-          <RoleIcon role={icon.role} className="h-full w-full" />
+          <RoleIcon role={icon.role} className={icon.size} priority={idx === 0} />
         </div>
       ))}
     </div>
@@ -328,7 +338,7 @@ export function FirstSequenceHeroContent() {
           <div className="mx-auto mt-2 h-40 w-full max-w-4xl">
             {cinematicMode ? (
               <GooeyText
-                texts={["Compete. Climb. Improve.", "Meet live.", "Book a Guide."]}
+                texts={["Get unstuck.", "Stay ahead.", "Prove you improved."]}
                 morphTime={2.5}
                 cooldownTime={3}
                 textClassName="text-2xl md:text-4xl font-black text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] italic tracking-tighter"
@@ -336,7 +346,7 @@ export function FirstSequenceHeroContent() {
               />
             ) : (
               <p className="text-2xl font-black italic tracking-tighter text-white drop-shadow-[0_8px_8px_rgba(0,0,0,0.9)] md:text-4xl">
-                Compete. Climb. Improve.
+                Get unstuck. Stay ahead. Prove you improved.
               </p>
             )}
           </div>
@@ -352,7 +362,10 @@ export function FirstSequenceHeroContent() {
             {isMobileViewport ? (
               <div className="mb-5 px-1 pt-1">
                 <p className="text-[clamp(1.375rem,5.5vw,1.75rem)] font-black italic leading-snug tracking-tighter text-white drop-shadow-[0_6px_14px_rgba(0,0,0,0.85)]">
-                  Compete. Climb. Improve.
+                  Get unstuck. Stay ahead. Prove you improved.
+                </p>
+                <p className="mt-2 text-sm text-white/75 leading-relaxed">
+                  Book a live expert. Get AI-generated practice from your real session. Climb your subject&apos;s leaderboard.
                 </p>
               </div>
             ) : null}
@@ -376,24 +389,23 @@ export function FirstSequenceHeroContent() {
                 href="/auth/signup"
                 className="lp-cta-pulse group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#0B1120] shadow-lg shadow-indigo-500/10 transition-all hover:-translate-y-0.5 hover:shadow-indigo-500/20 sm:w-auto sm:px-7 sm:py-3.5"
               >
-                <RoleIcon role="mentrixer" className="h-3.5 w-3.5" />
-                Become a Mentrixer
+                Start for free
                 <span className="group-hover:translate-x-0.5 transition-transform">
                   <ArrowRight />
                 </span>
               </Link>
               <Link
-                href="/auth/signup?role=tutor"
+                href="/try"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-slate-100 transition-colors hover:bg-white/[0.06] sm:w-auto sm:px-7 sm:py-3.5"
+              >
+                Try a practice quest
+              </Link>
+              <Link
+                href="/auth/signup?role=tutor"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-medium text-white/95 transition-colors hover:bg-white/[0.04] sm:w-auto sm:px-7 sm:py-3.5"
               >
                 <RoleIcon role="guide" className="h-3.5 w-3.5 brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]" />
                 Become a Guide
-              </Link>
-              <Link
-                href="/try"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-medium text-white/95 transition-colors hover:bg-white/[0.04] sm:w-auto sm:px-7 sm:py-3.5"
-              >
-                Try a Quest
               </Link>
             </div>
           </div>

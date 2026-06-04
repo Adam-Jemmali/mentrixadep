@@ -57,8 +57,8 @@ export function TutorFirstLoginTour({ user }: { user: AuthUser }) {
       },
       {
         id: "sessions",
-        title: "Manage Sessions",
-        description: "Review and run your upcoming sessions from your guide center.",
+        title: "Manage Home",
+        description: "Your Guide center — bookings, calendar, availability, and payouts.",
         href: "/tutor",
         icon: "/icons/guide.svg",
         isMatch: (path) => path === "/tutor",

@@ -11,6 +11,7 @@ import {
 } from "@/app/actions/clan-dashboard";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { clanArenaOutlineButton } from "@/lib/clan-light-form-ui";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { ClanDashboardClient } from "./clan-dashboard-client";
 import { ClanPublicPreview } from "./clan-public-preview";
@@ -50,11 +51,18 @@ export default async function ClanDetailPage({ params }: Props) {
       <div className={mentrixStudent.pageBg}>
         <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="outline" size="sm" className={clanArenaOutlineButton} asChild>
               <Link href="/student/clan">← Clans</Link>
             </Button>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-              <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={13} height={13} />
+              <Image
+                src="/icons/mentrixer.svg"
+                alt=""
+                width={13}
+                height={13}
+                className="size-[13px] shrink-0"
+                aria-hidden
+              />
               Mentrixer
             </span>
           </div>
@@ -77,13 +85,20 @@ export default async function ClanDetailPage({ params }: Props) {
 
   return (
     <div className={mentrixStudent.pageBg}>
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/student/clan">← Clans</Link>
           </Button>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-            <Image src="/icons/mentrixer.svg" alt="Mentrixer" width={13} height={13} />
+            <Image
+              src="/icons/mentrixer.svg"
+              alt=""
+              width={13}
+              height={13}
+              className="size-[13px] shrink-0"
+              aria-hidden
+            />
             Mentrixer
           </span>
         </div>

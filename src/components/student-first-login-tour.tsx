@@ -40,6 +40,14 @@ export function StudentFirstLoginTour({ user }: { user: AuthUser }) {
   const steps = useMemo<StudentTourStep[]>(
     () => [
       {
+        id: "study-plan",
+        title: "Build your study plan",
+        description: "Take the short diagnostic quiz so we can recommend topics and your first practice quest.",
+        href: "/student/onboarding",
+        icon: "/icons/mentrixer.svg",
+        isMatch: (path) => path === "/student/onboarding" || path.startsWith("/student/onboarding/"),
+      },
+      {
         id: "profile",
         title: "Complete your profile",
         description: "Set your profile and preferences so Mentrixa can personalize your learning.",

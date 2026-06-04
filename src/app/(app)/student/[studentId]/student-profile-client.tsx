@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { StudentProfileData } from "@/lib/student-profile";
@@ -17,12 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { APP_TIMEZONES } from "@/lib/timezones";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import {
   motion,
   AnimatePresence,
 } from "framer-motion";
@@ -31,34 +25,12 @@ import { cn } from "@/lib/utils";
 import type { UserSettings } from "@/app/actions/settings";
 import type { ReferralDashboardData } from "@/app/actions/referral";
 import { ReferralProgramSection } from "@/components/student/referral-program-section";
+import { DivisionFocusSelect } from "@/components/student/division-focus-select";
 import { AccountSecurityPanel } from "@/components/account-security-panel";
 import { Typewriter } from "@/components/ui/typewriter";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import {
-  Atom,
-  BrainCircuit,
-  CircleSlash2,
-  Dna,
-  FlaskConical,
-  Globe2,
-  Landmark,
-  Sigma,
-  Sparkles,
-} from "lucide-react";
-
-type FocusIconComponent = ComponentType<{ className?: string }>;
-
-function resolveDivisionIcon(key: string, name: string): FocusIconComponent {
-  const source = `${key} ${name}`.toLowerCase();
-  if (source.includes("biology")) return Dna;
-  if (source.includes("chem")) return FlaskConical;
-  if (source.includes("computer") || source.includes("data")) return BrainCircuit;
-  if (source.includes("econom")) return Landmark;
-  if (source.includes("english") || source.includes("history")) return Globe2;
-  if (source.includes("math")) return Sigma;
-  if (source.includes("physics")) return Atom;
-  return Sparkles;
-}
+import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/lib/rank-icons";
+import { RankBadge } from "@/components/student/rank-badge";
 
 // ─── Shared Battle UI Components ─────────────────────────────────────────────
 
@@ -181,7 +153,6 @@ function StudentProfileFormSection({
   const [form, setForm] = useState<UserSettings>(initial);
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
-  const selectedDivision = divisions.find((d) => d.key === form.focused_division_key) ?? null;
 
   function save() {
     setErr(null);
@@ -274,63 +245,18 @@ function StudentProfileFormSection({
               <p className="mt-1 text-[11px] text-slate-500 italic">
                 Your primary division for leaderboards.
               </p>
-              <Select
-                value={form.focused_division_key ?? "__none__"}
+              <DivisionFocusSelect
+                value={form.focused_division_key}
                 onValueChange={(v) =>
                   setForm((f) => ({
                     ...f,
-                    focused_division_key: v === "__none__" ? null : v,
+                    focused_division_key: v,
                   }))
                 }
-              >
-                <SelectTrigger className="mt-4 h-11 border-indigo-200 bg-white text-slate-950 shadow-sm focus:ring-indigo-500 rounded-xl">
-                  {selectedDivision ? (
-                    <span className="flex items-center gap-2.5 truncate">
-                      {(() => {
-                        const Icon = resolveDivisionIcon(selectedDivision.key, selectedDivision.name);
-                        return <Icon className="h-4 w-4 shrink-0 text-indigo-500" aria-hidden />;
-                      })()}
-                      <span className="truncate font-mono text-[12px] font-semibold tracking-[0.08em] text-slate-950">
-                        {selectedDivision.name}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2.5 truncate">
-                      <CircleSlash2 className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-                      <span className="truncate font-mono text-[12px] font-semibold tracking-[0.08em] text-slate-700">
-                        None
-                      </span>
-                    </span>
-                  )}
-                </SelectTrigger>
-                <SelectContent className="border-indigo-200 bg-white text-slate-950 shadow-xl">
-                  <SelectItem value="__none__" className="py-2 text-slate-900 data-[highlighted]:bg-indigo-50 data-[highlighted]:text-slate-950 data-[state=checked]:bg-indigo-100/70 data-[state=checked]:text-slate-950">
-                    <span className="flex items-center gap-2.5">
-                      <CircleSlash2 className="h-4 w-4 text-slate-400" aria-hidden />
-                      <span className="font-mono text-[13px] font-semibold tracking-[0.08em] text-slate-800">
-                        None
-                      </span>
-                    </span>
-                  </SelectItem>
-                  {divisions.map((d) => {
-                    const Icon = resolveDivisionIcon(d.key, d.name);
-                    return (
-                    <SelectItem
-                      key={d.key}
-                      value={d.key}
-                      className="py-2 text-slate-900 data-[highlighted]:bg-indigo-50 data-[highlighted]:text-slate-950 data-[state=checked]:bg-indigo-100/70 data-[state=checked]:text-slate-950"
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <Icon className="h-4 w-4 text-indigo-500" aria-hidden />
-                        <span className="font-mono text-[13px] font-semibold tracking-[0.08em] text-slate-950">
-                          {d.name}
-                        </span>
-                      </span>
-                    </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+                divisions={divisions}
+                noneLabel="None"
+                triggerClassName="mt-4"
+              />
             </div>
 
             <div className="flex flex-col justify-center">
@@ -419,6 +345,11 @@ export function StudentProfileClient({
     month: "long",
     year: "numeric",
   }).format(new Date(data.memberSince));
+
+  const accountRank = useMemo(
+    () => getAccountRankFromTotalXp(data.totalXp),
+    [data.totalXp],
+  );
 
   async function onAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -543,6 +474,18 @@ export function StudentProfileClient({
                        </button>
                     </div>
                   )}
+                  <div
+                    className="absolute -bottom-1 -right-1 z-10 rounded-2xl ring-4 ring-white shadow-lg"
+                    title={normalizeRankTitle(accountRank.title)}
+                  >
+                    <RankBadge
+                      rank={accountRank}
+                      size="md"
+                      active
+                      showGlow={accountRank.key === "mentrixer"}
+                      priority
+                    />
+                  </div>
                 </div>
                 
                 {data.viewer === "owner" && (
@@ -585,19 +528,38 @@ export function StudentProfileClient({
                   <p className="text-sm font-medium text-slate-400 italic">Member since {memberSince}</p>
                 </div>
 
-                <div className="mt-10 flex flex-wrap items-center gap-6">
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-2.5 text-xs font-black uppercase italic tracking-widest text-amber-600 shadow-sm">
-                    {data.levelLabel}
+                <div className="mt-10 flex flex-col gap-8 sm:flex-row sm:flex-wrap sm:items-center">
+                  <div className="flex items-center gap-4">
+                    <RankBadge
+                      rank={accountRank}
+                      size="lg"
+                      active
+                      showGlow={accountRank.key === "mentrixer"}
+                    />
+                    <div className="min-w-0">
+                      <p
+                        className="text-2xl font-black uppercase italic tracking-tight sm:text-3xl"
+                        style={{ color: accountRank.labelOnLight }}
+                      >
+                        {normalizeRankTitle(accountRank.title)}
+                      </p>
+                      <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                        Level {accountRank.level}
+                      </p>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <p className="font-mono text-3xl font-black italic tracking-tight text-indigo-900">
-                      {data.totalXp.toLocaleString()} <span className="text-[11px] not-italic text-slate-400 uppercase tracking-widest ml-1">Total XP</span>
+                      {data.totalXp.toLocaleString()}{" "}
+                      <span className="ml-1 text-[11px] font-sans not-italic uppercase tracking-widest text-slate-400">
+                        Total XP
+                      </span>
                     </p>
-                    {data.streakDays > 0 && (
+                    {data.streakDays > 0 ? (
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-600">
-                         {data.streakDays}-Day Strike Active
+                        {data.streakDays}-Day Strike Active
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 

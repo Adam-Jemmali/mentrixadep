@@ -10,14 +10,34 @@ import {
   pollDuelQueue,
   createAiDuelFromQueue,
   getDuelMatchupPreview,
+  acceptQueueMatch,
+  declineQueueMatch,
+  getQueueMatchAcceptance,
+  type DuelParticipantClan,
 } from "@/app/actions/duel";
 import { DUEL_AI_QUEUE_WAIT_MS } from "@/lib/duel-constants";
 import { Button } from "@/components/ui/button";
 import {  Info, Users } from "lucide-react";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
+import { DuelMatchAcceptScreen } from "@/components/duel/duel-match-accept-screen";
+import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
 import { getDivisionTheme } from "@/lib/division-ui";
 import { cn } from "@/lib/utils";
+import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/lib/rank-icons";
+import { RankBadge } from "@/components/student/rank-badge";
+import {
+  enterDuelQueueMusic,
+  startDuelLoopFromGesture,
+  playMentrixaRankUpOnce,
+} from "@/lib/mentrixa-sounds";
+import { safeRouterRefresh } from "@/lib/safe-router-refresh";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import {
+  arenaDivisionFocus,
+  arenaDivisionCardClasses,
+  arenaDivisionPanelClasses,
+} from "@/lib/arena-division-focus";
 
 interface Props {
   divisions: { key: string; name: string; description: string | null }[];
@@ -27,7 +47,8 @@ interface Props {
   currentUser: {
     name: string;
     avatarUrl: string | null;
-    clan: { name: string; tag: string } | null;
+    totalXp: number | null;
+    clan: DuelParticipantClan | null;
   };
 }
 
@@ -39,7 +60,7 @@ type MatchIntro = {
     avatarUrl: string | null; 
     bio: string | null; 
     totalXp: number | null;
-    clan: { name: string; tag: string } | null;
+    clan: DuelParticipantClan | null;
   };
   opponent: { 
     name: string; 
@@ -47,11 +68,11 @@ type MatchIntro = {
     bio: string | null; 
     totalXp: number | null; 
     isAi: boolean;
-    clan: { name: string; tag: string } | null;
+    clan: DuelParticipantClan | null;
   };
 };
 
-type MatchPhase = "preview" | "merge";
+type MatchPhase = "accept" | "merge";
 
 function formatCountdown(totalSeconds: number): string {
   const safe = Math.max(0, totalSeconds);
@@ -105,11 +126,16 @@ export function DuelHub({
   const [queueError, setQueueError] = useState<string | null>(null);
   const [matchIntro, setMatchIntro] = useState<MatchIntro | null>(null);
   const [matchPhase, setMatchPhase] = useState<MatchPhase | null>(null);
+  const [acceptBusy, setAcceptBusy] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [meAccepted, setMeAccepted] = useState(false);
+  const [opponentAccepted, setOpponentAccepted] = useState(false);
 
   const matchIntroRef = useRef<MatchIntro | null>(null);
   matchIntroRef.current = matchIntro;
 
   const queueResolveLockRef = useRef(false);
+  const myAccountRank = getAccountRankFromTotalXp(currentUser.totalXp ?? 0);
 
   useEffect(() => {
     if (queuePhase !== "waiting") {
@@ -159,12 +185,6 @@ export function DuelHub({
   }
 
   useEffect(() => {
-    if (!matchIntro || matchPhase !== "preview") return;
-    const timer = window.setTimeout(() => setMatchPhase("merge"), 1500);
-    return () => window.clearTimeout(timer);
-  }, [matchIntro, matchPhase]);
-
-  useEffect(() => {
     if (!matchIntro || matchPhase !== "merge") return;
     const timer = window.setTimeout(() => {
       router.push(`/student/duel/${matchIntro.duelId}`);
@@ -172,37 +192,111 @@ export function DuelHub({
     return () => window.clearTimeout(timer);
   }, [matchIntro, matchPhase, router]);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const stopAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-  }, []);
-
-  const playSuspense = useCallback(() => {
-    stopAudio();
-    const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-tense-horror-drum-roll-668.mp3");
-    audio.loop = true;
-    audio.volume = 0.4;
-    audio.play().catch(() => {
-      console.warn("Audio playback failed — usually requires user interaction first.");
-    });
-    audioRef.current = audio;
-  }, [stopAudio]);
+  useEffect(() => {
+    if (queuePhase !== "waiting" || matchIntro) return;
+    enterDuelQueueMusic();
+  }, [queuePhase, matchIntro]);
 
   const playMatchFoundStinger = useCallback(() => {
-    const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-cinematic-impact-with-reverb-2253.mp3");
-    audio.volume = 0.5;
-    audio.play().catch(() => { });
+    playMentrixaRankUpOnce();
   }, []);
+
+  const handleAcceptMatch = useCallback(async () => {
+    if (!matchIntro || acceptBusy) return;
+    setAcceptBusy(true);
+    setAcceptError(null);
+    try {
+      const r = await acceptQueueMatch(matchIntro.duelId);
+      if (!r.success) {
+        setAcceptError(r.error);
+        return;
+      }
+      setMeAccepted(r.state.meAccepted);
+      setOpponentAccepted(r.state.opponentAccepted);
+      if (r.state.bothAccepted || r.state.status === "active") {
+        setMatchPhase("merge");
+      }
+    } catch {
+      setAcceptError("Could not accept the match. Try again.");
+    } finally {
+      setAcceptBusy(false);
+    }
+  }, [matchIntro, acceptBusy]);
+
+  const handleDeclineMatch = useCallback(async () => {
+    if (!matchIntro || acceptBusy) return;
+    setAcceptBusy(true);
+    setAcceptError(null);
+    try {
+      const r = await declineQueueMatch(matchIntro.duelId);
+      if (!r.success) {
+        setAcceptError(r.error);
+        return;
+      }
+      setMatchIntro(null);
+      setMatchPhase(null);
+      setMeAccepted(false);
+      setOpponentAccepted(false);
+      setQueuePhase("idle");
+      setQueueStartedAtMs(null);
+      setQueueError("You declined this match.");
+    } catch {
+      setAcceptError("Could not decline the match.");
+    } finally {
+      setAcceptBusy(false);
+    }
+  }, [matchIntro, acceptBusy]);
+
+  useEffect(() => {
+    if (!matchIntro || matchPhase !== "accept") return;
+
+    let cancelled = false;
+    const sync = async () => {
+      try {
+        const resp = await getQueueMatchAcceptance(matchIntro.duelId);
+        if (cancelled || !resp.success) return;
+
+        const s = resp.state;
+        setMeAccepted(s.meAccepted);
+        setOpponentAccepted(s.opponentAccepted);
+
+        if (s.terminal && s.status !== "active") {
+          setAcceptError(
+            s.status === "cancelled" || s.status === "declined"
+              ? "Match was declined. Returning to matchmaking."
+              : "This match is no longer available.",
+          );
+          window.setTimeout(() => {
+            if (cancelled) return;
+            setMatchIntro(null);
+            setMatchPhase(null);
+            setMeAccepted(false);
+            setOpponentAccepted(false);
+            setQueuePhase("idle");
+            setQueueStartedAtMs(null);
+          }, 2200);
+          return;
+        }
+
+        if (s.bothAccepted || s.status === "active") {
+          setMatchPhase("merge");
+        }
+      } catch {
+        /* poll again */
+      }
+    };
+
+    void sync();
+    const id = setInterval(() => void sync(), 1500);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [matchIntro, matchPhase]);
 
   const showMatchIntroAndNavigate = useCallback(async (duelId: string): Promise<boolean> => {
     if (transitioningRef.current) return false;
     transitioningRef.current = true;
-    stopAudio();
     playMatchFoundStinger();
 
     const fallbackPush = () => {
@@ -239,7 +333,10 @@ export function DuelHub({
           clan: preview.opponent.clan,
         },
       });
-      setMatchPhase("preview");
+      setMatchPhase("accept");
+      setMeAccepted(false);
+      setOpponentAccepted(false);
+      setAcceptError(null);
       return true;
     } catch {
       fallbackPush();
@@ -247,7 +344,7 @@ export function DuelHub({
     } finally {
       transitioningRef.current = false;
     }
-  }, [router, divisions, stopAudio, playMatchFoundStinger]);
+  }, [router, divisions, playMatchFoundStinger]);
 
   const attemptResolveQueuedMatch = useCallback(async (): Promise<boolean> => {
     if (!divisionKey) return false;
@@ -255,18 +352,29 @@ export function DuelHub({
     if (queueResolveLockRef.current) return false;
     queueResolveLockRef.current = true;
     try {
-      const p = await pollDuelQueue(divisionKey);
+      let p;
+      try {
+        p = await pollDuelQueue(divisionKey);
+      } catch {
+        return false;
+      }
       if (p?.state === "matched" && p.duelId) {
         for (let attempt = 0; attempt < 4; attempt++) {
           if (await showMatchIntroAndNavigate(p.duelId)) return true;
           await new Promise((r) => setTimeout(r, 280));
         }
         setQueueError(
-          "A human match was found but the intro did not open. Check “Your duels” below and tap Open, or cancel and try again."
+          "A  match was found but the intro did not open. Check “Your duels” below and tap Open, or cancel and try again."
         );
         return false;
       }
-      const r = await createAiDuelFromQueue(divisionKey);
+      let r;
+      try {
+        r = await createAiDuelFromQueue(divisionKey);
+      } catch {
+        setQueueError("Matchmaking connection lost. Check your network and try again.");
+        return false;
+      }
       if (r.success) {
         for (let attempt = 0; attempt < 4; attempt++) {
           if (await showMatchIntroAndNavigate(r.duelId)) return true;
@@ -275,7 +383,7 @@ export function DuelHub({
         setQueueError(
           "Mentrixa Quest duel was created but the intro did not open. Open it from “Your duels” below."
         );
-        router.refresh();
+        safeRouterRefresh(router);
         return false;
       }
       setQueueError(r.error);
@@ -288,12 +396,16 @@ export function DuelHub({
   useEffect(() => {
     if (queuePhase !== "waiting" || !divisionKey || matchIntro) return;
     const tick = async () => {
-      const p = await pollDuelQueue(divisionKey);
-      if (p?.state === "matched" && p.duelId) {
-        if (!(await showMatchIntroAndNavigate(p.duelId))) {
-          await new Promise((r) => setTimeout(r, 350));
-          await showMatchIntroAndNavigate(p.duelId);
+      try {
+        const p = await pollDuelQueue(divisionKey);
+        if (p?.state === "matched" && p.duelId) {
+          if (!(await showMatchIntroAndNavigate(p.duelId))) {
+            await new Promise((r) => setTimeout(r, 350));
+            await showMatchIntroAndNavigate(p.duelId);
+          }
         }
+      } catch {
+        /* transient network / dev hiccup — poll again on next interval */
       }
     };
     const id = setInterval(() => void tick(), 2000);
@@ -319,6 +431,7 @@ export function DuelHub({
   }, [queuePhase, divisionKey, matchIntro, attemptResolveQueuedMatch]);
 
   async function playSparringQuestNow() {
+    startDuelLoopFromGesture();
     setQueueError(null);
     setInstantSparringLoading(true);
     try {
@@ -339,34 +452,37 @@ export function DuelHub({
   async function findMatch(explicitDivisionKey: string) {
     const key = explicitDivisionKey.trim();
     if (!key) return;
-    playSuspense();
+    startDuelLoopFromGesture();
     setQueueLoading(true);
     setQueueError(null);
     try {
       setDivisionKey(key);
-      const r = await joinDuelQueue(key);
+      let r;
+      try {
+        r = await joinDuelQueue(key);
+      } catch {
+        setQueueError("Could not reach matchmaking. Check your connection and try again.");
+        return;
+      }
       if (!r || typeof r !== "object" || !("success" in r)) {
-        stopAudio();
         setQueueError("Matchmaking failed. Please try again.");
         return;
       }
       if (!r.success) {
-        stopAudio();
         setQueueError(r.error);
         return;
       }
       if (r.state === "matched" && "duelId" in r && r.duelId) {
         const started = await showMatchIntroAndNavigate(r.duelId);
         if (!started) {
-          stopAudio();
           setQueueError("Could not open match preview. Try again from Your duels.");
         }
         return;
       }
       setQueueStartedAtMs(Date.now());
       setQueuePhase("waiting");
+      enterDuelQueueMusic();
     } catch {
-      stopAudio();
       setQueueError("Matchmaking failed. Please try again.");
     } finally {
       setQueueLoading(false);
@@ -374,7 +490,6 @@ export function DuelHub({
   }
 
   async function cancelQueue() {
-    stopAudio();
     setQueueLoading(true);
     setQueueError(null);
     await leaveDuelQueue();
@@ -383,7 +498,10 @@ export function DuelHub({
     setQueuePhase("idle");
     setMatchIntro(null);
     setMatchPhase(null);
-    router.refresh();
+    setMeAccepted(false);
+    setOpponentAccepted(false);
+    setAcceptError(null);
+    safeRouterRefresh(router);
   }
 
   if (divisions.length === 0) {
@@ -400,42 +518,77 @@ export function DuelHub({
       divisionKey;
 
     return (
-      <div className="fixed inset-0 z-[110] overflow-hidden bg-[#09162c]">
+      <div className="fixed inset-0 z-[110] flex h-[100dvh] flex-col overflow-hidden bg-[#09162c]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_42%),radial-gradient(circle_at_50%_15%,rgba(148,163,184,0.08),transparent_28%),linear-gradient(180deg,#0c1a33_0%,#09162c_100%)]" />
         <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:118px_118px] bg-repeat opacity-[0.045]" />
 
-        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-8 text-white">
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pt-4 pb-3 text-white sm:pt-6">
+          <ArenaQueueMatchHeadline divisionLabel={queueDivisionLabel} />
+
           {/* SEARCHING CONTAINER */}
-          <div className="mt-10 flex w-full max-w-6xl items-center justify-center gap-4 sm:gap-12 relative">
+          <div className="mx-auto mt-4 flex w-full max-w-6xl flex-1 items-center justify-center gap-3 sm:mt-6 sm:gap-8 lg:gap-12">
             
             {/* YOU SIDE */}
             <motion.div
               initial={{ opacity: 0, x: -50, scale: 0.8 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               transition={{ type: "spring", damping: 15 }}
-              className="flex flex-col items-center gap-5"
+              className="flex max-w-[9.5rem] flex-col items-center gap-3 sm:max-w-none sm:gap-4"
             >
               <div className="relative group">
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-500 opacity-20 blur group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-pulse" />
-                <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-2 border-white/20 bg-slate-900 shadow-[0_0_50px_rgba(99,102,241,0.15)] sm:h-40 sm:w-40 overflow-hidden">
-                  {getProfileImage(currentUser)}
+                <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-slate-900 shadow-[0_0_50px_rgba(99,102,241,0.15)] sm:h-32 sm:w-32 lg:h-36 lg:w-36">
+                  <motion.div
+                    className="relative h-full w-full"
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 10,
+                      ease: "linear",
+                      repeat: Infinity,
+                    }}
+                  >
+                    {getProfileImage(currentUser)}
+                  </motion.div>
                 </div>
               </div>
-              <div className="text-center space-y-1">
-                <p className="text-lg font-black uppercase italic tracking-tight text-white drop-shadow-md">{currentUser.name}</p>
+              <div className="space-y-1.5 text-center sm:space-y-2">
+                <div className="flex justify-center">
+                  <RankBadge rank={myAccountRank} size="sm" active showGlow={myAccountRank.key === "mentrixer"} className="sm:!h-14 sm:!w-14" />
+                </div>
+                <p
+                  className="text-[10px] font-bold uppercase tracking-[0.2em]"
+                  style={{ color: myAccountRank.labelOnDark }}
+                >
+                  {normalizeRankTitle(myAccountRank.title)}
+                </p>
+                <p className="text-base font-black uppercase italic tracking-tight text-white drop-shadow-md sm:text-lg">
+                  {currentUser.name}
+                </p>
                 {currentUser.clan ? (
-                   <motion.div 
-                     initial={{ opacity: 0, y: 5 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     className="flex flex-col items-center"
-                   >
-                     <span className="text-[10px] font-black italic uppercase tracking-[0.25em] text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-sm border border-indigo-400/20">
-                       {currentUser.clan.name}
-                     </span>
-                     <span className="text-[9px] font-bold text-slate-500 mt-1">[{currentUser.clan.tag}]</span>
-                   </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col items-center gap-2"
+                  >
+                    <ClanAvatarBadge
+                      name={currentUser.clan.name}
+                      avatarKind={currentUser.clan.avatarKind}
+                      presetKey={currentUser.clan.presetKey}
+                      avatarUrl={currentUser.clan.avatarUrl}
+                      size="sm"
+                      className="border-2 border-indigo-400/35 bg-slate-950/90 text-indigo-200 shadow-[0_0_18px_rgba(99,102,241,0.25)]"
+                    />
+                    <span className="text-[10px] font-black italic uppercase tracking-[0.2em] text-indigo-300">
+                      {currentUser.clan.name}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                      [{currentUser.clan.tag}]
+                    </span>
+                  </motion.div>
                 ) : (
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Lone Mentrixer</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    Lone Mentrixer
+                  </span>
                 )}
               </div>
             </motion.div>
@@ -445,12 +598,12 @@ export function DuelHub({
               <motion.div 
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="flex min-w-[170px] flex-col items-center rounded-[2rem] border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl sm:min-w-[240px] sm:px-10 sm:py-8 shadow-2xl"
+                className="flex min-w-[150px] flex-col items-center rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-5 text-center shadow-2xl backdrop-blur-xl sm:min-w-[220px] sm:px-8 sm:py-6"
               >
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">
                   Arena Match
                 </div>
-                <p className="mt-2 font-mono text-5xl font-black tabular-nums text-white sm:text-7xl drop-shadow-lg">
+                <p className="mt-2 font-mono text-4xl font-black tabular-nums text-white drop-shadow-lg sm:text-6xl">
                   {formatCountdown(queueCountdownSec)}
                 </p>
                 <p className="mt-2 text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em]">Live Matchmaking</p>
@@ -478,9 +631,9 @@ export function DuelHub({
               initial={{ opacity: 0, x: 50, scale: 0.8 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               transition={{ type: "spring", damping: 15 }}
-              className="flex flex-col items-center gap-5"
+              className="flex max-w-[9.5rem] flex-col items-center gap-3 sm:max-w-none sm:gap-4"
             >
-              <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-2 border-white/5 bg-slate-900/50 shadow-[0_0_30px_rgba(255,255,255,0.03)] sm:h-40 sm:w-40 backdrop-blur-sm">
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-white/5 bg-slate-900/50 shadow-[0_0_30px_rgba(255,255,255,0.03)] backdrop-blur-sm sm:h-32 sm:w-32 lg:h-36 lg:w-36">
                 <motion.div
                   animate={{ 
                     rotate: 360,
@@ -509,110 +662,47 @@ export function DuelHub({
             </motion.div>
 
           </div>
+        </div>
 
-          {/* VS ANIMATION */}
-          <div className="mt-12 flex flex-col items-center justify-center gap-5">
-            <ArenaQueueMatchHeadline divisionLabel={queueDivisionLabel} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0, rotate: -180 }}
-              animate={{ 
-                opacity: 1, 
-                scale: [0, 1.4, 1], 
-                rotate: [-180, 10, -5],
-              }}
-              transition={{ duration: 1, ease: "backOut" }}
-              className="relative flex h-32 w-32 items-center justify-center"
-            >
-              <motion.div 
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute inset-0 rounded-full bg-indigo-500/20 blur-2xl" 
-              />
-              <div className="absolute -rotate-[8deg] text-[4rem] font-black italic tracking-[-0.3em] text-white drop-shadow-[0_0_30px_rgba(99,102,241,0.6)] sm:text-[5rem]">
-                VS
-              </div>
-              {/* Decorative lines */}
-              <div className="absolute -left-12 top-1/2 h-0.5 w-10 bg-gradient-to-r from-transparent to-white/40" />
-              <div className="absolute -right-12 top-1/2 h-0.5 w-10 bg-gradient-to-l from-transparent to-white/40" />
-            </motion.div>
-          </div>
-
-          <div className="mt-8">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={queueLoading || instantSparringLoading}
-              className="text-indigo-600 hover:text-purple-500 hover:bg-black transition-all"
-              onClick={() => void cancelQueue()}
-            >
-              Cancel search
-            </Button>
-          </div>
+        <div className="relative z-20 shrink-0 border-t border-white/10 bg-[#09162c]/95 px-4 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={queueLoading || instantSparringLoading}
+            className="mx-auto flex h-10 w-full max-w-xs items-center justify-center rounded-xl border border-indigo-400/25 bg-indigo-500/10 text-xs font-black uppercase tracking-[0.16em] text-indigo-200 transition-all hover:border-indigo-300/40 hover:bg-indigo-500/20 hover:text-white"
+            onClick={() => void cancelQueue()}
+          >
+            Cancel search
+          </Button>
         </div>
       </div>
     );
   }
 
-  if (matchIntro && matchPhase === "preview") {
+  if (matchIntro && matchPhase === "accept") {
+    const acceptStatusLine =
+      meAccepted && opponentAccepted
+        ? "Starting duel…"
+        : meAccepted
+          ? "Waiting for opponent…"
+          : opponentAccepted
+            ? "Opponent is ready — accept to continue"
+            : "Waiting for both players to accept";
+
     return (
-      <div className="fixed inset-0 z-[120] overflow-hidden bg-[#08172f]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(59,130,246,0.15),transparent_42%),linear-gradient(180deg,#0b1832_0%,#08172f_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:118px_118px] bg-repeat opacity-[0.04]" />
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-8 text-white"
-        >
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="mb-8 px-6 py-2 rounded-full bg-indigo-600 text-white font-black italic uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(99,102,241,0.4)]"
-          >
-            Match Found!
-          </motion.div>
-
-          <div className="mt-2 flex w-full max-w-5xl items-center justify-center gap-4 sm:gap-12 px-4">
-            <ProfileCard
-              name={matchIntro.me.name}
-              bio={matchIntro.me.bio}
-              avatarUrl={matchIntro.me.avatarUrl}
-              totalXp={matchIntro.me.totalXp}
-              clan={matchIntro.me.clan}
-              tone="cyan"
-              align="left"
-            />
-
-            <motion.div 
-              initial={{ scale: 0, rotate: 180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", delay: 0.3 }}
-              className="flex flex-col items-center justify-center px-4"
-            >
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/20 bg-white/5 backdrop-blur-md shadow-2xl">
-                <div className="text-2xl font-black italic tracking-tighter text-white">VS</div>
-              </div>
-            </motion.div>
-
-            <ProfileCard
-              name={matchIntro.opponent.name}
-              bio={matchIntro.opponent.bio}
-              avatarUrl={matchIntro.opponent.avatarUrl}
-              totalXp={matchIntro.opponent.totalXp}
-              clan={matchIntro.opponent.clan}
-              tone="violet"
-              align="right"
-              isAi={matchIntro.opponent.isAi}
-            />
-          </div>
-          
-          <div className="mt-12 text-center">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Entering Battle Room...</p>
-          </div>
-        </motion.div>
-      </div>
+      <DuelMatchAcceptScreen
+        divisionLabel={matchIntro.divisionLabel}
+        me={matchIntro.me}
+        opponent={matchIntro.opponent}
+        meAccepted={meAccepted}
+        opponentAccepted={opponentAccepted}
+        acceptBusy={acceptBusy}
+        acceptError={acceptError}
+        onAccept={() => void handleAcceptMatch()}
+        onDecline={() => void handleDeclineMatch()}
+        statusLine={acceptStatusLine}
+      />
     );
   }
 
@@ -688,13 +778,32 @@ export function DuelHub({
         </motion.div>
       )}
 
-      <motion.ul 
-        layout
-        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+      <div
+        className={cn(
+          mentrixStudent.cardArena,
+          arenaDivisionPanelClasses(),
+        )}
       >
+        <p
+          className={cn(
+            "text-[10px] font-bold uppercase tracking-[0.22em]",
+            arenaDivisionFocus.eyebrow,
+          )}
+        >
+          Choose duel arena
+        </p>
+        <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
+          Tap a subject
+        </p>
+
+        <motion.ul
+          layout
+          className="mt-5 grid gap-5 overflow-visible sm:grid-cols-2 lg:grid-cols-3"
+        >
         {divisions.map((d, i) => {
           const t = getDivisionTheme(d.key);
           const isSelected = divisionKey === d.key;
+          const isProfileFocus = preferredDivisionKey === d.key;
           
           return (
             <motion.li 
@@ -702,16 +811,48 @@ export function DuelHub({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
+              className="overflow-visible p-1"
             >
               <div
+                role="button"
+                tabIndex={0}
+                aria-selected={isSelected}
                 onClick={() => setDivisionKey(d.key)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setDivisionKey(d.key);
+                  }
+                }}
                 className={cn(
-                  "group relative h-full flex flex-col rounded-3xl border bg-white p-6 transition-all duration-300 cursor-pointer",
-                  isSelected
-                    ? "border-indigo-500 ring-2 ring-indigo-500/20 shadow-xl shadow-indigo-500/10"
-                    : "border-slate-200 hover:border-indigo-300 hover:shadow-lg"
+                  "cursor-pointer",
+                  arenaDivisionCardClasses({
+                    isSelected,
+                    isProfileFocus,
+                  }),
                 )}
               >
+                {isSelected ? (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-cyan-400"
+                    aria-hidden
+                  />
+                ) : null}
+
+                {(isSelected || isProfileFocus) && (
+                  <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
+                    {isSelected ? (
+                      <span className="rounded-full border-2 border-cyan-200 bg-cyan-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-950 shadow-md shadow-cyan-900/40">
+                        Selected
+                      </span>
+                    ) : null}
+                    {isProfileFocus ? (
+                      <span className="rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
+                        Your focus
+                      </span>
+                    ) : null}
+                  </div>
+                )}
                 {/* ICON & TITLE */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4 min-w-0">
@@ -741,15 +882,19 @@ export function DuelHub({
                 <div className="mt-6">
                   <Button 
                     disabled={queueLoading}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      startDuelLoopFromGesture();
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       void findMatch(d.key);
                     }}
                     className={cn(
                       "w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
-                      isSelected 
-                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                      isSelected
+                        ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/35 ring-2 ring-cyan-300/80 hover:bg-cyan-500"
+                        : "bg-slate-100 text-slate-800 hover:bg-slate-200",
                     )}
                   >
                     {isSelected && queueLoading ? "Searching..." : "Start Duel"}
@@ -764,7 +909,8 @@ export function DuelHub({
             </motion.li>
           );
         })}
-      </motion.ul>
+        </motion.ul>
+      </div>
     </div>
   );
 }
@@ -812,67 +958,6 @@ function ArenaQueueMatchHeadline({ divisionLabel }: { divisionLabel: string }) {
         ) : null}
       </p>
     </div>
-  );
-}
-
-function ProfileCard({
-  name,
-  bio,
-  avatarUrl,
-  totalXp,
-  clan,
-  tone,
-  align,
-  isAi = false,
-}: {
-  name: string;
-  bio: string | null;
-  avatarUrl: string | null;
-  totalXp: number | null;
-  clan?: { name: string; tag: string } | null;
-  tone: "cyan" | "violet";
-  align: "left" | "right";
-  isAi?: boolean;
-}) {
-  const xpLabel = totalXp != null ? `${totalXp.toLocaleString()} XP` : null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className={`flex w-[min(100%,18rem)] flex-col items-center gap-3 text-center ${align === "right" ? "sm:translate-y-1" : ""}`}
-    >
-      <div
-        className={`relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border bg-slate-900 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] sm:h-28 sm:w-28 ${tone === "cyan" ? "border-cyan-200/30" : "border-violet-200/30"
-          }`}
-      >
-        {avatarUrl ? (
-          <Image src={avatarUrl} alt={name} fill unoptimized className="object-cover" sizes="112px" />
-        ) : (
-          <Image 
-            src={isAi ? MENTRIXA_LOGO_PNG : "/icons/mentrixer.svg"} 
-            alt={name} 
-            fill 
-            className="object-contain p-6" 
-            sizes="112px" 
-          />
-        )}
-      </div>
-
-      <div className="space-y-1">
-        <p className="text-base font-black uppercase italic tracking-tight text-white">{name}</p>
-        
-        {clan && (
-           <p className="text-[10px] font-black italic uppercase tracking-[0.2em] text-indigo-400">
-             {clan.name} <span className="text-slate-500">[{clan.tag}]</span>
-           </p>
-        )}
-
-        {xpLabel ? <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-300/75">{xpLabel}</p> : null}
-        {bio ? <p className="max-w-[18rem] text-sm leading-relaxed text-slate-200/80">{bio}</p> : null}
-      </div>
-    </motion.div>
   );
 }
 

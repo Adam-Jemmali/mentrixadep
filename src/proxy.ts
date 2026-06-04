@@ -25,6 +25,8 @@ import { waitlistRoleFromQuery } from "@/lib/waitlist-role";
 const publicRoutes = new Set([
   "/",
   "/api/health",
+  /** Public landing metrics (read-only aggregates). */
+  "/api/stats/landing",
   "/api/waitlist/join",
   "/api/waitlist/status",
   /** Optional-auth: handler uses getCurrentUser(); avoids redirect for guests with ?ref cookie */
@@ -173,6 +175,7 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
   const allowFramedAuthEntryPaths =
     pathname === "/auth/activate" ||
     pathname === "/auth/callback" ||
+    pathname === "/auth/signin" ||
     pathname === "/auth/signup" ||
     pathname === "/auth/session-sync";
   /**

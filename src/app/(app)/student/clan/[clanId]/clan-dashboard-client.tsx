@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -15,17 +15,15 @@ import { CLAN_AVATAR_PRESETS, CLAN_QUEST_CHALLENGE_BONUS_XP } from "@/lib/clan-c
 import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
 import { ClanChat } from "@/components/clan/clan-chat";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { DivisionFocusSelect } from "@/components/student/division-focus-select";
 import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
 import { Typewriter } from "@/components/ui/typewriter";
 import { GooeyText } from "@/components/ui/gooey-text-morphing";
 import { cn } from "@/lib/utils";
+import { safeRouterRefresh } from "@/lib/safe-router-refresh";
+import {
+  clanLightFieldLabel,
+} from "@/lib/clan-light-form-ui";
 
 type Pending = {
   id: string;
@@ -56,7 +54,6 @@ export function ClanDashboardClient({
   const { clan, memberCount, weeklyClanXp, challenge, members, trophies } = data;
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
   const [focusSelection, setFocusSelection] = useState<string>(clan.focus_division_key ?? "__none__");
   const [focusError, setFocusError] = useState<string | null>(null);
 
@@ -65,9 +62,7 @@ export function ClanDashboardClient({
   }, [router]);
 
   function refreshSoftly() {
-    startTransition(() => {
-      router.refresh();
-    });
+    safeRouterRefresh(router);
   }
 
   const ch = challenge;
@@ -137,7 +132,7 @@ export function ClanDashboardClient({
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFF] text-slate-900 p-6 md:p-10 space-y-12 max-w-7xl mx-auto">
+    <div className="mx-surface-light min-h-screen rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm md:p-10 space-y-12 max-w-7xl mx-auto">
       {/* HEADER: Premium Clean White */}
       <header className="relative flex flex-col md:flex-row items-center md:items-end justify-between gap-8 pb-12 border-b border-slate-100">
         <div className="flex flex-col items-center md:items-start gap-4 flex-1">
@@ -182,11 +177,11 @@ export function ClanDashboardClient({
 
         <div className="flex gap-12 text-center md:text-right">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1">Members</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Members</p>
             <p className="text-4xl font-black italic tracking-tighter">{memberCount}</p>
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1">Weekly XP</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Weekly XP</p>
             <p className="text-4xl font-black italic tracking-tighter text-indigo-600">{weeklyClanXp.toLocaleString()}</p>
           </div>
         </div>
@@ -260,12 +255,12 @@ export function ClanDashboardClient({
               <div>
                 <h2 className="text-2xl font-black italic uppercase tracking-tight text-slate-900">Weekly Challenge</h2>
                 <div className="mt-1 h-5 overflow-hidden">
-                  <Typewriter text={`Complete ${target} Quests for ${CLAN_QUEST_CHALLENGE_BONUS_XP} XP bonus`} speed={30} className="text-xs font-medium text-slate-400" />
+                  <Typewriter text={`Complete ${target} Quests for ${CLAN_QUEST_CHALLENGE_BONUS_XP} XP bonus`} speed={30} className="text-xs font-medium text-slate-600" />
                 </div>
               </div>
               <div className="text-right">
                 <span className="text-4xl font-black italic text-slate-900">{done}</span>
-                <span className="text-lg font-bold text-slate-200"> / {target}</span>
+                <span className="text-lg font-bold text-slate-500"> / {target}</span>
               </div>
             </div>
 
@@ -287,8 +282,8 @@ export function ClanDashboardClient({
           {/* STANDINGS: Typography focused */}
           <section className="space-y-8">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">Standings</h2>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Mentrixers</span>
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-600">Standings</h2>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Mentrixers</span>
             </div>
             <div className="space-y-2">
               {members.map((m, i) => (
@@ -299,7 +294,7 @@ export function ClanDashboardClient({
                   transition={{ delay: i * 0.05 }}
                   className="flex items-center gap-6 py-4 px-2 hover:bg-slate-50/50 transition-colors rounded-2xl group"
                 >
-                  <span className="w-8 text-2xl font-black italic text-slate-100 group-hover:text-slate-200 transition-colors">
+                  <span className="w-8 text-2xl font-black italic text-slate-400 group-hover:text-slate-600 transition-colors">
                     {String(i + 1).padStart(2, '0')}
                   </span>
 
@@ -307,7 +302,7 @@ export function ClanDashboardClient({
                     {m.avatar_url ? (
                       <Image src={m.avatar_url} alt="" fill unoptimized className="object-cover rounded-full" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-slate-50 rounded-full text-slate-300 font-bold text-xs">
+                      <div className="flex h-full w-full items-center justify-center bg-slate-100 rounded-full text-slate-600 font-bold text-xs">
                         {m.display_name?.[0] || 'M'}
                       </div>
                     )}
@@ -319,7 +314,7 @@ export function ClanDashboardClient({
                         {m.display_name?.trim() || `Mentrixer ${m.user_id.slice(0, 8)}`}
                       </span>
                       {m.role === "leader" && (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Leader</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Leader</span>
                       )}
                     </div>
                   </div>
@@ -327,14 +322,14 @@ export function ClanDashboardClient({
                   <div className="flex items-center gap-8">
                     <div className="text-right">
                       <span className="text-xl font-black italic text-slate-900 block">{m.weekly_xp.toLocaleString()}</span>
-                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Weekly XP</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weekly XP</span>
                     </div>
 
                     {m.user_id !== currentUserId && (
                       <button
                         onClick={() => void onDuel(m.user_id)}
                         disabled={busy === m.user_id}
-                        className="h-10 px-6 rounded-xl border border-slate-100 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:border-slate-900 hover:text-slate-900 transition-all opacity-0 group-hover:opacity-100"
+                        className="h-10 px-6 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 hover:border-slate-900 hover:text-slate-900 transition-all opacity-0 group-hover:opacity-100"
                       >
                         {busy === m.user_id ? "..." : "Friendly Battle"}
                       </button>
@@ -361,11 +356,11 @@ export function ClanDashboardClient({
           <div className="space-y-10">
             {isLeader && (
               <section className="space-y-8">
-                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">Management</h2>
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-600">Management</h2>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3">Badge Preset</label>
+                    <label className={`${clanLightFieldLabel} text-[10px] font-black uppercase tracking-widest block mb-3`}>Badge Preset</label>
                     <div className="grid grid-cols-3 gap-2">
                       {CLAN_AVATAR_PRESETS.map((k) => (
                         <button
@@ -376,7 +371,7 @@ export function ClanDashboardClient({
                             "h-12 rounded-xl border font-bold uppercase text-[10px] tracking-tighter transition-all",
                             clan.avatar_preset_key === k
                               ? "bg-slate-900 border-slate-900 text-white"
-                              : "border-slate-100 text-slate-400 hover:border-slate-300"
+                              : "border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900"
                           )}
                         >
                           {k}
@@ -386,8 +381,8 @@ export function ClanDashboardClient({
                   </div>
 
                   <div className="pt-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3">Custom Emblem</label>
-                    <label className="flex items-center justify-center w-full h-12 rounded-xl border border-dashed border-slate-200 hover:border-slate-900 hover:bg-slate-50 transition-all cursor-pointer group">
+                    <label className={`${clanLightFieldLabel} text-[10px] font-black uppercase tracking-widest block mb-3`}>Custom Emblem</label>
+                    <label className="flex items-center justify-center w-full h-12 rounded-xl border border-dashed border-slate-300 hover:border-slate-900 hover:bg-slate-50 transition-all cursor-pointer group">
                       <input
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
@@ -395,25 +390,21 @@ export function ClanDashboardClient({
                         disabled={busy !== null}
                         onChange={(e) => void onFile(e)}
                       />
-                      <span className="text-xs font-bold text-slate-300 group-hover:text-slate-900 transition-colors uppercase tracking-widest">
+                      <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-widest">
                         {busy === "up" ? "Uploading..." : "Upload Image"}
                       </span>
                     </label>
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Focus Division</label>
-                    <Select value={focusSelection} onValueChange={setFocusSelection}>
-                      <SelectTrigger className="bg-slate-50 border-none h-12 rounded-xl">
-                        <SelectValue placeholder="Select division" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">No Focus</SelectItem>
-                        {divisions.map((d) => (
-                          <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <label className={`${clanLightFieldLabel} text-[10px] font-black uppercase tracking-widest block`}>Focus Division</label>
+                    <DivisionFocusSelect
+                      value={focusSelection === "__none__" ? null : focusSelection}
+                      onValueChange={(v) => setFocusSelection(v ?? "__none__")}
+                      divisions={divisions}
+                      noneLabel="No Focus"
+                      disabled={busy !== null}
+                    />
                     {focusError && <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{focusError}</p>}
                     <Button
                       className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-xs"
@@ -429,11 +420,11 @@ export function ClanDashboardClient({
 
             {isLeader && pending.length > 0 && (
               <section className="space-y-8">
-                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">Join Requests</h2>
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-600">Join Requests</h2>
                 <div className="space-y-4">
                   {pending.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                      <span className="text-xs font-black uppercase tracking-tighter truncate">{p.display_name || "Mentrixer"}</span>
+                    <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                      <span className="text-xs font-black uppercase tracking-tighter truncate text-slate-900">{p.display_name || "Mentrixer"}</span>
                       <div className="flex gap-2">
                         <button
                           onClick={() => void onApprove(p.id)}
@@ -445,7 +436,7 @@ export function ClanDashboardClient({
                         <button
                           onClick={() => void onReject(p.id)}
                           disabled={busy !== null}
-                          className="text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 transition-colors"
+                          className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-red-600 transition-colors"
                         >
                           Reject
                         </button>
@@ -457,20 +448,20 @@ export function ClanDashboardClient({
             )}
 
             <section className="space-y-8">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">History</h2>
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-600">History</h2>
               {trophies.length === 0 ? (
-                <p className="text-xs font-bold text-slate-200 uppercase tracking-widest italic">Vault Empty</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest italic">Vault Empty</p>
               ) : (
                 <div className="space-y-4">
                   {trophies.map((t) => (
                     <div key={t.id} className="flex items-center justify-between group">
                       <div className="space-y-1">
-                        <p className="text-sm font-black italic uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">vs {t.opponent_name}</p>
-                        <p className="text-[10px] font-bold text-slate-200 uppercase tracking-widest">{t.ended_label}</p>
+                        <p className="text-sm font-black italic uppercase tracking-tighter text-slate-900 group-hover:text-indigo-600 transition-colors">vs {t.opponent_name}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t.ended_label}</p>
                       </div>
                       <span className={cn(
                         "text-[10px] font-black uppercase italic tracking-widest",
-                        t.won ? "text-emerald-500" : "text-slate-200"
+                        t.won ? "text-emerald-600" : "text-slate-500"
                       )}>
                         {t.won ? "Victory" : "Defeat"}
                       </span>

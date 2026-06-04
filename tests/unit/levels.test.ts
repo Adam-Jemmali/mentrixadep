@@ -8,35 +8,34 @@ import {
 } from "@/lib/levels";
 
 describe("getAccountLevelFromTotalXp", () => {
-  it("maps 0 XP to Rookie (level 1)", () => {
+  it("maps 0 XP to Wanderer (level 1)", () => {
     const a = getAccountLevelFromTotalXp(0);
     expect(a.level).toBe(1);
-    expect(a.title).toBe("Rookie");
+    expect(a.title).toBe("WANDERER");
     expect(a.minXp).toBe(0);
   });
 
-  it("maps 100 XP to Rookie (top of tier)", () => {
+  it("maps 100 XP to Wanderer (top of tier)", () => {
     const a = getAccountLevelFromTotalXp(100);
     expect(a.level).toBe(1);
-    expect(a.title).toBe("Rookie");
+    expect(a.title).toBe("WANDERER");
   });
 
-  it("maps 101 XP to Learner (level 2)", () => {
+  it("maps 101 XP to Seeker (level 2)", () => {
     const a = getAccountLevelFromTotalXp(101);
     expect(a.level).toBe(2);
-    expect(a.title).toBe("Learner");
+    expect(a.title).toBe("SEEKER");
   });
 
   it("maps boundaries for each account tier", () => {
     const cases: { xp: number; level: number; title: string }[] = [
-      { xp: 0, level: 1, title: "Rookie" },
-      { xp: 101, level: 2, title: "Learner" },
-      { xp: 301, level: 3, title: "Scholar" },
-      { xp: 701, level: 4, title: "Expert" },
-      { xp: 1501, level: 5, title: "Master" },
-      { xp: 3001, level: 6, title: "Legend" },
-      { xp: 6001, level: 7, title: "Champion" },
-      { xp: 12001, level: 8, title: "Grandmaster" },
+      { xp: 0, level: 1, title: "WANDERER" },
+      { xp: 101, level: 2, title: "SEEKER" },
+      { xp: 301, level: 3, title: "SCHOLAR" },
+      { xp: 701, level: 4, title: "CONTENDER" },
+      { xp: 1501, level: 5, title: "RIVAL" },
+      { xp: 3001, level: 6, title: "APEX" },
+      { xp: 6001, level: 7, title: "MENTRIXER" },
     ];
     for (const c of cases) {
       const a = getAccountLevelFromTotalXp(c.xp);
@@ -57,10 +56,10 @@ describe("getAccountLevelFromTotalXp", () => {
     expect(a.xpIntoLevel).toBe(0);
   });
 
-  it("handles very large XP (Grandmaster)", () => {
+  it("handles very large XP (Mentrixer max)", () => {
     const a = getAccountLevelFromTotalXp(9_999_999);
-    expect(a.level).toBe(8);
-    expect(a.title).toBe("Grandmaster");
+    expect(a.level).toBe(7);
+    expect(a.title).toBe("MENTRIXER");
     expect(a.xpToNextLevel).toBeNull();
   });
 
@@ -76,7 +75,7 @@ describe("levelUpDetected", () => {
     expect(levelUpDetected(50, 100)).toBe(false);
   });
 
-  it("is true when crossing from Rookie to Learner", () => {
+  it("is true when crossing from Wanderer to Seeker", () => {
     expect(levelUpDetected(100, 101)).toBe(true);
   });
 
@@ -84,7 +83,7 @@ describe("levelUpDetected", () => {
     expect(levelUpDetected(100, 100)).toBe(false);
   });
 
-  it("is false when both are already high tier", () => {
+  it("is false when both are already Mentrixer", () => {
     expect(levelUpDetected(10_000, 10_050)).toBe(false);
   });
 });

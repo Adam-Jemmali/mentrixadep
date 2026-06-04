@@ -10,6 +10,7 @@ interface FloatingXpParticle {
   amount: number;
   startX: number;
   startY: number;
+  nextObjective?: string;
 }
 
 export function FloatingXpAnimations() {
@@ -37,6 +38,7 @@ export function FloatingXpAnimations() {
         amount: event.amount,
         startX,
         startY,
+        nextObjective: event.nextObjective,
       };
 
       setParticles((prev) => [...prev, particle]);
@@ -68,7 +70,10 @@ export function FloatingXpAnimations() {
                 transform: "translateZ(0)",
               }}
             >
-              +{particle.amount} XP
+              <span>+{particle.amount} XP</span>
+              {particle.nextObjective ? (
+                <span className="ml-1 opacity-85">· {particle.nextObjective}</span>
+              ) : null}
             </motion.div>
           ) : (
             <motion.div
@@ -89,7 +94,10 @@ export function FloatingXpAnimations() {
                 textShadow: "0 0 8px rgba(16, 185, 129, 0.5)",
               }}
             >
-              +{particle.amount} XP
+              <span>+{particle.amount} XP</span>
+              {particle.nextObjective ? (
+                <span className="ml-1 text-xs text-emerald-300/90">· {particle.nextObjective}</span>
+              ) : null}
             </motion.div>
           ),
         )}

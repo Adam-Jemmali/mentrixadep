@@ -43,6 +43,208 @@ html { scroll-behavior: auto; }
 }
 body { background:#FAFAFA; color:#0F172A; font-family:'Geist',system-ui,sans-serif; -webkit-font-smoothing:antialiased; -webkit-touch-callout:none; }
 
+/* -------------------------------------------------------------
+   Full-revamp semantic shells
+   - workbench: dense, utility-first solving surfaces
+   - arena: progression + competition surfaces
+-------------------------------------------------------------- */
+.mx-shell-workbench {
+  background:
+    radial-gradient(1200px 620px at 0% -20%, rgba(99, 102, 241, 0.16), transparent 60%),
+    radial-gradient(900px 520px at 100% -30%, rgba(124, 58, 237, 0.14), transparent 56%),
+    linear-gradient(180deg, #090f1d 0%, #0b1220 45%, #0f172a 100%);
+  color: #e2e8f0;
+}
+
+.mx-shell-arena {
+  background:
+    radial-gradient(1400px 620px at 50% -35%, rgba(99, 102, 241, 0.26), transparent 62%),
+    radial-gradient(900px 500px at 100% 0%, rgba(139, 92, 246, 0.20), transparent 54%),
+    linear-gradient(180deg, #070d1a 0%, #101a31 55%, #0b1220 100%);
+  color: #f1f5f9;
+}
+
+/* Light content surface — dark text on white (use on dark shells). */
+.mx-surface-light {
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 18px -12px rgba(15, 23, 42, 0.22);
+}
+
+.mx-surface-light :where(.text-slate-400, .text-slate-500) {
+  color: #64748b;
+}
+
+.mx-surface-light :where(.text-slate-600) {
+  color: #475569;
+}
+
+.mx-surface-light :where(.text-slate-700, .text-slate-800, .text-slate-900) {
+  color: #0f172a;
+}
+
+/* Prevent inherited light shell text from washing out copy on white cards. */
+.mx-surface-light :where(.text-slate-100, .text-slate-200, .text-slate-300) {
+  color: #334155;
+}
+
+.mx-panel-workbench {
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(180deg, rgba(17, 26, 43, 0.94) 0%, rgba(11, 18, 32, 0.98) 100%);
+  box-shadow: 0 16px 30px -26px rgba(2, 6, 23, 0.9);
+  color: #f1f5f9;
+}
+
+.mx-panel-arena {
+  border-radius: 18px;
+  border: 1px solid rgba(99, 102, 241, 0.34);
+  background: linear-gradient(180deg, rgba(22, 32, 58, 0.95) 0%, rgba(13, 20, 38, 0.98) 100%);
+  box-shadow:
+    0 1px 0 rgba(165, 180, 252, 0.2) inset,
+    0 24px 44px -30px rgba(2, 6, 23, 0.95);
+  color: #f8fafc;
+}
+
+/* Dark panels: remap low-contrast dark Tailwind text utilities to light foreground. */
+.mx-panel-workbench :where(.text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600),
+.mx-panel-arena :where(.text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600) {
+  color: #e2e8f0;
+}
+
+.mx-panel-workbench :where(.text-slate-500, .text-slate-400),
+.mx-panel-arena :where(.text-slate-500, .text-slate-400) {
+  color: #cbd5e1;
+}
+
+/* Explicit white islands on dark shells keep dark readable text (incl. bg-white/95). */
+.mx-shell-workbench :where([class*="bg-white"]),
+.mx-shell-arena :where([class*="bg-white"]),
+.bg-mentrixa-app :where([class*="bg-white"]) {
+  color: #0f172a;
+}
+
+.mx-shell-workbench :where([class*="bg-white"]) :where([class*="text-slate-6"], [class*="text-slate-7"], [class*="text-zinc-6"], [class*="text-zinc-7"]),
+.mx-shell-arena :where([class*="bg-white"]) :where([class*="text-slate-6"], [class*="text-slate-7"], [class*="text-zinc-6"], [class*="text-zinc-7"]),
+.bg-mentrixa-app :where([class*="bg-white"]) :where([class*="text-slate-6"], [class*="text-slate-7"], [class*="text-zinc-6"], [class*="text-zinc-7"]) {
+  color: #334155 !important;
+}
+
+.mx-shell-workbench :where([class*="bg-white"]) :where([class*="text-slate-9"], [class*="text-slate-8"], [class*="text-zinc-9"], [class*="text-zinc-8"]),
+.mx-shell-arena :where([class*="bg-white"]) :where([class*="text-slate-9"], [class*="text-slate-8"], [class*="text-zinc-9"], [class*="text-zinc-8"]),
+.bg-mentrixa-app :where([class*="bg-white"]) :where([class*="text-slate-9"], [class*="text-slate-8"], [class*="text-zinc-9"], [class*="text-zinc-8"]) {
+  color: #09090b !important;
+}
+
+.mx-shell-workbench :where([class*="bg-white"]) :where([class*="text-slate-5"], [class*="text-slate-4"], [class*="text-zinc-5"], [class*="text-zinc-4"]),
+.mx-shell-arena :where([class*="bg-white"]) :where([class*="text-slate-5"], [class*="text-slate-4"], [class*="text-zinc-5"], [class*="text-zinc-4"]),
+.bg-mentrixa-app :where([class*="bg-white"]) :where([class*="text-slate-5"], [class*="text-slate-4"], [class*="text-zinc-5"], [class*="text-zinc-4"]) {
+  color: #52525b !important;
+}
+
+/* ------------------------------------------------------------------
+   Dark-shell contrast guard
+   Slate/zinc text on navy shells → white/violet. Excludes light surfaces.
+------------------------------------------------------------------- */
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-slate-9"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-slate-8"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-slate-7"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-slate-6"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-zinc-9"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-zinc-8"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-zinc-7"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-zinc-6"] {
+  color: #ffffff !important;
+}
+
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-slate-5"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-slate-4"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-slate-3"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-zinc-5"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-zinc-4"],
+:is(.mx-shell-workbench, .mx-shell-arena, .bg-mentrixa-app)
+  :where(:not(.mx-surface-light, .mx-surface-light *, [class*="bg-white"], [class*="bg-white"] *))[class*="text-zinc-3"] {
+  color: #ddd6fe !important;
+}
+
+.mx-surface-light,
+.mx-surface-light [class*="text-slate-9"],
+.mx-surface-light [class*="text-slate-8"],
+.mx-surface-light [class*="text-slate-7"],
+.mx-surface-light [class*="text-zinc-9"],
+.mx-surface-light [class*="text-zinc-8"],
+.mx-surface-light [class*="text-zinc-7"] {
+  color: #09090b;
+}
+
+.mx-surface-light [class*="text-slate-6"],
+.mx-surface-light [class*="text-slate-5"],
+.mx-surface-light [class*="text-slate-4"],
+.mx-surface-light [class*="text-zinc-6"],
+.mx-surface-light [class*="text-zinc-5"],
+.mx-surface-light [class*="text-zinc-4"] {
+  color: #3f3f46;
+}
+
+.mx-surface-dark {
+  background: linear-gradient(160deg, #1e1b4b 0%, #312e81 48%, #0f172a 100%);
+  color: #ffffff;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+
+.mx-surface-dark [class*="text-slate-9"],
+.mx-surface-dark [class*="text-slate-8"],
+.mx-surface-dark [class*="text-slate-7"],
+.mx-surface-dark [class*="text-slate-6"] {
+  color: #ffffff !important;
+}
+
+.mx-surface-dark [class*="text-slate-5"],
+.mx-surface-dark [class*="text-slate-4"],
+.mx-surface-dark [class*="text-slate-3"] {
+  color: #ddd6fe !important;
+}
+
+.mx-cta-primary {
+  border-radius: 12px;
+  border: 1px solid rgba(196, 181, 253, 0.55);
+  background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
+  color: #f8fafc;
+  box-shadow: 0 8px 0 #4338ca, 0 10px 16px -10px rgba(67, 56, 202, 0.85);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.mx-cta-primary:hover {
+  filter: brightness(1.05);
+}
+
+.mx-cta-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 4px 0 #4338ca, 0 8px 16px -12px rgba(67, 56, 202, 0.7);
+}
+
+.mx-hud-strip {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  backdrop-filter: blur(10px);
+}
+
 /* One paint-friendly stack (multiple gradients on a single element beat several full-screen overlay divs + animations). */
 .bg-mentrixa-app {
   background:
@@ -522,6 +724,14 @@ html[data-mentrixa-perf="lite"] .page-fade {
 .stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
 .stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
 
+@media (prefers-reduced-motion: reduce) {
+  .stagger-children > * {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+}
+
 /* Stats cells entrance */
 .stat-cells-animate .mentrixa-stat-cell {
   opacity: 0;
@@ -982,6 +1192,16 @@ main:has(.lp-root) > div {
   box-shadow: 0 24px 50px -20px rgba(59, 130, 246, 0.18);
 }
 
+/* Polaroid timeline feature cards */
+.lp-polaroid {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease;
+}
+.lp-polaroid-card:hover .lp-polaroid {
+  box-shadow:
+    0 20px 60px -12px rgba(0, 0, 0, 0.55),
+    0 0 40px -8px rgba(167, 139, 250, 0.25);
+}
+
 .lp-section-tilt {
   animation: lpSectionReveal 1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -1022,4 +1242,441 @@ main:has(.lp-root) > div {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
+}
+
+/* ═══ Landing hero — premium $25k chrome ═══ */
+/* Landing page — Mentrixa logo custom cursor (class toggled on <html> by MentrixaCursor) */
+html.lp-landing-logo-cursor-active,
+html.lp-landing-logo-cursor-active * {
+  cursor: none !important;
+}
+
+/* Touch-only devices — keep native cursor */
+@media (hover: none) and (pointer: coarse) {
+  html.lp-landing-logo-cursor-active,
+  html.lp-landing-logo-cursor-active * {
+    cursor: auto !important;
+  }
+}
+
+/* Legacy zone class — still supported where nested */
+.lp-landing-logo-cursor-zone,
+.lp-landing-logo-cursor-zone * {
+  cursor: none !important;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .lp-landing-logo-cursor-zone,
+  .lp-landing-logo-cursor-zone * {
+    cursor: auto !important;
+  }
+}
+
+.lp-hero-logo-cursor-zone,
+.lp-hero-logo-cursor-zone * {
+  cursor: none !important;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .lp-hero-logo-cursor-zone,
+  .lp-hero-logo-cursor-zone * {
+    cursor: auto !important;
+  }
+}
+
+.lp-hero-premium {
+  isolation: isolate;
+}
+
+.lp-hero-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+.lp-hero-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 90% 70% at 50% 40%, transparent 0%, rgba(2, 6, 23, 0.55) 100%);
+}
+
+.lp-hero-headline-gradient {
+  background: linear-gradient(
+    105deg,
+    #ffffff 0%,
+    #c7d2fe 28%,
+    #a5b4fc 42%,
+    #22d3ee 72%,
+    #e9d5ff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 40px rgba(99, 102, 241, 0.35));
+}
+
+.lp-hero-stage-glow {
+  background: radial-gradient(
+    ellipse 70% 55% at 50% 55%,
+    rgba(99, 102, 241, 0.35) 0%,
+    rgba(124, 58, 237, 0.12) 45%,
+    transparent 72%
+  );
+}
+
+.lp-hero-pedestal {
+  border-radius: 50%;
+  background: radial-gradient(ellipse 80% 40% at 50% 50%, rgba(99, 102, 241, 0.25), transparent 70%);
+  box-shadow:
+    0 0 80px rgba(99, 102, 241, 0.25),
+    inset 0 -8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.lp-hero-glass {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.82) 0%,
+    rgba(15, 23, 42, 0.55) 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 24px 64px -24px rgba(0, 0, 0, 0.65),
+    0 0 80px -20px rgba(99, 102, 241, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.lp-hero-pill {
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.lp-hero-pill:hover {
+  border-color: rgba(165, 180, 252, 0.35);
+  box-shadow: 0 0 24px -8px rgba(99, 102, 241, 0.45);
+}
+
+.lp-cta-premium {
+  position: relative;
+}
+
+.lp-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform-origin: 0%;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #22d3ee);
+  z-index: 60;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.8);
+}
+
+.lp-speech-bubble .lp-speech-bubble-tail {
+  border-color: rgba(129, 140, 248, 0.35);
+  background: rgb(30 27 75 / 0.82);
+}
+
+.lp-orbit-slot {
+  box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.12);
+  animation: lp-orbit-slot-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes lp-orbit-slot-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 16px rgba(99, 102, 241, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  50% {
+    box-shadow: inset 0 0 28px rgba(129, 140, 248, 0.35);
+    border-color: rgba(165, 180, 252, 0.35);
+  }
+}
+
+.lp-rank-tray {
+  min-height: 3.5rem;
+}
+
+.lp-flow-chip {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.lp-flow-chip:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.8);
+  outline-offset: 2px;
+}
+
+/* Hero waitlist — fruit-ninja slice stage + form pop */
+.lp-ninja-card {
+  box-shadow:
+    0 0 0 1px rgba(167, 139, 250, 0.06) inset,
+    0 20px 50px -20px rgba(0, 0, 0, 0.7),
+    0 0 60px -16px rgba(99, 102, 241, 0.2);
+}
+
+.lp-ninja-stage__rim {
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.55),
+    rgba(239, 68, 68, 0.35),
+    rgba(168, 85, 247, 0.45),
+    rgba(34, 211, 238, 0.4)
+  );
+  opacity: 0.85;
+  animation: lp-ninja-rim-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes lp-ninja-rim-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
+}
+
+.lp-ninja-stage__slashes {
+  background: repeating-linear-gradient(
+    -18deg,
+    transparent,
+    transparent 28px,
+    rgba(255, 255, 255, 0.025) 28px,
+    rgba(255, 255, 255, 0.025) 29px
+  );
+  mask-image: linear-gradient(to bottom, black 20%, transparent 95%);
+}
+
+.lp-ninja-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.25rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.lp-ninja-score--learn {
+  box-shadow: 0 0 20px -6px rgba(34, 211, 238, 0.45);
+  border-color: rgba(34, 211, 238, 0.25);
+}
+
+.lp-ninja-score--teach {
+  box-shadow: 0 0 20px -6px rgba(251, 191, 36, 0.4);
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
+.lp-ninja-score__label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.lp-ninja-score__num {
+  font-size: 1.125rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.lp-ninja-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(251, 191, 36, 0.5);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.lp-ninja-corner--tl {
+  left: 0;
+  top: 0;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 4px 0 0 0;
+}
+.lp-ninja-corner--tr {
+  right: 0;
+  top: 0;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 4px 0 0;
+}
+.lp-ninja-corner--bl {
+  left: 0;
+  bottom: 0;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 4px;
+}
+.lp-ninja-corner--br {
+  right: 0;
+  bottom: 0;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 4px 0;
+}
+
+.lp-ninja-pop-hero {
+  border-width: 1px;
+  box-shadow: 0 12px 40px -16px rgba(0, 0, 0, 0.65);
+}
+
+.lp-ninja-scroll {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.lp-ninja-form-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(15, 10, 25, 0.95) 0%, rgba(8, 6, 14, 0.98) 100%);
+  box-shadow: inset 0 0 40px rgba(99, 102, 241, 0.06);
+}
+
+.lp-ninja-cta {
+  background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 45%, #f59e0b 100%);
+  box-shadow:
+    0 4px 0 #b45309,
+    0 8px 24px -4px rgba(245, 158, 11, 0.55);
+}
+
+.lp-ninja-cta:active:not(:disabled) {
+  box-shadow:
+    0 1px 0 #b45309,
+    0 4px 12px -4px rgba(245, 158, 11, 0.45);
+  transform: translateY(2px);
+}
+
+.lp-ninja-cta--guide {
+  background: linear-gradient(180deg, #ede9fe 0%, #a78bfa 40%, #7c3aed 100%);
+  color: #fff;
+  box-shadow:
+    0 4px 0 #5b21b6,
+    0 8px 28px -4px rgba(139, 92, 246, 0.65);
+}
+
+.lp-ninja-cta--guide:active:not(:disabled) {
+  box-shadow:
+    0 1px 0 #5b21b6,
+    0 4px 14px -4px rgba(139, 92, 246, 0.5);
+  transform: translateY(2px);
+}
+
+@keyframes lp-coach-shimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.35);
+  }
+}
+
+.lp-coach-shimmer-amber {
+  animation: lp-coach-shimmer 2.2s ease-in-out infinite;
+}
+
+.lp-coach-shimmer-violet {
+  animation: lp-coach-shimmer 2.2s ease-in-out infinite;
+  animation-delay: 0.35s;
+}
+
+.lp-coach-brand {
+  animation: lp-coach-shimmer 2.8s ease-in-out infinite;
+}
+
+/* Dual-path fruit ninja: icons fall through the arena */
+@keyframes lp-path-fall {
+  0% {
+    top: -18%;
+    opacity: 0;
+    transform: translateX(-50%) scale(0.45) rotate(-12deg);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  6% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.18) rotate(4deg);
+    filter: drop-shadow(0 0 18px rgba(129, 140, 248, 0.55));
+  }
+  12% {
+    transform: translateX(-50%) scale(1) rotate(0deg);
+  }
+  100% {
+    top: 108%;
+    opacity: 0.35;
+    transform: translateX(-50%) scale(0.75) rotate(8deg);
+    filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.2));
+  }
+}
+
+@keyframes lp-path-slice {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  40% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.35);
+    filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.9));
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.2);
+  }
+}
+
+.lp-path-fall-icon {
+  position: absolute;
+  z-index: 20;
+  animation: lp-path-fall var(--fall-duration, 2.4s) linear forwards;
+  will-change: top, transform, opacity;
+}
+
+.lp-path-fall-icon--sliced {
+  animation: lp-path-slice 0.22s ease-out forwards !important;
+  pointer-events: none;
+}
+
+.lp-path-arena {
+  touch-action: manipulation;
+}
+
+@media (max-width: 900px) {
+  .lp-hero-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .lp-hero-headline-gradient {
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-conic,
+  .lp-hero-torus,
+  .lp-hero-shard,
+  .lp-hero-logo-float,
+  .lp-orbit-slot {
+    animation: none !important;
+  }
+
+  /* Keep path mini-game fall animation usable when OS requests reduced motion */
+  .lp-path-fall-icon {
+    animation-duration: var(--fall-duration, 2.4s) !important;
+  }
 }

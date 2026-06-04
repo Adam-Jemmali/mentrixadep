@@ -312,70 +312,70 @@ export function SessionsList({
       {showHeroStats ? (
         <>
           <div className="stat-cells-animate mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={totalXpRef}
                 className="xp-number text-2xl font-bold tabular-nums text-blue-700"
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
                 Total XP
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={streakRef}
                 className={`xp-number text-2xl font-bold tabular-nums ${
-                  streak > 0 ? "text-slate-900" : "text-slate-600"
+                  streak > 0 ? "text-zinc-900" : "text-zinc-600"
                 }`}
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
                 Streak days
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={sessionsRef}
-                className="xp-number text-2xl font-bold tabular-nums text-slate-900"
+                className="xp-number text-2xl font-bold tabular-nums text-zinc-900"
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
                 Sessions completed
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
               <span
                 ref={ratingRef}
-                className="xp-number text-2xl font-bold tabular-nums text-slate-900"
+                className="xp-number text-2xl font-bold tabular-nums text-zinc-900"
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
                 Avg rating
               </span>
             </div>
           </div>
 
-          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:px-5">
+          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-zinc-200/90 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:px-5">
             <div className="min-w-0 sm:min-w-[12rem]">
               <div className="flex flex-wrap items-center gap-2 sm:justify-start">
-                <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700">
+                <span className="inline-flex items-center rounded-full border border-zinc-300 bg-zinc-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-700">
                   {currentRank.badge}
                 </span>
-                <span className="text-sm font-semibold text-slate-900">{currentLevel}</span>
+                <span className="text-sm font-semibold text-zinc-900">{currentLevel}</span>
               </div>
-              <p className="mt-1 text-xs text-slate-600">
+              <p className="mt-1 text-xs text-zinc-600">
                 {currentRank.division ? `Division ${currentRank.division}` : "Unique rank"}
               </p>
-              <p className="mt-0.5 text-xs font-medium text-slate-700">
+              <p className="mt-0.5 text-xs font-medium text-zinc-700">
                 {xpToNext > 0 ? `${xpToNext} XP to ${nextLevel}` : "Top track"}
               </p>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
                 <div
                   ref={xpFillRef}
                   className={`h-full w-full origin-left scale-x-0 bg-gradient-to-r ${barColorClass}`}
                 />
               </div>
             </div>
-            <div className="text-xs font-mono font-medium text-slate-600 tabular-nums sm:text-right">
+            <div className="text-xs font-mono font-medium text-zinc-600 tabular-nums sm:text-right">
               {totalXp} XP
             </div>
           </div>
@@ -487,7 +487,7 @@ export function SessionsList({
                     {filteredRequests.map((request) => (
                       <div key={request.id} className="session-card rounded-xl border border-white/20 bg-white/5 p-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 overflow-hidden">
+                          <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden">
                              {request.tutor.avatar_url ? (
                               <Image src={request.tutor.avatar_url} alt="" width={40} height={40} className="w-full h-full object-cover" />
                             ) : (
@@ -506,7 +506,7 @@ export function SessionsList({
                               <span>with {request.tutor.display_name}</span>
                             </div>
                             {request.availability && (
-                              <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                              <p className="text-[10px] text-white/65 mt-1 font-mono">
                                 {formatSlotRangeInZone(request.availability.start_time, request.availability.end_time, displayTimeZone)}
                               </p>
                             )}
@@ -516,7 +516,7 @@ export function SessionsList({
                           <Badge variant={request.status === "rejected" ? "outline" : "default"} className={cn("text-[10px] uppercase font-bold px-2 py-0.5", request.status === "rejected" && "text-red-400 border-red-500/30 bg-red-500/10")}>
                             {request.status}
                           </Badge>
-                          <p className="text-[10px] text-slate-500 mt-1">Sent recently</p>
+                          <p className="text-[10px] text-white/65 mt-1">Sent recently</p>
                         </div>
                       </div>
                     ))}

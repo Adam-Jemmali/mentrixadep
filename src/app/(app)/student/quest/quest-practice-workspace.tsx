@@ -19,6 +19,8 @@ import {
 } from "@/app/actions/practice-quest";
 import { emitXpAward } from "@/lib/xp-events";
 import type { PracticeDifficulty, PracticePackType } from "@/lib/practice-quest-types";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { DivisionFocusSelect } from "@/components/student/division-focus-select";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "beginner", label: "Beginner" },
@@ -272,10 +274,10 @@ export function QuestPracticeWorkspace({
 
   if (phase === "wizard") {
     return (
-      <div className="relative max-w-xl mx-auto py-10 px-4">
+      <div className="relative mx-auto max-w-xl px-4 py-10">
         {busy ? (
           <div
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm supports-[backdrop-filter]:bg-white/65"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/95 backdrop-blur-sm"
             aria-busy="true"
             aria-live="polite"
           >
@@ -283,8 +285,8 @@ export function QuestPracticeWorkspace({
               className="h-9 w-9 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent motion-reduce:animate-none motion-reduce:border-indigo-400"
               aria-hidden
             />
-            <p className="mt-4 text-sm font-semibold text-slate-800">Building your pack…</p>
-            <p className="mt-1 max-w-[14rem] text-center text-xs text-slate-500">
+            <p className={`mt-4 text-sm font-semibold ${mentrixStudent.textOnLight}`}>Building your pack…</p>
+            <p className={`mt-1 max-w-[14rem] text-center text-xs ${mentrixStudent.textMutedOnLight}`}>
               AI may take a few seconds — hang tight.
             </p>
           </div>
@@ -292,30 +294,27 @@ export function QuestPracticeWorkspace({
         <div className="mb-6">
           <BackButton />
         </div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-          Practice packs
-        </p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">New quest</h1>
-        <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+        <div className={`${mentrixStudent.card} p-6 sm:p-8`}>
+        <p className={mentrixStudent.sectionEyebrowOnLight}>Practice packs</p>
+        <h1 className={`mt-2 text-2xl font-bold ${mentrixStudent.textOnLight}`}>New quest</h1>
+        <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
           Short drills built for where you are right now. Get instant feedback, track your progress, and earn XP as you go.
         </p>
 
         <div className="mt-8 space-y-6">
           <div>
-            <label className="text-xs font-medium text-slate-500">Subject</label>
-            <select
-              className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+            <label className={`text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>Subject</label>
+            <DivisionFocusSelect
               value={subjectKey}
-              onChange={(e) => setSubjectKey(e.target.value)}
-            >
-              {subjectOptions.map((o) => (
-                <option key={o.key} value={o.key}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
+              onValueChange={(v) => {
+                if (v) setSubjectKey(v);
+              }}
+              divisions={subjectOptions}
+              showNoneOption={false}
+              triggerClassName="mt-1"
+            />
             <Input
-              className="mt-2"
+              className="mt-2 border-violet-200 bg-white text-zinc-950 placeholder:text-zinc-500"
               placeholder="Or type a custom subject…"
               value={customSubject}
               onChange={(e) => setCustomSubject(e.target.value)}
@@ -324,7 +323,7 @@ export function QuestPracticeWorkspace({
 
           {!onboardingMode && (
             <div>
-              <label className="text-xs font-medium text-slate-500">Difficulty</label>
+              <label className={`text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>Difficulty</label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {DIFFICULTIES.map((d) => (
                   <button
@@ -333,8 +332,8 @@ export function QuestPracticeWorkspace({
                     onClick={() => setDifficulty(d.value)}
                     className={`rounded-lg border px-3 py-1.5 text-sm ${
                       difficulty === d.value
-                        ? "border-indigo-500 bg-indigo-50 text-indigo-900"
-                        : "border-slate-200 text-slate-600"
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-950"
+                        : "border-violet-200 bg-white text-zinc-700"
                     }`}
                   >
                     {d.label}
@@ -346,7 +345,7 @@ export function QuestPracticeWorkspace({
 
           {!onboardingMode && (
             <div>
-              <label className="text-xs font-medium text-slate-500">Question type</label>
+              <label className={`text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>Question type</label>
               <div className="mt-2 grid gap-2">
                 {PACK_TYPES.map((p) => (
                   <button
@@ -356,22 +355,23 @@ export function QuestPracticeWorkspace({
                     className={`text-left rounded-xl border p-3 text-sm ${
                       packType === p.value
                         ? "border-indigo-500 bg-indigo-50"
-                        : "border-slate-200 bg-white"
+                        : "border-violet-200 bg-white"
                     }`}
                   >
-                    <span className="font-semibold text-slate-900">{p.label}</span>
-                    <span className="block text-xs text-slate-500 mt-0.5">{p.desc}</span>
+                    <span className={`font-semibold ${mentrixStudent.textOnLight}`}>{p.label}</span>
+                    <span className={`mt-0.5 block text-xs ${mentrixStudent.textMutedOnLight}`}>{p.desc}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {err && <p className="text-sm text-red-600">{err}</p>}
+          {err && <p className="text-sm font-medium text-red-700">{err}</p>}
 
-          <Button className="w-full" disabled={busy} onClick={() => void beginPack()}>
+          <Button className="w-full" variant="workbenchPrimary" disabled={busy} onClick={() => void beginPack()}>
             {busy ? "Generating…" : onboardingMode ? "Start your first quest" : "Generate quest"}
           </Button>
+        </div>
         </div>
       </div>
     );
@@ -380,8 +380,8 @@ export function QuestPracticeWorkspace({
   if (phase === "done" && doneResult) {
     const xpTotal = (doneResult.xpAwarded ?? 0) + (doneResult.perfectBonus ?? 0);
     return (
-      <div className="max-w-lg mx-auto py-10 px-4 text-center">
-        <h2 className="text-2xl font-bold text-slate-900">Quest complete</h2>
+      <div className={`${mentrixStudent.card} mx-auto max-w-lg px-6 py-10 text-center`}>
+        <h2 className={`text-2xl font-bold ${mentrixStudent.textOnLight}`}>Quest complete</h2>
         <p className="mt-4 text-4xl font-mono font-bold text-indigo-600">
           {doneResult.correct}/{doneResult.total}
         </p>

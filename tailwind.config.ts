@@ -15,6 +15,39 @@ const config: Config = {
           700: "#6D28D9",
           900: "#4C1D95",
         },
+        // Workbench (LeetCode-inspired utility surfaces; still Mentrixa colors)
+        workbench: {
+          bg: "#0B1220",
+          panel: "#111A2B",
+          panelSoft: "#162238",
+          border: "#22314A",
+          text: "#E2E8F0",
+          muted: "#94A3B8",
+          accent: "#6366F1",
+        },
+        // Arena (Clash-inspired progression surfaces using Mentrixa spectrum)
+        arena: {
+          bg: "#0A1022",
+          card: "#15203A",
+          cardSoft: "#1D2B4B",
+          border: "#334A79",
+          cta: "#7C3AED",
+          ctaSecondary: "#4F46E5",
+          reward: "#8B5CF6",
+          danger: "#EF4444",
+        },
+        difficulty: {
+          easy: "#22C55E",
+          medium: "#F59E0B",
+          hard: "#EF4444",
+        },
+        rank: {
+          bronze: "#B45309",
+          silver: "#64748B",
+          gold: "#F59E0B",
+          platinum: "#6366F1",
+          grandmaster: "#8B5CF6",
+        },
         // Legacy brand palette
         brand: {
           50:  "#EEF2FF",

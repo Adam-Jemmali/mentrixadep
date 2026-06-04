@@ -23,6 +23,7 @@ import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { Typewriter } from "@/components/ui/typewriter";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { BackButton } from "@/components/ui/back-button";
+import { LeaderboardTierRank } from "@/components/student/leaderboard-tier-rank";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -507,9 +508,7 @@ function LeaderboardTab({
               <th className="py-2 pr-3 text-left cursor-pointer hover:text-slate-700">
                 Streak
               </th>
-              <th className="py-2 text-left cursor-pointer hover:text-slate-700">
-                Level
-              </th>
+              <th className="py-2 text-right">Account rank</th>
             </tr>
           </thead>
           <tbody>
@@ -600,10 +599,11 @@ function LeaderboardTab({
                       {row.streakDays}d
                     </span>
                   </td>
-                  <td className="py-2 align-middle">
-                    <span className={`text-xs font-semibold ${levelColorClass(mapTierToLevelName(row.level.tier))}`}>
-                      {mapTierToLevelName(row.level.tier)}
-                    </span>
+                  <td className="py-2 align-middle text-right">
+                    <LeaderboardTierRank
+                      totalXp={row.totalXp}
+                      divisionTier={row.level.tier}
+                    />
                   </td>
                 </tr>
               );

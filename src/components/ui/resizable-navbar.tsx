@@ -25,6 +25,8 @@ type NavBodyProps = {
   children: React.ReactNode;
   className?: string;
   visible?: boolean;
+  /** Solid dark shell — use on student nav over light pages (no translucent bleed-through). */
+  solid?: boolean;
 };
 
 type NavItemsProps = {
@@ -33,7 +35,9 @@ type NavItemsProps = {
     link: string;
   }[];
   className?: string;
-  onItemClick?: () => void;
+  onItemClick?: (item: { name: string; link: string }) => void;
+  onItemPointerDown?: (item: { name: string; link: string }) => void;
+  onItemHover?: (item: { name: string; link: string }) => void;
 };
 
 type MobileNavProps = {
@@ -99,14 +103,16 @@ export const Navbar = ({ children, className, freezeScrollShell = false }: Navba
   );
 };
 
-export const NavBody = ({ children, className, visible }: NavBodyProps) => {
+export const NavBody = ({ children, className, visible, solid = false }: NavBodyProps) => {
   return (
     <div
       className={cn(
         "relative z-[60] mx-auto hidden min-w-[min(980px,94vw)] w-full flex-row items-center justify-between self-start rounded-full border border-white/10 px-6 py-2 text-white transition-[background-color,box-shadow,transform,max-width] duration-300 ease-out lg:flex",
-        visible
-          ? "max-w-[74%] translate-y-[10px] scale-[0.995] bg-slate-950/82 shadow-[0_10px_36px_rgba(2,6,23,0.22)] supports-[backdrop-filter]:bg-slate-950/72 supports-[backdrop-filter]:backdrop-blur-sm"
-          : "max-w-full translate-y-0 scale-100 bg-slate-950/68 shadow-none supports-[backdrop-filter]:backdrop-blur-0",
+        solid
+          ? "max-w-[min(980px,94vw)] translate-y-0 scale-100 bg-slate-950 shadow-[0_14px_40px_-16px_rgba(2,6,23,0.65)] supports-[backdrop-filter]:bg-slate-950"
+          : visible
+            ? "max-w-[74%] translate-y-[10px] scale-[0.995] bg-slate-950/82 shadow-[0_10px_36px_rgba(2,6,23,0.22)] supports-[backdrop-filter]:bg-slate-950/72 supports-[backdrop-filter]:backdrop-blur-sm"
+            : "max-w-full translate-y-0 scale-100 bg-slate-950/68 shadow-none supports-[backdrop-filter]:backdrop-blur-0",
         className,
       )}
     >
@@ -115,7 +121,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
   );
 };
 
-export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
+export const NavItems = ({ items, className, onItemClick, onItemPointerDown, onItemHover }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
   const router = useRouter();
   const tier = useUiPerfTier();
@@ -131,8 +137,10 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
       onMouseEnter={() => {
         setHovered(idx);
         router.prefetch(item.link);
+        onItemHover?.(item);
       }}
-      onClick={onItemClick}
+      onPointerDown={() => onItemPointerDown?.(item)}
+      onClick={() => onItemClick?.(item)}
       className="relative px-4 py-2 text-[13px] text-current transition-opacity duration-150 ease-out hover:opacity-100"
     >
       {hovered === idx &&
@@ -228,8 +236,7 @@ export const MobileNavToggle = ({ isOpen, onClick }: { isOpen: boolean; onClick:
 export const NavbarLogo = () => {
   return (
     <Link href="/" className="flex items-center gap-2.5 text-white">
-      {/* Avoid `priority` here: marketing shell mounts this nav late; preload ofg was unused and spammed the console. */}
-      <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" />
+      <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
       <MentrixaWordmark trixaClassName="text-white" />
     </Link>
   );
@@ -237,10 +244,11 @@ export const NavbarLogo = () => {
 
 export const NavbarButton = ({
   href,
-  as: Tag = "a",
+  as,
   children,
   className,
   variant = "primary",
+  prefetch,
   ...props
 }: {
   href?: string;
@@ -248,7 +256,12 @@ export const NavbarButton = ({
   children: React.ReactNode;
   className?: string;
   variant?: "primary" | "secondary" | "dark" | "gradient";
-} & (React.ComponentPropsWithoutRef<"a"> | React.ComponentPropsWithoutRef<"button">)) => {
+  /** Next.js Link only — omitted for plain `<button>` / custom `as`. */
+  prefetch?: boolean;
+} & Omit<
+  React.ComponentPropsWithoutRef<"a"> & React.ComponentPropsWithoutRef<"button">,
+  "prefetch"
+>) => {
   const variantStyles = {
     primary: "bg-indigo-600 text-white hover:bg-indigo-700",
     secondary: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
@@ -256,16 +269,24 @@ export const NavbarButton = ({
     gradient: "bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500 text-white hover:opacity-95",
   } as const;
 
+  const sharedClassName = cn(
+    "inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors duration-200",
+    variantStyles[variant],
+    className,
+  );
+
+  const Tag = as ?? (href ? Link : "button");
+
+  if (Tag === Link && href) {
+    return (
+      <Link href={href} prefetch={prefetch} className={sharedClassName} {...props}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <Tag
-      href={href || undefined}
-      className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-colors duration-200",
-        variantStyles[variant],
-        className,
-      )}
-      {...props}
-    >
+    <Tag href={href || undefined} className={sharedClassName} {...props}>
       {children}
     </Tag>
   );

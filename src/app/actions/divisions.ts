@@ -19,6 +19,7 @@ export interface WeeklyLeaderboardEntry {
   displayName: string;
   avatarUrl: string | null;
   weeklyXp: number;
+  totalXp: number;
   streakDays: number;
   level: ReturnType<typeof getDivisionTierFromXp>;
   isCurrentUser: boolean;
@@ -171,8 +172,8 @@ export async function getWeeklyDivisionLeaderboard(
 
   const { data: xpRows } =
     userIds.length > 0
-      ? await admin.from("user_xp").select("user_id, streak_days, division_xp").in("user_id", userIds)
-      : { data: [] as { user_id: string; streak_days: number | null; division_xp: unknown }[] };
+      ? await admin.from("user_xp").select("user_id, streak_days, division_xp, total_xp").in("user_id", userIds)
+      : { data: [] as { user_id: string; streak_days: number | null; division_xp: unknown; total_xp: number | null }[] };
 
   const xpByUser = new Map(
     (xpRows ?? []).map((r) => [
@@ -180,6 +181,7 @@ export async function getWeeklyDivisionLeaderboard(
       {
         streak: (r.streak_days as number) ?? 0,
         divXp: (r.division_xp as Record<string, number>)?.[divisionKey] ?? 0,
+        totalXp: typeof r.total_xp === "number" ? Math.max(0, r.total_xp) : 0,
       },
     ]),
   );
@@ -193,6 +195,7 @@ export async function getWeeklyDivisionLeaderboard(
       displayName: names[r.user_id] ?? "Anonymous",
       avatarUrl: avatarUrls[r.user_id] ?? null,
       weeklyXp: r.xp_earned,
+      totalXp: meta?.totalXp ?? 0,
       streakDays: meta?.streak ?? 0,
       level: getDivisionTierFromXp(allTimeDivXp),
       isCurrentUser: r.user_id === currentUserId,

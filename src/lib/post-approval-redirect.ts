@@ -1,4 +1,5 @@
 import type { UserRole } from "@/lib/database.types";
+import { hasStudentCompletedDiagnostic } from "@/app/actions/diagnostic-onboarding";
 import { getRoleHomePath } from "@/lib/role-home";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,6 +46,11 @@ export async function getPostApprovalRedirectPath(params: {
 
   const completedSessions = sessionsRes.count ?? 0;
   const completedQuests = questsRes.count ?? 0;
+
+  const diagnosticDone = await hasStudentCompletedDiagnostic(params.userId);
+  if (!diagnosticDone) {
+    return "/student/onboarding";
+  }
 
   if (completedSessions === 0 && completedQuests === 0) {
     return "/student?onboarding=true";

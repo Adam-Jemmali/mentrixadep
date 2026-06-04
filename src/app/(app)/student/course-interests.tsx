@@ -83,9 +83,10 @@ export function CourseInterests({ courses }: CourseInterestsProps) {
               <button
                 type="button"
                 onClick={() => handleRemove(c.id)}
-                className="text-slate-300 hover:text-red-500 transition-colors"
+                aria-label={`Remove ${c.course_name} from my courses`}
+                className="inline-flex min-h-11 min-w-11 -my-1 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
               >
-                &times;
+                <span aria-hidden>×</span>
               </button>
             </span>
           ))}

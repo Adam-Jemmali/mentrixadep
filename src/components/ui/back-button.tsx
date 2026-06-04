@@ -34,12 +34,12 @@ export function BackButton({ className, onClick, role = "student" }: BackButtonP
         className
       )}
     >
-      <Image 
-        src={iconSrc} 
-        alt="" 
-        width={20} 
-        height={20} 
-        className="opacity-90 transition-transform duration-300 group-hover:scale-110"
+      <Image
+        src={iconSrc}
+        alt=""
+        width={20}
+        height={20}
+        className="size-5 shrink-0 opacity-90 transition-transform duration-300 group-hover:scale-110"
       />
       <span className="text-xs font-bold tracking-tight text-slate-700">
         Back

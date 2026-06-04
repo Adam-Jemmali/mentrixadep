@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { playMentrixaLoadingOnce } from "@/lib/mentrixa-sounds";
 
 export function LoadingSpinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const mapped = size === "sm" ? "sm" : size === "lg" ? "lg" : "md";
@@ -18,6 +20,10 @@ export function LoadingState({ message = "Loading..." }: { message?: string }) {
 }
 
 export function PageLoading() {
+  useEffect(() => {
+    playMentrixaLoadingOnce();
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#081528] text-white">
       <div
@@ -36,7 +42,7 @@ export function PageLoading() {
           className="absolute inset-[8%] rounded-full bg-cyan-300/30 blur-3xl"
           initial={{ scale: 0.2, opacity: 0.55 }}
           animate={{ scale: [0.2, 1.4], opacity: [0.55, 0.2] }}
-          transition={{ duration: 2, ease: "easeOut", repeat: Infinity }}
+          transition={{ duration: 5, ease: "easeInOut", repeat: Infinity }}
         />
         <motion.img
           src={MENTRIXA_LOGO_PNG}
@@ -44,7 +50,7 @@ export function PageLoading() {
           className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_0_90px_rgba(125,211,252,0.95)]"
           initial={{ scale: 0.08 }}
           animate={{ scale: [0.08, 1.45] }}
-          transition={{ duration: 2, ease: "easeOut", repeat: Infinity }}
+          transition={{ duration: 5, ease: "easeInOut", repeat: Infinity }}
         />
       </motion.div>
       <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-10">

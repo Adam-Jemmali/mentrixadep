@@ -11,6 +11,12 @@ import { joinDivision } from "@/app/actions/divisions";
 import { getDivisionTheme } from "@/lib/division-ui";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import {
+  arenaDivisionFocus,
+  arenaDivisionCardClasses,
+  arenaDivisionPanelClasses,
+} from "@/lib/arena-division-focus";
 
 export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubCard[] }) {
   const router = useRouter();
@@ -32,104 +38,138 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
   return (
     <div className="space-y-8">
       {error && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="p-4 rounded-2xl bg-slate-900/10 border border-slate-900/20 flex items-center gap-3 text-slate-900 text-xs font-bold uppercase tracking-widest"
+          className="flex items-center gap-3 rounded-2xl border border-slate-900/20 bg-slate-900/10 p-4 text-xs font-bold uppercase tracking-widest text-slate-900"
         >
-          <Info className="w-4 h-4" />
+          <Info className="h-4 w-4" />
           {error}
         </motion.div>
       )}
-      
-      <motion.ul 
-        layout
-        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-      >
-        {initialCards.map((c, i) => {
-          const t = getDivisionTheme(c.key);
-          const focused = c.isFocused;
-          return (
-            <motion.li 
-              key={c.key}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <div
-                className={cn(
-                  "group relative h-full flex flex-col rounded-3xl border bg-white p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1",
-                  focused
-                    ? "border-indigo-500 ring-2 ring-indigo-300/60"
-                    : "border-slate-200 hover:border-indigo-300"
-                )}
+
+      <div className={cn(mentrixStudent.cardArena, arenaDivisionPanelClasses())}>
+        <p
+          className={cn(
+            "text-[10px] font-bold uppercase tracking-[0.22em]",
+            arenaDivisionFocus.eyebrow,
+          )}
+        >
+          Choose your league arena
+        </p>
+        <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
+          Join a division to climb the board. The{" "}
+          <span className="font-semibold text-cyan-300">cyan outline</span> marks your home
+          focus.
+        </p>
+
+        <motion.ul
+          layout
+          className="mt-5 grid gap-5 overflow-visible sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {initialCards.map((c, i) => {
+            const t = getDivisionTheme(c.key);
+            const isFocused = c.isFocused;
+
+            return (
+              <motion.li
+                key={c.key}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="overflow-visible p-1"
               >
-                {/* ICON & TITLE */}
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className={cn("relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white bg-gradient-to-br shadow-lg transition-transform group-hover:scale-110", t.gradient)}>
-                      {t.emoji}
+                <div className={arenaDivisionCardClasses({ isSelected: isFocused })}>
+                  {isFocused ? (
+                    <div
+                      className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-cyan-400"
+                      aria-hidden
+                    />
+                  ) : null}
+
+                  {isFocused ? (
+                    <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
+                      <span className="rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
+                        Your focus
+                      </span>
                     </div>
-                    <div className="min-w-0">
-                      <h2 className="text-lg font-black italic uppercase tracking-tighter text-slate-900 leading-none truncate">
-                        {c.name.replace(/\s+Division$/i, "")}
-                      </h2>
-                      <div className="mt-1 flex items-center gap-2">
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                           <Users className="w-3 h-3 opacity-50" />
-                           {c.memberCount.toLocaleString()}
-                        </div>
-                        {c.weeklyRank != null && (
-                          <div className="flex items-center gap-1 text-[10px] font-black text-indigo-500 uppercase tracking-widest">
-                             <span>| Rank #{c.weeklyRank}</span>
-                          </div>
+                  ) : null}
+
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div
+                        className={cn(
+                          "relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-xl font-bold text-white shadow-lg transition-transform group-hover:scale-110",
+                          t.gradient,
                         )}
+                      >
+                        {t.emoji}
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="truncate text-lg font-black uppercase italic leading-none tracking-tighter text-slate-900">
+                          {c.name.replace(/\s+Division$/i, "")}
+                        </h2>
+                        <div className="mt-1 flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            <Users className="h-3 w-3 opacity-50" />
+                            {c.memberCount.toLocaleString()}
+                          </div>
+                          {c.weeklyRank != null ? (
+                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                              <span>| Rank #{c.weeklyRank}</span>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* DESCRIPTION */}
-                <p className="mt-4 text-xs font-medium leading-relaxed text-slate-500 flex-1 line-clamp-2">
-                  {c.description || "Compete in this division and climb the global leaderboards."}
-                </p>
+                  <p className="mt-4 line-clamp-2 flex-1 text-xs font-medium leading-relaxed text-slate-500">
+                    {c.description || "Compete in this division and climb the global leaderboards."}
+                  </p>
 
-                {/* FOOTER ACTIONS */}
-                <div className="mt-6 flex items-center justify-between gap-3">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 h-10 rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all active:scale-95" 
-                    asChild
-                  >
-                    <Link href={`/student/division/${encodeURIComponent(c.key)}`}>
-                      Enter Arena
-                    </Link>
-                  </Button>
-                  
-                  {!c.isMember ? (
+                  <div className="mt-6 flex items-center justify-between gap-3">
                     <Button
-                      disabled={isPending}
-                      onClick={() => handleJoin(c.key)}
-                      className="flex-1 h-10 rounded-xl bg-indigo-600 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all active:scale-95"
+                      variant="outline"
+                      className="h-10 flex-1 rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95"
+                      asChild
                     >
-                      Join
+                      <Link href={`/student/division/${encodeURIComponent(c.key)}`}>
+                        Enter Arena
+                      </Link>
                     </Button>
-                  ) : (
-                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                       <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600">Joined</span>
-                    </div>
-                  )}
-                </div>
 
-                {/* DECORATIVE LOGO */}
-                <div className="absolute -bottom-2 -right-2 p-2 opacity-[0.02] grayscale pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-                   <Image src="/mentrixalogo/logo.webp" alt="" width={80} height={80} />
+                    {!c.isMember ? (
+                      <Button
+                        disabled={isPending}
+                        onClick={() => handleJoin(c.key)}
+                        className={cn(
+                          "h-10 flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
+                          isFocused
+                            ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/35 ring-2 ring-cyan-300/80 hover:bg-cyan-500"
+                            : "bg-slate-100 text-slate-800 hover:bg-slate-200",
+                        )}
+                      >
+                        Join
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-3 py-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-cyan-800">
+                          Joined
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pointer-events-none absolute -bottom-2 -right-2 p-2 opacity-[0.02] grayscale transition-opacity group-hover:opacity-[0.05]">
+                    <Image src="/mentrixalogo/logo.webp" alt="" width={80} height={80} />
+                  </div>
                 </div>
-              </div>
-            </motion.li>
-          );
-        })}
-      </motion.ul>
+              </motion.li>
+            );
+          })}
+        </motion.ul>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { useLayoutEffect, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
+
+const MentrixaCursor = dynamic(
+  () => import("@/components/ui/tech-cursor").then((m) => m.MentrixaCursor),
+  { ssr: false, loading: () => null },
+);
 
 /**
  * Minimal client boundary for `/` only — no Supabase, nav, dialogs, or PWA hooks.
@@ -9,8 +15,6 @@ import { CookieConsentBanner } from "@/components/cookie-consent-banner";
  * (avoids `options.factory` / undefined module factory errors + white screen).
  */
 export function MarketingShellClient({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
-
   useLayoutEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
@@ -18,46 +22,12 @@ export function MarketingShellClient({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  useEffect(() => {
-    const forceTop = () => {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    };
-
-    forceTop();
-    const rafOne = window.requestAnimationFrame(() => {
-      forceTop();
-      const rafTwo = window.requestAnimationFrame(forceTop);
-      window.setTimeout(forceTop, 0);
-      void rafTwo;
-    });
-
-    const onPageShow = () => forceTop();
-    window.addEventListener("pageshow", onPageShow);
-
-    const reveal = window.requestAnimationFrame(() => {
-      setReady(true);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(rafOne);
-      window.cancelAnimationFrame(reveal);
-      window.removeEventListener("pageshow", onPageShow);
-      if ("scrollRestoration" in window.history) {
-        window.history.scrollRestoration = "auto";
-      }
-    };
-  }, []);
-
   return (
     <>
+      <MentrixaCursor />
       <CookieConsentBanner />
-      <main
-        className="relative min-h-screen bg-[#0B1120]"
-        style={{ opacity: ready ? 1 : 0, transition: "opacity 1ms linear" }}
-      >
-        <div className="relative z-10">
-          {children}
-        </div>
+      <main className="relative min-h-screen bg-[radial-gradient(1200px_560px_at_50%_-18%,rgba(99,102,241,0.28),transparent_60%),linear-gradient(180deg,#070d1a_0%,#0b1220_48%,#111827_100%)] text-slate-100">
+        <div className="relative z-10">{children}</div>
       </main>
     </>
   );

@@ -10,15 +10,13 @@ export default async function DivisionsHubPage() {
   const cards = await getDivisionHubCards(user.id);
 
   return (
-    <div className={mentrixStudent.pageBg}>
+    <div className={mentrixStudent.pageBgArena}>
       <div className={mentrixStudent.mainWide}>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className={mentrixStudent.sectionEyebrow}>Arena & leagues</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Divisions
-            </h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+            <h1 className={`mt-2 ${mentrixStudent.pageTitle}`}>Divisions</h1>
+            <p className={`mt-2 max-w-xl ${mentrixStudent.pageSubtitle}`}>
               Join subject communities, climb the weekly XP board , and coordinate with other Mentrixers. Set a focus division.
             </p>
           </div>

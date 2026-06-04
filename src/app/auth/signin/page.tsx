@@ -2,20 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { toUserFacingAuthError } from "@/lib/user-facing-error";
-
-const GoogleSignInButton = dynamic(
-  () => import("@/components/auth/google-sign-in-button").then((m) => m.GoogleSignInButton),
-  {
-    loading: () => <div className="h-11 w-full animate-pulse rounded-xl border border-slate-200 bg-slate-100" />,
-  },
-);
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
@@ -27,19 +20,6 @@ export default function SignInPage() {
   const authError = searchParams.get("error");
   const emailPrefill = searchParams.get("email")?.trim().toLowerCase() ?? "";
   const desiredRole = searchParams.get("role") === "tutor" ? "tutor" : "student";
-
-  useEffect(() => {
-    const wrapper = document.getElementById("auth-form-wrapper");
-    if (!wrapper) return;
-    const children = Array.from(wrapper.children);
-    void import("gsap").then(({ gsap }) => {
-      gsap.fromTo(
-        children,
-        { y: 16, opacity: 0 },
-        { y: 0, opacity: 1, stagger: 0.07, duration: 0.4, ease: "power3.out" },
-      );
-    });
-  }, []);
 
   useEffect(() => {
     if (authError === "waitlist_rejected") {
@@ -133,12 +113,12 @@ export default function SignInPage() {
           <MentrixaLogoLoader size="xl" label="Signing you in" />
         </div>
       ) : null}
-      <h1 className="text-[24px] font-bold tracking-[-0.03em] text-slate-900 mb-1">
+      <h1 className="text-[24px] font-bold tracking-[-0.03em] text-white mb-1">
         Sign in
       </h1>
-      <p className="text-sm text-slate-500 mb-5">
+      <p className="text-sm text-slate-300 mb-5">
         New to Mentrixa?{" "}
-        <Link href={`/auth/signup?role=${desiredRole}`} className="text-mentrixa-600 hover:underline">
+        <Link href={`/auth/signup?role=${desiredRole}`} className="text-indigo-300 hover:text-indigo-200 hover:underline">
           Sign up
         </Link>
       </p>
@@ -159,21 +139,21 @@ export default function SignInPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+          <Label htmlFor="email" className="block text-sm font-medium text-slate-200 mb-1.5">
             Email
           </Label>
           <Input
             id="email"
             name="email"
             type="email"
-            placeholder="you@university.ca or your personal email"
+            placeholder="you@university or your personal email"
             defaultValue={emailPrefill}
             className="input-premium border-slate-200 transition-all duration-200"
           />
         </div>
 
         <div>
-          <Label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
+          <Label htmlFor="password" className="block text-sm font-medium text-slate-200 mb-1.5">
             Password
           </Label>
           <div className="relative">
@@ -181,19 +161,19 @@ export default function SignInPage() {
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
-              className="input-premium border-slate-200 transition-all duration-200"
+              className="input-premium border-slate-200 pr-12 transition-all duration-200"
             />
             <button
               type="button"
               onClick={() => setShowPassword((p) => !p)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-600 hover:text-slate-900"
             >
               {showPassword ? "Hide" : "Show"}
             </button>
           </div>
           <Link
             href="/auth/forgot-password"
-            className="block mt-1.5 text-xs text-slate-400 hover:text-slate-700 text-right"
+            className="block mt-1.5 text-xs text-slate-400 hover:text-slate-200 text-right"
           >
             Forgot password
           </Link>

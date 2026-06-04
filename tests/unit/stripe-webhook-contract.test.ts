@@ -25,7 +25,7 @@ describe("stripe webhook route contract", () => {
 
   it("verifies webhook signatures", () => {
     const src = readWebhookRouteSource();
-    expect(src.includes("stripe.webhooks.constructEvent")).toBe(true);
+    expect(src.includes("webhooks.constructEvent")).toBe(true);
     expect(src.includes("getStripeWebhookSecret")).toBe(true);
   });
 });

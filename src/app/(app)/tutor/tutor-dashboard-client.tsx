@@ -15,7 +15,7 @@ import { CreateAvailabilityCard } from "@/components/ui/create-availability-card
 import { CourseManager } from "./course-manager";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatDate } from "@/lib/time-format";
-import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
 import { Typewriter } from "@/components/ui/typewriter";
 
@@ -221,7 +221,7 @@ export function TutorDashboardClient({
   }, [pastSessions]);
 
   return (
-    <div className={mentrixTutor.pageBg}>
+    <>
     {slotsCreatedNotice ? (
       <div
         role="alert"
@@ -234,8 +234,8 @@ export function TutorDashboardClient({
         </p>
       </div>
     ) : null}
-    <div className="max-w-7xl mx-auto px-6 py-8 relative">
-      <header className={`${mentrixTutor.heroGradient} mb-10 p-6 sm:p-8`}>
+    <main className={mentrixStudent.main}>
+      <header className={`${mentrixStudent.heroGradientLite} relative mb-8 overflow-hidden p-6 sm:p-8`}>
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-xl space-y-3">
             <TutorHeroGreeting greeting={greeting} firstName={firstName} />
@@ -260,8 +260,8 @@ export function TutorDashboardClient({
 
       {/* Stat bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className={mentrixTutor.card + " p-4"}>
-          <div className={mentrixTutor.sectionEyebrow + " mb-1"}>
+        <div className={mentrixStudent.card + " p-4"}>
+          <div className={mentrixStudent.sectionEyebrowOnLight + " mb-1"}>
             Revenue this month
           </div>
           <div
@@ -272,8 +272,8 @@ export function TutorDashboardClient({
           </div>
         </div>
 
-        <div className={mentrixTutor.card + " p-4"}>
-          <div className={mentrixTutor.sectionEyebrow + " mb-1"}>
+        <div className={mentrixStudent.card + " p-4"}>
+          <div className={mentrixStudent.sectionEyebrowOnLight + " mb-1"}>
             Sessions taught
           </div>
           <div
@@ -284,8 +284,8 @@ export function TutorDashboardClient({
           </div>
         </div>
 
-        <div className={mentrixTutor.card + " p-4"}>
-          <div className={mentrixTutor.sectionEyebrow + " mb-1"}>
+        <div className={mentrixStudent.card + " p-4"}>
+          <div className={mentrixStudent.sectionEyebrowOnLight + " mb-1"}>
             Avg rating
           </div>
           <div
@@ -296,8 +296,8 @@ export function TutorDashboardClient({
           </div>
         </div>
 
-        <div className={`${mentrixTutor.card} p-4 ${pendingCount > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
-          <div className={`${mentrixTutor.sectionEyebrow} mb-1 ${pendingCount > 0 ? "text-red-600" : ""}`}>
+        <div className={`${mentrixStudent.card} p-4 ${pendingCount > 0 ? "border-red-200 bg-red-50/50" : ""}`}>
+          <div className={`${mentrixStudent.sectionEyebrowOnLight} mb-1 ${pendingCount > 0 ? "text-red-600" : ""}`}>
             Pending requests
           </div>
           <div
@@ -330,7 +330,7 @@ export function TutorDashboardClient({
       <div className="grid lg:grid-cols-12 gap-8">
         {/* Main area */}
         <div className="lg:col-span-8">
-          <ScrollRevealCard className={mentrixTutor.card + " min-h-[26rem] p-6"}>
+          <ScrollRevealCard className={mentrixStudent.card + " min-h-[26rem] p-6"}>
           <Tabs defaultValue="requests" className="w-full">
             <TabsList className="h-auto bg-transparent border-b border-slate-200 rounded-none px-0 mb-4">
               <TabsTrigger
@@ -374,11 +374,11 @@ export function TutorDashboardClient({
 
         {/* Sidebar */}
         <aside className="lg:col-span-4 space-y-6">
-          <ScrollRevealCard className={mentrixTutor.card + " min-h-[11rem] p-6"}>
+          <ScrollRevealCard className={mentrixStudent.card + " min-h-[11rem] p-6"}>
             <CourseManager courses={tutorCourses} />
           </ScrollRevealCard>
 
-          <ScrollRevealCard id="tutor-availability-slots" className={`scroll-mt-24 ${mentrixTutor.card} min-h-[18rem] p-6`}>
+          <ScrollRevealCard id="tutor-availability-slots" className={`scroll-mt-24 ${mentrixStudent.card} min-h-[18rem] p-6`}>
             <h2 className="text-sm font-bold text-slate-900 mb-3">Availability</h2>
 
             <div className="flex items-center justify-between py-3 border-b border-[#F1F5F9] mb-4">
@@ -406,7 +406,7 @@ export function TutorDashboardClient({
             </div>
           </ScrollRevealCard>
 
-          <ScrollRevealCard className={mentrixTutor.card + " p-6"}>
+          <ScrollRevealCard className={mentrixStudent.card + " p-6"}>
             <h3 className="text-sm font-bold text-slate-900 mb-2">Recent packages</h3>
             <div className="space-y-1">
               {recentPackages.map((session) => (
@@ -436,8 +436,8 @@ export function TutorDashboardClient({
           </ScrollRevealCard>
         </aside>
       </div>
-    </div>
-    </div>
+    </main>
+    </>
   );
 }
 

@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { gsap } from "gsap";
 import type { AuthUser } from "@/lib/auth";
 import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
@@ -17,17 +16,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { staggerIn } from "@/lib/gsap";
 import { readUiPerfTier } from "@/lib/ui-performance";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 
 const STUDENT_LINKS = [
+  { href: "/student", label: "Home" },
+  { href: "/student/onboarding", label: "Plan" },
+  { href: "/student/progress", label: "Progress" },
   { href: "/student/quest", label: "Quest" },
   { href: "/student/learning-path", label: "Path" },
-  { href: "/student/division", label: "Division" },
+  { href: "/student/division", label: "League" },
   { href: "/student/clan", label: "Clan" },
   { href: "/student/duel", label: "Duels" },
-  { href: "/student", label: "Sessions" },
 ] as const;
 
 const TUTOR_LINKS = [
@@ -176,24 +176,32 @@ function NavigationInner({ user }: NavigationProps) {
   }, [router, logoHref, navItems, profileHref]);
 
   useEffect(() => {
-    if (!navRef.current) return;
-    gsap.fromTo(
-      navRef.current,
-      { y: -48 },
-      { y: 0, duration: 0.26, ease: "power2.out", delay: 0.04 },
-    );
+    if (!navRef.current || readUiPerfTier() === "lite") return;
+    let cancelled = false;
+    void import("gsap").then(({ gsap }) => {
+      if (cancelled || !navRef.current) return;
+      gsap.fromTo(
+        navRef.current,
+        { y: -48 },
+        { y: 0, duration: 0.26, ease: "power2.out", delay: 0.04 },
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (mobileOpen && mobileLinkRefs.current.length > 0 && readUiPerfTier() !== "lite") {
+    if (!mobileOpen || mobileLinkRefs.current.length === 0 || readUiPerfTier() === "lite") return;
+    void import("@/lib/gsap").then(({ staggerIn }) => {
       staggerIn(mobileLinkRefs.current);
-    }
+    });
   }, [mobileOpen]);
 
   return (
     <nav
       ref={navRef}
-      className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-white/[0.06] bg-slate-950/95 supports-[backdrop-filter]:bg-slate-950/88 supports-[backdrop-filter]:backdrop-blur-sm"
+      className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-indigo-400/15 bg-slate-950/92 supports-[backdrop-filter]:bg-slate-950/88 supports-[backdrop-filter]:backdrop-blur-md"
     >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         <div className="flex items-center gap-2 shrink-0">
@@ -204,8 +212,7 @@ function NavigationInner({ user }: NavigationProps) {
                 alt="Mentrixa"
                 width={32}
                 height={32}
-                priority
-                className="h-8 w-8 object-contain"
+                className="size-8 object-contain"
               />
             )}
             <MentrixaWordmark trixaClassName="text-white/95" />

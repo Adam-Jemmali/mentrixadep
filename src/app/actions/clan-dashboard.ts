@@ -79,6 +79,72 @@ export type PublicClanSnapshot = {
   member_count: number;
 };
 
+export type PublicClanBrowseRow = {
+  id: string;
+  name: string;
+  tag: string;
+  member_count: number;
+  leader_name: string;
+  focus_division_key: string | null;
+  focus_label: string;
+};
+
+type ClanBrowseSource = {
+  id: string;
+  name: string;
+  tag: string;
+  leader_id: string;
+  focus_division_key: string | null;
+};
+
+async function buildPublicClanBrowseRows(
+  admin: ReturnType<typeof createAdminClient>,
+  clans: ClanBrowseSource[],
+): Promise<PublicClanBrowseRow[]> {
+  if (!clans.length) return [];
+
+  const ids = clans.map((c) => c.id);
+  const leaderIds = [...new Set(clans.map((c) => c.leader_id))];
+
+  const [{ data: memberRows }, { data: settings }, { data: divisions }] = await Promise.all([
+    admin.from("clan_members").select("clan_id").in("clan_id", ids),
+    admin.from("user_settings").select("user_id, display_name").in("user_id", leaderIds),
+    admin.from("divisions").select("key, name").eq("active", true),
+  ]);
+
+  const memberCounts = new Map<string, number>();
+  for (const row of memberRows ?? []) {
+    const cid = row.clan_id as string;
+    memberCounts.set(cid, (memberCounts.get(cid) ?? 0) + 1);
+  }
+
+  const leaderNames = new Map<string, string>();
+  for (const row of settings ?? []) {
+    const name = (row.display_name as string | null)?.trim();
+    leaderNames.set(row.user_id as string, name || "Mentrixer");
+  }
+
+  const divisionNames = new Map<string, string>();
+  for (const row of divisions ?? []) {
+    divisionNames.set(row.key as string, row.name as string);
+  }
+
+  return clans.map((c) => {
+    const focusKey = (c.focus_division_key as string | null) ?? null;
+    return {
+      id: c.id,
+      name: c.name,
+      tag: c.tag,
+      member_count: memberCounts.get(c.id) ?? 0,
+      leader_name: leaderNames.get(c.leader_id) ?? "Mentrixer",
+      focus_division_key: focusKey,
+      focus_label: focusKey
+        ? divisionNames.get(focusKey) ?? focusKey.replace(/-/g, " ")
+        : "Any subject",
+    };
+  });
+}
+
 export async function getPublicClanSnapshot(
   clanId: string
 ): Promise<PublicClanSnapshot | null> {
@@ -303,9 +369,36 @@ export async function getClanDashboard(
   }
 }
 
-export async function searchPublicClans(
-  query: string
-): Promise<{ id: string; name: string; tag: string; member_count: number }[]> {
+export async function getTopPublicClans(limit = 8): Promise<PublicClanBrowseRow[]> {
+  const user = await requireRole(["student", "admin"]);
+  if (user.role !== "student") return [];
+
+  const admin = createAdminClient();
+  const { data: clans } = await admin
+    .from("clans")
+    .select("id, name, tag, leader_id, focus_division_key")
+    .eq("is_public", true)
+    .limit(120);
+
+  if (!clans?.length) return [];
+
+  const rows = await buildPublicClanBrowseRows(
+    admin,
+    clans.map((c) => ({
+      id: c.id as string,
+      name: c.name as string,
+      tag: c.tag as string,
+      leader_id: c.leader_id as string,
+      focus_division_key: (c.focus_division_key as string | null) ?? null,
+    })),
+  );
+
+  return rows
+    .sort((a, b) => b.member_count - a.member_count || a.name.localeCompare(b.name))
+    .slice(0, Math.min(Math.max(limit, 1), 20));
+}
+
+export async function searchPublicClans(query: string): Promise<PublicClanBrowseRow[]> {
   const user = await requireRole(["student", "admin"]);
   if (user.role !== "student") return [];
 
@@ -315,7 +408,7 @@ export async function searchPublicClans(
   const admin = createAdminClient();
   const { data: clans } = await admin
     .from("clans")
-    .select("id, name, tag")
+    .select("id, name, tag, leader_id, focus_division_key")
     .eq("is_public", true)
     .ilike("name", `%${q}%`)
     .order("name", { ascending: true })
@@ -323,24 +416,16 @@ export async function searchPublicClans(
 
   if (!clans?.length) return [];
 
-  const ids = clans.map((c) => c.id as string);
-  const { data: counts } = await admin
-    .from("clan_members")
-    .select("clan_id")
-    .in("clan_id", ids);
-
-  const byClan = new Map<string, number>();
-  for (const row of counts ?? []) {
-    const cid = row.clan_id as string;
-    byClan.set(cid, (byClan.get(cid) ?? 0) + 1);
-  }
-
-  return clans.map((c) => ({
-    id: c.id as string,
-    name: c.name as string,
-    tag: c.tag as string,
-    member_count: byClan.get(c.id as string) ?? 0,
-  }));
+  return buildPublicClanBrowseRows(
+    admin,
+    clans.map((c) => ({
+      id: c.id as string,
+      name: c.name as string,
+      tag: c.tag as string,
+      leader_id: c.leader_id as string,
+      focus_division_key: (c.focus_division_key as string | null) ?? null,
+    })),
+  );
 }
 
 export async function postClanMessage(

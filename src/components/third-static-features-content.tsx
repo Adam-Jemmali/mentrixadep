@@ -108,8 +108,9 @@ export function ThirdStaticFeaturesContent() {
                         alt=""
                         width={20}
                         height={20}
+                        priority={item.icon === "/images/live.webp"}
                         className={cn(
-                          "object-contain brightness-0 invert",
+                          "size-5 object-contain brightness-0 invert",
                           "max-lg:brightness-100 max-lg:invert-0 max-lg:drop-shadow-sm",
                         )}
                       />
@@ -145,8 +146,9 @@ export function ThirdStaticFeaturesContent() {
                         alt=""
                         width={20}
                         height={20}
+                        priority={item.icon === "/images/live.webp"}
                         className={cn(
-                          "object-contain brightness-0 invert",
+                          "size-5 object-contain brightness-0 invert",
                           "max-lg:brightness-100 max-lg:invert-0 max-lg:drop-shadow-sm",
                         )}
                       />

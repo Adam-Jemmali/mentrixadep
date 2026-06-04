@@ -164,6 +164,7 @@ const ScrollRevealCard = React.forwardRef<HTMLDivElement, React.HTMLAttributes<H
             transformOrigin: "center bottom",
             opacity: isInView ? 1 : 0.4,
             transition: "opacity 0.4s ease-out",
+            position: "relative",
           }}
         >
           <div

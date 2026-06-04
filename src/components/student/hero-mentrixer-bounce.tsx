@@ -112,13 +112,13 @@ export function HeroMentrixerBounce() {
   return (
     <div ref={boxRef} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       <div ref={iconARef} className="absolute left-0 top-0 will-change-transform opacity-85">
-        <Image src="/icons/mentrixer.svg" alt="" width={48} height={48} />
+        <Image src="/icons/mentrixer.svg" alt="" width={48} height={48} priority className="size-12" />
       </div>
       <div ref={iconBRef} className="absolute left-0 top-0 will-change-transform opacity-65">
-        <Image src="/icons/mentrixer.svg" alt="" width={40} height={40} />
+        <Image src="/icons/mentrixer.svg" alt="" width={40} height={40} className="size-10" />
       </div>
       <div ref={iconCRef} className="absolute left-0 top-0 will-change-transform opacity-55">
-        <Image src="/icons/mentrixer.svg" alt="" width={32} height={32} />
+        <Image src="/icons/mentrixer.svg" alt="" width={32} height={32} className="size-8" />
       </div>
     </div>
   );

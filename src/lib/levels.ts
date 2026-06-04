@@ -6,14 +6,13 @@
 // ─── Account levels (total XP) ─────────────────────────────────────────────
 
 export const ACCOUNT_LEVELS = [
-  { level: 1, title: "Rookie", minXp: 0, maxXp: 100 },
-  { level: 2, title: "Learner", minXp: 101, maxXp: 300 },
-  { level: 3, title: "Scholar", minXp: 301, maxXp: 700 },
-  { level: 4, title: "Expert", minXp: 701, maxXp: 1500 },
-  { level: 5, title: "Master", minXp: 1501, maxXp: 3000 },
-  { level: 6, title: "Legend", minXp: 3001, maxXp: 6000 },
-  { level: 7, title: "Champion", minXp: 6001, maxXp: 12000 },
-  { level: 8, title: "Grandmaster", minXp: 12001, maxXp: null },
+  { level: 1, title: "WANDERER", minXp: 0, maxXp: 100 },
+  { level: 2, title: "SEEKER", minXp: 101, maxXp: 300 },
+  { level: 3, title: "SCHOLAR", minXp: 301, maxXp: 700 },
+  { level: 4, title: "CONTENDER", minXp: 701, maxXp: 1500 },
+  { level: 5, title: "RIVAL", minXp: 1501, maxXp: 3000 },
+  { level: 6, title: "APEX", minXp: 3001, maxXp: 6000 },
+  { level: 7, title: "MENTRIXER", minXp: 6001, maxXp: null },
 ] as const;
 
 export interface AccountLevelInfo {

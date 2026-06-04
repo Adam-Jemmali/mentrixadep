@@ -21,13 +21,7 @@ import { getDivisionTheme } from "@/lib/division-ui";
 import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-function mapTierToBadge(tier: string) {
-  if (tier === "bronze") return { name: "Learner", bg: "bg-slate-500/10", border: "border-slate-500/20", text: "text-slate-400" };
-  if (tier === "silver") return { name: "Scholar",bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-400" };
-  if (tier === "gold") return { name: "Expert", bg: "bg-blue-600/10", border: "border-blue-500/20", text: "text-blue-400" };
-  return { name: "Master", bg: "bg-purple-500/10", border: "border-purple-500/20", text: "text-purple-400" };
-}
+import { LeaderboardTierRank } from "@/components/student/leaderboard-tier-rank";
 
 function RankingAvatar({
   displayName,
@@ -429,12 +423,11 @@ function LeaderboardTableWeekly({
             <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Name</th>
             <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Weekly XP</th>
             <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Streak</th>
-            <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Tier</th>
+            <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Rank</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {rows.map((r) => {
-            const badge = mapTierToBadge(r.level.tier);
             return (
               <motion.tr
                 key={r.userId}
@@ -477,9 +470,10 @@ function LeaderboardTableWeekly({
                   </div>
                 </td>
                 <td className="py-4 px-6 text-right">
-                  <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest", badge.bg, badge.border, badge.text)}>
-                    {badge.name}
-                  </div>
+                  <LeaderboardTierRank
+                    totalXp={r.totalXp}
+                    divisionTier={r.level.tier}
+                  />
                 </td>
               </motion.tr>
             );
@@ -510,12 +504,11 @@ function LeaderboardTableAllTime({
             <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Name</th>
             <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Division XP</th>
             <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Streak</th>
-            <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Tier</th>
+            <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Rank</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {rows.map((r) => {
-            const badge = mapTierToBadge(r.level.tier);
             return (
               <tr
                 key={r.userId}
@@ -546,9 +539,10 @@ function LeaderboardTableAllTime({
                   </div>
                 </td>
                 <td className="py-4 px-6 text-right">
-                   <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest", badge.bg, badge.border, badge.text)}>
-                    {badge.name}
-                  </div>
+                  <LeaderboardTierRank
+                    totalXp={r.totalXp}
+                    divisionTier={r.level.tier}
+                  />
                 </td>
               </tr>
             );

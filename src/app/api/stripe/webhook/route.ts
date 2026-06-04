@@ -18,6 +18,7 @@ import {
   sendRefundIssuedEmail,
   type SessionEmailDetails,
 } from "@/lib/email";
+import { checkInstitutionCredits, consumeInstitutionCredit } from "@/lib/institution-credits";
 
 export const runtime = "nodejs";
 /** Vercel + Next — webhook runs DB + emails; allow headroom beyond default 10s cap. */
@@ -152,6 +153,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
     sendCheckoutConfirmationEmail = true;
     console.log(`[webhook] booking created: availability=${availabilityId} student=${studentId}`);
+
+    try {
+      const creditCheck = await checkInstitutionCredits(studentId);
+      if (creditCheck.isMember && creditCheck.hasCredits && creditCheck.institutionId) {
+        const consumed = await consumeInstitutionCredit(creditCheck.institutionId);
+        if (consumed) {
+          console.log(`[webhook] institution credit consumed: institution=${creditCheck.institutionId} student=${studentId}`);
+        }
+      }
+    } catch (creditErr) {
+      captureUnexpectedError("institution-credit-webhook", creditErr, { studentId, availabilityId });
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message.toLowerCase() : "";
     if (msg.includes("another learner")) {
@@ -435,8 +448,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error(`[webhook] handler error for ${event.type}:`, err);
     captureUnexpectedError(`stripe-webhook-${event.type}`, err);
-    // Return 200 so Stripe doesn't retry — we've logged the error
-    return NextResponse.json({ received: true, error: "Handler failed, logged" });
+    return NextResponse.json(
+      { received: false, error: "Handler failed" },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ received: true });

@@ -79,7 +79,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
                 whileTap={{ scale: 0.95 }}
               >
                 <Link
-                  href="/student/quest"
+                  href={isRank1 ? "/student/duel" : "/student/quest"}
                   className={cn(
                     "inline-flex h-10 items-center rounded-xl px-5 text-xs font-bold uppercase tracking-widest transition-all",
                     isRank1 

@@ -11,12 +11,14 @@ import {
   ChevronRight,
   BadgeCheck,
   BarChart2,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
+  { href: "/admin/reconciliation", label: "Reconciliation", icon: ArrowLeftRight },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/registrations", label: "Registrations", icon: ClipboardList },
   { href: "/admin/verification", label: "Verification", icon: BadgeCheck },

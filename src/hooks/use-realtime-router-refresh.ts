@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { safeRouterRefresh } from "@/lib/safe-router-refresh";
 
 export type RealtimeTableConfig = {
   table: string;
@@ -29,38 +30,65 @@ export function useRealtimeRouterRefresh(
   useEffect(() => {
     const supabase = createClient();
     const timerRef = { current: null as ReturnType<typeof setTimeout> | null };
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const schedule = () => {
       if (timerRef.current) return;
       timerRef.current = setTimeout(() => {
         timerRef.current = null;
-        router.refresh();
+        safeRouterRefresh(router);
       }, debounceMs);
     };
 
-    const channel = supabase.channel(channelName);
-    const parsed: RealtimeTableConfig[] = JSON.parse(configsKey) as RealtimeTableConfig[];
-    for (const c of parsed) {
-      channel.on(
-        "postgres_changes",
-        {
-          event: c.event ?? "*",
-          schema: c.schema ?? "public",
-          table: c.table,
-          ...(c.filter ? { filter: c.filter } : {}),
-        },
-        schedule,
-      );
-    }
-
-    void channel.subscribe();
-
-    return () => {
+    const teardown = () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-      void supabase.removeChannel(channel);
+      if (channel) {
+        void supabase.removeChannel(channel);
+        channel = null;
+      }
+    };
+
+    const subscribe = () => {
+      if (channel) return;
+
+      channel = supabase.channel(channelName);
+      const parsed: RealtimeTableConfig[] = JSON.parse(configsKey) as RealtimeTableConfig[];
+      for (const c of parsed) {
+        channel.on(
+          "postgres_changes",
+          {
+            event: c.event ?? "*",
+            schema: c.schema ?? "public",
+            table: c.table,
+            ...(c.filter ? { filter: c.filter } : {}),
+          },
+          schedule,
+        );
+      }
+
+      void channel.subscribe();
+    };
+
+    subscribe();
+
+    /** Release Supabase websocket on bfcache freeze so back/forward navigation can restore. */
+    const onPageHide = (event: PageTransitionEvent) => {
+      if (event.persisted) teardown();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) subscribe();
+    };
+
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
+
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
+      teardown();
     };
   }, [router, channelName, configsKey, debounceMs]);
 }
@@ -78,7 +106,7 @@ export function useVisibilityRouterRefresh(intervalMs: number = 50_000): void {
       const now = Date.now();
       if (now - lastAt.current < intervalMs) return;
       lastAt.current = now;
-      router.refresh();
+      safeRouterRefresh(router);
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);

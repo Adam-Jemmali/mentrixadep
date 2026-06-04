@@ -349,6 +349,10 @@ export interface SkillDuel {
   completed_at: string | null;
   challenger_hidden_at: string | null;
   opponent_hidden_at: string | null;
+  /** Set when student_id accepts a queue / ai_queue match preview. */
+  student_ready_at: string | null;
+  /** Set when opponent accepts, or when the sparring bot is ready. */
+  opponent_ready_at: string | null;
 }
 
 export interface Clan {

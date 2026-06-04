@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, MessageSquare, Copy, Save, Send, CheckCircle2, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { mentrixTutor } from "@/lib/mentrix-tutor-ui";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 import { Typewriter } from "@/components/ui/typewriter";
 import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
 
@@ -361,7 +361,7 @@ export function TutorStudioClient({
   }
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-indigo-100/80 bg-white px-4 py-5 shadow-[0_20px_55px_-36px_rgba(67,56,202,0.45)] md:px-5">
+    <section className={`${mentrixStudent.card} relative overflow-hidden px-4 py-5 md:px-5`}>
       <div className="pointer-events-none absolute -top-24 -left-24 h-56 w-56 rounded-full bg-indigo-500/8 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl" />
       <header className="relative mb-6 flex flex-col items-center gap-5 border-b border-indigo-100 pb-6 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end">
@@ -729,7 +729,7 @@ function StudioSection({
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ y: -4 }}
       transition={{ delay, duration: 0.4, type: "spring", bounce: 0.3 }}
-      className={`${mentrixTutor.card} p-5 overflow-hidden group border-2 border-transparent transition-shadow duration-300 hover:border-blue-100 hover:shadow-[0_20px_25px_-5px_rgb(0_0_0_/_0.1),0_8px_10px_-6px_rgb(0_0_0_/_0.1)]`}
+      className={`${mentrixStudent.card} p-5 overflow-hidden group border-2 border-transparent transition-shadow duration-300 hover:border-blue-100 hover:shadow-[0_20px_25px_-5px_rgb(0_0_0_/_0.1),0_8px_10px_-6px_rgb(0_0_0_/_0.1)]`}
     >
       <div className="mb-4 flex items-center gap-2.5">
         <motion.div 
@@ -801,7 +801,7 @@ function SessionPackageEditor({
   return (
     <div className="px-4 py-8 md:px-8 md:py-10">
       <div className="mb-10 space-y-6">
-        <header className={`${mentrixTutor.heroGradient} -mx-4 -mt-8 mb-10 p-8 md:-mx-8 md:-mt-10 md:p-10`}>
+        <header className={`${mentrixStudent.heroGradientLite} -mx-4 -mt-8 mb-10 p-8 md:-mx-8 md:-mt-10 md:p-10`}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-3">

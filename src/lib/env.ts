@@ -15,9 +15,12 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
   // AI & Others
-  OPENAI_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
+
+  // Observability
+  NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+  CRON_SECRET: z.string().optional(),
 
   // App Metadata
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -47,7 +50,6 @@ export const env = {
     supabaseServiceRoleKey: data.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
     stripeSecretKey: data.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "",
     stripeWebhookSecret: data.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET || "",
-    openaiApiKey: data.OPENAI_API_KEY || process.env.OPENAI_API_KEY || "",
     resendApiKey: data.RESEND_API_KEY || process.env.RESEND_API_KEY || "",
     geminiApiKey: data.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "",
     nodeEnv: data.NODE_ENV || process.env.NODE_ENV || "development",
@@ -68,10 +70,6 @@ export function getResendApiKey() {
 
 export function getGeminiApiKey() {
   return env.server.geminiApiKey;
-}
-
-export function getOpenaiApiKey() {
-  return env.server.openaiApiKey;
 }
 
 export function getSupabaseUrl() {

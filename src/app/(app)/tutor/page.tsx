@@ -3,6 +3,7 @@ import { getTutorCommandCenterData } from "@/app/actions/tutor";
 import { TutorCommandCenterClient } from "./tutor-command-center-client";
 import { requireRole } from "@/lib/auth";
 import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/lib/student-dashboard-helpers";
+import { mentrixStudent } from "@/lib/mentrix-student-ui";
 
 export const metadata: Metadata = {
   title: "Guide center · Mentrixa",
@@ -23,20 +24,22 @@ export default async function TutorPage() {
     const greeting = greetingForHour(hour, firstName);
 
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className={mentrixStudent.pageBgHub}>
         <TutorCommandCenterClient data={data} greeting={greeting} firstName={firstName} />
       </div>
     );
   } catch (e) {
     console.error("[tutor/page] render failed:", e);
     return (
-      <div className="min-h-screen bg-neutral-50 px-6 py-12">
-        <div className="mx-auto max-w-xl rounded-md border border-slate-200 bg-white p-6">
-          <h1 className="text-lg font-medium text-slate-900">Guide center unavailable</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            We could not load your dashboard right now. Please refresh in a few seconds.
-          </p>
-        </div>
+      <div className={mentrixStudent.pageBgHub}>
+        <main className={mentrixStudent.main}>
+          <div className={`${mentrixStudent.card} mx-auto max-w-xl p-6`}>
+            <h1 className={`text-lg font-medium ${mentrixStudent.textOnLight}`}>Guide center unavailable</h1>
+            <p className={`mt-2 text-sm ${mentrixStudent.textMutedOnLight}`}>
+              We could not load your dashboard right now. Please refresh in a few seconds.
+            </p>
+          </div>
+        </main>
       </div>
     );
   }

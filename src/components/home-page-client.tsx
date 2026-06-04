@@ -11,17 +11,6 @@ import { cn } from "@/lib/utils";
 import { useTrack } from "@/lib/use-track";
 import PricingSection from "@/components/ui/pricing";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
-import {
-  Navbar,
-  NavBody,
-  NavItems,
-  MobileNav,
-  MobileNavHeader,
-  MobileNavMenu,
-  MobileNavToggle,
-  NavbarButton,
-  NavbarLogo,
-} from "@/components/ui/resizable-navbar";
 import { ContactSocialLinks } from "@/components/contact/contact-social-links";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/lib/mentrixa-brand";
 import { markLandingSection, useLandingPerfMetrics, useLowEndMode } from "@/lib/landing-perf";
@@ -62,34 +51,25 @@ const ArrowRight = memo(function ArrowRight() {
 
 const RoleIcon = memo(function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
   return (
-    <span className={`relative inline-block h-4 w-4 shrink-0 ${className}`} aria-hidden>
+    <span className={`relative inline-block size-4 shrink-0 ${className}`} aria-hidden>
       <Image
         src={role === "mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`}
         alt=""
-        fill
+        width={16}
+        height={16}
         unoptimized
-        className="object-contain"
+        className="size-full object-contain"
         sizes="16px"
       />
     </span>
   );
 });
 
-const LANDING_NAV_ITEMS = [
-  { name: "Features", link: "#features" },
-  { name: "Why join", link: "#why" },
-  { name: "Flow", link: "#flow" },
-  { name: "Pricing", link: "#pricing" },
-  { name: "Contact", link: "#contact" },
-  { name: "Sign in", link: "/auth/signin?signin=1" },
-];
-
 const FEEDBACK_EMAIL = DEFAULT_PUBLIC_FEEDBACK_EMAIL;
 
 export function HomePageClient() {
   const [ctaRef, ctaVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
   const [contactRef, contactVis] = useInViewOnce<HTMLElement>("0px 0px -12% 0px");
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const track = useTrack();
   const lowEndMode = useLowEndMode();
   const enablePerfMetrics = process.env.NODE_ENV !== "production" && !lowEndMode;
@@ -150,66 +130,6 @@ export function HomePageClient() {
 
   return (
     <div className="lp-root">
-      <Navbar className="lp-nav fixed top-3 left-0 right-0 z-50 px-3 sm:px-5">
-        <div className="relative w-full">
-          <NavBody>
-            <NavbarLogo />
-            <NavItems items={LANDING_NAV_ITEMS} />
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <NavbarButton
-                href="/auth/signup?role=tutor"
-                variant="secondary"
-                className="hidden sm:inline-flex"
-              >
-                <RoleIcon role="guide" className="h-3.5 w-3.5" />
-                Become a Guide
-              </NavbarButton>
-              <NavbarButton href="/auth/signup" variant="primary" className="hidden sm:inline-flex">
-                <RoleIcon role="mentrixer" className="h-3.5 w-3.5 brightness-0 invert" />
-                Become a Mentrixer
-              </NavbarButton>
-            </div>
-          </NavBody>
-
-          <MobileNav>
-            <div className="relative w-full">
-              <MobileNavHeader>
-                <NavbarLogo />
-                <MobileNavToggle isOpen={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)} />
-              </MobileNavHeader>
-
-              <MobileNavMenu isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)}>
-                {LANDING_NAV_ITEMS.map((item) => (
-                  <a
-                    key={item.link}
-                    href={item.link}
-                    onClick={() => setMobileNavOpen(false)}
-                    className="rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/8 hover:text-white"
-                  >
-                    {item.name}
-                  </a>
-                ))}
-
-                <div className="mt-2 flex flex-col gap-2">
-                  <NavbarButton
-                    href="/auth/signup?role=tutor"
-                    variant="secondary"
-                    className="w-full"
-                  >
-                    <RoleIcon role="guide" className="h-3.5 w-3.5" />
-                    Become a Guide
-                  </NavbarButton>
-                  <NavbarButton href="/auth/signup" variant="primary" className="w-full">
-                    <RoleIcon role="mentrixer" className="h-3.5 w-3.5 brightness-0 invert" />
-                    Become a Mentrixer
-                  </NavbarButton>
-                </div>
-              </MobileNavMenu>
-            </div>
-          </MobileNav>
-        </div>
-      </Navbar>
-
       <PricingSection />
 
       <section

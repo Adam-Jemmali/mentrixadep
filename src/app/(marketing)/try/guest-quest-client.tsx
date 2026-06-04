@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { XP } from "@/lib/xp-constants";
 import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
@@ -29,7 +29,7 @@ import {
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
   if (!x || typeof x !== "object") return false;
   const o = x as Record<string, unknown>;
-  const kinds = ["mcq", "true_false", "short_answer", "image_mcq"] as const;
+  const kinds = ["mcq", "true_false", "short_answer", "image_mcq", "drag_rank"] as const;
   return (
     typeof o.id === "string" &&
     typeof o.kind === "string" &&
@@ -127,6 +127,18 @@ function bestStreakInRun(resultsSoFar: boolean[]): number {
   return best;
 }
 
+function shuffleStrings(items: string[]): string[] {
+  const next = [...items];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j]!, next[i]!];
+  }
+  if (next.length > 1 && next.every((v, i) => v === items[i])) {
+    return shuffleStrings(next);
+  }
+  return next;
+}
+
 export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: string; name: string }[] }) {
   const router = useRouter();
   const [subjectKey, setSubjectKey] = useState(defaultSubjects[0]?.key ?? "general");
@@ -137,6 +149,8 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
   const [selected, setSelected] = useState<number | null>(null);
   const [shortAnswerText, setShortAnswerText] = useState("");
   const [shortSubmitted, setShortSubmitted] = useState(false);
+  const [rankOrder, setRankOrder] = useState<string[]>([]);
+  const [rankSubmitted, setRankSubmitted] = useState(false);
   const [results, setResults] = useState<boolean[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -166,6 +180,13 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     setShortAnswerText("");
     setShortSubmitted(false);
     setSelected(null);
+    setRankSubmitted(false);
+    const q = questions?.[qIndex];
+    if (q?.kind === "drag_rank" && q.rankItems) {
+      setRankOrder(shuffleStrings(q.rankItems));
+    } else {
+      setRankOrder([]);
+    }
   }, [qIndex, questions]);
 
   const start = async () => {
@@ -225,6 +246,22 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     const ref = q.referenceAnswer ?? "";
     const ok = gradeGuestShortAnswer(shortAnswerText, ref);
     setShortSubmitted(true);
+    setResults((r) => {
+      const next = [...r, ok];
+      playOutcomeSound(ok);
+      hapticOutcome(ok);
+      return next;
+    });
+  };
+
+  const submitRankOrder = () => {
+    if (!questions || rankSubmitted) return;
+    const q = questions[qIndex];
+    if (!q || q.kind !== "drag_rank" || !q.rankItems) return;
+    const ok =
+      rankOrder.length === q.rankItems.length &&
+      rankOrder.every((item, i) => item === q.rankItems![i]);
+    setRankSubmitted(true);
     setResults((r) => {
       const next = [...r, ok];
       playOutcomeSound(ok);
@@ -373,8 +410,9 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     if (!q) return null;
 
     const isShort = q.kind === "short_answer";
-    const choiceAnswered = !isShort && selected != null;
-    const answered = isShort ? shortSubmitted : choiceAnswered;
+    const isDragRank = q.kind === "drag_rank";
+    const choiceAnswered = !isShort && !isDragRank && selected != null;
+    const answered = isShort ? shortSubmitted : isDragRank ? rankSubmitted : choiceAnswered;
     const wasCorrect = answered ? results[qIndex] : undefined;
     const imageMcq =
       q.kind === "image_mcq" &&
@@ -496,6 +534,48 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                     to submit
                   </span>
                 </div>
+              </motion.div>
+            ) : isDragRank && q.rankItems && rankOrder.length > 0 ? (
+              <motion.div
+                className="mt-6 space-y-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.25 }}
+              >
+                <p className="text-xs font-medium text-slate-500">Drag rows into the correct order (top = first).</p>
+                <Reorder.Group
+                  axis="y"
+                  values={rankOrder}
+                  onReorder={rankSubmitted ? () => {} : setRankOrder}
+                  className="space-y-2"
+                >
+                  {rankOrder.map((item) => (
+                    <Reorder.Item
+                      key={item}
+                      value={item}
+                      drag={!rankSubmitted}
+                      className={cn(
+                        "flex cursor-grab items-center gap-3 rounded-xl border-2 bg-white px-4 py-3 text-sm font-medium text-slate-900 active:cursor-grabbing",
+                        rankSubmitted
+                          ? "cursor-default border-slate-200"
+                          : "border-slate-200 hover:border-blue-300 hover:bg-blue-50/40",
+                      )}
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500">
+                        ⋮⋮
+                      </span>
+                      {item}
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
+                {!rankSubmitted ? (
+                  <Button type="button" className="font-semibold" onClick={() => {
+                    playClickSound();
+                    submitRankOrder();
+                  }}>
+                    Lock order
+                  </Button>
+                ) : null}
               </motion.div>
             ) : imageMcq && q.options && q.optionImageUrls ? (
               <motion.div
@@ -671,6 +751,12 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                           <span className="font-semibold text-slate-900">
                             {formatGuestTryReferenceAnswerDisplay(q.referenceAnswer)}
                           </span>
+                        </p>
+                      ) : null}
+                      {isDragRank && !wasCorrect && q.rankItems ? (
+                        <p className="mt-2 text-sm text-slate-700">
+                          <span className="text-slate-500">Correct order: </span>
+                          <span className="font-semibold text-slate-900">{q.rankItems.join(" → ")}</span>
                         </p>
                       ) : null}
                     </div>

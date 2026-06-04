@@ -6,9 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   submitSkillDuelAnswers,
   submitSkillDuelQuestionAnswer,
-  activateSkillDuelSession,
   withdrawPendingSkillDuel,
   hideSkillDuelFromList,
+  acceptQueueMatch,
+  declineQueueMatch,
+  getQueueMatchAcceptance,
   type DuelPublicRow,
 } from "@/app/actions/duel";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ import {
 } from "@/lib/duel-constants";
 import { XP } from "@/lib/xp-constants";
 import { useRealtimeRouterRefresh } from "@/hooks/use-realtime-router-refresh";
+import { safeRouterRefresh } from "@/lib/safe-router-refresh";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -52,10 +55,18 @@ function labelsForSide(duel: DuelPublicRow, side: Props["side"]) {
   return { youLabel, themLabel, youAreChallenger };
 }
 
+function isQueueStyleMatchSource(ms: string | null | undefined): boolean {
+  return ms === "queue" || ms === "ai_queue";
+}
+
 export function DuelPlayClient({ duel, side }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [listActionLoading, setListActionLoading] = useState(false);
+  const [acceptBusy, setAcceptBusy] = useState(false);
+  const [meAccepted, setMeAccepted] = useState(false);
+  const [opponentAccepted, setOpponentAccepted] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(DUEL_SECONDS_PER_QUESTION);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -101,19 +112,80 @@ export function DuelPlayClient({ duel, side }: Props) {
       ? duel.opponent_running_score
       : duel.student_running_score) ?? 0;
 
-  /** Queue match: either learner can generate the quiz */
+  const queueStylePending =
+    duel.status === "pending" && isQueueStyleMatchSource(duel.match_source);
+
   useEffect(() => {
-    if (duel.status !== "pending") return;
-    if (duel.match_source !== "queue") return;
+    if (!queueStylePending) return;
+
     let cancelled = false;
-    void (async () => {
-      const r = await activateSkillDuelSession(duel.id);
-      if (!cancelled && r.success) router.refresh();
-    })();
+    const sync = async () => {
+      try {
+        const resp = await getQueueMatchAcceptance(duel.id);
+        if (cancelled || !resp.success) return;
+        const s = resp.state;
+        setMeAccepted(s.meAccepted);
+        setOpponentAccepted(s.opponentAccepted);
+        if (s.bothAccepted || s.status === "active") {
+          safeRouterRefresh(router);
+        }
+        if (s.terminal && s.status !== "active") {
+          setAcceptError(
+            s.status === "cancelled" || s.status === "declined"
+              ? "This match was declined."
+              : "This match is no longer available.",
+          );
+        }
+      } catch {
+        /* retry on next tick */
+      }
+    };
+
+    void sync();
+    const id = setInterval(() => void sync(), 1500);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
-  }, [duel.id, duel.status, duel.match_source, router]);
+  }, [duel.id, queueStylePending, router]);
+
+  async function handleQueueAccept() {
+    setAcceptBusy(true);
+    setAcceptError(null);
+    try {
+      const r = await acceptQueueMatch(duel.id);
+      if (!r.success) {
+        setAcceptError(r.error);
+        return;
+      }
+      setMeAccepted(r.state.meAccepted);
+      setOpponentAccepted(r.state.opponentAccepted);
+      if (r.state.bothAccepted || r.state.status === "active") {
+        safeRouterRefresh(router);
+      }
+    } catch {
+      setAcceptError("Could not accept the match.");
+    } finally {
+      setAcceptBusy(false);
+    }
+  }
+
+  async function handleQueueDecline() {
+    setAcceptBusy(true);
+    setAcceptError(null);
+    try {
+      const r = await declineQueueMatch(duel.id);
+      if (!r.success) {
+        setAcceptError(r.error);
+        return;
+      }
+      router.push("/student/duel");
+    } catch {
+      setAcceptError("Could not decline the match.");
+    } finally {
+      setAcceptBusy(false);
+    }
+  }
 
   /** Realtime diagnostics only (actual refresh handled by debounced hook). */
   useEffect(() => {
@@ -148,7 +220,7 @@ export function DuelPlayClient({ duel, side }: Props) {
     if (duel.status !== "active") return;
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
-      router.refresh();
+      safeRouterRefresh(router);
     };
     const id = setInterval(tick, 8000);
     return () => clearInterval(id);
@@ -193,7 +265,7 @@ export function DuelPlayClient({ duel, side }: Props) {
       if (!cancelled) {
         setLoading(false);
         if (!res.success) setError(res.error);
-        else router.refresh();
+        else safeRouterRefresh(router);
       }
     })();
     return () => {
@@ -224,7 +296,7 @@ export function DuelPlayClient({ duel, side }: Props) {
       setError(res.error);
       return;
     }
-    router.refresh();
+    safeRouterRefresh(router);
   }
 
   async function handleLegacySubmit(answers: number[]) {
@@ -236,10 +308,58 @@ export function DuelPlayClient({ duel, side }: Props) {
       setError(res.error);
       return;
     }
-    router.refresh();
+    safeRouterRefresh(router);
   }
 
   if (duel.status === "pending") {
+    if (queueStylePending) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="rounded-lg border border-indigo-200 bg-white px-4 py-6 text-center space-y-4"
+        >
+          <div>
+            <p className="text-sm font-medium text-slate-800">Match found</p>
+            <p className="mt-2 text-xs text-slate-500">
+              Both sides must accept before questions begin
+              {duel.is_ai_opponent ? " (you and the sparring bot)." : "."}
+            </p>
+          </div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            {meAccepted && opponentAccepted
+              ? "Starting duel…"
+              : meAccepted
+                ? "Waiting for opponent…"
+                : opponentAccepted
+                  ? "Opponent is ready — accept to continue"
+                  : "Waiting for both players to accept"}
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button
+              type="button"
+              disabled={acceptBusy || meAccepted}
+              onClick={() => void handleQueueAccept()}
+            >
+              {acceptBusy ? "…" : meAccepted ? "You accepted" : "Accept match"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={acceptBusy}
+              onClick={() => void handleQueueDecline()}
+            >
+              Decline
+            </Button>
+          </div>
+          {acceptError ? (
+            <p className="text-sm text-red-600">{acceptError}</p>
+          ) : null}
+        </motion.div>
+      );
+    }
+
     const init = duel.initiator_id ?? duel.student_id;
     if (side === "opponent" && init === duel.student_id) {
       return null;
@@ -275,7 +395,7 @@ export function DuelPlayClient({ duel, side }: Props) {
                   setError(r.error);
                   return;
                 }
-                router.refresh();
+                safeRouterRefresh(router);
               })();
             }}
           >
@@ -386,25 +506,25 @@ export function DuelPlayClient({ duel, side }: Props) {
         className="space-y-6"
       >
         <div
-          className={`rounded-lg border px-5 py-6 text-center ${
+          className={`rounded-2xl border px-5 py-6 text-center shadow-sm ${
             tie
-              ? "border-slate-200 bg-slate-50"
+              ? "border-zinc-200 bg-zinc-50"
               : youWon
                 ? "border-emerald-200/80 bg-emerald-50/90"
-                : "border-slate-200 bg-white"
+                : "border-zinc-200 bg-white"
           }`}
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             Result
           </p>
-          <p className="mt-2 text-lg font-semibold text-slate-900">
+          <p className="mt-2 text-lg font-semibold text-zinc-950">
             {tie ? "Draw" : youWon ? "You won" : "You didn’t win this one"}
           </p>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-zinc-700">
             {youLabel}: {yourScore} · {themLabel}: {theirScore}{" "}
-            <span className="text-slate-400">/ {total}</span>
+            <span className="text-zinc-500">/ {total}</span>
           </p>
-          <p className="mt-4 text-sm text-slate-700">{xpLine}</p>
+          <p className="mt-4 text-sm font-medium text-zinc-800">{xpLine}</p>
         </div>
 
         <ol className="space-y-4">
@@ -495,25 +615,25 @@ export function DuelPlayClient({ duel, side }: Props) {
       <div className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
               Live
             </p>
-            <p className="mt-0.5 text-sm text-slate-900">
+            <p className="mt-0.5 text-sm font-medium text-zinc-950">
               <span className="font-semibold tabular-nums">{youLabel}</span>:{" "}
               <span className="tabular-nums">{youScore}</span>
-              <span className="mx-2 text-slate-300">|</span>
+              <span className="mx-2 text-zinc-300">|</span>
               <span className="font-semibold tabular-nums">{themLabel}</span>:{" "}
               <span className="tabular-nums">{theyScore}</span>
             </p>
             {!duel.is_ai_opponent && theirLen < myLen ? (
-              <p className="mt-1.5 text-xs text-slate-500">
+              <p className="mt-1.5 text-xs text-zinc-600">
                 You are a question ahead totals still compare on accuracy.
               </p>
             ) : null}
           </div>
           <div className="flex items-center gap-3">
             <div
-              className="relative h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-white"
+              className="relative h-11 w-11 shrink-0 rounded-full border border-zinc-200 bg-white"
               style={{
                 background: `conic-gradient(rgb(15 23 42) ${
                   timerNorm * 360
@@ -522,19 +642,19 @@ export function DuelPlayClient({ duel, side }: Props) {
               aria-hidden
             />
             <div className="text-right">
-              <p className="text-[10px] font-medium uppercase text-slate-400">
+              <p className="text-[10px] font-semibold uppercase text-zinc-500">
                 Time
               </p>
-              <p className="text-lg font-semibold tabular-nums text-slate-900">
+              <p className="text-lg font-semibold tabular-nums text-zinc-950">
                 {timeLeft}s
               </p>
             </div>
           </div>
         </div>
 
-        <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-100">
           <motion.div
-            className="h-full bg-slate-800"
+            className="h-full bg-zinc-900"
             initial={false}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.25 }}
@@ -548,12 +668,12 @@ export function DuelPlayClient({ duel, side }: Props) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.18 }}
-            className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-5"
           >
-            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
               {kindLabel(q.type)} · Question {currentIndex + 1} of {total}
             </p>
-            <p className="mt-2 text-base font-medium leading-snug text-slate-900">
+            <p className="mt-2 text-base font-semibold leading-snug text-zinc-950">
               {q.prompt}
             </p>
             <div className="mt-4 space-y-2">
@@ -563,7 +683,7 @@ export function DuelPlayClient({ duel, side }: Props) {
                   type="button"
                   disabled={loading}
                   onClick={() => void pickAnswer(ci)}
-                  className="flex w-full items-center rounded-md border border-slate-200 bg-white px-3 py-2.5 text-left text-sm text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 disabled:opacity-50"
+                  className="flex w-full items-center rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-left text-sm font-medium text-zinc-900 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400 disabled:opacity-50"
                 >
                   {choiceLine(c, ci, q.choices.length)}
                 </button>

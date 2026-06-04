@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
 import type { AuthUser } from "@/lib/auth";
@@ -20,9 +20,15 @@ import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { BubbleText } from "@/components/ui/bubble-text";
 
+const TUTOR_NAV_DESKTOP_SHELL =
+  "!bg-slate-950 border-indigo-400/20 shadow-[0_14px_40px_-16px_rgba(2,6,23,0.75)]";
+const TUTOR_NAV_MOBILE_SHELL =
+  "!bg-slate-950 border-white/15 shadow-[0_10px_30px_-16px_rgba(2,6,23,0.75)] md:!bg-slate-950";
+
 const TUTOR_NAV_ITEMS = [
+  { name: "Home", link: "/tutor" },
   { name: "Studio", link: "/tutor/sessions-ai" },
-  { name: "Sessions", link: "/tutor" },
+  { name: "Payouts", link: "/tutor#payouts" },
 ];
 
 function getInitials(displayName: string | null | undefined, email?: string | null): string {
@@ -84,11 +90,6 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const onboardingTour = searchParams.get("onboarding") === "true";
-  const isStudioRoute =
-    pathname === "/tutor/sessions-ai" || pathname.startsWith("/tutor/sessions-ai/");
-  const solidBlackShell = isStudioRoute || onboardingTour;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -114,12 +115,6 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
 
   const initials = user ? getInitials(user.displayName, user.email) : "G";
   const profileHref = user ? `/tutor/${user.id}` : "/tutor";
-  const studioDesktopNavClass = solidBlackShell
-    ? "bg-black/90 supports-[backdrop-filter]:bg-black/85 shadow-[0_10px_36px_rgba(0,0,0,0.45)]"
-    : undefined;
-  const studioMobileNavClass = solidBlackShell
-    ? "bg-black/70 shadow-[0_10px_30px_rgba(0,0,0,0.38)]"
-    : undefined;
 
   useEffect(() => {
     router.prefetch("/tutor");
@@ -131,7 +126,7 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
     <Navbar className="tutor-nav fixed top-3 left-0 right-0 z-40 px-3 sm:px-5">
       <div className="relative w-full">
         {/* Desktop Navbar */}
-        <NavBody className={studioDesktopNavClass}>
+        <NavBody className={TUTOR_NAV_DESKTOP_SHELL}>
           <Link href="/tutor" className="flex items-center gap-2.5 shrink-0">
             <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
             <MentrixaWordmark trixaClassName="text-white" />
@@ -183,7 +178,7 @@ export function TutorNavbar({ user }: TutorNavbarProps) {
         </NavBody>
 
         {/* Mobile Navbar */}
-        <MobileNav className={studioMobileNavClass}>
+        <MobileNav className={TUTOR_NAV_MOBILE_SHELL}>
           <div className="relative w-full">
             <MobileNavHeader>
               <Link href="/tutor" className="flex items-center gap-2.5 shrink-0">

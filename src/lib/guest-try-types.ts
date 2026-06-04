@@ -1,6 +1,6 @@
 /** Try Quest (marketing guest demo) — mixed modalities; validated server-side before JSON response. */
 
-export type GuestTryQuestionKind = "mcq" | "true_false" | "short_answer" | "image_mcq";
+export type GuestTryQuestionKind = "mcq" | "true_false" | "short_answer" | "image_mcq" | "drag_rank";
 
 export type GuestTryQuestion = {
   id: string;
@@ -19,6 +19,8 @@ export type GuestTryQuestion = {
   optionImagePrompts?: string[];
   correctIndex?: number;
   referenceAnswer?: string;
+  /** drag_rank — items in the correct order (client shuffles for display). */
+  rankItems?: string[];
 };
 
 /** Normalize common math typings so 3x^2, 3*x**2, and 3x² all align for grading. */
@@ -94,7 +96,8 @@ const GUEST_TRY_KIND_UI: Record<GuestTryQuestionKind, { badge: string; hint: str
   mcq: { badge: "Deep cut MCQ", hint: "Wrong answers are meant to look tempting." },
   true_false: { badge: "True / False", hint: "Read every qualifier in the statement." },
   short_answer: { badge: "Sharp recall", hint: "Short phrase — synonyms usually count." },
-  image_mcq: { badge: "Visual pick", hint: "Use the picture — pick the option that matches." },
+  image_mcq: { badge: "Visual pick", hint: "Each picture is different — match the caption." },
+  drag_rank: { badge: "Drag to rank", hint: "Put the steps or levels in the right order." },
 };
 
 export function guestTryKindUi(kind: GuestTryQuestionKind): { badge: string; hint: string } {
@@ -132,6 +135,14 @@ export function isPlayableGuestTryQuestion(q: GuestTryQuestion): boolean {
         typeof q.correctIndex === "number" &&
         q.correctIndex >= 0 &&
         q.correctIndex < 4
+      );
+    case "drag_rank":
+      return (
+        Array.isArray(q.rankItems) &&
+        q.rankItems.length >= 3 &&
+        q.rankItems.length <= 6 &&
+        q.rankItems.every((x) => typeof x === "string" && x.trim().length >= 2) &&
+        new Set(q.rankItems.map((x) => x.trim().toLowerCase())).size === q.rankItems.length
       );
   }
 }
@@ -180,6 +191,18 @@ function readOptions(row: Record<string, unknown>, count: number): string[] | nu
   const options = rawOpts.filter((x) => typeof x === "string").map((x) => String(x).trim().slice(0, 500));
   if (options.length !== count) return null;
   return options;
+}
+
+function readRankItems(row: Record<string, unknown>): string[] | null {
+  const raw = row.rankItems ?? row.items ?? row.steps;
+  if (!Array.isArray(raw)) return null;
+  const items = raw
+    .filter((x) => typeof x === "string")
+    .map((x) => String(x).trim().slice(0, 200))
+    .filter(Boolean);
+  if (items.length < 3 || items.length > 6) return null;
+  if (new Set(items.map((x) => x.toLowerCase())).size !== items.length) return null;
+  return items;
 }
 
 /** Normalize one raw AI row into a validated question, or null. */
@@ -248,6 +271,20 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
       promptImagePrompt,
       options: ["True", "False"],
       correctIndex: ci,
+    };
+  }
+
+  if (kindRaw === "drag_rank" || kindRaw === "rank_order" || kindRaw === "ordering" || kindRaw === "order") {
+    const rankItems = readRankItems(o);
+    if (!rankItems) return null;
+    return {
+      id,
+      kind: "drag_rank",
+      prompt,
+      explanation,
+      promptImageUrl,
+      promptImagePrompt,
+      rankItems,
     };
   }
 

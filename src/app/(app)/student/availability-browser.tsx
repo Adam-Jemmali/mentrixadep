@@ -148,11 +148,15 @@ export function AvailabilityBrowser({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search by name or course"
-        className="h-8 mb-3 text-xs bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
+        aria-label="Search guides by name or course"
+        className="mb-3 min-h-11 text-xs bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
       />
 
       <Select value={courseFilter} onValueChange={setCourseFilter}>
-        <SelectTrigger className="h-8 mb-4 text-xs bg-white border-slate-200 text-slate-900">
+        <SelectTrigger
+          aria-label="Filter guides by course"
+          className="mb-4 min-h-11 text-xs bg-white border-slate-200 text-slate-900"
+        >
           <SelectValue placeholder="All courses" />
         </SelectTrigger>
         <SelectContent>

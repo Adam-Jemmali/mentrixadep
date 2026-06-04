@@ -2,11 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  hideSkillDuelFromList,
-  withdrawPendingSkillDuel,
-} from "@/app/actions/duel";
+import { hideSkillDuelFromList } from "@/app/actions/duel";
 import { Button } from "@/components/ui/button";
+import { safeRouterRefresh } from "@/lib/safe-router-refresh";
 
 type Props = {
   duelId: string;
@@ -14,6 +12,9 @@ type Props = {
   myId: string;
   studentId: string;
   opponentStudentId: string | null;
+  isAiOpponent?: boolean;
+  onRemoved?: (duelId: string) => void;
+  onError?: (message: string) => void;
 };
 
 export function DuelRowActions({
@@ -22,6 +23,9 @@ export function DuelRowActions({
   myId,
   studentId,
   opponentStudentId,
+  isAiOpponent = false,
+  onRemoved,
+  onError,
 }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -30,53 +34,36 @@ export function DuelRowActions({
   const isOpponent =
     opponentStudentId != null && opponentStudentId === myId;
 
-  if (status === "pending" && isChallenger) {
-    return (
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        className="text-slate-500 shrink-0"
-        disabled={busy}
-        onClick={() => {
-          setBusy(true);
-          void (async () => {
-            const r = await withdrawPendingSkillDuel(duelId);
-            setBusy(false);
-            if (r.success) router.refresh();
-          })();
-        }}
-      >
-        {busy ? "…" : "Cancel"}
-      </Button>
-    );
+  if (status === "pending" && isOpponent && !isAiOpponent) {
+    return null;
   }
 
-  const terminal =
-    status === "completed" ||
-    status === "declined" ||
-    status === "cancelled";
-  if (terminal && (isChallenger || isOpponent)) {
-    return (
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        className="text-slate-500 shrink-0"
-        disabled={busy}
-        onClick={() => {
-          setBusy(true);
-          void (async () => {
-            const r = await hideSkillDuelFromList(duelId);
-            setBusy(false);
-            if (r.success) router.refresh();
-          })();
-        }}
-      >
-        {busy ? "…" : "Hide"}
-      </Button>
-    );
+  if (!isChallenger && !isOpponent) {
+    return null;
   }
 
-  return null;
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      className="shrink-0 text-slate-500 hover:text-rose-600"
+      disabled={busy}
+      onClick={() => {
+        setBusy(true);
+        void (async () => {
+          const r = await hideSkillDuelFromList(duelId);
+          setBusy(false);
+          if (r.success) {
+            onRemoved?.(duelId);
+            safeRouterRefresh(router);
+          } else {
+            onError?.(r.error);
+          }
+        })();
+      }}
+    >
+      {busy ? "…" : "Remove"}
+    </Button>
+  );
 }

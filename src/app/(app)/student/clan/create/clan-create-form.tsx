@@ -15,6 +15,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DivisionFocusSelect } from "@/components/student/division-focus-select";
+import {
+  clanArenaOutlineButton,
+  clanArenaPrimaryButton,
+  clanLightFieldHint,
+  clanLightFieldLabel,
+  clanLightInput,
+  clanLightSelectContent,
+  clanLightSelectItem,
+  clanLightSelectTrigger,
+} from "@/lib/clan-light-form-ui";
 
 type Div = { key: string; name: string };
 
@@ -60,92 +71,85 @@ export function ClanCreateForm({ divisions }: { divisions: Div[] }) {
   return (
     <form onSubmit={(e) => void submit(e)} className="space-y-6 max-w-lg">
       <div>
-        <Label htmlFor="cname">Clan name</Label>
+        <Label htmlFor="cname" className={clanLightFieldLabel}>Clan name</Label>
         <Input
           id="cname"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1.5"
+          className={clanLightInput}
           required
           minLength={2}
           maxLength={60}
         />
-        <p className="text-xs text-slate-500 mt-1">Must be unique across Mentrixa.</p>
+        <p className={clanLightFieldHint}>Must be unique across Mentrixa.</p>
       </div>
       <div>
-        <Label htmlFor="ctag">Short tag</Label>
+        <Label htmlFor="ctag" className={clanLightFieldLabel}>Short tag</Label>
         <Input
           id="ctag"
           value={tag}
           onChange={(e) => setTag(e.target.value)}
-          className="mt-1.5 font-mono uppercase"
+          className={`${clanLightInput} font-mono uppercase`}
           required
           minLength={2}
           maxLength={8}
           placeholder="e.g. MATH01"
         />
-        <p className="text-xs text-slate-500 mt-1">2–8 letters or numbers, shown on your badge.</p>
+        <p className={clanLightFieldHint}>2–8 letters or numbers, shown on your badge.</p>
       </div>
       <div>
-        <Label htmlFor="cdesc">Description (optional)</Label>
+        <Label htmlFor="cdesc" className={clanLightFieldLabel}>Description (optional)</Label>
         <Textarea
           id="cdesc"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="mt-1.5 min-h-[88px]"
+          className={`${clanLightInput} min-h-[88px]`}
           maxLength={500}
         />
       </div>
       <div>
-        <Label>Subject focus (optional)</Label>
-        <Select value={focus || "__none__"} onValueChange={(v) => setFocus(v === "__none__" ? "" : v)}>
-          <SelectTrigger className="mt-1.5">
-            <SelectValue placeholder="Any subject" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">Any subject</SelectItem>
-            {divisions.map((d) => (
-              <SelectItem key={d.key} value={d.key}>
-                {d.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label className={clanLightFieldLabel}>Subject focus (optional)</Label>
+        <DivisionFocusSelect
+          value={focus || null}
+          onValueChange={(v) => setFocus(v ?? "")}
+          divisions={divisions}
+          noneLabel="Any subject"
+        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label>How Mentrixers join</Label>
+          <Label className={clanLightFieldLabel}>How Mentrixers join</Label>
           <Select
             value={joinMode}
             onValueChange={(v) => setJoinMode(v as "open" | "approval")}
           >
-            <SelectTrigger className="mt-1.5">
+            <SelectTrigger className={clanLightSelectTrigger}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="open">Open invite or discover</SelectItem>
-              <SelectItem value="approval">Approval you confirm requests</SelectItem>
+            <SelectContent className={clanLightSelectContent}>
+              <SelectItem value="open" className={clanLightSelectItem}>Open invite or discover</SelectItem>
+              <SelectItem value="approval" className={clanLightSelectItem}>Approval only</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label>Discoverability</Label>
+          <Label className={clanLightFieldLabel}>Discoverability</Label>
           <Select
             value={isPublic ? "yes" : "no"}
             onValueChange={(v) => setIsPublic(v === "yes")}
           >
-            <SelectTrigger className="mt-1.5">
+            <SelectTrigger className={clanLightSelectTrigger}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="yes">Listed in clan search</SelectItem>
-              <SelectItem value="no">Invite-only (hidden from search)</SelectItem>
+            <SelectContent className={clanLightSelectContent}>
+              <SelectItem value="yes" className={clanLightSelectItem}>Listed in clan search</SelectItem>
+              <SelectItem value="no" className={clanLightSelectItem}>Invite-only (hidden from search)</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
       <div>
-        <Label>Badge icon</Label>
+        <Label className={clanLightFieldLabel}>Badge icon</Label>
         <div className="mt-2 flex flex-wrap gap-2">
           {CLAN_AVATAR_PRESETS.map((k) => (
             <Button
@@ -153,7 +157,11 @@ export function ClanCreateForm({ divisions }: { divisions: Div[] }) {
               type="button"
               size="sm"
               variant={preset === k ? "default" : "outline"}
-              className="capitalize"
+              className={
+                preset === k
+                  ? clanArenaPrimaryButton
+                  : `${clanArenaOutlineButton} capitalize`
+              }
               onClick={() => setPreset(k)}
             >
               {k}
@@ -161,8 +169,8 @@ export function ClanCreateForm({ divisions }: { divisions: Div[] }) {
           ))}
         </div>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <Button type="submit" disabled={loading}>
+      {error && <p className="text-sm font-medium text-red-700">{error}</p>}
+      <Button type="submit" disabled={loading} className={clanArenaPrimaryButton}>
         {loading ? "Creating…" : "Create clan"}
       </Button>
     </form>

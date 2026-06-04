@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="210 25 260 260" role="img" aria-label="Apex rank">
+<defs>
+  <filter id="apex-glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+  </filter>
+</defs>
+
+<g transform="translate(340,155)" fill="none" stroke="#7C3AED">
+
+  <!-- Subtle violet glow behind emblem (first badge with glow) -->
+  <circle r="52" fill="#7C3AED" fill-opacity="0.08" stroke="none" filter="url(#apex-glow)"/>
+
+  <!-- Frame: double outer band + inner ring + NEW dashed deco ring -->
+  <circle r="98" stroke-width="2" stroke-opacity="0.52"/>
+  <circle r="92" stroke-width="2" stroke-opacity="0.4"/>
+  <circle r="74" stroke-width="1.5" stroke-opacity="0.28"/>
+  <circle r="64" stroke-width="1" stroke-opacity="0.2" stroke-dasharray="6,4"/>
+
+  <!-- Cardinal ticks -->
+  <line x1="0" y1="-98" x2="0" y2="-82" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.6"/>
+  <line x1="98" y1="0" x2="82" y2="0" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.6"/>
+  <line x1="0" y1="98" x2="0" y2="82" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.6"/>
+  <line x1="-98" y1="0" x2="-82" y2="0" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.6"/>
+
+  <!-- Ordinal ticks -->
+  <line x1="69" y1="-69" x2="62" y2="-62" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.35"/>
+  <line x1="69" y1="69" x2="62" y2="62" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.35"/>
+  <line x1="-69" y1="69" x2="-62" y2="62" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.35"/>
+  <line x1="-69" y1="-69" x2="-62" y2="-62" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.35"/>
+
+  <!-- NEW: Cardinal diamond ornaments (upgrade from dots) -->
+  <polygon points="0,-100 4,-95 0,-90 -4,-95" fill="#7C3AED" fill-opacity="0.55" stroke="none"/>
+  <polygon points="100,0 95,4 90,0 95,-4" fill="#7C3AED" fill-opacity="0.55" stroke="none"/>
+  <polygon points="0,100 4,95 0,90 -4,95" fill="#7C3AED" fill-opacity="0.55" stroke="none"/>
+  <polygon points="-100,0 -95,4 -90,0 -95,-4" fill="#7C3AED" fill-opacity="0.55" stroke="none"/>
+
+  <!-- Ordinal dots (carried from Rival) -->
+  <circle cx="67" cy="-67" r="2.5" fill="#7C3AED" fill-opacity="0.35" stroke="none"/>
+  <circle cx="67" cy="67" r="2.5" fill="#7C3AED" fill-opacity="0.35" stroke="none"/>
+  <circle cx="-67" cy="67" r="2.5" fill="#7C3AED" fill-opacity="0.35" stroke="none"/>
+  <circle cx="-67" cy="-67" r="2.5" fill="#7C3AED" fill-opacity="0.35" stroke="none"/>
+
+  <!-- Mountain range: sharp geometric peak, two sub-peaks -->
+  <polyline points="-50,42 -30,18 -18,28 0,-32 18,28 30,18 50,42" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" stroke-opacity="0.9"/>
+
+  <!-- Star above summit (filled, precise) -->
+  <polygon points="0,-52 4,-42 14,-40 6,-34 8,-24 0,-30 -8,-24 -6,-34 -14,-40 -4,-42" fill="#7C3AED" fill-opacity="0.85" stroke="none"/>
+
+</g>
+</svg>

@@ -30,6 +30,8 @@ export function MentrixaLogoMark({ size = "md", className, priority }: LogoProps
           height={w}
           className="h-full w-full object-contain drop-shadow-[0_8px_32px_rgba(59,130,246,0.35)]"
           priority={priority}
+          fetchPriority={priority ? "high" : undefined}
+          sizes={`${w}px`}
         />
       </div>
     </div>

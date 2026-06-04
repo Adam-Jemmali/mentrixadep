@@ -4,12 +4,11 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { setOAuthCookiesClient } from "@/lib/oauth-auth";
+import { loadGoogleGsiScript } from "@/lib/google-gsi-loader";
 import { toUserFacingAuthError } from "@/lib/user-facing-error";
 
 const buttonClassName =
   "w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none";
-
-const GSI_SRC = "https://accounts.google.com/gsi/client";
 
 /** Uses `/api/auth/oauth-next` instead of a Server Action (avoids Next 16 RSC/action parse errors). */
 async function fetchPostOAuthRedirectWithRetry(): Promise<{ path: string } | { error: string }> {
@@ -59,58 +58,6 @@ async function fetchPostOAuthRedirectWithRetry(): Promise<{ path: string } | { e
   return { error: lastErr };
 }
 
-function gsiReady(): boolean {
-  return typeof window !== "undefined" && !!window.google?.accounts?.id;
-}
-
-/** Injects `gsi/client` if needed, then polls until `google.accounts.id` exists (fixes races + duplicate tags). */
-function loadGsiScript(signal?: { cancelled: boolean }): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === "undefined") {
-      reject(new Error("no window"));
-      return;
-    }
-    if (gsiReady()) {
-      resolve();
-      return;
-    }
-
-    if (!document.querySelector(`script[src="${GSI_SRC}"]`)) {
-      const script = document.createElement("script");
-      script.src = GSI_SRC;
-      script.async = true;
-      script.defer = true;
-      script.onerror = () => {
-        if (!signal?.cancelled) reject(new Error("Failed to load Google script"));
-      };
-      document.head.appendChild(script);
-    }
-
-    const start = Date.now();
-    const poll = window.setInterval(() => {
-      if (signal?.cancelled) {
-        window.clearInterval(poll);
-        return;
-      }
-      if (gsiReady()) {
-        window.clearInterval(poll);
-        resolve();
-        return;
-      }
-      if (Date.now() - start > 15000) {
-        window.clearInterval(poll);
-        if (!signal?.cancelled) {
-          reject(
-            new Error(
-              "Google Sign-In timed out. Often caused by Content-Security-Policy blocking accounts.google.com — redeploy with latest middleware headers."
-            )
-          );
-        }
-      }
-    }, 50);
-  });
-}
-
 type Variant = "signin" | "signup";
 
 /**
@@ -119,17 +66,11 @@ type Variant = "signin" | "signup";
  *
  * Requires `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Web client ID — same as Supabase → Auth → Google).
  *
- * Fallback: Supabase OAuth redirect (shows Supabase host on Google’s screen) if client ID is missing.
+ * Fallback: Supabase OAuth redirect if the GSI script is blocked or fails to load.
  */
 export function GoogleSignInButton({
   variant = "signin",
-  /** Selected role on signup before Google — persisted via OAuth cookies for callback / GIS. */
   oauthRole,
-  /**
-   * Signup only: after Google ID token sign-in, run this instead of `/api/auth/oauth-next`
-   * (e.g. send activation link + show “check your email” in the parent). Return `abort` if
-   * the parent cleared the flow — caller will sign out the fresh Google session.
-   */
   onSignupGoogleComplete,
 }: {
   variant?: Variant;
@@ -140,11 +81,12 @@ export function GoogleSignInButton({
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [gsiError, setGsiError] = useState<string | null>(null);
+  /** GSI script blocked or failed — use Supabase OAuth redirect instead of an empty button slot. */
+  const [useOAuthRedirect, setUseOAuthRedirect] = useState(false);
+  const [gsiLoading, setGsiLoading] = useState(true);
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
 
-  /** GSI `initialize` runs once per page load — keep latest handlers via refs. */
   const onCredentialRef = useRef<(response: { credential?: string }) => void>(() => {});
   const onSignupGoogleCompleteRef = useRef(onSignupGoogleComplete);
   onSignupGoogleCompleteRef.current = onSignupGoogleComplete;
@@ -189,7 +131,6 @@ export function GoogleSignInButton({
       setBusy(true);
       setError(null);
       try {
-        // Signup: join + confirmation email BEFORE Supabase auth (avoids trigger-only row with no email).
         if (variant === "signup" && onSignupGoogleCompleteRef.current) {
           try {
             await onSignupGoogleCompleteRef.current(token);
@@ -250,7 +191,10 @@ export function GoogleSignInButton({
   };
 
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId || useOAuthRedirect) {
+      setGsiLoading(false);
+      return;
+    }
 
     const cancelledRef = { cancelled: false };
     let el: HTMLDivElement | null = null;
@@ -260,8 +204,9 @@ export function GoogleSignInButton({
       if (!el || cancelledRef.cancelled) return;
 
       void (async () => {
+        setGsiLoading(true);
         try {
-          await loadGsiScript(cancelledRef);
+          await loadGoogleGsiScript(cancelledRef);
           if (cancelledRef.cancelled || !containerRef.current || !window.google?.accounts?.id) {
             return;
           }
@@ -271,7 +216,6 @@ export function GoogleSignInButton({
           if (!g.__mxGsiInitialized) {
             window.google.accounts.id.initialize({
               client_id: clientId,
-              // Prefer classic button flow; FedCM + strict COOP has caused postMessage failures for some setups.
               use_fedcm_for_button: false,
               callback: (r) => {
                 onCredentialRef.current(r);
@@ -288,11 +232,11 @@ export function GoogleSignInButton({
           });
         } catch (err) {
           if (!cancelledRef.cancelled) {
-            console.error("[GoogleSignInButton] GSI init failed:", err);
-            setGsiError(
-              "Google Sign-In could not load. If this persists after refresh, contact support."
-            );
+            console.warn("[GoogleSignInButton] GSI unavailable, using OAuth redirect:", err);
+            setUseOAuthRedirect(true);
           }
+        } finally {
+          if (!cancelledRef.cancelled) setGsiLoading(false);
         }
       })();
     }, 0);
@@ -304,22 +248,28 @@ export function GoogleSignInButton({
       if (el) el.innerHTML = "";
       else if (containerAtSetup) containerAtSetup.innerHTML = "";
     };
-  }, [clientId, variant]);
+  }, [clientId, variant, useOAuthRedirect]);
 
-  if (!clientId) {
+  const showOAuthRedirectButton = !clientId || useOAuthRedirect;
+
+  if (showOAuthRedirectButton) {
     return (
       <div className="space-y-2">
         <button type="button" onClick={signInWithSupabaseOAuth} disabled={busy} className={buttonClassName}>
           {busy ? "Redirecting…" : "Continue with Google"}
         </button>
-        <p className="text-xs text-slate-600 leading-relaxed">
-          To avoid the <code className="text-[11px] bg-slate-100 px-1 rounded">supabase.co</code> screen on
-          Google, add{" "}
-          <code className="text-[11px] bg-slate-100 px-1 rounded">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code>{" "}
-          (same Web Client ID as Supabase → Authentication → Google) and redeploy. Add{" "}
-          <code className="text-[11px] bg-slate-100 px-1 rounded">{`{your origin}`}</code> under
-          Authorized JavaScript origins in Google Cloud Console.
-        </p>
+        {!clientId ? (
+          <p className="text-xs text-slate-600 leading-relaxed">
+            To show Google&apos;s button on this page (without the Supabase redirect screen), add{" "}
+            <code className="text-[11px] bg-slate-100 px-1 rounded">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code>{" "}
+            and add your site URL under Authorized JavaScript origins in Google Cloud Console.
+          </p>
+        ) : useOAuthRedirect ? (
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Google&apos;s sign-in widget could not load (often an ad blocker or network filter). Use the
+            button above — sign-in still works via a secure redirect.
+          </p>
+        ) : null}
         {error ? <div className="text-sm text-red-600">{error}</div> : null}
       </div>
     );
@@ -327,18 +277,18 @@ export function GoogleSignInButton({
 
   return (
     <div className="space-y-2 w-full">
+      {gsiLoading ? (
+        <div
+          className="h-11 w-full animate-pulse rounded-lg border border-slate-200 bg-slate-100"
+          aria-hidden
+        />
+      ) : null}
       <div
-        className={`w-full min-h-[44px] flex justify-center [&>div]:!w-full ${busy ? "opacity-60 pointer-events-none" : ""}`}
+        className={`w-full min-h-[44px] flex justify-center [&>div]:!w-full ${busy || gsiLoading ? "opacity-60 pointer-events-none" : ""} ${gsiLoading ? "sr-only absolute h-0 overflow-hidden" : ""}`}
         ref={containerRef}
       />
       {busy ? <p className="text-center text-xs text-slate-500">Signing you in…</p> : null}
-      {gsiError ? <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">{gsiError}</div> : null}
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
-      {gsiError ? (
-        <button type="button" onClick={signInWithSupabaseOAuth} disabled={busy} className={buttonClassName}>
-          {busy ? "Redirecting…" : "Continue with Google (via Supabase)"}
-        </button>
-      ) : null}
     </div>
   );
 }

@@ -57,6 +57,7 @@ export function StudentCourseChips({
   }
 
   async function handleRemove(courseId: string) {
+    if (courseId.startsWith("temp-")) return;
     const prev = localCourses;
     setLocalCourses((current) => current.filter((c) => c.id !== courseId));
     try {
@@ -83,6 +84,8 @@ export function StudentCourseChips({
         <button
           type="button"
           onClick={() => onSelectCourse("all")}
+          aria-label="All courses"
+          aria-pressed={selectedCourse === "all"}
           className={cn(
             "min-h-11 w-full rounded-full px-3.5 py-2 text-xs font-semibold transition-colors border-2 sm:w-auto",
             selectedCourse === "all"
@@ -93,37 +96,42 @@ export function StudentCourseChips({
           All
         </button>
         {localCourses.map((c) => (
-          <button
+          <div
             key={c.id}
-            type="button"
-            onClick={() => onSelectCourse(c.course_name)}
             className={cn(
-              "inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors border-2 sm:w-auto sm:justify-start",
+              "inline-flex min-h-11 w-full items-stretch overflow-hidden rounded-full border-2 sm:w-auto",
               selectedCourse === c.course_name
                 ? "border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                : "border-slate-200 bg-white text-slate-700 hover:border-indigo-200",
+                : "border-slate-200 bg-white text-slate-700",
             )}
           >
-            {c.course_name}
-            <span
-              role="button"
-              tabIndex={0}
-              className="ml-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-slate-300 hover:bg-slate-100 hover:text-red-500"
-              onClick={(e) => {
-                e.stopPropagation();
-                void handleRemove(c.id);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  void handleRemove(c.id);
-                }
-              }}
+            <button
+              type="button"
+              onClick={() => onSelectCourse(c.course_name)}
+              aria-pressed={selectedCourse === c.course_name}
+              className={cn(
+                "min-h-11 flex-1 px-3.5 py-2 text-left text-xs font-semibold transition-colors sm:text-center",
+                selectedCourse === c.course_name
+                  ? "text-white hover:bg-indigo-500/90"
+                  : "hover:bg-slate-50",
+              )}
             >
-              ×
-            </span>
-          </button>
+              {c.course_name}
+            </button>
+            <button
+              type="button"
+              aria-label={`Remove ${c.course_name} from my courses`}
+              className={cn(
+                "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border-l text-base leading-none transition-colors",
+                selectedCourse === c.course_name
+                  ? "border-indigo-400/50 text-white/80 hover:bg-indigo-500/90 hover:text-white"
+                  : "border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-600",
+              )}
+              onClick={() => void handleRemove(c.id)}
+            >
+              <span aria-hidden>×</span>
+            </button>
+          </div>
         ))}
       </div>
 

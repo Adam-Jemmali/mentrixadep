@@ -16,14 +16,13 @@ export function useLowEndMode() {
     const deviceMemory = typeof (navigator as Navigator & { deviceMemory?: number }).deviceMemory === "number"
       ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory!
       : 8;
-    const isSlowNetwork = connection?.effectiveType === "2g" || connection?.effectiveType === "3g";
-    // Tuned for smoother landing playback on low-to-mid laptops.
+    const isSlowNetwork = connection?.effectiveType === "2g" || connection?.effectiveType === "slow-2g";
     const nextLowEnd =
       media.matches ||
       Boolean(connection?.saveData) ||
       isSlowNetwork ||
-      cores <= 6 ||
-      deviceMemory <= 6;
+      cores <= 4 ||
+      deviceMemory <= 4;
     setLowEnd(nextLowEnd);
   }, []);
 
@@ -73,7 +72,7 @@ export function useSectionScrollProgress(sectionId: string, threshold = 0.01) {
 
 export function useLandingPerfMetrics(enabled = true) {
   useEffect(() => {
-    if (!enabled || typeof window === "undefined" || typeof PerformanceObserver === "undefined") return;
+    if (process.env.NODE_ENV === "production" || !enabled || typeof window === "undefined") return;
 
     const state = {
       longTasks: 0,
@@ -121,7 +120,10 @@ export function useLandingPerfMetrics(enabled = true) {
       // Exposed for profiling verification and QA checks.
       (window as Window & { __landingPerf?: typeof payload }).__landingPerf = payload;
       if (process.env.NODE_ENV !== "production") {
-        console.info("[LandingPerf]", payload);
+        const debug =
+          typeof window !== "undefined" &&
+          window.localStorage?.getItem("mentrixa-landing-debug") === "1";
+        if (debug) console.info("[LandingPerf]", payload);
       }
     };
 
@@ -142,6 +144,7 @@ export function useLandingPerfMetrics(enabled = true) {
 }
 
 export function markLandingSection(sectionId: string, label: string) {
+  if (process.env.NODE_ENV === "production") return () => {};
   if (typeof window === "undefined" || typeof PerformanceObserver === "undefined") return () => {};
   const section = document.getElementById(sectionId);
   if (!section) return () => {};
@@ -152,7 +155,10 @@ export function markLandingSection(sectionId: string, label: string) {
         if (entry.isIntersecting) {
           performance.mark(`landing:${label}:enter`);
           if (process.env.NODE_ENV !== "production") {
-            console.info(`[LandingMark] ${label} enter`);
+            const debug =
+              typeof window !== "undefined" &&
+              window.localStorage?.getItem("mentrixa-landing-debug") === "1";
+            if (debug) console.info(`[LandingMark] ${label} enter`);
           }
         } else {
           performance.mark(`landing:${label}:exit`);

@@ -581,6 +581,18 @@ export function buildGuestMixedFallbackPack(subjectRaw: string): GuestTryQuestio
         correctIndex: 0,
       },
       {
+        id: "chem-rank-1",
+        kind: "drag_rank",
+        prompt: "Chemistry process: Rank these steps for preparing a standard solution from a solid solute (first → last).",
+        explanation: "Weigh solute, dissolve in less than final volume, transfer to volumetric flask, dilute to the mark.",
+        rankItems: [
+          "Weigh the solid solute accurately",
+          "Dissolve solute in a beaker with partial solvent",
+          "Transfer to a volumetric flask",
+          "Add solvent to the calibration mark and mix",
+        ],
+      },
+      {
         id: "chem-tf-2",
         kind: "true_false",
         prompt: "Chemistry exam statement: Avogadro's number is approximately 6.022 × 10²³.",
@@ -891,6 +903,18 @@ export function buildGuestMixedFallbackPack(subjectRaw: string): GuestTryQuestio
         `${subject} textbook visual for an invalid setup`,
       ],
       correctIndex: 1,
+    },
+    {
+      id: "gen-rank-1",
+      kind: "drag_rank",
+      prompt: `${subject} exam: Rank these study moves from first to last when learning a new topic.`,
+      explanation: "Preview the scope, practice with feedback, then test under exam-like conditions.",
+      rankItems: [
+        "Skim the syllabus and key terms",
+        "Practice with mixed problems",
+        "Check answers and fix mistakes",
+        "Do a timed self-test",
+      ],
     },
     {
       id: "gen-mcq-2",

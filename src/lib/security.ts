@@ -638,9 +638,9 @@ export const securityHeaders = {
   "Content-Security-Policy": [
     "default-src 'self'",
     "upgrade-insecure-requests",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://js.stripe.com https://*.stripe.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://*.stripe.com",
     "worker-src 'self' blob:",
-    "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com",
+    "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://www.gstatic.com",
     "img-src 'self' blob: data: https: https://*.googleusercontent.com https://*.stripe.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "frame-src 'self' https://accounts.google.com https://js.stripe.com https://*.stripe.com",

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { acceptSkillDuel, declineSkillDuel } from "@/app/actions/duel";
 import { Button } from "@/components/ui/button";
+import { safeRouterRefresh } from "@/lib/safe-router-refresh";
 
 /** Shown to the challenged learner while the duel is pending. */
 export function DuelInviteeActions({ duelId }: { duelId: string }) {
@@ -20,7 +21,7 @@ export function DuelInviteeActions({ duelId }: { duelId: string }) {
       setError(r.error);
       return;
     }
-    router.refresh();
+    safeRouterRefresh(router);
   }
 
   async function decline() {
@@ -32,7 +33,7 @@ export function DuelInviteeActions({ duelId }: { duelId: string }) {
       setError(r.error);
       return;
     }
-    router.refresh();
+    safeRouterRefresh(router);
   }
 
   return (

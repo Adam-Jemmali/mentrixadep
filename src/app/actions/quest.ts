@@ -778,6 +778,7 @@ export interface LeaderboardEntry {
   displayName: string;
   avatarUrl: string | null;
   divisionXp: number;
+  totalXp: number;
   streakDays: number;
   level: ReturnType<typeof getDivisionTierFromXp>;
   isCurrentUser: boolean;
@@ -875,6 +876,31 @@ async function resolveLeaderboardAvatarUrls(
   return avatarUrls;
 }
 
+async function resolveLeaderboardTotalXp(
+  adminClient: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+): Promise<Record<string, number>> {
+  const totalXpByUser: Record<string, number> = {};
+  if (userIds.length === 0) return totalXpByUser;
+
+  const { data: xpRows } = await adminClient
+    .from("user_xp")
+    .select("user_id, total_xp")
+    .in("user_id", userIds);
+
+  for (const row of xpRows ?? []) {
+    const uid = row.user_id as string;
+    totalXpByUser[uid] =
+      typeof row.total_xp === "number" ? Math.max(0, row.total_xp) : 0;
+  }
+
+  for (const uid of userIds) {
+    if (!(uid in totalXpByUser)) totalXpByUser[uid] = 0;
+  }
+
+  return totalXpByUser;
+}
+
 /** Uses mv_division_leaderboard when present; falls back to scanning user_xp. */
 async function buildDivisionLeaderboard(
   divisionKey: string,
@@ -918,8 +944,11 @@ async function buildDivisionLeaderboard(
   }
 
   const userIds = divXpList.map((r) => r.user_id);
-  const displayNames = await resolveLeaderboardDisplayNames(adminClient, userIds);
-  const avatarUrls = await resolveLeaderboardAvatarUrls(adminClient, userIds);
+  const [displayNames, avatarUrls, totalXpByUser] = await Promise.all([
+    resolveLeaderboardDisplayNames(adminClient, userIds),
+    resolveLeaderboardAvatarUrls(adminClient, userIds),
+    resolveLeaderboardTotalXp(adminClient, userIds),
+  ]);
 
   return divXpList.map((r, i) => ({
     rank: i + 1,
@@ -927,6 +956,7 @@ async function buildDivisionLeaderboard(
     displayName: displayNames[r.user_id] ?? "Anonymous",
     avatarUrl: avatarUrls[r.user_id] ?? null,
     divisionXp: r.xp,
+    totalXp: totalXpByUser[r.user_id] ?? 0,
     streakDays: r.streak_days,
     level: getDivisionTierFromXp(r.xp),
     isCurrentUser: r.user_id === currentUserId,

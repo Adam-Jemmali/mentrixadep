@@ -77,7 +77,8 @@ export function ConsoleSilencer() {
         typeof event.filename === "string" &&
         (event.filename.includes("chrome-extension://") ||
           event.filename.includes("moz-extension://") ||
-          event.filename.includes("safari-web-extension://"));
+          event.filename.includes("safari-web-extension://") ||
+          (event.filename.includes("vendor.js") && isExtensionNoListenerNoise(event.message)));
       if (
         fromExtensionFile ||
         isExtensionNoListenerNoise(event.message) ||

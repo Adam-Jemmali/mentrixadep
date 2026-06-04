@@ -9,6 +9,7 @@ import {
 } from "@/lib/division-ui";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { arenaDivisionPickerCardClasses } from "@/lib/arena-division-focus";
 
 export type DivisionCatalogItem = {
   key: string;
@@ -97,7 +98,7 @@ export function DivisionPickerCards(
           placeholder="Search subjects…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="max-w-md bg-white border-slate-200"
+          className="max-w-md border-slate-200 bg-white text-slate-900"
           aria-label="Search divisions"
         />
       )}
@@ -113,7 +114,7 @@ export function DivisionPickerCards(
       )}
       <div
         className={cn(
-          "grid gap-2 sm:gap-3",
+          "grid gap-3 overflow-visible sm:gap-4",
           compact
             ? "grid-cols-1 sm:grid-cols-2"
             : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
@@ -124,13 +125,7 @@ export function DivisionPickerCards(
             type="button"
             disabled={!!pending || isNavigating}
             onClick={() => void handleFocusClick("auto")}
-            className={cn(
-              "text-left rounded-xl border-2 p-3 sm:p-4 transition-all duration-200",
-              "hover:shadow-md hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-mentrixa-500",
-              selected === null
-                ? "border-mentrixa-500 bg-mentrixa-50 shadow-sm ring-2 ring-mentrixa-200"
-                : "border-slate-200 bg-white"
-            )}
+            className={arenaDivisionPickerCardClasses(selected === null)}
           >
             <div className="flex items-start gap-3">
               <span
@@ -151,8 +146,13 @@ export function DivisionPickerCards(
               </div>
             </div>
             {pending === "auto" && (
-              <p className="text-[11px] text-mentrixa-600 mt-2">Saving…</p>
+              <p className="mt-2 text-[11px] text-cyan-700">Saving…</p>
             )}
+            {selected === null ? (
+              <p className="mt-2 text-[9px] font-black uppercase tracking-[0.14em] text-cyan-700">
+                Active focus
+              </p>
+            ) : null}
           </button>
         )}
         {filtered.map((d) => {
@@ -162,6 +162,7 @@ export function DivisionPickerCards(
             props.mode === "focus"
               ? props.selectedKey === d.key
               : props.selectedKey === d.key;
+          const useArenaFocus = isFocus;
 
           return (
             <button
@@ -172,13 +173,17 @@ export function DivisionPickerCards(
                 if (isFocus) void handleFocusClick(d.key);
                 else handleSelectClick(d.key);
               }}
-              className={cn(
-                "text-left rounded-xl border-2 p-3 sm:p-4 transition-all duration-200",
-                "hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-                active
-                  ? cn("shadow-md ring-2 ring-offset-1", theme.ring, theme.softBg)
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              )}
+              className={
+                useArenaFocus
+                  ? arenaDivisionPickerCardClasses(active)
+                  : cn(
+                      "rounded-xl border-2 p-3 text-left transition-all duration-200 sm:p-4",
+                      "hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+                      active
+                        ? cn("shadow-md ring-2 ring-offset-1", theme.ring, theme.softBg)
+                        : "border-slate-200 bg-white hover:border-slate-300",
+                    )
+              }
             >
               <div className="flex items-start gap-3">
                 <span
@@ -208,8 +213,15 @@ export function DivisionPickerCards(
                 </div>
               </div>
               {pending === d.key && (
-                <p className="text-[11px] text-mentrixa-600 mt-2">Saving…</p>
+                <p className={cn("mt-2 text-[11px]", useArenaFocus ? "text-cyan-700" : "text-mentrixa-600")}>
+                  Saving…
+                </p>
               )}
+              {useArenaFocus && active ? (
+                <p className="mt-2 text-[9px] font-black uppercase tracking-[0.14em] text-cyan-700">
+                  Active focus
+                </p>
+              ) : null}
             </button>
           );
         })}

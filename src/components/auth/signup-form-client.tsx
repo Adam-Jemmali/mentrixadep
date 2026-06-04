@@ -573,7 +573,7 @@ export function SignupFormClient({
           <div className="w-full border-t border-slate-200"></div>
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-[#FAFAFA] px-2 text-slate-400">or continue with email link</span>
+          <span className="bg-[#FAFAFA] px-2 text-slate-400">or continue with email</span>
         </div>
       </div>
 
@@ -595,8 +595,8 @@ export function SignupFormClient({
           {loading ? "Sending link..." : "Continue with email"}
         </Button>
         <p className="text-xs text-slate-500 leading-relaxed">
-          Submits your onboarding request first, then sends an activation link if you are already approved. You can use
-          Google above instead — no need for both.
+          Submits your onboarding request first, then sends an activation link if you are already approved.
+          
         </p>
       </form>
     </div>

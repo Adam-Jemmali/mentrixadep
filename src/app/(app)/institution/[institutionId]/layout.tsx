@@ -17,7 +17,7 @@ export default async function InstitutionLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] flex">
+    <div className="min-h-screen bg-slate-100 flex text-slate-900">
       <InstitutionSidebar institution={institution} />
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 p-6 lg:p-8 overflow-auto">{children}</main>

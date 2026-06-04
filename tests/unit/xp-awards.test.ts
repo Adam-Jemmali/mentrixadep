@@ -68,6 +68,6 @@ describe("applyXpAward (mocked Supabase)", () => {
     });
     const r = await applyXpAward(userId, 10, "boundary:test", null);
     expect(r.totalXp).toBe(105);
-    expect(r.levelUp).toEqual({ fromLevel: 1, toLevel: 2, title: "Learner" });
+    expect(r.levelUp).toEqual({ fromLevel: 1, toLevel: 2, title: "SEEKER" });
   });
 });

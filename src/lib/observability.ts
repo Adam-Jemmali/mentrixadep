@@ -1,10 +1,46 @@
 /**
- * Server-safe monitoring helpers — logs only (no third-party APM).
+ * Observability helpers — Sentry-backed error capture with structured logging.
+ *
+ * All functions are safe to call even when Sentry DSN is not configured
+ * (dev/test environments) — they fall back to console output.
  */
+import * as Sentry from "@sentry/nextjs";
+import { randomUUID } from "crypto";
 
-/** Gemini / Google GenAI returned a rate-limit style error (or our message match). */
+export function generateRequestId(): string {
+  return randomUUID();
+}
+
+function capture(
+  level: "error" | "warning",
+  scope: string,
+  err: unknown,
+  extra?: Record<string, unknown>
+) {
+  const message = `[${scope}] ${err instanceof Error ? err.message : String(err)}`;
+
+  if (level === "error") {
+    console.error(message, extra);
+  } else {
+    console.warn(message, extra);
+  }
+
+  if (err instanceof Error) {
+    Sentry.captureException(err, {
+      tags: { scope },
+      extra,
+    });
+  } else {
+    Sentry.captureMessage(message, {
+      level,
+      tags: { scope },
+      extra,
+    });
+  }
+}
+
 export function reportGeminiRateLimited(feature: string, message: string): void {
-  console.warn(`[Gemini rate limit] ${feature}`, message.slice(0, 500));
+  capture("warning", `gemini-rate-limit:${feature}`, message);
 }
 
 export function captureStripeWebhookError(
@@ -12,30 +48,26 @@ export function captureStripeWebhookError(
   err: unknown,
   extra?: Record<string, unknown>
 ): void {
-  console.error("[stripe-webhook]", stage, err, extra);
+  capture("error", `stripe-webhook:${stage}`, err, extra);
 }
 
 export function reportStripeWebhookMissingMetadata(checkoutSessionId: string): void {
-  console.error("[stripe-webhook] missing availabilityId or studentId in metadata", {
+  capture("error", "stripe-webhook:missing-metadata", new Error("Missing availabilityId or studentId in metadata"), {
     checkoutSessionId,
   });
 }
 
 export function reportStripeWebhookMissingSignature(): void {
   if (process.env.NODE_ENV !== "production") return;
-  console.warn("[stripe-webhook] missing stripe-signature header");
+  capture("warning", "stripe-webhook:missing-signature", "Missing stripe-signature header");
 }
 
-/** Wrap a Supabase query (pass-through; add timing here if needed). */
 export function withSupabaseQuerySpan<T>(name: string, fn: () => Promise<T>): Promise<T> {
-  void name;
-  return fn();
+  return Sentry.startSpan({ name: `db:${name}`, op: "db.query" }, () => fn());
 }
 
-/** Stripe API calls (checkout, refunds, Connect). */
 export function withStripeApiSpan<T>(name: string, fn: () => Promise<T>): Promise<T> {
-  void name;
-  return fn();
+  return Sentry.startSpan({ name: `stripe:${name}`, op: "http.client" }, () => fn());
 }
 
 export function captureUnexpectedError(
@@ -43,10 +75,9 @@ export function captureUnexpectedError(
   err: unknown,
   extra?: Record<string, unknown>
 ): void {
-  console.error(`[${scope}]`, err, extra);
+  capture("error", scope, err, extra);
 }
 
-/** Edge middleware: log client-visible HTTP errors (4xx/5xx) without PII. */
 export function reportMiddlewareHttpError(params: {
   status: number;
   pathname: string;
@@ -54,7 +85,6 @@ export function reportMiddlewareHttpError(params: {
   userIdRedacted: string;
 }): void {
   if (params.status < 400) return;
-  // In CI/dev E2E we intentionally probe guarded endpoints; keep logs clean there.
   if (
     process.env.NODE_ENV !== "production" &&
     params.status < 500 &&
@@ -63,27 +93,51 @@ export function reportMiddlewareHttpError(params: {
     return;
   }
   const msg = `HTTP ${params.status} ${params.method} ${params.pathname}`;
-  if (params.status >= 500) console.error(msg, { userIdRedacted: params.userIdRedacted });
-  else console.warn(msg, { userIdRedacted: params.userIdRedacted });
+  if (params.status >= 500) {
+    capture("error", "middleware-http", msg, { userIdRedacted: params.userIdRedacted });
+  } else {
+    capture("warning", "middleware-http", msg, { userIdRedacted: params.userIdRedacted });
+  }
 }
 
 export function reportAuthLockout(params: {
   keyType: "email";
   retryAfterSeconds: number;
 }): void {
-  console.warn("[auth-lockout]", params);
+  capture("warning", "auth-lockout", `Lockout for ${params.keyType}`, params);
 }
 
 export function reportAuthCaptchaFailure(params: {
   reason: string;
   hasToken: boolean;
 }): void {
-  console.warn("[auth-captcha-failure]", params);
+  capture("warning", "auth-captcha-failure", params.reason, params);
 }
 
 export function reportSecurityRateLimitDenied(params: {
   scope: string;
   retryAfterSeconds: number;
 }): void {
-  console.warn("[security-rate-limit-denied]", params);
+  capture("warning", "security-rate-limit-denied", `Rate limit hit: ${params.scope}`, params);
+}
+
+export function reportCronExecution(params: {
+  job: string;
+  status: "started" | "completed" | "failed";
+  rowsProcessed?: number;
+  durationMs?: number;
+  error?: unknown;
+}): void {
+  const message = `[cron:${params.job}] ${params.status}`;
+  if (params.status === "failed") {
+    capture("error", `cron:${params.job}`, params.error ?? message, {
+      rowsProcessed: params.rowsProcessed,
+      durationMs: params.durationMs,
+    });
+  } else {
+    console.log(message, {
+      rowsProcessed: params.rowsProcessed,
+      durationMs: params.durationMs,
+    });
+  }
 }

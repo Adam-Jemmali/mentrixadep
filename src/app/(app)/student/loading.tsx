@@ -1,6 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
+import { playMentrixaLoadingOnce } from "@/lib/mentrixa-sounds";
+
 export default function StudentDashboardLoading() {
+  useEffect(() => {
+    playMentrixaLoadingOnce();
+  }, []);
+
   return (
     <div className="space-y-8 animate-pulse">
       <div className="rounded-2xl border border-slate-200 bg-white p-5">

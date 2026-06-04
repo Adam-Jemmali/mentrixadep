@@ -28,6 +28,7 @@ import { APP_TIMEZONES } from "@/lib/timezones";
 import { updateUserSettings, type UserSettings } from "@/app/actions/settings";
 import { cn } from "@/lib/utils";
 import { TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES } from "@/lib/teaching-defaults";
+import { TutorQualityBadge } from "@/components/tutor-quality-badge";
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -113,17 +114,17 @@ function ProfileToggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-3 border-b border-slate-100 last:border-b-0">
-      <div>
-        <p className="text-sm font-medium text-slate-900">{label}</p>
-        <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+    <div className="flex items-start justify-between gap-4 border-b border-indigo-50 py-4 last:border-b-0">
+      <div className="space-y-1">
+        <p className="text-sm font-bold text-indigo-900">{label}</p>
+        <p className="text-[11px] leading-relaxed text-slate-500">{description}</p>
       </div>
       <button
         type="button"
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none",
-          checked ? "bg-blue-600" : "bg-slate-200"
+          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2",
+          checked ? "bg-indigo-600" : "bg-indigo-100",
         )}
         role="switch"
         aria-checked={checked}
@@ -463,7 +464,7 @@ export function TutorProfileClient({
           >
             <Link href="/tutor" className="flex items-center gap-2">
               <Image src="/icons/guide.svg" alt="" width={16} height={16} className="h-4 w-4 opacity-60" />
-              Guide Dashboard
+              Arena Dashboard
             </Link>
           </Button>
         </div>
@@ -488,6 +489,9 @@ export function TutorProfileClient({
               <p className="max-w-xl text-sm leading-relaxed text-slate-500">
                 {profile.email} · Teaching excellence through live Mentrixa sessions.
               </p>
+              <div className="mt-2">
+                <TutorQualityBadge tutorId={profile.id} />
+              </div>
               
 
               {profile.courses.length > 0 ? (
