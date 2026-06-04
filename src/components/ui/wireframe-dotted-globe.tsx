@@ -2,32 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import type { Feature, FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
+import type { Feature, FeatureCollection } from "geojson";
 import { cn } from "@/lib/utils";
+import { GLOBE_LAND_GEOJSON } from "@/lib/globe-land-data";
 
 const ICON_VERSION = "20260410";
-
-const LAND_GEO_URLS = [
-  "/geo/ne_110m_land.json",
-  "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json",
-] as const;
-
-async function fetchLandGeoJson(): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
-  let lastError: unknown;
-  for (const url of LAND_GEO_URLS) {
-    try {
-      const res = await fetch(url, { cache: "force-cache" });
-      if (!res.ok) continue;
-      const data = (await res.json()) as FeatureCollection<Geometry, GeoJsonProperties>;
-      if (data?.type === "FeatureCollection" && Array.isArray(data.features)) {
-        return data;
-      }
-    } catch (err) {
-      lastError = err;
-    }
-  }
-  throw lastError ?? new Error("Failed to load land data");
-}
 
 export type GlobeMarkerRole = "mentrixer" | "guide";
 
@@ -120,11 +99,11 @@ function generateDotsInPolygon(feature: Feature, dotSpacing = 22): [number, numb
   return dots;
 }
 
-function loadIcon(role: GlobeMarkerRole): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+function loadIcon(role: GlobeMarkerRole): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = () => resolve(null);
     img.src =
       role === "mentrixer"
         ? `/icons/mentrixer.svg?v=${ICON_VERSION}`
@@ -256,24 +235,28 @@ export function WireframeDottedGlobe({
       try {
         setIsLoading(true);
 
-        const [mentrixerIcon, guideIcon, landFeaturesData] = await Promise.all([
+        if (!GLOBE_LAND_GEOJSON?.features?.length) {
+          throw new Error("Bundled land map data is missing or invalid");
+        }
+
+        landFeatures = GLOBE_LAND_GEOJSON;
+
+        const [mentrixerIcon, guideIcon] = await Promise.all([
           loadIcon("mentrixer"),
           loadIcon("guide"),
-          fetchLandGeoJson(),
         ]);
 
         if (cancelled) return;
 
-        iconCache.mentrixer = mentrixerIcon;
-        iconCache.guide = guideIcon;
+        if (mentrixerIcon) iconCache.mentrixer = mentrixerIcon;
+        if (guideIcon) iconCache.guide = guideIcon;
 
-        landFeatures = landFeaturesData;
-
-        landFeatures.features.forEach((feature) => {
+        for (const feature of landFeatures.features) {
+          if (!feature.geometry) continue;
           generateDotsInPolygon(feature, 26).forEach(([lng, lat]) => {
             allDots.push({ lng, lat });
           });
-        });
+        }
 
         render();
         setIsLoading(false);
