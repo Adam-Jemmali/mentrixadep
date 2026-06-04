@@ -7,6 +7,28 @@ import { cn } from "@/lib/utils";
 
 const ICON_VERSION = "20260410";
 
+const LAND_GEO_URLS = [
+  "/geo/ne_110m_land.json",
+  "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json",
+] as const;
+
+async function fetchLandGeoJson(): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
+  let lastError: unknown;
+  for (const url of LAND_GEO_URLS) {
+    try {
+      const res = await fetch(url, { cache: "force-cache" });
+      if (!res.ok) continue;
+      const data = (await res.json()) as FeatureCollection<Geometry, GeoJsonProperties>;
+      if (data?.type === "FeatureCollection" && Array.isArray(data.features)) {
+        return data;
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError ?? new Error("Failed to load land data");
+}
+
 export type GlobeMarkerRole = "mentrixer" | "guide";
 
 export type GlobeMarker = {
@@ -234,10 +256,10 @@ export function WireframeDottedGlobe({
       try {
         setIsLoading(true);
 
-        const [mentrixerIcon, guideIcon, landRes] = await Promise.all([
+        const [mentrixerIcon, guideIcon, landFeaturesData] = await Promise.all([
           loadIcon("mentrixer"),
           loadIcon("guide"),
-          fetch("/geo/ne_110m_land.json"),
+          fetchLandGeoJson(),
         ]);
 
         if (cancelled) return;
@@ -245,9 +267,7 @@ export function WireframeDottedGlobe({
         iconCache.mentrixer = mentrixerIcon;
         iconCache.guide = guideIcon;
 
-        if (!landRes.ok) throw new Error("Failed to load land data");
-
-        landFeatures = (await landRes.json()) as FeatureCollection<Geometry, GeoJsonProperties>;
+        landFeatures = landFeaturesData;
 
         landFeatures.features.forEach((feature) => {
           generateDotsInPolygon(feature, 26).forEach(([lng, lat]) => {

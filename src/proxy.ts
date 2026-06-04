@@ -637,6 +637,6 @@ export const config = {
   matcher: [
     // Never run middleware on Stripe webhooks (raw body + signature verification).
     // Also exclude Next internals, static assets.
-    "/((?!api/stripe/webhook|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/stripe/webhook|_next/static|_next/image|favicon.ico|geo/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json|ico|woff2?|txt|xml|webmanifest)$).*)",
   ],
 };
