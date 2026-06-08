@@ -23,6 +23,10 @@ import {
 import { XP } from "@/lib/xp-constants";
 import { useRealtimeRouterRefresh } from "@/hooks/use-realtime-router-refresh";
 import { safeRouterRefresh } from "@/lib/safe-router-refresh";
+import { SkillDuelChoiceBoard } from "@/components/duel/skill-duel-choice-board";
+import { SkillDuelResults } from "@/components/duel/skill-duel-results";
+import { TiltCard } from "@/components/ui/tilt-card";
+import { stripGuestTryPromptDecorators } from "@/lib/guest-try-types";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -37,15 +41,10 @@ function kindLabel(type?: string) {
   return "Quiz";
 }
 
-function choiceLine(
-  text: string,
-  index: number,
-  choiceCount: number
-): string {
-  if (choiceCount === 2 && (text === "True" || text === "False")) {
-    return text;
-  }
-  return `${index + 1}. ${text}`;
+function kindHint(type?: string) {
+  if (type === "tf") return "Drag True or False into the answer slot.";
+  if (type === "flashcard") return "Match the term to the right meaning.";
+  return "Wrong answers are meant to look tempting — read carefully.";
 }
 
 function labelsForSide(duel: DuelPublicRow, side: Props["side"]) {
@@ -494,98 +493,46 @@ export function DuelPlayClient({ duel, side }: Props) {
       : (duel.student_score ?? 0);
 
     const xpLine = tie
-      ? `+${XP.DUEL_TIE} XP each close match.`
+      ? `+${XP.DUEL_TIE} XP each — close match. Queue again and break the tie.`
       : youWon
-        ? `+${XP.DUEL_WIN} XP strong work.`
-        : `+${XP.DUEL_LOSS} XP for finishing win comes next.`;
+        ? `+${XP.DUEL_WIN} XP — strong work. Keep the momentum going.`
+        : `+${XP.DUEL_LOSS} XP — every round builds rank. Study the replay below.`;
+
+    const xpAmount = tie ? XP.DUEL_TIE : youWon ? XP.DUEL_WIN : XP.DUEL_LOSS;
 
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="space-y-6"
-      >
-        <div
-          className={`rounded-2xl border px-5 py-6 text-center shadow-sm ${
-            tie
-              ? "border-zinc-200 bg-zinc-50"
-              : youWon
-                ? "border-emerald-200/80 bg-emerald-50/90"
-                : "border-zinc-200 bg-white"
-          }`}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            Result
-          </p>
-          <p className="mt-2 text-lg font-semibold text-zinc-950">
-            {tie ? "Draw" : youWon ? "You won" : "You didn’t win this one"}
-          </p>
-          <p className="mt-1 text-sm text-zinc-700">
-            {youLabel}: {yourScore} · {themLabel}: {theirScore}{" "}
-            <span className="text-zinc-500">/ {total}</span>
-          </p>
-          <p className="mt-4 text-sm font-medium text-zinc-800">{xpLine}</p>
-        </div>
-
-        <ol className="space-y-4">
-          {duel.questions.map((q, i) => {
-            const full = duel.fullQuestions?.[i];
-            const correct = full?.correctIndex;
-            return (
-              <li
-                key={i}
-                className="rounded-lg border border-slate-100 bg-white p-4 text-sm"
-              >
-                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                  {kindLabel(q.type)}
-                </p>
-                <p className="mt-1 text-slate-800">{q.prompt}</p>
-                <ul className="mt-2 space-y-1">
-                  {q.choices.map((c, j) => (
-                    <li
-                      key={j}
-                      className={
-                        correct === j
-                          ? "font-medium text-emerald-800"
-                          : "text-slate-600"
-                      }
-                    >
-                      {choiceLine(c, j, q.choices.length)}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            );
-          })}
-        </ol>
-
-        <div className="flex flex-col items-center gap-2 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={listActionLoading}
-            onMouseEnter={prefetchDuelHub}
-            onTouchStart={prefetchDuelHub}
-            onClick={() => {
-              setListActionLoading(true);
-              setError(null);
-              void (async () => {
-                const r = await hideSkillDuelFromList(duel.id);
-                setListActionLoading(false);
-                if (!r.success) {
-                  setError(r.error);
-                  return;
-                }
-                router.push("/student/duel");
-              })();
-            }}
-          >
-            {listActionLoading ? "Removing…" : "Remove from my list"}
-          </Button>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        </div>
-      </motion.div>
+      <SkillDuelResults
+        divisionKey={duel.division_key}
+        questions={duel.questions}
+        fullQuestions={duel.fullQuestions}
+        myAnswers={myAnswers}
+        theirAnswers={theirAnswers}
+        youLabel={youLabel}
+        themLabel={themLabel}
+        yourScore={yourScore}
+        theirScore={theirScore}
+        total={total}
+        youWon={youWon}
+        tie={tie}
+        xpAmount={xpAmount}
+        xpLine={xpLine}
+        listActionLoading={listActionLoading}
+        error={error}
+        onPrefetchHub={prefetchDuelHub}
+        onRemoveFromList={() => {
+          setListActionLoading(true);
+          setError(null);
+          void (async () => {
+            const r = await hideSkillDuelFromList(duel.id);
+            setListActionLoading(false);
+            if (!r.success) {
+              setError(r.error);
+              return;
+            }
+            router.push("/student/duel");
+          })();
+        }}
+      />
     );
   }
 
@@ -668,27 +615,37 @@ export function DuelPlayClient({ duel, side }: Props) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.18 }}
-            className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-5"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-              {kindLabel(q.type)} · Question {currentIndex + 1} of {total}
-            </p>
-            <p className="mt-2 text-base font-semibold leading-snug text-zinc-950">
-              {q.prompt}
-            </p>
-            <div className="mt-4 space-y-2">
-              {q.choices.map((c, ci) => (
-                <button
-                  key={ci}
-                  type="button"
+            <TiltCard
+              tiltLimit={2}
+              className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)] sm:p-6"
+            >
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
+                    {kindLabel(q.type)}
+                  </span>
+                  <p className="text-[11px] text-slate-500 max-w-lg leading-snug">
+                    {kindHint(q.type)}
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">
+                  Q {currentIndex + 1} / {total}
+                </span>
+              </div>
+
+              <p className="text-base font-medium leading-relaxed text-slate-900 sm:text-[17px]">
+                {stripGuestTryPromptDecorators(q.prompt)}
+              </p>
+
+              <div className="mt-6">
+                <SkillDuelChoiceBoard
+                  choices={q.choices}
                   disabled={loading}
-                  onClick={() => void pickAnswer(ci)}
-                  className="flex w-full items-center rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-left text-sm font-medium text-zinc-900 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400 disabled:opacity-50"
-                >
-                  {choiceLine(c, ci, q.choices.length)}
-                </button>
-              ))}
-            </div>
+                  onSelect={(ci) => void pickAnswer(ci)}
+                />
+              </div>
+            </TiltCard>
           </motion.div>
         </AnimatePresence>
 
@@ -745,33 +702,27 @@ function LegacyDuelForm({
       {duel.questions.map((q, qi) => (
         <div
           key={qi}
-          className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
         >
           <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
             {kindLabel(q.type)} · Question {qi + 1}
           </p>
-          <p className="mt-1 text-sm font-medium text-slate-900">{q.prompt}</p>
-          <div className="mt-3 space-y-2">
-            {q.choices.map((c, ci) => (
-              <label
-                key={ci}
-                className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
-              >
-                <input
-                  type="radio"
-                  name={`q-${qi}`}
-                  checked={answers[qi] === ci}
-                  onChange={() => {
-                    setAnswers((prev) => {
-                      const next = [...prev];
-                      next[qi] = ci;
-                      return next;
-                    });
-                  }}
-                />
-                {choiceLine(c, ci, q.choices.length)}
-              </label>
-            ))}
+          <p className="mt-2 text-sm font-medium text-slate-900">
+            {stripGuestTryPromptDecorators(q.prompt)}
+          </p>
+          <div className="mt-4">
+            <SkillDuelChoiceBoard
+              choices={q.choices}
+              lockOnSelect={false}
+              selectedIndex={answers[qi]}
+              onSelect={(ci) => {
+                setAnswers((prev) => {
+                  const next = [...prev];
+                  next[qi] = ci;
+                  return next;
+                });
+              }}
+            />
           </div>
         </div>
       ))}

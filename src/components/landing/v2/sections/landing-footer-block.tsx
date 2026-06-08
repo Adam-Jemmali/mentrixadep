@@ -149,7 +149,7 @@ That is Mentrixa.
 
           <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="order-2 text-[11px] text-slate-300 sm:order-1">
-              &copy; {new Date().getFullYear()} Mentrixa Inc. · Built in Ottawa.
+              &copy; {new Date().getFullYear()} Mentrixa Inc. 
             </p>
             <span className="order-1 text-[12px] text-indigo-300/70 sm:order-2 sm:text-right">
               <a
