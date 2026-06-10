@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Star } from "lucide-react";
-import type { UsageReportRow } from "@/app/actions/institution";
+import type { UsageReportRow } from "@/features/institutions/institution";
 
 function exportCsv(name: string, report: UsageReportRow[]) {
   const headers = [

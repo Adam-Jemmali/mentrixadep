@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { addTutorCourse, removeTutorCourse, uploadTutorCourseEvidence } from "@/app/actions/tutor";
+import { addTutorCourse, removeTutorCourse, uploadTutorCourseEvidence } from "@/features/tutor/courses";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
 import Image from "next/image";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import { GooeyText } from "@/components/ui/gooey-text";
-import { ParticleTextEffect } from "@/components/ui/particle-text";
-import { BubbleText } from "@/components/ui/bubble-text";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { GooeyText } from "@/shared/ui/gooey-text";
+import { ParticleTextEffect } from "@/shared/ui/particle-text";
+import { BubbleText } from "@/shared/ui/bubble-text";
 
 interface TutorCourseItem {
   id: string;

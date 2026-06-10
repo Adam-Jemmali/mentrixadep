@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { updatePassword, deleteAccount } from "@/app/actions/settings";
-import { isNextRedirectError } from "@/lib/is-next-redirect-error";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { updatePassword, deleteAccount } from "@/features/settings/user-settings";
+import { isNextRedirectError } from "@/shared/core/is-next-redirect-error";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { cn } from "@/shared/core/utils";
 
 export function AccountSecurityPanel({ className }: { className?: string }) {
   const [currentPw, setCurrentPw] = useState("");

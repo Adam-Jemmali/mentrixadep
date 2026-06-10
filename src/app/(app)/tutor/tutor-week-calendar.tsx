@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { JoinVideoCallButton } from "@/components/join-video-call-button";
-import { formatTimeRangeInZone, getDayKeyInZone, formatDateInZone } from "@/lib/time-format";
-import { cn } from "@/lib/utils";
+import { JoinVideoCallButton } from "@/features/video/join-video-call-button";
+import { formatTimeRangeInZone, getDayKeyInZone, formatDateInZone } from "@/shared/core/time-format";
+import { cn } from "@/shared/core/utils";
 import { TutorAvatar } from "../student/session-components/tutor-avatar";
-import { deleteAvailability } from "@/app/actions/tutor";
+import { deleteAvailability } from "@/features/tutor/availability";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 
 type CalendarPayload = {
   weekRange: { startIso: string; endIso: string };

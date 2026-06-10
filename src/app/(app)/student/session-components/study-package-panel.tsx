@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { getSessionPackage } from "@/app/actions/autoPilot";
-import type { SessionAiPackage } from "@/lib/database.types";
+import { Button } from "@/shared/ui/button";
+import { getSessionPackage } from "@/features/studio-ai/studio-packages";
+import type { SessionAiPackage } from "@/shared/types/database";
 
 type Phase = "loading" | "ready" | "empty" | "withdrawn" | "error";
 

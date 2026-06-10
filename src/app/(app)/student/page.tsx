@@ -1,23 +1,25 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { StudentHeroGreeting } from "@/components/student/student-hero-greeting";
+import { StudentHeroGreeting } from "@/features/student-profile/ui/student-hero-greeting";
 
-import { requireRole } from "@/lib/auth";
+import { requireRole } from "@/shared/core/auth";
 import {
   getTutorAvailability,
+} from "@/features/booking/browse-availability";
+import {
   getStudentHubSnapshot,
   getStudentSessionsHubBundle,
-} from "@/app/actions/student";
-import { getTopRival } from "@/app/actions/top-rival";
-import { getQuestAccuracyTrend } from "@/app/actions/quest";
-import type { StudentCourse, UserXp } from "@/lib/database.types";
-import { getAccountLevelFromTotalXp } from "@/lib/levels";
-import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/lib/rank-icons";
-import { RankBadge } from "@/components/student/rank-badge";
+} from "@/features/student-profile/hub-snapshot";
+import { getTopRival } from "@/features/divisions/top-rival";
+import { getQuestAccuracyTrend } from "@/features/quest/quest-reads";
+import type { StudentCourse, UserXp } from "@/shared/types/database";
+import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
+import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 
-import { getWeekRangeUTC } from "@/lib/time-format";
-import { MentrixHeroDecor } from "@/components/student/mentrix-hero-decor";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { getWeekRangeUTC } from "@/shared/core/time-format";
+import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   DeferredAccountRankLadder,
   DeferredHeroMentrixerBounce,
@@ -34,11 +36,11 @@ import {
   greetingForHour,
   isStreakAtRisk18h,
   rankRecommendedGuides,
-} from "@/lib/student-dashboard-helpers";
-import { getUpcomingSessionBriefs } from "@/app/actions/pre-session-brief";
-import { hasStudentCompletedDiagnostic } from "@/app/actions/diagnostic-onboarding";
-import { Button } from "@/components/ui/button";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+} from "@/features/student-profile/student-dashboard-helpers";
+import { getUpcomingSessionBriefs } from "@/features/pre-session-brief/brief";
+import { hasStudentCompletedDiagnostic } from "@/features/quest/diagnostic-onboarding";
+import { Button } from "@/shared/ui/button";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 
 interface StudentPageProps {

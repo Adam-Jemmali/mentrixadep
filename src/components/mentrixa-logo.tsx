@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { cn } from "@/lib/utils";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { cn } from "@/shared/core/utils";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 
 const PX = { sm: 44, md: 60, lg: 80, xl: 104, hero: 160 } as const;
 

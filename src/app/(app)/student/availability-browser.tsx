@@ -2,22 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { formatSlotRangeInZone, formatTimeInZone } from "@/lib/time-format";
-import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatSlotRangeInZone, formatTimeInZone } from "@/shared/core/time-format";
+import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
+import { Input } from "@/shared/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { formatUsdFromCents } from "@/lib/duel-reward";
-import { splitSessionPriceCents } from "@/lib/booking-pricing";
-import { Typewriter } from "@/components/ui/typewriter";
-import { BookingConfirmationCard } from "@/components/ui/booking-confirmation-card";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { formatUsdFromCents } from "@/features/duels/duel-reward";
+import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { BookingConfirmationCard } from "@/shared/ui/booking-confirmation-card";
 
 function slotsInNextDays<T extends { start_time: string }>(slots: T[], days: number): T[] {
   const now = Date.now();

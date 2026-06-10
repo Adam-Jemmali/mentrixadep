@@ -1,4 +1,5 @@
-import { getSystemSettings } from "@/app/actions/admin";
+import { getSystemSettings } from "@/features/admin/system-settings";
+
 import { AdminSettingsClient } from "./settings-client";
 
 export const dynamic = "force-dynamic";

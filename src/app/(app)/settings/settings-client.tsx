@@ -7,15 +7,15 @@ import {
   updatePassword,
   deleteAccount,
   type UserSettings,
-} from "@/app/actions/settings";
-import { isNextRedirectError } from "@/lib/is-next-redirect-error";
-import { createClient } from "@/lib/supabase/client";
-import { APP_TIMEZONES } from "@/lib/timezones";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/features/settings/user-settings";
+import { isNextRedirectError } from "@/shared/core/is-next-redirect-error";
+import { createClient } from "@/shared/integrations/supabase/client";
+import { APP_TIMEZONES } from "@/shared/core/timezones";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
 import Image from "next/image";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
 const BUFFER_OPTIONS = [0, 5, 10, 15, 30, 60] as const;

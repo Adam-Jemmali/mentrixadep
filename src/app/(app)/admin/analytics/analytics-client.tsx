@@ -19,8 +19,8 @@ import type {
   FunnelStepRow,
   SubjectRow,
   RevenueRow,
-} from "@/lib/analytics";
-import { cn } from "@/lib/utils";
+} from "@/shared/integrations/analytics";
+import { cn } from "@/shared/core/utils";
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 

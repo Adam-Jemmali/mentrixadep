@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toggleAutoApprove } from "@/app/actions/tutor";
+import { toggleAutoApprove } from "@/features/tutor/session-requests";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 

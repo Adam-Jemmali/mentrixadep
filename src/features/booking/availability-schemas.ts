@@ -1,0 +1,87 @@
+import { z } from "zod";
+import { isValidIanaTimeZone } from "@/shared/core/timezones";
+
+/** Tutor-set session price (CAD dollars, stored as cents in DB). Must match landing page promise. */
+export const SESSION_PRICE_CAD_MIN = 15;
+export const SESSION_PRICE_CAD_MAX = 60;
+
+/** Monday = 0 … Sunday = 6 */
+export const weekdayMon0Schema = z.number().int().min(0).max(6);
+
+const timeHHmmSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5][0-9]$/, "Use HH:mm (24h)");
+
+export const createAvailabilitySlotsSchema = z
+  .object({
+    course: z.string().min(1).max(200),
+    weekdays: z
+      .array(weekdayMon0Schema)
+      .min(1)
+      .max(7)
+      .transform((arr) => [...new Set(arr)].sort((a, b) => a - b)),
+    startTime: timeHHmmSchema,
+    endTime: timeHHmmSchema,
+    recurring: z.boolean(),
+    /** Used when recurring is true (default 12 on server). */
+    recurringWeeks: z.number().int().min(1).max(52).optional(),
+    /** Whole or decimal CAD per session (e.g. 15–60). */
+    priceCad: z
+      .number()
+      .min(SESSION_PRICE_CAD_MIN, `Price must be at least $${SESSION_PRICE_CAD_MIN} CAD`)
+      .max(SESSION_PRICE_CAD_MAX, `Price cannot exceed $${SESSION_PRICE_CAD_MAX} CAD`),
+    maxStudents: z.literal(1),
+    timezone: z.string().min(1).max(120),
+  })
+  .superRefine((data, ctx) => {
+    const [sh = 0, sm = 0] = data.startTime.split(":").map(Number);
+    const [eh = 0, em = 0] = data.endTime.split(":").map(Number);
+    if (sm % 15 !== 0 || em % 15 !== 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Use 15-minute increments (:00, :15, :30, :45)",
+        path: ["startTime"],
+      });
+    }
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    if (endMin <= startMin) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End time must be after start time on the same day",
+        path: ["endTime"],
+      });
+      return;
+    }
+    const dur = endMin - startMin;
+    if (dur < 1 || dur > 480) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Session length must be between 1 and 480 minutes",
+        path: ["endTime"],
+      });
+    }
+    if (dur % 15 !== 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Session length must be a multiple of 15 minutes",
+        path: ["endTime"],
+      });
+    }
+    if (!isValidIanaTimeZone(data.timezone)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose a valid timezone from the list",
+        path: ["timezone"],
+      });
+    }
+  });
+
+export type CreateAvailabilitySlotsInput = z.infer<typeof createAvailabilitySlotsSchema>;
+
+export const availabilityIdSchema = z.string().uuid();
+
+export const setAvailabilityActiveSchema = z.object({
+  availabilityId: availabilityIdSchema,
+  active: z.boolean(),
+});

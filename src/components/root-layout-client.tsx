@@ -9,19 +9,19 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { fireLevelUpConfetti } from "@/lib/confetti-burst";
-import { playMentrixaRankUpOnce, ensureMentrixaAudioUnlocked, warmMentrixaSoundAssets } from "@/lib/mentrixa-sounds";
-import { flushXpQueue } from "@/lib/pwa-xp-queue";
-import { trackClientEvent } from "@/lib/use-track";
-import type { AuthUser } from "@/lib/auth";
-import { cn } from "@/lib/utils";
+import { createClient } from "@/shared/integrations/supabase/client";
+import { fireLevelUpConfetti } from "@/features/xp/confetti-burst";
+import { playMentrixaRankUpOnce, ensureMentrixaAudioUnlocked, warmMentrixaSoundAssets } from "@/shared/integrations/mentrixa-sounds";
+import { flushXpQueue } from "@/features/xp/pwa-xp-queue";
+import { trackClientEvent } from "@/shared/integrations/use-track";
+import type { AuthUser } from "@/shared/core/auth";
+import { cn } from "@/shared/core/utils";
 import { StudentNavbar } from "@/components/student-navbar";
 import { TutorNavbar } from "@/components/tutor-navbar";
 import { UiPerformanceBootstrap } from "@/components/ui-performance-bootstrap";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -29,14 +29,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 
 const Navigation = dynamic(
   () => import("@/components/navigation").then((m) => ({ default: m.Navigation })),
   { loading: () => null },
 );
 const FloatingXpAnimations = dynamic(
-  () => import("@/components/floating-xp-animations").then((m) => ({ default: m.FloatingXpAnimations })),
+  () => import("@/features/xp/floating-xp-animations").then((m) => ({ default: m.FloatingXpAnimations })),
   { ssr: false, loading: () => null },
 );
 const StudentFirstLoginTour = dynamic(
@@ -48,7 +48,7 @@ const TutorFirstLoginTour = dynamic(
   { ssr: false, loading: () => null },
 );
 const FeedbackWidget = dynamic(
-  () => import("@/components/feedback-widget").then((m) => ({ default: m.FeedbackWidget })),
+  () => import("@/features/marketing/feedback-widget").then((m) => ({ default: m.FeedbackWidget })),
   { ssr: false, loading: () => null },
 );
 const CookieConsentBanner = dynamic(
@@ -56,7 +56,7 @@ const CookieConsentBanner = dynamic(
   { ssr: false, loading: () => null },
 );
 const ClickSoundProvider = dynamic(
-  () => import("@/components/ui/click-sound-provider").then((m) => ({ default: m.ClickSoundProvider })),
+  () => import("@/shared/ui/click-sound-provider").then((m) => ({ default: m.ClickSoundProvider })),
   { ssr: false, loading: () => null },
 );
 

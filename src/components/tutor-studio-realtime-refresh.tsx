@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRealtimeRouterRefresh, useVisibilityRouterRefresh } from "@/hooks/use-realtime-router-refresh";
+import { useRealtimeRouterRefresh, useVisibilityRouterRefresh } from "@/shared/core/hooks/use-realtime-router-refresh";
 
 /** Studio list + package rows update when generation finishes or session rows change. */
 export function TutorStudioRealtimeRefresh({ tutorId }: { tutorId: string }) {

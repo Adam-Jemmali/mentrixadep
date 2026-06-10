@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/core/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
@@ -12,14 +12,14 @@ import {
   type SubjectEntry,
   type KnowledgeNode,
   type NextStepRecommendation,
-} from "@/lib/knowledge-graph";
-import { SkillTree } from "@/components/learning/skill-tree";
-import { SubjectProgressRing } from "@/components/learning/subject-progress-ring";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import { Typewriter } from "@/components/ui/typewriter";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { BackButton } from "@/components/ui/back-button";
+} from "@/features/learning-path/knowledge-graph-lib";
+import { SkillTree } from "@/features/learning-path/ui/skill-tree";
+import { SubjectProgressRing } from "@/features/learning-path/ui/subject-progress-ring";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { BackButton } from "@/shared/ui/back-button";
 
 interface Props {
   nodes: KnowledgeNode[];

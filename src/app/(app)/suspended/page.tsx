@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/shared/integrations/supabase/server";
 import { redirect } from "next/navigation";
-import { normalizeAccessStatus } from "@/lib/user-access-status";
-import { getRoleHomePath } from "@/lib/role-home";
+import { normalizeAccessStatus } from "@/shared/core/user-access-status";
+import { getRoleHomePath } from "@/shared/core/role-home";
 
 export default async function SuspendedPage() {
   const supabase = await createClient();

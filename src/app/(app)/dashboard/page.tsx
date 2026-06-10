@@ -1,9 +1,9 @@
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/shared/core/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { createClient } from "@/shared/integrations/supabase/server";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
 
 export const dynamic = "force-dynamic";
 

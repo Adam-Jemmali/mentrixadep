@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { requireRole } from "@/lib/auth";
-import { getDivisionsCatalog } from "@/app/actions/quest";
-import { Button } from "@/components/ui/button";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { requireRole } from "@/shared/core/auth";
+import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
+import { Button } from "@/shared/ui/button";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { ClanCreateForm } from "./clan-create-form";
 import {
   clanArenaLightSection,
@@ -11,7 +11,7 @@ import {
   clanArenaLightTitle,
   clanArenaOutlineButton,
   clanLightPanel,
-} from "@/lib/clan-light-form-ui";
+} from "@/features/clans/clan-light-form-ui";
 
 export const metadata = { title: "Create clan · Mentrixa" };
 

@@ -25,7 +25,10 @@
     "analyze": "cross-env ANALYZE=true next build",
     "push:vapid": "node scripts/generate-vapid-keys.mjs",
     "types:generate": "node scripts/generate-types.mjs",
-    "audit:ci": "npm audit --audit-level=moderate"
+    "audit:ci": "npm audit --audit-level=moderate",
+    "load:smoke": "k6 run load-tests/smoke.js",
+    "load:track": "k6 run load-tests/track.js",
+    "load:landing": "k6 run load-tests/landing.js"
   },
   "dependencies": {
     "@google/genai": "^1.45.0",
@@ -54,6 +57,7 @@
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
+    "@upstash/redis": "^1.38.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

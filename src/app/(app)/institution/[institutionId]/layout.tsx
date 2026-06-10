@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getInstitutionById } from "@/app/actions/institution";
+import { getInstitutionById } from "@/features/institutions/institution";
 import { InstitutionSidebar } from "./institution-sidebar";
 
 export default async function InstitutionLayout({

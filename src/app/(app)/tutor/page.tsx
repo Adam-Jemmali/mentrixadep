@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { getTutorCommandCenterData } from "@/app/actions/tutor";
+import { getTutorCommandCenterData } from "@/features/tutor/command-center";
 import { TutorCommandCenterClient } from "./tutor-command-center-client";
-import { requireRole } from "@/lib/auth";
-import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/lib/student-dashboard-helpers";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { requireRole } from "@/shared/core/auth";
+import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/features/student-profile/student-dashboard-helpers";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
 export const metadata: Metadata = {
   title: "Guide center · Mentrixa",

@@ -10,7 +10,7 @@ import {
   startVerificationReview,
   type VerificationRecord,
   type VerificationStatus,
-} from "@/app/actions/verification";
+} from "@/features/verification/verification-queue";
 
 interface VerificationStats {
   pending: number;

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { RateSessionForm } from "../rate-session-form";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 
 type Session = {
   id: string;

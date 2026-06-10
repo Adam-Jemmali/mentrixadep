@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { syncUiPerfDataset } from "@/lib/ui-performance";
+import { syncUiPerfDataset } from "@/shared/core/ui-performance";
 
 /** Keeps `html[data-mentrixa-perf]` in sync for CSS and mirrors tier changes (reduced-motion toggles). */
 export function UiPerformanceBootstrap() {

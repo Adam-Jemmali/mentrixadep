@@ -4,10 +4,10 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { AuthUser } from "@/lib/auth";
-import { signOut } from "@/app/actions/auth";
-import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import type { AuthUser } from "@/shared/core/auth";
+import { signOut } from "@/features/auth/auth";
+import { cn } from "@/shared/core/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/shared/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +15,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { readUiPerfTier } from "@/lib/ui-performance";
+} from "@/shared/ui/dropdown-menu";
+import { readUiPerfTier } from "@/shared/core/ui-performance";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 
 const STUDENT_LINKS = [
@@ -193,7 +193,7 @@ function NavigationInner({ user }: NavigationProps) {
 
   useEffect(() => {
     if (!mobileOpen || mobileLinkRefs.current.length === 0 || readUiPerfTier() === "lite") return;
-    void import("@/lib/gsap").then(({ staggerIn }) => {
+    void import("@/shared/core/gsap").then(({ staggerIn }) => {
       staggerIn(mobileLinkRefs.current);
     });
   }, [mobileOpen]);

@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeAccessStatus } from "@/lib/user-access-status";
-import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
-import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
-import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
-import { isWaitlistEnabled } from "@/lib/flags";
+import { createClient } from "@/shared/integrations/supabase/server";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { normalizeAccessStatus } from "@/shared/core/user-access-status";
+import { syncApprovedWaitlistToUserProfile } from "@/features/registration/waitlist-user-sync";
+import { getPostApprovalRedirectPath } from "@/shared/core/post-approval-redirect";
+import { fetchRegistrationRequestRow } from "@/features/registration/registration-request-lookup";
+import { isWaitlistEnabled } from "@/shared/core/flags";
 
 /**
  * Auth sync gateway — runs after every login/signup/Google OAuth.

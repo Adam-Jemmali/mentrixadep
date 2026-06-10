@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { deletePastSession } from "@/app/actions/sessions";
+import { deletePastSession } from "@/features/booking/sessions";
 import { useAdminViewContext } from "@/components/admin-view-context";
 
 interface DeletePastSessionButtonProps {

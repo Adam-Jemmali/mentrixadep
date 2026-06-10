@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireRole } from "@/lib/auth";
+import { requireRole } from "@/shared/core/auth";
 import { AdminSidebar } from "./admin-sidebar";
 
 export const metadata: Metadata = {

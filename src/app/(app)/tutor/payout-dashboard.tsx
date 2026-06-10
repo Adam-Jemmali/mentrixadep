@@ -11,8 +11,8 @@ import {
   ExternalLink,
   CircleDollarSign,
 } from "lucide-react";
-import type { PayoutDashboardData, PayoutLedgerRow } from "@/app/actions/stripe-connect";
-import { triggerManualPayout } from "@/app/actions/stripe-connect";
+import type { PayoutDashboardData, PayoutLedgerRow } from "@/features/payments/payout-ledger";
+import { triggerManualPayout } from "@/features/payments/payout-ledger";
 import { useRouter } from "next/navigation";
 
 function cad(cents: number): string {

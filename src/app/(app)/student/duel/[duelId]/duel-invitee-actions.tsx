@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { acceptSkillDuel, declineSkillDuel } from "@/app/actions/duel";
-import { Button } from "@/components/ui/button";
-import { safeRouterRefresh } from "@/lib/safe-router-refresh";
+import { acceptSkillDuel, declineSkillDuel } from "@/features/duels/duel-gameplay";
+import { Button } from "@/shared/ui/button";
+import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
 
 /** Shown to the challenged learner while the duel is pending. */
 export function DuelInviteeActions({ duelId }: { duelId: string }) {

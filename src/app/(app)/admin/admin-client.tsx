@@ -1,22 +1,20 @@
 "use client";
 
+import { approveRegistrationRequest, rejectRegistrationRequest, toggleAutoApproveRegistrations, approveAllPendingRegistrations } from "@/features/admin/registration-queue";
+import { verifyTutorCourse } from "@/features/admin/tutor-courses-admin";
+import type { AdminUser } from "@/features/admin/admin-users";
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { gsap } from "gsap";
-import {
-  approveRegistrationRequest,
-  rejectRegistrationRequest,
-  toggleAutoApproveRegistrations,
-  approveAllPendingRegistrations,
-  verifyTutorCourse,
-  type AdminUser,
-} from "@/app/actions/admin";
-import { Badge } from "@/components/ui/badge";
-import type { RegistrationRequest } from "@/lib/database.types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
+import { Badge } from "@/shared/ui/badge";
+import type { RegistrationRequest } from "@/shared/types/database";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
 import { AdminIllustration } from "@/components/illustrations";
 
 function relativeTime(iso: string): string {

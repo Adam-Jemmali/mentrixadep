@@ -1,8 +1,8 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { LeaderboardEntry, DivisionStat } from "@/app/actions/quest";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import type { LeaderboardEntry, DivisionStat } from "@/features/divisions/leaderboard";
 
 function LevelBadge({
   tier,

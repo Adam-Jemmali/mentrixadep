@@ -1,8 +1,8 @@
 "use client";
 
 import { Check, Zap } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { Institution } from "@/lib/database.types";
+import { cn } from "@/shared/core/utils";
+import type { Institution } from "@/shared/types/database";
 
 const PLANS = [
   {

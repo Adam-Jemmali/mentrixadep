@@ -14,14 +14,14 @@ import {
   Info,
   Users
 } from "lucide-react";
-import type { DivisionDetailPayload } from "@/app/actions/divisions";
-import { joinDivision, postDivisionMessage } from "@/app/actions/divisions";
-import { setFocusedDivision } from "@/app/actions/quest";
-import { getDivisionTheme } from "@/lib/division-ui";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { LeaderboardTierRank } from "@/components/student/leaderboard-tier-rank";
+import type { DivisionDetailPayload } from "@/features/divisions/divisions";
+import { joinDivision, postDivisionMessage } from "@/features/divisions/divisions";
+import { setFocusedDivision } from "@/features/divisions/leaderboard";
+import { getDivisionTheme } from "@/features/divisions/division-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/core/utils";
+import { LeaderboardTierRank } from "@/features/student-profile/ui/leaderboard-tier-rank";
 
 function RankingAvatar({
   displayName,

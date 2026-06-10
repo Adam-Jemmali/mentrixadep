@@ -1,7 +1,7 @@
 "use client";
 
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/core/utils";
 
 /** @deprecated Use `MentrixaLogoLoader` — kept for `LoadingSpinner` / `PageLoading`. */
 export function MentrixaLoadingMark({

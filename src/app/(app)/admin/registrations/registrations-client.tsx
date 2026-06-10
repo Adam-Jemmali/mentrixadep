@@ -1,5 +1,8 @@
 "use client";
 
+import { approveRegistrationRequest, rejectRegistrationRequest, reinstateRejectedRegistrationRequest, toggleAutoApproveRegistrations, approveAllPendingRegistrations } from "@/features/admin/registration-queue";
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
@@ -8,16 +11,10 @@ import {
   X,
   AlertCircle,
 } from "lucide-react";
-import {
-  approveRegistrationRequest,
-  rejectRegistrationRequest,
-  reinstateRejectedRegistrationRequest,
-  toggleAutoApproveRegistrations,
-  approveAllPendingRegistrations,
-} from "@/app/actions/admin";
-import type { RegistrationRequest } from "@/lib/database.types";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+
+import type { RegistrationRequest } from "@/shared/types/database";
+import { Button } from "@/shared/ui/button";
+import { Switch } from "@/shared/ui/switch";
 
 interface Props {
   requests: RegistrationRequest[];

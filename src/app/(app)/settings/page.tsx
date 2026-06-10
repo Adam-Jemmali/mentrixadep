@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/shared/core/auth";
 import { redirect } from "next/navigation";
 
 export const metadata = {

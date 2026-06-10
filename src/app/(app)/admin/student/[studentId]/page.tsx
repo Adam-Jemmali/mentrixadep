@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { getStudentDashboardForAdmin } from "@/app/actions/student";
+import { getStudentDashboardForAdmin } from "@/features/student-profile/student-admin-reads";
 import { SessionsList } from "@/app/(app)/student/sessions-list";
 import { AvailabilityBrowser } from "@/app/(app)/student/availability-browser";
 import { StudentDashboardIllustration } from "@/components/illustrations";

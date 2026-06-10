@@ -5,9 +5,9 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { signOut } from "@/app/actions/auth";
-import type { AuthUser } from "@/lib/auth";
+import { cn } from "@/shared/core/utils";
+import { signOut } from "@/features/auth/auth";
+import type { AuthUser } from "@/shared/core/auth";
 import {
   Navbar,
   NavBody,
@@ -16,11 +16,11 @@ import {
   MobileNavHeader,
   MobileNavMenu,
   MobileNavToggle,
-} from "@/components/ui/resizable-navbar";
+} from "@/shared/ui/resizable-navbar";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
-import { StudentNavRankStrip } from "@/components/student/student-nav-rank-strip";
-import { ArenaMusicMuteToggle } from "@/components/student/arena-music-mute-toggle";
+import { StudentNavRankStrip } from "@/features/student-profile/ui/student-nav-rank-strip";
+import { ArenaMusicMuteToggle } from "@/features/student-profile/ui/arena-music-mute-toggle";
 import {
   bindDuelAudioElement,
   DUEL_SOUND_SRC,
@@ -29,18 +29,18 @@ import {
   preloadDuelSound,
   startDuelLoopFromGesture,
   stopDuelLoop,
-} from "@/lib/duel-audio-controller";
+} from "@/features/duels/duel-audio-controller";
 import {
   playMentrixaLoadingOnce,
   unlockMentrixaAudioFromUserGesture,
-} from "@/lib/mentrixa-sounds";
+} from "@/shared/integrations/mentrixa-sounds";
 
 const BubbleText = dynamic(
-  () => import("@/components/ui/bubble-text").then((m) => ({ default: m.BubbleText })),
+  () => import("@/shared/ui/bubble-text").then((m) => ({ default: m.BubbleText })),
   { ssr: false, loading: () => null },
 );
 const SecurityShield = dynamic(
-  () => import("@/components/security/SecurityShield").then((m) => ({ default: m.SecurityShield })),
+  () => import("@/features/auth/ui/security/SecurityShield").then((m) => ({ default: m.SecurityShield })),
   { ssr: false, loading: () => null },
 );
 

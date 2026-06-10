@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import { playMentrixaLoadingOnce } from "@/lib/mentrixa-sounds";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { playMentrixaLoadingOnce } from "@/shared/integrations/mentrixa-sounds";
 
 export function LoadingSpinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const mapped = size === "sm" ? "sm" : size === "lg" ? "lg" : "md";

@@ -5,24 +5,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { gsap } from "gsap";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { UpcomingSessionCard } from "./session-components/upcoming-session-card";
 import { PastSessionCard } from "./session-components/past-session-card";
 import { RateSessionFloating } from "./session-components/rate-session-floating";
 import { StudentWeekCalendar } from "./student-week-calendar";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/core/utils";
 import { TutorAvatar } from "./session-components/tutor-avatar";
 import { Clock, Calendar as CalendarIcon, History as HistoryIcon, Send } from "lucide-react";
-import { StudentSessionTutorProfile } from "@/app/actions/student";
-import type { SessionAiPackage } from "@/lib/database.types";
+import { StudentSessionTutorProfile } from "@/features/booking/session-lists";
+import type { SessionAiPackage } from "@/shared/types/database";
 
-import { countUp as gsapCountUp } from "@/lib/gsap";
-import { useLevelInfo } from "@/lib/mentrixa-ranks";
-import { formatSlotRangeInZone } from "@/lib/time-format";
-import { readUiPerfTier } from "@/lib/ui-performance";
-import { useUiPerfTier } from "@/lib/use-ui-perf-tier";
+import { countUp as gsapCountUp } from "@/shared/core/gsap";
+import { useLevelInfo } from "@/features/xp/mentrixa-ranks";
+import { formatSlotRangeInZone } from "@/shared/core/time-format";
+import { readUiPerfTier } from "@/shared/core/ui-performance";
+import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
 

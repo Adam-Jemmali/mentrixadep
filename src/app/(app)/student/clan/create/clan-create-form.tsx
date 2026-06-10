@@ -1,21 +1,24 @@
 "use client";
 
+import { createClan } from "@/features/clans/clan-membership";
+
+
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createClan } from "@/app/actions/clan";
-import { CLAN_AVATAR_PRESETS } from "@/lib/clan-constants";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+
+import { CLAN_AVATAR_PRESETS } from "@/features/clans/clan-constants";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
+import { Label } from "@/shared/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { DivisionFocusSelect } from "@/components/student/division-focus-select";
+} from "@/shared/ui/select";
+import { DivisionFocusSelect } from "@/features/student-profile/ui/division-focus-select";
 import {
   clanArenaOutlineButton,
   clanArenaPrimaryButton,
@@ -25,7 +28,7 @@ import {
   clanLightSelectContent,
   clanLightSelectItem,
   clanLightSelectTrigger,
-} from "@/lib/clan-light-form-ui";
+} from "@/features/clans/clan-light-form-ui";
 
 type Div = { key: string; name: string };
 

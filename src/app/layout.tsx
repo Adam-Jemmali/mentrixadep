@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { OrganizationJsonLd } from "@/components/organization-json-ld";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
-import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/shared/core/site";
 import { ConsoleSilencer } from "@/components/console-silencer";
 import "./globals.css";
 

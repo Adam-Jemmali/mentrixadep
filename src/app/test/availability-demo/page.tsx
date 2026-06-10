@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateAvailabilityCard } from "@/components/ui/create-availability-card";
+import { CreateAvailabilityCard } from "@/shared/ui/create-availability-card";
 
 export default function AvailabilityDemoPage() {
   const dummyCourses = ["Mathematics", "Physics", "Computer Science", "Chemistry"];

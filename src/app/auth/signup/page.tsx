@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { isWaitlistEnabled } from "@/lib/flags";
-import { waitlistRoleFromQuery } from "@/lib/waitlist-role";
-import { SignupFormClient } from "@/components/auth/signup-form-client";
+import { isWaitlistEnabled } from "@/shared/core/flags";
+import { waitlistRoleFromQuery } from "@/features/registration/waitlist-role";
+import { SignupFormClient } from "@/features/auth/ui/signup-form-client";
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

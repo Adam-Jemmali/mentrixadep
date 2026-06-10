@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { createClient } from "@/shared/integrations/supabase/client";
+import { Button } from "@/shared/ui/button";
 import { Package } from "lucide-react";
 
 const STORAGE_ACK = "mentrixa-studio-pkg-ack-v1";

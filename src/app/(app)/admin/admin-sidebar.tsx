@@ -13,7 +13,7 @@ import {
   BarChart2,
   ArrowLeftRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/core/utils";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },

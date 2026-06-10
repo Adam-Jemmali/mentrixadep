@@ -2,9 +2,9 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { formatDate, formatTimeRange } from "@/lib/time-format";
+import { formatDate, formatTimeRange } from "@/shared/core/time-format";
 import { DeletePastSessionButton } from "@/components/delete-past-session-button";
-import { JoinVideoCallButton } from "@/components/join-video-call-button";
+import { JoinVideoCallButton } from "@/features/video/join-video-call-button";
 import { TutorSessionActions } from "./tutor-session-actions";
 import { TutorPastAiGenerateButton } from "./tutor-past-ai-generate";
 

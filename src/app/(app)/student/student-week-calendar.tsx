@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { JoinVideoCallButton } from "@/components/join-video-call-button";
-import { formatTimeRangeInZone, getDayKeyInZone, formatDateInZone } from "@/lib/time-format";
-import { cn } from "@/lib/utils";
+import { JoinVideoCallButton } from "@/features/video/join-video-call-button";
+import { formatTimeRangeInZone, getDayKeyInZone, formatDateInZone } from "@/shared/core/time-format";
+import { cn } from "@/shared/core/utils";
 import { TutorAvatar } from "./session-components/tutor-avatar";
 import { Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 

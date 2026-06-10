@@ -1,13 +1,17 @@
 "use client";
 
+import type { PublicClanSnapshot } from "@/features/clans/clan-reads";
+import { requestJoinPublicClan } from "@/features/clans/clan-membership";
+
+
 import { useState } from "react";
 import Image from "next/image";
-import type { PublicClanSnapshot } from "@/app/actions/clan-dashboard";
-import { requestJoinPublicClan } from "@/app/actions/clan";
-import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
-import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/ui/back-button";
-import { CLAN_MAX_MEMBERS } from "@/lib/clan-constants";
+
+
+import { ClanAvatarBadge } from "@/features/clans/ui/clan-avatar-badge";
+import { Button } from "@/shared/ui/button";
+import { BackButton } from "@/shared/ui/back-button";
+import { CLAN_MAX_MEMBERS } from "@/features/clans/clan-constants";
 
 type Props = {
   snap: PublicClanSnapshot;

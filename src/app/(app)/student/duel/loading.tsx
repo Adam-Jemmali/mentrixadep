@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { playDuelSoundLoop, warmMentrixaSoundAssets } from "@/lib/mentrixa-sounds";
+import { playDuelSoundLoop, warmMentrixaSoundAssets } from "@/shared/integrations/mentrixa-sounds";
 
 export default function DuelSegmentLoading() {
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { RootLayoutClient } from "@/components/root-layout-client";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/shared/core/auth";
 
 /**
  * Authenticated app shell (nav, Supabase client, PWA hooks). Lives in its own route group so

@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { Typewriter } from "@/components/ui/typewriter";
+import { cn } from "@/shared/core/utils";
+import { Typewriter } from "@/shared/ui/typewriter";
 
 /** Matches landing / marketing header: gradient MEN + solid TRIXA. */
 export function MentrixaWordmark({

@@ -5,25 +5,22 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import type {
-  LeaderboardEntry,
-  DivisionStat,
-  QuestHistoryEntry,
-} from "@/app/actions/quest";
-import type { LevelInfo } from "@/lib/levels";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import type { LeaderboardEntry, DivisionStat } from "@/features/divisions/leaderboard";
+import type { QuestHistoryEntry } from "@/features/quest/quest-reads";
+import type { LevelInfo } from "@/features/xp/levels";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { Button } from "@/shared/ui/button";
 import { DivisionIllustration } from "@/components/illustrations";
 import { FocusDivisionPicker } from "./focus-division-picker";
 import {
   getDivisionTheme,
   divisionTeaser,
-} from "@/lib/division-ui";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { Typewriter } from "@/components/ui/typewriter";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { BackButton } from "@/components/ui/back-button";
-import { LeaderboardTierRank } from "@/components/student/leaderboard-tier-rank";
+} from "@/features/divisions/division-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { BackButton } from "@/shared/ui/back-button";
+import { LeaderboardTierRank } from "@/features/student-profile/ui/leaderboard-tier-rank";
 
 gsap.registerPlugin(ScrollTrigger);
 

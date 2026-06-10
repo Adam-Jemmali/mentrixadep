@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AuthUser } from "@/lib/auth";
+import type { AuthUser } from "@/shared/core/auth";
 import { FirstLoginTourPanel } from "@/components/first-login-tour-panel";
 
 type TutorTourStep = {

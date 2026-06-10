@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getStudentProfile } from "@/app/actions/student-profile";
-import { getReferralDashboardData } from "@/app/actions/referral";
+import { getStudentProfile } from "@/features/student-profile/student-profile";
+import { getReferralDashboardData } from "@/features/referrals/referrals";
 import { StudentProfileClient } from "./student-profile-client";
 
 interface Props {

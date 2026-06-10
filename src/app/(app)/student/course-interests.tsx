@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { addStudentCourse, removeStudentCourse } from "@/app/actions/student";
+import { addStudentCourse, removeStudentCourse } from "@/features/booking/student-courses";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
 
 interface StudentCourseItem {
   id: string;

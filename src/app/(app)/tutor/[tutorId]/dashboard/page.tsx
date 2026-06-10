@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getTutorDashboardForAdmin } from "@/app/actions/tutor";
+import { getTutorDashboardForAdmin } from "@/features/tutor/public-profile";
 import { TutorDashboardClient, type AnySessionRequest } from "../../tutor-dashboard-client";
 import { AdminViewProvider } from "@/components/admin-view-context";
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/lib/student-dashboard-helpers";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/features/student-profile/student-dashboard-helpers";
 
 interface Props {
   params: Promise<{ tutorId: string }>;

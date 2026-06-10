@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { studentCancelSession } from "@/app/actions/cancellation";
+import { studentCancelSession } from "@/features/booking/cancellation";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
-import { isStudentCancelRefundEligible } from "@/lib/refund-eligibility";
+import { isStudentCancelRefundEligible } from "@/features/booking/refund-eligibility";
 
 interface CancelSessionButtonProps {
   sessionId: string;

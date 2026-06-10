@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { rateSession } from "@/app/actions/student";
-import { emitXpAward } from "@/lib/xp-events";
+import { rateSession } from "@/features/booking/rate-session";
+import { emitXpAward } from "@/features/xp/xp-events";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { fireRatingConfetti } from "@/lib/confetti-burst";
+import { Button } from "@/shared/ui/button";
+import { Textarea } from "@/shared/ui/textarea";
+import { fireRatingConfetti } from "@/features/xp/confetti-burst";
 
 interface RateSessionFormProps {
   sessionId: string;

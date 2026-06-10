@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRealtimeRouterRefresh, useVisibilityRouterRefresh } from "@/hooks/use-realtime-router-refresh";
+import { useRealtimeRouterRefresh, useVisibilityRouterRefresh } from "@/shared/core/hooks/use-realtime-router-refresh";
 
 /**
  * Keeps the learner dashboard (browse slots, sessions, requests) in sync when guides

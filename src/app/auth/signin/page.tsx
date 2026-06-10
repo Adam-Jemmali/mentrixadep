@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
-import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
-import { toUserFacingAuthError } from "@/lib/user-facing-error";
+import { GoogleSignInButton } from "@/features/auth/ui/google-sign-in-button";
+import { toUserFacingAuthError } from "@/shared/core/user-facing-error";
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);

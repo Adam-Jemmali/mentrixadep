@@ -1,4 +1,4 @@
-import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/shared/core/site";
 
 /**
  * Organization + WebSite JSON-LD for brand clarity in Google (Knowledge Graph signals).

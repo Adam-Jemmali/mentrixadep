@@ -1,9 +1,13 @@
 "use client";
 
+import { updateSystemSetting } from "@/features/admin/system-settings";
+import type { SystemSettings } from "@/features/admin/system-settings";
+
+
 import { useState, useTransition, type ReactNode } from "react";
 import Image from "next/image";
-import { updateSystemSetting } from "@/app/actions/admin";
-import type { SystemSettings } from "@/app/actions/admin";
+
+
 
 
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { ContactPageClient } from "@/components/contact/contact-page-client";
-import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/lib/mentrixa-brand";
-import { getSiteUrl } from "@/lib/site";
+import { ContactPageClient } from "@/features/marketing/contact-ui/contact-page-client";
+import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/features/marketing/mentrixa-brand";
+import { getSiteUrl } from "@/shared/core/site";
 
 export const metadata: Metadata = {
   title: "Contact & feedback · Mentrixa",

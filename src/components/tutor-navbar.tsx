@@ -4,9 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { signOut } from "@/app/actions/auth";
-import type { AuthUser } from "@/lib/auth";
+import { cn } from "@/shared/core/utils";
+import { signOut } from "@/features/auth/auth";
+import type { AuthUser } from "@/shared/core/auth";
 import {
   Navbar,
   NavBody,
@@ -15,10 +15,10 @@ import {
   MobileNavHeader,
   MobileNavMenu,
   MobileNavToggle,
-} from "@/components/ui/resizable-navbar";
+} from "@/shared/ui/resizable-navbar";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
-import { BubbleText } from "@/components/ui/bubble-text";
+import { BubbleText } from "@/shared/ui/bubble-text";
 
 const TUTOR_NAV_DESKTOP_SHELL =
   "!bg-slate-950 border-indigo-400/20 shadow-[0_14px_40px_-16px_rgba(2,6,23,0.75)]";

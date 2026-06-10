@@ -8,7 +8,7 @@ import {
   saveResolveToStudyNotes,
   setResolveHelpful,
   type ResolveProblemRow,
-} from "@/app/actions/resolve";
+} from "@/features/resolve/resolve";
 
 export function ResolveProblemClient({ problem }: { problem: ResolveProblemRow }) {
   const [isPending, startTransition] = useTransition();

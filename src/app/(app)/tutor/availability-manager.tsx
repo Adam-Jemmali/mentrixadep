@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
-import { deleteAvailability, setAvailabilityActive } from "@/app/actions/tutor";
+import { deleteAvailability, setAvailabilityActive } from "@/features/tutor/availability";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { formatTimeRangeInZone } from "@/lib/time-format";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { formatTimeRangeInZone } from "@/shared/core/time-format";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Switch } from "@/shared/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 
 export type AvailabilityManagerSlot = {
   id: string;

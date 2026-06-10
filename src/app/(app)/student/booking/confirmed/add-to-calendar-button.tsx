@@ -1,7 +1,7 @@
 "use client";
 
-import { buildSessionIcsCalendar } from "@/lib/calendar-ics";
-import { Button } from "@/components/ui/button";
+import { buildSessionIcsCalendar } from "@/features/booking/calendar-ics";
+import { Button } from "@/shared/ui/button";
 import { Calendar } from "lucide-react";
 
 type Props = {

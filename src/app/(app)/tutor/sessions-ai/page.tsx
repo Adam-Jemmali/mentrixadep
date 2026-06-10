@@ -1,6 +1,6 @@
-import { requireRole } from "@/lib/auth";
-import { getTutorSessionsWithPackages } from "@/app/actions/autoPilot";
-import type { SessionAiPackage } from "@/lib/database.types";
+import { requireRole } from "@/shared/core/auth";
+import { getTutorSessionsWithPackages } from "@/features/studio-ai/studio-packages";
+import type { SessionAiPackage } from "@/shared/types/database";
 import { TutorStudioPageClient } from "./tutor-studio-page-client";
 
 export const metadata = { title: "Studio · Mentrixa" };

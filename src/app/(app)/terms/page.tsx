@@ -1,9 +1,9 @@
 "use client";
 
-import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
-import { Typewriter } from "@/components/ui/typewriter";
-import { Card } from "@/components/ui/card";
-import { BackButton } from "@/components/ui/back-button";
+import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { Card } from "@/shared/ui/card";
+import { BackButton } from "@/shared/ui/back-button";
 import { motion } from "framer-motion";
 
 const termsSections = [

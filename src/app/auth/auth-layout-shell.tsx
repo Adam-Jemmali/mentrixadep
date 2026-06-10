@@ -5,10 +5,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/core/utils";
 import { gsap } from "gsap";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 
 const PHRASES = [
   "Any skill. Any subject. One ranked arena that tells the truth about where you stand.",

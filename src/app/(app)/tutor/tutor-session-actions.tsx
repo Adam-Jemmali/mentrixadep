@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { completeSession } from "@/app/actions/tutor";
-import { tutorCancelSession } from "@/app/actions/cancellation";
+import { completeSession } from "@/features/tutor/tutor-sessions";
+import { tutorCancelSession } from "@/features/booking/cancellation";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import Image from "next/image";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 
 export function TutorSessionActions({ sessionId }: { sessionId: string }) {
   const router = useRouter();

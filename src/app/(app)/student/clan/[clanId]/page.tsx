@@ -1,18 +1,16 @@
+import { getClanDashboard, getPublicClanSnapshot } from "@/features/clans/clan-reads";
+import { listClanMessages } from "@/features/clans/clan-messages";
+import { listPendingJoinRequests } from "@/features/clans/clan-join-requests";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getDivisionsCatalog } from "@/app/actions/quest";
-import {
-  getClanDashboard,
-  getPublicClanSnapshot,
-  listClanMessages,
-  listPendingJoinRequests,
-} from "@/app/actions/clan-dashboard";
-import { Button } from "@/components/ui/button";
+import { requireRole } from "@/shared/core/auth";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
+
+import { Button } from "@/shared/ui/button";
 import Image from "next/image";
-import { clanArenaOutlineButton } from "@/lib/clan-light-form-ui";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { clanArenaOutlineButton } from "@/features/clans/clan-light-form-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { ClanDashboardClient } from "./clan-dashboard-client";
 import { ClanPublicPreview } from "./clan-public-preview";
 

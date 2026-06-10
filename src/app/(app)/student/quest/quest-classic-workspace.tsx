@@ -3,18 +3,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { gsap } from "gsap";
-import { staggerIn } from "@/lib/gsap";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  submitQuest,
-  submitQuestAnswer,
-  getCurrentUserXp,
-  type QuestGoal,
-  type QuestMode,
-} from "@/app/actions/quest";
-import { BackButton } from "@/components/ui/back-button";
-import { emitXpAward } from "@/lib/xp-events";
+import { staggerIn } from "@/shared/core/gsap";
+import { Button } from "@/shared/ui/button";
+import { Textarea } from "@/shared/ui/textarea";
+import { submitQuest, submitQuestAnswer, type QuestGoal, type QuestMode } from "@/features/quest/classic-quest";
+import { getCurrentUserXp } from "@/features/quest/quest-reads";
+import { BackButton } from "@/shared/ui/back-button";
+import { emitXpAward } from "@/features/xp/xp-events";
 import { QuestIllustration } from "@/components/illustrations";
 
 const RECENT_KEY = "mentrixa_quests";

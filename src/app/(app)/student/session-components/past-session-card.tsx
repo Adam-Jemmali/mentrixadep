@@ -7,23 +7,23 @@ import { TutorAvatar } from "./tutor-avatar";
 import { StudyPackagePanel } from "./study-package-panel";
 import { DeletePastSessionButton } from "@/components/delete-past-session-button";
 import { RateSessionForm } from "../rate-session-form";
-import { formatDateInZone, formatTimeInZone } from "@/lib/time-format";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "@/shared/ui/collapsible";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { StudentSessionTutorProfile } from "@/app/actions/student";
-import type { SessionAiPackage } from "@/lib/database.types";
+} from "@/shared/ui/dialog";
+import type { StudentSessionTutorProfile } from "@/features/booking/session-lists";
+import type { SessionAiPackage } from "@/shared/types/database";
 
 type RatingRow = { id: string; rating: number; comment: string | null };
 

@@ -4,30 +4,30 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ScrollRevealCard } from "@/components/ui/card";
-import type { TutorCommandCenterPayload } from "@/app/actions/tutor";
+import { ScrollRevealCard } from "@/shared/ui/card";
+import type { TutorCommandCenterPayload } from "@/features/tutor/command-center";
 import { SessionRequestsList } from "./session-requests-list";
 import { TutorWeekCalendar } from "./tutor-week-calendar";
 import { AvailabilityManager } from "./availability-manager";
 import { AutoApproveToggle } from "./auto-approve-toggle";
-import { CreateAvailabilityCard } from "@/components/ui/create-availability-card";
+import { CreateAvailabilityCard } from "@/shared/ui/create-availability-card";
 import { CourseManager } from "./course-manager";
 import { TutorAvatar } from "../student/session-components/tutor-avatar";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { formatDateInZone } from "@/lib/time-format";
+} from "@/shared/ui/dialog";
+import { formatDateInZone } from "@/shared/core/time-format";
 import { TutorPayoutDashboard } from "./payout-dashboard";
-import { Typewriter } from "@/components/ui/typewriter";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
-import { TutorHeroDecor } from "@/components/tutor/tutor-hero-decor";
-import { HeroGuideBounce } from "@/components/tutor/hero-guide-bounce";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { TutorHeroGreeting } from "@/features/tutor/ui/tutor-hero-greeting";
+import { TutorHeroDecor } from "@/features/tutor/ui/tutor-hero-decor";
+import { HeroGuideBounce } from "@/features/tutor/ui/hero-guide-bounce";
 import { TutorHubRealtimeRefresh } from "@/components/tutor-hub-realtime-refresh";
 
 const TutorEarningsChart = dynamic(

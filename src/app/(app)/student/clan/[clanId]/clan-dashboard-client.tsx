@@ -1,29 +1,32 @@
 "use client";
 
+import { approveJoinRequest, rejectJoinRequest } from "@/features/clans/clan-join-requests";
+import type { ClanDashboardPayload } from "@/features/clans/clan-reads";
+import type { ClanMessageRow } from "@/features/clans/clan-messages";
+import { setClanAvatarPreset, setClanFocusDivision, uploadClanAvatar } from "@/features/clans/clan-customization";
+
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import type { ClanDashboardPayload, ClanMessageRow } from "@/app/actions/clan-dashboard";
-import {
-  approveJoinRequest,
-  rejectJoinRequest,
-} from "@/app/actions/clan-dashboard";
-import { setClanAvatarPreset, setClanFocusDivision, uploadClanAvatar } from "@/app/actions/clan";
-import { createClanSkillDuel } from "@/app/actions/duel";
-import { CLAN_AVATAR_PRESETS, CLAN_QUEST_CHALLENGE_BONUS_XP } from "@/lib/clan-constants";
-import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
-import { ClanChat } from "@/components/clan/clan-chat";
-import { Button } from "@/components/ui/button";
-import { DivisionFocusSelect } from "@/components/student/division-focus-select";
-import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
-import { Typewriter } from "@/components/ui/typewriter";
-import { GooeyText } from "@/components/ui/gooey-text-morphing";
-import { cn } from "@/lib/utils";
-import { safeRouterRefresh } from "@/lib/safe-router-refresh";
+
+
+
+import { createClanSkillDuel } from "@/features/duels/duel-create";
+import { CLAN_AVATAR_PRESETS, CLAN_QUEST_CHALLENGE_BONUS_XP } from "@/features/clans/clan-constants";
+import { ClanAvatarBadge } from "@/features/clans/ui/clan-avatar-badge";
+import { ClanChat } from "@/features/clans/ui/clan-chat";
+import { Button } from "@/shared/ui/button";
+import { DivisionFocusSelect } from "@/features/student-profile/ui/division-focus-select";
+import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { GooeyText } from "@/shared/ui/gooey-text-morphing";
+import { cn } from "@/shared/core/utils";
+import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
 import {
   clanLightFieldLabel,
-} from "@/lib/clan-light-form-ui";
+} from "@/features/clans/clan-light-form-ui";
 
 type Pending = {
   id: string;

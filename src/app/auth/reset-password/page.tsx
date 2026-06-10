@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AuthLayout } from "@/components/auth/AuthLayout";
-import { AuthCard } from "@/components/auth/AuthCard";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { AuthLayout } from "@/features/auth/ui/AuthLayout";
+import { AuthCard } from "@/features/auth/ui/AuthCard";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
-import { getRoleHomePath } from "@/lib/role-home";
+import { createClient } from "@/shared/integrations/supabase/client";
+import { getRoleHomePath } from "@/shared/core/role-home";
 
 function isRecoveryType(value: string | null): value is "recovery" {
   return value === "recovery";

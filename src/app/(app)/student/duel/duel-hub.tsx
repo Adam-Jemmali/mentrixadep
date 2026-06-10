@@ -4,40 +4,32 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  joinDuelQueue,
-  leaveDuelQueue,
-  pollDuelQueue,
-  createAiDuelFromQueue,
-  getDuelMatchupPreview,
-  acceptQueueMatch,
-  declineQueueMatch,
-  getQueueMatchAcceptance,
-  type DuelParticipantClan,
-} from "@/app/actions/duel";
-import { DUEL_AI_QUEUE_WAIT_MS } from "@/lib/duel-constants";
-import { Button } from "@/components/ui/button";
+import { joinDuelQueue, leaveDuelQueue, pollDuelQueue, acceptQueueMatch, declineQueueMatch, getQueueMatchAcceptance } from "@/features/duels/duel-queue";
+import { createAiDuelFromQueue } from "@/features/duels/duel-gameplay";
+import { getDuelMatchupPreview, type DuelParticipantClan } from "@/features/duels/duel-reads";
+import { DUEL_AI_QUEUE_WAIT_MS } from "@/features/duels/duel-constants";
+import { Button } from "@/shared/ui/button";
 import {  Info, Users } from "lucide-react";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
-import { DuelMatchAcceptScreen } from "@/components/duel/duel-match-accept-screen";
-import { ClanAvatarBadge } from "@/components/clan/clan-avatar-badge";
-import { getDivisionTheme } from "@/lib/division-ui";
-import { cn } from "@/lib/utils";
-import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/lib/rank-icons";
-import { RankBadge } from "@/components/student/rank-badge";
+import { DuelMatchAcceptScreen } from "@/features/duels/ui/duel-match-accept-screen";
+import { ClanAvatarBadge } from "@/features/clans/ui/clan-avatar-badge";
+import { getDivisionTheme } from "@/features/divisions/division-ui";
+import { cn } from "@/shared/core/utils";
+import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import {
   enterDuelQueueMusic,
   startDuelLoopFromGesture,
   playMentrixaRankUpOnce,
-} from "@/lib/mentrixa-sounds";
-import { safeRouterRefresh } from "@/lib/safe-router-refresh";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+} from "@/shared/integrations/mentrixa-sounds";
+import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   arenaDivisionFocus,
   arenaDivisionCardClasses,
   arenaDivisionPanelClasses,
-} from "@/lib/arena-division-focus";
+} from "@/features/divisions/arena-division-focus";
 
 interface Props {
   divisions: { key: string; name: string; description: string | null }[];

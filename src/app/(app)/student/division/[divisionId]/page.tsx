@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
-import { loadDivisionDetailPage } from "@/app/actions/divisions";
+import { requireRole } from "@/shared/core/auth";
+import { loadDivisionDetailPage } from "@/features/divisions/divisions";
 import { DivisionDetailClient } from "./division-detail-client";
 
 export default async function DivisionDetailPage({

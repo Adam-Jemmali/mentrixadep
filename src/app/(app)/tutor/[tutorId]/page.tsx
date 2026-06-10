@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { getTutorPublicProfile } from "@/app/actions/tutor";
-import { getCurrentUser } from "@/lib/auth";
-import { getSiteUrl } from "@/lib/site";
+import { getTutorPublicProfile } from "@/features/tutor/public-profile";
+import { getCurrentUser } from "@/shared/core/auth";
+import { getSiteUrl } from "@/shared/core/site";
 import { TutorProfileClient } from "./tutor-profile-client";
 
 interface Props {

@@ -2,13 +2,13 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { BubbleText } from "@/components/ui/bubble-text";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { BubbleText } from "@/shared/ui/bubble-text";
 
-import type { QuestAccuracyTrend } from "@/app/actions/quest";
-import type { AccountRankVisual } from "@/lib/rank-icons";
-import { RankBadge } from "@/components/student/rank-badge";
-import { normalizeRankTitle } from "@/lib/rank-icons";
+import type { QuestAccuracyTrend } from "@/features/quest/quest-reads";
+import type { AccountRankVisual } from "@/features/xp/rank-icons";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { normalizeRankTitle } from "@/features/xp/rank-icons";
 
 const container = {
   hidden: { opacity: 0 },

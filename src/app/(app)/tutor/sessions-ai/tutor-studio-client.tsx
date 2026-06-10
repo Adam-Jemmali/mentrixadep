@@ -4,31 +4,26 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { gsap } from "gsap";
-import {
-  deleteStudioPackage,
-  publishStudioPackage,
-  saveStudioPackageDraft,
-  type TutorSessionWithPackage,
-} from "@/app/actions/autoPilot";
+import { deleteStudioPackage, publishStudioPackage, saveStudioPackageDraft, type TutorSessionWithPackage } from "@/features/studio-ai/studio-packages";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import type { SessionAiPackage } from "@/lib/database.types";
-import { formatDate } from "@/lib/time-format";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import type { SessionAiPackage } from "@/shared/types/database";
+import { formatDate } from "@/shared/core/time-format";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/shared/ui/select";
 import { Loader2, MessageSquare, Copy, Save, Send, CheckCircle2, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { Typewriter } from "@/components/ui/typewriter";
-import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
 
 const STREAM_END = "\n__MENTRIXA_STUDIO_END__";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { playMentrixaLoadingOnce } from "@/lib/mentrixa-sounds";
+import { playMentrixaLoadingOnce } from "@/shared/integrations/mentrixa-sounds";
 
 export default function StudentDashboardLoading() {
   useEffect(() => {

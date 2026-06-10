@@ -1,5 +1,5 @@
-import { MarketingShellClient } from "@/components/marketing-shell-client";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
+import { MarketingShellClient } from "@/features/marketing/marketing-shell-client";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 
 /**
  * Public marketing shell only — no `RootLayoutClient` / Supabase Realtime in this layout chunk.

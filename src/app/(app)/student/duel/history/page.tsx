@@ -1,14 +1,11 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
-import {
-  getDuelHistorySummary,
-  listStudentDuels,
-} from "@/app/actions/duel";
-import { getDivisionsCatalog } from "@/app/actions/quest";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getHeadToHeadSummary } from "@/lib/duel-reward";
-import { Button } from "@/components/ui/button";
-import { DuelRowActions } from "@/components/student/duel-row-actions";
+import { requireRole } from "@/shared/core/auth";
+import { getDuelHistorySummary, listStudentDuels } from "@/features/duels/duel-reads";
+import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { getHeadToHeadSummary } from "@/features/duels/duel-reward";
+import { Button } from "@/shared/ui/button";
+import { DuelRowActions } from "@/features/student-profile/ui/duel-row-actions";
 
 export const metadata = { title: "Duel history · Mentrixa" };
 

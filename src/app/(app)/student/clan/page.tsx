@@ -1,15 +1,17 @@
+import { getTopPublicClans } from "@/features/clans/clan-reads";
+import { getMyClan } from "@/features/clans/clan-membership";
 import Link from "next/link";
 import Image from "next/image";
-import { requireRole } from "@/lib/auth";
-import { getMyClan } from "@/app/actions/clan";
-import { getTopPublicClans } from "@/app/actions/clan-dashboard";
-import { Button } from "@/components/ui/button";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { clanArenaLightSection, clanArenaLightSubtitle, clanArenaLightTitle } from "@/lib/clan-light-form-ui";
+import { requireRole } from "@/shared/core/auth";
+
+
+import { Button } from "@/shared/ui/button";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { clanArenaLightSection, clanArenaLightSubtitle, clanArenaLightTitle } from "@/features/clans/clan-light-form-ui";
 import { ClanBrowseClient } from "./clan-browse-client";
-import { Typewriter } from "@/components/ui/typewriter";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { BackButton } from "@/components/ui/back-button";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { BackButton } from "@/shared/ui/back-button";
 
 export const metadata = { title: "Clans · Mentrixa" };
 

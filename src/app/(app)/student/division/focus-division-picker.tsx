@@ -1,12 +1,12 @@
 "use client";
 
-import { DivisionPickerCards } from "@/components/student/division-picker-cards";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { cn } from "@/lib/utils";
+import { DivisionPickerCards } from "@/features/student-profile/ui/division-picker-cards";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { cn } from "@/shared/core/utils";
 import {
   arenaDivisionFocus,
   arenaDivisionPanelClasses,
-} from "@/lib/arena-division-focus";
+} from "@/features/divisions/arena-division-focus";
 
 interface Props {
   focusedDivisionKey: string | null;

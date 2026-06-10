@@ -3,30 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  submitSkillDuelAnswers,
-  submitSkillDuelQuestionAnswer,
-  withdrawPendingSkillDuel,
-  hideSkillDuelFromList,
-  acceptQueueMatch,
-  declineQueueMatch,
-  getQueueMatchAcceptance,
-  type DuelPublicRow,
-} from "@/app/actions/duel";
-import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
-import { trackClientEvent } from "@/lib/use-track";
+import { submitSkillDuelAnswers, submitSkillDuelQuestionAnswer, withdrawPendingSkillDuel, hideSkillDuelFromList } from "@/features/duels/duel-gameplay";
+import { acceptQueueMatch, declineQueueMatch, getQueueMatchAcceptance } from "@/features/duels/duel-queue";
+import { type DuelPublicRow } from "@/features/duels/duel-reads";
+import { Button } from "@/shared/ui/button";
+import { createClient } from "@/shared/integrations/supabase/client";
+import { trackClientEvent } from "@/shared/integrations/use-track";
 import {
   DUEL_SECONDS_PER_QUESTION,
   DUEL_QUESTION_COUNT,
-} from "@/lib/duel-constants";
-import { XP } from "@/lib/xp-constants";
-import { useRealtimeRouterRefresh } from "@/hooks/use-realtime-router-refresh";
-import { safeRouterRefresh } from "@/lib/safe-router-refresh";
-import { SkillDuelChoiceBoard } from "@/components/duel/skill-duel-choice-board";
-import { SkillDuelResults } from "@/components/duel/skill-duel-results";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { stripGuestTryPromptDecorators } from "@/lib/guest-try-types";
+} from "@/features/duels/duel-constants";
+import { XP } from "@/features/xp/xp-constants";
+import { useRealtimeRouterRefresh } from "@/shared/core/hooks/use-realtime-router-refresh";
+import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
+import { SkillDuelChoiceBoard } from "@/features/duels/ui/skill-duel-choice-board";
+import { SkillDuelResults } from "@/features/duels/ui/skill-duel-results";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 

@@ -13,21 +13,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { BookingPriceBreakdown } from "@/components/booking-price-breakdown";
-import { splitSessionPriceCents } from "@/lib/booking-pricing";
-import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
-import { formatSlotRangeInZone } from "@/lib/time-format";
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { BookingPriceBreakdown } from "@/features/booking/booking-price-breakdown";
+import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
+import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { AccountSecurityPanel } from "@/components/account-security-panel";
-import { Typewriter } from "@/components/ui/typewriter";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { APP_TIMEZONES } from "@/lib/timezones";
-import { updateUserSettings, type UserSettings } from "@/app/actions/settings";
-import { cn } from "@/lib/utils";
-import { TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES } from "@/lib/teaching-defaults";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
+import { Label } from "@/shared/ui/label";
+import { APP_TIMEZONES } from "@/shared/core/timezones";
+import { updateUserSettings, type UserSettings } from "@/features/settings/user-settings";
+import { cn } from "@/shared/core/utils";
+import { TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES } from "@/features/tutor/teaching-defaults";
 import { TutorQualityBadge } from "@/components/tutor-quality-badge";
 gsap.registerPlugin(ScrollTrigger);
 

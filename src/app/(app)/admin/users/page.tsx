@@ -1,4 +1,6 @@
-import { getAllUsers, getAllUnverifiedTutorCourses } from "@/app/actions/admin";
+import { getAllUsers } from "@/features/admin/admin-users";
+import { getAllUnverifiedTutorCourses } from "@/features/admin/tutor-courses-admin";
+
 import { AdminUsersClient } from "./users-client";
 
 export const dynamic = "force-dynamic";

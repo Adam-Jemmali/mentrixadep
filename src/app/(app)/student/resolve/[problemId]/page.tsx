@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { getResolveProblem } from "@/app/actions/resolve";
+import { getResolveProblem } from "@/features/resolve/resolve";
 import { ResolveProblemClient } from "./resolve-problem-client";
-import { BackButton } from "@/components/ui/back-button";
+import { BackButton } from "@/shared/ui/back-button";
 
 type Props = { params: Promise<{ problemId: string }> };
 

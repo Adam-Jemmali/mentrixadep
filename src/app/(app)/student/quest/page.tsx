@@ -1,4 +1,4 @@
-import { getDivisionsCatalog } from "@/app/actions/quest";
+import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
 import { QuestPageClient } from "./quest-page-client";
 
 export const metadata = { title: "Quest · Mentrixa" };

@@ -3,21 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { ScrollRevealCard } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
+import { Button } from "@/shared/ui/button";
+import { ScrollRevealCard } from "@/shared/ui/card";
 import Link from "next/link";
 import { SessionsList } from "./sessions-list";
 import { SessionRequestsList } from "./session-requests-list";
 import { AvailabilityManager } from "./availability-manager";
 import { AutoApproveToggle } from "./auto-approve-toggle";
-import { CreateAvailabilityCard } from "@/components/ui/create-availability-card";
+import { CreateAvailabilityCard } from "@/shared/ui/create-availability-card";
 import { CourseManager } from "./course-manager";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { formatDate } from "@/lib/time-format";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { TutorHeroGreeting } from "@/components/tutor/tutor-hero-greeting";
-import { Typewriter } from "@/components/ui/typewriter";
+import { formatDate } from "@/shared/core/time-format";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { TutorHeroGreeting } from "@/features/tutor/ui/tutor-hero-greeting";
+import { Typewriter } from "@/shared/ui/typewriter";
 
 type AnySession = {
   id: string;

@@ -5,8 +5,8 @@ import {
   getStudentProgressSnapshot,
   generateShareableProgressUrl,
   type ProgressSnapshot,
-} from "@/app/actions/student-progress";
-import { cn } from "@/lib/utils";
+} from "@/features/learning-path/student-progress";
+import { cn } from "@/shared/core/utils";
 
 function StatCard({ label, value, subtext }: { label: string; value: string | number; subtext?: string }) {
   return (

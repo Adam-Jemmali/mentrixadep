@@ -1,7 +1,10 @@
 "use client";
 
+import { approveRegistrationRequest, rejectRegistrationRequest } from "@/features/admin/registration-queue";
+
+
 import { useState } from "react";
-import { approveRegistrationRequest, rejectRegistrationRequest } from "@/app/actions/admin";
+
 import { useRouter } from "next/navigation";
 
 export function RegistrationActions({ requestId }: { requestId: string }) {

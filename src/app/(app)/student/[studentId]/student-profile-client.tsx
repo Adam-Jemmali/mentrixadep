@@ -3,34 +3,34 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import type { StudentProfileData } from "@/lib/student-profile";
-import { xpTierProgressFraction } from "@/lib/student-profile";
+import type { StudentProfileData } from "@/features/student-profile/student-profile-lib";
+import { xpTierProgressFraction } from "@/features/student-profile/student-profile-lib";
 import {
   updateStudentProfile,
   updateStudentAvatarUrl,
   clearStudentAvatar,
-} from "@/app/actions/student-profile";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { APP_TIMEZONES } from "@/lib/timezones";
+} from "@/features/student-profile/student-profile";
+import { createClient } from "@/shared/integrations/supabase/client";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
+import { Label } from "@/shared/ui/label";
+import { APP_TIMEZONES } from "@/shared/core/timezones";
 import {
   motion,
   AnimatePresence,
 } from "framer-motion";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import type { UserSettings } from "@/app/actions/settings";
-import type { ReferralDashboardData } from "@/app/actions/referral";
-import { ReferralProgramSection } from "@/components/student/referral-program-section";
-import { DivisionFocusSelect } from "@/components/student/division-focus-select";
+import { cn } from "@/shared/core/utils";
+import type { UserSettings } from "@/features/settings/user-settings";
+import type { ReferralDashboardData } from "@/features/referrals/referrals";
+import { ReferralProgramSection } from "@/features/student-profile/ui/referral-program-section";
+import { DivisionFocusSelect } from "@/features/student-profile/ui/division-focus-select";
 import { AccountSecurityPanel } from "@/components/account-security-panel";
-import { Typewriter } from "@/components/ui/typewriter";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/lib/rank-icons";
-import { RankBadge } from "@/components/student/rank-badge";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 
 // ─── Shared Battle UI Components ─────────────────────────────────────────────
 

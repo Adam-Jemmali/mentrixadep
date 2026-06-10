@@ -2,10 +2,10 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { submitResolveProblem } from "@/app/actions/resolve";
+import { submitResolveProblem } from "@/features/resolve/resolve";
 import katex from "katex";
 import "katex/dist/katex.min.css";
-import { resolveIntakeSchema } from "@/lib/schemas";
+import { resolveIntakeSchema } from "@/shared/core/schemas";
 
 type Difficulty = "no_idea" | "concept_but_stuck" | "minor_confusion";
 

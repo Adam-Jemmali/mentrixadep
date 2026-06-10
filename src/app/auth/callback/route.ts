@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/shared/integrations/supabase/server";
 import { redirect } from "next/navigation";
-import { resolveOAuthSessionRedirect } from "@/app/actions/auth";
-import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
-import { resolvePostAuthDestination } from "@/lib/post-auth-destination";
+import { resolveOAuthSessionRedirect } from "@/features/auth/auth";
+import { syncApprovedWaitlistToUserProfile } from "@/features/registration/waitlist-user-sync";
+import { resolvePostAuthDestination } from "@/shared/core/post-auth-destination";
 
 const OTP_TYPES = [
   "signup",

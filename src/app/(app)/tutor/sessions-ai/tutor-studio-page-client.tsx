@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { BackButton } from "@/components/ui/back-button";
-import { Typewriter } from "@/components/ui/typewriter";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { BackButton } from "@/shared/ui/back-button";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { TutorStudioClient } from "./tutor-studio-client";
 import { AdminViewProvider } from "@/components/admin-view-context";
 import { TutorStudioRealtimeRefresh } from "@/components/tutor-studio-realtime-refresh";
-import type { TutorSessionWithPackage } from "@/app/actions/autoPilot";
+import type { TutorSessionWithPackage } from "@/features/studio-ai/studio-packages";
 
 type Props = {
   sessions: TutorSessionWithPackage[];

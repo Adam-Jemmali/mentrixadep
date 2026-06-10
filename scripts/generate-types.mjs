@@ -10,7 +10,7 @@
  *   - NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env
  *   - supabase CLI installed: npx supabase gen types typescript
  *
- * The generated types are written to src/lib/supabase-generated.types.ts.
+ * The generated types are written to src/shared/types/supabase-generated.types.ts.
  * The hand-maintained database.types.ts remains for app-level interfaces.
  */
 
@@ -46,7 +46,7 @@ if (!supabaseUrl) {
 }
 
 const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
-const outFile = resolve(root, "src/lib/supabase-generated.types.ts");
+const outFile = resolve(root, "src/shared/types/supabase-generated.types.ts");
 
 console.log(`Generating types for project: ${projectRef}`);
 console.log(`Output: ${outFile}`);

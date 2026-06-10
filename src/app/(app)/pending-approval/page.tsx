@@ -1,12 +1,12 @@
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/shared/integrations/supabase/server";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { redirect } from "next/navigation";
-import { PendingApprovalContent } from "@/components/auth/PendingApprovalContent";
-import { PendingApprovalRealtimeRefresh } from "@/components/auth/PendingApprovalRealtimeRefresh";
-import { getPostApprovalRedirectPath } from "@/lib/post-approval-redirect";
-import { normalizeAccessStatus } from "@/lib/user-access-status";
-import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
-import { syncApprovedWaitlistToUserProfile } from "@/lib/waitlist-user-sync";
+import { PendingApprovalContent } from "@/features/auth/ui/PendingApprovalContent";
+import { PendingApprovalRealtimeRefresh } from "@/features/auth/ui/PendingApprovalRealtimeRefresh";
+import { getPostApprovalRedirectPath } from "@/shared/core/post-approval-redirect";
+import { normalizeAccessStatus } from "@/shared/core/user-access-status";
+import { fetchRegistrationRequestRow } from "@/features/registration/registration-request-lookup";
+import { syncApprovedWaitlistToUserProfile } from "@/features/registration/waitlist-user-sync";
 
 export default async function PendingApprovalPage() {
   const supabase = await createClient();

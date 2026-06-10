@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { generateSessionPackage } from "@/app/actions/autoPilot";
+import { generateSessionPackage } from "@/features/studio-ai/studio-packages";
 import { useAdminViewContext } from "@/components/admin-view-context";
 
 export function TutorPastAiGenerateButton({

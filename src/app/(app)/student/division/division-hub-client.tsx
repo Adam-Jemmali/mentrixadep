@@ -6,17 +6,17 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { Info, Users } from "lucide-react";
-import type { DivisionHubCard } from "@/app/actions/divisions";
-import { joinDivision } from "@/app/actions/divisions";
-import { getDivisionTheme } from "@/lib/division-ui";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import type { DivisionHubCard } from "@/features/divisions/divisions";
+import { joinDivision } from "@/features/divisions/divisions";
+import { getDivisionTheme } from "@/features/divisions/division-ui";
+import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/core/utils";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   arenaDivisionFocus,
   arenaDivisionCardClasses,
   arenaDivisionPanelClasses,
-} from "@/lib/arena-division-focus";
+} from "@/features/divisions/arena-division-focus";
 
 export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubCard[] }) {
   const router = useRouter();

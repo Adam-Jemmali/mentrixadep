@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
-import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/lib/mentrixa-brand";
+import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
 
 export const dynamic = "force-dynamic";
 

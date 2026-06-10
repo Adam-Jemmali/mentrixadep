@@ -4,9 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { Users, Zap, CreditCard, TrendingUp, ArrowRight, Building2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { Institution } from "@/lib/database.types";
-import type { InstitutionMemberRow } from "@/app/actions/institution";
+import { cn } from "@/shared/core/utils";
+import type { Institution } from "@/shared/types/database";
+import type { InstitutionMemberRow } from "@/features/institutions/institution";
 
 const PLAN_LIMITS: Record<string, number> = { free: 10, basic: 50, pro: Infinity };
 const PLAN_NEXT: Record<string, string> = {

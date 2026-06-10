@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addStudentCourse, removeStudentCourse } from "@/app/actions/student";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { addStudentCourse, removeStudentCourse } from "@/features/booking/student-courses";
+import { Input } from "@/shared/ui/input";
+import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/core/utils";
 
 export type StudentCourseChip = { id: string; course_name: string };
 

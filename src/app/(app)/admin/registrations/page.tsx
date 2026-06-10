@@ -1,4 +1,5 @@
-import { getRegistrationRequests, getAutoApproveRegistrations } from "@/app/actions/admin";
+import { getRegistrationRequests, getAutoApproveRegistrations } from "@/features/admin/registration-queue";
+
 import { AdminRegistrationsClient } from "./registrations-client";
 
 export const dynamic = "force-dynamic";

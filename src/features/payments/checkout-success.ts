@@ -1,0 +1,85 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getStripeServer } from "@/shared/integrations/stripe/server";
+import { bookSessionAsUser } from "@/features/booking/book-session";
+import {
+  getSessionRequestIdByStripeCheckout,
+  hasBookingSyncedForCheckout,
+} from "@/shared/integrations/stripe/booking-sync";
+import { trackEvent } from "@/shared/integrations/analytics";
+
+function redirectToStudent(req: NextRequest, booking: string, reason?: string) {
+  const url = new URL(`/student?booking=${booking}`, req.url);
+  if (reason) url.searchParams.set("reason", reason);
+  if (booking === "success") {
+    url.searchParams.set("sessionsTab", "upcoming");
+    url.hash = "sessions-history";
+  }
+  return NextResponse.redirect(url);
+}
+
+export async function GET(req: NextRequest) {
+  const checkoutSessionId = req.nextUrl.searchParams.get("session_id");
+  if (!checkoutSessionId) {
+    return redirectToStudent(req, "error", "missing_session_id");
+  }
+
+  try {
+    const stripe = getStripeServer();
+    const checkoutSession = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+
+    if (checkoutSession.payment_status !== "paid") {
+      return redirectToStudent(req, "error", "payment_not_completed");
+    }
+
+    const availabilityId =
+      checkoutSession.metadata?.availability_id ??
+      checkoutSession.metadata?.availabilityId;
+    const studentId =
+      checkoutSession.metadata?.student_id ?? checkoutSession.metadata?.studentId;
+    const tutorId =
+      checkoutSession.metadata?.tutor_id ?? checkoutSession.metadata?.tutorId;
+    if (!availabilityId || !studentId) {
+      return redirectToStudent(req, "error", "missing_metadata");
+    }
+
+    try {
+      const result = await bookSessionAsUser(availabilityId, studentId, {
+        stripeCheckoutSessionId: checkoutSession.id,
+      });
+      void trackEvent("checkout_completed", {
+        userId: studentId,
+        properties: {
+          availability_id: availabilityId,
+          amount_cents: checkoutSession.amount_total ?? 0,
+        },
+      });
+      const status =
+        typeof result.request?.status === "string"
+          ? result.request.status.toLowerCase()
+          : "pending";
+      return redirectToStudent(req, "success", status === "approved" ? "approved" : "pending");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      if (err instanceof Error && msg.includes("another learner")) {
+        return redirectToStudent(req, "error", "slot_unavailable");
+      }
+      if (
+        err instanceof Error &&
+        (msg.includes("pending request") || msg.includes("already have"))
+      ) {
+        return redirectToStudent(req, "success", "pending");
+      }
+      if (
+        err instanceof Error &&
+        (await hasBookingSyncedForCheckout(availabilityId, studentId, tutorId))
+      ) {
+        const reqId = await getSessionRequestIdByStripeCheckout(checkoutSession.id);
+        return redirectToStudent(req, "success", reqId ? "approved" : "pending");
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error("[stripe/checkout/success] finalize booking failed:", err);
+    return redirectToStudent(req, "error", "finalize_failed");
+  }
+}

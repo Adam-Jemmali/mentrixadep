@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/time-format";
-import { formatDurationLabel, getSessionDurationMinutes } from "@/lib/stripe-checkout-copy";
+import { requireRole } from "@/shared/core/auth";
+import { createClient } from "@/shared/integrations/supabase/server";
+import { Button } from "@/shared/ui/button";
+import { formatDate } from "@/shared/core/time-format";
+import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
 import { AddToCalendarButton } from "./add-to-calendar-button";
-import { splitSessionPriceCents } from "@/lib/booking-pricing";
-import { formatUsdFromCents } from "@/lib/duel-reward";
-import { Typewriter } from "@/components/ui/typewriter";
-import { GlassTimeCard } from "@/components/ui/glass-time-card";
+import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { formatUsdFromCents } from "@/features/duels/duel-reward";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { GlassTimeCard } from "@/shared/ui/glass-time-card";
 import { CheckCircle2, ChevronRight } from "lucide-react";
 
 interface PageProps {

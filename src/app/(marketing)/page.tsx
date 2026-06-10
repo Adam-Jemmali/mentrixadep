@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { MarketingLandingNav } from "@/components/marketing-landing-nav";
-import { LandingPageClient } from "@/components/landing/v2/landing-page-client";
-import { getSiteUrl, SITE_NAME } from "@/lib/site";
+import { MarketingLandingNav } from "@/features/marketing/marketing-landing-nav";
+import { LandingPageClient } from "@/features/marketing/landing/v2/landing-page-client";
+import { getSiteUrl, SITE_NAME } from "@/shared/core/site";
 
 const V2_DESCRIPTION =
   "The ranked world for learning. Prove what you know with public rank, daily quests, and duels. Free to compete. Book a verified Guide when you need a breakthrough.";

@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { AuthLayout } from "@/components/auth/AuthLayout";
-import { AuthCard } from "@/components/auth/AuthCard";
+import { Button } from "@/shared/ui/button";
+import { AuthLayout } from "@/features/auth/ui/AuthLayout";
+import { AuthCard } from "@/features/auth/ui/AuthCard";
 
 export default function ConfirmResetPage() {
   const router = useRouter();

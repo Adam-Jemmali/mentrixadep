@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getInstitutionById, getInstitutionUsageReport } from "@/app/actions/institution";
+import { getInstitutionById, getInstitutionUsageReport } from "@/features/institutions/institution";
 import { InstitutionUsageClient } from "./usage-client";
 
 export default async function UsagePage({

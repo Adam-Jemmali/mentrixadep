@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/site";
+import { getSiteUrl } from "@/shared/core/site";
 
 /** Public URLs that should be discoverable (no auth wall). `/tutor` is the Guide dashboard — not listed. */
 const publicPaths = [

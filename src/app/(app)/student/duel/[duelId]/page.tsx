@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
-import { getDuelForUser } from "@/app/actions/duel";
+import { requireRole } from "@/shared/core/auth";
+import { getDuelForUser } from "@/features/duels/duel-reads";
 import { DuelPlayClient } from "./duel-play-client";
 import { DuelInviteeActions } from "./duel-invitee-actions";
-import { BackButton } from "@/components/ui/back-button";
+import { BackButton } from "@/shared/ui/back-button";
 
 interface Props {
   params: Promise<{ duelId: string }>;

@@ -1,5 +1,8 @@
 "use client";
 
+import type { PlatformMetrics } from "@/features/admin/admin-dashboard";
+
+
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { gsap } from "gsap";
@@ -16,8 +19,8 @@ import {
   TrendingUp,
   AlertCircle,
 } from "lucide-react";
-import type { PlatformMetrics } from "@/app/actions/admin";
-import type { RegistrationRequest } from "@/lib/database.types";
+
+import type { RegistrationRequest } from "@/shared/types/database";
 
 interface UnverifiedCourse {
   id: string;

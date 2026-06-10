@@ -1,5 +1,5 @@
-import { requireRole } from "@/lib/auth";
-import { getMyKnowledgeGraph } from "@/app/actions/knowledge-graph";
+import { requireRole } from "@/shared/core/auth";
+import { getMyKnowledgeGraph } from "@/features/learning-path/knowledge-graph";
 import { LearningPathClient } from "./learning-path-client";
 import type { Metadata } from "next";
 

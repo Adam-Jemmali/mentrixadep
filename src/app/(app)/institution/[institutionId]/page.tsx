@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getInstitutionById, getInstitutionMonthlyUsage, getInstitutionMembers } from "@/app/actions/institution";
+import { getInstitutionById, getInstitutionMonthlyUsage, getInstitutionMembers } from "@/features/institutions/institution";
 import { InstitutionOverviewClient } from "./overview-client";
 
 export default async function InstitutionOverviewPage({

@@ -5,7 +5,7 @@ import {
   getPopularSubjects,
   getKpiMetrics,
   getDailyEventCounts,
-} from "@/lib/analytics";
+} from "@/shared/integrations/analytics";
 import { AnalyticsDashboardClient } from "./analytics-client";
 
 export const metadata = { title: "Analytics · Mentrixa Admin" };

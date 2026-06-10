@@ -1,4 +1,4 @@
-import { getStudentCourses } from "@/app/actions/student";
+import { getStudentCourses } from "@/features/booking/student-courses";
 import { ResolvePageClient } from "./ResolvePageClient";
 
 export default async function ResolvePage() {

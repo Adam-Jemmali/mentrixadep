@@ -1,13 +1,13 @@
-import { requireRole } from "@/lib/auth";
-import { getDuelHistorySummary, listStudentDuels, getLearnerPreview } from "@/app/actions/duel";
-import { getDivisionsCatalog } from "@/app/actions/quest";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requireRole } from "@/shared/core/auth";
+import { getDuelHistorySummary, listStudentDuels, getLearnerPreview } from "@/features/duels/duel-reads";
+import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { DuelHub } from "./duel-hub";
-import { AccountRankLadder } from "@/components/student/account-rank-ladder";
-import { YourDuelsList } from "@/components/student/your-duels-list";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
+import { AccountRankLadder } from "@/features/student-profile/ui/account-rank-ladder";
+import { YourDuelsList } from "@/features/student-profile/ui/your-duels-list";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
 
 export const metadata = { title: "Skill duels · Mentrixa" };
 

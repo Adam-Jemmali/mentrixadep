@@ -1,4 +1,7 @@
-import { getPlatformMetrics, getRegistrationRequests, getAllUnverifiedTutorCourses } from "@/app/actions/admin";
+import { getPlatformMetrics } from "@/features/admin/admin-dashboard";
+import { getRegistrationRequests } from "@/features/admin/registration-queue";
+import { getAllUnverifiedTutorCourses } from "@/features/admin/tutor-courses-admin";
+
 import { AdminDashboardClient } from "./admin-dashboard-client";
 
 export const dynamic = "force-dynamic";

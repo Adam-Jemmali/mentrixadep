@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getInstitutionById, getInstitutionMonthlyUsage } from "@/app/actions/institution";
+import { getInstitutionById, getInstitutionMonthlyUsage } from "@/features/institutions/institution";
 import { BillingClient } from "./billing-client";
 
 export default async function BillingPage({

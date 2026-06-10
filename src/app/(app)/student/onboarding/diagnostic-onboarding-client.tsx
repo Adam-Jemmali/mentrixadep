@@ -2,9 +2,9 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { submitDiagnosticOnboarding } from "@/app/actions/diagnostic-onboarding";
-import type { DiagnosticInput, DiagnosticResult } from "@/lib/diagnostic-onboarding-plan";
-import { cn } from "@/lib/utils";
+import { submitDiagnosticOnboarding } from "@/features/quest/diagnostic-onboarding";
+import type { DiagnosticInput, DiagnosticResult } from "@/features/quest/diagnostic-onboarding-plan";
+import { cn } from "@/shared/core/utils";
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 const TOTAL_STEPS = 8;

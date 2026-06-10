@@ -3,10 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Trash2, Search, Shield } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { addInstitutionMemberByEmail, removeInstitutionMember } from "@/app/actions/institution";
-import type { InstitutionMemberRow } from "@/app/actions/institution";
-import type { InstitutionPlan } from "@/lib/database.types";
+import { cn } from "@/shared/core/utils";
+import { addInstitutionMemberByEmail, removeInstitutionMember } from "@/features/institutions/institution";
+import type { InstitutionMemberRow } from "@/features/institutions/institution";
+import type { InstitutionPlan } from "@/shared/types/database";
 
 const PLAN_LIMITS: Record<InstitutionPlan, number | null> = {
   free: 10,

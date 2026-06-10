@@ -5,18 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { XP } from "@/lib/xp-constants";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { Typewriter } from "@/components/ui/typewriter";
-import { BubbleText } from "@/components/ui/bubble-text";
-import { GooeyText } from "@/components/ui/gooey-text-morphing";
-import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { getDivisionTheme, divisionTeaser } from "@/lib/division-ui";
+import { Button } from "@/shared/ui/button";
+import { XP } from "@/features/xp/xp-constants";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { BubbleText } from "@/shared/ui/bubble-text";
+import { GooeyText } from "@/shared/ui/gooey-text-morphing";
+import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
+import { cn } from "@/shared/core/utils";
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
+import { getDivisionTheme, divisionTeaser } from "@/features/divisions/division-ui";
 import {
   formatGuestTryReferenceAnswerDisplay,
   gradeGuestShortAnswer,
@@ -24,7 +24,7 @@ import {
   isPlayableGuestTryQuestion,
   stripGuestTryPromptDecorators,
   type GuestTryQuestion,
-} from "@/lib/guest-try-types";
+} from "@/features/quest/guest-try-types";
 
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
   if (!x || typeof x !== "object") return false;
@@ -162,7 +162,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
   // Trigger confetti when entering results phase
   useEffect(() => {
     if (phase === "done") {
-      import("@/lib/confetti-burst").then((m) => {
+      import("@/features/xp/confetti-burst").then((m) => {
         void m.fireRatingConfetti();
         if (isPerfect) setTimeout(() => void m.fireLevelUpConfetti(), 1200);
       });

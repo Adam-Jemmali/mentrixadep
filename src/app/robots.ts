@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/site";
+import { getSiteUrl } from "@/shared/core/site";
 
 /**
  * Do not disallow `/tutor/` — public Guide profiles live at `/tutor/[id]` and should be crawlable.

@@ -1,11 +1,11 @@
 "use client";
 
 import { TutorAvatar } from "./tutor-avatar";
-import { JoinVideoCallButton } from "@/components/join-video-call-button";
+import { JoinVideoCallButton } from "@/features/video/join-video-call-button";
 import { CancelSessionButton } from "../cancel-session-button";
-import { formatDateInZone, formatTimeInZone } from "@/lib/time-format";
-import { Badge } from "@/components/ui/badge";
-import type { StudentSessionTutorProfile } from "@/app/actions/student";
+import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
+import { Badge } from "@/shared/ui/badge";
+import type { StudentSessionTutorProfile } from "@/features/booking/session-lists";
 
 type Session = {
   id: string;

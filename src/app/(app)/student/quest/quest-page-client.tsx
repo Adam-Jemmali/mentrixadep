@@ -1,14 +1,14 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { QuestClassicWorkspace } from "./quest-classic-workspace";
 import { QuestPracticeWorkspace } from "./quest-practice-workspace";
-import { Typewriter } from "@/components/ui/typewriter";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { BackButton } from "@/components/ui/back-button";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { TiltCard } from "@/shared/ui/tilt-card";
+import { BackButton } from "@/shared/ui/back-button";
 
 export function QuestPageClient({
   subjectOptions,

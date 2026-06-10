@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createAvailabilitySlots } from "@/app/actions/tutor";
+import { createAvailabilitySlots } from "@/features/tutor/availability";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -11,18 +11,18 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { MENTRIXA_LOGO_PNG } from "@/lib/mentrixa-brand";
-import { APP_TIMEZONES } from "@/lib/timezones";
-import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/lib/availability-schemas";
+} from "@/shared/ui/select";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { APP_TIMEZONES } from "@/shared/core/timezones";
+import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/features/booking/availability-schemas";
 import {
   describeAvailabilityScheduleIssue,
   earliestFirstOccurrenceStartUtc,
-} from "@/lib/availability-slot-builder";
-import { addMinutesToHHmm } from "@/lib/teaching-defaults";
+} from "@/features/booking/availability-slot-builder";
+import { addMinutesToHHmm } from "@/features/tutor/teaching-defaults";
 
 const WEEKDAYS: { value: number; label: string }[] = [
   { value: 0, label: "Mon" },

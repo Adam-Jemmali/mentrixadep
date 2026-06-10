@@ -60,45 +60,43 @@ A full-stack Next.js application for managing online tutoring sessions with role
 
 ## Project Structure
 
+Vertical slice layout — business logic in `features/`, cross-cutting code in `shared/`, Next.js routes in `app/` (thin shells).
+
 ```
 mentrixa/
 ├── src/
-│   ├── app/
-│   │   ├── actions/           # Server actions (admin, auth, recordings, sessions, student, tutor, video)
-│   │   ├── admin/             # Admin dashboard + registration actions
-│   │   ├── api/cron/          # Cron endpoint (auto-complete sessions)
-│   │   ├── auth/              # Sign in, sign up, OAuth callback
-│   │   ├── dashboard/         # Shared dashboard page
-│   │   ├── pending-approval/  # Waiting screen for unapproved users
-│   │   ├── student/           # Student dashboard pages
-│   │   ├── tutor/             # Tutor dashboard pages
-│   │   ├── video/             # Video call page
-│   │   ├── layout.tsx         # Root layout
-│   │   ├── page.tsx           # Landing page
-│   │   └── globals.css        # Global styles + theme
-│   ├── components/
-│   │   ├── landing/           # Landing page sections (Header, Hero, HowItWorks, etc.)
-│   │   ├── ui/                # Primitives (Button, Card, Input, Label, Tabs)
-│   │   ├── video-call.tsx     # WebRTC video call + recording component
-│   │   ├── join-video-call-button.tsx
-│   │   ├── navigation.tsx     # Authenticated nav bar
-│   │   ├── error-boundary.tsx
-│   │   ├── loading.tsx
-│   │   └── empty-state.tsx
-│   ├── lib/
-│   │   ├── supabase/          # Supabase clients (client, server, admin)
-│   │   ├── auth.ts            # getCurrentUser, requireAuth, requireRole
-│   │   ├── cache.ts           # Simple in-memory cache (availability data)
-│   │   ├── database.types.ts  # TypeScript interfaces for all tables
-│   │   ├── env.ts             # Type-safe env variable access
-│   │   ├── security.ts        # Validation, sanitization, rate limiting, headers
-│   │   ├── time-format.ts     # Date/time formatting helpers
-│   │   ├── utils.ts           # cn() utility (clsx + tailwind-merge)
-│   │   └── webrtc.ts          # WebRTC config, peer connection, media helpers
-│   └── proxy.ts               # Auth redirects, role gating, security headers (Next 16 proxy)
-├── supabase/
-│   ├── 001-schema.sql         # Complete schema, RLS, triggers, indexes
-│   └── 002-seed-admin.sql     # Seed admin user after auth signup
+│   ├── features/              # Vertical slices (server actions + domain helpers per feature)
+│   │   ├── auth/              # Sign-in, OAuth, role selection
+│   │   ├── booking/           # Session booking, availability, cancellation
+│   │   ├── tutor/             # Tutor dashboard, availability, courses
+│   │   ├── duels/             # Skill duels
+│   │   ├── quest/             # Quest solver & practice
+│   │   ├── payments/          # Stripe Connect & payouts
+│   │   ├── jobs/              # Background job queue
+│   │   └── …                  # See LEAN_ARCHITECTURE_PLAN.md
+│   ├── shared/
+│   │   ├── core/              # Auth, security, env, cache, proxy logic
+│   │   ├── integrations/      # Supabase, Stripe, email, AI, observability
+│   │   ├── ui/                # Design system primitives (Button, Card, …)
+│   │   └── types/             # database.types.ts
+│   ├── app/                   # Next.js App Router (pages + API route shells)
+│   │   ├── (app)/             # Authenticated app routes
+│   │   ├── (marketing)/       # Landing, contact, try demo
+│   │   ├── api/               # API routes & crons
+│   │   └── auth/              # Auth pages
+│   ├── components/            # App shell only (navbars, layout, illustrations)
+│   ├── proxy.ts               # Middleware entry (re-exports shared/core/proxy)
+│   └── globals.css
+```
+
+Legacy paths removed: `src/lib/`, `src/app/actions/`. All 40 API routes are thin shells re-exporting from `features/`.
+
+See [`LEAN_ARCHITECTURE_PLAN.md`](LEAN_ARCHITECTURE_PLAN.md) for the full domain map and migration roadmap.
+
+```
+mentrixa/
+├── supabase/                  # SQL migrations
+├── scripts/migrate-architecture.mjs
 ├── tailwind.config.ts
 ├── tsconfig.json
 └── package.json

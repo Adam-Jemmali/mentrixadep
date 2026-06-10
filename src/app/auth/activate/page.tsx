@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { isWaitlistEnabled } from "@/lib/flags";
-import { fetchRegistrationRequestRow } from "@/lib/registration-request-lookup";
-import { ActivateAuthClient } from "@/components/auth/activate-auth-client";
+import { createClient } from "@/shared/integrations/supabase/server";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { isWaitlistEnabled } from "@/shared/core/flags";
+import { fetchRegistrationRequestRow } from "@/features/registration/registration-request-lookup";
+import { ActivateAuthClient } from "@/features/auth/ui/activate-auth-client";
 import {
   authUserHasGoogleProvider,
   findAuthUserByEmail,
   isGoogleOnlyAuthUser,
-} from "@/lib/auth-user-lookup";
-import { resolvePostAuthDestination } from "@/lib/post-auth-destination";
+} from "@/shared/core/auth-user-lookup";
+import { resolvePostAuthDestination } from "@/shared/core/post-auth-destination";
 
 function normalizeEmail(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();

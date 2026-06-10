@@ -1,0 +1,36 @@
+import type { BackgroundJobRow } from "@/features/jobs/types";
+import { handleAnalyticsJob } from "@/features/jobs/handlers/analytics";
+import { handleBriefJob } from "@/features/jobs/handlers/brief";
+import { handleEmailJob } from "@/features/jobs/handlers/email";
+import { handlePayoutLedgerJob } from "@/features/jobs/handlers/payout";
+import { handleStudioPackageJob } from "@/features/jobs/handlers/studio-package";
+import { handleTranscriptionJob } from "@/features/jobs/handlers/transcription";
+
+export async function runJobHandler(job: BackgroundJobRow): Promise<void> {
+  const payload = job.payload ?? {};
+
+  switch (job.job_type) {
+    case "email.send":
+      await handleEmailJob(payload as Parameters<typeof handleEmailJob>[0]);
+      break;
+    case "ai.studio_package":
+      await handleStudioPackageJob(payload as Parameters<typeof handleStudioPackageJob>[0]);
+      break;
+    case "ai.brief":
+      await handleBriefJob(payload as Parameters<typeof handleBriefJob>[0]);
+      break;
+    case "ai.transcription":
+      await handleTranscriptionJob();
+      break;
+    case "payout.ledger":
+      await handlePayoutLedgerJob(payload as Parameters<typeof handlePayoutLedgerJob>[0]);
+      break;
+    case "analytics.track":
+      await handleAnalyticsJob(payload as Parameters<typeof handleAnalyticsJob>[0]);
+      break;
+    case "booking.fulfill":
+      throw new Error("booking.fulfill handler not yet wired");
+    default:
+      throw new Error(`Unknown job type: ${job.job_type}`);
+  }
+}

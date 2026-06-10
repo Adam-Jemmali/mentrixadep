@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteUrl } from "@/lib/site";
+import { getSiteUrl } from "@/shared/core/site";
 
 export const metadata: Metadata = {
   title: "Sign up · Mentrixa",

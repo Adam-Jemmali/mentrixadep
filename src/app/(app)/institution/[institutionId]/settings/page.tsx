@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getInstitutionById } from "@/app/actions/institution";
+import { getInstitutionById } from "@/features/institutions/institution";
 import { InstitutionSettingsClient } from "./settings-client";
 
 export default async function SettingsPage({

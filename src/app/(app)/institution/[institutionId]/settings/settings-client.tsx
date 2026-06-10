@@ -4,9 +4,9 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Building2, ImageIcon } from "lucide-react";
-import { updateInstitution } from "@/app/actions/institution";
-import type { Institution } from "@/lib/database.types";
-import { Button } from "@/components/ui/button";
+import { updateInstitution } from "@/features/institutions/institution";
+import type { Institution } from "@/shared/types/database";
+import { Button } from "@/shared/ui/button";
 
 export function InstitutionSettingsClient({ institution }: { institution: Institution }) {
   const router = useRouter();

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { setUserRole } from "@/app/actions/auth";
+import { setUserRole } from "@/features/auth/auth";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { BackButton } from "@/components/ui/back-button";
-import { getRoleHomePath } from "@/lib/role-home";
-import type { UserRole } from "@/lib/database.types";
+import { BackButton } from "@/shared/ui/back-button";
+import { getRoleHomePath } from "@/shared/core/role-home";
+import type { UserRole } from "@/shared/types/database";
 
 type Role = "student" | "tutor";
 

@@ -1,5 +1,10 @@
 "use client";
 
+import { suspendUser, unsuspendUser } from "@/features/admin/admin-users";
+import type { AdminUser } from "@/features/admin/admin-users";
+import { verifyTutorCourse } from "@/features/admin/tutor-courses-admin";
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -10,9 +15,9 @@ import {
   MoreHorizontal,
   X,
 } from "lucide-react";
-import { suspendUser, unsuspendUser, verifyTutorCourse } from "@/app/actions/admin";
-import type { AdminUser } from "@/app/actions/admin";
-import { Button } from "@/components/ui/button";
+
+
+import { Button } from "@/shared/ui/button";
 
 type UnverifiedCourse = {
   id: string;

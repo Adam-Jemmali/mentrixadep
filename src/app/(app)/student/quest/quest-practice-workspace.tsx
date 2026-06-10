@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/ui/back-button";
-import { Input } from "@/components/ui/input";
-import { PromptWithMath } from "@/components/quest/prompt-with-math";
-import { ShareScoreCardButton } from "@/components/quest/share-score-card";
+import { Button } from "@/shared/ui/button";
+import { BackButton } from "@/shared/ui/back-button";
+import { Input } from "@/shared/ui/input";
+import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import { ShareScoreCardButton } from "@/features/quest/ui/share-score-card";
 import {
   createPracticeQuest,
   startPracticeSession,
@@ -16,11 +16,11 @@ import {
   submitPracticeWritten,
   finalizePracticeQuest,
   type PracticeQuestionPublic,
-} from "@/app/actions/practice-quest";
-import { emitXpAward } from "@/lib/xp-events";
-import type { PracticeDifficulty, PracticePackType } from "@/lib/practice-quest-types";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { DivisionFocusSelect } from "@/components/student/division-focus-select";
+} from "@/features/quest/practice-quest";
+import { emitXpAward } from "@/features/xp/xp-events";
+import type { PracticeDifficulty, PracticePackType } from "@/features/quest/practice-quest-types";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { DivisionFocusSelect } from "@/features/student-profile/ui/division-focus-select";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "beginner", label: "Beginner" },

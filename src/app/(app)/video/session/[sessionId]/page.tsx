@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { validateJoinRequest } from "@/app/actions/video";
-import { getCurrentUser } from "@/lib/auth";
-import { getRoleHomePath } from "@/lib/role-home";
-import { VideoCall } from "@/components/video-call";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { validateJoinRequest } from "@/features/video/video";
+import { getCurrentUser } from "@/shared/core/auth";
+import { getRoleHomePath } from "@/shared/core/role-home";
+import { VideoCall } from "@/features/video/video-call";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
 
 interface VideoSessionPageProps {
   params: Promise<{ sessionId: string }>;
@@ -28,7 +28,7 @@ export default async function VideoSessionPage({
   } catch (error) {
     // If room doesn't exist, try to create it
     if (error instanceof Error && error.message.includes("not found")) {
-      const { createVideoRoom } = await import("@/app/actions/video");
+      const { createVideoRoom } = await import("@/features/video/video");
       try {
         const createResult = await createVideoRoom(sessionId);
         if (createResult.success && createResult.room) {

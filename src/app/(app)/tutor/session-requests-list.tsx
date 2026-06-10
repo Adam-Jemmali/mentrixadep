@@ -5,10 +5,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import { Building2 } from "lucide-react";
-import { approveSessionRequest, rejectSessionRequest } from "@/app/actions/tutor";
+import { approveSessionRequest, rejectSessionRequest } from "@/features/tutor/session-requests";
 import { useAdminViewContext } from "@/components/admin-view-context";
-import { formatSlotRangeInZone } from "@/lib/time-format";
-import { Button } from "@/components/ui/button";
+import { formatSlotRangeInZone } from "@/shared/core/time-format";
+import { Button } from "@/shared/ui/button";
 
 interface SessionRequest {
   id: string;

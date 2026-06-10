@@ -1,5 +1,5 @@
-import { requireRole } from "@/lib/auth";
-import { getVerificationQueue, getVerificationStats } from "@/app/actions/verification";
+import { requireRole } from "@/shared/core/auth";
+import { getVerificationQueue, getVerificationStats } from "@/features/verification/verification-queue";
 import { VerificationClient } from "./verification-client";
 
 export const dynamic = "force-dynamic";

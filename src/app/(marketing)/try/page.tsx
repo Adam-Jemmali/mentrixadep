@@ -1,11 +1,11 @@
 import { GuestQuestClient } from "./guest-quest-client";
-import { getDivisionsCatalog } from "@/app/actions/quest";
-import { HeroMentrixerBounce } from "@/components/student/hero-mentrixer-bounce";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
-import { BackButton } from "@/components/ui/back-button";
-import { ParticleTextEffect } from "@/components/ui/particle-text-effect";
-import { Typewriter } from "@/components/ui/typewriter";
-import { TiltCard } from "@/components/ui/tilt-card";
+import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
+import { HeroMentrixerBounce } from "@/features/student-profile/ui/hero-mentrixer-bounce";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { BackButton } from "@/shared/ui/back-button";
+import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
+import { Typewriter } from "@/shared/ui/typewriter";
+import { TiltCard } from "@/shared/ui/tilt-card";
 
 export default async function TryPage() {
   const divisions = await getDivisionsCatalog();

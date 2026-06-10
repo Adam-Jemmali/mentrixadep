@@ -1,12 +1,16 @@
 "use client";
 
+import { searchPublicClans } from "@/features/clans/clan-reads";
+import type { PublicClanBrowseRow } from "@/features/clans/clan-reads";
+import { requestJoinPublicClan } from "@/features/clans/clan-membership";
+
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { requestJoinPublicClan } from "@/app/actions/clan";
-import { searchPublicClans, type PublicClanBrowseRow } from "@/app/actions/clan-dashboard";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
+
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
 import {
   clanArenaLightMeta,
   clanArenaLightRowMuted,
@@ -15,9 +19,9 @@ import {
   clanArenaOutlineButton,
   clanArenaPrimaryButton,
   clanLightInput,
-} from "@/lib/clan-light-form-ui";
-import { resolveDivisionFocusIcon } from "@/lib/division-focus-icons";
-import { cn } from "@/lib/utils";
+} from "@/features/clans/clan-light-form-ui";
+import { resolveDivisionFocusIcon } from "@/features/divisions/division-focus-icons";
+import { cn } from "@/shared/core/utils";
 
 function ClanBrowseRow({
   row,

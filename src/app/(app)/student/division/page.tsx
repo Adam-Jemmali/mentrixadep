@@ -1,6 +1,6 @@
-import { requireRole } from "@/lib/auth";
-import { getDivisionHubCards } from "@/app/actions/divisions";
-import { mentrixStudent } from "@/lib/mentrix-student-ui";
+import { requireRole } from "@/shared/core/auth";
+import { getDivisionHubCards } from "@/features/divisions/divisions";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { DivisionHubClient } from "./division-hub-client";
 
 export const metadata = { title: "Divisions · Mentrixa" };

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTutorQualityScore } from "@/app/actions/tutor-quality";
-import { getBadgeLabel, getBadgeColorClass, type TutorQualityScore } from "@/lib/tutor-quality";
-import { cn } from "@/lib/utils";
+import { getTutorQualityScore } from "@/features/tutor/tutor-quality";
+import { getBadgeLabel, getBadgeColorClass, type TutorQualityScore } from "@/features/tutor/tutor-quality-lib";
+import { cn } from "@/shared/core/utils";
 
 export function TutorQualityBadge({ tutorId }: { tutorId: string }) {
   const [score, setScore] = useState<TutorQualityScore | null>(null);
