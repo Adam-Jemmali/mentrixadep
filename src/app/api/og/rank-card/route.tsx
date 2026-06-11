@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getRankCardByUsername } from "@/features/rank-card/reads";
+import { loadOgRankCardData } from "@/features/rank-card/og-rank-card-data";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 
 export const runtime = "edge";
@@ -11,14 +11,15 @@ export async function GET(request: Request) {
     return new Response("Missing username", { status: 400 });
   }
 
-  const card = await getRankCardByUsername(username, { skipAnalytics: true });
-  if (!card || card.isPrivate) {
+  const card = await loadOgRankCardData(username);
+  if (card.status === "not_found") {
+    return new Response("Not found", { status: 404 });
+  }
+  if (card.status === "private") {
     return new Response("Not found", { status: 404 });
   }
 
   const rankVisual = getAccountRankByLevel(card.globalRankLevel);
-  const top = card.topSubject;
-  const subjectLine = top ? `${top.subject} · ${top.currentAccuracy}% accuracy` : "Competitive arena record";
 
   return new ImageResponse(
     (
@@ -41,7 +42,15 @@ export async function GET(request: Request) {
               MENTRIXA
             </div>
             <div style={{ fontSize: 48, fontWeight: 900, fontStyle: "italic" }}>{card.displayName}</div>
-            <div style={{ fontSize: 22, color: rankVisual.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+            <div
+              style={{
+                fontSize: 22,
+                color: rankVisual.color,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+              }}
+            >
               {normalizeRankTitle(card.globalRankTitle)}
             </div>
           </div>
@@ -75,7 +84,7 @@ export async function GET(request: Request) {
           <div style={{ fontSize: 16, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.15em" }}>
             Verified competitive performance
           </div>
-          <div style={{ marginTop: 12, fontSize: 32, fontWeight: 700 }}>{subjectLine}</div>
+          <div style={{ marginTop: 12, fontSize: 32, fontWeight: 700 }}>{card.subjectLine}</div>
           <div style={{ marginTop: 8, fontSize: 18, color: "#64748b" }}>
             mentrixa.one/rank/{username}
           </div>
