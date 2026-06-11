@@ -32,6 +32,8 @@ export type EmailJobPayload = {
     | "session_reminder_tutor"
     | "session_reminder_student"
     | "pre_session_brief"
+    | "progress_snapshot"
+    | "breakthrough_guide"
     | "raw";
   to: string;
   /** Template-specific data or raw email fields */

@@ -77,7 +77,7 @@ export function HeroRankOrbitGame() {
   const { canLoop, cinematic, mounted } = useLandingMotion();
   const loop = canLoop && !reducedMotion;
 
-  const [xp, setXp] = useState(2885);
+  const [xp] = useState(0);
   const [tray, setTray] = useState<AccountRankKey[]>(STABLE_TRAY_ORDER);
   const [placed, setPlaced] = useState<Partial<Record<number, AccountRankKey>>>({});
   const [selectedKey, setSelectedKey] = useState<AccountRankKey | null>(null);
@@ -99,14 +99,6 @@ export function HeroRankOrbitGame() {
   useEffect(() => {
     setTray(shuffleKeys(ACCOUNT_RANK_VISUALS.map((r) => r.key)));
   }, []);
-
-  useEffect(() => {
-    if (!loop) return;
-    const id = window.setInterval(() => {
-      setXp((v) => v + Math.floor(Math.random() * 12) + 3);
-    }, 2800);
-    return () => window.clearInterval(id);
-  }, [loop]);
 
   useEffect(() => {
     if (gameLocked) return;
@@ -226,7 +218,7 @@ export function HeroRankOrbitGame() {
 
       <div className="mb-3 flex items-center justify-between gap-2 px-1">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300/90">
-          {placedCount}/{ACCOUNT_RANK_VISUALS.length} ranks
+          {placedCount}/{ACCOUNT_RANK_VISUALS.length} ranks. Your rank starts here.
         </p>
 
         {!gameLocked ? (
@@ -338,7 +330,7 @@ export function HeroRankOrbitGame() {
                 sizes="28px"
               />
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-indigo-300">Live XP</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-indigo-300">Your XP</span>
             <span className="text-xl font-black tabular-nums text-white">
               {cinematic ? (
                 <NumberFlow value={xp} transformTiming={{ duration: 700, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }} />

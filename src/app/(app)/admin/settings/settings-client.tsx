@@ -474,22 +474,6 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
             </div>
           </SettingRow>
           <SettingRow
-            label="Clans"
-            description="Enable team-based communities where learners can form groups and compete."
-            img="/images/clan.webp"
-          >
-            <div className="flex items-center gap-3">
-              {savedKey === "feature_clans_enabled" && (
-                <span className="text-[11px] text-emerald-600 font-medium">Saved</span>
-              )}
-              <Toggle
-                checked={settings.clansEnabled}
-                disabled={isPending}
-                onChange={(v) => updateToggle("feature_clans_enabled", "clansEnabled", "enabled", v)}
-              />
-            </div>
-          </SettingRow>
-          <SettingRow
             label="Mentrixa quests"
             description="Allow learners to generate AI-powered practice quests."
             img="/images/quest.webp"

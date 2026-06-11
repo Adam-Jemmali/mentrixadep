@@ -12,7 +12,6 @@ export interface SystemSettings {
   platformFeePercent: number;
   maintenanceMode: boolean;
   duelsEnabled: boolean;
-  clansEnabled: boolean;
   aiQuestsEnabled: boolean;
 }
 
@@ -35,7 +34,6 @@ export async function getSystemSettings(): Promise<SystemSettings> {
     platformFeePercent: (map["platform_fee_percent"]?.value as number) ?? 15,
     maintenanceMode: map["maintenance_mode"]?.enabled === true,
     duelsEnabled: map["feature_duels_enabled"]?.enabled !== false,
-    clansEnabled: map["feature_clans_enabled"]?.enabled !== false,
     aiQuestsEnabled: map["feature_ai_quests_enabled"]?.enabled !== false,
   };
 }

@@ -33,14 +33,6 @@ export type DuelPublicRow = {
   completed_at: string | null;
 };
 
-export type DuelParticipantClan = {
-  name: string;
-  tag: string;
-  avatarKind: "preset" | "custom";
-  presetKey: string | null;
-  avatarUrl: string | null;
-};
-
 export type DuelMatchupPreview = {
   duelId: string;
   divisionKey: string;
@@ -50,7 +42,6 @@ export type DuelMatchupPreview = {
     avatarUrl: string | null;
     bio: string | null;
     totalXp: number | null;
-    clan: DuelParticipantClan | null;
   };
   opponent: {
     id: string | null;
@@ -59,47 +50,18 @@ export type DuelMatchupPreview = {
     bio: string | null;
     totalXp: number | null;
     isAi: boolean;
-    clan: DuelParticipantClan | null;
   };
 };
-
-function mapClanRowForDuelPreview(
-  row: {
-    name: string;
-    tag: string;
-    avatar_kind?: string | null;
-    avatar_preset_key?: string | null;
-    avatar_url?: string | null;
-  } | null
-): DuelParticipantClan | null {
-  if (!row) return null;
-  const avatarUrl =
-    typeof row.avatar_url === "string" && row.avatar_url.trim().length > 0
-      ? row.avatar_url.trim()
-      : null;
-  return {
-    name: row.name,
-    tag: row.tag,
-    avatarKind:
-      row.avatar_kind === "custom" ? "custom" : "preset",
-    presetKey:
-      typeof row.avatar_preset_key === "string" && row.avatar_preset_key.trim()
-        ? row.avatar_preset_key.trim()
-        : null,
-    avatarUrl,
-  };
-}
 
 export async function getLearnerPreview(
   admin: ReturnType<typeof createAdminClient>,
   userId: string
-): Promise<{ 
-  id: string; 
-  name: string; 
-  avatarUrl: string | null; 
-  bio: string | null; 
+): Promise<{
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
   totalXp: number | null;
-  clan: DuelParticipantClan | null;
 }> {
   const { data: settings } = await admin
     .from("user_settings")
@@ -113,22 +75,6 @@ export async function getLearnerPreview(
     .eq("user_id", userId)
     .maybeSingle();
 
-  const { data: membership } = await admin
-    .from("clan_members")
-    .select("clan_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  let clan: DuelParticipantClan | null = null;
-  if (membership?.clan_id) {
-    const { data: clanRow } = await admin
-      .from("clans")
-      .select("name, tag, avatar_kind, avatar_preset_key, avatar_url")
-      .eq("id", membership.clan_id)
-      .maybeSingle();
-    clan = mapClanRowForDuelPreview(clanRow);
-  }
-
   const displayName =
     typeof settings?.display_name === "string" ? settings.display_name.trim() : "";
   const avatarUrl =
@@ -138,13 +84,12 @@ export async function getLearnerPreview(
   const bio = typeof settings?.bio === "string" && settings.bio.trim().length > 0 ? settings.bio.trim() : null;
   const totalXp = typeof xpRow?.total_xp === "number" ? xpRow.total_xp : null;
 
-  const result = { 
-    id: userId, 
-    name: displayName || "Learner", 
-    avatarUrl, 
-    bio, 
-    totalXp, 
-    clan 
+  const result = {
+    id: userId,
+    name: displayName || "Learner",
+    avatarUrl,
+    bio,
+    totalXp,
   };
 
   if (displayName.length > 0) {

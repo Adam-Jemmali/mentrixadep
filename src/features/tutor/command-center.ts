@@ -2,6 +2,7 @@
 
 import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
+import { getTutorCourses } from "@/features/tutor/courses";
 import { normalizeTeachingDefaultDurationMinutes } from "@/features/tutor/teaching-defaults";
 import type { PayoutDashboardData } from "@/features/payments/payout-ledger";
 import { sanitizeForRsc } from "@/shared/core/rsc-serialize";
@@ -17,7 +18,13 @@ import {
 import { getTutorAvailability } from "@/features/tutor/availability";
 import { getSessionRequests, getAutoApprove } from "@/features/tutor/session-requests";
 import { getUpcomingSessions, getPastSessions } from "@/features/tutor/tutor-sessions";
-import { getTutorCourses } from "@/features/tutor/courses";
+import { getGuideImpactHistory } from "@/features/guide-rank/reads";
+import {
+  getGuideRankProgress,
+  maxImpactScore,
+} from "@/features/guide-rank/calculate-pure";
+import type { GuideRankProgress } from "@/features/guide-rank/calculate-pure";
+import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
 
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
@@ -66,6 +73,11 @@ export type TutorCommandCenterPayload = {
   sessionDefaultDurationMinutes: number;
   /** Stripe Connect & payout data (null if loading fails gracefully) */
   payoutData: PayoutDashboardData | null;
+  guideRank: string;
+  rankProgress: GuideRankProgress;
+  impactScores: GuideImpactEntry[];
+  impactHistoryLast30Days: { date: string; impactScore: number }[];
+  completedSessionsTotal: number;
 };
 
 function fallbackTutorCommandCenterPayload(
@@ -105,6 +117,15 @@ function fallbackTutorCommandCenterPayload(
     tutorTimezone: "UTC",
     sessionDefaultDurationMinutes: 60,
     payoutData: null,
+    guideRank: "practitioner",
+    rankProgress: getGuideRankProgress({
+      rankKey: "practitioner",
+      sessionsCompleted: 0,
+      maxImpactScore: 0,
+    }),
+    impactScores: [],
+    impactHistoryLast30Days: [],
+    completedSessionsTotal: 0,
   };
 }
 
@@ -143,6 +164,9 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       calSessionsRes,
       availIdsRes,
       settingsTzRes,
+      guideRankRes,
+      impactScoresRes,
+      completedCountRes,
     ] = await Promise.all([
       loadTutorSection("sessionRequests", () => getSessionRequests(), []),
       loadTutorSection("availability", () => getTutorAvailability(), []),
@@ -189,6 +213,18 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         .select("timezone, session_default_duration")
         .eq("user_id", tutorId)
         .maybeSingle(),
+      supabase.from("users").select("guide_rank").eq("id", tutorId).maybeSingle(),
+      supabase
+        .from("guide_impact_scores")
+        .select("subject, impact_score, sessions_counted")
+        .eq("guide_id", tutorId)
+        .order("impact_score", { ascending: false }),
+      supabase
+        .from("sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("tutor_id", tutorId)
+        .eq("status", "completed")
+        .eq("completed", true),
     ]);
 
     const supabaseErrors = [
@@ -299,6 +335,25 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     }
     const enrichedCalSessions = await enrichTutorRowsWithStudentProfiles(calSessionsRes.data ?? []);
 
+    const impactScores: GuideImpactEntry[] = (impactScoresRes.data ?? []).map((row) => ({
+      subject: row.subject,
+      impactScore: Number(row.impact_score),
+      sessionsCounted: row.sessions_counted,
+    }));
+    const completedSessionsTotal = completedCountRes.count ?? pastSessions.length;
+    const guideRank = (guideRankRes.data?.guide_rank as string) ?? "practitioner";
+    const rankProgress = getGuideRankProgress({
+      rankKey: guideRank,
+      sessionsCompleted: completedSessionsTotal,
+      maxImpactScore: maxImpactScore(impactScores),
+    });
+    let impactHistoryLast30Days: { date: string; impactScore: number }[] = [];
+    try {
+      impactHistoryLast30Days = await getGuideImpactHistory(tutorId, 30);
+    } catch {
+      impactHistoryLast30Days = [];
+    }
+
     let calendarAvailability = calAvailRes.data ?? [];
     const calAvailIds = calendarAvailability.map((a) => a.id);
     if (calAvailIds.length > 0) {
@@ -353,6 +408,11 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         settingsTzRes.data?.session_default_duration,
       ),
       payoutData,
+      guideRank,
+      rankProgress,
+      impactScores,
+      impactHistoryLast30Days,
+      completedSessionsTotal,
     };
 
     logTutorLoader("payload-built", {

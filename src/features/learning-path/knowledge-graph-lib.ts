@@ -306,3 +306,42 @@ export function buildNextStepRecommendations(
 
   return recs.slice(0, 4);
 }
+
+/**
+ * Subtopics downstream of a breakthrough concept in the same topic —
+ * prefer unstarted / weak nodes the learner has not mastered yet.
+ */
+export function pickDownstreamSubtopics(
+  nodes: KnowledgeNode[],
+  subject: string,
+  topic: string,
+  brokenSubtopic: string,
+  limit = 3,
+): KnowledgeNode[] {
+  const candidates = nodes.filter(
+    (n) =>
+      n.subject === subject &&
+      n.topic === topic &&
+      n.subtopic.toLowerCase() !== brokenSubtopic.toLowerCase() &&
+      n.masteryScore < 80,
+  );
+
+  const unstarted = candidates
+    .filter((n) => n.masteryScore === 0)
+    .sort((a, b) => a.subtopic.localeCompare(b.subtopic));
+  const weak = candidates
+    .filter((n) => n.masteryScore > 0)
+    .sort((a, b) => a.masteryScore - b.masteryScore);
+
+  const ordered = [...unstarted, ...weak];
+  const seen = new Set<string>();
+  const picked: KnowledgeNode[] = [];
+  for (const node of ordered) {
+    const key = node.subtopic.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picked.push(node);
+    if (picked.length >= limit) break;
+  }
+  return picked;
+}

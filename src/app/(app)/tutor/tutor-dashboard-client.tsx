@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { gsap } from "gsap";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Button } from "@/shared/ui/button";
 import { ScrollRevealCard } from "@/shared/ui/card";
@@ -72,6 +72,7 @@ interface TutorDashboardClientProps {
   autoApprove: boolean;
   tutorCourses?: TutorCourseItem[];
   tutorTimezone?: string;
+  tutorId?: string;
   /** Teaching Defaults — fixed length for each opening created here. */
   sessionDefaultDurationMinutes?: number;
   greeting?: string;
@@ -86,6 +87,7 @@ export function TutorDashboardClient({
   autoApprove,
   tutorCourses = [],
   tutorTimezone = "UTC",
+  tutorId,
   sessionDefaultDurationMinutes = 60,
   greeting = "Good day",
   firstName = "Guide",
@@ -138,7 +140,7 @@ export function TutorDashboardClient({
   const pendingRef = useRef<HTMLDivElement | null>(null);
   const requestsSectionRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (revenueRef.current) {
       const obj = { val: 0 };
       gsap.to(obj, {
@@ -358,7 +360,12 @@ export function TutorDashboardClient({
             </TabsContent>
 
             <TabsContent value="upcoming" className="mt-0">
-              <SessionsList upcomingSessions={upcomingSessions} pastSessions={pastSessions} />
+              <SessionsList
+                upcomingSessions={upcomingSessions}
+                pastSessions={pastSessions}
+                guideId={tutorId}
+                displayTimeZone={tutorTimezone}
+              />
             </TabsContent>
 
             <TabsContent value="past" className="mt-0">

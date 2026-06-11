@@ -7,12 +7,8 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { env, getGeminiApiKey } from "@/shared/core/env";
-import {
-  enforceSlidingRateLimit,
-  getRateLimitId,
-  RATE_LIMITS,
-  sanitizeString,
-} from "@/shared/core/security";
+import { sanitizeString } from "@/shared/core/security";
+import { enforceUserAiRateLimit } from "@/shared/core/security/rate-limiter";
 import {
   reportGeminiRateLimited,
   captureUnexpectedError,
@@ -262,11 +258,8 @@ export async function peekDailyLimit(
 }
 
 export async function enforceAiRateLimit(userId: string, action: string): Promise<void> {
-  await enforceSlidingRateLimit(
-    getRateLimitId(userId),
-    RATE_LIMITS.questAi,
-    action,
-  );
+  const kind = action.startsWith("duel") ? "duel" : "quest";
+  await enforceUserAiRateLimit(userId, kind);
 }
 
 // ============================================

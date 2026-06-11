@@ -2,6 +2,7 @@
 
 import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { countRecentSecurityEvents } from "@/shared/core/security/security-events";
 
 export interface PlatformMetrics {
   totalUsers: number;
@@ -14,7 +15,8 @@ export interface PlatformMetrics {
   activeQuests: number;
   pendingApprovals: number;
   activeDuels: number;
-  totalClans: number;
+  activeDivisionWars: number;
+  securityEvents24h: number;
 }
 
 export async function getPlatformMetrics(): Promise<PlatformMetrics> {
@@ -25,6 +27,7 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
   const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const securitySince = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
   const [
     usersRes,
@@ -34,7 +37,8 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
     activeQuestsRes,
     pendingApprovalsRes,
     activeDuelsRes,
-    clansRes,
+    activeDivisionWarsRes,
+    securityEvents24h,
   ] = await Promise.all([
     adminClient.from("users").select("id, role", { count: "exact" }),
     adminClient.from("sessions").select("id", { count: "exact" }).gte("created_at", todayStart),
@@ -43,7 +47,8 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
     adminClient.from("user_quest_progress").select("id", { count: "exact" }).eq("status", "in_progress"),
     adminClient.from("registration_requests").select("id", { count: "exact" }).eq("status", "pending"),
     adminClient.from("skill_duels").select("id", { count: "exact" }).eq("status", "active"),
-    adminClient.from("clans").select("id", { count: "exact" }),
+    adminClient.from("division_wars").select("id", { count: "exact" }).eq("status", "active"),
+    countRecentSecurityEvents(securitySince),
   ]);
 
   const users = usersRes.data ?? [];
@@ -64,6 +69,7 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
     activeQuests: activeQuestsRes.count ?? 0,
     pendingApprovals: pendingApprovalsRes.count ?? 0,
     activeDuels: activeDuelsRes.count ?? 0,
-    totalClans: clansRes.count ?? 0,
+    activeDivisionWars: activeDivisionWarsRes.count ?? 0,
+    securityEvents24h,
   };
 }

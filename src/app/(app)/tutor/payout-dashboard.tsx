@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
-import { gsap } from "gsap";
+import { useState, useTransition, useRef } from "react";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import {
   ArrowUpRight,
   AlertCircle,
@@ -51,12 +51,12 @@ function MetricCard({
   highlight?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!ref.current) return;
     gsap.fromTo(
       ref.current,
       { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
+      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
     );
   }, []);
   return (

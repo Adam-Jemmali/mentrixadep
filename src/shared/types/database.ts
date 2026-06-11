@@ -23,6 +23,9 @@ export interface User {
   stripe_account_id_live?: string | null;
   stripe_payouts_enabled?: boolean;
   stripe_onboarding_at?: string | null;
+  /** Guide teaching rank ladder (tutors only). */
+  guide_rank?: string;
+  guide_rank_updated_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -190,6 +193,32 @@ export interface UserAchievementRow {
   created_at: string;
 }
 
+export interface ProgressSnapshotDbRow {
+  id: string;
+  student_id: string;
+  snapshot_data: Record<string, unknown>;
+  generated_at: string;
+  email_sent_at: string | null;
+  clicked_at: string | null;
+}
+
+export interface GuideImpactScoreDbRow {
+  id: string;
+  guide_id: string;
+  subject: string;
+  impact_score: number;
+  sessions_counted: number;
+  last_calculated: string;
+}
+
+export interface GuideImpactHistoryDbRow {
+  id: string;
+  guide_id: string;
+  subject: string;
+  impact_score: number;
+  recorded_at: string;
+}
+
 export interface SessionAiPackage {
   session_id: string;
   summary: string | null;
@@ -313,6 +342,10 @@ export interface UserSettingsRow {
   focused_division_key: string | null;
   /** Student: allow skill duel challenges from peers */
   duel_opt_in: boolean;
+  /** Public slug for mentrixa.one/rank/[username] */
+  rank_card_username: string | null;
+  /** When false, /rank/[username] shows a private notice */
+  rank_card_public: boolean;
   updated_at: string;
 }
 
@@ -446,6 +479,64 @@ export interface DivisionWinnerRow {
   user_id: string;
   weekly_xp: number;
   bonus_xp: number;
+  created_at: string;
+}
+
+export interface BreakthroughEventRow {
+  id: string;
+  student_id: string;
+  subject: string;
+  concept: string;
+  accuracy_before: number;
+  accuracy_after: number;
+  session_id: string | null;
+  triggered_by: "quest" | "session" | "duel";
+  detected_at: string;
+  shared_at: string | null;
+}
+
+export interface BreakthroughQuestQueueRow {
+  id: string;
+  breakthrough_event_id: string;
+  student_id: string;
+  subject: string;
+  topic: string;
+  target_subtopic: string;
+  sort_order: number;
+  quest_id: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface DivisionWarRow {
+  id: string;
+  division_a_id: string;
+  division_b_id: string;
+  subject: string;
+  week_start: string;
+  week_end: string;
+  status: "active" | "completed";
+  winner_division_id: string | null;
+  created_at: string;
+}
+
+export interface DivisionWarContributionRow {
+  id: string;
+  war_id: string;
+  student_id: string;
+  division_id: string;
+  quests_completed: number;
+  total_accuracy_points: number;
+  last_updated: string;
+}
+
+export interface DivisionWarBadgeRow {
+  id: string;
+  user_id: string;
+  war_id: string;
+  division_id: string;
+  division_name: string;
+  expires_at: string;
   created_at: string;
 }
 
@@ -653,6 +744,29 @@ export interface Database {
         };
         Update: Partial<UserAchievementRow>;
       };
+      progress_snapshots: {
+        Row: ProgressSnapshotDbRow;
+        Insert: Omit<ProgressSnapshotDbRow, "id" | "generated_at" | "email_sent_at" | "clicked_at"> & {
+          id?: string;
+          generated_at?: string;
+          email_sent_at?: string | null;
+          clicked_at?: string | null;
+        };
+        Update: Partial<ProgressSnapshotDbRow>;
+      };
+      guide_impact_scores: {
+        Row: GuideImpactScoreDbRow;
+        Insert: Omit<GuideImpactScoreDbRow, "id" | "last_calculated"> & {
+          id?: string;
+          last_calculated?: string;
+        };
+        Update: Partial<GuideImpactScoreDbRow>;
+      };
+      guide_impact_history: {
+        Row: GuideImpactHistoryDbRow;
+        Insert: Omit<GuideImpactHistoryDbRow, "id"> & { id?: string };
+        Update: Partial<GuideImpactHistoryDbRow>;
+      };
       session_ai_packages: {
         Row: SessionAiPackage;
         Insert: Omit<SessionAiPackage, "created_at" | "updated_at"> & {
@@ -770,6 +884,59 @@ export interface Database {
         };
         Update: Partial<DivisionWinnerRow>;
       };
+      breakthrough_events: {
+        Row: BreakthroughEventRow;
+        Insert: Omit<
+          BreakthroughEventRow,
+          "id" | "detected_at" | "shared_at" | "triggered_by" | "session_id"
+        > & {
+          id?: string;
+          session_id?: string | null;
+          triggered_by?: "quest" | "session" | "duel";
+          detected_at?: string;
+          shared_at?: string | null;
+        };
+        Update: Partial<BreakthroughEventRow>;
+      };
+      breakthrough_quest_queue: {
+        Row: BreakthroughQuestQueueRow;
+        Insert: Omit<
+          BreakthroughQuestQueueRow,
+          "id" | "created_at" | "quest_id" | "completed_at"
+        > & {
+          id?: string;
+          quest_id?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<BreakthroughQuestQueueRow>;
+      };
+      division_wars: {
+        Row: DivisionWarRow;
+        Insert: Omit<DivisionWarRow, "id" | "created_at" | "status" | "winner_division_id"> & {
+          id?: string;
+          status?: "active" | "completed";
+          winner_division_id?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<DivisionWarRow>;
+      };
+      division_war_contributions: {
+        Row: DivisionWarContributionRow;
+        Insert: Omit<DivisionWarContributionRow, "id" | "last_updated"> & {
+          id?: string;
+          last_updated?: string;
+        };
+        Update: Partial<DivisionWarContributionRow>;
+      };
+      division_war_badges: {
+        Row: DivisionWarBadgeRow;
+        Insert: Omit<DivisionWarBadgeRow, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<DivisionWarBadgeRow>;
+      };
       push_subscriptions: {
         Row: PushSubscriptionRow;
         Insert: Omit<PushSubscriptionRow, "id" | "created_at" | "updated_at"> & {
@@ -810,6 +977,17 @@ export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
 
 export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Update"];
+
+// ─── Security events ───────────────────────────────────────────────────────────
+
+export interface SecurityEvent {
+  id: string;
+  event_type: string;
+  user_id: string | null;
+  ip_address: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
 
 // ─── Institution B2B ──────────────────────────────────────────────────────────
 

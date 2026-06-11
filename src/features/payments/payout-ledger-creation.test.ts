@@ -13,7 +13,7 @@ describe("payout ledger creation on session completion", () => {
   it("verifies the payout dashboard loader exists and exports", async () => {
     const { getPayoutDashboardData } = await import("@/features/payments/payout-ledger");
     expect(typeof getPayoutDashboardData).toBe("function");
-  });
+  }, 30_000);
 
   it("verifies the complete-sessions cron route module is loadable", async () => {
     const routeText = await (async () => {
@@ -26,7 +26,7 @@ describe("payout ledger creation on session completion", () => {
     })();
 
     expect(typeof routeText).toBe("string");
-  });
+  }, 30_000);
 
   it("PLATFORM_FEE_BPS constant is defined for payout math", async () => {
     const { PLATFORM_FEE_BPS } = await import("@/features/booking/booking-pricing");

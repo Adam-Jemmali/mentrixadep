@@ -2,9 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useMemo, useRef, useState } from "react";
+import {
+  runGsapAction,
+  useGsapEffect,
+  useGsapScrollTriggerEffect,
+} from "@/shared/core/gsap-lazy";
 import type { LeaderboardEntry, DivisionStat } from "@/features/divisions/leaderboard";
 import type { QuestHistoryEntry } from "@/features/quest/quest-reads";
 import type { LevelInfo } from "@/features/xp/levels";
@@ -21,8 +24,6 @@ import { Typewriter } from "@/shared/ui/typewriter";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { BackButton } from "@/shared/ui/back-button";
 import { LeaderboardTierRank } from "@/features/student-profile/ui/leaderboard-tier-rank";
-
-gsap.registerPlugin(ScrollTrigger);
 
 type SortKey = "xp" | "streak" | "level";
 
@@ -108,27 +109,17 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
     return rows;
   }, [leaderboard, sortKey]);
 
-  // Header countups
-  useEffect(() => {
+  useGsapEffect(() => {
     const rankEl = document.querySelector<HTMLElement>("[data-division-stat='rank']");
     const xpEl = document.querySelector<HTMLElement>("[data-division-stat='xp']");
     const levelEl = document.querySelector<HTMLElement>("[data-division-stat='level']");
 
-    if (rankEl && rank != null) {
-      animateCount(rankEl, rank);
-    }
-    if (xpEl && divisionXp != null) {
-      animateCount(xpEl, divisionXp);
-    }
-    if (levelEl && level) {
-      // show total XP basis for level
-      const total = level.minXp + level.xpInTier;
-      animateCount(levelEl, total);
-    }
+    if (rankEl && rank != null) animateCount(rankEl, rank);
+    if (xpEl && divisionXp != null) animateCount(xpEl, divisionXp);
+    if (levelEl && level) animateCount(levelEl, level.minXp + level.xpInTier);
   }, [rank, divisionXp, level]);
 
-  // XP progress bar
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     const bar = document.querySelector<HTMLElement>("[data-user-xp-bar]");
     if (!bar || !level) return;
     const max = level.nextTierAt ?? level.minXp + 100;
@@ -142,8 +133,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
     });
   }, [level]);
 
-  // Scroll animations for leaderboard rows and mini XP bars
-  useEffect(() => {
+  useGsapScrollTriggerEffect((gsap, ScrollTrigger) => {
     if (activeTab !== "leaderboard") return;
 
     const rows = gsap.utils.toArray<HTMLTableRowElement>("[data-leaderboard-row]");
@@ -151,13 +141,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
       gsap.fromTo(
         rows,
         { y: 4, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.25,
-          stagger: 0.03,
-          ease: "power2.out",
-        },
+        { y: 0, opacity: 1, duration: 0.25, stagger: 0.03, ease: "power2.out" },
       );
     }
 
@@ -171,10 +155,7 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
           width: maxWidth,
           duration: 0.6,
           ease: "power2.out",
-          scrollTrigger: {
-            trigger: bar,
-            start: "top 80%",
-          },
+          scrollTrigger: { trigger: bar, start: "top 80%" },
         },
       );
     });
@@ -200,20 +181,20 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
       return;
     }
     const el = tabContentRef.current;
-    gsap.to(el, {
-      opacity: 0,
-      y: 4,
-      duration: 0.15,
-      onComplete: () => {
-        setActiveTab(nextTab);
-        requestAnimationFrame(() => {
-          gsap.fromTo(
-            el,
-            { opacity: 0, y: 4 },
-            { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" },
-          );
-        });
-      },
+    runGsapAction((gsap) => {
+      gsap.to(el, {
+        opacity: 0,
+        y: 4,
+        duration: 0.15,
+        onComplete: () => {
+          setActiveTab(nextTab);
+          requestAnimationFrame(() => {
+            runGsapAction((g) => {
+              g.fromTo(el, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" });
+            });
+          });
+        },
+      });
     });
   };
 
@@ -428,14 +409,16 @@ function StatBlock({ label, dataAttr }: { label: string; dataAttr: string }) {
 }
 
 function animateCount(el: HTMLElement, end: number) {
-  const obj = { val: 0 };
-  gsap.to(obj, {
-    val: end,
-    duration: 1.2,
-    ease: "power2.out",
-    onUpdate: () => {
-      el.textContent = Math.round(obj.val).toString();
-    },
+  runGsapAction((gsap) => {
+    const obj = { val: 0 };
+    gsap.to(obj, {
+      val: end,
+      duration: 1.2,
+      ease: "power2.out",
+      onUpdate: () => {
+        el.textContent = Math.round(obj.val).toString();
+      },
+    });
   });
 }
 

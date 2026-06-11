@@ -3,7 +3,6 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { cn } from "@/shared/core/utils";
-import { SparklesCore } from "@/shared/ui/sparkles";
 import { fadeUp, staggerContainer } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 
@@ -29,22 +28,12 @@ export function LandingStoryBridge({ chapter, title, subtitle }: Props) {
       {cinematic ? (
         <>
           <motion.div
-            className="pointer-events-none absolute inset-0 z-0"
+            className="pointer-events-none absolute inset-0 z-0 lp-sparkle-field"
             initial={{ opacity: 0 }}
             animate={inView ? { opacity: 1 } : { opacity: 0 }}
             transition={{ duration: 0.8 }}
-          >
-            <SparklesCore
-              id={`sparkles-${chapter.replace(/\s+/g, "-")}`}
-              background="transparent"
-              minSize={0.4}
-              maxSize={1.2}
-              particleDensity={48}
-              className="h-full w-full"
-              particleColor="#60A5FA"
-              speed={0.9}
-            />
-          </motion.div>
+            aria-hidden
+          />
           <motion.div
             className="pointer-events-none absolute left-0 top-1/2 h-px w-full bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent"
             initial={{ scaleX: 0, opacity: 0 }}

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { gsap } from "gsap";
+import { runGsapAction } from "@/shared/core/gsap-lazy";
 import { Building2 } from "lucide-react";
 import { approveSessionRequest, rejectSessionRequest } from "@/features/tutor/session-requests";
 import { useAdminViewContext } from "@/components/admin-view-context";
@@ -94,7 +94,8 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
       }
       return;
     }
-    gsap.to(rowEl, {
+    runGsapAction((gsap) => {
+      gsap.to(rowEl, {
       height: 0,
       opacity: 0,
       paddingTop: 0,
@@ -117,6 +118,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
           });
       },
     });
+    });
   };
 
   const handleReject = async (id: string) => {
@@ -135,7 +137,8 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
       }
       return;
     }
-    gsap.to(rowEl, {
+    runGsapAction((gsap) => {
+      gsap.to(rowEl, {
       height: 0,
       opacity: 0,
       paddingTop: 0,
@@ -154,6 +157,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
             });
           });
       },
+    });
     });
   };
 

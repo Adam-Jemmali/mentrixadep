@@ -22,6 +22,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 import { LeaderboardTierRank } from "@/features/student-profile/ui/leaderboard-tier-rank";
+import { DivisionWarPanel } from "@/features/division-wars/division-war-panel";
 
 function RankingAvatar({
   displayName,
@@ -207,12 +208,16 @@ export function DivisionDetailClient({
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-3 text-indigo-400"
+            className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center gap-3 text-indigo-800"
           >
-            <Info className="w-5 h-5 shrink-0" />
+            <Info className="w-5 h-5 shrink-0 text-indigo-600" />
             <p className="text-xs font-bold uppercase tracking-widest leading-none">{banner}</p>
           </motion.div>
         )}
+
+        {initial.divisionWar?.war ? (
+          <DivisionWarPanel initial={initial.divisionWar} divisionKey={divisionKey} />
+        ) : null}
 
         <div className="grid lg:grid-cols-12 gap-10">
           

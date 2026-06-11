@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { validateJoinRequest } from "@/features/video/video";
 import { getCurrentUser } from "@/shared/core/auth";
 import { getRoleHomePath } from "@/shared/core/role-home";
-import { VideoCall } from "@/features/video/video-call";
+import { VideoCall } from "@/features/video/video-call-dynamic";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 
 interface VideoSessionPageProps {

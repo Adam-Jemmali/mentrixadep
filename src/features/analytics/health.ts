@@ -15,6 +15,7 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
+      db: dbOk,
       dbOk,
       database: dbOk ? "ok" : "degraded",
       service: "mentrixa",

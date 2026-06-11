@@ -31,6 +31,8 @@ import { Typewriter } from "@/shared/ui/typewriter";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RankCardShareButton } from "@/features/rank-card/rank-card-share-button";
+import { getSiteUrl } from "@/shared/core/site";
 
 // ─── Shared Battle UI Components ─────────────────────────────────────────────
 
@@ -163,6 +165,7 @@ function StudentProfileFormSection({
         timezone: form.timezone,
         profile_visible_to_tutors: form.profile_visible_to_tutors,
         duel_opt_in: form.duel_opt_in,
+        rank_card_public: form.rank_card_public,
         focused_division_key: form.focused_division_key ?? "",
         email_session_reminders: form.email_session_reminders,
         email_session_booked: form.email_session_booked,
@@ -271,6 +274,12 @@ function StudentProfileFormSection({
                 description="Enable 1v1 skill challenges from peers."
                 checked={form.duel_opt_in}
                 onChange={(v) => setForm((f) => ({ ...f, duel_opt_in: v }))}
+              />
+              <ProfileToggle
+                label="Public Rank Card"
+                description="Share verified quest, duel, and Guide data at mentrixa.one/rank/[username]. On by default."
+                checked={form.rank_card_public}
+                onChange={(v) => setForm((f) => ({ ...f, rank_card_public: v }))}
               />
             </div>
           </div>
@@ -676,6 +685,16 @@ export function StudentProfileClient({
             </div>
 
             {/* Referral Section (If applicable) */}
+            {data.viewer === "owner" && data.rankCardUsername && data.rankCardPublic ? (
+              <RankCardShareButton
+                username={data.rankCardUsername}
+                siteUrl={getSiteUrl()}
+                topSubject={data.rankCardTopSubject}
+                rankTitle={normalizeRankTitle(accountRank.title)}
+                accuracy={data.rankCardTopAccuracy}
+              />
+            ) : null}
+
             {data.viewer === "owner" && referral ? (
               <ReferralProgramSection initial={referral} />
             ) : null}

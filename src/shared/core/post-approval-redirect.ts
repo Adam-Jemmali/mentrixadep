@@ -1,5 +1,4 @@
 import type { UserRole } from "@/shared/types/database";
-import { hasStudentCompletedDiagnostic } from "@/features/quest/diagnostic-onboarding";
 import { getRoleHomePath } from "@/shared/core/role-home";
 import { createClient } from "@/shared/integrations/supabase/server";
 
@@ -23,37 +22,22 @@ export async function getPostApprovalRedirectPath(params: {
 
   const supabase = await createClient();
 
-  const [sessionsRes, questsRes] = await Promise.all([
-    supabase
-      .from("sessions")
-      .select("id", { count: "exact", head: true })
-      .eq("student_id", params.userId)
-      .eq("status", "completed"),
-    supabase
-      .from("user_quest_progress")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", params.userId)
-      .eq("status", "completed"),
-  ]);
+  const { count, error } = await supabase
+    .from("user_quest_progress")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", params.userId)
+    .eq("status", "completed");
 
-  if (sessionsRes.error || questsRes.error) {
-    console.error("[post-approval-redirect] count query failed", {
-      sessionsError: sessionsRes.error?.message,
-      questsError: questsRes.error?.message,
+  if (error) {
+    console.error("[post-approval-redirect] quest count query failed", {
+      questsError: error.message,
     });
     return basePath;
   }
 
-  const completedSessions = sessionsRes.count ?? 0;
-  const completedQuests = questsRes.count ?? 0;
-
-  const diagnosticDone = await hasStudentCompletedDiagnostic(params.userId);
-  if (!diagnosticDone) {
-    return "/student/onboarding";
-  }
-
-  if (completedSessions === 0 && completedQuests === 0) {
-    return "/student?onboarding=true";
+  const completedQuests = count ?? 0;
+  if (completedQuests === 0) {
+    return "/student/quest?onboarding=true";
   }
 
   return basePath;

@@ -1,7 +1,5 @@
 "use server";
 
-import { recordClanDuelWin } from "@/features/clans/clan-events";
-import { areUsersInSameClan } from "@/features/clans/clan-membership";
 import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
@@ -538,20 +536,6 @@ async function maybeCompleteDuel(
         true
       );
       await applyXpAward(row.student_id, XP.DUEL_LOSS, `duel_loss:${duelId}`, div);
-    }
-  }
-
-  // Clan XP Logic
-  if (winner !== "tie") {
-    const winnerId = winner === "student" ? row.student_id : row.opponent_student_id;
-    const loserId = winner === "student" ? row.opponent_student_id : row.student_id;
-    
-    if (winnerId && loserId && !isAi) {
-      const sameClan = await areUsersInSameClan(winnerId, loserId);
-      await recordClanDuelWin(winnerId, !sameClan);
-    } else if (winnerId && isAi) {
-       // Against AI, it's always a friendly boost to the clan
-       await recordClanDuelWin(winnerId, false);
     }
   }
 

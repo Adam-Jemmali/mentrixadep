@@ -14,7 +14,7 @@ let duelEl: HTMLAudioElement | null = null;
 let loopWanted = false;
 
 export function isArenaPath(pathname: string): boolean {
-  return pathname.startsWith("/student/clan") || pathname.startsWith("/student/duel");
+  return pathname.startsWith("/student/duel") || pathname.startsWith("/student/division");
 }
 
 function isMuted(): boolean {

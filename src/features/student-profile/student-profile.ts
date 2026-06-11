@@ -13,6 +13,8 @@ import type {
   StudentProfileDivisionBadge,
   StudentProfileViewer,
 } from "@/features/student-profile/student-profile-lib";
+import { ensureRankCardUsername } from "@/features/rank-card/ensure-username";
+import { buildRankCardSubjects } from "@/features/rank-card/build-rank-card";
 
 export type {
   StudentProfileAchievement,
@@ -26,6 +28,7 @@ const studentProfileUpdateSchema = z.object({
   timezone: z.string().min(1).max(64),
   profile_visible_to_tutors: z.boolean(),
   duel_opt_in: z.boolean(),
+  rank_card_public: z.boolean(),
   focused_division_key: z.string().max(64),
   email_session_reminders: z.boolean(),
   email_session_booked: z.boolean(),
@@ -180,6 +183,18 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
+  let rankCardUsername =
+    typeof (settingsRow as { rank_card_username?: string | null })?.rank_card_username === "string"
+      ? (settingsRow as { rank_card_username: string }).rank_card_username
+      : null;
+  let rankCardPublic =
+    (settingsRow as { rank_card_public?: boolean })?.rank_card_public !== false;
+
+  if (access === "owner") {
+    const ensured = await ensureRankCardUsername(parsed.id, displayName);
+    if (ensured) rankCardUsername = ensured;
+  }
+
   let privateSettings: UserSettings | null = null;
   if (access === "owner") {
     privateSettings = {
@@ -200,12 +215,24 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
           ? settingsRow.focused_division_key
           : null,
       duel_opt_in: settingsRow?.duel_opt_in === true,
+      rank_card_username: rankCardUsername,
+      rank_card_public: rankCardPublic,
     };
   }
 
   const divisions = (divRows ?? [])
     .map((d) => ({ key: d.key, name: d.name }))
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  let rankCardTopSubject: string | null = courses[0] ?? null;
+  let rankCardTopAccuracy = 0;
+  if (access === "owner") {
+    const subjects = await buildRankCardSubjects(parsed.id, totalXp);
+    if (subjects[0]) {
+      rankCardTopSubject = subjects[0].subject;
+      rankCardTopAccuracy = subjects[0].currentAccuracy;
+    }
+  }
 
   const out: StudentProfileData = {
     studentId: parsed.id,
@@ -230,6 +257,10 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     privateSettings,
     emailPrefix,
     divisions,
+    rankCardUsername,
+    rankCardPublic,
+    rankCardTopSubject,
+    rankCardTopAccuracy,
   };
   return out;
 }
@@ -256,6 +287,7 @@ export async function updateStudentProfile(
       timezone: v.timezone,
       profile_visible_to_tutors: v.profile_visible_to_tutors,
       duel_opt_in: v.duel_opt_in,
+      rank_card_public: v.rank_card_public,
       focused_division_key: v.focused_division_key.trim()
         ? v.focused_division_key.trim().slice(0, 64)
         : null,

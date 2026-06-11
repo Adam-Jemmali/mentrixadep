@@ -6,6 +6,7 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { XP } from "@/features/xp/xp-constants";
 import { countReferralRewardsThisMonth } from "@/features/referrals/referral-monthly-cap";
 import { MAX_REFERRAL_REWARDS_PER_MONTH } from "@/features/referrals/referral-constants";
+import { trackEvent } from "@/shared/integrations/analytics";
 
 export type ApplyXpAwardResult = {
   awarded: boolean;
@@ -152,11 +153,15 @@ export async function applyXpAward(
     };
     await admin.from("user_achievements").insert({
       user_id: userId,
-      achievement_type: "level_up",
+      achievement_type: "rank_up",
       from_level: oldLevel.level,
       to_level: newLevel.level,
       title: newLevel.title,
       meta: { total_xp: newTotal, previous_title: oldLevel.title },
+    });
+    void trackEvent("rank_up", {
+      userId,
+      properties: { fromLevel: oldLevel.level, toLevel: newLevel.level, title: newLevel.title },
     });
   }
 

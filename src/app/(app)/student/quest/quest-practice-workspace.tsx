@@ -18,9 +18,13 @@ import {
   type PracticeQuestionPublic,
 } from "@/features/quest/practice-quest";
 import { emitXpAward } from "@/features/xp/xp-events";
+import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { PracticeDifficulty, PracticePackType } from "@/features/quest/practice-quest-types";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { DivisionFocusSelect } from "@/features/student-profile/ui/division-focus-select";
+import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
+import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
+import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "beginner", label: "Beginner" },
@@ -83,11 +87,21 @@ export function QuestPracticeWorkspace({
     mistakeReviews?: { questionId: string; prompt: string; review: string }[];
     totalXp?: number;
   } | null>(null);
+  const [breakthroughCelebration, setBreakthroughCelebration] =
+    useState<BreakthroughCelebration | null>(null);
 
   const timeLeftRef = useRef(timeLimitSec);
   const [timeLeft, setTimeLeft] = useState(timeLimitSec);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onboardingCompleteRef = useRef(false);
   const touchStartX = useRef<number | null>(null);
+
+  const completeOnboardingQuest = useCallback(() => {
+    if (onboardingCompleteRef.current) return;
+    onboardingCompleteRef.current = true;
+    trackClientEvent("onboarding_quest_completed");
+    router.push("/student?celebration=wanderer");
+  }, [router]);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -113,6 +127,52 @@ export function QuestPracticeWorkspace({
     [],
   );
 
+  const startQuestTimer = useCallback(
+    (limitSec: number, activeQuestId: string) => {
+      setTimeLimitSec(limitSec);
+      timeLeftRef.current = limitSec;
+      setTimeLeft(limitSec);
+      stopTimer();
+      timerRef.current = setInterval(() => {
+        timeLeftRef.current -= 1;
+        setTimeLeft((t) => Math.max(0, t - 1));
+        if (timeLeftRef.current <= 0) {
+          stopTimer();
+          void (async () => {
+            const fin = await finalizePracticeQuest(activeQuestId, { timedOut: true });
+            if (fin.success) {
+              setDoneResult(fin.result);
+              if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
+              if (onboardingMode) {
+                completeOnboardingQuest();
+              } else {
+                setPhase("done");
+              }
+            }
+          })();
+        }
+      }, 1000);
+    },
+    [completeOnboardingQuest, onboardingMode, stopTimer],
+  );
+
+  const resumeQuestRun = useCallback(
+    async (activeQuestId: string, limitSec = 15 * 60) => {
+      setErr(null);
+      setQIndex(0);
+      const st = await startPracticeSession(activeQuestId);
+      if (!st.success) {
+        setErr(st.error);
+        return false;
+      }
+      setPhase("run");
+      await loadQuestion(activeQuestId, 0);
+      startQuestTimer(limitSec, activeQuestId);
+      return true;
+    },
+    [loadQuestion, startQuestTimer],
+  );
+
   const beginPack = async () => {
     setErr(null);
     const picked = subjectOptions.find((o) => o.key === subjectKey);
@@ -126,8 +186,9 @@ export function QuestPracticeWorkspace({
     setBusy(true);
     const res = await createPracticeQuest({
       subject: subj,
-      difficulty,
-      packType,
+      difficulty: onboardingMode ? "intermediate" : difficulty,
+      packType: onboardingMode ? "mcq" : packType,
+      questionCount: onboardingMode ? 5 : undefined,
     });
     setBusy(false);
     if (!res.success) {
@@ -146,21 +207,7 @@ export function QuestPracticeWorkspace({
     }
     setPhase("run");
     await loadQuestion(res.questId, 0);
-    stopTimer();
-    timerRef.current = setInterval(() => {
-      timeLeftRef.current -= 1;
-      setTimeLeft((t) => Math.max(0, t - 1));
-      if (timeLeftRef.current <= 0) {
-        stopTimer();
-        void (async () => {
-          const fin = await finalizePracticeQuest(res.questId, { timedOut: true });
-          if (fin.success) {
-            setDoneResult(fin.result);
-            setPhase("done");
-          }
-        })();
-      }
-    }, 1000);
+    startQuestTimer(res.timeLimitSec, res.questId);
   };
 
   useEffect(() => {
@@ -169,25 +216,45 @@ export function QuestPracticeWorkspace({
 
   useEffect(() => {
     if (!onboardingMode || phase !== "done" || !doneResult) return;
-    router.push("/student?celebration=levelup");
-  }, [onboardingMode, phase, doneResult, router]);
+    completeOnboardingQuest();
+  }, [onboardingMode, phase, doneResult, completeOnboardingQuest]);
 
   const finishRun = async (id: string) => {
     stopTimer();
     const fin = await finalizePracticeQuest(id);
     if (fin.success) {
       setDoneResult(fin.result);
-      setPhase("done");
-      // Emit XP award event for floating animation and navbar pulse
+      if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
       if ((fin.result.xpAwarded ?? 0) > 0) {
         emitXpAward({
           amount: fin.result.xpAwarded,
           totalXp: fin.result.totalXp ?? 0,
         });
       }
+      if (onboardingMode) {
+        completeOnboardingQuest();
+      } else {
+        setPhase("done");
+      }
     } else {
       setErr(fin.error);
     }
+  };
+
+  const onStartNextBreakthroughQuest = async () => {
+    if (!breakthroughCelebration) return;
+    setBusy(true);
+    const res = await createNextBreakthroughQuest(breakthroughCelebration.eventId);
+    setBusy(false);
+    if (!res.success) {
+      setErr(res.error);
+      setBreakthroughCelebration(null);
+      return;
+    }
+    setBreakthroughCelebration(null);
+    setDoneResult(null);
+    setQuestId(res.questId);
+    await resumeQuestRun(res.questId);
   };
 
   const onMcqSelect = async (optIdx: number) => {
@@ -291,14 +358,22 @@ export function QuestPracticeWorkspace({
             </p>
           </div>
         ) : null}
-        <div className="mb-6">
-          <BackButton />
-        </div>
+        {!onboardingMode ? (
+          <div className="mb-6">
+            <BackButton />
+          </div>
+        ) : null}
         <div className={`${mentrixStudent.card} p-6 sm:p-8`}>
-        <p className={mentrixStudent.sectionEyebrowOnLight}>Practice packs</p>
-        <h1 className={`mt-2 text-2xl font-bold ${mentrixStudent.textOnLight}`}>New quest</h1>
+        <p className={mentrixStudent.sectionEyebrowOnLight}>
+          {onboardingMode ? "First quest" : "Practice packs"}
+        </p>
+        <h1 className={`mt-2 text-2xl font-bold ${mentrixStudent.textOnLight}`}>
+          {onboardingMode ? "Pick your subject" : "New quest"}
+        </h1>
         <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
-          Short drills built for where you are right now. Get instant feedback, track your progress, and earn XP as you go.
+          {onboardingMode
+            ? "Five quick questions. Your rank starts here."
+            : "Short drills built for where you are right now. Get instant feedback, track your progress, and earn XP as you go."}
         </p>
 
         <div className="mt-8 space-y-6">
@@ -313,12 +388,14 @@ export function QuestPracticeWorkspace({
               showNoneOption={false}
               triggerClassName="mt-1"
             />
-            <Input
-              className="mt-2 border-violet-200 bg-white text-zinc-950 placeholder:text-zinc-500"
-              placeholder="Or type a custom subject…"
-              value={customSubject}
-              onChange={(e) => setCustomSubject(e.target.value)}
-            />
+            {!onboardingMode && (
+              <Input
+                className="mt-2 border-violet-200 bg-white text-zinc-950 placeholder:text-zinc-500"
+                placeholder="Or type a custom subject…"
+                value={customSubject}
+                onChange={(e) => setCustomSubject(e.target.value)}
+              />
+            )}
           </div>
 
           {!onboardingMode && (
@@ -380,49 +457,59 @@ export function QuestPracticeWorkspace({
   if (phase === "done" && doneResult) {
     const xpTotal = (doneResult.xpAwarded ?? 0) + (doneResult.perfectBonus ?? 0);
     return (
-      <div className={`${mentrixStudent.card} mx-auto max-w-lg px-6 py-10 text-center`}>
-        <h2 className={`text-2xl font-bold ${mentrixStudent.textOnLight}`}>Quest complete</h2>
-        <p className="mt-4 text-4xl font-mono font-bold text-indigo-600">
-          {doneResult.correct}/{doneResult.total}
-        </p>
-        <p className="mt-2 text-sm text-slate-600">
-          {doneResult.perfect ? "Perfect score bonus XP." : "Nice work keep practicing."}
-        </p>
-        <p className="mt-4 text-lg text-emerald-700 font-medium">+{xpTotal} XP</p>
-        {doneResult.mistakeReviews && doneResult.mistakeReviews.length > 0 && (
-          <div className="mt-8 text-left border border-slate-200 rounded-lg p-4 bg-white">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
-              Review mistakes
-            </p>
-            <ul className="space-y-4">
-              {doneResult.mistakeReviews.map((m) => (
-                <li key={m.questionId}>
-                  <p className="text-xs text-slate-500 line-clamp-2">{m.prompt}</p>
-                  <p className="text-sm text-slate-800 mt-1">{m.review}</p>
-                </li>
-              ))}
-            </ul>
+      <>
+        <div className={`${mentrixStudent.card} mx-auto max-w-lg px-6 py-10 text-center`}>
+          <h2 className={`text-2xl font-bold ${mentrixStudent.textOnLight}`}>Quest complete</h2>
+          <p className="mt-4 text-4xl font-mono font-bold text-indigo-600">
+            {doneResult.correct}/{doneResult.total}
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
+            {doneResult.perfect ? "Perfect score bonus XP." : "Nice work keep practicing."}
+          </p>
+          <p className="mt-4 text-lg text-emerald-700 font-medium">+{xpTotal} XP</p>
+          {doneResult.mistakeReviews && doneResult.mistakeReviews.length > 0 && (
+            <div className="mt-8 text-left border border-slate-200 rounded-lg p-4 bg-white">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+                Review mistakes
+              </p>
+              <ul className="space-y-4">
+                {doneResult.mistakeReviews.map((m) => (
+                  <li key={m.questionId}>
+                    <p className="text-xs text-slate-500 line-clamp-2">{m.prompt}</p>
+                    <p className="text-sm text-slate-800 mt-1">{m.review}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <ShareScoreCardButton
+              title="Quest score"
+              scoreLine={`Score ${doneResult.correct}/${doneResult.total}`}
+              xpLine={`+${xpTotal} XP`}
+            />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPhase("wizard");
+                setQuestId(null);
+                setDoneResult(null);
+                setBreakthroughCelebration(null);
+                setErr(null);
+              }}
+            >
+              New quest
+            </Button>
           </div>
-        )}
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <ShareScoreCardButton
-            title="Quest score"
-            scoreLine={`Score ${doneResult.correct}/${doneResult.total}`}
-            xpLine={`+${xpTotal} XP`}
-          />
-          <Button
-            variant="outline"
-            onClick={() => {
-              setPhase("wizard");
-              setQuestId(null);
-              setDoneResult(null);
-              setErr(null);
-            }}
-          >
-            New quest
-          </Button>
         </div>
-      </div>
+        {breakthroughCelebration ? (
+          <BreakthroughCelebrationOverlay
+            celebration={breakthroughCelebration}
+            onDismiss={() => setBreakthroughCelebration(null)}
+            onStartNextQuest={() => void onStartNextBreakthroughQuest()}
+          />
+        ) : null}
+      </>
     );
   }
 

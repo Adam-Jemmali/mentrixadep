@@ -23,7 +23,8 @@ function isHobbyCompatibleCronSchedule(schedule: string): boolean {
   if (/\*\/\d+/.test(s)) return false;
   const parts = s.split(/\s+/);
   if (parts.length < 5) return false;
-  const [minute, hour] = parts;
+  const minute = parts[0] ?? "";
+  const hour = parts[1] ?? "";
   if (minute.includes(",") || hour.includes(",")) return false;
   if (minute === "*" || hour === "*") return false;
   return true;
@@ -48,6 +49,7 @@ describe("vercel cron config", () => {
     const requiredPaths = [
       "/api/cron/complete-sessions",
       "/api/cron/process-payouts",
+      "/api/cron/process-background-jobs",
     ];
 
     for (const requiredPath of requiredPaths) {

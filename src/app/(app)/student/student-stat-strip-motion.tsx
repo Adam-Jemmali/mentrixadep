@@ -6,9 +6,9 @@ import { TiltCard } from "@/shared/ui/tilt-card";
 import { BubbleText } from "@/shared/ui/bubble-text";
 
 import type { QuestAccuracyTrend } from "@/features/quest/quest-reads";
-import type { AccountRankVisual } from "@/features/xp/rank-icons";
-import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { normalizeRankTitle } from "@/features/xp/rank-icons";
+import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
+import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
+import { RankBadge } from "@/features/xp/components/rank-badge";
 
 const container = {
   hidden: { opacity: 0 },
@@ -45,6 +45,7 @@ export function StudentStatStripMotion({
 
   const trendArrow = questAccuracy?.direction === "up" ? "↑" : questAccuracy?.direction === "down" ? "↓" : "";
   const trendColor = questAccuracy?.direction === "up" ? "text-emerald-600" : questAccuracy?.direction === "down" ? "text-rose-600" : "text-zinc-500";
+  const accountLevel = getAccountLevelFromTotalXp(totalXp);
 
   return (
     <motion.div
@@ -59,16 +60,13 @@ export function StudentStatStripMotion({
           scale={1.04}
           className="mx-surface-light flex flex-row items-center gap-3 rounded-2xl px-4 py-4 sm:px-5"
         >
-          <RankBadge rank={accountRank} size="md" active showGlow={accountRank.key === "mentrixer"} />
+          <RankBadge rank={accountLevel} size="lg" animate={accountRank.key === "mentrixer"} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold uppercase tracking-wide" style={{ color: accountRank.labelOnLight }}>
               {normalizeRankTitle(accountRank.title)}
             </p>
-            <span className="text-2xl font-bold tabular-nums text-blue-700">
-              {totalXp.toLocaleString()}
-            </span>
             <span className="mt-0.5 block text-[11px] uppercase tracking-wide text-zinc-500">
-              <BubbleText text="Total XP" activeColor="text-blue-500" neighborColor="text-blue-400" />
+              <BubbleText text={`${totalXp.toLocaleString()} XP earned`} activeColor="text-blue-500" neighborColor="text-blue-400" />
             </span>
           </div>
         </TiltCard>

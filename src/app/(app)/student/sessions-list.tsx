@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { gsap } from "gsap";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -18,7 +18,6 @@ import { Clock, Calendar as CalendarIcon, History as HistoryIcon, Send } from "l
 import { StudentSessionTutorProfile } from "@/features/booking/session-lists";
 import type { SessionAiPackage } from "@/shared/types/database";
 
-import { countUp as gsapCountUp } from "@/shared/core/gsap";
 import { useLevelInfo } from "@/features/xp/mentrixa-ranks";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { readUiPerfTier } from "@/shared/core/ui-performance";
@@ -237,70 +236,81 @@ export function SessionsList({
     currentRank,
   } = useLevelInfo(totalXp);
 
-  useEffect(() => {
-    if (!showHeroStats) return;
-    const lite = readUiPerfTier() === "lite";
-    if (lite) {
-      if (totalXpRef.current) totalXpRef.current.textContent = String(totalXp);
-      if (streakRef.current) streakRef.current.textContent = String(streak);
-      if (sessionsRef.current) sessionsRef.current.textContent = String(sessionsCompleted);
-      if (ratingRef.current)
-        ratingRef.current.textContent = String(Math.round(avgRating * 10) / 10);
+  useGsapEffect(
+    (gsap) => {
+      if (!showHeroStats) return;
+      const lite = readUiPerfTier() === "lite";
+      if (lite) {
+        if (totalXpRef.current) totalXpRef.current.textContent = String(totalXp);
+        if (streakRef.current) streakRef.current.textContent = String(streak);
+        if (sessionsRef.current) sessionsRef.current.textContent = String(sessionsCompleted);
+        if (ratingRef.current)
+          ratingRef.current.textContent = String(Math.round(avgRating * 10) / 10);
+        if (xpFillRef.current) {
+          const ratio = Math.min(Math.max(progressPercent / 100, 0), 1);
+          xpFillRef.current.style.transformOrigin = "left center";
+          xpFillRef.current.style.transform = `scaleX(${ratio})`;
+        }
+        return;
+      }
+      void import("@/shared/core/gsap").then(({ countUp }) => {
+        if (totalXpRef.current) countUp(totalXpRef.current, totalXp);
+        if (streakRef.current) countUp(streakRef.current, streak);
+        if (sessionsRef.current) countUp(sessionsRef.current, sessionsCompleted);
+        if (ratingRef.current)
+          countUp(ratingRef.current, Math.round(avgRating * 10) / 10, 1.2);
+      });
+
       if (xpFillRef.current) {
         const ratio = Math.min(Math.max(progressPercent / 100, 0), 1);
-        xpFillRef.current.style.transformOrigin = "left center";
-        xpFillRef.current.style.transform = `scaleX(${ratio})`;
+        gsap.set(xpFillRef.current, { transformOrigin: "left center", scaleX: 0 });
+        gsap.to(xpFillRef.current, {
+          scaleX: ratio,
+          duration: 1,
+          ease: "power3.out",
+          delay: 0.4,
+        });
       }
-      return;
-    }
-    if (totalXpRef.current) gsapCountUp(totalXpRef.current, totalXp);
-    if (streakRef.current) gsapCountUp(streakRef.current, streak);
-    if (sessionsRef.current) gsapCountUp(sessionsRef.current, sessionsCompleted);
-    if (ratingRef.current) gsapCountUp(ratingRef.current, Math.round(avgRating * 10) / 10, 1.2);
+    },
+    [showHeroStats, totalXp, streak, sessionsCompleted, avgRating, progressPercent],
+  );
 
-    if (xpFillRef.current) {
-      const ratio = Math.min(Math.max(progressPercent / 100, 0), 1);
-      gsap.set(xpFillRef.current, { transformOrigin: "left center", scaleX: 0 });
-      gsap.to(xpFillRef.current, {
-        scaleX: ratio,
-        duration: 1,
-        ease: "power3.out",
-        delay: 0.4,
+  useGsapEffect(
+    (gsap) => {
+      if (!showHeroStats) return;
+      if (readUiPerfTier() === "lite") return;
+      const cells = document.querySelectorAll(".mentrixa-stat-cell");
+      if (cells.length === 0) return;
+      gsap.from(cells, {
+        opacity: 0,
+        y: 6,
+        duration: 0.4,
+        stagger: 0.06,
+        ease: "power2.out",
       });
-    }
-  }, [showHeroStats, totalXp, streak, sessionsCompleted, avgRating, progressPercent]);
-
-  useEffect(() => {
-    if (!showHeroStats) return;
-    if (readUiPerfTier() === "lite") return;
-    const cells = document.querySelectorAll(".mentrixa-stat-cell");
-    if (cells.length === 0) return;
-    gsap.from(cells, {
-      opacity: 0,
-      y: 6,
-      duration: 0.4,
-      stagger: 0.06,
-      ease: "power2.out",
-    });
-  }, [showHeroStats]);
+    },
+    [showHeroStats],
+  );
 
   const animateCards = useCallback(() => {
     if (readUiPerfTier() === "lite") return;
     const panel = document.querySelector(`[data-student-sessions-tab="${activeTab}"]`);
     const cards = panel?.querySelectorAll(".session-card") ?? [];
     if (cards.length === 0) return;
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 6 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.28,
-        stagger: 0.05,
-        ease: "power2.out",
-        clearProps: "opacity,transform",
-      },
-    );
+    void import("gsap").then(({ gsap }) => {
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 6 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.28,
+          stagger: 0.05,
+          ease: "power2.out",
+          clearProps: "opacity,transform",
+        },
+      );
+    });
   }, [activeTab]);
 
   useEffect(() => {

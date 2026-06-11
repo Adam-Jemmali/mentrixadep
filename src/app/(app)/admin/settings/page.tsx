@@ -12,7 +12,6 @@ export default async function AdminSettingsPage() {
     platformFeePercent: 15,
     maintenanceMode: false,
     duelsEnabled: true,
-    clansEnabled: true,
     aiQuestsEnabled: true,
   }));
 

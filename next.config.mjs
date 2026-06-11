@@ -27,11 +27,16 @@ const supabasePattern = supabaseStorageRemotePattern();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ["@google/genai"],
   experimental: {
     optimizePackageImports: [
       "lucide-react",
       "@tabler/icons-react",
       "framer-motion",
+      "recharts",
+      "katex",
+      "gsap",
+      "@number-flow/react",
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
       "@radix-ui/react-popover",
@@ -39,7 +44,6 @@ const nextConfig = {
       "@radix-ui/react-tabs",
       "@radix-ui/react-tooltip",
       "@supabase/supabase-js",
-      "gsap",
       "d3",
     ],
   },
@@ -131,7 +135,7 @@ const nextConfig = {
 
   reactStrictMode: true,
 
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, isServer }) => {
     config.ignoreWarnings = [
       ...(Array.isArray(config.ignoreWarnings) ? config.ignoreWarnings : []),
       /Serializing big strings.*impacts deserialization performance/,
@@ -142,6 +146,28 @@ const nextConfig = {
         level: "error",
       };
       /** Next.js forces dev `devtool` in development; do not override (see improper-devtool warning). */
+    }
+    if (!dev && !isServer) {
+      config.optimization = config.optimization ?? {};
+      config.optimization.splitChunks = config.optimization.splitChunks ?? {};
+      const cacheGroups = config.optimization.splitChunks.cacheGroups ?? {};
+      config.optimization.splitChunks.cacheGroups = {
+        ...cacheGroups,
+        gsap: {
+          test: /[\\/]node_modules[\\/]gsap[\\/]/,
+          name: "gsap",
+          chunks: "async",
+          priority: 45,
+          reuseExistingChunk: true,
+        },
+        framerMotion: {
+          test: /[\\/]node_modules[\\/](framer-motion|motion-dom)[\\/]/,
+          name: "framer-motion",
+          chunks: "async",
+          priority: 40,
+          reuseExistingChunk: true,
+        },
+      };
     }
     return config;
   },

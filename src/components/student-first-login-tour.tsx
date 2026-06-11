@@ -40,12 +40,12 @@ export function StudentFirstLoginTour({ user }: { user: AuthUser }) {
   const steps = useMemo<StudentTourStep[]>(
     () => [
       {
-        id: "study-plan",
-        title: "Build your study plan",
-        description: "Take the short diagnostic quiz so we can recommend topics and your first practice quest.",
-        href: "/student/onboarding",
+        id: "quest",
+        title: "Play your first Quest",
+        description: "Pick a subject and complete your first practice quest to start climbing the rank ladder.",
+        href: "/student/quest?onboarding=true",
         icon: "/icons/mentrixer.svg",
-        isMatch: (path) => path === "/student/onboarding" || path.startsWith("/student/onboarding/"),
+        isMatch: (path) => path === "/student/quest" || path.startsWith("/student/quest/"),
       },
       {
         id: "profile",
@@ -64,36 +64,12 @@ export function StudentFirstLoginTour({ user }: { user: AuthUser }) {
         isMatch: (path) => path === "/student/duel" || path.startsWith("/student/duel/"),
       },
       {
-        id: "clan",
-        title: "Join a Clan",
-        description: "Find your learning crew to stay motivated, collaborate, and climb together.",
-        href: "/student/clan",
-        icon: "/icons/mentrixer.svg",
-        isMatch: (path) => path === "/student/clan" || path.startsWith("/student/clan/"),
-      },
-      {
         id: "division",
-        title: "Enter Division",
-        description: "Track your rank and compete in your division leaderboard each week.",
+        title: "Enter your division",
+        description: "See your rank, compete on the leaderboard, and join Division Wars each week.",
         href: "/student/division",
         icon: "/icons/guide.svg",
         isMatch: (path) => path === "/student/division" || path.startsWith("/student/division/"),
-      },
-      {
-        id: "path",
-        title: "Set your Path",
-        description: "Use your learning path to focus on the exact topics you want to master next.",
-        href: "/student/learning-path",
-        icon: "/icons/mentrixer.svg",
-        isMatch: (path) => path === "/student/learning-path" || path.startsWith("/student/learning-path/"),
-      },
-      {
-        id: "quest",
-        title: "Play Quest",
-        description: "Run daily quest practice to sharpen concepts and keep your progress momentum.",
-        href: "/student/quest",
-        icon: "/icons/guide.svg",
-        isMatch: (path) => path === "/student/quest" || path.startsWith("/student/quest/"),
       },
       {
         id: "sessions",

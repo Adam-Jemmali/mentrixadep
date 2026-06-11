@@ -15,9 +15,15 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
-import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { splitSessionPriceCents, getStudentSessionCheckoutCents } from "@/features/booking/booking-pricing";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { BookingConfirmationCard } from "@/shared/ui/booking-confirmation-card";
+import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
+import { ImpactScoreBadge } from "@/features/guide-impact/components/impact-score-badge";
+import {
+  impactForCourseFilter,
+  type GuideImpactEntry,
+} from "@/features/guide-impact/impact-score-pure";
 
 function slotsInNextDays<T extends { start_time: string }>(slots: T[], days: number): T[] {
   const now = Date.now();
@@ -56,6 +62,10 @@ interface AvailabilityBrowserProps {
   syncCourseFilter?: string | null;
   /** IANA timezone for displaying slot instants (student profile or admin viewing student). */
   displayTimeZone?: string;
+  guideImpactByTutorId?: Record<string, GuideImpactEntry[]>;
+  guideRankByTutorId?: Record<string, string>;
+  /** Courses the student has completed quests in — drives default “Highest Impact” sort. */
+  questHistorySubjects?: string[];
 }
 
 export function AvailabilityBrowser({
@@ -65,12 +75,28 @@ export function AvailabilityBrowser({
   tutorExpertise = {},
   syncCourseFilter,
   displayTimeZone = "UTC",
+  guideImpactByTutorId = {},
+  guideRankByTutorId = {},
+  questHistorySubjects = [],
 }: AvailabilityBrowserProps) {
   const [query, setQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>(
     studentCourseNames.length > 0 ? (studentCourseNames[0] ?? "all") : "all",
   );
   const [selectedSlot, setSelectedSlot] = useState<Availability | null>(null);
+  const [sortBy, setSortBy] = useState<"impact" | "name">("name");
+  const [minImpact80, setMinImpact80] = useState(false);
+
+  const defaultSortByImpact = useMemo(() => {
+    if (questHistorySubjects.length === 0) return false;
+    if (courseFilter === "all") return true;
+    const cf = courseFilter.toLowerCase();
+    return questHistorySubjects.some((s) => s.toLowerCase() === cf);
+  }, [questHistorySubjects, courseFilter]);
+
+  useEffect(() => {
+    setSortBy(defaultSortByImpact ? "impact" : "name");
+  }, [defaultSortByImpact]);
 
   useEffect(() => {
     if (syncCourseFilter == null || syncCourseFilter === undefined) return;
@@ -81,12 +107,16 @@ export function AvailabilityBrowser({
     const map = new Map<
       string,
       {
+        tutorId: string;
         name: string;
         email: string;
         avatarUrl: string | null;
         priceCents: number;
         rating: number;
         sessions: number;
+        impactScore: number;
+        impactSessions: number;
+        impactSubject: string | null;
         slots: Availability[];
       }
     >();
@@ -96,15 +126,25 @@ export function AvailabilityBrowser({
       const name = slot.tutor?.display_name?.trim() || email.split("@")[0] || "Guide";
       const key = slot.tutor_id ?? email;
       const avatarUrl = slot.tutor?.avatar_url ?? null;
+      const tutorId = slot.tutor_id ?? "";
+      const impactEntries = guideImpactByTutorId[tutorId] ?? [];
+      const courseImpact =
+        courseFilter !== "all"
+          ? impactForCourseFilter(impactEntries, courseFilter)
+          : impactEntries[0] ?? null;
 
       if (!map.has(key)) {
         map.set(key, {
+          tutorId,
           name,
           email,
           avatarUrl,
-          priceCents: slot.price_per_session ?? 2500,
+          priceCents: getStudentSessionCheckoutCents(),
           rating: 4.8,
           sessions: 24,
+          impactScore: courseImpact?.impactScore ?? 0,
+          impactSessions: courseImpact?.sessionsCounted ?? 0,
+          impactSubject: courseImpact?.subject ?? null,
           slots: [],
         });
       }
@@ -113,6 +153,10 @@ export function AvailabilityBrowser({
     }
 
     let list = Array.from(map.values());
+
+    if (minImpact80) {
+      list = list.filter((g) => g.impactScore > 80 && g.impactSessions >= 3);
+    }
 
     if (query) {
       const q = query.toLowerCase();
@@ -131,8 +175,15 @@ export function AvailabilityBrowser({
         ...g,
         slots: slotsInNextDays(g.slots, 14),
       }))
-      .filter((g) => g.slots.length > 0);
-  }, [availability, query, courseFilter]);
+      .filter((g) => g.slots.length > 0)
+      .sort((a, b) => {
+        if (sortBy === "impact") {
+          const diff = b.impactScore - a.impactScore;
+          if (diff !== 0) return diff;
+        }
+        return a.name.localeCompare(b.name);
+      });
+  }, [availability, query, courseFilter, guideImpactByTutorId, minImpact80, sortBy]);
 
   return (
     <aside>
@@ -169,10 +220,34 @@ export function AvailabilityBrowser({
         </SelectContent>
       </Select>
 
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as "impact" | "name")}>
+          <SelectTrigger
+            aria-label="Sort guides"
+            className="min-h-9 w-[160px] text-xs bg-white border-slate-200 text-slate-900"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="impact">Highest Impact</SelectItem>
+            <SelectItem value="name">Name (A–Z)</SelectItem>
+          </SelectContent>
+        </Select>
+        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-slate-600">
+          <input
+            type="checkbox"
+            checked={minImpact80}
+            onChange={(e) => setMinImpact80(e.target.checked)}
+            className="rounded border-slate-300"
+          />
+          Impact Score &gt; 80
+        </label>
+      </div>
+
       {guides.length > 0 ? (
         <div className="divide-y divide-slate-200 border-y border-slate-200 bg-white rounded-lg">
           {guides.map((guide, idx) => {
-            const tutorId = guide.slots[0]?.tutor_id ?? "";
+            const tutorId = guide.tutorId || (guide.slots[0]?.tutor_id ?? "");
             const expertise = tutorId ? (tutorExpertise[tutorId] ?? []) : [];
             const hasVerifiedCourse = expertise.some((e) => e.verified);
 
@@ -211,12 +286,27 @@ export function AvailabilityBrowser({
                         Verified
                       </Badge>
                     )}
+                    {guideRankByTutorId[tutorId] ? (
+                      <GuideRankBadge
+                        rankKey={guideRankByTutorId[tutorId]!}
+                        size="sm"
+                        showLabel={false}
+                      />
+                    ) : null}
                   </div>
                   <div className="shrink-0 text-right text-sm font-medium tabular-nums text-slate-900">
                     {formatUsdFromCents(splitSessionPriceCents(guide.priceCents).totalCents)}
                     <span className="block text-[10px] font-normal text-slate-500">incl. fee</span>
                   </div>
                 </div>
+                {guide.impactSessions >= 3 ? (
+                  <ImpactScoreBadge
+                    impactScore={guide.impactScore}
+                    sessionsCounted={guide.impactSessions}
+                    subject={guide.impactSubject ?? undefined}
+                    size="sm"
+                  />
+                ) : null}
                 <div className="mt-0.5 text-xs text-slate-600">
                   {guide.rating.toFixed(1)} rating · {guide.sessions} sessions
                 </div>
@@ -272,7 +362,7 @@ function BookingDialog({
   }, [slot?.id]);
   if (!slot) return null;
 
-  const priceCents = slot.price_per_session ?? 2500;
+  const priceCents = getStudentSessionCheckoutCents();
   const durationMin = getSessionDurationMinutes(slot.start_time, slot.end_time);
   const scheduleLine = `${formatSlotRangeInZone(slot.start_time, slot.end_time, displayTimeZone)} · ${formatDurationLabel(durationMin)}`;
   const expertise = slot.tutor_id ? (tutorExpertise[slot.tutor_id] ?? []) : [];

@@ -65,6 +65,7 @@ export default async function TutorDashboardAdminPage({ params }: Props) {
           autoApprove={data.autoApprove}
           tutorCourses={data.tutorCourses}
           tutorTimezone={data.tutorTimezone}
+          tutorId={tutorId}
           sessionDefaultDurationMinutes={data.sessionDefaultDurationMinutes}
           greeting={greeting}
           firstName={firstName}

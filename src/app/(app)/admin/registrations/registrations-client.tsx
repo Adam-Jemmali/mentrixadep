@@ -3,9 +3,9 @@
 import { approveRegistrationRequest, rejectRegistrationRequest, reinstateRejectedRegistrationRequest, toggleAutoApproveRegistrations, approveAllPendingRegistrations } from "@/features/admin/registration-queue";
 
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { gsap } from "gsap";
+import { runGsapAction, useGsapEffect } from "@/shared/core/gsap-lazy";
 import {
   CheckCircle2,
   X,
@@ -61,7 +61,7 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
 
   const showActionsColumn = filter !== "approved";
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     const rows = document.querySelectorAll(".reg-row");
     if (!rows.length) return;
     gsap.fromTo(rows, { opacity: 0, y: 6 }, { opacity: 1, y: 0, stagger: 0.035, duration: 0.25, ease: "power2.out" });
@@ -70,9 +70,11 @@ export function AdminRegistrationsClient({ requests: initialRequests, autoApprov
   const collapseRow = useCallback((id: string, onDone: () => void) => {
     const row = rowRefs.current.get(id);
     if (!row) { onDone(); return; }
-    gsap.to(row, {
-      height: 0, opacity: 0, paddingTop: 0, paddingBottom: 0,
-      duration: 0.25, ease: "power2.in", onComplete: onDone,
+    runGsapAction((gsap) => {
+      gsap.to(row, {
+        height: 0, opacity: 0, paddingTop: 0, paddingBottom: 0,
+        duration: 0.25, ease: "power2.in", onComplete: onDone,
+      });
     });
   }, []);
 

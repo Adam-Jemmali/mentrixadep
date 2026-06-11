@@ -2,7 +2,7 @@ import { processBackgroundJobs } from "@/features/jobs/process";
 import { cronGetHandler } from "@/shared/core/cron-auth";
 
 async function runProcessBackgroundJobsCron() {
-  const worker = await processBackgroundJobs(10);
+  const worker = await processBackgroundJobs(50);
   return {
     rows_scanned: worker.claimed,
     rows_updated: worker.completed,

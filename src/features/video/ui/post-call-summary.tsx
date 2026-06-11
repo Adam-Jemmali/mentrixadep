@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { gsap } from "gsap";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { CheckCircle, Clock, Film, ArrowRight } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -75,13 +75,12 @@ export function PostCallSummary({
       ? "Next: Studio — pick this session to build or publish your learner’s Quest package."
       : "Next: Sessions → History — rate this call and open past session details.";
 
-  // Entrance animation
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!cardRef.current) return;
     gsap.fromTo(
       cardRef.current,
       { opacity: 0, y: 24, scale: 0.97 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" }
+      { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" },
     );
   }, []);
 

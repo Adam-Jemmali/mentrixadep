@@ -18,10 +18,10 @@ const WireframeDottedGlobe = dynamic(
 );
 
 const MOTTO =
-  "The ranked world for anyone who wants to prove what they know.";
+  "Every action moves rank. No participation points. Only competition counts.";
 
 const VISION =
-  "Every person trying to get better at something deserves a place to compete and a real expert when the game is not enough.";
+  "You put in the hours. You still do not know if it stuck. Mentrixa tells you the truth against real people before it costs you.";
 
 export function SocialProofStrip() {
   const reduceMotion = useReducedMotion();

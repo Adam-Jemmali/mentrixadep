@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getClientIpFromRequest } from "@/shared/core/security";
+import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
 import { generateGuestTryQuestPack, hydrateGuestTryQuestionImages } from "@/shared/integrations/ai";
 import {
   isPlayableGuestTryQuestion,
@@ -22,11 +24,15 @@ function todayIso() {
   return d.toISOString().slice(0, 10);
 }
 
-const TRY_QUEST_COUNT = 8;
+const TRY_QUEST_COUNT = 5;
 const ENFORCE_GUEST_DAILY_LIMIT = process.env.NODE_ENV === "production";
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIpFromRequest({ headers: req.headers });
+    const routeBlocked = await enforceApiRouteRateLimit("guest.practice", { ip });
+    if (routeBlocked) return routeBlocked;
+
     const body = await req.json();
     const subject = typeof body?.subject === "string" ? body.subject : "General";
 

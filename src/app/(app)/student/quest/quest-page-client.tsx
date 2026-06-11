@@ -29,7 +29,7 @@ export function QuestPageClient({
       <div className={`${mentrixStudent.pageBg} min-h-screen`}>
         <div className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6">
           <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm leading-relaxed text-indigo-950 shadow-sm">
-             This is the Quest workspace. Where you can practice and build your skills and be #1 in the leaderboard. 
+            Your rank starts at zero. This Quest moves it. Pick your subject and prove what you know.
           </div>
         </div>
         <QuestPracticeWorkspace subjectOptions={subjectOptions} onboardingMode />

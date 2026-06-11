@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTutorPublicProfile } from "@/features/tutor/public-profile";
 import { getCurrentUser } from "@/shared/core/auth";
@@ -13,7 +13,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tutorId } = await params;
   const profile = await getTutorPublicProfile(tutorId);
   if (!profile) return { title: "Tutor not found, Mentrixa" };
-  const title = `${profile.name} - Mentrixa Guide`;
+  const title = profile.guideRank && profile.guideRank !== "practitioner"
+    ? `${profile.name} — ${profile.guideRank.toUpperCase()} Guide · Mentrixa`
+    : `${profile.name} - Mentrixa Guide`;
   const description = `Book a session with ${profile.name} on Mentrixa.`;
   const canonical = `${getSiteUrl()}/tutor/${tutorId}`;
   return {
@@ -33,9 +35,6 @@ export default async function TutorProfilePage({ params }: Props) {
   ]);
 
   if (!profile) notFound();
-  if (currentUser?.role === "student") {
-    redirect("/student#browse-guides");
-  }
 
   return (
     <TutorProfileClient

@@ -10,10 +10,18 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic";
 import { usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/shared/integrations/supabase/client";
-import { fireLevelUpConfetti } from "@/features/xp/confetti-burst";
-import { playMentrixaRankUpOnce, ensureMentrixaAudioUnlocked, warmMentrixaSoundAssets } from "@/shared/integrations/mentrixa-sounds";
 import { flushXpQueue } from "@/features/xp/pwa-xp-queue";
 import { trackClientEvent } from "@/shared/integrations/use-track";
+import type { RankLevelUpPayload } from "@/features/xp/components/rank-level-up-modal";
+
+const RankLevelUpModal = dynamic(
+  () =>
+    import("@/features/xp/components/rank-level-up-modal").then((m) => ({
+      default: m.RankLevelUpModal,
+    })),
+  { ssr: false, loading: () => null },
+);
+import { ensureMentrixaAudioUnlocked, warmMentrixaSoundAssets } from "@/shared/integrations/mentrixa-sounds";
 import type { AuthUser } from "@/shared/core/auth";
 import { cn } from "@/shared/core/utils";
 import { StudentNavbar } from "@/components/student-navbar";
@@ -155,26 +163,18 @@ function AppNavOrNothing({ user }: { user: AuthUser | null }) {
   return <Navigation user={user} />;
 }
 
-type LevelUpPayload = { to_level: number | null; title: string | null };
+type RankModalState = {
+  payload: RankLevelUpPayload;
+  headline?: string;
+  subtitle?: string;
+};
 
 function LevelUpExperience({ user }: { user: AuthUser | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [open, setOpen] = useState(false);
-  const [payload, setPayload] = useState<LevelUpPayload | null>(null);
+  const [modalState, setModalState] = useState<RankModalState | null>(null);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
   const celebrationTriggeredRef = useRef(false);
-  const rankSoundPlayedRef = useRef(false);
-
-  useEffect(() => {
-    if (!open || !payload) {
-      rankSoundPlayedRef.current = false;
-      return;
-    }
-    if (rankSoundPlayedRef.current) return;
-    rankSoundPlayedRef.current = true;
-    playMentrixaRankUpOnce();
-  }, [open, payload]);
 
   const uid = user?.id;
   const isStudent = user?.role === "student";
@@ -213,18 +213,26 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
     }
   }, [uid, showStreak]);
 
+  const dismissRankModal = useCallback(() => {
+    setModalState(null);
+    void refreshStreak();
+  }, [refreshStreak]);
+
   useEffect(() => {
     void refreshStreak();
   }, [refreshStreak]);
 
   useEffect(() => {
-    const shouldCelebrate = pathname === "/student" && searchParams.get("celebration") === "levelup";
-    if (!shouldCelebrate || celebrationTriggeredRef.current) return;
+    const wandererReveal =
+      pathname === "/student" && searchParams.get("celebration") === "wanderer";
+    if (!wandererReveal || celebrationTriggeredRef.current) return;
 
     celebrationTriggeredRef.current = true;
-    setPayload({ to_level: null, title: "Level up" });
-    setOpen(true);
-    void fireLevelUpConfetti();
+    setModalState({
+      payload: { toLevel: 1, title: "WANDERER" },
+      headline: "You are now a Mentrixer",
+      subtitle: "Rank: WANDERER. Your first Quest is on the board.",
+    });
 
     if (typeof window !== "undefined") {
       const nextUrl = new URL(window.location.href);
@@ -237,7 +245,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
     if (!uid || !user?.approved) return;
     const supabase = createClient();
     const channel = supabase
-      .channel(`user_achievements:${uid}`)
+      .channel(`achievements:${uid}`)
       .on(
         "postgres_changes",
         {
@@ -252,17 +260,18 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
             to_level?: number | null;
             title?: string | null;
           };
-          if (n.achievement_type === "level_up") {
-            setPayload({ to_level: n.to_level ?? null, title: n.title ?? null });
-            setOpen(true);
-            void fireLevelUpConfetti();
-          }
+          const isRankUp =
+            n.achievement_type === "rank_up" || n.achievement_type === "level_up";
+          if (!isRankUp || n.to_level == null || !n.title) return;
+          setModalState({
+            payload: { toLevel: n.to_level, title: n.title },
+          });
         },
       )
       .subscribe((status: RealtimeSubscribeStatus) => {
         if (status === "SUBSCRIBED") {
           trackClientEvent("realtime_reconnect", {
-            channel: `user_achievements:${uid}`,
+            channel: `achievements:${uid}`,
             reason: "subscribed",
           });
           return;
@@ -270,7 +279,7 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
 
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           trackClientEvent("realtime_disconnect", {
-            channel: `user_achievements:${uid}`,
+            channel: `achievements:${uid}`,
             reason: status.toLowerCase(),
           });
         }
@@ -312,38 +321,13 @@ function LevelUpExperience({ user }: { user: AuthUser | null }) {
         </div>
       ) : null}
 
-      {open && payload ? (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 px-4 backdrop-blur-[2px]"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="level-up-title"
-        >
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 text-center shadow-xl">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">Level up</p>
-            <h2 id="level-up-title" className="mt-2 text-2xl font-medium tracking-tight text-slate-900">
-              {payload.title ?? "New rank"}
-            </h2>
-            {payload.to_level != null ? (
-              <p className="mt-2 font-mono text-sm text-slate-500">Level {payload.to_level}</p>
-            ) : null}
-            <p className="mt-4 text-sm leading-relaxed text-slate-600">
-              You’ve crossed the next threshold. Keep the momentum — sessions, quests, and duels all add XP.
-            </p>
-            <button
-              type="button"
-              className="mt-8 w-full rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-              onClick={() => {
-                setOpen(false);
-                setPayload(null);
-                void refreshStreak();
-              }}
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <RankLevelUpModal
+        open={modalState != null}
+        payload={modalState?.payload ?? null}
+        headline={modalState?.headline}
+        subtitle={modalState?.subtitle}
+        onDismiss={dismissRankModal}
+      />
     </>
   );
 }
@@ -451,7 +435,7 @@ function PushNotificationOptIn() {
         <DialogHeader>
           <DialogTitle className="text-lg text-blue-900 font-semibold">Enable notifications?</DialogTitle>
           <DialogDescription className="text-sm text-slate-600 leading-relaxed">
-            Get session reminders, duel challenges, level-up moments, and clan updates!
+            Get session reminders, duel challenges, and level-up moments.
          
           </DialogDescription>
         </DialogHeader>
@@ -514,13 +498,10 @@ export function RootLayoutClient({
     isApprovedStudent && pathname === "/student/quest" && searchParams.get("onboarding") === "true";
   const isWorkbenchRoute =
     pathname.includes("/quest") ||
-    pathname.includes("/resolve") ||
-    pathname.includes("/learning-path") ||
     pathname.includes("/sessions-ai");
   const isArenaRoute =
     pathname.includes("/duel") ||
-    pathname.includes("/division") ||
-    pathname.includes("/clan");
+    pathname.includes("/division");
 
   return (
     <ErrorBoundary>
@@ -535,7 +516,7 @@ export function RootLayoutClient({
         <StudentNavbar user={user} />
       ) : null}
       {isApprovedTutor && user && !isVideoRoute ? <TutorNavbar user={user} /> : null}
-      {isApprovedStudent && user ? <StudentFirstLoginTour user={user} /> : null}
+      {isApprovedStudent && user && !isQuestOnboarding ? <StudentFirstLoginTour user={user} /> : null}
       {isApprovedTutor && user ? <TutorFirstLoginTour user={user} /> : null}
       <LevelUpExperience user={user} />
       {isApprovedStudent && user ? (

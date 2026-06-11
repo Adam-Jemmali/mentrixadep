@@ -76,7 +76,7 @@ export function HeroClimbSection() {
               custom={0}
               className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-300/90"
             >
-              The ranked world for learning
+              Free to compete · Guides live now
             </motion.p>
 
             <HeroHeadline className="text-balance font-black italic tracking-[-0.04em] text-white drop-shadow-[0_12px_40px_rgba(0,0,0,0.55)] text-[clamp(2.35rem,6.8vw,4.25rem)] leading-[1.02]" />
@@ -86,12 +86,8 @@ export function HeroClimbSection() {
               custom={2}
               className="mx-auto mt-5 max-w-xl text-pretty text-[15px] leading-relaxed text-slate-300/95 sm:text-base lg:mx-0"
             >
-              Most people spend years on a skill and never know
-if they are actually good at it.
-
-Mentrixa fixes that.
-
-Free to compete. Pay only when you need a breakthrough.
+              Mentrixa is a public ranked arena. Compete daily. See what breaks. Fix it with a
+              verified expert. Free to start. $39 when you need a breakthrough.
             </motion.p>
 
           
@@ -102,10 +98,10 @@ Free to compete. Pay only when you need a breakthrough.
               className="mt-9 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start"
             >
               <LandingShimmerButton href="/auth/signup" variant="primary" className="lp-cta-pulse">
-                Start competing free →
+                Prove what you know →
               </LandingShimmerButton>
               <LandingShimmerButton href="/try" variant="secondary">
-                See how it works ↓
+                Watch how it works ↓
               </LandingShimmerButton>
               <LandingShimmerButton href="/auth/signup?role=tutor" variant="ghost">
                 <RoleIcon role="guide" className="brightness-0 invert" />
@@ -118,7 +114,7 @@ Free to compete. Pay only when you need a breakthrough.
               custom={4}
               className="mt-4 text-center text-[11px] font-medium text-slate-500 lg:text-left"
             >
-              Free to join. Quests and duels always free. Pay only when you book a live Guide session.
+              Free forever. No card until you book a Guide. Accuracy improves or the session is free.
             </motion.p>
           </motion.div>
 

@@ -19,21 +19,46 @@ import {
   type SessionEmailDetails,
 } from "@/shared/integrations/email";
 import { checkInstitutionCredits, consumeInstitutionCredit } from "@/features/institutions/institution-credits";
+import { recordSecurityEvent } from "@/shared/core/security/security-events";
 
 function stripe(): Stripe {
   return getStripeServer();
 }
 
-async function markEventProcessed(eventId: string, eventType: string): Promise<boolean> {
+async function isEventProcessed(eventId: string): Promise<boolean> {
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data, error } = await admin
     .from("stripe_webhook_log")
-    .insert({ event_id: eventId, event_type: eventType });
-  if (error) {
-    if (error.code === "23505") return true;
-    throw error;
+    .select("event_id")
+    .eq("event_id", eventId)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
+async function logWebhook(
+  eventId: string,
+  eventType: string,
+  status: "processed" | "failed",
+  errorMessage?: string,
+): Promise<void> {
+  if (status === "processed") {
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("stripe_webhook_log")
+      .insert({ event_id: eventId, event_type: eventType });
+    if (error && error.code !== "23505") throw error;
+    return;
   }
-  return false;
+
+  await recordSecurityEvent({
+    event_type: "stripe_webhook_failed",
+    metadata: {
+      event_id: eventId,
+      event_type: eventType,
+      error: errorMessage?.slice(0, 500) ?? "unknown",
+    },
+  });
 }
 
 async function unlockSlot(availabilityId: string) {
@@ -116,7 +141,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (!availabilityId || !studentId) {
     reportStripeWebhookMissingMetadata(session.id);
     console.error("[webhook] checkout.session.completed: missing metadata", session.id);
-    return;
+    throw new Error("checkout.session.completed missing required metadata");
   }
 
   if (isSmokeTest) {
@@ -157,6 +182,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     } else {
       captureStripeWebhookError("booking", err, { availabilityId, studentId });
       console.error("[webhook] bookSessionAsUser failed:", err);
+      throw err instanceof Error ? err : new Error("bookSessionAsUser failed");
     }
   }
 
@@ -340,16 +366,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const alreadyProcessed = await markEventProcessed(event.id, event.type);
+    const alreadyProcessed = await isEventProcessed(event.id);
     if (alreadyProcessed) {
       console.log(`[webhook] duplicate event skipped: ${event.id} (${event.type})`);
       return NextResponse.json({ received: true, duplicate: true });
     }
-  } catch (logErr) {
-    console.warn("[webhook] idempotency log failed (non-fatal):", logErr);
-  }
 
-  try {
     switch (event.type) {
       case "checkout.session.completed": {
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
@@ -397,14 +419,17 @@ export async function POST(req: NextRequest) {
       default:
         console.log(`[webhook] unhandled event type: ${event.type}`);
     }
+
+    await logWebhook(event.id, event.type, "processed");
+    return NextResponse.json({ received: true });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error(`[webhook] handler error for ${event.type}:`, err);
     captureUnexpectedError(`stripe-webhook-${event.type}`, err);
+    await logWebhook(event.id, event.type, "failed", message);
     return NextResponse.json(
-      { received: false, error: "Handler failed" },
-      { status: 500 }
+      { error: "Handler failed" },
+      { status: 500 },
     );
   }
-
-  return NextResponse.json({ received: true });
 }

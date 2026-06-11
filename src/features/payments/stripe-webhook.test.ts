@@ -28,4 +28,12 @@ describe("stripe webhook route contract", () => {
     expect(src.includes("webhooks.constructEvent")).toBe(true);
     expect(src.includes("getStripeWebhookSecret")).toBe(true);
   });
+
+  it("logs outcomes and returns 500 on handler failure", () => {
+    const src = readWebhookRouteSource();
+    expect(src.includes("logWebhook")).toBe(true);
+    expect(src.includes("\"processed\"")).toBe(true);
+    expect(src.includes("\"failed\"")).toBe(true);
+    expect(src.includes("status: 500")).toBe(true);
+  });
 });

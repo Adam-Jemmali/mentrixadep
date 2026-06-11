@@ -1,14 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
-import katex from "katex";
-import "katex/dist/katex.min.css";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-/**
- * Renders plain text with optional inline/block LaTeX: \( ... \) and $$ ... $$.
- */
-export function PromptWithMath({ text }: { text: string }) {
-  // Some generators escape inline math dollars as \$...\$.
+type KatexModule = typeof import("katex");
+
+function renderMathParts(text: string, katex: KatexModule["default"]): ReactNode[] {
   const normalizedText = text.replace(/\\\$/g, "$");
   const parts: ReactNode[] = [];
   let key = 0;
@@ -33,7 +29,7 @@ export function PromptWithMath({ text }: { text: string }) {
       parts.push(
         <span
           key={key++}
-          className={displayMode ? "block my-2" : "inline"}
+          className={displayMode ? "my-2 block" : "inline"}
           dangerouslySetInnerHTML={{ __html: html }}
         />,
       );
@@ -49,5 +45,40 @@ export function PromptWithMath({ text }: { text: string }) {
       </span>,
     );
   }
-  return <div className="text-slate-800 text-sm leading-relaxed">{parts}</div>;
+  return parts;
+}
+
+/**
+ * Renders plain text with optional inline/block LaTeX: \( ... \) and $$ ... $$.
+ * KaTeX loads on demand so quest routes stay lean when no math is present.
+ */
+export function PromptWithMath({ text }: { text: string }) {
+  const [katex, setKatex] = useState<KatexModule["default"] | null>(null);
+  const needsMath = /\\\(|\\\$|\$\$|\$[^$\n]+\$/.test(text);
+
+  useEffect(() => {
+    if (!needsMath) return;
+    let active = true;
+    void import("katex").then((mod) => {
+      if (!active) return;
+      setKatex(mod.default);
+      void import("katex/dist/katex.min.css");
+    });
+    return () => {
+      active = false;
+    };
+  }, [needsMath]);
+
+  const parts = useMemo(() => {
+    if (!katex) return null;
+    return renderMathParts(text, katex);
+  }, [text, katex]);
+
+  if (!needsMath || !katex || !parts) {
+    return (
+      <div className="text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">{text}</div>
+    );
+  }
+
+  return <div className="text-sm leading-relaxed text-slate-800">{parts}</div>;
 }

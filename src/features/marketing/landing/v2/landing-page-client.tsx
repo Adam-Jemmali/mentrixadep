@@ -81,17 +81,17 @@ export function LandingPageClient() {
       <DeferredSocialProofStrip />
 
       <LandingStoryBridge
-        chapter="Chapter 01"
-        title="One arena. Every skill you take seriously."
-        subtitle="Courses end. Rank does not. Mentrixa is not a content library you finish and forget. It is a competitive arena you return to every time you want proof the skill is real."
+        chapter="01"
+        title="One rank per skill."
+        subtitle="Courses end. Certificates lie. Rank updates every time you compete."
       />
 
       <DeferredOutcomesSection />
 
       <LandingStoryBridge
-        chapter="Chapter 02"
-        title="A number that tells the truth."
-        subtitle="Most learners have no idea if they are improving. They confuse hours spent with progress made. Mentrixa turns every quest, duel, and session into a score. Public. Permanent. Undeniable."
+        chapter="02"
+        title="Rank only cares about results."
+        subtitle="You studied three hours and still failed. Mentrixa shows which concept broke. One number. Public. Live."
       />
 
       <DeferredFeaturesBentoSection />
@@ -101,9 +101,9 @@ export function LandingPageClient() {
       <DeferredWhyMentrixSection />
 
       <LandingStoryBridge
-        chapter="Chapter 03"
-        title="The same 4 moves. Any skill you enter."
-        subtitle="Every learner who improves on Mentrixa runs the same loop. Book when stuck. Meet the Guide live. Unpack what you learned. Climb tomorrow. The subject changes. The loop does not."
+        chapter="03"
+        title="Four moves. Same loop."
+        subtitle="Compete. Book when stuck. Meet live. Climb tomorrow."
       />
 
       <DeferredFlowStepsSection />

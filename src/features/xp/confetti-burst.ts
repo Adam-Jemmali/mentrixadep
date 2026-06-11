@@ -21,13 +21,40 @@ export async function fireLevelUpConfetti(): Promise<void> {
     particleCount: count,
     spread: 100,
     startVelocity: 45,
-    colors: ["#0f172a", "#334155", "#64748b", "#f59e0b", "#10b981"],
+    colors: ["#0f172a", "#334155", "#64748b", "#2563eb", "#4f46e5", "#7c3aed"],
   });
   await confetti({
     ...defaults,
     particleCount: Math.floor(count * 0.6),
     spread: 160,
     scalar: 0.9,
-    colors: ["#1e293b", "#eab308"],
+    colors: ["#1e293b", "#38bdf8", "#4f46e5"],
   });
+}
+
+/** Gold particle rain — MENTRIXER rank reveal only. */
+export async function fireMentrixerGoldRain(): Promise<void> {
+  if (typeof window === "undefined") return;
+  const confetti = (await import("canvas-confetti")).default;
+  const gold = ["#D4A017", "#F5D76E", "#B8860B", "#FFF8E7"];
+  const durationMs = 2800;
+  const end = Date.now() + durationMs;
+
+  const frame = () => {
+    confetti({
+      particleCount: 4,
+      angle: 270,
+      spread: 36,
+      startVelocity: 28,
+      origin: { x: Math.random(), y: -0.05 },
+      colors: gold,
+      gravity: 1.1,
+      scalar: 1.1,
+      drift: Math.random() * 0.4 - 0.2,
+    });
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  };
+  frame();
 }

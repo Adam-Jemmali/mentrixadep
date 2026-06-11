@@ -8,14 +8,14 @@ type Props = {
   className?: string;
 };
 
-const FULL_LABEL = "Every skill you are building deserves a rank.";
+const FULL_LABEL = "You never find out if you are good at what you are building.";
 
 function HeroHeadlineStatic({ className }: Props) {
   return (
     <h1 className={className} aria-label={FULL_LABEL}>
-      <span className="block">Every skill you are</span>
-      <span className="block">building deserves</span>
-      <span className="block">a rank.</span>
+      <span className="block">You never find out</span>
+      <span className="block">if you are good</span>
+      <span className="block">at what you are building.</span>
     </h1>
   );
 }

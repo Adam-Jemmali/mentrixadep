@@ -24,4 +24,6 @@ export const XP = {
   WEEKLY_DIVISION_TOP_1: 500,
   WEEKLY_DIVISION_TOP_2: 250,
   WEEKLY_DIVISION_TOP_3: 100,
+  /** Winning division war — granted to active contributors (cron). */
+  DIVISION_WAR_WIN: 200,
 } as const;

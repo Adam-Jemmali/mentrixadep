@@ -10,7 +10,7 @@ import {
 } from "react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient as createBrowserSupabaseClient } from "@/shared/integrations/supabase/client";
-import { gsap } from "gsap";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import {
   createPeerConnection,
   getUserMedia,
@@ -750,7 +750,7 @@ export function VideoCall({
     isSharingScreenRef.current = isSharingScreen;
   }, [isSharingScreen]);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (connectionStatus !== "connecting" || !connectingLineRef.current) return;
     const line = connectingLineRef.current;
     gsap.to(line, {
@@ -767,7 +767,7 @@ export function VideoCall({
     };
   }, [connectionStatus]);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (isRecording && recordingIndicatorRef.current) {
       gsap.fromTo(
         recordingIndicatorRef.current,
@@ -777,7 +777,7 @@ export function VideoCall({
     }
   }, [isRecording]);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!controlsRef.current) return;
     gsap.set(controlsRef.current, { opacity: 1 });
 

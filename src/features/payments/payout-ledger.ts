@@ -13,6 +13,7 @@ import {
   platformFeeCents,
   tutorNetCents,
 } from "@/features/payments/connect-internal";
+import { getStudentSessionCheckoutCents } from "@/features/booking/booking-pricing";
 import {
   openStripeConnectOrDashboard,
   resolveStoredStripeAccountId,
@@ -432,7 +433,7 @@ export async function createPayoutLedgerForSession(sessionId: string): Promise<v
     }
   }
 
-  if (grossCents == null) grossCents = 2500;
+  if (grossCents == null) grossCents = getStudentSessionCheckoutCents();
   const net = tutorNetCents(grossCents);
   const fee = platformFeeCents(grossCents);
 

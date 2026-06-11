@@ -23,12 +23,28 @@ import {
 } from "@/shared/ui/dialog";
 import { formatDateInZone } from "@/shared/core/time-format";
 import { TutorPayoutDashboard } from "./payout-dashboard";
+import { TutorHubRealtimeRefresh } from "@/components/tutor-hub-realtime-refresh";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { TutorHeroGreeting } from "@/features/tutor/ui/tutor-hero-greeting";
 import { TutorHeroDecor } from "@/features/tutor/ui/tutor-hero-decor";
 import { HeroGuideBounce } from "@/features/tutor/ui/hero-guide-bounce";
-import { TutorHubRealtimeRefresh } from "@/components/tutor-hub-realtime-refresh";
+import { PreSessionContextSection } from "@/features/pre-session-brief/pre-session-context-section";
+import { GuideRankProgressCard } from "@/features/guide-rank/components/guide-rank-progress-card";
+import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
+
+const TutorImpactTrendChart = dynamic(
+  () => import("./tutor-impact-trend-chart").then((m) => m.TutorImpactTrendChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="h-[220px] w-full min-w-0 animate-pulse rounded bg-slate-100"
+        aria-hidden
+      />
+    ),
+  },
+);
 
 const TutorEarningsChart = dynamic(
   () => import("./tutor-earnings-chart").then((m) => m.TutorEarningsChart),
@@ -108,7 +124,8 @@ export function TutorCommandCenterClient({
               <Typewriter text="Manage bookings, payouts, and your week." speed={40} waitTime={5000} />
             </div>
             
-            <div className="mt-4 inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm shadow-sm">
+            <div className="mt-4 inline-flex flex-wrap items-center gap-3">
+              <GuideRankBadge rankKey={data.guideRank} size="md" />
               <TutorAvatar 
                 displayName={data.guideProfile.displayName} 
                 emailPrefix={data.guideProfile.displayName} 
@@ -248,6 +265,53 @@ export function TutorCommandCenterClient({
           </ul>
         </div>
       )}
+
+      <section className="mb-8 grid gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <GuideRankProgressCard progress={data.rankProgress} />
+        </div>
+        <div className="lg:col-span-7">
+          <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
+            <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>
+              Impact Score trend (last 30 days)
+            </h2>
+            <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
+              <TutorImpactTrendChart data={data.impactHistoryLast30Days} />
+            </div>
+          </ScrollRevealCard>
+        </div>
+      </section>
+
+      {data.upcomingSessions.length > 0 ? (
+        <PreSessionContextSection
+          guideId={data.tutorId}
+          upcomingSessions={data.upcomingSessions}
+          displayTimeZone={data.tutorTimezone}
+        />
+      ) : null}
+
+      {data.impactScores.filter((s) => s.sessionsCounted >= 3).length > 0 ? (
+        <section className="mb-8">
+          <ScrollRevealCard className={mentrixStudent.card + " p-5"}>
+            <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>
+              Your top performing subjects
+            </h2>
+            <ul className="divide-y divide-slate-100">
+              {data.impactScores
+                .filter((s) => s.sessionsCounted >= 3)
+                .slice(0, 5)
+                .map((s) => (
+                  <li key={s.subject} className="flex items-center justify-between py-3 text-sm">
+                    <span className="font-medium text-slate-800">{s.subject}</span>
+                    <span className="font-mono font-semibold tabular-nums text-indigo-700">
+                      {Math.round(s.impactScore)}/100
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          </ScrollRevealCard>
+        </section>
+      ) : null}
 
       {/* Actions + chart */}
       <div className="grid gap-6 lg:grid-cols-12">

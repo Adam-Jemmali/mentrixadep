@@ -896,41 +896,16 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
               )}
             </motion.div>
 
-            {/* CTA Actions */}
-            <div className="grid gap-3">
+            {/* CTA */}
+            <div>
               <Button
                 asChild
-                className="h-14 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 text-lg font-black italic tracking-tight shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                className="h-14 w-full rounded-2xl bg-white text-slate-900 hover:bg-slate-100 text-base font-semibold shadow-[0_0_30px_rgba(255,255,255,0.2)]"
               >
                 <Link href="/auth/signup" onClick={() => playClickSound()}>
-                  CLAIM REWARDS NOW →
+                  Create your free account to save this score and compete in your Division.
                 </Link>
               </Button>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    playClickSound();
-                    setPhase("wizard");
-                    setQIndex(0);
-                    setSelected(null);
-                    setResults([]);
-                    setQuestions(null);
-                  }}
-                  className="h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest"
-                >
-                  Try Another
-                </Button>
-                <Button
-                  variant="outline"
-                  onMouseEnter={() => router.prefetch("/")}
-                  onTouchStart={() => router.prefetch("/")}
-                  onClick={() => router.push("/")}
-                  className="h-12 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 font-bold text-xs uppercase tracking-widest"
-                >
-                  Main Menu
-                </Button>
-              </div>
             </div>
           </motion.div>
 

@@ -6,14 +6,10 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getStripeServer } from "@/shared/integrations/stripe/server";
 import { getSiteUrl } from "@/shared/core/site";
 import { mentrixaCheckoutBrandingWithAssets } from "@/shared/integrations/stripe/checkout-copy";
-import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { getStudentSessionCheckoutCents, splitSessionPriceCents } from "@/features/booking/booking-pricing";
 import { captureUnexpectedError, withStripeApiSpan } from "@/shared/integrations/observability";
 import { trackEvent } from "@/shared/integrations/analytics";
-import {
-  enforceSlidingRateLimit,
-  RATE_LIMITS,
-  getRateLimitId,
-} from "@/shared/core/security";
+import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -97,11 +93,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await enforceSlidingRateLimit(
-      getRateLimitId(user.id),
-      RATE_LIMITS.stripeCheckout,
-      "stripe.checkout"
-    );
+    const rateBlocked = await enforceApiRouteRateLimit("stripe.checkout", {
+      userId: user.id,
+    });
+    if (rateBlocked) return rateBlocked;
 
     const adminClient = createAdminClient();
     const stripe = getStripeServer();
@@ -365,7 +360,7 @@ export async function POST(req: NextRequest) {
       // Non-critical fallback.
     }
 
-    const sessionPriceCents: number = availability.price_per_session ?? 2500;
+    const sessionPriceCents = getStudentSessionCheckoutCents();
     const split = splitSessionPriceCents(sessionPriceCents);
 
     const appOrigin = resolveAppOrigin(req);

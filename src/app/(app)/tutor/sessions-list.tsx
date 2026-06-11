@@ -7,6 +7,8 @@ import { DeletePastSessionButton } from "@/components/delete-past-session-button
 import { JoinVideoCallButton } from "@/features/video/join-video-call-button";
 import { TutorSessionActions } from "./tutor-session-actions";
 import { TutorPastAiGenerateButton } from "./tutor-past-ai-generate";
+import { GuidePreSessionContextPanel } from "@/features/pre-session-brief/guide-context-panel";
+import { isPreSessionContextWindowOpen } from "@/features/pre-session-brief/context-pure";
 
 interface Session {
   id: string;
@@ -36,12 +38,16 @@ interface SessionsListProps {
   upcomingSessions: Session[];
   pastSessions: Session[];
   mode?: "all" | "past-only";
+  guideId?: string;
+  displayTimeZone?: string;
 }
 
 export function SessionsList({
   upcomingSessions,
   pastSessions,
   mode = "all",
+  guideId,
+  displayTimeZone = "UTC",
 }: SessionsListProps) {
   const filteredUpcoming = useMemo(
     () => upcomingSessions.filter((s) => s.status !== "cancelled"),
@@ -256,6 +262,17 @@ export function SessionsList({
                       />
                       <TutorSessionActions sessionId={session.id} />
                     </div>
+                    {guideId && isPreSessionContextWindowOpen(session.start_time) ? (
+                      <GuidePreSessionContextPanel
+                        sessionId={session.id}
+                        guideId={guideId}
+                        course={session.course}
+                        startTime={session.start_time}
+                        endTime={session.end_time}
+                        studentName={learnerName}
+                        displayTimeZone={displayTimeZone}
+                      />
+                    ) : null}
                   </td>
                 </tr>
               );

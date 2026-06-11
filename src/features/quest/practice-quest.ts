@@ -1,6 +1,8 @@
 "use server";
 
-import { recordClanQuestCompletion } from "@/features/clans/clan-events";
+import { recordDivisionWarQuestContribution } from "@/features/division-wars/contributions";
+import { detectBreakthroughsAfterQuest } from "@/features/breakthrough-events/detect";
+import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
@@ -18,6 +20,7 @@ import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
 import { XP } from "@/features/xp/xp-constants";
 import { sanitizeString } from "@/shared/core/security";
 import { updateKnowledgeGraph } from "@/features/learning-path/knowledge-graph";
+import { trackEvent } from "@/shared/integrations/analytics";
 import type {
   PracticeDifficulty,
   PracticePackMetadata,
@@ -459,6 +462,7 @@ export async function finalizePracticeQuest(
   | {
       success: true;
       result: PracticePackResult & { totalXp?: number; streakDays?: number };
+      breakthrough?: BreakthroughCelebration | null;
     }
   | { success: false; error: string }
 > {
@@ -545,7 +549,12 @@ export async function finalizePracticeQuest(
     );
     if (xp1.awarded) {
       xpAwarded = XP.QUEST_COMPLETE;
-      await recordClanQuestCompletion(user.id);
+      void recordDivisionWarQuestContribution({
+        studentId: user.id,
+        divisionKey,
+        correct,
+        total,
+      });
     }
 
     if (perfect) {
@@ -629,8 +638,49 @@ export async function finalizePracticeQuest(
     }
 
     revalidatePath("/student/quest");
-    revalidatePath("/student/learning-path");
     revalidatePath("/student/division");
+
+    if (meta.breakthroughEventId) {
+      try {
+        await admin
+          .from("breakthrough_quest_queue")
+          .update({ completed_at: new Date().toISOString() })
+          .eq("breakthrough_event_id", meta.breakthroughEventId)
+          .eq("quest_id", questId)
+          .eq("student_id", user.id);
+      } catch {
+        /* non-critical */
+      }
+    }
+
+    try {
+      const { count: completedCount } = await admin
+        .from("user_quest_progress")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("status", "completed");
+      if ((completedCount ?? 0) <= 1) {
+        void trackEvent("first_quest_completed", { userId: user.id });
+        void trackEvent("onboarding_quest_completed", {
+          userId: user.id,
+          properties: { questId, packType: meta.packType ?? "mcq" },
+        });
+      }
+    } catch {
+      /* non-critical */
+    }
+
+    let breakthrough: BreakthroughCelebration | null = null;
+    try {
+      breakthrough = await detectBreakthroughsAfterQuest({
+        studentId: user.id,
+        questId,
+        subject: meta.subject || meta.course || "General",
+        triggeredBy: "quest",
+      });
+    } catch {
+      /* non-critical */
+    }
 
     return {
       success: true,
@@ -639,6 +689,7 @@ export async function finalizePracticeQuest(
         totalXp: xpFinal?.total_xp,
         streakDays: xpFinal?.streak_days,
       },
+      breakthrough,
     };
   } catch (e) {
     return {

@@ -21,25 +21,25 @@ const FLOW_STEPS = [
     number: "01",
     icon: "/images/book.webp",
     title: "Book",
-    line: "Find your Guide by subject. See the full price. Book in three minutes.",
+    line: "Snapshot shows the weak spot. Quest picks the right Guide. Three clicks.",
   },
   {
     number: "02",
     icon: "/images/live.webp",
     title: "Meet",
-    line: "Show up live. Screen share your problem. Work through it together until it breaks open.",
+    line: "Show up live. Your Guide already knows where you broke. Start there.",
   },
   {
     number: "03",
     icon: "/images/package.webp",
     title: "Unpack",
-    line: "Immediately after you hang up, Quest ships your summary, flashcards, and practice drills.",
+    line: "Ten minutes later your Quest pack lands. Summary, flashcards, drills on what you fixed.",
   },
   {
     number: "04",
     icon: "/images/xp.webp",
     title: "Climb",
-    line: "XP lands. Division rank updates. Come back tomorrow and do it again. The rank compounds.",
+    line: "XP updates. Rank moves. Big jump? You get a Breakthrough Card to share.",
   },
 ];
 

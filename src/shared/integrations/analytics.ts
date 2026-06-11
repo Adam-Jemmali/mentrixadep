@@ -15,6 +15,7 @@ export type AnalyticsEventName =
   // Activation
   | "first_session_booked"
   | "first_quest_completed"
+  | "onboarding_quest_completed"
   | "first_duel_played"
   // Engagement
   | "quest_started"
@@ -33,6 +34,11 @@ export type AnalyticsEventName =
   | "streak_maintained"
   | "streak_broken"
   | "level_up"
+  | "rank_up"
+  | "progress_snapshot_cta_clicked"
+  | "rank_card_viewed"
+  | "division_war_notification"
+  | "breakthrough_detected"
   // Sessions
   | "session_booked"
   | "session_rated"

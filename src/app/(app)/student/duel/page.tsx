@@ -2,6 +2,7 @@ import { requireRole } from "@/shared/core/auth";
 import { getDuelHistorySummary, listStudentDuels, getLearnerPreview } from "@/features/duels/duel-reads";
 import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { getCachedUserMetaBatch } from "@/shared/core/user-meta-cache";
 import { DuelHub } from "./duel-hub";
 import { AccountRankLadder } from "@/features/student-profile/ui/account-rank-ladder";
 import { YourDuelsList } from "@/features/student-profile/ui/your-duels-list";
@@ -60,20 +61,21 @@ export default async function StudentDuelsPage() {
     initialQueueDivision = null;
   }
 
+  const opponentIds = Array.from(
+    new Set(
+      rows
+        .filter((r) => !r.is_ai_opponent)
+        .map((r) => (r.student_id === myId ? r.opponent_student_id : r.student_id))
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const opponentMeta = await getCachedUserMetaBatch(opponentIds);
   const nameById: Record<string, string> = {};
-  for (const r of rows) {
-    if (r.is_ai_opponent) continue;
-    const oid = r.student_id === myId ? r.opponent_student_id : r.student_id;
-    if (!oid || nameById[oid]) continue;
-    try {
-      const { data } = await admin.auth.admin.getUserById(oid);
-      const email = data?.user?.email ?? "";
-      nameById[oid] = email
-        ? (email.split("@")[0] ?? "").trim() || "Learner"
-        : "Learner";
-    } catch {
-      nameById[oid] = "Learner";
-    }
+  for (const oid of opponentIds) {
+    const email = opponentMeta[oid]?.email ?? "";
+    nameById[oid] = email
+      ? (email.split("@")[0] ?? "").trim() || "Learner"
+      : "Learner";
   }
 
   const stats = "error" in history ? null : history;

@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { gsap } from "gsap";
+import { runGsapAction, useGsapEffect } from "@/shared/core/gsap-lazy";
 import { deleteStudioPackage, publishStudioPackage, saveStudioPackageDraft, type TutorSessionWithPackage } from "@/features/studio-ai/studio-packages";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import type { SessionAiPackage } from "@/shared/types/database";
@@ -179,7 +179,7 @@ export function TutorStudioClient({
     return sorted;
   }, [rows, query, packageFilter, courseFilter, studentFilter, sortBy]);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!openRowId || !expandedRowRef.current) return;
     gsap.from(expandedRowRef.current, {
       height: 0,
@@ -201,15 +201,17 @@ export function TutorStudioClient({
     }
     const rowId = openRowId;
     setClosingRowId(rowId);
-    gsap.to(expandedRowRef.current, {
-      height: 0,
-      opacity: 0,
-      duration: 0.25,
-      ease: "power2.in",
-      onComplete: () => {
-        setClosingRowId(null);
-        setOpenRowId((current) => (current === rowId ? null : current));
-      },
+    runGsapAction((gsap) => {
+      gsap.to(expandedRowRef.current, {
+        height: 0,
+        opacity: 0,
+        duration: 0.25,
+        ease: "power2.in",
+        onComplete: () => {
+          setClosingRowId(null);
+          setOpenRowId((current) => (current === rowId ? null : current));
+        },
+      });
     });
   };
 

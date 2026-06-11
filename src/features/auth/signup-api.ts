@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/shared/integrations/supabase/server";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { RATE_LIMITS, checkSlidingWindowRateLimit, getClientIpFromRequest, sanitizeError, validateEmail, validatePassword } from "@/shared/core/security";
+import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
 import { compositeRateKey, emailRateKey, ipRateKey } from "@/shared/core/security/auth-abuse";
 import { reportSecurityRateLimitDenied } from "@/shared/integrations/observability";
 import { isDisposableEmail } from "@/shared/core/disposable-email";
@@ -24,12 +25,23 @@ type SignUpBody = {
 };
 
 function jsonError(message: string, status = 400, extra?: Record<string, unknown>) {
-  return NextResponse.json({ ok: false, error: message, ...extra }, { status });
+  const retryAfterSeconds =
+    status === 429 && typeof extra?.retryAfterSeconds === "number"
+      ? extra.retryAfterSeconds
+      : null;
+  const headers =
+    retryAfterSeconds !== null
+      ? { "Retry-After": String(Math.max(1, retryAfterSeconds)) }
+      : undefined;
+  return NextResponse.json({ ok: false, error: message, ...extra }, { status, headers });
 }
 
 export async function POST(req: Request) {
   try {
     const ip = getClientIpFromRequest({ headers: req.headers });
+    const routeBlocked = await enforceApiRouteRateLimit("auth.signup", { ip });
+    if (routeBlocked) return routeBlocked;
+
     const body = (await req.json().catch(() => ({}))) as SignUpBody;
     const email = validateEmail(body.email);
     if (isDisposableEmail(email)) return jsonError("Temporary email addresses are not allowed. Please use a real email.", 400);

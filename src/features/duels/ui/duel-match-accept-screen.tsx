@@ -4,9 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/shared/ui/button";
-import { ClanAvatarBadge } from "@/features/clans/ui/clan-avatar-badge";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { DuelParticipantClan } from "@/features/duels/duel-reads";
 import { MENTRIXA_SOUND_SRC } from "@/shared/integrations/mentrixa-sounds";
 import {
   getAccountRankByLevel,
@@ -21,7 +19,6 @@ export type DuelMatchAcceptParticipant = {
   avatarUrl: string | null;
   bio: string | null;
   totalXp: number | null;
-  clan: DuelParticipantClan | null;
   isAi?: boolean;
 };
 
@@ -64,14 +61,12 @@ function AcceptRankHero({
   ready,
   side,
   avatarUrl,
-  clan,
 }: {
   rank: AccountRankVisual;
   name: string;
   ready: boolean;
   side: "left" | "right";
   avatarUrl: string | null;
-  clan: DuelParticipantClan | null;
 }) {
   return (
     <motion.div
@@ -127,24 +122,6 @@ function AcceptRankHero({
         >
           {ready ? "Ready" : "Awaiting"}
         </p>
-        {clan ? (
-          <div className="mt-3 flex flex-col items-center gap-1.5 border-t border-amber-200/15 pt-3">
-            <ClanAvatarBadge
-              name={clan.name}
-              avatarKind={clan.avatarKind}
-              presetKey={clan.presetKey}
-              avatarUrl={clan.avatarUrl}
-              size="md"
-              className="!bg-slate-950/90 border-2 border-amber-300/35 text-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.2)]"
-            />
-            <p className="text-[10px] font-black uppercase italic tracking-[0.12em] text-amber-100/90">
-              {clan.name}
-            </p>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-amber-200/50">
-              [{clan.tag}]
-            </p>
-          </div>
-        ) : null}
       </div>
     </motion.div>
   );
@@ -239,7 +216,6 @@ export function DuelMatchAcceptScreen({
             ready={meAccepted}
             side="left"
             avatarUrl={me.avatarUrl}
-            clan={me.clan}
           />
 
           <motion.span
@@ -257,7 +233,6 @@ export function DuelMatchAcceptScreen({
             ready={opponentAccepted}
             side="right"
             avatarUrl={opponent.isAi ? null : opponent.avatarUrl}
-            clan={opponent.clan}
           />
         </div>
 

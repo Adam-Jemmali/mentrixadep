@@ -130,6 +130,8 @@ export const cacheKeys = {
   leaderboard: (divisionKey: string) => `leaderboard:${divisionKey}`,
   landingStats: () => "landing:stats:v2",
   hub: (userId: string) => `hub:${userId}`,
+  divisionHub: (userId: string) => `division:hub:${userId}`,
+  availabilityBrowse: (courseKey: string) => `availability:browse:${courseKey}`,
   userMeta: (userId: string) => `user:meta:${userId}`,
   checkoutLock: (slotId: string) => `lock:checkout:${slotId}`,
 } as const;
@@ -138,6 +140,8 @@ export const cacheTtl = {
   leaderboard: 60,
   landingStats: 300,
   hub: 30,
+  divisionHub: 30,
+  availabilityBrowse: 90,
   userMeta: 600,
   checkoutLock: 30,
 } as const;

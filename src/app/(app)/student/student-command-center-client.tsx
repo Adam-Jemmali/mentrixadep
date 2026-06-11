@@ -10,6 +10,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
 import { AvailabilityBrowser } from "./availability-browser";
 import { StudentCourseChips, type StudentCourseChip } from "./student-course-chips";
+import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
 import { User } from "lucide-react";
 
 type Upcoming = {
@@ -50,6 +51,9 @@ export function StudentCommandCenterClient({
   tutorExpertise,
   recommendedGuides,
   displayTimeZone = "UTC",
+  guideImpactByTutorId = {},
+  questHistorySubjects = [],
+  guideRankByTutorId = {},
 }: {
   studentCourses: StudentCourseChip[];
   upcomingSessions: Upcoming[];
@@ -59,6 +63,9 @@ export function StudentCommandCenterClient({
   recommendedGuides: RecommendedGuide[];
   /** Profile timezone. Slots display in this zone. */
   displayTimeZone?: string;
+  guideImpactByTutorId?: Record<string, GuideImpactEntry[]>;
+  questHistorySubjects?: string[];
+  guideRankByTutorId?: Record<string, string>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -83,9 +90,6 @@ export function StudentCommandCenterClient({
     router.prefetch("/student/quest");
     router.prefetch("/student/duel");
     router.prefetch("/student/division");
-    router.prefetch("/student/learning-path");
-    router.prefetch("/student/progress");
-    router.prefetch("/student/onboarding");
   }, [router]);
 
   return (
@@ -187,15 +191,7 @@ export function StudentCommandCenterClient({
           <ScrollRevealCard className={`${mentrixStudent.card} min-h-[11rem] p-5`}>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Quick actions</p>
             <div className="mt-3 space-y-2">
-              <Link href="/student/onboarding" className="flex min-h-11 items-center justify-between rounded-md border border-indigo-200 bg-indigo-50/80 px-3 py-2 text-xs font-medium text-indigo-900 transition hover:bg-indigo-50">
-                <span className="inline-flex items-center gap-2"><Image src="/images/book.webp" alt="" width={16} height={16} aria-hidden /> Study plan quiz</span>
-                <Image src="/images/live.webp" alt="" width={16} height={16} className="size-4 opacity-60" aria-hidden />
-              </Link>
-              <Link href="/student/progress" className="flex min-h-11 items-center justify-between rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50">
-                <span className="inline-flex items-center gap-2"><Image src="/images/quest.webp" alt="" width={16} height={16} aria-hidden /> View progress</span>
-                <Image src="/images/live.webp" alt="" width={16} height={16} className="size-4 opacity-60" aria-hidden />
-              </Link>
-              <Link href="/student/quest" className="flex min-h-11 items-center justify-between rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50">
+              <Link href="/student/quest" className="flex min-h-11 items-center justify-between rounded-md border border-indigo-200 bg-indigo-50/80 px-3 py-2 text-xs font-medium text-indigo-900 transition hover:bg-indigo-50">
                 <span className="inline-flex items-center gap-2"><Image src="/images/quest.webp" alt="" width={16} height={16} aria-hidden /> Start daily quest</span>
                 <Image src="/images/live.webp" alt="" width={16} height={16} className="size-4 opacity-60" aria-hidden />
               </Link>
@@ -272,6 +268,9 @@ export function StudentCommandCenterClient({
           tutorExpertise={tutorExpertise}
           syncCourseFilter={syncFilter}
           displayTimeZone={displayTimeZone}
+          guideImpactByTutorId={guideImpactByTutorId}
+          questHistorySubjects={questHistorySubjects}
+          guideRankByTutorId={guideRankByTutorId}
         />
       </section>
     </div>

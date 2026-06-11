@@ -46,7 +46,7 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
   const [completed, setCompleted] = useState(false);
 
   const [coach, setCoach] = useState<{ message: string; tone: CoachTone }>({
-    message: "Put the four moves in order. Every Mentrixer who improves runs them in this exact sequence.",
+    message: "Get the sequence right. Every person who moves their rank runs these four in this exact order. Drag them into place.",
     tone: "coach",
   });
 
@@ -110,7 +110,7 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
   const reset = useCallback(() => {
     setOrder(shuffleIds(CORRECT_ORDER));
     setCompleted(false);
-    setCoach({ message: "Put the four moves in order. Every Mentrixer who improves runs them in this exact sequence.", tone: "coach" });
+    setCoach({ message: "Get the sequence right. Every person who moves their rank runs these four in this exact order. Drag them into place.", tone: "coach" });
   }, []);
 
   return (

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/shared/integrations/supabase/server";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { sanitizeError, validateEmail, validatePassword, RATE_LIMITS, checkSlidingWindowRateLimit, getClientIpFromRequest } from "@/shared/core/security";
+import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
 import { clearAuthFailures, compositeRateKey, emailLockKey, emailRateKey, getAuthLockState, ipRateKey, registerAuthFailure } from "@/shared/core/security/auth-abuse";
 import { isCaptchaConfigured, verifyTurnstileToken } from "@/shared/core/security/captcha";
 import { reportAuthCaptchaFailure, reportAuthLockout, reportSecurityRateLimitDenied } from "@/shared/integrations/observability";
@@ -37,7 +38,15 @@ type SignInBody = {
 };
 
 function jsonError(message: string, status = 400, extra?: Record<string, unknown>) {
-  return NextResponse.json({ ok: false, error: message, ...extra }, { status });
+  const retryAfterSeconds =
+    status === 429 && typeof extra?.retryAfterSeconds === "number"
+      ? extra.retryAfterSeconds
+      : null;
+  const headers =
+    retryAfterSeconds !== null
+      ? { "Retry-After": String(Math.max(1, retryAfterSeconds)) }
+      : undefined;
+  return NextResponse.json({ ok: false, error: message, ...extra }, { status, headers });
 }
 
 async function authUserExistsByEmail(email: string): Promise<boolean> {
@@ -63,6 +72,9 @@ export async function POST(req: Request) {
   try {
     const headers = req.headers;
     const ip = getClientIpFromRequest({ headers });
+    const routeBlocked = await enforceApiRouteRateLimit("auth.signin", { ip });
+    if (routeBlocked) return routeBlocked;
+
     const body = (await req.json().catch(() => ({}))) as SignInBody;
     const email = validateEmail(body.email);
     const password = validatePassword(body.password);

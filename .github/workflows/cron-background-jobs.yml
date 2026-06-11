@@ -1,25 +1,26 @@
-# Vercel Hobby allows cron jobs at most once per day — the 15-minute background
-# worker cannot live in vercel.json on free tier. This workflow pings production instead.
+# Background job worker cannot run more than once/day on Vercel Hobby, so it is scheduled
+# in vercel.json. Use this workflow only when you need a manual drain (Actions → Run workflow).
 #
-# Required repository secrets:
-#   CRON_SECRET
-# Optional variable:
-#   PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
+# Required repository secret: CRON_SECRET
+# Optional variable: PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
 
 name: Cron Background Jobs
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
   process-background-jobs:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger /api/cron/process-background-jobs
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "CRON_SECRET is not set — add it under repository secrets to run this workflow."
+            exit 1
+          fi
           BASE_URL="${{ vars.PLAYWRIGHT_BASE_URL || 'https://mentrixa.one' }}"
           URL="${BASE_URL%/}/api/cron/process-background-jobs"
           echo "Pinging ${URL}"
@@ -29,5 +30,3 @@ jobs:
           echo "HTTP ${code}"
           cat /tmp/cron-body.txt
           test "${code}" -ge 200 && test "${code}" -lt 300
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}

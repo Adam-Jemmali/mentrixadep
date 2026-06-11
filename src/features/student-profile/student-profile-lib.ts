@@ -43,6 +43,12 @@ export type StudentProfileData = {
   emailPrefix: string;
   /** Active divisions for focused division selector (owner form). */
   divisions: { key: string; name: string }[];
+  /** Public Rank Card slug (owner / when public). */
+  rankCardUsername: string | null;
+  rankCardPublic: boolean;
+  /** Best subject line for share copy (owner). */
+  rankCardTopSubject: string | null;
+  rankCardTopAccuracy: number;
 };
 
 /** XP progress width within current account level (0–1) for UI. */

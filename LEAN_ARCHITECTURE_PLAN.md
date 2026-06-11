@@ -90,7 +90,7 @@ src/
 │   ├── marketing/
 │   ├── notifications/
 │   ├── jobs/
-│   └── analytics/ g4224y2
+│   └── analytics/ 
 │
 ├── shared/                      # Cross-feature only (DRY, not AHA)
 │   ├── core/                    # auth, db, env, security, errors

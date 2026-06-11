@@ -6,14 +6,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { joinDuelQueue, leaveDuelQueue, pollDuelQueue, acceptQueueMatch, declineQueueMatch, getQueueMatchAcceptance } from "@/features/duels/duel-queue";
 import { createAiDuelFromQueue } from "@/features/duels/duel-gameplay";
-import { getDuelMatchupPreview, type DuelParticipantClan } from "@/features/duels/duel-reads";
+import { getDuelMatchupPreview } from "@/features/duels/duel-reads";
 import { DUEL_AI_QUEUE_WAIT_MS } from "@/features/duels/duel-constants";
 import { Button } from "@/shared/ui/button";
 import {  Info, Users } from "lucide-react";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { DuelMatchAcceptScreen } from "@/features/duels/ui/duel-match-accept-screen";
-import { ClanAvatarBadge } from "@/features/clans/ui/clan-avatar-badge";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { cn } from "@/shared/core/utils";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
@@ -40,27 +39,24 @@ interface Props {
     name: string;
     avatarUrl: string | null;
     totalXp: number | null;
-    clan: DuelParticipantClan | null;
   };
 }
 
 type MatchIntro = {
   duelId: string;
   divisionLabel: string;
-  me: { 
-    name: string; 
-    avatarUrl: string | null; 
-    bio: string | null; 
+  me: {
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
     totalXp: number | null;
-    clan: DuelParticipantClan | null;
   };
-  opponent: { 
-    name: string; 
-    avatarUrl: string | null; 
-    bio: string | null; 
-    totalXp: number | null; 
+  opponent: {
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    totalXp: number | null;
     isAi: boolean;
-    clan: DuelParticipantClan | null;
   };
 };
 
@@ -314,7 +310,6 @@ export function DuelHub({
           avatarUrl: preview.me.avatarUrl,
           bio: preview.me.bio,
           totalXp: preview.me.totalXp,
-          clan: preview.me.clan,
         },
         opponent: {
           name: preview.opponent.name,
@@ -322,7 +317,6 @@ export function DuelHub({
           bio: preview.opponent.bio,
           totalXp: preview.opponent.totalXp,
           isAi: preview.opponent.isAi,
-          clan: preview.opponent.clan,
         },
       });
       setMatchPhase("accept");
@@ -556,32 +550,9 @@ export function DuelHub({
                 <p className="text-base font-black uppercase italic tracking-tight text-white drop-shadow-md sm:text-lg">
                   {currentUser.name}
                 </p>
-                {currentUser.clan ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <ClanAvatarBadge
-                      name={currentUser.clan.name}
-                      avatarKind={currentUser.clan.avatarKind}
-                      presetKey={currentUser.clan.presetKey}
-                      avatarUrl={currentUser.clan.avatarUrl}
-                      size="sm"
-                      className="border-2 border-indigo-400/35 bg-slate-950/90 text-indigo-200 shadow-[0_0_18px_rgba(99,102,241,0.25)]"
-                    />
-                    <span className="text-[10px] font-black italic uppercase tracking-[0.2em] text-indigo-300">
-                      {currentUser.clan.name}
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                      [{currentUser.clan.tag}]
-                    </span>
-                  </motion.div>
-                ) : (
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                    Lone Mentrixer
-                  </span>
-                )}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  Mentrixer
+                </span>
               </div>
             </motion.div>
 

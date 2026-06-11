@@ -399,12 +399,12 @@ if (typeof setInterval !== "undefined") {
 export const RATE_LIMITS = {
   /** Per-IP middleware guard for POST /auth/signin and /auth/signup (production only). */
   authPage: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
-  signIn: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
-  signInIpBurst: { maxRequests: 20, windowMs: 5 * 60 * 1000 },
+  signIn: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
+  signInIpBurst: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
   signInEmailBurst: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
   signInIpEmailBurst: { maxRequests: 8, windowMs: 15 * 60 * 1000 },
-  signUp: { maxRequests: 3, windowMs: 60 * 60 * 1000 },
-  signUpIpBurst: { maxRequests: 10, windowMs: 60 * 60 * 1000 },
+  signUp: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
+  signUpIpBurst: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
   signUpEmailBurst: { maxRequests: 4, windowMs: 60 * 60 * 1000 },
   bookSession: { maxRequests: 10, windowMs: 60 * 1000 },
   createAvailability: { maxRequests: 20, windowMs: 60 * 1000 },
@@ -414,14 +414,10 @@ export const RATE_LIMITS = {
   questAi: { maxRequests: 20, windowMs: 60 * 60 * 1000 },
   /** Studio package stream — separate bucket from `questAi` so tutor generates aren’t capped by quest traffic. */
   studioPackageAi: { maxRequests: 40, windowMs: 60 * 60 * 1000 },
-  resolveAi: { maxRequests: 20, windowMs: 60 * 60 * 1000 },
   stripeCheckout: { maxRequests: 5, windowMs: 60 * 1000 },
   duelCreate: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
   duelSubmit: { maxRequests: 40, windowMs: 60 * 1000 },
   duelQueueJoin: { maxRequests: 30, windowMs: 60 * 1000 },
-  clanCreate: { maxRequests: 5, windowMs: 60 * 60 * 1000 },
-  clanJoin: { maxRequests: 15, windowMs: 60 * 60 * 1000 },
-  clanRegenerateCode: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
 } as const;
 
 /**

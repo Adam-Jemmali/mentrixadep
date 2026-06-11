@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { getCachedUserMetaBatch } from "@/shared/core/user-meta-cache";
 
 export function isMissingCancelledSessionColumnsError(err: { message?: string }): boolean {
   const m = (err.message ?? "").toLowerCase();
@@ -65,46 +66,19 @@ export async function enrichStudentSessionsWithTutorProfiles<T extends { tutor_i
     ])
   );
 
-  const metaById = new Map<
-    string,
-    { display_name: string | null; avatar_url: string | null; email: string }
-  >();
-
-  await Promise.all(
-    tutorIds.map(async (id) => {
-      try {
-        const { data } = await adminClient.auth.admin.getUserById(id);
-        const u = data?.user;
-        const email = u?.email ?? "";
-        const meta = u?.user_metadata as Record<string, unknown> | undefined;
-        const avatarRaw = meta?.avatar_url ?? meta?.picture;
-        const avatar_url =
-          typeof avatarRaw === "string" && avatarRaw.length > 0 ? avatarRaw : null;
-        metaById.set(id, {
-          display_name: settingsById.get(id)?.display_name ?? null,
-          avatar_url,
-          email,
-        });
-      } catch {
-        metaById.set(id, {
-          display_name: settingsById.get(id)?.display_name ?? null,
-          avatar_url: null,
-          email: "",
-        });
-      }
-    })
-  );
+  const cachedMeta = await getCachedUserMetaBatch(tutorIds);
 
   return sessions.map((session) => {
-    const m = metaById.get(session.tutor_id);
+    const cached = cachedMeta[session.tutor_id];
+    const settings = settingsById.get(session.tutor_id);
     return {
       ...session,
       tutor: {
         id: session.tutor_id,
         role: "tutor",
-        display_name: m?.display_name ?? null,
-        avatar_url: settingsById.get(session.tutor_id)?.avatar_url ?? m?.avatar_url ?? null,
-        email: m?.email,
+        display_name: settings?.display_name ?? cached?.displayName ?? null,
+        avatar_url: settings?.avatar_url ?? null,
+        email: cached?.email ?? undefined,
       },
     };
   });

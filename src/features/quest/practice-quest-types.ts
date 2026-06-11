@@ -38,6 +38,9 @@ export interface PracticePackMetadata {
   session?: PracticeSessionState;
   /** After completion */
   result?: PracticePackResult;
+  /** Breakthrough adaptive follow-up */
+  breakthroughEventId?: string;
+  focusSubtopic?: string;
 }
 
 export interface PracticeSessionAnswer {

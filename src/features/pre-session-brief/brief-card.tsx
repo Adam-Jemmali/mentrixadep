@@ -6,8 +6,8 @@
  * Expandable accordion design: collapsed = teaser, expanded = full brief.
  */
 
-import { useState, useRef, useEffect } from "react";
-import { gsap } from "gsap";
+import { useState, useRef } from "react";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { ChevronDown, Brain, AlertTriangle, Zap, MessageSquare, Clock } from "lucide-react";
 import type { StoredPreSessionBrief } from "@/features/pre-session-brief/brief";
 
@@ -79,18 +79,16 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
   const minsLeft = minutesUntil(brief.sessionStartTime);
   const isImminent = minsLeft <= 30;
 
-  // Entrance animation on mount
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!cardRef.current) return;
     gsap.fromTo(
       cardRef.current,
       { opacity: 0, y: 10 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", delay: 0.1 }
+      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", delay: 0.1 },
     );
   }, []);
 
-  // Expand/collapse the detail body
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     const el = bodyRef.current;
     if (!el) return;
     if (expanded) {
@@ -99,7 +97,7 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
       gsap.fromTo(
         el,
         { height: 0, opacity: 0 },
-        { height, opacity: 1, duration: 0.3, ease: "power2.out", clearProps: "height" }
+        { height, opacity: 1, duration: 0.3, ease: "power2.out", clearProps: "height" },
       );
     } else {
       gsap.to(el, { height: 0, opacity: 0, duration: 0.22, ease: "power2.in" });
@@ -274,12 +272,12 @@ export function PreSessionBriefStrip({
   const minsLeft = minutesUntil(sessionStartTime);
   const stripRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!stripRef.current) return;
     gsap.fromTo(
       stripRef.current,
       { opacity: 0, x: -8 },
-      { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }
+      { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" },
     );
   }, []);
 

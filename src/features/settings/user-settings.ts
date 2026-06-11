@@ -8,6 +8,8 @@ import { revalidatePath } from "next/cache";
 import { deleteRegistrationRequestsByIdentityEmail } from "@/features/registration/delete-registration-requests-by-email";
 import { getSiteUrl } from "@/shared/core/site";
 import { assertNoBlockedLanguage } from "@/shared/core/security";
+import { isValidRankCardUsername } from "@/features/rank-card/username";
+import { ensureRankCardUsername } from "@/features/rank-card/ensure-username";
 
 export interface UserSettings {
   display_name: string | null;
@@ -26,6 +28,10 @@ export interface UserSettings {
   focused_division_key: string | null;
   /** Student: allow peer skill duel challenges */
   duel_opt_in: boolean;
+  /** Public Rank Card slug (mentrixa.one/rank/[username]) */
+  rank_card_username: string | null;
+  /** When false, Rank Card URL shows private notice */
+  rank_card_public: boolean;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -43,6 +49,8 @@ const DEFAULT_SETTINGS: UserSettings = {
   session_buffer_minutes: 15,
   focused_division_key: null,
   duel_opt_in: false,
+  rank_card_username: null,
+  rank_card_public: true,
 };
 
 export async function getUserSettings(): Promise<UserSettings> {
@@ -79,6 +87,12 @@ export async function getUserSettings(): Promise<UserSettings> {
         ? data.focused_division_key
         : null,
     duel_opt_in: data.duel_opt_in === true,
+    rank_card_username:
+      typeof (data as { rank_card_username?: unknown }).rank_card_username === "string"
+        ? (data as { rank_card_username: string }).rank_card_username
+        : null,
+    rank_card_public:
+      (data as { rank_card_public?: boolean }).rank_card_public !== false,
   };
 }
 
@@ -121,6 +135,14 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
     assertNoBlockedLanguage(validated.data.bio, "bio");
   }
 
+  if (validated.data.rank_card_username !== undefined && validated.data.rank_card_username !== null) {
+    const slug = validated.data.rank_card_username.toLowerCase();
+    if (!isValidRankCardUsername(slug)) {
+      throw new Error("Rank Card username must be 3–30 characters (lowercase letters, numbers, hyphens).");
+    }
+    payload.rank_card_username = slug;
+  }
+
   const { error } = await supabase
     .from("user_settings")
     .upsert({ user_id: user.id, ...payload }, { onConflict: "user_id" });
@@ -134,6 +156,18 @@ export async function updateUserSettings(settings: Partial<UserSettings>) {
     await adminClient.auth.admin.updateUserById(user.id, {
       user_metadata: { full_name: validated.data.display_name },
     });
+
+    if (user.role === "student" && validated.data.display_name) {
+      await ensureRankCardUsername(user.id, validated.data.display_name);
+    }
+  }
+
+  const rankSlug =
+    typeof payload.rank_card_username === "string"
+      ? payload.rank_card_username
+      : validated.data.rank_card_username;
+  if (typeof rankSlug === "string" && rankSlug) {
+    revalidatePath(`/rank/${rankSlug}`);
   }
 
   revalidatePath("/settings");

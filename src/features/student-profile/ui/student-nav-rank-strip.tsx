@@ -47,7 +47,7 @@ export function StudentNavRankStrip() {
   const rank = getAccountRankFromTotalXp(totalXp);
   const modeLabel = pathname.includes("/duel") || pathname.includes("/division") || pathname.includes("/clan")
     ? "Arena"
-    : pathname.includes("/quest") || pathname.includes("/resolve") || pathname.includes("/learning-path")
+    : pathname.includes("/quest")
       ? "Workbench"
       : null;
 

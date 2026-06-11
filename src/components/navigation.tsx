@@ -21,12 +21,8 @@ import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 
 const STUDENT_LINKS = [
   { href: "/student", label: "Home" },
-  { href: "/student/onboarding", label: "Plan" },
-  { href: "/student/progress", label: "Progress" },
   { href: "/student/quest", label: "Quest" },
-  { href: "/student/learning-path", label: "Path" },
   { href: "/student/division", label: "League" },
-  { href: "/student/clan", label: "Clan" },
   { href: "/student/duel", label: "Duels" },
 ] as const;
 

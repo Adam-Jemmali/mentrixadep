@@ -10,6 +10,8 @@ const ALLOWED_CLIENT_EVENTS: AnalyticsEventName[] = [
   "signup_started",
   "quest_started",
   "quest_completed",
+  "onboarding_quest_completed",
+  "progress_snapshot_cta_clicked",
   "duel_challenged",
   "checkout_started",
   "checkout_abandoned",

@@ -1,6 +1,29 @@
 /** Platform fee retained by Mentrixa from tutor-side settlement (15% in bps). */
 export const PLATFORM_FEE_BPS = 1500;
 
+/** Flat student price — one Guide session (CAD cents). */
+export const BREAKTHROUGH_SESSION_PRICE_CENTS = 3900;
+
+/** Momentum Pack — three sessions within 90 days (CAD cents). */
+export const MOMENTUM_PACK_PRICE_CENTS = 9900;
+export const MOMENTUM_PACK_SESSION_COUNT = 3;
+
+/** Guide payout on a $39 session (85%). */
+export const GUIDE_PAYOUT_ON_BREAKTHROUGH_CENTS = 3315;
+
+export function formatStudentBreakthroughPrice(): string {
+  return "$39 CAD";
+}
+
+export function formatStudentMomentumPackPrice(): string {
+  return "$99 CAD";
+}
+
+/** Amount charged at Stripe checkout for a single Guide session. */
+export function getStudentSessionCheckoutCents(): number {
+  return BREAKTHROUGH_SESSION_PRICE_CENTS;
+}
+
 /** Reduced platform fee for bundle purchases (10% in bps). */
 export const BUNDLE_PLATFORM_FEE_BPS = 1000;
 

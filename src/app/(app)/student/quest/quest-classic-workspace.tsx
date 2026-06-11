@@ -2,8 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { gsap } from "gsap";
-import { staggerIn } from "@/shared/core/gsap";
+import { runGsapAction, useGsapEffect } from "@/shared/core/gsap-lazy";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import { submitQuest, submitQuestAnswer, type QuestGoal, type QuestMode } from "@/features/quest/classic-quest";
@@ -490,11 +489,13 @@ export function QuestClassicWorkspace() {
     } else {
       // No cached payload old entry. Submit to fetch and cache.
       if (textareaRef.current) {
-        gsap.fromTo(
-          textareaRef.current,
-          { borderColor: "#2563EB" },
-          { borderColor: "#E2E8F0", duration: 0.8 },
-        );
+        runGsapAction((gsap) => {
+          gsap.fromTo(
+            textareaRef.current,
+            { borderColor: "#2563EB" },
+            { borderColor: "#E2E8F0", duration: 0.8 },
+          );
+        });
       }
       requestAnimationFrame(() => {
         void handleSubmit(item.text);
@@ -514,14 +515,15 @@ export function QuestClassicWorkspace() {
   useLayoutEffect(() => {
     if (!xpFillRef.current) return;
     const ratio = Math.min((xpThisSession || 0) / 50, 1);
-    gsap.set(xpFillRef.current, {
-      scaleX: ratio,
-      transformOrigin: "left center",
+    runGsapAction((gsap) => {
+      gsap.set(xpFillRef.current, {
+        scaleX: ratio,
+        transformOrigin: "left center",
+      });
     });
   }, [xpThisSession]);
 
-  // animate XP bar when session XP or total changes
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!xpFillRef.current) return;
     const ratio = Math.min((xpThisSession || 0) / 50, 1);
     gsap.to(xpFillRef.current, {
@@ -532,15 +534,18 @@ export function QuestClassicWorkspace() {
     });
   }, [xpThisSession, totalXp]);
 
-  // animate suggestions on mount when empty
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (currentQuest || isLoading) return;
-    if (typeof document === "undefined") return;
     const nodes = document.querySelectorAll("[data-quest-suggestion]");
     if (!nodes.length) return;
-    setTimeout(() => {
-      staggerIn(nodes);
+    const timer = window.setTimeout(() => {
+      gsap.fromTo(
+        nodes,
+        { y: 8, opacity: 0 },
+        { y: 0, opacity: 1, stagger: 0.04, duration: 0.35, ease: "power2.out" },
+      );
     }, 400);
+    return () => window.clearTimeout(timer);
   }, [currentQuest, isLoading]);
 
   const suggestions = [
@@ -896,7 +901,7 @@ export function QuestClassicWorkspace() {
 function HintSection({ index, total, text }: { index: number; total: number; text: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!containerRef.current) return;
     const el = containerRef.current;
     const textEl = el.querySelector<HTMLParagraphElement>("[data-hint-text]");
@@ -914,16 +919,7 @@ function HintSection({ index, total, text }: { index: number; total: number; tex
       chars.push(span);
     }
 
-    gsap.fromTo(
-      chars,
-      { opacity: 0 },
-      {
-        opacity: 1,
-        stagger: 0.012,
-        duration: 0,
-        ease: "none",
-      },
-    );
+    gsap.fromTo(chars, { opacity: 0 }, { opacity: 1, stagger: 0.012, duration: 0, ease: "none" });
   }, []);
 
   return (
@@ -958,7 +954,7 @@ function ReasoningSection({
 }) {
   const ref = useRef<HTMLParagraphElement | null>(null);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!shown || !ref.current) return;
     const el = ref.current;
     const content = el.textContent ?? "";
@@ -971,11 +967,7 @@ function ReasoningSection({
       el.appendChild(span);
       chars.push(span);
     }
-    gsap.fromTo(
-      chars,
-      { opacity: 0 },
-      { opacity: 1, stagger: 0.012, duration: 0, ease: "none" },
-    );
+    gsap.fromTo(chars, { opacity: 0 }, { opacity: 1, stagger: 0.012, duration: 0, ease: "none" });
   }, [shown]);
 
   if (!text) return null;
@@ -1015,7 +1007,7 @@ function SolutionSection({
 }) {
   const ref = useRef<HTMLParagraphElement | null>(null);
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     if (!shown || !ref.current) return;
     const el = ref.current;
     const content = el.textContent ?? "";
@@ -1028,11 +1020,7 @@ function SolutionSection({
       el.appendChild(span);
       chars.push(span);
     }
-    gsap.fromTo(
-      chars,
-      { opacity: 0 },
-      { opacity: 1, stagger: 0.012, duration: 0, ease: "none" },
-    );
+    gsap.fromTo(chars, { opacity: 0 }, { opacity: 1, stagger: 0.012, duration: 0, ease: "none" });
   }, [shown]);
 
   if (!text) return null;

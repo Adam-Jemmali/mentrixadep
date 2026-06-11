@@ -50,4 +50,13 @@ export const userSettingsSchema = z.object({
   session_buffer_minutes: z.number().int().min(0).max(120).optional(),
   focused_division_key: z.string().trim().max(64).nullable().optional(),
   duel_opt_in: z.boolean().optional(),
+  rank_card_public: z.boolean().optional(),
+  rank_card_username: z
+    .string()
+    .trim()
+    .min(3)
+    .max(30)
+    .regex(/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$|^[a-z0-9]{3}$/)
+    .nullable()
+    .optional(),
 });

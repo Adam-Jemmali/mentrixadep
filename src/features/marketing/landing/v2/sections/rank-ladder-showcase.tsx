@@ -10,13 +10,23 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { ACCOUNT_RANK_VISUALS, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { ACCOUNT_RANK_VISUALS, normalizeRankTitle, type AccountRankKey } from "@/features/xp/rank-icons";
 import { RankBadge, RankTitle } from "@/features/student-profile/ui/rank-badge";
 import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import { fadeUp, staggerContainer, viewportOnce, springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { cn } from "@/shared/core/utils";
+
+const RANK_MOTIVATION: Record<AccountRankKey, string> = {
+  wanderer: "You showed up. Rank starts now.",
+  seeker: "You came back. Most do not.",
+  scholar: "You are in the game.",
+  contender: "Your name is on the board.",
+  rival: "The top sees you coming.",
+  apex: "One rank from MENTRIXER.",
+  mentrixer: "Proven in public. Earned.",
+};
 
 export function RankLadderShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -60,20 +70,14 @@ export function RankLadderShowcase() {
     };
   }, []);
 
-  const [coachMessage, setCoachMessage] = useState("Tap a rank or scroll. Where do you actually stand?");
+  const [coachMessage, setCoachMessage] = useState("Tap a rank or scroll. Are you as good as you think?");
   const active = ACCOUNT_RANK_VISUALS[activeIndex]!;
 
   useEffect(() => {
-    const stepLabel =
-      active.key === "wanderer"
-        ? "First step"
-        : active.key === "mentrixer"
-          ? "The signal"
-          : "Prove what you know";
     setCoachMessage(
-      `${normalizeRankTitle(active.title)} — ${active.minXp.toLocaleString()} to ${
+      `${normalizeRankTitle(active.title)} · ${active.minXp.toLocaleString()} to ${
         active.maxXp != null ? active.maxXp.toLocaleString() : "∞"
-      } XP · ${stepLabel}`,
+      } XP · ${RANK_MOTIVATION[active.key]}`,
     );
   }, [active.key, active.title, active.minXp, active.maxXp]);
 
@@ -108,14 +112,14 @@ export function RankLadderShowcase() {
             custom={1}
             className="mx-auto mt-3 max-w-2xl font-bold text-white text-[clamp(24px,3.8vw,40px)] tracking-[-0.03em] leading-tight"
           >
-            Seven ranks. One truth. Where do you actually stand?
+            Seven ranks. One question. Are you as good as you think?
           </motion.h2>
         </motion.div>
 
         <LandingSpeechBubble
           message={coachMessage}
           tone="coach"
-          label="Your current rank"
+          label="Where everyone starts"
           className="mx-auto mt-8"
         />
 

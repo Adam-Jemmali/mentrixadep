@@ -31,16 +31,17 @@ export async function getTopRival(): Promise<TopRivalData> {
     .eq("user_id", user.id)
     .single();
 
-  // Get all division stats to find the focused division
-  const divisionStats = await getStudentDivisionStats(user.id);
-  const sortedDivisions = [...divisionStats].sort((a, b) => b.xp - a.xp);
+  let focusedDivisionKey =
+    typeof settingsRow?.focused_division_key === "string" &&
+    settingsRow.focused_division_key.trim()
+      ? settingsRow.focused_division_key.trim()
+      : null;
 
-  // Determine focused division
-  const focusedDivisionKey =
-    (typeof settingsRow?.focused_division_key === "string" &&
-      settingsRow.focused_division_key.trim()) ||
-    sortedDivisions[0]?.divisionKey ||
-    null;
+  if (!focusedDivisionKey) {
+    const divisionStats = await getStudentDivisionStats(user.id);
+    focusedDivisionKey =
+      [...divisionStats].sort((a, b) => b.xp - a.xp)[0]?.divisionKey ?? null;
+  }
 
   if (!focusedDivisionKey) {
     return { status: "no_division" };

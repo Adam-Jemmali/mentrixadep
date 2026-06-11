@@ -50,7 +50,7 @@ const STUDENT_NAV_DESKTOP_SHELL =
 const STUDENT_NAV_MOBILE_HEADER_SHELL =
   "!bg-slate-950 border-white/15 shadow-[0_10px_30px_-16px_rgba(2,6,23,0.75)] md:!bg-slate-950";
 
-const ARENA_NAV_LINKS = new Set(["/student/duel", "/student/clan"]);
+const ARENA_NAV_LINKS = new Set(["/student/duel", "/student/division"]);
 
 function isArenaNavLink(link: string): boolean {
   return ARENA_NAV_LINKS.has(link);
@@ -59,10 +59,8 @@ function isArenaNavLink(link: string): boolean {
 const STUDENT_NAV_ITEMS = [
   { name: "Home", link: "/student" },
   { name: "Quest", link: "/student/quest" },
-  { name: "Path", link: "/student/learning-path" },
   { name: "League", link: "/student/division" },
   { name: "Duels", link: "/student/duel" },
-  { name: "Clan", link: "/student/clan" },
 ];
 
 function getInitials(displayName: string | null | undefined, email?: string | null): string {

@@ -62,10 +62,13 @@ const publicRoutes = new Set([
   "/terms",
   /** Guest quest demo — no auth required, uses rate limiting via cookies */
   "/try",
+  /** Shareable Rank Card OG image */
+  "/api/og/rank-card",
+  "/api/og/breakthrough",
 ]);
 
 /** Public tutor profile pages: /tutor/[tutorId] (and nested public paths under /tutor/). */
-const publicPrefixes = ["/tutor/"];
+const publicPrefixes = ["/tutor/", "/rank/", "/breakthrough/"];
 
 const authRoutesForRateLimit = ["/auth/signin", "/auth/signup"];
 

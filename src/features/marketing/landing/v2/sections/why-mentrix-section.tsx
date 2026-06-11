@@ -15,15 +15,15 @@ import {
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 
 const WITHOUT_SYSTEM = [
-  "You spend hours studying and have no idea if any of it is actually in your head",
-  "You hit the exam, the interview, or the test and find out the hard way what you did not know",
-  "You keep paying for tools that answer your question and leave the gap that caused it exactly where it was",
+  "You put in hours. Nothing moves. You do not know what broke.",
+  "The exam tells you what you missed. Too late to fix it.",
+  "Tools answer questions but leave the gap where it was.",
 ];
 
 const WHY_NOW = [
-  "Daily quests and duels in a public division that updates every time you show up",
-  "A verified Guide available tonight who sees your full quest history before the session starts",
-  "A rank that moves every time you do — and sits still every time you do not",
+  "Rank updates after every quest, duel, and session. You always know where you stand.",
+  "Guides see your accuracy and weakest concepts before you join. Session starts at the problem.",
+  "Honest rank on your public Rank Card. Moves when you work. Stops when you stop.",
 ];
 
 export function WhyMentrixSection() {
@@ -46,7 +46,7 @@ export function WhyMentrixSection() {
             custom={0}
             className="font-bold text-white text-[clamp(22px,3.2vw,32px)] tracking-[-0.03em]"
           >
-            The most expensive thing in learning is not knowing where you broke.
+            The worst time to learn what you missed is after the exam.
           </motion.h2>
         </motion.div>
 

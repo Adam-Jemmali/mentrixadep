@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { formatDate } from "@/shared/core/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
 import { AddToCalendarButton } from "./add-to-calendar-button";
-import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { getStudentSessionCheckoutCents, splitSessionPriceCents } from "@/features/booking/booking-pricing";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { GlassTimeCard } from "@/shared/ui/glass-time-card";
@@ -48,7 +48,7 @@ export default async function BookingConfirmedPage({ searchParams }: PageProps) 
   }
 
   const durationMin = getSessionDurationMinutes(availability.start_time, availability.end_time);
-  const price = splitSessionPriceCents(availability.price_per_session ?? 2500);
+  const price = splitSessionPriceCents(getStudentSessionCheckoutCents());
 
   return (
     <div className="min-h-screen bg-mentrixa-app text-white relative overflow-hidden flex items-center justify-center py-12 px-4">

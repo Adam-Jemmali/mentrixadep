@@ -23,14 +23,14 @@ type Feature = {
 const FEATURE_ROWS: Feature[][] = [
   [
     {
-      title: "Live Duels",
+      title: "Skill Duels",
       image: "/images/features/live-duels.webp",
       icon: "/images/live.webp",
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
-      title: "Duel Arena",
+      title: "Division Leaderboard",
       image: "/images/features/duel-arena.webp",
       icon: "/images/sword.webp",
       rotation: 2,
@@ -39,14 +39,14 @@ const FEATURE_ROWS: Feature[][] = [
   ],
   [
     {
-      title: "Problem Solver",
+      title: "Quest Practice",
       image: "/images/features/problem-solver.webp",
       icon: "/images/quest.webp",
       rotation: 1,
       accent: "from-purple-500/50",
     },
     {
-      title: "Learning Path",
+      title: "Rank Card",
       image: "/images/features/learning-path.webp",
       icon: "/images/book.webp",
       rotation: -1,
@@ -55,14 +55,14 @@ const FEATURE_ROWS: Feature[][] = [
   ],
   [
     {
-      title: "League",
+      title: "Impact Score",
       image: "/images/features/league.webp",
       icon: "/images/xp.webp",
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
-      title: "Clan Wars",
+      title: "Division Wars",
       image: "/images/features/clan-wars.webp",
       icon: "/images/clan.webp",
       rotation: 2,
@@ -78,7 +78,7 @@ const FEATURE_ROWS: Feature[][] = [
       accent: "from-purple-500/50",
     },
     {
-      title: "Study Package",
+      title: "Quest Pack",
       image: "/images/features/study-package.webp",
       icon: "/images/package.webp",
       rotation: -1,
@@ -87,14 +87,14 @@ const FEATURE_ROWS: Feature[][] = [
   ],
   [
     {
-      title: "Studio Output",
+      title: "Guide Studio",
       image: "/images/features/studio-output.webp",
       icon: "/images/pending.webp",
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
-      title: "Guide Knowledge",
+      title: "Breakthrough Events",
       image: "/images/features/guide-knowledge.webp",
       icon: "/images/money.webp",
       rotation: 2,
@@ -205,14 +205,15 @@ export function FeaturesBentoSection() {
             custom={0}
             className="mx-auto max-w-3xl text-center text-[clamp(22px,3.4vw,34px)] font-bold leading-tight tracking-[-0.03em] text-white"
           >
-            Any skill you take seriously. 1 arena. No ceiling.
+            Any skill. Any stage.
           </motion.h2>
           <motion.p
             variants={fadeUp}
             custom={1}
             className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-slate-300 md:text-[15px]"
           >
-            The same competitive loop for university, certifications, and career skills.
+            Exam next week. Interview next month. Skill you have been building for a year. Same arena.
+            Same rank. Same loop.
           </motion.p>
         </motion.div>
 

@@ -17,11 +17,10 @@ import {
 const ICON_VERSION = "20260410";
 
 const LANDING_NAV_ITEMS = [
-  { name: "Features", link: "#features" },
-  { name: "Ranks", link: "#ranks" },
-  { name: "Why now", link: "#why" },
-  { name: "Flow", link: "#flow" },
+  { name: "How it works", link: "#flow" },
+  { name: "Your rank", link: "#ranks" },
   { name: "Pricing", link: "#pricing" },
+  { name: "For Guides", link: "#path" },
   { name: "Contact", link: "#contact" },
   { name: "Sign in", link: "/auth/signin?signin=1" },
 ];
@@ -70,7 +69,7 @@ export function MarketingLandingNav() {
             </NavbarButton>
             <NavbarButton href="/auth/signup" variant="primary" className="hidden sm:inline-flex" prefetch={false}>
               <RoleIcon role="mentrixer" className="brightness-0 invert" />
-              Prove what you know
+              Start free
             </NavbarButton>
           </div>
         </NavBody>
@@ -101,7 +100,7 @@ export function MarketingLandingNav() {
                 </NavbarButton>
                 <NavbarButton href="/auth/signup" variant="primary" className="w-full" prefetch={false}>
                   <RoleIcon role="mentrixer" className="brightness-0 invert" />
-                  Prove what you know
+                  Start free
                 </NavbarButton>
               </div>
             </MobileNavMenu>

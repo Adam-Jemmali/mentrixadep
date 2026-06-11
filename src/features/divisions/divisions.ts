@@ -6,7 +6,10 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUtcWeekMondayString } from "@/features/divisions/division-week";
 import { getDivisionTierFromXp } from "@/features/xp/levels";
 import { assertNoBlockedLanguage } from "@/shared/core/security";
-import { getDivisionKeyForCourse, getDivisionsCatalog, getDivisionLeaderboard, type LeaderboardEntry } from "@/features/divisions/leaderboard";
+import { getDivisionKeyForCourse, getDivisionLeaderboard, type LeaderboardEntry } from "@/features/divisions/leaderboard";
+import { getDivisionWarPanel } from "@/features/division-wars/reads";
+import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
+import { createClient } from "@/shared/integrations/supabase/server";
 
 export interface WeeklyLeaderboardEntry {
   rank: number;
@@ -198,77 +201,21 @@ export async function getWeeklyDivisionLeaderboard(
   });
 }
 
+async function loadDivisionHubCards(userId: string): Promise<DivisionHubCard[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("division_hub_cards", { p_user_id: userId });
+  if (error) {
+    throw new Error(`Failed to load division hub: ${error.message}`);
+  }
+  if (!Array.isArray(data)) return [];
+  return data as DivisionHubCard[];
+}
+
 export async function getDivisionHubCards(userId: string): Promise<DivisionHubCard[]> {
   await requireRole(["student", "admin"]);
-  const admin = createAdminClient();
-  const weekStart = getUtcWeekMondayString();
-
-  const [catalog, { data: settingsRow }] = await Promise.all([
-    getDivisionsCatalog(),
-    admin.from("user_settings").select("focused_division_key").eq("user_id", userId).maybeSingle(),
-  ]);
-
-  const focused =
-    typeof settingsRow?.focused_division_key === "string"
-      ? settingsRow.focused_division_key.trim()
-      : null;
-
-  const { data: memberships } = await admin
-    .from("user_divisions")
-    .select("division_key")
-    .eq("user_id", userId);
-
-  const memberSet = new Set((memberships ?? []).map((m) => m.division_key));
-
-  const cards: DivisionHubCard[] = [];
-
-  for (const d of catalog) {
-    const { count: memberCount } = await admin
-      .from("user_divisions")
-      .select("*", { count: "exact", head: true })
-      .eq("division_key", d.key);
-
-    const { data: myWeek } = await admin
-      .from("division_weekly_xp")
-      .select("xp_earned")
-      .eq("user_id", userId)
-      .eq("division_key", d.key)
-      .eq("week_start", weekStart)
-      .maybeSingle();
-
-    const myXp = myWeek?.xp_earned ?? 0;
-    let weeklyRank: number | null = null;
-    if (memberSet.has(d.key) && myXp > 0) {
-      const { count: above } = await admin
-        .from("division_weekly_xp")
-        .select("*", { count: "exact", head: true })
-        .eq("division_key", d.key)
-        .eq("week_start", weekStart)
-        .gt("xp_earned", myXp);
-      weeklyRank = (above ?? 0) + 1;
-    } else if (memberSet.has(d.key) && myXp === 0) {
-      const { count: total } = await admin
-        .from("division_weekly_xp")
-        .select("*", { count: "exact", head: true })
-        .eq("division_key", d.key)
-        .eq("week_start", weekStart)
-        .gt("xp_earned", 0);
-      weeklyRank = (total ?? 0) > 0 ? (total ?? 0) + 1 : null;
-    }
-
-    cards.push({
-      key: d.key,
-      name: d.name,
-      description: d.description ?? null,
-      memberCount: memberCount ?? 0,
-      weeklyRank,
-      weeklyXp: myXp,
-      isFocused: focused === d.key,
-      isMember: memberSet.has(d.key),
-    });
-  }
-
-  return cards;
+  return withCache(cacheKeys.divisionHub(userId), cacheTtl.divisionHub, () =>
+    loadDivisionHubCards(userId),
+  );
 }
 
 export async function joinDivision(
@@ -498,7 +445,8 @@ export async function loadDivisionDetailPage(divisionKey: string, userId: string
   const admin = createAdminClient();
   const weekStart = getUtcWeekMondayString();
 
-  const [weekly, allTime, activity, duels, messages, isMember, memberCountRes] = await Promise.all([
+  const [weekly, allTime, activity, duels, messages, isMember, memberCountRes, divisionWar] =
+    await Promise.all([
     getWeeklyDivisionLeaderboard(divisionKey, userId, 50),
     getDivisionLeaderboard(divisionKey, userId, 50),
     getDivisionActivityFeed(divisionKey, 3),
@@ -506,6 +454,7 @@ export async function loadDivisionDetailPage(divisionKey: string, userId: string
     getDivisionMessages(divisionKey, 80),
     isUserDivisionMember(userId, divisionKey),
     admin.from("user_divisions").select("*", { count: "exact", head: true }).eq("division_key", divisionKey.trim()),
+    getDivisionWarPanel(divisionKey, userId),
   ]);
 
   const memberCount = memberCountRes.count ?? 0;
@@ -541,6 +490,7 @@ export async function loadDivisionDetailPage(divisionKey: string, userId: string
     memberCount,
     weeklyPoolXp,
     isFocused: focused === divisionKey,
+    divisionWar,
   };
 }
 

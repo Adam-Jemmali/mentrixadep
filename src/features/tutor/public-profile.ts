@@ -3,6 +3,8 @@
 import { requireAuth, requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUserSettings } from "@/features/settings/user-settings";
+import { getGuideBreakthroughs } from "@/features/guide-rank/reads";
+import { averageImpactScore } from "@/features/guide-rank/calculate-pure";
 import { normalizeTeachingDefaultDurationMinutes } from "@/features/tutor/teaching-defaults";
 
 async function fetchTutorPublicProfileUncached(tutorId: string) {
@@ -17,7 +19,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
   // Fetch tutor user record
   const { data: tutorUser, error: userError } = await adminClient
     .from("users")
-    .select("id, role, approved")
+    .select("id, role, approved, guide_rank")
     .eq("id", tutorId)
     .eq("role", "tutor")
     .eq("approved", true)
@@ -111,6 +113,56 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
   const bio =
     typeof bioRaw === "string" && bioRaw.trim().length > 0 ? bioRaw.trim() : null;
 
+  const { data: impactRows } = await adminClient
+    .from("guide_impact_scores")
+    .select("subject, impact_score, sessions_counted")
+    .eq("guide_id", tutorId)
+    .order("impact_score", { ascending: false });
+
+  const impactScores = (impactRows ?? []).map((row) => ({
+    subject: row.subject,
+    impactScore: Number(row.impact_score),
+    sessionsCounted: row.sessions_counted,
+  }));
+
+  const avgImpactScore = averageImpactScore(impactScores);
+
+  const { data: tutorCourseRows } = await adminClient
+    .from("tutor_courses")
+    .select("course_name")
+    .eq("tutor_id", tutorId)
+    .eq("verified", true);
+
+  const allSubjects = Array.from(
+    new Set([
+      ...courses,
+      ...(tutorCourseRows ?? []).map((r) => r.course_name),
+      ...impactScores.map((i) => i.subject),
+    ]),
+  ).sort();
+
+  let responseRatePercent: number | null = null;
+  const { data: availIds } = await adminClient
+    .from("availability")
+    .select("id")
+    .eq("tutor_id", tutorId);
+  const availabilityIds = (availIds ?? []).map((a) => a.id);
+  if (availabilityIds.length > 0) {
+    const MS24 = 24 * 60 * 60 * 1000;
+    const { data: reqRows } = await adminClient
+      .from("session_requests")
+      .select("status, created_at, updated_at")
+      .in("availability_id", availabilityIds);
+    const decided = (reqRows ?? []).filter((r) => r.status === "approved" || r.status === "rejected");
+    const inTime = decided.filter(
+      (r) => new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() <= MS24,
+    );
+    responseRatePercent =
+      decided.length === 0 ? null : Math.round((inTime.length / decided.length) * 1000) / 10;
+  }
+
+  const breakthroughs = await getGuideBreakthroughs(tutorId, 5);
+
   return {
     id: tutorId,
     email,
@@ -120,11 +172,16 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     ratingCount: ratingList.length,
     ratingDistribution,
     reviews,
-    courses,
+    courses: allSubjects,
     availability,
     autoApprove,
     tutorTimezone,
     bio,
+    impactScores,
+    guideRank: (tutorUser as { guide_rank?: string }).guide_rank ?? "practitioner",
+    avgImpactScore,
+    responseRatePercent,
+    breakthroughs,
   };
 }
 

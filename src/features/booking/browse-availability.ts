@@ -5,10 +5,17 @@ import { createClient } from "@/shared/integrations/supabase/server";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { addDaysIso } from "@/features/booking/booking-pricing";
 import { isMissingAvailabilityColumnsError } from "@/features/booking/booking-internal";
+import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
 
 export async function getTutorAvailability(course?: string) {
   await requireRole(["student", "admin"]);
+  const courseKey = (course?.trim() || "all").toLowerCase().slice(0, 80);
+  return withCache(cacheKeys.availabilityBrowse(courseKey), cacheTtl.availabilityBrowse, () =>
+    loadTutorAvailability(course),
+  );
+}
 
+async function loadTutorAvailability(course?: string) {
   const supabase = await createClient();
   const adminClient = createAdminClient();
 

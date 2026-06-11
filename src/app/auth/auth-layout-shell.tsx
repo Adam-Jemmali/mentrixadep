@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/shared/core/utils";
-import { gsap } from "gsap";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 
 const PHRASES = [
@@ -24,28 +24,31 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
   const isSelectRole = pathname.endsWith("/select-role");
   const showLeftPanel = useMemo(() => !isSelectRole, [isSelectRole]);
 
-  useEffect(() => {
-    if (!showLeftPanel) return;
-    const id = window.setInterval(() => {
-      if (!phraseRef.current) return;
-      const el = phraseRef.current;
-      gsap.to(el, {
-        y: -40,
-        opacity: 0,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => {
-          setIndex((prev) => (prev + 1) % PHRASES.length);
-          gsap.fromTo(
-            el,
-            { y: 40, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" },
-          );
-        },
-      });
-    }, 3200);
-    return () => window.clearInterval(id);
-  }, [showLeftPanel]);
+  useGsapEffect(
+    (gsap) => {
+      if (!showLeftPanel) return;
+      const id = window.setInterval(() => {
+        if (!phraseRef.current) return;
+        const el = phraseRef.current;
+        gsap.to(el, {
+          y: -40,
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.in",
+          onComplete: () => {
+            setIndex((prev) => (prev + 1) % PHRASES.length);
+            gsap.fromTo(
+              el,
+              { y: 40, opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" },
+            );
+          },
+        });
+      }, 3200);
+      return () => window.clearInterval(id);
+    },
+    [showLeftPanel],
+  );
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-slate-950 text-slate-100">

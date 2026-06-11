@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGsapEffect, useGsapScrollTriggerEffect } from "@/shared/core/gsap-lazy";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +15,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { BookingPriceBreakdown } from "@/features/booking/booking-price-breakdown";
-import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { splitSessionPriceCents, formatStudentBreakthroughPrice, getStudentSessionCheckoutCents } from "@/features/booking/booking-pricing";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { AccountSecurityPanel } from "@/components/account-security-panel";
@@ -29,8 +28,14 @@ import { updateUserSettings, type UserSettings } from "@/features/settings/user-
 import { cn } from "@/shared/core/utils";
 import { TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES } from "@/features/tutor/teaching-defaults";
 import { TutorQualityBadge } from "@/components/tutor-quality-badge";
-gsap.registerPlugin(ScrollTrigger);
-
+import {
+  ImpactScoreBadge,
+  ImpactScoreBreakdown,
+} from "@/features/guide-impact/components/impact-score-badge";
+import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
+import { pickImpactForSubject, subjectsMatch } from "@/features/guide-impact/impact-score-pure";
+import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
+import type { GuideBreakthrough } from "@/features/guide-rank/reads";
 // ─── types ────────────────────────────────────────────────────────────────────
 
 interface AvailabilitySlot {
@@ -63,6 +68,11 @@ interface Profile {
   tutorTimezone: string;
   /** Public guide bio from user_settings — shown in Guide Snapshot after “Update Identity”. */
   bio?: string | null;
+  impactScores?: GuideImpactEntry[];
+  guideRank?: string;
+  avgImpactScore?: number | null;
+  responseRatePercent?: number | null;
+  breakthroughs?: GuideBreakthrough[];
   privateSettings?: UserSettings;
 }
 
@@ -90,7 +100,8 @@ function formatPrice(cents: number | null): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-function formatPriceFromBaseSessionCents(baseCents: number | null): string {
+function formatPriceFromBaseSessionCents(baseCents: number | null, studentView = true): string {
+  if (studentView) return formatStudentBreakthroughPrice();
   if (baseCents == null) return "$26.25";
   return formatPrice(splitSessionPriceCents(baseCents).totalCents);
 }
@@ -313,13 +324,24 @@ export function TutorProfileClient({
       ? trimmedGuideBio
       : `Teaching ${profile.courses.length > 0 ? profile.courses.slice(0, 2).join(" • ") : "multi-subject sessions"} with clarity, structure, and momentum.`;
 
+  const impactScores = profile.impactScores ?? [];
+  const eligibleImpact = impactScores.filter((e) => e.sessionsCounted >= 3);
+  const primaryImpact =
+    eligibleImpact.length > 0
+      ? eligibleImpact.reduce((top, cur) => (cur.impactScore > top.impactScore ? cur : top))
+      : null;
+  const courseImpact =
+    profile.courses.length > 0
+      ? pickImpactForSubject(eligibleImpact, profile.courses[0] ?? "")
+      : primaryImpact;
+  const headlineImpact = courseImpact ?? primaryImpact;
+
   // Booking dialog
   const [dialogSlot, setDialogSlot] = useState<AvailabilitySlot | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
-  // ── GSAP: name word clip-reveal ────────────────────────────────────────────
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     const el = nameRef.current;
     if (!el) return;
     const wordEls = el.querySelectorAll<HTMLSpanElement>(".word-inner");
@@ -330,8 +352,7 @@ export function TutorProfileClient({
     );
   }, []);
 
-  // ── GSAP: session count up ─────────────────────────────────────────────────
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     const el = statRefs.current[0];
     if (!el) return;
     const target = profile.sessionCount;
@@ -346,8 +367,7 @@ export function TutorProfileClient({
     });
   }, [profile.sessionCount]);
 
-  // ── GSAP: availability rows stagger on mount ───────────────────────────────
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     const rows = document.querySelectorAll(".avail-row");
     if (!rows.length) return;
     gsap.fromTo(
@@ -357,8 +377,7 @@ export function TutorProfileClient({
     );
   }, [filteredSlots.length, selectedDay]);
 
-  // ── GSAP: rating bars ScrollTrigger ────────────────────────────────────────
-  useEffect(() => {
+  useGsapScrollTriggerEffect((gsap, ScrollTrigger) => {
     const total = profile.ratingCount;
     ratingBarRefs.current.forEach((bar, i) => {
       if (!bar) return;
@@ -374,19 +393,14 @@ export function TutorProfileClient({
           ease: "power2.out",
           delay: i * 0.06,
           transformOrigin: "left center",
-          scrollTrigger: {
-            trigger: bar,
-            start: "top 85%",
-            once: true,
-          },
+          scrollTrigger: { trigger: bar, start: "top 85%", once: true },
         },
       );
     });
     return () => ScrollTrigger.getAll().forEach((t) => t.kill());
   }, [profile.ratingDistribution, profile.ratingCount]);
 
-  // ── GSAP: review rows ScrollTrigger stagger ────────────────────────────────
-  useEffect(() => {
+  useGsapScrollTriggerEffect((gsap) => {
     const els = reviewRefs.current.filter(Boolean);
     if (!els.length) return;
     gsap.fromTo(
@@ -398,11 +412,7 @@ export function TutorProfileClient({
         stagger: 0.07,
         duration: 0.3,
         ease: "power2.out",
-        scrollTrigger: {
-          trigger: els[0],
-          start: "top 88%",
-          once: true,
-        },
+        scrollTrigger: { trigger: els[0], start: "top 88%", once: true },
       },
     );
   }, [profile.reviews.length]);
@@ -442,12 +452,6 @@ export function TutorProfileClient({
   }
 
   // ── render ─────────────────────────────────────────────────────────────────
-  const priceDisplay =
-    bookableSlots[0] != null
-      ? formatPriceFromBaseSessionCents(bookableSlots[0].price_per_session)
-      : profile.availability[0] != null
-        ? formatPriceFromBaseSessionCents(profile.availability[0].price_per_session)
-        : "$26.25";
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24 text-indigo-950">
@@ -475,6 +479,16 @@ export function TutorProfileClient({
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400">
                 Verified Mentrixa Guide
               </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <GuideRankBadge rankKey={profile.guideRank ?? "practitioner"} size="lg" />
+                {headlineImpact && headlineImpact.sessionsCounted >= 3 ? (
+                  <ImpactScoreBadge
+                    impactScore={headlineImpact.impactScore}
+                    sessionsCounted={headlineImpact.sessionsCounted}
+                    subject={impactScores.length > 1 ? headlineImpact.subject : undefined}
+                  />
+                ) : null}
+              </div>
               <h1
                 ref={nameRef}
                 className="font-extrabold tracking-[-0.04em] leading-none text-indigo-950"
@@ -487,23 +501,32 @@ export function TutorProfileClient({
                 ))}
               </h1>
               <p className="max-w-xl text-sm leading-relaxed text-slate-500">
-                {profile.email} · Teaching excellence through live Mentrixa sessions.
+                {profile.email} · Outcome-verified teaching on Mentrixa.
               </p>
               <div className="mt-2">
                 <TutorQualityBadge tutorId={profile.id} />
               </div>
-              
 
               {profile.courses.length > 0 ? (
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {profile.courses.map((c) => (
-                    <span
-                      key={c}
-                      className="cursor-default rounded border border-indigo-100 bg-slate-50/40 px-2.5 py-1 text-xs font-mono text-slate-500 transition-colors duration-150 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
-                    >
-                      {c}
-                    </span>
-                  ))}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {profile.courses.map((c) => {
+                    const subjectImpact = impactScores.find(
+                      (s) => subjectsMatch(s.subject, c) && s.sessionsCounted >= 3,
+                    );
+                    return (
+                      <span
+                        key={c}
+                        className="inline-flex cursor-default flex-col rounded-lg border border-indigo-100 bg-slate-50/40 px-2.5 py-1.5 text-xs transition-colors duration-150 hover:border-indigo-300 hover:bg-indigo-50"
+                      >
+                        <span className="font-mono font-medium text-slate-700">{c}</span>
+                        {subjectImpact ? (
+                          <span className="mt-0.5 text-[10px] font-semibold tabular-nums text-indigo-600">
+                            {Math.round(subjectImpact.impactScore)}/100 impact
+                          </span>
+                        ) : null}
+                      </span>
+                    );
+                  })}
                 </div>
               ) : null}
 
@@ -517,23 +540,27 @@ export function TutorProfileClient({
                   >
                     {profile.sessionCount}
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-400">Sessions taught</span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Sessions</span>
                 </div>
                 <div className="mentrixa-stat-cell">
                   <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
-                    {profile.avgRating !== null ? profile.avgRating.toFixed(1) : "—"}
+                    {profile.avgImpactScore != null ? Math.round(profile.avgImpactScore) : "—"}
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-400">Avg rating / 5</span>
-                </div>
-                <div className="mentrixa-stat-cell">
-                  <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">~2h</span>
-                  <span className="mt-0.5 block text-xs text-slate-400">Response time</span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Avg Impact</span>
                 </div>
                 <div className="mentrixa-stat-cell">
                   <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
-                    {priceDisplay}
+                    {profile.responseRatePercent != null
+                      ? `${Math.round(profile.responseRatePercent)}%`
+                      : "—"}
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-400">Per session (incl. fee)</span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Response rate</span>
+                </div>
+                <div className="mentrixa-stat-cell">
+                  <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
+                    {profile.courses.length}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Subjects</span>
                 </div>
               </div>
             </div>
@@ -568,6 +595,31 @@ export function TutorProfileClient({
           <div className="space-y-10 lg:col-span-2">
             <section className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
               <h2 className="mb-6 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">
+                Recent Breakthroughs
+              </h2>
+              {(profile.breakthroughs ?? []).length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  Student accuracy gains appear here as outcome data accumulates.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {(profile.breakthroughs ?? []).map((b, i) => (
+                    <li
+                      key={`${b.concept}-${i}`}
+                      className="rounded-2xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-sm text-emerald-950"
+                    >
+                      A student went from{" "}
+                      <strong>{Math.round(b.prePercent)}%</strong> to{" "}
+                      <strong>{Math.round(b.postPercent)}%</strong> on{" "}
+                      <strong>{b.concept}</strong>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
+              <h2 className="mb-6 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">
                 Availability Grid
               </h2>
               {filteredSlots.length === 0 ? (
@@ -589,7 +641,10 @@ export function TutorProfileClient({
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-black uppercase tracking-widest text-indigo-500">
-                          {formatPriceFromBaseSessionCents(slot.price_per_session)}
+                          {formatPriceFromBaseSessionCents(
+                            slot.price_per_session,
+                            !isOwnProfile && viewerRole !== "tutor",
+                          )}
                         </span>
                         {(!isOwnProfile && viewerRole !== "tutor") ? (
                           <Button
@@ -694,6 +749,14 @@ export function TutorProfileClient({
                   ))}
                 </ul>
               )}
+              {impactScores.length > 1 ? (
+                <div className="mt-6 border-t border-indigo-50 pt-6">
+                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                    Impact by subject
+                  </p>
+                  <ImpactScoreBreakdown entries={impactScores} />
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -737,7 +800,7 @@ export function TutorProfileClient({
                   Pricing
                 </p>
                 <BookingPriceBreakdown
-                  sessionPriceCents={dialogSlot.price_per_session ?? 2500}
+                  sessionPriceCents={getStudentSessionCheckoutCents()}
                 />
                 <p className="mt-4 border-t-2 border-mentrixa-200 pt-3 text-sm font-medium leading-relaxed text-neutral-900">
                   Stripe lists the session and 15% platform fee separately. If you decline this request, the

@@ -12,6 +12,7 @@ import {
 } from "@/features/student-profile/hub-snapshot";
 import { getTopRival } from "@/features/divisions/top-rival";
 import { getQuestAccuracyTrend } from "@/features/quest/quest-reads";
+import { getActiveProgressSnapshot } from "@/features/progress-snapshot/reads";
 import type { StudentCourse, UserXp } from "@/shared/types/database";
 import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
@@ -24,6 +25,7 @@ import {
   DeferredAccountRankLadder,
   DeferredHeroMentrixerBounce,
   DeferredPreSessionBriefCard,
+  DeferredProgressSnapshotCard,
   DeferredSessionsList,
   DeferredStudentCommandCenterClient,
   DeferredStudentStatStripMotion,
@@ -38,10 +40,14 @@ import {
   rankRecommendedGuides,
 } from "@/features/student-profile/student-dashboard-helpers";
 import { getUpcomingSessionBriefs } from "@/features/pre-session-brief/brief";
-import { hasStudentCompletedDiagnostic } from "@/features/quest/diagnostic-onboarding";
 import { Button } from "@/shared/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
+import {
+  getGuideImpactScoresMap,
+  getStudentQuestCourseNames,
+} from "@/features/guide-impact/reads";
+import { getGuideRanksMap } from "@/features/guide-rank/reads";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -57,7 +63,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, diagnosticCompleted] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -65,8 +71,15 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       getTutorAvailability(),
       getTopRival(),
       getQuestAccuracyTrend(user.id),
-      hasStudentCompletedDiagnostic(user.id),
+      getActiveProgressSnapshot().catch(() => null),
     ]);
+
+  const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
+  const [guideImpactByTutorId, questHistorySubjects, guideRankByTutorId] = await Promise.all([
+    getGuideImpactScoresMap(tutorIdsForImpact).catch(() => ({})),
+    getStudentQuestCourseNames(user.id).catch(() => [] as string[]),
+    getGuideRanksMap(tutorIdsForImpact).catch(() => ({})),
+  ]);
 
   const { upcomingSessions, pastSessions } = sessionsBundle;
 
@@ -220,24 +233,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 </Button>
                 <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
                   <Link
-                    href="/student/progress"
-                    className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"
-                  >
-                    Progress
-                  </Link>
-                </Button>
-                {!diagnosticCompleted && (
-                  <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
-                    <Link
-                      href="/student/onboarding"
-                      className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"
-                    >
-                      Study plan
-                    </Link>
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
-                  <Link
                     href="/student/quest"
                     className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"
                   >
@@ -260,6 +255,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         </div>
 
         <div className="mt-8 space-y-6">
+          {progressSnapshot ? (
+            <DeferredProgressSnapshotCard snapshot={progressSnapshot} />
+          ) : null}
           <DeferredAccountRankLadder totalXp={totalXp} variant="dashboard" />
           <DeferredStudentStatStripMotion
             totalXp={totalXp}
@@ -271,18 +269,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             accountRank={accountRank}
           />
         </div>
-
-        {!diagnosticCompleted && (
-          <div className="mt-8 mb-2 rounded-2xl border border-indigo-200/90 bg-indigo-50/95 px-5 py-4 text-sm text-indigo-950 shadow-sm">
-            <p className="font-semibold">Get your personalized study plan</p>
-            <p className="mt-1 text-indigo-900/90">
-              Answer a few quick questions and we&apos;ll build a study plan and your first practice quest.
-            </p>
-            <Button size="sm" className="mt-3 bg-indigo-600 text-white hover:bg-indigo-700" asChild>
-              <Link href="/student/onboarding">Start study plan quiz</Link>
-            </Button>
-          </div>
-        )}
 
         {query.booking === "success" && (
           <div className="mt-8 mb-2 rounded-2xl border border-emerald-200/80 bg-white px-5 py-4 text-sm text-emerald-900 shadow-sm">
@@ -343,6 +329,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             tutorExpertise={tutorExpertise}
             recommendedGuides={recommendedGuides}
             displayTimeZone={timeZone}
+            guideImpactByTutorId={guideImpactByTutorId}
+            questHistorySubjects={questHistorySubjects}
+            guideRankByTutorId={guideRankByTutorId}
           />
 
           <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">

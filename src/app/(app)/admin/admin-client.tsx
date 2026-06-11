@@ -8,7 +8,7 @@ import type { AdminUser } from "@/features/admin/admin-users";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { gsap } from "gsap";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
 
 import { Badge } from "@/shared/ui/badge";
 import type { RegistrationRequest } from "@/shared/types/database";
@@ -121,21 +121,24 @@ export function AdminClient({
     setPending(initialPending);
   }, [initialPending]);
 
-  useEffect(() => {
-    if (isFirstSearchRender.current) {
-      isFirstSearchRender.current = false;
-      return;
-    }
-    const rows = document.querySelectorAll(".users-row");
-    if (!rows.length) return;
-    gsap.fromTo(
-      rows,
-      { opacity: 0, y: 2 },
-      { opacity: 1, y: 0, stagger: 0.025, duration: 0.2, ease: "power2.out" },
-    );
-  }, [search, roleFilter]);
+  useGsapEffect(
+    (gsap) => {
+      if (isFirstSearchRender.current) {
+        isFirstSearchRender.current = false;
+        return;
+      }
+      const rows = document.querySelectorAll(".users-row");
+      if (!rows.length) return;
+      gsap.fromTo(
+        rows,
+        { opacity: 0, y: 2 },
+        { opacity: 1, y: 0, stagger: 0.025, duration: 0.2, ease: "power2.out" },
+      );
+    },
+    [search, roleFilter],
+  );
 
-  useEffect(() => {
+  useGsapEffect((gsap) => {
     const rows = document.querySelectorAll(".pending-row");
     if (!rows.length) return;
     gsap.fromTo(
@@ -151,15 +154,17 @@ export function AdminClient({
       onDone();
       return;
     }
-    gsap.to(row, {
-      height: 0,
-      opacity: 0,
-      paddingTop: 0,
-      paddingBottom: 0,
-      borderWidth: 0,
-      duration: 0.28,
-      ease: "power2.in",
-      onComplete: onDone,
+    void import("gsap").then(({ gsap }) => {
+      gsap.to(row, {
+        height: 0,
+        opacity: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        borderWidth: 0,
+        duration: 0.28,
+        ease: "power2.in",
+        onComplete: onDone,
+      });
     });
   }, []);
 

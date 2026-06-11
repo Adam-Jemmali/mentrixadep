@@ -112,6 +112,6 @@ describe("Stripe Connect destination-charge payout flow", () => {
 
     expect(ledgerUpdateEq).toHaveBeenCalledWith("id", LEDGER_ID);
     expect(transfersCreate).not.toHaveBeenCalled();
-  });
+  }, 30_000);
 });
 

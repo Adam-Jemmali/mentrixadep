@@ -101,3 +101,15 @@ export function DeferredSessionsList(
 ) {
   return <DeferredSessionsListInner {...props} />;
 }
+
+export const DeferredProgressSnapshotCard = dynamic(
+  () =>
+    import("@/features/progress-snapshot/ui/progress-snapshot-card").then((m) => ({
+      default: m.ProgressSnapshotCard,
+    })),
+  {
+    loading: () => (
+      <div className="min-h-[8rem] rounded-2xl border border-violet-200 bg-white/90" aria-hidden />
+    ),
+  },
+);

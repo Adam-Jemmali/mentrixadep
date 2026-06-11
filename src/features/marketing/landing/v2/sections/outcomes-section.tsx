@@ -14,10 +14,10 @@ import {
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 
 const OUTCOME_LINES = [
-  "Within 10 minutes of every live session, Quest generates your summary, flashcards, and practice drills from that exact call. Not templates. Not generic. Yours.",
-  "Quest reads your performance data and drills the specific concept you keep missing. Not a textbook chapter. The exact gap the data found.",
-  "Every skill you add gets its own division, its own leaderboard, and its own Guide pool. One account. Unlimited subjects. The rank follows you.",
-  "Guides set their own rate between $15 and $60 CAD. You see the full price before you book. Stripe pays them the moment the session ends. No invoicing. No waiting. No surprises.",
+  "Ten minutes after every call, Quest builds your summary, flashcards, and drills from that session.",
+  "Quest drills the concept your accuracy keeps dropping on. Not random practice.",
+  "One account. Each skill gets its own division, leaderboard, and Guide pool.",
+  "Guides set rates. Stripe pays when the call ends. No invoices.",
 ];
 
 export function OutcomesSection() {
@@ -36,7 +36,7 @@ export function OutcomesSection() {
           className="text-center"
         >
           <motion.p variants={fadeUp} custom={0} className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300">
-            The offer, clearly
+            What you get
           </motion.p>
         </motion.div>
 

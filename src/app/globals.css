@@ -899,6 +899,64 @@ main:has(.lp-root) > div {
   animation-delay: 3s;
 }
 
+/* Admin dashboard — entrance without GSAP */
+@keyframes dashCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.dash-animate-in .metric-card,
+.dash-animate-in .dash-section {
+  animation: dashCardIn 0.35s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  opacity: 0;
+}
+.dash-animate-in .metric-card:nth-child(1),
+.dash-animate-in .dash-section:nth-child(1) { animation-delay: 0s; }
+.dash-animate-in .metric-card:nth-child(2),
+.dash-animate-in .dash-section:nth-child(2) { animation-delay: 0.04s; }
+.dash-animate-in .metric-card:nth-child(3),
+.dash-animate-in .dash-section:nth-child(3) { animation-delay: 0.08s; }
+.dash-animate-in .metric-card:nth-child(4),
+.dash-animate-in .dash-section:nth-child(4) { animation-delay: 0.12s; }
+.dash-animate-in .metric-card:nth-child(5),
+.dash-animate-in .dash-section:nth-child(5) { animation-delay: 0.16s; }
+.dash-animate-in .metric-card:nth-child(6),
+.dash-animate-in .dash-section:nth-child(6) { animation-delay: 0.2s; }
+.dash-animate-in .metric-card:nth-child(7),
+.dash-animate-in .dash-section:nth-child(7) { animation-delay: 0.24s; }
+.dash-animate-in .metric-card:nth-child(8),
+.dash-animate-in .dash-section:nth-child(8) { animation-delay: 0.28s; }
+
+/* Landing — CSS sparkles (replaces tsparticles) */
+@keyframes lpSparkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.6);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+.lp-sparkle-field {
+  background-image:
+    radial-gradient(circle at 12% 28%, rgba(96, 165, 250, 0.55) 0 1px, transparent 2px),
+    radial-gradient(circle at 38% 62%, rgba(56, 189, 248, 0.45) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 71% 18%, rgba(96, 165, 250, 0.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 84% 74%, rgba(125, 211, 252, 0.4) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 22% 82%, rgba(96, 165, 250, 0.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 55% 42%, rgba(56, 189, 248, 0.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 92% 38%, rgba(96, 165, 250, 0.4) 0 1px, transparent 2px),
+    radial-gradient(circle at 48% 12%, rgba(125, 211, 252, 0.45) 0 1.5px, transparent 2.5px);
+  animation: lpSparkle 3.2s ease-in-out infinite;
+}
+
 /* Landing — motion without GSAP */
 @keyframes lpHeroLine {
   from {

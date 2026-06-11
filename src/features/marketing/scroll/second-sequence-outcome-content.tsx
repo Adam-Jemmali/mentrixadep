@@ -8,7 +8,7 @@ const OUTCOME_LINES = [
   "Within 10 minutes of every session, Quest drops your summary, flashcards, and practice problems.",
   "Your Quest practice drills are built from your session, not recycled problems.",
   "Sessions, quests, duels, and your division rank all live in one place. One login. One place to become the best Mentrixer.",
-  "Guides set their rate ($15-$60 CAD per session). Stripe pays them automatically after every session.",
+  "One flat price — $39 CAD per Guide session. Stripe pays Guides automatically after every session.",
 ];
 
 export function SecondSequenceOutcomeContent() {

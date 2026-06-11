@@ -259,6 +259,11 @@ export async function generateAndStorePreSessionBrief(params: {
     return { ok: false, reason: insertError?.message ?? "DB insert failed" };
   }
 
+  await admin
+    .from("session_briefs")
+    .update({ guide_context_cached_at: null })
+    .eq("session_id", params.sessionId);
+
   // Send email
   if (params.sendEmail !== false) {
     await sendPreSessionBriefEmail(params.studentEmail, {
@@ -358,31 +363,4 @@ export async function getUpcomingSessionBriefs(): Promise<
   });
 }
 
-// ─── Row mapper ───────────────────────────────────────────────────────────────
-
-function mapBriefRow(
-  row: Record<string, unknown>,
-  sessionId: string
-): StoredPreSessionBrief {
-  return {
-    id: String(row.id ?? ""),
-    sessionId,
-    likelyCoverage: Array.isArray(row.likely_coverage)
-      ? (row.likely_coverage as unknown[]).map(String)
-      : [],
-    weakSpotsToWatch: Array.isArray(row.weak_spots)
-      ? (row.weak_spots as unknown[]).map(String)
-      : [],
-    warmUpExercise: {
-      title: String(row.warm_up_title ?? "Quick warm-up"),
-      prompt: String(row.warm_up_prompt ?? ""),
-      hint: typeof row.warm_up_hint === "string" && row.warm_up_hint.trim()
-        ? row.warm_up_hint
-        : undefined,
-    },
-    questionsToAsk: Array.isArray(row.questions_to_ask)
-      ? (row.questions_to_ask as unknown[]).map(String)
-      : [],
-    createdAt: String(row.created_at ?? ""),
-  };
-}
+import { mapBriefRow } from "@/features/pre-session-brief/context-mapper";

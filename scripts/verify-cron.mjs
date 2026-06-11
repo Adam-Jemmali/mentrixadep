@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 const REQUIRED_PATHS = [
   "/api/cron/complete-sessions",
   "/api/cron/process-payouts",
+  "/api/cron/process-background-jobs",
 ];
 
 function loadVercelConfig() {

@@ -1,6 +1,6 @@
 "use server";
 
-import { recordClanQuestCompletion } from "@/features/clans/clan-events";
+import { recordDivisionWarQuestContribution } from "@/features/division-wars/contributions";
 import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
@@ -317,7 +317,12 @@ async function recordQuestAttempt(
           `quest_complete:${questId}`,
           divisionKey ?? undefined,
         );
-        await recordClanQuestCompletion(user.id);
+        void recordDivisionWarQuestContribution({
+          studentId: user.id,
+          divisionKey,
+          correct: success ? 1 : 0,
+          total: 1,
+        });
       }
     }
 

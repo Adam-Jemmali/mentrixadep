@@ -3,9 +3,7 @@
 import type { PlatformMetrics } from "@/features/admin/admin-dashboard";
 
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { gsap } from "gsap";
 import {
   Users,
   BookOpen,
@@ -85,22 +83,10 @@ function relativeTime(iso: string) {
 }
 
 export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCourses }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const cards = containerRef.current.querySelectorAll(".metric-card, .dash-section");
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 12 },
-      { opacity: 1, y: 0, stagger: 0.04, duration: 0.35, ease: "power2.out" }
-    );
-  }, []);
-
   const m = metrics;
 
   return (
-    <div ref={containerRef} className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto dash-animate-in">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Platform Overview</h1>
@@ -159,9 +145,9 @@ export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCours
           accent="bg-red-50"
         />
         <MetricCard
-          label="Clans"
-          value={m?.totalClans ?? "—"}
-          sub="Total communities"
+          label="Division wars"
+          value={m?.activeDivisionWars ?? "—"}
+          sub="Active this week"
           icon={Shield}
           accent="bg-teal-50"
         />
@@ -172,6 +158,16 @@ export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCours
           icon={CheckCircle2}
           accent="bg-slate-100"
           href="/admin/users"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <MetricCard
+          label="Security events"
+          value={m?.securityEvents24h ?? "—"}
+          sub="Last 24 hours"
+          icon={AlertCircle}
+          accent={m && m.securityEvents24h > 0 ? "bg-amber-50" : "bg-slate-100"}
         />
       </div>
 

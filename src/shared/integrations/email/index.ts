@@ -71,4 +71,7 @@ export {
   type VerificationInfoRequestEmailData,
   sendVerificationInfoRequestEmail,
   sendContactFeedbackInbound,
+  type ProgressSnapshotEmailProps,
+  sendProgressSnapshotEmail,
+  sendBreakthroughGuideEmail,
 } from "./marketing";

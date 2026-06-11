@@ -37,6 +37,15 @@ const ArrowRight = () => (
 
 const FEEDBACK_EMAIL = DEFAULT_PUBLIC_FEEDBACK_EMAIL;
 
+const FINAL_CTA_COPY = `You put in the hours.
+You still do not know if it stuck.
+
+Compete. See where you stand.
+Fix the gap in one session.
+
+Free to start. $39 for a breakthrough.
+Accuracy improves or the session is free.`;
+
 export function LandingFooterBlock() {
   const ctaRef = useRef<HTMLElement>(null);
   const contactRef = useRef<HTMLElement>(null);
@@ -59,12 +68,9 @@ export function LandingFooterBlock() {
           <motion.h2
             variants={fadeUp}
             custom={0}
-            className="text-balance font-bold text-white text-[clamp(24px,7vw,46px)] tracking-[-0.04em] leading-[1.15] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]"
+            className="whitespace-pre-line text-balance font-bold text-white text-[clamp(20px,5.5vw,32px)] tracking-[-0.03em] leading-[1.35] drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]"
           >
-            Every learner deserves a ranked world.
-Every expert deserves to be paid what they know.
-That is Mentrixa.
-            
+            {FINAL_CTA_COPY}
           </motion.h2>
           <motion.div
             variants={fadeUp}
@@ -73,7 +79,7 @@ That is Mentrixa.
           >
             <LandingShimmerButton href="/auth/signup" variant="primary" className="sm:min-w-[220px]">
               <RoleIcon role="mentrixer" />
-              Start competing free →
+              Prove what you know. Start free →
               <ArrowRight />
             </LandingShimmerButton>
             <LandingShimmerButton href="/auth/signup?role=tutor" variant="secondary" className="sm:min-w-[200px]">
@@ -96,18 +102,17 @@ That is Mentrixa.
             Contact and feedback
           </motion.p>
           <motion.h2 variants={fadeUp} custom={1} className="font-bold text-white text-[clamp(22px,6vw,32px)] tracking-[-0.03em] leading-tight">
-            Something missing? Something broken? Tell us.
+            Bug? Broken rank? Tell us.
           </motion.h2>
           <motion.p variants={fadeUp} custom={2} className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-200">
-            Every message reaches the founder directly. Bug report, feature idea, a session that went wrong, a rank
-            you think is broken. e read everything and we reply.
+            We read everything. We reply to everything.
           </motion.p>
           <motion.div variants={fadeUp} custom={3} className="mt-8 flex justify-center">
             <ContactSocialLinks variant="dark" />
           </motion.div>
           <motion.div variants={fadeUp} custom={4} className="mt-10">
             <LandingShimmerButton href="/contact" variant="primary">
-              Send a message →
+              Send it directly →
               <ArrowRight />
             </LandingShimmerButton>
           </motion.div>
@@ -124,7 +129,7 @@ That is Mentrixa.
                 <span className="text-[15px] font-bold tracking-tight text-white">Mentrixa</span>
               </Link>
               <p className="mt-2 max-w-xs text-[12px] leading-snug text-indigo-200/75">
-                The ranked world for learning.
+                Built for people who want to know before it counts.
               </p>
             </div>
 
@@ -149,7 +154,7 @@ That is Mentrixa.
 
           <div className="flex flex-col gap-3 border-t border-white/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="order-2 text-[11px] text-slate-300 sm:order-1">
-              &copy; {new Date().getFullYear()} Mentrixa Inc. 
+              &copy; {new Date().getFullYear()} Mentrixa Inc. · Built in Ottawa.
             </p>
             <span className="order-1 text-[12px] text-indigo-300/70 sm:order-2 sm:text-right">
               <a
