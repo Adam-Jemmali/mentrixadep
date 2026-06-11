@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 test.setTimeout(60_000);
+const COLD_START_TIMEOUT = 15_000;
 
 function passwordField(page: Page) {
   return page.locator('input[name="password"]');
@@ -24,7 +25,7 @@ async function mockSupabaseSignUp(
 }
 
 async function mockOnboardingApproved(page: Page) {
-  await page.route("**/api/waitlist/join**", async (route) => {
+  await page.route("**/api/waitlist/join*", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -36,10 +37,10 @@ async function mockOnboardingApproved(page: Page) {
 test.describe("Sign in", () => {
   test("shows sign-in form", async ({ page }) => {
     await page.goto("/auth/signin");
-    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/continue with google/i).first()).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible({ timeout: 15_000 });
-    await expect(passwordField(page)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible({ timeout: COLD_START_TIMEOUT });
+    await expect(page.getByText(/continue with google/i).first()).toBeVisible({ timeout: COLD_START_TIMEOUT });
+    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible({ timeout: COLD_START_TIMEOUT });
+    await expect(passwordField(page)).toBeVisible({ timeout: COLD_START_TIMEOUT });
   });
 });
 
