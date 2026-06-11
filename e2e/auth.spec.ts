@@ -24,7 +24,7 @@ async function mockSupabaseSignUp(
   });
 }
 
-async function mockOnboardingApproved(page: Page) {
+async function mockWaitlistJoinApproved(page: Page) {
   await page.route("**/api/waitlist/join*", async (route) => {
     await route.fulfill({
       status: 200,
@@ -58,7 +58,7 @@ test.describe("Sign up", () => {
 
 test.describe("Auth flows (CI-safe fixtures)", () => {
   test("student signup shows verification checkpoint with mocked signup response", async ({ page }) => {
-    await mockOnboardingApproved(page);
+    await mockWaitlistJoinApproved(page);
     await mockSupabaseSignUp(page, {
       email: "student.e2e@example.com",
       // Activation-link flow should keep the user signed out until email verification.
@@ -78,7 +78,7 @@ test.describe("Auth flows (CI-safe fixtures)", () => {
   });
 
   test("tutor signup shows pending-approval messaging without session", async ({ page }) => {
-    await mockOnboardingApproved(page);
+    await mockWaitlistJoinApproved(page);
     await mockSupabaseSignUp(page, {
       email: "tutor.e2e@example.com",
       withSession: false,
