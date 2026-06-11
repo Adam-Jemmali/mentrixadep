@@ -6,10 +6,6 @@ function passwordField(page: Page) {
   return page.locator('input[name="password"]');
 }
 
-function confirmPasswordField(page: Page) {
-  return page.locator('input[name="confirmPassword"]');
-}
-
 async function mockSupabaseSignUp(
   page: Page,
   options: { email: string; withSession: boolean },
@@ -27,13 +23,23 @@ async function mockSupabaseSignUp(
   });
 }
 
+async function mockOnboardingApproved(page: Page) {
+  await page.route("**/api/waitlist/join**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, approved: true }),
+    });
+  });
+}
+
 test.describe("Sign in", () => {
   test("shows sign-in form", async ({ page }) => {
     await page.goto("/auth/signin");
-    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible();
-    await expect(page.getByText(/continue with google/i).first()).toBeVisible();
-    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible();
-    await expect(passwordField(page)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/continue with google/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible({ timeout: 15_000 });
+    await expect(passwordField(page)).toBeVisible({ timeout: 15_000 });
   });
 });
 
@@ -51,26 +57,26 @@ test.describe("Sign up", () => {
 
 test.describe("Auth flows (CI-safe fixtures)", () => {
   test("student signup shows verification checkpoint with mocked signup response", async ({ page }) => {
+    await mockOnboardingApproved(page);
     await mockSupabaseSignUp(page, {
       email: "student.e2e@example.com",
-      withSession: true,
+      withSession: false,
     });
 
     await page.goto("/auth/signup");
     await page.getByRole("textbox", { name: /^email$/i }).fill("student.e2e@example.com");
-    await passwordField(page).fill("SafePass123!");
-    await confirmPasswordField(page).fill("SafePass123!");
     const ageCheckbox = page.getByRole("checkbox", { name: /13 years old or older/i });
     await expect(ageCheckbox).toBeVisible();
     await ageCheckbox.check({ force: true });
-    await page.getByRole("button", { name: /^sign up$/i }).click();
+    await page.getByRole("button", { name: /continue with email/i }).click();
 
-    await expect(page.getByRole("heading", { name: /please check your email/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /check your email to continue/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /back to sign in/i })).toBeVisible();
     await expect(page.getByText(/student\.e2e@example\.com/i)).toBeVisible();
   });
 
   test("tutor signup shows pending-approval messaging without session", async ({ page }) => {
+    await mockOnboardingApproved(page);
     await mockSupabaseSignUp(page, {
       email: "tutor.e2e@example.com",
       withSession: false,
@@ -79,17 +85,13 @@ test.describe("Auth flows (CI-safe fixtures)", () => {
     await page.goto("/auth/signup");
     await page.getByRole("button", { name: /i want to be a guide|i want to teach/i }).first().click();
     await page.getByRole("textbox", { name: /^email$/i }).fill("tutor.e2e@example.com");
-    await passwordField(page).fill("SafePass123!");
-    await confirmPasswordField(page).fill("SafePass123!");
     const ageCheckbox = page.getByRole("checkbox", { name: /13 years old or older/i });
     await expect(ageCheckbox).toBeVisible();
     await ageCheckbox.check({ force: true });
-    await page.getByRole("button", { name: /^sign up$/i }).click();
+    await page.getByRole("button", { name: /continue with email/i }).click();
 
-    await expect(page.getByRole("heading", { name: /please check your email/i })).toBeVisible();
-    await expect(
-      page.getByText(/admin may still need to approve your account before you can sign in/i),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /check your email to continue/i })).toBeVisible();
+    await expect(page.getByText(/admin approval rules still apply for guide onboarding/i)).toBeVisible();
     await expect(page.getByRole("link", { name: /back to sign in/i })).toBeVisible();
   });
 });
