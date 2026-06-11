@@ -2,7 +2,8 @@ import { ImageResponse } from "next/og";
 import { loadOgRankCardData } from "@/features/rank-card/og-rank-card-data";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 
-export const runtime = "edge";
+/** Node runtime — @vercel/og exceeds the 1 MB Edge bundle limit on Hobby. */
+export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

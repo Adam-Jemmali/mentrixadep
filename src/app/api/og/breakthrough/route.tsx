@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
-import { getBreakthroughForShare } from "@/features/breakthrough-events/reads";
+import { loadOgBreakthroughData } from "@/features/breakthrough-events/og-breakthrough-data";
 
-export const runtime = "edge";
+/** Node runtime — @vercel/og exceeds the 1 MB Edge bundle limit on Hobby. */
+export const runtime = "nodejs";
 
 const MENTRIXER_GOLD = "#D4A017";
 
@@ -12,8 +13,8 @@ export async function GET(request: Request) {
     return new Response("Missing event_id", { status: 400 });
   }
 
-  const event = await getBreakthroughForShare(eventId);
-  if (!event) {
+  const event = await loadOgBreakthroughData(eventId);
+  if (event.status === "not_found") {
     return new Response("Not found", { status: 404 });
   }
 

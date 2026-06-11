@@ -1,4 +1,5 @@
 import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
+import { supabaseRestSelect } from "@/shared/integrations/supabase/rest-fetch";
 
 export type OgRankCardData =
   | { status: "not_found" }
@@ -31,30 +32,6 @@ type QuestProgressRow = {
   num_attempts: number | null;
   quests: { metadata: Record<string, unknown> | null } | { metadata: Record<string, unknown> | null }[] | null;
 };
-
-function supabaseRestHeaders(): HeadersInit | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-    Accept: "application/json",
-  };
-}
-
-async function supabaseSelect<T>(table: string, query: string): Promise<T[]> {
-  const headers = supabaseRestHeaders();
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  if (!headers || !base) return [];
-
-  const res = await fetch(`${base}/rest/v1/${table}?${query}`, {
-    headers,
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  return (await res.json()) as T[];
-}
 
 function computeAccuracyPercent(correct: number, total: number): number {
   if (total <= 0) return 0;
@@ -102,7 +79,7 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
   const username = rawUsername.trim().toLowerCase();
   if (!username) return { status: "not_found" };
 
-  const settingsRows = await supabaseSelect<SettingsRow>(
+  const settingsRows = await supabaseRestSelect<SettingsRow>(
     "user_settings",
     `rank_card_username=eq.${encodeURIComponent(username)}&select=user_id,display_name,rank_card_public&limit=1`,
   );
@@ -117,15 +94,15 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
   const studentId = settings.user_id;
 
   const [userRows, xpRows, questRows] = await Promise.all([
-    supabaseSelect<UserRow>(
+    supabaseRestSelect<UserRow>(
       "users",
       `id=eq.${encodeURIComponent(studentId)}&select=role,approved&limit=1`,
     ),
-    supabaseSelect<XpRow>(
+    supabaseRestSelect<XpRow>(
       "user_xp",
       `user_id=eq.${encodeURIComponent(studentId)}&select=total_xp&limit=1`,
     ),
-    supabaseSelect<QuestProgressRow>(
+    supabaseRestSelect<QuestProgressRow>(
       "user_quest_progress",
       `user_id=eq.${encodeURIComponent(studentId)}&status=eq.completed&select=num_attempts,quests(metadata)&order=last_attempt_at.desc&limit=80`,
     ),
