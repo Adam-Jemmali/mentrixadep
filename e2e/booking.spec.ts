@@ -6,9 +6,9 @@ test.describe("Booking (public tutor profile)", () => {
       waitUntil: "domcontentloaded",
       timeout: 60_000,
     });
-    await expect(page.getByText(/something went wrong|next_not_found|not found/i).first()).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(
+      page.getByRole("heading", { name: /page not found|something went wrong/i }),
+    ).toBeVisible({ timeout: 30_000 });
   });
 });
 

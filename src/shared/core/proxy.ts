@@ -462,7 +462,13 @@ async function runSupabaseAuthGuard(
 
   let maintenanceMode = false;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (serviceRoleKey) {
+  const supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : "";
+  const skipMaintenanceFetch =
+    !serviceRoleKey ||
+    !supabaseUrl ||
+    supabaseHost === "placeholder.supabase.co" ||
+    supabaseHost.endsWith(".placeholder.supabase.co");
+  if (!skipMaintenanceFetch) {
     try {
       const maintenanceRes = await fetch(
         `${supabaseUrl}/rest/v1/system_settings?key=eq.maintenance_mode&select=value&limit=1`,
