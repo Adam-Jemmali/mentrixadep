@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 test.setTimeout(60_000);
-const COLD_START_TIMEOUT = 15_000;
+const SIGN_IN_VISIBILITY_TIMEOUT = 15_000;
 
 function passwordField(page: Page) {
   return page.locator('input[name="password"]');
@@ -37,10 +37,10 @@ async function mockOnboardingApproved(page: Page) {
 test.describe("Sign in", () => {
   test("shows sign-in form", async ({ page }) => {
     await page.goto("/auth/signin");
-    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible({ timeout: COLD_START_TIMEOUT });
-    await expect(page.getByText(/continue with google/i).first()).toBeVisible({ timeout: COLD_START_TIMEOUT });
-    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible({ timeout: COLD_START_TIMEOUT });
-    await expect(passwordField(page)).toBeVisible({ timeout: COLD_START_TIMEOUT });
+    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible({ timeout: SIGN_IN_VISIBILITY_TIMEOUT });
+    await expect(page.getByText(/continue with google/i).first()).toBeVisible({ timeout: SIGN_IN_VISIBILITY_TIMEOUT });
+    await expect(page.getByRole("textbox", { name: /^email$/i })).toBeVisible({ timeout: SIGN_IN_VISIBILITY_TIMEOUT });
+    await expect(passwordField(page)).toBeVisible({ timeout: SIGN_IN_VISIBILITY_TIMEOUT });
   });
 });
 
@@ -61,6 +61,7 @@ test.describe("Auth flows (CI-safe fixtures)", () => {
     await mockOnboardingApproved(page);
     await mockSupabaseSignUp(page, {
       email: "student.e2e@example.com",
+      // Activation-link flow should keep the user signed out until email verification.
       withSession: false,
     });
 
