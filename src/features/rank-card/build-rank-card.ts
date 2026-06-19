@@ -5,10 +5,16 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import {
   computeAccuracyPercent,
   duelWinRate,
-  rankFromTotalXp,
   subjectsLooselyMatch,
   weekKeyFromDate,
 } from "@/features/rank-card/calculate-pure";
+import {
+  formatVerifiedFirstAttemptSummary,
+  getApCalcVerifiedRankStats,
+  getCalibratedRank,
+  isApCalcSubjectName,
+} from "@/features/xp/calibrated-rank";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { RankCardBreakthrough, RankCardSubject } from "@/features/rank-card/types";
 
 const MS_90D = 90 * 24 * 60 * 60 * 1000;
@@ -286,7 +292,6 @@ export async function buildRankCardSubjects(
   totalXp: number,
 ): Promise<RankCardSubject[]> {
   const admin = createAdminClient();
-  const globalRank = rankFromTotalXp(totalXp);
   const since90 = new Date(Date.now() - MS_90D).toISOString();
 
   const [questCounts, questRows] = await Promise.all([
@@ -296,16 +301,26 @@ export async function buildRankCardSubjects(
 
   const eligibleSubjects = Array.from(questCounts.entries())
     .filter(([, count]) => count > 5)
-    .map(([subject]) => subject)
-    .sort();
+    .map(([subject]) => subject);
+
+  const apCalcStats = await getApCalcVerifiedRankStats(studentId);
+  if (
+    apCalcStats.verifiedCount >= 5 &&
+    !eligibleSubjects.some((subject) => isApCalcSubjectName(subject))
+  ) {
+    eligibleSubjects.push(AP_CALC_AB_SUBJECT);
+  }
+
+  const sortedSubjects = eligibleSubjects.sort();
 
   const subjects: RankCardSubject[] = [];
 
-  for (const subject of eligibleSubjects) {
+  for (const subject of sortedSubjects) {
+    const calibrated = await getCalibratedRank(studentId, subject);
     const divisionKey = await divisionKeyForSubject(admin, subject);
     const [{ wins, losses }, peerRate, sessionCount, breakthroughs] = await Promise.all([
       studentDuelStats(admin, studentId, divisionKey, since90),
-      peerDuelWinRate(admin, divisionKey, globalRank.level, studentId, since90),
+      peerDuelWinRate(admin, divisionKey, calibrated.level, studentId, since90),
       admin
         .from("sessions")
         .select("id", { count: "exact", head: true })
@@ -320,18 +335,28 @@ export async function buildRankCardSubjects(
     const totalQ = subjectQuests.reduce((s, r) => s + r.total, 0);
     const lastActivity = subjectQuests[0]?.completedAt ?? null;
 
+    const verifiedSummary =
+      isApCalcSubjectName(subject) && calibrated.verifiedStats
+        ? formatVerifiedFirstAttemptSummary(calibrated.verifiedStats)
+        : null;
+    const currentAccuracy =
+      isApCalcSubjectName(subject) && calibrated.verifiedStats
+        ? calibrated.verifiedStats.accuracyPercent
+        : computeAccuracyPercent(totalCorrect, totalQ);
+
     subjects.push({
       subject,
-      rankTitle: globalRank.title,
-      rankLevel: globalRank.level,
+      rankTitle: calibrated.title,
+      rankLevel: calibrated.level,
       accuracyTrend: accuracyTrendFromQuests(questRows, subject),
-      currentAccuracy: computeAccuracyPercent(totalCorrect, totalQ),
+      currentAccuracy,
       duelWinRate: duelWinRate(wins, losses),
       peerDuelWinRate: peerRate,
       guideSessionsCompleted: sessionCount.count ?? 0,
       breakthroughs,
       lastActivityAt: lastActivity,
       questCount: questCounts.get(subject) ?? 0,
+      verifiedFirstAttemptSummary: verifiedSummary,
     });
   }
 

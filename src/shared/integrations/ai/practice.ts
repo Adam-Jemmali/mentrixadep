@@ -31,6 +31,10 @@ import {
   isStrictSubjectLockedGuestQuestion,
   isGeneralMixedGuestSubject,
 } from "./shared";
+import {
+  AP_CALC_AB_UNAVAILABLE_MESSAGE,
+  isApCalculusAbSubject,
+} from "@/features/quest/ap-calc-ab-subject";
 
 // ============================================
 // TYPES
@@ -902,6 +906,9 @@ export async function generatePracticeQuestPack(
   params: { subject: string; difficulty: PracticeDifficulty; packType: PracticePackType; accountLevelTitle: string; questionCount: number },
   userId: string
 ): Promise<{ questions: PracticeQuestion[] } | AiErrorResult> {
+  if (isApCalculusAbSubject(params.subject)) {
+    return { error: true, message: AP_CALC_AB_UNAVAILABLE_MESSAGE };
+  }
   try {
     await enforceAiRateLimit(userId, "quest.ai.practice");
     const daily = await incrementDailyLimit(userId, "quest_gen");

@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+export const preSessionVerifiedGapNodeSchema = z.object({
+  unitName: z.string(),
+  nodeName: z.string(),
+  verifiedFirstAttempt: z.boolean().nullable(),
+  attemptsCount: z.number().int().min(0),
+  correctCount: z.number().int().min(0),
+});
+
+export const preSessionVerifiedGapsSchema = z.object({
+  nodes: z.array(preSessionVerifiedGapNodeSchema).max(3),
+  sessionFocusSignal: z.number().min(0.1).max(1).nullable(),
+});
+
+export type VerifiedGapsSummary = z.infer<typeof preSessionVerifiedGapsSchema>;
+
 export const preSessionWeakestConceptSchema = z.object({
   label: z.string(),
   accuracyPercent: z.number().int().min(0).max(100),
@@ -16,6 +31,7 @@ export const preSessionPerformanceSchema = z.object({
   divisionPosition: z.number().int().min(1).nullable(),
   divisionKey: z.string().nullable(),
   lastSessionTopic: z.string().nullable(),
+  sessionFocusSignal: z.number().min(0.1).max(1).nullable().optional(),
 });
 
 export const preSessionAiBriefSchema = z.object({
@@ -44,6 +60,7 @@ export const preSessionContextSchema = z.object({
   performance: preSessionPerformanceSchema,
   aiBrief: preSessionAiBriefSchema.nullable(),
   breakthrough: preSessionBreakthroughSchema.nullable(),
+  verifiedGaps: preSessionVerifiedGapsSchema.nullable().optional(),
   cachedAt: z.string(),
 });
 

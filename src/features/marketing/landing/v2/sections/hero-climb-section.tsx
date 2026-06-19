@@ -71,13 +71,7 @@ export function HeroClimbSection() {
           >
           
 
-            <motion.p
-              variants={fadeUp}
-              custom={0}
-              className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-300/90"
-            >
-              Free to compete · Guides live now
-            </motion.p>
+          
 
             <HeroHeadline className="text-balance font-black italic tracking-[-0.04em] text-white drop-shadow-[0_12px_40px_rgba(0,0,0,0.55)] text-[clamp(2.35rem,6.8vw,4.25rem)] leading-[1.02]" />
 

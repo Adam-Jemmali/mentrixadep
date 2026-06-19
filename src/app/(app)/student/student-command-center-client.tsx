@@ -11,6 +11,10 @@ import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
 import { AvailabilityBrowser } from "./availability-browser";
 import { StudentCourseChips, type StudentCourseChip } from "./student-course-chips";
 import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
+import {
+  formatMatchedSkillsLine,
+  type MatchmakerGuideResult,
+} from "@/features/matchmaker/matchmaker-pure";
 import { User } from "lucide-react";
 
 type Upcoming = {
@@ -24,15 +28,6 @@ type Upcoming = {
 
 type TutorExpertiseEntry = { course_name: string; proof_description: string; verified: boolean };
 
-type RecommendedGuide = {
-  tutorId: string;
-  displayName: string;
-  avatarUrl?: string | null;
-  bio?: string | null;
-  coursesMatched: number;
-  hasOpenSlot: boolean;
-};
-
 type Availability = {
   id: string;
   tutor_id: string;
@@ -44,23 +39,23 @@ type Availability = {
 };
 
 export function StudentCommandCenterClient({
+  userId,
   studentCourses,
   upcomingSessions,
   availability,
   availableCourses,
   tutorExpertise,
-  recommendedGuides,
   displayTimeZone = "UTC",
   guideImpactByTutorId = {},
   questHistorySubjects = [],
   guideRankByTutorId = {},
 }: {
+  userId: string;
   studentCourses: StudentCourseChip[];
   upcomingSessions: Upcoming[];
   availability: Availability[];
   availableCourses: string[];
   tutorExpertise: Record<string, TutorExpertiseEntry[]>;
-  recommendedGuides: RecommendedGuide[];
   /** Profile timezone. Slots display in this zone. */
   displayTimeZone?: string;
   guideImpactByTutorId?: Record<string, GuideImpactEntry[]>;
@@ -77,6 +72,7 @@ export function StudentCommandCenterClient({
         ?.course_name ?? "all"
     : "all";
   const [selectedCourse, setSelectedCourse] = useState<string | "all">(initialSelection);
+  const [matchmakerGuides, setMatchmakerGuides] = useState<MatchmakerGuideResult[]>([]);
 
   const filteredUpcoming = useMemo(() => {
     if (selectedCourse === "all") return upcomingSessions;
@@ -91,6 +87,27 @@ export function StudentCommandCenterClient({
     router.prefetch("/student/duel");
     router.prefetch("/student/division");
   }, [router]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/matchmaker?userId=${encodeURIComponent(userId)}`);
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { guides?: MatchmakerGuideResult[] };
+        if (!cancelled && Array.isArray(data.guides)) {
+          setMatchmakerGuides(data.guides);
+        }
+      } catch {
+        if (!cancelled) setMatchmakerGuides([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   return (
     <div className="space-y-8">
@@ -208,16 +225,18 @@ export function StudentCommandCenterClient({
         </div>
       </div>
 
-      {recommendedGuides.length > 0 && (
+      {matchmakerGuides.length > 0 && (
         <ScrollRevealCard className={`${mentrixStudent.card} p-5 sm:p-6`}>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-zinc-900">Recommended guides</h2>
             <User className="w-4 h-4 opacity-50" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {recommendedGuides.map((g) => (
+            {matchmakerGuides.map((g) => {
+              const matchLine = formatMatchedSkillsLine(g.matchedNodes.length);
+              return (
               <div
-                key={g.tutorId}
+                key={g.guideId}
                 className="rounded-xl border border-zinc-200 bg-white px-4 py-4 transition hover:border-indigo-200 hover:shadow-sm"
               >
                 <div className="flex items-center gap-2">
@@ -232,13 +251,15 @@ export function StudentCommandCenterClient({
                   </div>
                   <p className="truncate text-sm font-semibold text-zinc-900">{g.displayName}</p>
                 </div>
-                <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-xs leading-5 text-zinc-600">
-                  {g.bio?.trim() || "Experienced guide with strong match against your selected subjects."}
-                </p>
-                <p className="mt-1 text-sm text-zinc-600">
-                  {g.coursesMatched} course{g.coursesMatched === 1 ? "" : "s"} matched
-                </p>
-                {g.hasOpenSlot && (
+                {matchLine ? (
+                  <p className="mt-2 text-sm text-zinc-600">{matchLine}</p>
+                ) : null}
+                {g.matchedNodes.length > 0 && (
+                  <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-5 text-zinc-600">
+                    {g.matchedNodes.join(", ")}
+                  </p>
+                )}
+                {g.nextAvailableSlot && (
                   <span className="mt-2 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-800">
                     Open slots
                   </span>
@@ -247,7 +268,8 @@ export function StudentCommandCenterClient({
                   Book now
                 </a>
               </div>
-            ))}
+            );
+            })}
           </div>
         </ScrollRevealCard>
       )}

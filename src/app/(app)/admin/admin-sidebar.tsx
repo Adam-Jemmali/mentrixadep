@@ -12,6 +12,7 @@ import {
   BadgeCheck,
   BarChart2,
   ArrowLeftRight,
+  FileCheck2,
 } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 
@@ -22,6 +23,7 @@ const NAV = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/registrations", label: "Registrations", icon: ClipboardList },
   { href: "/admin/verification", label: "Verification", icon: BadgeCheck },
+  { href: "/admin/item-review", label: "Item Review", icon: FileCheck2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

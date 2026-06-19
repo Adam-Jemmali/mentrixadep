@@ -1,5 +1,6 @@
 import { GuestQuestClient } from "./guest-quest-client";
 import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { HeroMentrixerBounce } from "@/features/student-profile/ui/hero-mentrixer-bounce";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { BackButton } from "@/shared/ui/back-button";
@@ -10,6 +11,14 @@ import { TiltCard } from "@/shared/ui/tilt-card";
 export default async function TryPage() {
   const divisions = await getDivisionsCatalog();
   const subjectOptions = divisions.map((d) => ({ key: d.key, name: d.name }));
+  const hasApCalc = subjectOptions.some(
+    (option) =>
+      option.name.replace(/\s+Division$/i, "").trim().toLowerCase() === "ap calculus ab"
+  );
+  if (!hasApCalc) {
+    subjectOptions.push({ key: "ap-calculus-ab", name: AP_CALC_AB_SUBJECT });
+    subjectOptions.sort((a, b) => a.name.localeCompare(b.name));
+  }
   return (
     <div className={`${mentrixStudent.pageBg} relative min-h-screen overflow-hidden`}>
       <div className="pointer-events-none absolute inset-0 z-0 opacity-80">

@@ -1,0 +1,1357 @@
+[
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Introducing limits and calculus change",
+    "node_slug": "introducing-limits-and-calculus-change",
+    "description": "Limits describe function behavior near a point and underpin all of calculus.",
+    "common_misconceptions": [
+      "Treats limit value as always equal to function value at that point"
+    ],
+    "display_order": 1
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Estimating limits from graphs",
+    "node_slug": "estimating-limits-from-graphs",
+    "description": "Read approximate limit values by tracing y values as x approaches a target from a graph.",
+    "common_misconceptions": [
+      "Reads the open circle value instead of the nearby trend",
+      "Ignores one-sided approach direction"
+    ],
+    "display_order": 2
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Estimating limits from tables",
+    "node_slug": "estimating-limits-from-tables",
+    "description": "Use input output tables with x values closer to a target to estimate a limit numerically.",
+    "common_misconceptions": [
+      "Assumes the last table entry is the exact limit",
+      "Uses values far from the target point"
+    ],
+    "display_order": 3
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "One sided limits",
+    "node_slug": "one-sided-limits",
+    "description": "Evaluate left hand and right hand limits to describe approach from a single direction.",
+    "common_misconceptions": [
+      "Assumes left and right limits are always equal",
+      "Mixes up notation for x approaches a from left vs right"
+    ],
+    "display_order": 4
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Limit laws and algebraic limits",
+    "node_slug": "limit-laws-and-algebraic-limits",
+    "description": "Apply sum, difference, product, quotient, and constant multiple rules to evaluate limits of combinations.",
+    "common_misconceptions": [
+      "Applies quotient law when denominator limit is zero",
+      "Distributes limits incorrectly across products"
+    ],
+    "display_order": 5
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Limits by algebraic manipulation",
+    "node_slug": "limits-by-algebraic-manipulation",
+    "description": "Factor, rationalize, or simplify expressions to resolve indeterminate forms before taking a limit.",
+    "common_misconceptions": [
+      "Cancels terms that are not common factors",
+      "Stops simplifying before the indeterminate form is removed"
+    ],
+    "display_order": 6
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Choosing a limit evaluation strategy",
+    "node_slug": "choosing-a-limit-evaluation-strategy",
+    "description": "Select graph, table, or algebraic methods based on how the function is presented.",
+    "common_misconceptions": [
+      "Forces algebra when a graph already shows the limit",
+      "Uses tables when exact algebra is straightforward"
+    ],
+    "display_order": 7
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Squeeze theorem",
+    "node_slug": "squeeze-theorem",
+    "description": "Bound a function between two others with the same limit to prove the middle function shares that limit.",
+    "common_misconceptions": [
+      "Fails to verify inequalities hold near the target point",
+      "Uses bounds that do not share the same limit"
+    ],
+    "display_order": 8
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Connecting multiple limit representations",
+    "node_slug": "connecting-multiple-limit-representations",
+    "description": "Relate graphical, numerical, and analytical limit information for the same function.",
+    "common_misconceptions": [
+      "Treats representations as unrelated answers",
+      "Ignores mismatch signals between graph and algebra"
+    ],
+    "display_order": 9
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Limits involving infinity",
+    "node_slug": "limits-involving-infinity",
+    "description": "Describe end behavior and unbounded growth using limits as x approaches positive or negative infinity.",
+    "common_misconceptions": [
+      "Confuses infinity as a number with unbounded behavior",
+      "Swaps signs for x approaches negative infinity"
+    ],
+    "display_order": 10
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Horizontal asymptotes from limits",
+    "node_slug": "horizontal-asymptotes-from-limits",
+    "description": "Identify horizontal asymptotes using limits of a function as x approaches plus or minus infinity.",
+    "common_misconceptions": [
+      "Equates horizontal asymptote with any horizontal line the graph crosses",
+      "Finds only one side of end behavior"
+    ],
+    "display_order": 11
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Vertical asymptotes and infinite limits",
+    "node_slug": "vertical-asymptotes-and-infinite-limits",
+    "description": "Locate vertical asymptotes where function values grow without bound as x approaches a finite value.",
+    "common_misconceptions": [
+      "Marks a hole as a vertical asymptote",
+      "Assumes infinite limit implies the function equals infinity"
+    ],
+    "display_order": 12
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Continuity at a point",
+    "node_slug": "continuity-at-a-point",
+    "description": "A function is continuous at a point when the limit, function value, and approach all agree.",
+    "common_misconceptions": [
+      "Checks only that f(a) exists",
+      "Ignores whether the limit equals f(a)"
+    ],
+    "display_order": 13
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Types of discontinuities",
+    "node_slug": "types-of-discontinuities",
+    "description": "Classify removable, jump, and infinite discontinuities from limits and graph features.",
+    "common_misconceptions": [
+      "Labels every gap as removable",
+      "Confuses jump discontinuity with infinite discontinuity"
+    ],
+    "display_order": 14
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Continuity on an interval",
+    "node_slug": "continuity-on-an-interval",
+    "description": "Determine whether a function is continuous on open or closed intervals using endpoint rules.",
+    "common_misconceptions": [
+      "Requires differentiability for continuity on an interval",
+      "Ignores endpoint one sided limits on closed intervals"
+    ],
+    "display_order": 15
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Intermediate Value Theorem",
+    "node_slug": "intermediate-value-theorem",
+    "description": "Use IVT on continuous functions to guarantee a target value is hit between two inputs.",
+    "common_misconceptions": [
+      "Applies IVT without checking continuity on the interval",
+      "Assumes IVT gives the exact x location"
+    ],
+    "display_order": 16
+  },
+  {
+    "unit_number": 1,
+    "unit_name": "Limits and Continuity",
+    "node_name": "Removing discontinuities",
+    "node_slug": "removing-discontinuities",
+    "description": "Define a new function value at a removable discontinuity so the limit matches the assigned value.",
+    "common_misconceptions": [
+      "Redefines values at jump discontinuities expecting continuity",
+      "Forgets to state the single corrected value"
+    ],
+    "display_order": 17
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Average rate of change",
+    "node_slug": "average-rate-of-change",
+    "description": "Compute average rate of change as the slope of a secant line over an interval.",
+    "common_misconceptions": [
+      "Uses a single point instead of two endpoints",
+      "Confuses average rate with instantaneous rate"
+    ],
+    "display_order": 18
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Instantaneous rate of change",
+    "node_slug": "instantaneous-rate-of-change",
+    "description": "Instantaneous rate is the limit of average rates as the interval shrinks around a point.",
+    "common_misconceptions": [
+      "Treats instantaneous rate as average over a tiny but nonzero interval only",
+      "Assumes instantaneous rate exists everywhere"
+    ],
+    "display_order": 19
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Tangent lines and secant lines",
+    "node_slug": "tangent-lines-and-secant-lines",
+    "description": "A tangent line matches local direction; secant lines connect two points on a curve.",
+    "common_misconceptions": [
+      "Draws tangent using two distant points only",
+      "Equates secant slope with tangent slope without a limit"
+    ],
+    "display_order": 20
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Definition of the derivative as a limit",
+    "node_slug": "definition-of-the-derivative-as-a-limit",
+    "description": "The derivative at a is the limit of the difference quotient as h approaches zero.",
+    "common_misconceptions": [
+      "Substitutes h equals zero before simplifying",
+      "Uses the wrong difference quotient form"
+    ],
+    "display_order": 21
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Estimating derivatives from graphs",
+    "node_slug": "estimating-derivatives-from-graphs",
+    "description": "Estimate f prime at a point from the tangent slope or nearby secant slopes on a graph.",
+    "common_misconceptions": [
+      "Reads derivative sign from y value instead of slope",
+      "Uses a secant through unrelated points"
+    ],
+    "display_order": 22
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Differentiability and continuity",
+    "node_slug": "differentiability-and-continuity",
+    "description": "Differentiability implies continuity, but continuity does not guarantee a derivative exists.",
+    "common_misconceptions": [
+      "Assumes continuous functions are always differentiable",
+      "Thinks a sharp corner is differentiable"
+    ],
+    "display_order": 23
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Power rule",
+    "node_slug": "power-rule",
+    "description": "Differentiate x raised to n by bringing down the exponent and reducing the power by one.",
+    "common_misconceptions": [
+      "Forgets to subtract one from the exponent",
+      "Applies power rule to exponential functions like 2 to the x"
+    ],
+    "display_order": 24
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Sum and difference rules",
+    "node_slug": "sum-and-difference-rules",
+    "description": "The derivative of a sum or difference is the sum or difference of the derivatives.",
+    "common_misconceptions": [
+      "Differentiates only one term in a sum",
+      "Applies product rule to simple sums"
+    ],
+    "display_order": 25
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Constant multiple rule",
+    "node_slug": "constant-multiple-rule",
+    "description": "A constant factor stays outside when differentiating a function multiple.",
+    "common_misconceptions": [
+      "Differentiates the constant into a nonzero term incorrectly",
+      "Drops the constant factor entirely"
+    ],
+    "display_order": 26
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Derivative of a constant",
+    "node_slug": "derivative-of-a-constant",
+    "description": "The derivative of any constant function is zero everywhere.",
+    "common_misconceptions": [
+      "Writes the constant as the derivative",
+      "Treats constants as variable terms"
+    ],
+    "display_order": 27
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Derivatives of sin x and cos x",
+    "node_slug": "derivatives-of-sin-x-and-cos-x",
+    "description": "Memorize and apply that sine differentiates to cosine and cosine differentiates to negative sine.",
+    "common_misconceptions": [
+      "Differentiates sin to negative cos",
+      "Swaps sin and cos derivative signs"
+    ],
+    "display_order": 28
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Derivative of e to the x",
+    "node_slug": "derivative-of-e-to-the-x",
+    "description": "The exponential e to the x equals its own derivative for all real x.",
+    "common_misconceptions": [
+      "Treats e to the x like a power function",
+      "Introduces a coefficient of ln e incorrectly"
+    ],
+    "display_order": 29
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Derivative of ln x",
+    "node_slug": "derivative-of-ln-x",
+    "description": "The derivative of natural log x is one over x for positive x.",
+    "common_misconceptions": [
+      "Uses one over x for ln of any expression without chain rule",
+      "Differentiates ln x as ln"
+    ],
+    "display_order": 30
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Derivative notation f prime and dy dx",
+    "node_slug": "derivative-notation-f-prime-and-dy-dx",
+    "description": "Translate between f prime of x, dy dx, and operator notation for the same derivative.",
+    "common_misconceptions": [
+      "Treats dy and dx as separate unrelated numbers always",
+      "Confuses f prime with f itself"
+    ],
+    "display_order": 31
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Higher order derivatives",
+    "node_slug": "higher-order-derivatives",
+    "description": "Differentiate repeatedly to obtain second and higher derivatives when they exist.",
+    "common_misconceptions": [
+      "Stops after first derivative for concavity questions",
+      "Assumes second derivative always exists"
+    ],
+    "display_order": 32
+  },
+  {
+    "unit_number": 2,
+    "unit_name": "Differentiation Definition and Properties",
+    "node_name": "Interpreting derivative as velocity",
+    "node_slug": "interpreting-derivative-as-velocity",
+    "description": "If position is s of t, velocity is s prime of t and acceleration is the next derivative.",
+    "common_misconceptions": [
+      "Uses position as velocity",
+      "Confuses speed with signed velocity"
+    ],
+    "display_order": 33
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Chain rule basics",
+    "node_slug": "chain-rule-basics",
+    "description": "Differentiate a composite function by multiplying outer and inner derivatives.",
+    "common_misconceptions": [
+      "Forgets to multiply by the inner derivative",
+      "Confuses chain rule with product rule"
+    ],
+    "display_order": 34
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Chain rule with composite functions",
+    "node_slug": "chain-rule-with-composite-functions",
+    "description": "Identify inner and outer layers in nested functions before applying the chain rule.",
+    "common_misconceptions": [
+      "Treats nested functions as a product",
+      "Differentiates only the outer layer"
+    ],
+    "display_order": 35
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Implicit differentiation basics",
+    "node_slug": "implicit-differentiation-basics",
+    "description": "Differentiate both sides of an equation with respect to x and collect dy dx terms.",
+    "common_misconceptions": [
+      "Forgets to differentiate y terms with chain rule",
+      "Drops dy dx factor when differentiating y"
+    ],
+    "display_order": 36
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Implicit differentiation advanced",
+    "node_slug": "implicit-differentiation-advanced",
+    "description": "Apply implicit differentiation to relations with products, quotients, or trig inside y terms.",
+    "common_misconceptions": [
+      "Applies explicit rules only to y terms",
+      "Fails to isolate dy dx after differentiation"
+    ],
+    "display_order": 37
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Derivatives of inverse functions",
+    "node_slug": "derivatives-of-inverse-functions",
+    "description": "Use g prime of y equals one over f prime of g of y when f and g are inverses.",
+    "common_misconceptions": [
+      "Reciprocates the function value instead of the derivative",
+      "Uses wrong variable when evaluating f prime"
+    ],
+    "display_order": 38
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Derivative of inverse sin x",
+    "node_slug": "derivative-of-inverse-sin-x",
+    "description": "Differentiate inverse sine with the one over square root of one minus x squared form on its domain.",
+    "common_misconceptions": [
+      "Omits absolute value considerations in general forms",
+      "Confuses with inverse cos derivative sign"
+    ],
+    "display_order": 39
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Derivative of inverse cos x",
+    "node_slug": "derivative-of-inverse-cos-x",
+    "description": "Differentiate inverse cosine with the negative one over square root of one minus x squared form.",
+    "common_misconceptions": [
+      "Uses the same sign as inverse sine",
+      "Forgets domain restrictions near endpoints"
+    ],
+    "display_order": 40
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Derivative of inverse tan x",
+    "node_slug": "derivative-of-inverse-tan-x",
+    "description": "Differentiate inverse tangent as one over one plus x squared.",
+    "common_misconceptions": [
+      "Uses reciprocal tangent formula incorrectly",
+      "Mixes inverse tan with inverse sin forms"
+    ],
+    "display_order": 41
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Logarithmic differentiation setup",
+    "node_slug": "logarithmic-differentiation-setup",
+    "description": "Take natural log of both sides to simplify products, quotients, or variable exponents before differentiating.",
+    "common_misconceptions": [
+      "Logs only one factor of a product",
+      "Forgets implicit step after logging"
+    ],
+    "display_order": 42
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Differentiating general exponential a to the x",
+    "node_slug": "differentiating-general-exponential-a-to-the-x",
+    "description": "Differentiate a to the x using a to the x times ln a when a is a positive constant.",
+    "common_misconceptions": [
+      "Applies power rule to a to the x",
+      "Uses ln a in the exponent instead of as a factor"
+    ],
+    "display_order": 43
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Selecting a differentiation technique",
+    "node_slug": "selecting-a-differentiation-technique",
+    "description": "Choose among power, product, quotient, chain, and implicit methods based on function structure.",
+    "common_misconceptions": [
+      "Defaults to product rule for every composite",
+      "Uses quotient rule when chain rule suffices"
+    ],
+    "display_order": 44
+  },
+  {
+    "unit_number": 3,
+    "unit_name": "Differentiation Composite Implicit Inverse",
+    "node_name": "Parametric and vector derivatives intro",
+    "node_slug": "parametric-and-vector-derivatives-intro",
+    "description": "Differentiate component functions with respect to a parameter when motion is given parametrically.",
+    "common_misconceptions": [
+      "Differentiates with respect to x when t is the parameter",
+      "Ignores chain relationship between t and x"
+    ],
+    "display_order": 45
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Position velocity and acceleration context",
+    "node_slug": "position-velocity-and-acceleration-context",
+    "description": "Connect position, velocity, and acceleration functions in motion problems using derivatives.",
+    "common_misconceptions": [
+      "Integrates when differentiation is required",
+      "Uses speed when direction matters"
+    ],
+    "display_order": 46
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Related rates problem setup",
+    "node_slug": "related-rates-problem-setup",
+    "description": "Draw a diagram, label variables, and relate their rates with an equation before differentiating.",
+    "common_misconceptions": [
+      "Differentiates before writing a relating equation",
+      "Treats all rates as constants incorrectly"
+    ],
+    "display_order": 47
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Related rates geometry applications",
+    "node_slug": "related-rates-geometry-applications",
+    "description": "Use geometric formulas such as Pythagorean theorem or similar triangles in related rates.",
+    "common_misconceptions": [
+      "Uses outdated geometry after dimensions change",
+      "Forgets to differentiate constants properly"
+    ],
+    "display_order": 48
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Related rates with changing angles",
+    "node_slug": "related-rates-with-changing-angles",
+    "description": "Relate trigonometric angle variables to lengths and differentiate with respect to time.",
+    "common_misconceptions": [
+      "Forgets chain rule on angle functions of time",
+      "Uses degrees without converting when needed"
+    ],
+    "display_order": 49
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Local linearization concept",
+    "node_slug": "local-linearization-concept",
+    "description": "Approximate a function near a point using the tangent line value at that point.",
+    "common_misconceptions": [
+      "Uses secant line far from the point",
+      "Confuses linearization with tangent line equation always at zero"
+    ],
+    "display_order": 50
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Tangent line approximation",
+    "node_slug": "tangent-line-approximation",
+    "description": "Evaluate L of x equals f of a plus f prime of a times x minus a for nearby estimates.",
+    "common_misconceptions": [
+      "Uses wrong anchor point a",
+      "Omits f prime of a factor on x minus a"
+    ],
+    "display_order": 51
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Differentials dy and dx",
+    "node_slug": "differentials-dy-and-dx",
+    "description": "Relate dy equals f prime of x dx as a local change estimate along the tangent.",
+    "common_misconceptions": [
+      "Treats dy and dx as always equal to actual delta y and delta x",
+      "Uses differentials far from the linearization point"
+    ],
+    "display_order": 52
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "L Hopital rule indeterminate zero over zero",
+    "node_slug": "l-hopital-rule-indeterminate-zero-over-zero",
+    "description": "Differentiate numerator and denominator separately when a limit yields zero over zero locally.",
+    "common_misconceptions": [
+      "Applies L Hopital without verifying indeterminate form",
+      "Differentiates only one side of the fraction once incorrectly"
+    ],
+    "display_order": 53
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "L Hopital rule indeterminate infinity over infinity",
+    "node_slug": "l-hopital-rule-indeterminate-infinity-over-infinity",
+    "description": "Apply L Hopital when limits produce infinity over infinity and other conditions are met.",
+    "common_misconceptions": [
+      "Uses L Hopital on infinity minus infinity without rewrite",
+      "Assumes one application always finishes the limit"
+    ],
+    "display_order": 54
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Motion along a line",
+    "node_slug": "motion-along-a-line",
+    "description": "Analyze when a particle speeds up, slows down, or changes direction using velocity and acceleration signs.",
+    "common_misconceptions": [
+      "Equates positive velocity with speeding up always",
+      "Ignores acceleration opposite to velocity"
+    ],
+    "display_order": 55
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Rates of change in applied contexts",
+    "node_slug": "rates-of-change-in-applied-contexts",
+    "description": "Interpret derivatives as marginal or instantaneous rates in science and economics style settings.",
+    "common_misconceptions": [
+      "Reports units without per input variable",
+      "Uses average rate where instantaneous is asked"
+    ],
+    "display_order": 56
+  },
+  {
+    "unit_number": 4,
+    "unit_name": "Contextual Applications of Differentiation",
+    "node_name": "Error in linear approximation",
+    "node_slug": "error-in-linear-approximation",
+    "description": "Recognize that tangent estimates are most accurate very close to the linearization point.",
+    "common_misconceptions": [
+      "Expects zero error everywhere on the tangent",
+      "Uses linearization far outside a small neighborhood"
+    ],
+    "display_order": 57
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Mean Value Theorem",
+    "node_slug": "mean-value-theorem",
+    "description": "On a continuous interval, some point has instantaneous rate equal to the average rate over the interval.",
+    "common_misconceptions": [
+      "Applies MVT without continuity on the closed interval",
+      "Confuses average rate with function average value"
+    ],
+    "display_order": 58
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Extreme Value Theorem",
+    "node_slug": "extreme-value-theorem",
+    "description": "Continuous functions on closed intervals attain absolute maximum and minimum values.",
+    "common_misconceptions": [
+      "Assumes extrema occur only at endpoints",
+      "Ignores interior critical points"
+    ],
+    "display_order": 59
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Critical points and stationary points",
+    "node_slug": "critical-points-and-stationary-points",
+    "description": "Find points where f prime is zero or undefined to locate candidate extrema.",
+    "common_misconceptions": [
+      "Assumes every critical point is an extremum",
+      "Forgets to check where derivative is undefined"
+    ],
+    "display_order": 60
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "First derivative test",
+    "node_slug": "first-derivative-test",
+    "description": "Use sign changes of f prime around critical points to classify local maxima and minima.",
+    "common_misconceptions": [
+      "Classifies without checking sign on both sides",
+      "Treats zero derivative alone as proof of max"
+    ],
+    "display_order": 61
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Intervals of increase and decrease",
+    "node_slug": "intervals-of-increase-and-decrease",
+    "description": "f increases where f prime is positive and decreases where f prime is negative.",
+    "common_misconceptions": [
+      "Uses f sign instead of f prime sign",
+      "Ignores undefined derivative intervals"
+    ],
+    "display_order": 62
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Absolute extrema on closed intervals",
+    "node_slug": "absolute-extrema-on-closed-intervals",
+    "description": "Compare critical values and endpoint values to find absolute max and min on a closed interval.",
+    "common_misconceptions": [
+      "Checks only critical points",
+      "Compares only relative extrema"
+    ],
+    "display_order": 63
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Concavity and second derivative",
+    "node_slug": "concavity-and-second-derivative",
+    "description": "f is concave up where f double prime is positive and concave down where f double prime is negative.",
+    "common_misconceptions": [
+      "Uses first derivative sign for concavity",
+      "Assumes concavity matches increase decrease"
+    ],
+    "display_order": 64
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Inflection points",
+    "node_slug": "inflection-points",
+    "description": "Inflection points occur where concavity changes, often at zeros of f double prime with a sign change.",
+    "common_misconceptions": [
+      "Labels any f double prime zero as inflection without sign change",
+      "Confuses inflection with critical points"
+    ],
+    "display_order": 65
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Second derivative test",
+    "node_slug": "second-derivative-test",
+    "description": "If f prime is zero and f double prime is nonzero, the sign of f double prime classifies max or min.",
+    "common_misconceptions": [
+      "Applies when f double prime is zero inconclusively without first derivative test",
+      "Uses at non critical points"
+    ],
+    "display_order": 66
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Sketching graphs from derivative information",
+    "node_slug": "sketching-graphs-from-derivative-information",
+    "description": "Build a function sketch from sign charts of f prime and f double prime and key values.",
+    "common_misconceptions": [
+      "Sketches without connecting to given f values",
+      "Ignores asymptotes when sketching"
+    ],
+    "display_order": 67
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Optimization problem setup",
+    "node_slug": "optimization-problem-setup",
+    "description": "Define variables, constraints, and a single objective function to maximize or minimize.",
+    "common_misconceptions": [
+      "Optimizes without a constraint relating variables",
+      "Uses wrong variable as the objective"
+    ],
+    "display_order": 68
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Optimization with constraints",
+    "node_slug": "optimization-with-constraints",
+    "description": "Substitute constraint equations to express the objective in one variable before differentiating.",
+    "common_misconceptions": [
+      "Differentiates before substitution",
+      "Forgets domain restrictions from context"
+    ],
+    "display_order": 69
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Optimization geometry applications",
+    "node_slug": "optimization-geometry-applications",
+    "description": "Solve max min problems from area, volume, or distance geometry with feasible domains.",
+    "common_misconceptions": [
+      "Accepts negative lengths or areas",
+      "Checks endpoints poorly on closed domains"
+    ],
+    "display_order": 70
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Connecting f f prime and f double prime",
+    "node_slug": "connecting-f-f-prime-and-f-double-prime",
+    "description": "Interpret how function, slope, and curvature graphs relate at the same x values.",
+    "common_misconceptions": [
+      "Assumes f positive means f prime positive",
+      "Matches peaks of f with peaks of f prime always"
+    ],
+    "display_order": 71
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Candidates test for extrema",
+    "node_slug": "candidates-test-for-extrema",
+    "description": "List critical points and endpoints as candidates then compare function values for absolute extrema.",
+    "common_misconceptions": [
+      "Omits endpoints on closed intervals",
+      "Compares derivatives instead of function values"
+    ],
+    "display_order": 72
+  },
+  {
+    "unit_number": 5,
+    "unit_name": "Analytical Applications of Differentiation",
+    "node_name": "Global vs local extrema",
+    "node_slug": "global-vs-local-extrema",
+    "description": "Distinguish local peaks and valleys from the highest and lowest values on an entire domain.",
+    "common_misconceptions": [
+      "Assumes local max is global max",
+      "Ignores domain boundaries for global extrema"
+    ],
+    "display_order": 73
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Antiderivatives definition",
+    "node_slug": "antiderivatives-definition",
+    "description": "An antiderivative F of f satisfies F prime equals f on an interval.",
+    "common_misconceptions": [
+      "Forgets the constant of integration",
+      "Assumes antiderivative is unique without plus C"
+    ],
+    "display_order": 74
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Indefinite integrals notation",
+    "node_slug": "indefinite-integrals-notation",
+    "description": "Write families of antiderivatives with integral notation and include plus C.",
+    "common_misconceptions": [
+      "Omits plus C in indefinite integrals",
+      "Treats indefinite integral as a number"
+    ],
+    "display_order": 75
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Basic integration rules",
+    "node_slug": "basic-integration-rules",
+    "description": "Reverse power, sum, and constant multiple rules to integrate polynomials and simple combinations.",
+    "common_misconceptions": [
+      "Adds one to the exponent when integrating power terms incorrectly",
+      "Integrates sum term by term with missing C once only"
+    ],
+    "display_order": 76
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Integrals of sin cos e to the x and one over x",
+    "node_slug": "integrals-of-sin-cos-e-to-the-x-and-one-over-x",
+    "description": "Apply standard antiderivatives for trig and exponential forms including one over x as ln absolute x.",
+    "common_misconceptions": [
+      "Integrates e to the x with power rule",
+      "Forgets absolute value in ln antiderivative discussions"
+    ],
+    "display_order": 77
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Riemann sums left right and midpoint",
+    "node_slug": "riemann-sums-left-right-and-midpoint",
+    "description": "Approximate definite integrals using left, right, and midpoint rectangle sums on partitions.",
+    "common_misconceptions": [
+      "Uses wrong sample point for the chosen rule",
+      "Confuses number of rectangles with partition width"
+    ],
+    "display_order": 78
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Trapezoidal sum approximation",
+    "node_slug": "trapezoidal-sum-approximation",
+    "description": "Average endpoint heights on subintervals to approximate area under a curve with trapezoids.",
+    "common_misconceptions": [
+      "Uses rectangle rules when trapezoids are specified",
+      "Doubles interval width incorrectly"
+    ],
+    "display_order": 79
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Definite integral as limit of Riemann sums",
+    "node_slug": "definite-integral-as-limit-of-riemann-sums",
+    "description": "A definite integral is the limit of Riemann sums as partition norm goes to zero when it exists.",
+    "common_misconceptions": [
+      "Treats finite Riemann sum as exact integral always",
+      "Uses unequal widths without weighting correctly"
+    ],
+    "display_order": 80
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Fundamental Theorem of Calculus part 1",
+    "node_slug": "fundamental-theorem-of-calculus-part-1",
+    "description": "If F of x is integral from a to x of f of t dt, then F prime of x equals f of x for continuous f.",
+    "common_misconceptions": [
+      "Differentiates with respect to the wrong limit",
+      "Forgets chain rule when upper limit is composite"
+    ],
+    "display_order": 81
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Fundamental Theorem of Calculus part 2",
+    "node_slug": "fundamental-theorem-of-calculus-part-2",
+    "description": "Evaluate definite integrals using any antiderivative F with F of b minus F of a.",
+    "common_misconceptions": [
+      "Subtracts in wrong order b minus a reversed",
+      "Uses indefinite integral without evaluating bounds"
+    ],
+    "display_order": 82
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Evaluating definite integrals",
+    "node_slug": "evaluating-definite-integrals",
+    "description": "Find antiderivatives then apply FTC part 2, or use geometry when shapes are clear.",
+    "common_misconceptions": [
+      "Leaves plus C in a definite evaluation incorrectly",
+      "Splits integrals without continuity justification"
+    ],
+    "display_order": 83
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Accumulation functions",
+    "node_slug": "accumulation-functions",
+    "description": "Interpret integrals with variable upper limits as accumulated change from a fixed start.",
+    "common_misconceptions": [
+      "Treats variable limit as a constant",
+      "Confuses accumulated amount with rate"
+    ],
+    "display_order": 84
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Net change from rate",
+    "node_slug": "net-change-from-rate",
+    "description": "Integral of rate over time gives net change in the underlying quantity.",
+    "common_misconceptions": [
+      "Uses rate at an endpoint instead of integrating",
+      "Confuses net change with total distance always"
+    ],
+    "display_order": 85
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "u substitution basics",
+    "node_slug": "u-substitution-basics",
+    "description": "Choose u and du to rewrite an integral into a simpler form and back substitute.",
+    "common_misconceptions": [
+      "Forgets to change dx to du completely",
+      "Fails to back substitute after integrating in u"
+    ],
+    "display_order": 86
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "u substitution with definite integrals",
+    "node_slug": "u-substitution-with-definite-integrals",
+    "description": "Change both integrand and bounds when using u substitution on definite integrals.",
+    "common_misconceptions": [
+      "Keeps original bounds after switching to u",
+      "Back substitutes then also changes bounds twice"
+    ],
+    "display_order": 87
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Interpreting definite integrals in context",
+    "node_slug": "interpreting-definite-integrals-in-context",
+    "description": "Attach correct units and meaning to integral results in applied settings.",
+    "common_misconceptions": [
+      "Reports rate units instead of accumulated units",
+      "Ignores sign meaning in context"
+    ],
+    "display_order": 88
+  },
+  {
+    "unit_number": 6,
+    "unit_name": "Integration and Accumulation of Change",
+    "node_name": "Properties of definite integrals",
+    "node_slug": "properties-of-definite-integrals",
+    "description": "Use linearity, interval additivity, and symmetry to simplify integral calculations.",
+    "common_misconceptions": [
+      "Reverses bounds without sign change",
+      "Splits at discontinuities without separate limits"
+    ],
+    "display_order": 89
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Modeling with differential equations",
+    "node_slug": "modeling-with-differential-equations",
+    "description": "Translate verbal rates of change into equations involving derivatives of unknown functions.",
+    "common_misconceptions": [
+      "Uses algebraic equations without derivatives",
+      "Swaps independent and dependent variables"
+    ],
+    "display_order": 90
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Verifying solutions to differential equations",
+    "node_slug": "verifying-solutions-to-differential-equations",
+    "description": "Substitute a proposed function and its derivatives to confirm it satisfies the equation.",
+    "common_misconceptions": [
+      "Checks only the original function without derivatives",
+      "Accepts solutions outside stated domain"
+    ],
+    "display_order": 91
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Slope fields interpretation",
+    "node_slug": "slope-fields-interpretation",
+    "description": "Read short segment slopes on a grid to infer solution curve behavior without solving explicitly.",
+    "common_misconceptions": [
+      "Draws curves ignoring segment slopes",
+      "Assumes all slope fields have explicit formulas"
+    ],
+    "display_order": 92
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Drawing and sketching slope fields",
+    "node_slug": "drawing-and-sketching-slope-fields",
+    "description": "Compute dy dx at grid points and sketch consistent slope segments for a given differential equation.",
+    "common_misconceptions": [
+      "Uses wrong ratio for dy dx at each point",
+      "Sketches segments with inconsistent scale"
+    ],
+    "display_order": 93
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Reasoning with slope fields",
+    "node_slug": "reasoning-with-slope-fields",
+    "description": "Match initial conditions to solution curves suggested by a slope field picture.",
+    "common_misconceptions": [
+      "Ignores initial point when selecting a curve",
+      "Crosses segments perpendicular incorrectly often"
+    ],
+    "display_order": 94
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Separable differential equations setup",
+    "node_slug": "separable-differential-equations-setup",
+    "description": "Rewrite dy dx as g of y times h of x when variables can be isolated on separate sides.",
+    "common_misconceptions": [
+      "Separates incorrectly when variables are entangled",
+      "Loses constant solutions during separation"
+    ],
+    "display_order": 95
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Separable differential equations solving",
+    "node_slug": "separable-differential-equations-solving",
+    "description": "Integrate both sides after separation and solve for the unknown function with initial data.",
+    "common_misconceptions": [
+      "Integrates only one side",
+      "Forgets absolute value or domain restrictions in ln steps"
+    ],
+    "display_order": 96
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Exponential growth models",
+    "node_slug": "exponential-growth-models",
+    "description": "Model proportional growth with dy dt equals k y and exponential solutions.",
+    "common_misconceptions": [
+      "Uses linear growth instead of exponential",
+      "Chooses wrong sign for k in growth"
+    ],
+    "display_order": 97
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Exponential decay models",
+    "node_slug": "exponential-decay-models",
+    "description": "Model proportional decay with negative rate constant and decreasing exponential solutions.",
+    "common_misconceptions": [
+      "Uses growth formula with positive k for decay",
+      "Confuses half life with doubling time formula"
+    ],
+    "display_order": 98
+  },
+  {
+    "unit_number": 7,
+    "unit_name": "Differential Equations",
+    "node_name": "Initial value problems",
+    "node_slug": "initial-value-problems",
+    "description": "Use an initial condition to determine the constant after finding a general solution.",
+    "common_misconceptions": [
+      "Substitutes initial data before integrating",
+      "Uses wrong variable in the initial condition"
+    ],
+    "display_order": 99
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Average value of a function",
+    "node_slug": "average-value-of-a-function",
+    "description": "The average value of f on a b is one over b minus a times the integral of f from a to b.",
+    "common_misconceptions": [
+      "Averages endpoints only",
+      "Forgets to divide by interval length"
+    ],
+    "display_order": 100
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Area between curves with vertical slices",
+    "node_slug": "area-between-curves-with-vertical-slices",
+    "description": "Integrate top minus bottom function difference with respect to x on intersection bounds.",
+    "common_misconceptions": [
+      "Integrates bottom minus top without absolute value awareness",
+      "Uses wrong intersection limits"
+    ],
+    "display_order": 101
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Area between curves with horizontal slices",
+    "node_slug": "area-between-curves-with-horizontal-slices",
+    "description": "Integrate right minus left function difference with respect to y when slicing horizontally.",
+    "common_misconceptions": [
+      "Keeps dx when integrating with respect to y",
+      "Swaps right and left functions"
+    ],
+    "display_order": 102
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Volume by disk method",
+    "node_slug": "volume-by-disk-method",
+    "description": "Revolve a region about an axis and integrate pi times radius squared for cross sectional disks.",
+    "common_misconceptions": [
+      "Uses radius without squaring",
+      "Uses wrong axis distance as radius"
+    ],
+    "display_order": 103
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Volume by washer method",
+    "node_slug": "volume-by-washer-method",
+    "description": "Subtract inner disk area from outer disk area when a hole appears in the solid of revolution.",
+    "common_misconceptions": [
+      "Subtracts radii before squaring",
+      "Uses washer when a solid disk suffices"
+    ],
+    "display_order": 104
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Choosing disk vs washer method",
+    "node_slug": "choosing-disk-vs-washer-method",
+    "description": "Decide whether an inner radius is zero or positive before setting up the volume integral.",
+    "common_misconceptions": [
+      "Always uses washer notation",
+      "Ignores gap between region and axis of rotation"
+    ],
+    "display_order": 105
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Volumes with known cross sections",
+    "node_slug": "volumes-with-known-cross-sections",
+    "description": "Integrate cross sectional area functions perpendicular to an axis when shapes are given.",
+    "common_misconceptions": [
+      "Uses disk formula when cross sections are not circles",
+      "Forgets to express area in one variable"
+    ],
+    "display_order": 106
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Displacement from velocity integral",
+    "node_slug": "displacement-from-velocity-integral",
+    "description": "Integrate velocity over time to find net displacement of a particle.",
+    "common_misconceptions": [
+      "Uses speed integral for displacement",
+      "Confuses displacement with total distance"
+    ],
+    "display_order": 107
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Total distance traveled",
+    "node_slug": "total-distance-traveled",
+    "description": "Integrate absolute value of velocity or split intervals by sign to find total path length.",
+    "common_misconceptions": [
+      "Uses displacement integral for total distance",
+      "Forgets to split where velocity changes sign"
+    ],
+    "display_order": 108
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Accumulation in applied integration",
+    "node_slug": "accumulation-in-applied-integration",
+    "description": "Interpret definite integrals of density or rate functions as totals over an interval.",
+    "common_misconceptions": [
+      "Reports average when total is requested",
+      "Uses wrong units after integration"
+    ],
+    "display_order": 109
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Particle motion from integrals",
+    "node_slug": "particle-motion-from-integrals",
+    "description": "Recover position from velocity or velocity from acceleration using initial conditions and integrals.",
+    "common_misconceptions": [
+      "Omits plus C before applying initial data",
+      "Differentiates when integration is needed"
+    ],
+    "display_order": 110
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Setting up volume integrals",
+    "node_slug": "setting-up-volume-integrals",
+    "description": "Draw the region and axis, identify a representative slice, and express radius or area correctly.",
+    "common_misconceptions": [
+      "Labels radius from wrong reference line",
+      "Uses inconsistent variable of integration"
+    ],
+    "display_order": 111
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Units and interpretation of integrals",
+    "node_slug": "units-and-interpretation-of-integrals",
+    "description": "Explain what a computed integral represents including units in applied volume and motion problems.",
+    "common_misconceptions": [
+      "Gives numeric answer without context",
+      "Multiplies units incorrectly"
+    ],
+    "display_order": 112
+  },
+  {
+    "unit_number": 8,
+    "unit_name": "Applications of Integration",
+    "node_name": "Integration with piecewise functions",
+    "node_slug": "integration-with-piecewise-functions",
+    "description": "Split integrals at breakpoints where formulas or behavior change on the interval of integration.",
+    "common_misconceptions": [
+      "Integrates across a jump without splitting",
+      "Uses wrong formula on a subinterval"
+    ],
+    "display_order": 113
+  }
+]

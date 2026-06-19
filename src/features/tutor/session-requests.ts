@@ -9,6 +9,7 @@ import { createRefundForRejectedRequest } from "@/shared/integrations/stripe/ses
 import { createPayoutLedgerForSession } from "@/features/payments/payout-ledger";
 import { validateUUID } from "@/shared/core/security";
 import { enrichTutorRowsWithStudentProfiles } from "@/features/tutor/tutor-internal";
+import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
 
 export async function getSessionRequests() {
   const user = await requireRole(["tutor", "admin"]);
@@ -159,6 +160,10 @@ export async function approveSessionRequest(requestId: string, onBehalfOfUserId?
   // Create payout ledger at approval so transfer can release when session start time is reached.
   void createPayoutLedgerForSession(sessionId).catch((err) => {
     console.error("[approveSessionRequest] ledger creation failed:", err);
+  });
+
+  void seedSessionTargetNodes(sessionId, session.student_id, session.course).catch((err) => {
+    console.error("[approveSessionRequest] session target seed failed:", err);
   });
 
   // Fire-and-forget emails: learner confirmation + guide calendar notification

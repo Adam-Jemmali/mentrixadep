@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, Clock, Sparkles, Swords, Target, X } from "lucide-react";
@@ -8,6 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { cn } from "@/shared/core/utils";
+import { emitXpAward } from "@/features/xp/xp-events";
 
 type QuestionPublic = {
   prompt: string;
@@ -67,6 +68,30 @@ const FILTER_LABELS: Record<ReviewFilter, string> = {
   missed: "Missed",
   skipped: "Timed out",
 };
+
+function DuelXpCelebration({
+  amount,
+  youWon,
+  tie,
+}: {
+  amount: number;
+  youWon: boolean;
+  tie: boolean;
+}) {
+  const firedRef = useRef(false);
+
+  useEffect(() => {
+    if (firedRef.current || amount <= 0) return;
+    firedRef.current = true;
+    emitXpAward({
+      amount,
+      trigger: "duel",
+      message: tie ? "Close match!" : youWon ? "Victory!" : "Keep grinding!",
+    });
+  }, [amount, tie, youWon]);
+
+  return null;
+}
 
 export function SkillDuelResults({
   divisionKey,
@@ -142,6 +167,7 @@ export function SkillDuelResults({
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="space-y-6"
     >
+      <DuelXpCelebration amount={xpAmount} youWon={youWon} tie={tie} />
       <section className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-b from-[#0b1830] via-[#0f2244] to-[#09162c] p-6 text-white shadow-[0_24px_80px_-24px_rgba(15,23,42,0.85)] sm:p-8">
         <div
           className={cn(

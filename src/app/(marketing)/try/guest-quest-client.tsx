@@ -25,6 +25,12 @@ import {
   stripGuestTryPromptDecorators,
   type GuestTryQuestion,
 } from "@/features/quest/guest-try-types";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { buildApCalcGuestResultsSummary } from "@/features/quest/guest-try-results";
+import { shuffleGuestTryPack } from "@/features/quest/guest-try-shuffle";
+import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
+import { warmKatex } from "@/features/quest/ui/normalize-math-text";
+import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
   if (!x || typeof x !== "object") return false;
@@ -141,6 +147,7 @@ function shuffleStrings(items: string[]): string[] {
 
 export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: string; name: string }[] }) {
   const router = useRouter();
+  const tier = useUiPerfTier();
   const [subjectKey, setSubjectKey] = useState(defaultSubjects[0]?.key ?? "general");
   const [subjectName, setSubjectName] = useState(defaultSubjects[0]?.name ?? "General");
   const [phase, setPhase] = useState<"wizard" | "run" | "done">("wizard");
@@ -155,6 +162,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [correctCelebrationOpen, setCorrectCelebrationOpen] = useState(false);
 
   const correctCount = results.filter(Boolean).length;
   const isPerfect = questions != null && correctCount === questions.length && phase === "done";
@@ -181,6 +189,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     setShortSubmitted(false);
     setSelected(null);
     setRankSubmitted(false);
+    setCorrectCelebrationOpen(false);
     const q = questions?.[qIndex];
     if (q?.kind === "drag_rank" && q.rankItems) {
       setRankOrder(shuffleStrings(q.rankItems));
@@ -213,10 +222,12 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
         setBusy(false);
         return;
       }
-      setQuestions(cleaned);
+      setQuestions(shuffleGuestTryPack(cleaned));
       setQIndex(0);
       setResults([]);
+      setCorrectCelebrationOpen(false);
       setPhase("run");
+      void warmKatex();
       setBusy(false);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -237,6 +248,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
       hapticOutcome(correct);
       return next;
     });
+    if (correct) setCorrectCelebrationOpen(true);
   };
 
   const submitShortAnswer = () => {
@@ -252,6 +264,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
       hapticOutcome(ok);
       return next;
     });
+    if (ok) setCorrectCelebrationOpen(true);
   };
 
   const submitRankOrder = () => {
@@ -268,9 +281,11 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
       hapticOutcome(ok);
       return next;
     });
+    if (ok) setCorrectCelebrationOpen(true);
   };
 
   const next = () => {
+    setCorrectCelebrationOpen(false);
     setSelected(null);
     if (!questions) return;
     const nx = qIndex + 1;
@@ -423,7 +438,6 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
 
     const progress = ((qIndex + 1) / questions.length) * 100;
     const kindUi = guestTryKindUi(q.kind);
-    const streakNow = answered ? streakFromEnd(results) : 0;
     const promptDisplay = stripGuestTryPromptDecorators(q.prompt);
 
     return (
@@ -584,7 +598,7 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.15, duration: 0.3 }}
               >
-                {q.options.map((opt, i) => {
+                {q.options.map((_opt, i) => {
                   const url = q.optionImageUrls![i]!;
                   const isSel = selected === i;
                   const isCorr = i === q.correctIndex;
@@ -604,12 +618,16 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                         onSelect(i);
                       }}
                       disabled={selected != null}
+                      aria-label={`Option ${String.fromCharCode(65 + i)}`}
                       whileHover={selected == null ? { scale: 1.02 } : {}}
                       whileTap={selected == null ? { scale: 0.98 } : {}}
-                      className={`flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-center transition-all ${bgClass} ${
+                      className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-center transition-all ${bgClass} ${
                         showFb ? "cursor-default" : "cursor-pointer"
                       }`}
                     >
+                      <span className="absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-[10px] font-bold text-slate-600 shadow-sm">
+                        {String.fromCharCode(65 + i)}
+                      </span>
                       <div className="relative h-20 w-full">
                         <Image
                           key={`guest-opt-${qIndex}-${q.id}-${i}-${url}`}
@@ -621,7 +639,6 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                           sizes="120px"
                         />
                       </div>
-                      <span className="text-[11px] font-medium leading-snug text-slate-800">{opt}</span>
                     </motion.button>
                   );
                 })}
@@ -705,9 +722,9 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
               </motion.div>
             )}
 
-            {/* Feedback section */}
+            {/* Feedback section — wrong answers only; correct uses celebration popup */}
             <AnimatePresence>
-              {answered && wasCorrect !== undefined && (
+              {answered && wasCorrect === false && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -715,45 +732,23 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                   transition={{ duration: 0.25 }}
                   className="mt-6"
                 >
-                  {wasCorrect && streakNow >= 2 ? (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.92 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-900"
-                    >
-                      <span aria-hidden>🔥</span> On fire · {streakNow} in a row
-                    </motion.div>
-                  ) : null}
-
                   <motion.div
                     initial={false}
-                    animate={
-                      wasCorrect
-                        ? { x: 0, scale: [1, 1.01, 1] }
-                        : { x: [0, -7, 7, -5, 5, 0], scale: 1 }
-                    }
-                    transition={wasCorrect ? { duration: 0.35 } : { duration: 0.42 }}
+                    animate={{ x: [0, -7, 7, -5, 5, 0], scale: 1 }}
+                    transition={{ duration: 0.42 }}
                   >
-                    <div
-                      className={`rounded-lg border-2 p-4 ${
-                        wasCorrect ? "bg-blue-50 border-blue-200" : "bg-slate-50 border-slate-200"
-                      }`}
-                    >
-                      <p className={`font-semibold mb-1 ${wasCorrect ? "text-blue-900" : "text-slate-900"}`}>
-                        {wasCorrect ? "✓ Crushed it!" : " Close..read the breakdown"}
-                      </p>
-                      <p className={`text-sm ${wasCorrect ? "text-blue-800" : "text-slate-800"}`}>{q.explanation}</p>
+                    <div className="rounded-lg border-2 border-slate-200 bg-slate-50 p-4">
+                      <p className="font-semibold mb-1 text-slate-900">Close..read the breakdown</p>
+                      <p className="text-sm text-slate-800">{q.explanation}</p>
                       {isShort && q.referenceAnswer ? (
                         <p className="mt-2 text-sm text-slate-700">
-                          <span className="text-slate-500">
-                            {wasCorrect ? "Accepted answers include: " : "Example answers: "}
-                          </span>
+                          <span className="text-slate-500">Example answers: </span>
                           <span className="font-semibold text-slate-900">
                             {formatGuestTryReferenceAnswerDisplay(q.referenceAnswer)}
                           </span>
                         </p>
                       ) : null}
-                      {isDragRank && !wasCorrect && q.rankItems ? (
+                      {isDragRank && q.rankItems ? (
                         <p className="mt-2 text-sm text-slate-700">
                           <span className="text-slate-500">Correct order: </span>
                           <span className="font-semibold text-slate-900">{q.rankItems.join(" → ")}</span>
@@ -783,6 +778,17 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
               )}
             </AnimatePresence>
           </TiltCard>
+
+          <PracticeCorrectCelebration
+            open={correctCelebrationOpen && wasCorrect === true}
+            explanation={q.explanation}
+            lite={tier === "lite"}
+            nextLabel={qIndex + 1 >= questions.length ? "See results" : "Next round"}
+            onNext={() => {
+              playClickSound();
+              next();
+            }}
+          />
         </motion.div>
       </AnimatePresence>
     );
@@ -794,6 +800,10 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
     const streakRecord = bestStreakInRun(results);
     const wouldXp = XP.QUEST_COMPLETE + (correct === questions.length ? XP.QUEST_PERFECT_BONUS : 0);
     const isPerfect = correct === questions.length;
+    const isApCalcTry = isApCalculusAbSubject(subjectName);
+    const apCalcSummary = isApCalcTry
+      ? buildApCalcGuestResultsSummary(questions, results)
+      : null;
 
     return (
       <motion.div
@@ -854,7 +864,13 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
               <div className="rounded-3xl bg-white/5 border border-white/5 p-6 text-center group hover:bg-white/10 transition-colors">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Correct</p>
                 <div className="text-4xl font-black text-white flex items-baseline justify-center gap-1">
-                  <BubbleText text={`${correct}/${questions.length}`} activeColor="text-blue-400" />
+                  {apCalcSummary ? (
+                    <span className="text-2xl sm:text-3xl leading-tight text-center">
+                      {apCalcSummary.scoreLine}
+                    </span>
+                  ) : (
+                    <BubbleText text={`${correct}/${questions.length}`} activeColor="text-blue-400" />
+                  )}
                 </div>
               </div>
               <div className="rounded-3xl bg-white/5 border border-white/5 p-6 text-center group hover:bg-white/10 transition-colors">
@@ -865,6 +881,26 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                 <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-tighter">Correct in a row</p>
               </div>
             </div>
+
+            {apCalcSummary ? (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
+                className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 text-left"
+              >
+                <div className="space-y-2">
+                  {apCalcSummary.unitLines.map((line) => (
+                    <p key={line} className="text-sm text-slate-200">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+                <p className="mt-4 text-sm font-medium text-blue-200">
+                  {apCalcSummary.weakestLine}
+                </p>
+              </motion.div>
+            ) : null}
 
             {/* Reward Display (Clash Royale Style) */}
             <motion.div 
@@ -903,7 +939,9 @@ export function GuestQuestClient({ defaultSubjects }: { defaultSubjects: { key: 
                 className="h-14 w-full rounded-2xl bg-white text-slate-900 hover:bg-slate-100 text-base font-semibold shadow-[0_0_30px_rgba(255,255,255,0.2)]"
               >
                 <Link href="/auth/signup" onClick={() => playClickSound()}>
-                  Create your free account to save this score and compete in your Division.
+                  {isApCalcTry
+                    ? "Create your free account to save this score"
+                    : "Create your free account to save this score and compete in your Division."}
                 </Link>
               </Button>
             </div>

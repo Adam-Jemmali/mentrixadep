@@ -7,6 +7,7 @@ import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { getSiteUrl } from "@/shared/core/site";
 import type { RankCardData } from "@/features/rank-card/types";
 import { RankCardAccuracyChart } from "@/features/rank-card/rank-card-accuracy-chart";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -119,6 +120,13 @@ export function RankCardPublicPage({ data }: { data: RankCardData }) {
                   </p>
                   <RankCardAccuracyChart data={subject.accuracyTrend} />
                 </div>
+
+                {isApCalculusAbSubject(subject.subject) &&
+                subject.verifiedFirstAttemptSummary ? (
+                  <p className="mt-6 text-sm text-slate-200">
+                    {subject.verifiedFirstAttemptSummary}
+                  </p>
+                ) : null}
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
                   <Stat label="Duel win rate" value={`${subject.duelWinRate}%`} />

@@ -12,6 +12,11 @@ export interface PracticeQuestionMcq {
   options: string[];
   correctIndex: number;
   explanation: string;
+  /** AP Calculus AB item bank */
+  skillNodeId?: string;
+  topicTag?: string;
+  subtopicTag?: string;
+  unitNumber?: number;
 }
 
 export interface PracticeQuestionWritten {
@@ -38,6 +43,8 @@ export interface PracticePackMetadata {
   session?: PracticeSessionState;
   /** After completion */
   result?: PracticePackResult;
+  /** MCQ options were shuffled so correctIndex is not always 0 */
+  mcqOptionsShuffled?: boolean;
   /** Breakthrough adaptive follow-up */
   breakthroughEventId?: string;
   focusSubtopic?: string;

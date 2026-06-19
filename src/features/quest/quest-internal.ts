@@ -1,5 +1,11 @@
 import { z } from "zod";
 import type { QuestExplanationResponse, QuestVariant } from "@/shared/integrations/ai";
+import {
+  buildComputationalQuestFallback,
+  buildConceptualQuestFallback,
+  isComputationalQuestPrompt,
+  matchCuratedQuestFallback,
+} from "@/features/quest/quest-curated-fallbacks";
 
 export type QuestGoal = "exam" | "interview" | "assignment";
 export type QuestMode = "coach" | "exam";
@@ -58,32 +64,14 @@ export function buildQuestFallbackResponse(
   goal: QuestGoal,
   mode: QuestMode
 ): QuestExplanationResponse {
-  const trimmed = prompt.trim();
-  const compactPrompt = trimmed.length > 240 ? `${trimmed.slice(0, 240)}...` : trimmed;
-  const goalLabel =
-    goal === "exam" ? "exam prep" : goal === "interview" ? "interview prep" : "assignment help";
+  const curated = matchCuratedQuestFallback(prompt, mode);
+  if (curated) return curated;
 
-  const hints = [
-    `Start by restating the problem in your own words and list all given facts from: ${compactPrompt}`,
-    "Identify what the final target is (value, explanation, algorithm, or proof step) before calculating anything.",
-    "Break the task into 2-4 smaller checkpoints and solve each checkpoint in order.",
-    "Validate units/definitions and test edge cases to confirm your final result is logically consistent.",
-  ];
+  if (!isComputationalQuestPrompt(prompt)) {
+    return buildConceptualQuestFallback(prompt, mode);
+  }
 
-  const reasoning =
-    `Fallback guidance (${goalLabel}): ` +
-    "The AI generator is temporarily busy, so this response uses a reliable structured method. " +
-    "First isolate known information, then map it to the governing concept or formula, then execute step-by-step, and finally verify with a quick sanity check.";
-
-  const finalAnswer =
-    "Structured fallback answer: define knowns, apply the core rule, compute or justify each step, and verify against constraints. " +
-    "If you share the exact intermediate step where you are stuck, Quest can continue from that point immediately.";
-
-  return {
-    hints,
-    reasoning: mode === "exam" ? "" : reasoning,
-    finalAnswer,
-  };
+  return buildComputationalQuestFallback(prompt, mode);
 }
 
 function normalizeAnswerForFallback(s: string): string {

@@ -1,3 +1,31 @@
+/** Fire a celebratory burst when XP is earned (client-only). */
+export async function fireXpRewardConfetti(): Promise<void> {
+  if (typeof window === "undefined") return;
+  const confetti = (await import("canvas-confetti")).default;
+  const colors = ["#2563eb", "#6366f1", "#a855f7", "#22d3ee", "#fbbf24", "#34d399"];
+  void confetti({
+    particleCount: 70,
+    spread: 88,
+    origin: { y: 0.52 },
+    colors,
+    ticks: 180,
+  });
+  void confetti({
+    particleCount: 28,
+    angle: 60,
+    spread: 58,
+    origin: { x: 0.08, y: 0.62 },
+    colors,
+  });
+  void confetti({
+    particleCount: 28,
+    angle: 120,
+    spread: 58,
+    origin: { x: 0.92, y: 0.62 },
+    colors,
+  });
+}
+
 /** Fire a short confetti burst (client-only; dynamic import). */
 export async function fireRatingConfetti(): Promise<void> {
   if (typeof window === "undefined") return;

@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  normalizeMathText,
+  textContainsMath,
+  warmKatex,
+} from "@/features/quest/ui/normalize-math-text";
 
 type KatexModule = typeof import("katex");
 
 function renderMathParts(text: string, katex: KatexModule["default"]): ReactNode[] {
-  const normalizedText = text.replace(/\\\$/g, "$");
+  const normalizedText = normalizeMathText(text);
   const parts: ReactNode[] = [];
   let key = 0;
   const re = /\\\(([\s\S]*?)\\\)|\$\$([\s\S]*?)\$\$|\$([^$\n]+?)\$/g;
@@ -49,36 +54,47 @@ function renderMathParts(text: string, katex: KatexModule["default"]): ReactNode
 }
 
 /**
- * Renders plain text with optional inline/block LaTeX: \( ... \) and $$ ... $$.
- * KaTeX loads on demand so quest routes stay lean when no math is present.
+ * Renders plain text with optional inline/block LaTeX: \( ... \), $$ ... $$, $ ... $,
+ * and bare commands like \frac{a}{b}.
  */
 export function PromptWithMath({ text }: { text: string }) {
   const [katex, setKatex] = useState<KatexModule["default"] | null>(null);
-  const needsMath = /\\\(|\\\$|\$\$|\$[^$\n]+\$/.test(text);
+  const needsMath = textContainsMath(text);
+  const normalizedPreview = useMemo(
+    () => (needsMath ? normalizeMathText(text) : text),
+    [needsMath, text],
+  );
 
   useEffect(() => {
     if (!needsMath) return;
     let active = true;
-    void import("katex").then((mod) => {
+    void warmKatex().then((mod) => {
       if (!active) return;
       setKatex(mod.default);
-      void import("katex/dist/katex.min.css");
     });
     return () => {
       active = false;
     };
-  }, [needsMath]);
+  }, [needsMath, text]);
 
   const parts = useMemo(() => {
     if (!katex) return null;
     return renderMathParts(text, katex);
   }, [text, katex]);
 
-  if (!needsMath || !katex || !parts) {
+  if (!needsMath) {
     return (
-      <div className="text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">{text}</div>
+      <div className="text-sm leading-relaxed text-zinc-900 whitespace-pre-wrap">{text}</div>
     );
   }
 
-  return <div className="text-sm leading-relaxed text-slate-800">{parts}</div>;
+  if (!katex || !parts) {
+    return (
+      <div className="text-sm leading-relaxed text-zinc-900 whitespace-pre-wrap animate-pulse">
+        {normalizedPreview.replace(/\$/g, "")}
+      </div>
+    );
+  }
+
+  return <div className="text-sm leading-relaxed text-zinc-900">{parts}</div>;
 }

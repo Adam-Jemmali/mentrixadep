@@ -11,10 +11,12 @@ export interface KnowledgeNode {
   subject: string;
   topic: string;
   subtopic: string;
+  skillNodeId?: string | null;
   masteryScore: number; // 0–100
   attempts: number;
   correct: number;
   correctStreak: number;
+  firstAttemptCorrect?: boolean | null;
   lastSeenAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -25,6 +27,7 @@ export interface KnowledgeNodeUpdate {
   topic: string;
   subtopic: string;
   correct: boolean;
+  skillNodeId?: string;
 }
 
 /** Flat subject → topic → subtopic tree for display */

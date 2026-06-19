@@ -6,10 +6,16 @@ import { runGsapAction, useGsapEffect } from "@/shared/core/gsap-lazy";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import { submitQuest, submitQuestAnswer, type QuestGoal, type QuestMode } from "@/features/quest/classic-quest";
+import {
+  completeAdaptiveClassicQuest,
+  startAdaptiveClassicQuest,
+} from "@/features/quest/adaptive-classic-quest";
+import type { AdaptiveWorldState } from "@/shared/integrations/ai/adaptive-quest";
 import { getCurrentUserXp } from "@/features/quest/quest-reads";
 import { BackButton } from "@/shared/ui/back-button";
 import { emitXpAward } from "@/features/xp/xp-events";
 import { QuestIllustration } from "@/components/illustrations";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
 const RECENT_KEY = "mentrixa_quests";
 const ACTIVE_QUEST_SESSION_KEY = "mentrixa_active_quest_v1";
@@ -94,6 +100,12 @@ export function QuestClassicWorkspace() {
   const [answerFeedback, setAnswerFeedback] = useState<string | null>(null);
   const [questCompleted, setQuestCompleted] = useState(false);
   const [lastXpAwarded, setLastXpAwarded] = useState<number | null>(null);
+  const [adaptiveMode, setAdaptiveMode] = useState(false);
+  const [adaptiveQuestId, setAdaptiveQuestId] = useState<string | null>(null);
+  const [adaptiveWorldState, setAdaptiveWorldState] = useState<AdaptiveWorldState | null>(null);
+  const [adaptiveFeedback, setAdaptiveFeedback] = useState<string[]>([]);
+  const [adaptiveSessionActive, setAdaptiveSessionActive] = useState(false);
+  const [adaptiveInitialPrompt, setAdaptiveInitialPrompt] = useState("");
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const rightPaneRef = useRef<HTMLDivElement | null>(null);
@@ -263,6 +275,107 @@ export function QuestClassicWorkspace() {
   const totalHints = hints.length;
   const visibleHints = useMemo(() => hints.slice(0, hintsRevealed), [hints, hintsRevealed]);
 
+  const adaptiveSubjectLabel = useMemo(
+    () => GOAL_OPTIONS.find((g) => g.value === goal)?.label ?? "General",
+    [goal],
+  );
+
+  const resetAdaptiveSession = () => {
+    setAdaptiveQuestId(null);
+    setAdaptiveWorldState(null);
+    setAdaptiveFeedback([]);
+    setAdaptiveSessionActive(false);
+    setAdaptiveInitialPrompt("");
+  };
+
+  const handleAdaptiveSubmit = async (text: string) => {
+    setSubmitError(null);
+    setRecordError(null);
+    setIsLoading(true);
+
+    let questId = adaptiveQuestId;
+    if (!questId) {
+      const started = await startAdaptiveClassicQuest(text, goal, mode, adaptiveSubjectLabel);
+      if ("error" in started) {
+        setIsLoading(false);
+        setSubmitError(started.message);
+        return;
+      }
+      questId = started.questId;
+      setAdaptiveQuestId(questId);
+      setAdaptiveSessionActive(true);
+      setAdaptiveInitialPrompt(text);
+      addToRecent(text);
+      setCurrentQuest(null);
+    }
+
+    try {
+      const res = await fetch("/api/quests/adaptive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questId,
+          message: text,
+          priorWorldState: adaptiveWorldState,
+          subject: adaptiveSubjectLabel,
+        }),
+      });
+
+      const data = (await res.json()) as {
+        feedback?: string;
+        updatedWorldState?: AdaptiveWorldState;
+        isResolved?: boolean;
+        error?: string;
+      };
+
+      if (!res.ok || !data.feedback || !data.updatedWorldState) {
+        setSubmitError(data.error ?? "Adaptive challenge failed. Try again.");
+        if (!adaptiveWorldState) {
+          resetAdaptiveSession();
+          setPrompt(text);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      setAdaptiveFeedback((prev) => [...prev, data.feedback!]);
+      setAdaptiveWorldState(data.updatedWorldState);
+      setPrompt("");
+
+      if (data.isResolved) {
+        const fin = await completeAdaptiveClassicQuest(questId);
+        if (fin && "error" in fin) {
+          setRecordError(fin.message);
+        } else if (fin) {
+          setQuestCompleted(true);
+          markRecentCompleted(adaptiveInitialPrompt || text);
+          setPrompt(adaptiveInitialPrompt || text);
+          setLastXpAwarded(fin.xpAwarded ?? 0);
+          setXpThisSession((s) => s + (fin.xpAwarded ?? 0));
+          setTotalXp(fin.totalXp ?? totalXp);
+          setStreakDays(fin.streakDays ?? streakDays);
+          if ((fin.xpAwarded ?? 0) > 0) {
+            emitXpAward({
+              amount: fin.xpAwarded ?? 0,
+              totalXp: fin.totalXp ?? totalXp,
+              trigger: "quest",
+              message: "Adaptive challenge complete!",
+            });
+          }
+        }
+      }
+    } catch {
+      setSubmitError("Adaptive challenge failed. Try again.");
+      if (!adaptiveWorldState) {
+        resetAdaptiveSession();
+        setPrompt(text);
+      }
+    } finally {
+      setIsLoading(false);
+      focusSolverPane();
+    }
+  };
+
   const handleSubmit = async (autoText?: string) => {
     // Read from textarea ref when clicking button to avoid stale state from batching
     const text = (autoText ?? textareaRef.current?.value ?? prompt).trim();
@@ -270,6 +383,12 @@ export function QuestClassicWorkspace() {
     setPrompt(text); // Update immediately for display
     setSubmitError(null);
     setRecordError(null);
+
+    if (adaptiveMode) {
+      await handleAdaptiveSubmit(text);
+      return;
+    }
+
     setIsLoading(true);
 
     const result = await submitQuest(text, goal, mode);
@@ -404,6 +523,7 @@ export function QuestClassicWorkspace() {
           emitXpAward({
             amount: result.xpAwarded ?? 0,
             totalXp: result.totalXp ?? totalXp,
+            trigger: "quest",
           });
         }
       } else {
@@ -412,6 +532,41 @@ export function QuestClassicWorkspace() {
     } finally {
       setSubmittingAnswer(false);
     }
+  };
+
+  const retryQuestionText = useMemo(() => {
+    const fromAdaptive = adaptiveInitialPrompt.trim();
+    const fromPrompt = prompt.trim();
+    return fromAdaptive || fromPrompt;
+  }, [adaptiveInitialPrompt, prompt]);
+
+  const handleRetrySameQuestion = () => {
+    const text = retryQuestionText;
+    if (!text || isLoading) return;
+
+    setQuestCompleted(false);
+    setLastXpAwarded(null);
+    setRecordError(null);
+    setSubmitError(null);
+    setUserAnswer("");
+    setAnswerFeedback(null);
+    setPrompt(text);
+    if (textareaRef.current) textareaRef.current.value = text;
+
+    if (adaptiveMode || adaptiveSessionActive) {
+      resetAdaptiveSession();
+      setAdaptiveMode(true);
+    } else {
+      setCurrentQuest(null);
+      setHintsRevealed(0);
+      setReasoningShown(false);
+      setSolutionShown(false);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+      }
+    }
+
+    void handleSubmit(text);
   };
 
   const getAnswerPlaceholder = () => {
@@ -437,6 +592,7 @@ export function QuestClassicWorkspace() {
     setSolutionShown(false);
     setUserAnswer("");
     setAnswerFeedback(null);
+    resetAdaptiveSession();
     setRecordError(null);
     setSubmitError(null);
     setPrompt("");
@@ -557,39 +713,103 @@ export function QuestClassicWorkspace() {
   const allHintsRevealed = totalHints > 0 ? hintsRevealed >= totalHints : true;
 
   return (
-    <div className="bg-slate-50 relative">
+    <div className="mx-surface-light relative bg-white">
       <QuestIllustration />
       <div className="grid min-h-0 grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] md:h-[calc(100dvh-3.5rem)] md:max-h-[calc(100dvh-3.5rem)]">
         {/* LEFT PANE */}
-        <aside className="relative min-h-0 border-b border-slate-200 bg-slate-50 md:h-full md:border-b-0 md:border-r flex flex-col justify-between overflow-y-auto">
+        <aside className="relative min-h-0 border-b border-slate-200 mx-surface-light bg-white md:h-full md:border-b-0 md:border-r flex flex-col justify-between overflow-y-auto">
           <div className="flex-1 px-5 pt-6 pb-4">
             <div className="mb-6">
               <BackButton />
             </div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-2 block">
-              Problem
+
+            <div className="mb-4">
+              <p className={`${mentrixStudent.sectionEyebrowOnLight} mb-2`}>
+                Adaptive challenge mode
+              </p>
+              <div className="border border-violet-200 rounded-md overflow-hidden grid grid-cols-2 text-[13px] font-semibold h-9 bg-white">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (adaptiveMode) resetAdaptiveSession();
+                    setAdaptiveMode(false);
+                  }}
+                  className={`border-r border-violet-200 transition-colors ${
+                    !adaptiveMode
+                      ? "bg-indigo-700 text-white"
+                      : "bg-white text-zinc-800 hover:bg-violet-50 hover:text-indigo-950"
+                  }`}
+                >
+                  Off
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdaptiveMode(true)}
+                  className={`transition-colors ${
+                    adaptiveMode
+                      ? "bg-indigo-700 text-white"
+                      : "bg-white text-zinc-800 hover:bg-violet-50 hover:text-indigo-950"
+                  }`}
+                >
+                  On
+                </button>
+              </div>
+            </div>
+
+            <label className={`${mentrixStudent.sectionEyebrowOnLight} mb-2 block`}>
+              {adaptiveMode && adaptiveWorldState ? "Your response" : "Problem"}
             </label>
             <Textarea
               ref={textareaRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Paste your problem or question..."
+              placeholder={
+                adaptiveMode && adaptiveWorldState
+                  ? "Type your next move in the scenario..."
+                  : "Paste your problem or question..."
+              }
               className="min-h-[120px] resize-none border border-slate-200 rounded-xl text-[14px] leading-relaxed p-3 bg-white focus-visible:ring-0 focus-visible:border-mentrixa-400 shadow-[0_0_0_3px_rgba(37,99,235,0.08)] outline-none transition-all duration-200 hover:border-slate-300"
             />
 
+            {adaptiveMode && adaptiveFeedback.length > 0 && (
+              <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                <p className={mentrixStudent.sectionEyebrowOnLight}>
+                  Scenario feed
+                </p>
+                <ul className="mt-2 space-y-2">
+                  {adaptiveFeedback.map((entry, index) => (
+                    <li key={`${index}-${entry.slice(0, 24)}`} className="text-sm text-zinc-800 leading-relaxed">
+                      {entry}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {adaptiveMode && adaptiveWorldState && (
+              <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+                <p className="text-xs font-semibold text-indigo-800 uppercase tracking-[0.14em]">
+                  Step {adaptiveWorldState.stepIndex} of {adaptiveWorldState.stepTotal}
+                </p>
+                <p className="mt-2 text-sm text-indigo-950 leading-relaxed">
+                  {adaptiveWorldState.currentChallenge}
+                </p>
+              </div>
+            )}
+
             {/* Recent */}
             <div className="mt-4">
-              <p className="text-xs text-slate-400 mb-1.5">Recent</p>
-              <div>
+              <p className={`${mentrixStudent.sectionEyebrowOnLight} mb-2`}>Recent</p>
+              <div className="rounded-lg border border-violet-200 bg-white p-1">
                 {recentQuests.slice(0, MAX_RECENT).map((item) => (
                   <div
                     key={item.text}
-                    className="group flex items-center gap-1 py-1.5 border-b border-slate-50"
+                    className="group flex items-center gap-1 rounded-md px-2 py-1.5 hover:bg-violet-50 border-b border-violet-100 last:border-b-0"
                   >
                     <button
                       type="button"
                       onClick={() => handleRecentClick(item)}
-                      className="flex-1 text-left text-xs text-slate-500 hover:text-slate-900 truncate min-w-0"
+                      className={`flex-1 text-left text-sm font-medium ${mentrixStudent.textOnLight} hover:text-indigo-700 hover:underline truncate min-w-0`}
                     >
                       {item.text}
                     </button>
@@ -600,7 +820,7 @@ export function QuestClassicWorkspace() {
                         removeFromRecent(item.text);
                       }}
                       aria-label="Remove from recents"
-                      className="shrink-0 p-0.5 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className={`shrink-0 p-0.5 ${mentrixStudent.textMutedOnLight} hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity`}
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" />
@@ -610,14 +830,14 @@ export function QuestClassicWorkspace() {
                   </div>
                 ))}
                 {recentQuests.length === 0 && (
-                  <p className="text-[11px] text-slate-300">No recent questions yet.</p>
+                  <p className={`text-[11px] text-purple-500`}>No recent questions yet.</p>
                 )}
               </div>
-            </div>
+            </div>  
 
             {/* Goal selector */}
             <div className="border-t border-slate-200 mt-4 pt-4">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-2">
+              <p className={`${mentrixStudent.sectionEyebrowOnLight} mb-2`}>
                 Goal
               </p>
               <div className="flex flex-col gap-2">
@@ -628,10 +848,10 @@ export function QuestClassicWorkspace() {
                       key={g.value}
                       type="button"
                       onClick={() => setGoal(g.value)}
-                      className={`w-full h-9 rounded-md border text-sm transition-all ${
+                      className={`w-full h-9 rounded-md border text-sm font-medium transition-all ${
                         selected
-                          ? "bg-mentrixa-50 border-blue-500 text-mentrixa-700 font-semibold"
-                          : "bg-transparent border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-900"
+                          ? "border-indigo-500 bg-indigo-50 text-indigo-950 font-semibold"
+                          : "border-violet-200 bg-white text-zinc-800 hover:border-indigo-300 hover:text-indigo-950"
                       }`}
                     >
                       {g.labelText}
@@ -643,17 +863,17 @@ export function QuestClassicWorkspace() {
 
             {/* Mode toggle */}
             <div className="border-t border-slate-200 mt-4 pt-4">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-2">
+              <p className={`${mentrixStudent.sectionEyebrowOnLight} mb-2`}>
                 Mode
               </p>
-              <div className="border border-slate-200 rounded-md overflow-hidden grid grid-cols-2 text-[13px] font-medium h-9">
+              <div className="border border-violet-200 rounded-md overflow-hidden grid grid-cols-2 text-[13px] font-semibold h-9 bg-white">
                 <button
                   type="button"
                   onClick={() => setMode("coach")}
-                  className={`border-r border-slate-200 transition-colors ${
+                  className={`border-r border-violet-200 transition-colors ${
                     mode === "coach"
-                      ? "bg-slate-900 text-white"
-                      : "bg-transparent text-slate-500 hover:bg-slate-50"
+                      ? "bg-indigo-700 text-white"
+                      : "bg-white text-zinc-800 hover:bg-violet-50 hover:text-indigo-950"
                   }`}
                 >
                   Coach
@@ -663,8 +883,8 @@ export function QuestClassicWorkspace() {
                   onClick={() => setMode("exam")}
                   className={`transition-colors ${
                     mode === "exam"
-                      ? "bg-slate-900 text-white"
-                      : "bg-transparent text-slate-500 hover:bg-slate-50"
+                      ? "bg-indigo-700 text-white"
+                      : "bg-white text-zinc-800 hover:bg-violet-50 hover:text-indigo-950"
                   }`}
                 >
                   Exam
@@ -681,7 +901,15 @@ export function QuestClassicWorkspace() {
               onClick={() => handleSubmit()}
               disabled={isLoading || !prompt.trim()}
             >
-              <span>{isLoading ? "Thinking..." : "Ask Mentrixa"}</span>
+              <span>
+                {isLoading
+                  ? "Thinking..."
+                  : adaptiveMode
+                    ? adaptiveWorldState
+                      ? "Send response"
+                      : "Start challenge"
+                    : "Ask Mentrixa"}
+              </span>
               {isLoading && (
                 <span className="absolute inset-0 rounded-md border border-mentrixa-200 animate-[pulse_1.5s_ease-in-out_infinite]" />
               )}
@@ -689,7 +917,7 @@ export function QuestClassicWorkspace() {
           </div>
 
           {/* Bottom XP strip */}
-          <div className="border-t border-slate-200 px-5 py-3 flex items-center justify-between text-[11px] font-mono text-slate-500">
+          <div className="border-t border-slate-200 px-5 py-3 flex items-center justify-between text-[11px] font-mono text-zinc-600">
             <span>
               {streakDays === 0
                 ? "No streak"
@@ -712,8 +940,60 @@ export function QuestClassicWorkspace() {
           ref={rightPaneRef}
           className="relative min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 bg-white md:min-h-0"
         >
+          {/* Adaptive challenge pane */}
+          {adaptiveSessionActive && isLoading && (
+            <div className="flex min-h-[45vh] items-center justify-center text-sm text-violet-700">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-6 h-6 border-2 border-mentrixa-500 border-t-transparent rounded-full animate-spin" />
+                <p className="animate-pulse">Updating scenario...</p>
+              </div>
+            </div>
+          )}
+
+          {adaptiveSessionActive && !isLoading && (
+            <div className="max-w-3xl mx-auto">
+              <div className="border-b border-slate-100 pb-6 mb-6">
+                <p className="text-xs font-mono text-violet-700 mb-2">Your question</p>
+                <p className="text-zinc-950 font-medium leading-relaxed whitespace-pre-wrap mb-6">
+                  {adaptiveInitialPrompt}
+                </p>
+                {adaptiveWorldState ? (
+                  <>
+                    <p className="text-xs font-mono text-violet-700 mb-2">Scenario</p>
+                    <p className="text-zinc-900 leading-relaxed mb-4">
+                      {adaptiveWorldState.scenarioTitle}
+                    </p>
+                    <p className="text-xs font-mono text-violet-700 mb-2">
+                      Step {adaptiveWorldState.stepIndex} of {adaptiveWorldState.stepTotal}
+                    </p>
+                    <p className="text-zinc-950 font-medium leading-relaxed whitespace-pre-wrap">
+                      {adaptiveWorldState.currentChallenge}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-zinc-600">Starting scenario...</p>
+                )}
+              </div>
+              {questCompleted && (
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <Button size="sm" onClick={handleAskAnother}>
+                    Ask another question
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isLoading || !retryQuestionText}
+                    onClick={handleRetrySameQuestion}
+                  >
+                    Same question, new attempt
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Empty state */}
-          {!currentQuest && !isLoading && (
+          {!currentQuest && !adaptiveSessionActive && !isLoading && (
             <div className="flex min-h-[45vh] flex-col items-center justify-center text-center px-2 sm:px-4 md:h-full md:min-h-0">
               {submitError && (
                 <div
@@ -724,7 +1004,7 @@ export function QuestClassicWorkspace() {
                   <p className="text-sm text-red-800 mt-1 leading-relaxed">{submitError}</p>
                 </div>
               )}
-              <p className="text-sm text-slate-600">Ask a question to begin.</p>
+              <p className="text-sm text-zinc-700">Ask a question to begin.</p>
               <div className="mt-4 max-w-md w-full text-left">
                 {suggestions.map((s) => (
                   <button
@@ -742,18 +1022,18 @@ export function QuestClassicWorkspace() {
           )}
 
           {/* Active quest document or loading state with persistent question */}
-          {(currentQuest || isLoading) && (
+          {(currentQuest || isLoading) && !adaptiveSessionActive && (
             <div className="max-w-3xl mx-auto">
               {/* User prompt - Persistent */}
               <div className="border-b border-slate-100 pb-6 mb-6">
-                <p className="text-xs font-mono text-slate-300 mb-2">Your question</p>
-                <p className="text-slate-900 font-medium leading-relaxed whitespace-pre-wrap">
+                <p className="text-xs font-mono text-violet-700 mb-2">Your question</p>
+                <p className="text-zinc-950 font-medium leading-relaxed whitespace-pre-wrap">
                   {prompt}
                 </p>
               </div>
 
               {isLoading ? (
-                <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
+                <div className="flex min-h-[40vh] items-center justify-center text-sm text-violet-700">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-6 h-6 border-2 border-mentrixa-500 border-t-transparent rounded-full animate-spin" />
                     <p className="animate-pulse">Generating hints…</p>
@@ -778,11 +1058,11 @@ export function QuestClassicWorkspace() {
                         <button
                           type="button"
                           onClick={handleRevealNextHint}
-                          className="text-sm text-slate-400 hover:text-slate-700 underline underline-offset-2"
+                          className="text-sm text-violet-700 hover:text-zinc-800 underline underline-offset-2"
                         >
                           Reveal next hint {totalHints - hintsRevealed} remaining
                         </button>
-                        <span className="text-xs font-mono text-slate-300">
+                        <span className="text-xs font-mono text-violet-700">
                           {hintsRevealed} / {totalHints}
                         </span>
                       </div>
@@ -807,7 +1087,7 @@ export function QuestClassicWorkspace() {
 
                         {/* Variant problems */}
                         <div className="mt-6">
-                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em] mb-3">
+                          <p className={`${mentrixStudent.sectionEyebrowOnLight} mb-3`}>
                             More questions
                           </p>
                           <div className="space-y-2">
@@ -818,7 +1098,7 @@ export function QuestClassicWorkspace() {
                                 onClick={() => handleSuggestionClick(v.prompt)}
                                 className="flex items-baseline text-sm text-mentrixa-600 hover:underline"
                               >
-                                <span className="font-mono text-[11px] text-slate-300 mr-3">
+                                <span className="font-mono text-[11px] text-violet-600 mr-3">
                                   {`0${i + 1}`}
                                 </span>
                                 <span>{v.prompt}</span>
@@ -834,14 +1114,9 @@ export function QuestClassicWorkspace() {
                           )}
                           {questCompleted ? (
                             <div className="flex flex-col gap-3">
-                              <p className="text-sm font-medium text-slate-700">
-                                Quest complete!
-                                {lastXpAwarded != null && lastXpAwarded > 0 && (
-                                  <span className="ml-1.5 text-emerald-600">+{lastXpAwarded} XP</span>
-                                )}
-                              </p>
+                              <p className="text-sm font-medium text-zinc-800">Quest complete!</p>
                               {lastXpAwarded == null && (
-                                <p className="text-xs text-slate-500 leading-relaxed">
+                                <p className="text-xs text-zinc-600 leading-relaxed">
                                   This run is saved in Recents for review only. To answer again for XP, start
                                   a new attempt with the same wording.
                                 </p>
@@ -853,8 +1128,8 @@ export function QuestClassicWorkspace() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  disabled={isLoading || !prompt.trim()}
-                                  onClick={() => void handleSubmit()}
+                                  disabled={isLoading || !retryQuestionText}
+                                  onClick={handleRetrySameQuestion}
                                 >
                                   Same question, new attempt
                                 </Button>
@@ -862,7 +1137,7 @@ export function QuestClassicWorkspace() {
                             </div>
                           ) : (
                             <div className="flex flex-col gap-3">
-                              <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.2em]">
+                              <p className={mentrixStudent.sectionEyebrowOnLight}>
                                 Your answer
                               </p>
                               <Textarea
@@ -928,12 +1203,12 @@ function HintSection({ index, total, text }: { index: number; total: number; tex
       data-hint-index={index}
       className="pb-5 mb-6 border-b border-slate-50"
     >
-      <p className="text-xs font-mono text-slate-300 mb-2">
+      <p className="text-xs font-mono text-violet-700 mb-2">
         Hint {index + 1} of {total}
       </p>
       <p
         data-hint-text
-        className="text-slate-600 text-sm leading-relaxed"
+        className="text-zinc-700 text-sm leading-relaxed"
       >
         {text}
       </p>
@@ -978,7 +1253,7 @@ function ReasoningSection({
         <button
           type="button"
           onClick={onShow}
-          className="text-sm text-slate-400 hover:text-slate-700 underline underline-offset-2"
+          className="text-sm text-violet-700 hover:text-zinc-800 underline underline-offset-2"
         >
           Show reasoning ({mode === "exam" ? "no solution" : "with solution"})
         </button>
@@ -988,8 +1263,8 @@ function ReasoningSection({
 
   return (
     <div className="border-l-2 border-slate-200 pl-5 mb-6">
-      <p className="text-xs font-mono text-slate-300 mb-2">Reasoning</p>
-      <p ref={ref} className="text-slate-500 text-sm leading-relaxed">
+      <p className="text-xs font-mono text-violet-700 mb-2">Reasoning</p>
+      <p ref={ref} className="text-zinc-600 text-sm leading-relaxed">
         {text}
       </p>
     </div>
@@ -1031,7 +1306,7 @@ function SolutionSection({
         <button
           type="button"
           onClick={onShow}
-          className="text-sm text-slate-400 hover:text-slate-700 underline underline-offset-2"
+          className="text-sm text-violet-700 hover:text-zinc-800 underline underline-offset-2"
         >
           Show full solution
         </button>
@@ -1041,8 +1316,8 @@ function SolutionSection({
 
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6">
-      <p className="text-xs font-mono text-slate-300 mb-2">Full solution</p>
-      <p ref={ref} className="text-slate-900 text-sm leading-relaxed font-mono whitespace-pre-wrap">
+      <p className="text-xs font-mono text-violet-700 mb-2">Full solution</p>
+      <p ref={ref} className="text-zinc-950 text-sm leading-relaxed font-mono whitespace-pre-wrap">
         {text}
       </p>
     </div>

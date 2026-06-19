@@ -22,7 +22,6 @@ export type AnalyticsEventName =
   | "quest_completed"
   | "duel_challenged"
   | "division_joined"
-  | "clan_created"
   // Revenue
   | "checkout_started"
   | "checkout_completed"

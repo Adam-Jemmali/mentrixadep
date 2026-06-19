@@ -7,6 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { BackButton } from "@/shared/ui/back-button";
 import { Input } from "@/shared/ui/input";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import { warmKatex } from "@/features/quest/ui/normalize-math-text";
 import { ShareScoreCardButton } from "@/features/quest/ui/share-score-card";
 import {
   createPracticeQuest,
@@ -23,8 +24,14 @@ import type { PracticeDifficulty, PracticePackType } from "@/features/quest/prac
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { DivisionFocusSelect } from "@/features/student-profile/ui/division-focus-select";
 import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
+import { SessionBreakthroughCard } from "@/features/breakthrough-events/session-breakthrough-card";
 import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
+import type { SessionBreakthroughLine } from "@/features/breakthrough-events/post-session-retest";
+import { useBiometricTelemetry } from "@/shared/hooks/useBiometricTelemetry";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
+import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "beginner", label: "Beginner" },
@@ -56,6 +63,7 @@ export function QuestPracticeWorkspace({
   onboardingMode?: boolean;
 }) {
   const router = useRouter();
+  const tier = useUiPerfTier();
   const [phase, setPhase] = useState<Phase>("wizard");
   const [subjectKey, setSubjectKey] = useState(subjectOptions[0]?.key ?? "general");
   const [customSubject, setCustomSubject] = useState("");
@@ -78,6 +86,10 @@ export function QuestPracticeWorkspace({
   } | null>(null);
   const [writtenFeedback, setWrittenFeedback] = useState<string | null>(null);
   const [writtenAwaitingContinue, setWrittenAwaitingContinue] = useState(false);
+  const [correctCelebration, setCorrectCelebration] = useState<{
+    explanation: string;
+    mode: "mcq" | "written";
+  } | null>(null);
   const [doneResult, setDoneResult] = useState<{
     correct: number;
     total: number;
@@ -89,12 +101,42 @@ export function QuestPracticeWorkspace({
   } | null>(null);
   const [breakthroughCelebration, setBreakthroughCelebration] =
     useState<BreakthroughCelebration | null>(null);
+  const [sessionBreakthrough, setSessionBreakthrough] = useState<SessionBreakthroughLine[]>([]);
+  const [activeSubject, setActiveSubject] = useState("");
+
+  const telemetry = useBiometricTelemetry(phase === "run");
+  const telemetryRef = useRef(telemetry);
+  useEffect(() => {
+    telemetryRef.current = telemetry;
+  }, [telemetry]);
+
+  useEffect(() => {
+    if (phase === "run") void warmKatex();
+  }, [phase]);
 
   const timeLeftRef = useRef(timeLimitSec);
   const [timeLeft, setTimeLeft] = useState(timeLimitSec);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onboardingCompleteRef = useRef(false);
   const touchStartX = useRef<number | null>(null);
+
+  const buildFinalizeOptions = useCallback(
+    (timedOut = false) => {
+      const base = timedOut ? { timedOut: true as const } : {};
+      if (!isApCalculusAbSubject(activeSubject)) return base;
+      const snapshot = telemetryRef.current;
+      return {
+        ...base,
+        telemetry: {
+          keystrokeVariance: snapshot.keystrokeVariance,
+          tabFocusLeaks: snapshot.tabFocusLeaks,
+          frictionScore: snapshot.frictionScore,
+          isAnomalyDetected: snapshot.isAnomalyDetected,
+        },
+      };
+    },
+    [activeSubject],
+  );
 
   const completeOnboardingQuest = useCallback(() => {
     if (onboardingCompleteRef.current) return;
@@ -139,10 +181,11 @@ export function QuestPracticeWorkspace({
         if (timeLeftRef.current <= 0) {
           stopTimer();
           void (async () => {
-            const fin = await finalizePracticeQuest(activeQuestId, { timedOut: true });
+            const fin = await finalizePracticeQuest(activeQuestId, buildFinalizeOptions(true));
             if (fin.success) {
               setDoneResult(fin.result);
               if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
+              setSessionBreakthrough(fin.sessionBreakthrough ?? []);
               if (onboardingMode) {
                 completeOnboardingQuest();
               } else {
@@ -153,7 +196,7 @@ export function QuestPracticeWorkspace({
         }
       }, 1000);
     },
-    [completeOnboardingQuest, onboardingMode, stopTimer],
+    [buildFinalizeOptions, completeOnboardingQuest, onboardingMode, stopTimer],
   );
 
   const resumeQuestRun = useCallback(
@@ -184,6 +227,7 @@ export function QuestPracticeWorkspace({
       return;
     }
     setBusy(true);
+    setActiveSubject(subj);
     const res = await createPracticeQuest({
       subject: subj,
       difficulty: onboardingMode ? "intermediate" : difficulty,
@@ -221,14 +265,18 @@ export function QuestPracticeWorkspace({
 
   const finishRun = async (id: string) => {
     stopTimer();
-    const fin = await finalizePracticeQuest(id);
-    if (fin.success) {
+    const fin = await finalizePracticeQuest(id, buildFinalizeOptions());
+      if (fin.success) {
       setDoneResult(fin.result);
       if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
-      if ((fin.result.xpAwarded ?? 0) > 0) {
+      setSessionBreakthrough(fin.sessionBreakthrough ?? []);
+      const xpTotal = (fin.result.xpAwarded ?? 0) + (fin.result.perfectBonus ?? 0);
+      if (xpTotal > 0) {
         emitXpAward({
-          amount: fin.result.xpAwarded,
+          amount: xpTotal,
           totalXp: fin.result.totalXp ?? 0,
+          trigger: "quest",
+          message: fin.result.perfect ? "Perfect score bonus!" : undefined,
         });
       }
       if (onboardingMode) {
@@ -252,6 +300,7 @@ export function QuestPracticeWorkspace({
       return;
     }
     setBreakthroughCelebration(null);
+    setSessionBreakthrough([]);
     setDoneResult(null);
     setQuestId(res.questId);
     await resumeQuestRun(res.questId);
@@ -273,6 +322,9 @@ export function QuestPracticeWorkspace({
       correctIndex: r.correctIndex,
       canContinue: !r.finished,
     });
+    if (r.correct && !r.finished) {
+      setCorrectCelebration({ explanation: r.explanation, mode: "mcq" });
+    }
     if (r.finished && questId) {
       await finishRun(questId);
     }
@@ -290,6 +342,12 @@ export function QuestPracticeWorkspace({
     setWrittenFeedback(r.feedback + (r.explanation ? `\n\n${r.explanation}` : ""));
     if (r.finished && questId) {
       await finishRun(questId);
+    } else if (r.correct) {
+      setCorrectCelebration({
+        explanation: r.explanation || r.feedback,
+        mode: "written",
+      });
+      setWrittenAwaitingContinue(true);
     } else {
       setWrittenAwaitingContinue(true);
     }
@@ -297,6 +355,7 @@ export function QuestPracticeWorkspace({
 
   const writtenContinue = async () => {
     if (!questId) return;
+    setCorrectCelebration(null);
     setWrittenAwaitingContinue(false);
     const next = qIndex + 1;
     setQIndex(next);
@@ -305,6 +364,7 @@ export function QuestPracticeWorkspace({
 
   const mcqNext = async () => {
     if (!questId) return;
+    setCorrectCelebration(null);
     setMcqResult(null);
     setMcqPicked(null);
     const next = qIndex + 1;
@@ -316,6 +376,7 @@ export function QuestPracticeWorkspace({
     if (!questId || busy || qIndex <= 0) return;
     setMcqResult(null);
     setMcqPicked(null);
+    setCorrectCelebration(null);
     setWrittenFeedback(null);
     setWrittenAwaitingContinue(false);
     setWritten("");
@@ -464,9 +525,8 @@ export function QuestPracticeWorkspace({
             {doneResult.correct}/{doneResult.total}
           </p>
           <p className="mt-2 text-sm text-slate-600">
-            {doneResult.perfect ? "Perfect score bonus XP." : "Nice work keep practicing."}
+            {doneResult.perfect ? "Perfect score — bonus XP included." : "Nice work keep practicing."}
           </p>
-          <p className="mt-4 text-lg text-emerald-700 font-medium">+{xpTotal} XP</p>
           {doneResult.mistakeReviews && doneResult.mistakeReviews.length > 0 && (
             <div className="mt-8 text-left border border-slate-200 rounded-lg p-4 bg-white">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
@@ -482,6 +542,9 @@ export function QuestPracticeWorkspace({
               </ul>
             </div>
           )}
+          {sessionBreakthrough.length > 0 ? (
+            <SessionBreakthroughCard lines={sessionBreakthrough} />
+          ) : null}
           <div className="mt-8 flex flex-col items-center gap-3">
             <ShareScoreCardButton
               title="Quest score"
@@ -495,6 +558,7 @@ export function QuestPracticeWorkspace({
                 setQuestId(null);
                 setDoneResult(null);
                 setBreakthroughCelebration(null);
+                setSessionBreakthrough([]);
                 setErr(null);
               }}
             >
@@ -517,7 +581,7 @@ export function QuestPracticeWorkspace({
     const progress = ((qIndex + 1) / question.total) * 100;
     return (
       <div
-        className="max-w-3xl mx-auto py-6 px-4 touch-pan-y"
+        className={`${mentrixStudent.card} mx-auto max-w-3xl touch-pan-y px-4 py-6 sm:p-8`}
         onTouchStart={(e) => {
           touchStartX.current = e.targetTouches[0]?.clientX ?? null;
         }}
@@ -533,18 +597,18 @@ export function QuestPracticeWorkspace({
         }}
       >
         <div className="flex items-center justify-between gap-4 mb-4">
-          <p className="text-xs font-mono text-slate-500">
+          <p className={`text-xs font-mono ${mentrixStudent.textMutedOnLight}`}>
             Q{qIndex + 1}/{question.total}
           </p>
           <p
             className={`text-sm font-mono font-semibold ${
-              timeLeft < 120 ? "text-red-600" : "text-slate-700"
+              timeLeft < 120 ? "text-red-600" : mentrixStudent.textOnLight
             }`}
           >
             {formatTime(timeLeft)}
           </p>
         </div>
-        <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-8">
+        <div className="h-2 rounded-full bg-violet-100 overflow-hidden mb-8">
           <motion.div
             className="h-full bg-indigo-600"
             initial={{ width: 0 }}
@@ -565,7 +629,7 @@ export function QuestPracticeWorkspace({
             ) : question.kind === "problem_solving" ? (
               <PromptWithMath text={question.prompt} />
             ) : (
-              <p className="text-slate-900 whitespace-pre-wrap text-sm leading-relaxed">
+              <p className={`${mentrixStudent.textOnLight} whitespace-pre-wrap text-sm leading-relaxed`}>
                 {question.prompt}
               </p>
             )}
@@ -574,7 +638,7 @@ export function QuestPracticeWorkspace({
               <div className="grid gap-2 sm:grid-cols-2">
                 {question.options.map((opt, i) => {
                   let cls =
-                    "border border-slate-200 rounded-xl p-4 text-left text-sm transition-all hover:border-slate-300";
+                    "border border-violet-200 bg-white rounded-xl p-4 text-left text-sm transition-all hover:border-indigo-300";
                   if (mcqResult) {
                     if (i === mcqResult.correctIndex) cls += " border-emerald-500 bg-emerald-50";
                     else if (i === mcqPicked && !mcqResult.correct)
@@ -587,7 +651,7 @@ export function QuestPracticeWorkspace({
                       disabled={!!mcqResult || busy}
                       onClick={() => void onMcqSelect(i)}
                       whileTap={{ scale: 0.98 }}
-                      className={cls}
+                      className={`${cls} ${mentrixStudent.textOnLight}`}
                     >
                       <PromptWithMath text={opt} />
                     </motion.button>
@@ -599,38 +663,42 @@ export function QuestPracticeWorkspace({
             {question.kind !== "mcq" && (
               <div className="space-y-3">
                 <textarea
-                  className="w-full min-h-[120px] rounded-lg border border-slate-200 p-3 text-sm"
+                  className={`w-full min-h-[120px] rounded-lg border border-violet-200 bg-white p-3 text-sm ${mentrixStudent.textOnLight}`}
                   placeholder="Your answer…"
                   value={written}
                   onChange={(e) => setWritten(e.target.value)}
                   disabled={busy || writtenAwaitingContinue}
                 />
-                {writtenFeedback && (
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{writtenFeedback}</p>
+                {writtenFeedback && !correctCelebration && (
+                  <p className={`text-sm whitespace-pre-wrap ${mentrixStudent.textMutedOnLight}`}>
+                    {writtenFeedback}
+                  </p>
                 )}
-                {writtenAwaitingContinue ? (
+                {writtenAwaitingContinue && !correctCelebration ? (
                   <Button type="button" onClick={() => void writtenContinue()}>
                     Next question
                   </Button>
-                ) : (
+                ) : !writtenAwaitingContinue ? (
                   <Button
                     disabled={busy || !written.trim()}
                     onClick={() => void onWrittenSubmit()}
                   >
                     Submit answer
                   </Button>
-                )}
+                ) : null}
               </div>
             )}
 
-            {question.kind === "mcq" && mcqResult && (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                <p className="font-medium text-slate-900 mb-1">
-                  {mcqResult.correct ? "Correct" : "Not quite"}
-                </p>
-                <p>{mcqResult.explanation}</p>
+            {question.kind === "mcq" && mcqResult && !mcqResult.correct && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm mx-surface-light">
+                <p className={`font-semibold mb-1 ${mentrixStudent.textOnLight}`}>Not quite</p>
+                <p className={mentrixStudent.textMutedOnLight}>{mcqResult.explanation}</p>
                 {mcqResult.canContinue && !busy && (
-                  <Button className="mt-4" variant="outline" onClick={() => void mcqNext()}>
+                  <Button
+                    className="mt-4 border-indigo-300 bg-white text-indigo-950 hover:bg-indigo-50"
+                    variant="outline"
+                    onClick={() => void mcqNext()}
+                  >
                     Next question
                   </Button>
                 )}
@@ -638,6 +706,16 @@ export function QuestPracticeWorkspace({
             )}
           </motion.div>
         </AnimatePresence>
+
+        <PracticeCorrectCelebration
+          open={correctCelebration != null}
+          explanation={correctCelebration?.explanation ?? ""}
+          lite={tier === "lite"}
+          onNext={() => {
+            if (correctCelebration?.mode === "mcq") void mcqNext();
+            else void writtenContinue();
+          }}
+        />
 
         {err && <p className="mt-4 text-sm text-red-600">{err}</p>}
       </div>

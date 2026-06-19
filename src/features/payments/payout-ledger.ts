@@ -3,6 +3,7 @@
 import Stripe from "stripe";
 import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { checkGuaranteeForSession } from "@/features/payments/accuracy-guarantee";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { validateUUID } from "@/shared/core/security";
@@ -522,7 +523,7 @@ export async function processQueuedPayouts(): Promise<{ processed: number; faile
 
   const { data: readyRows } = await admin
     .from("tutor_payout_ledger")
-    .select("id")
+    .select("id, session_id")
     .in("status", ["pending", "held"])
     .lte("hold_until", new Date().toISOString())
     .limit(50);
@@ -531,6 +532,25 @@ export async function processQueuedPayouts(): Promise<{ processed: number; faile
   let failed = 0;
 
   for (const row of readyRows ?? []) {
+    if (row.session_id) {
+      await checkGuaranteeForSession(row.session_id);
+
+      const { data: session } = await admin
+        .from("sessions")
+        .select("stripe_refund_id")
+        .eq("id", row.session_id)
+        .maybeSingle();
+
+      if (session?.stripe_refund_id) {
+        await admin
+          .from("tutor_payout_ledger")
+          .update({ status: "refunded" })
+          .eq("id", row.id)
+          .in("status", ["pending", "held"]);
+        continue;
+      }
+    }
+
     try {
       await transferSessionPayout(row.id);
       processed++;

@@ -374,7 +374,7 @@ export interface SkillDuel {
   winner: "student" | "opponent" | "tie" | null;
   reward_amount_cents: number;
   /** How the duel was started */
-  match_source: "queue" | "clan" | "direct" | "ai_queue" | null;
+  match_source: "queue" | "direct" | "ai_queue" | null;
   /** Simulated opponent (no human peer row) */
   is_ai_opponent: boolean;
   created_at: string;
@@ -386,31 +386,6 @@ export interface SkillDuel {
   student_ready_at: string | null;
   /** Set when opponent accepts, or when the sparring bot is ready. */
   opponent_ready_at: string | null;
-}
-
-export interface Clan {
-  id: string;
-  name: string;
-  tag: string;
-  invite_code: string;
-  leader_id: string;
-  description?: string | null;
-  focus_division_key?: string | null;
-  join_mode?: "open" | "approval";
-  is_public?: boolean;
-  avatar_kind?: "preset" | "custom";
-  avatar_preset_key?: string | null;
-  avatar_url?: string | null;
-  xp_total?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ClanMember {
-  clan_id: string;
-  user_id: string;
-  role: "leader" | "member";
-  joined_at: string;
 }
 
 export interface DuelQueueRow {
@@ -559,16 +534,6 @@ export interface FeedbackSubmissionRow {
   message: string;
   page_path: string | null;
   user_agent: string | null;
-  created_at: string;
-}
-
-export interface GuideWaitlistRequestRow {
-  id: string;
-  user_id: string;
-  email: string;
-  course_name: string | null;
-  page_path: string | null;
-  notes: string | null;
   created_at: string;
 }
 
@@ -824,20 +789,6 @@ export interface Database {
         };
         Update: Partial<SkillDuel>;
       };
-      clans: {
-        Row: Clan;
-        Insert: Omit<Clan, "id" | "created_at" | "updated_at"> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Clan>;
-      };
-      clan_members: {
-        Row: ClanMember;
-        Insert: ClanMember;
-        Update: Partial<ClanMember>;
-      };
       duel_queue: {
         Row: DuelQueueRow;
         Insert: DuelQueueRow;
@@ -954,14 +905,6 @@ export interface Database {
         };
         Update: Partial<FeedbackSubmissionRow>;
       };
-      guide_waitlist_requests: {
-        Row: GuideWaitlistRequestRow;
-        Insert: Omit<GuideWaitlistRequestRow, "id" | "created_at"> & {
-          id?: string;
-          created_at?: string;
-        };
-        Update: Partial<GuideWaitlistRequestRow>;
-      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -1011,35 +954,5 @@ export interface InstitutionMember {
   user_id: string;
   role: "student" | "admin";
   added_at: string;
-}
-
-// ─── Resolve feature ───────────────────────────────────────────────────────────
-
-export type ResolveDifficulty =
-  | "no_idea"
-  | "concept_but_stuck"
-  | "minor_confusion";
-
-export interface ResolveProblem {
-  id: string;
-  user_id: string;
-  subject: string;
-  problem_text: string;
-  image_url: string | null;
-  difficulty: ResolveDifficulty;
-  ai_response: Record<string, unknown> | null;
-  was_helpful: boolean | null;
-  tutor_escalated: boolean;
-  created_at: string;
-}
-
-export interface ResolveStudyNote {
-  id: string;
-  user_id: string;
-  problem_id: string;
-  subject: string;
-  note_title: string;
-  note_body: string;
-  created_at: string;
 }
 

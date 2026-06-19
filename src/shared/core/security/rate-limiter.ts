@@ -9,6 +9,7 @@ export const API_ROUTE_LIMITS = {
   "guest.practice": { maxRequests: 3, windowMs: 60 * 60 * 1000, scope: "ip" as const },
   "ai.quest": { maxRequests: 20, windowMs: 60 * 60 * 1000, scope: "user" as const },
   "ai.duel": { maxRequests: 20, windowMs: 60 * 60 * 1000, scope: "user" as const },
+  "quest.adaptive": { maxRequests: 20, windowMs: 60 * 60 * 1000, scope: "user" as const },
 } as const;
 
 export type ApiRouteLimitKey = keyof typeof API_ROUTE_LIMITS;
@@ -54,6 +55,8 @@ export async function enforceApiRouteRateLimit(
   opts: { ip?: string; userId?: string },
 ): Promise<NextResponse | null> {
   const limit = API_ROUTE_LIMITS[route];
+  if (!limit) return null;
+
   const identifier =
     limit.scope === "user"
       ? opts.userId

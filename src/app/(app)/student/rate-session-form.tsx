@@ -6,7 +6,6 @@ import { emitXpAward } from "@/features/xp/xp-events";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
-import { fireRatingConfetti } from "@/features/xp/confetti-burst";
 
 interface RateSessionFormProps {
   sessionId: string;
@@ -60,10 +59,10 @@ export function RateSessionForm({
         setError(friendlyRatingError(result.error));
         return;
       }
-      void fireRatingConfetti();
-      // Emit XP award event for floating animation and navbar pulse
       emitXpAward({
         amount: 50, // XP.SESSION_RATE = 50
+        trigger: "session",
+        message: "Thanks for your feedback!",
       });
       setOptimisticDone(true);
       await new Promise((r) => setTimeout(r, 450));
@@ -83,7 +82,6 @@ export function RateSessionForm({
     return (
       <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-4 text-center">
         <p className="text-sm font-medium text-slate-900">Thanks for your feedback.</p>
-        <p className="text-xs text-slate-600">+50 XP added to your progress.</p>
       </div>
     );
   }

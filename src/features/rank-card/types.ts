@@ -24,6 +24,7 @@ export const rankCardSubjectSchema = z.object({
   breakthroughs: z.array(rankCardBreakthroughSchema),
   lastActivityAt: z.string().nullable(),
   questCount: z.number().int().min(0),
+  verifiedFirstAttemptSummary: z.string().nullable().optional(),
 });
 
 export const rankCardDataSchema = z.object({

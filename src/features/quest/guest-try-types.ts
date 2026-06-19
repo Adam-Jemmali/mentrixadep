@@ -21,6 +21,11 @@ export type GuestTryQuestion = {
   referenceAnswer?: string;
   /** drag_rank — items in the correct order (client shuffles for display). */
   rankItems?: string[];
+  /** AP Calculus AB item bank metadata for try results breakdown. */
+  skillNodeId?: string;
+  unitNumber?: number;
+  unitName?: string;
+  nodeName?: string;
 };
 
 /** Normalize common math typings so 3x^2, 3*x**2, and 3x² all align for grading. */
@@ -96,7 +101,7 @@ const GUEST_TRY_KIND_UI: Record<GuestTryQuestionKind, { badge: string; hint: str
   mcq: { badge: "Deep cut MCQ", hint: "Wrong answers are meant to look tempting." },
   true_false: { badge: "True / False", hint: "Read every qualifier in the statement." },
   short_answer: { badge: "Sharp recall", hint: "Short phrase — synonyms usually count." },
-  image_mcq: { badge: "Visual pick", hint: "Each picture is different — match the caption." },
+  image_mcq: { badge: "Visual pick", hint: "Choose the image that best matches the question." },
   drag_rank: { badge: "Drag to rank", hint: "Put the steps or levels in the right order." },
 };
 

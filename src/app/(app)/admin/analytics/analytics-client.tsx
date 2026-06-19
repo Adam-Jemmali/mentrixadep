@@ -153,7 +153,6 @@ const EVENT_CATEGORY: Record<string, string> = {
   quest_completed: "Engagement",
   duel_challenged: "Engagement",
   division_joined: "Engagement",
-  clan_created: "Engagement",
   checkout_started: "Revenue",
   checkout_completed: "Revenue",
   checkout_abandoned: "Revenue",

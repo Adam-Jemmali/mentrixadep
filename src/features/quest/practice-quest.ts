@@ -3,6 +3,11 @@
 import { recordDivisionWarQuestContribution } from "@/features/division-wars/contributions";
 import { detectBreakthroughsAfterQuest } from "@/features/breakthrough-events/detect";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
+import {
+  getSessionBreakthroughLines,
+  recordPostSessionTargetResults,
+  type SessionBreakthroughLine,
+} from "@/features/breakthrough-events/post-session-retest";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
@@ -13,6 +18,13 @@ import {
   generateMistakeReview,
 } from "@/shared/integrations/ai";
 import { buildPracticeFallbackQuestions } from "@/features/quest/practice-fallback-questions";
+import { shufflePracticePackMcqOptions } from "@/features/quest/practice-mcq-shuffle";
+import {
+  AP_CALC_AB_SUBJECT,
+  AP_CALC_AB_UNAVAILABLE_MESSAGE,
+  isApCalculusAbSubject,
+} from "@/features/quest/ap-calc-ab-subject";
+import { selectItemBankQuestions } from "@/features/quest/item-bank-selector";
 import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { applyXpAward } from "@/features/xp/xp-awards";
 
@@ -20,6 +32,10 @@ import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
 import { XP } from "@/features/xp/xp-constants";
 import { sanitizeString } from "@/shared/core/security";
 import { updateKnowledgeGraph } from "@/features/learning-path/knowledge-graph";
+import { scheduleApCalcReviews } from "@/features/learning-path/schedule-ap-calc-reviews";
+import { recordVerifiedFirstAttemptsForQuest } from "@/features/quest/record-verified-first-attempts";
+import { recordQuestTelemetryLog } from "@/features/quest/record-telemetry-log";
+import { z } from "zod";
 import { trackEvent } from "@/shared/integrations/analytics";
 import type {
   PracticeDifficulty,
@@ -34,6 +50,18 @@ import type {
 
 const PRACTICE_PACKS_DAILY = 10;
 const DEFAULT_TIME_SEC = 15 * 60;
+
+const questTelemetrySchema = z.object({
+  keystrokeVariance: z.number().min(0),
+  tabFocusLeaks: z.number().int().min(0),
+  frictionScore: z.number().min(0.1).max(1),
+  isAnomalyDetected: z.boolean(),
+});
+
+const finalizePracticeOptionsSchema = z.object({
+  timedOut: z.boolean().optional(),
+  telemetry: questTelemetrySchema.optional(),
+});
 
 function isPracticeHardLimitMessage(input: unknown): boolean {
   const msg =
@@ -154,45 +182,62 @@ export async function createPracticeQuest(
     const totalXp = xpRow?.total_xp ?? 0;
     const levelInfo = getAccountLevelFromTotalXp(totalXp);
 
-    const gen = await generatePracticeQuestPack(
-      {
-        subject,
-        difficulty: input.difficulty,
-        packType: input.packType,
-        accountLevelTitle: levelInfo.title,
-        questionCount: qc,
-      },
-      user.id,
-    );
+    let questions: PracticeQuestion[];
 
-    const questions =
-      "error" in gen && gen.error
-        ? isPracticeHardLimitMessage(gen.message)
-          ? null
-          : buildPracticeFallbackQuestions(subject, input.packType, qc)
-        : (gen as { questions: PracticeQuestion[] }).questions;
+    if (isApCalculusAbSubject(subject)) {
+      const bankQuestions = await selectItemBankQuestions(user.id, subject, qc);
+      if (bankQuestions.length === 0) {
+        return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
+      }
+      questions = bankQuestions;
+    } else {
+      const gen = await generatePracticeQuestPack(
+        {
+          subject,
+          difficulty: input.difficulty,
+          packType: input.packType,
+          accountLevelTitle: levelInfo.title,
+          questionCount: qc,
+        },
+        user.id,
+      );
 
-    if (!questions || !questions.length) {
-      return {
-        success: false,
-        error:
-          "error" in gen && gen.error ? gen.message : "Could not generate practice pack.",
-      };
+      const generated =
+        "error" in gen && gen.error
+          ? isPracticeHardLimitMessage(gen.message)
+            ? null
+            : buildPracticeFallbackQuestions(subject, input.packType, qc)
+          : (gen as { questions: PracticeQuestion[] }).questions;
+
+      if (!generated || !generated.length) {
+        return {
+          success: false,
+          error:
+            "error" in gen && gen.error ? gen.message : "Could not generate practice pack.",
+        };
+      }
+      questions = generated;
     }
+
+    questions = shufflePracticePackMcqOptions(questions);
+
     const meta: PracticePackMetadata = {
       questKind: "practice_pack",
-      subject,
+      subject: isApCalculusAbSubject(subject) ? AP_CALC_AB_SUBJECT : subject,
       difficulty: input.difficulty,
-      packType: input.packType,
+      packType: isApCalculusAbSubject(subject) ? "mcq" : input.packType,
       accountLevelTitle: levelInfo.title,
       questionCount: questions.length,
       timeLimitSec,
-      course: subject,
+      course: isApCalculusAbSubject(subject) ? AP_CALC_AB_SUBJECT : subject,
       questions,
+      mcqOptionsShuffled: true,
     };
 
     const supabase = await createClient();
-    const title = `Practice: ${subject} — ${input.difficulty} (${input.packType})`;
+    const title = isApCalculusAbSubject(subject)
+      ? `Practice: ${AP_CALC_AB_SUBJECT} — ${input.difficulty} (mcq)`
+      : `Practice: ${subject} — ${input.difficulty} (${input.packType})`;
     const { data: quest, error: insErr } = await supabase
       .from("quests")
       .insert({
@@ -324,12 +369,19 @@ export async function startPracticeSession(questId: string): Promise<{ success: 
     if (!loaded.ok) return { success: false, error: loaded.error };
     await patchPackMetadata(questId, (m) => {
       if (m.session?.startedAt) return m;
+      const base = m.mcqOptionsShuffled
+        ? m
+        : {
+            ...m,
+            questions: shufflePracticePackMcqOptions(m.questions),
+            mcqOptionsShuffled: true,
+          };
       const session: PracticeSessionState = {
         startedAt: new Date().toISOString(),
         currentIndex: 0,
         answers: [],
       };
-      return { ...m, session };
+      return { ...base, session };
     });
     return { success: true };
   } catch (e) {
@@ -457,18 +509,21 @@ export async function submitPracticeWritten(
 
 export async function finalizePracticeQuest(
   questId: string,
-  options?: { timedOut?: boolean },
+  options?: { timedOut?: boolean; telemetry?: z.infer<typeof questTelemetrySchema> },
 ): Promise<
   | {
       success: true;
       result: PracticePackResult & { totalXp?: number; streakDays?: number };
       breakthrough?: BreakthroughCelebration | null;
+      sessionBreakthrough?: SessionBreakthroughLine[];
     }
   | { success: false; error: string }
 > {
   try {
     const user = await requireRole(["student", "admin"]);
     const admin = createAdminClient();
+    const parsedOptions = finalizePracticeOptionsSchema.safeParse(options ?? {});
+    const finalizeOptions = parsedOptions.success ? parsedOptions.data : {};
     const loaded = await loadPackForUser(questId, user.id);
     if (!loaded.ok) return { success: false, error: loaded.error };
 
@@ -496,7 +551,7 @@ export async function finalizePracticeQuest(
     let { meta } = loaded;
     const qs = meta.questions;
 
-    if (options?.timedOut && meta.session) {
+    if (finalizeOptions.timedOut && meta.session) {
       const have = new Set(meta.session.answers.map((a) => a.index));
       const extra: PracticeSessionAnswer[] = [];
       for (let i = 0; i < qs.length; i++) {
@@ -624,17 +679,64 @@ export async function finalizePracticeQuest(
     try {
       const kgUpdates = qs.map((q, i) => {
         const answer = byIndex.get(i);
-        const qMeta = q as typeof q & { subtopicTag?: string; topicTag?: string };
+        const qMeta = q as typeof q & {
+          subtopicTag?: string;
+          topicTag?: string;
+          skillNodeId?: string;
+        };
         return {
           subject: sanitizeString(meta.subject || meta.course || "General").slice(0, 80),
           topic: sanitizeString(qMeta.topicTag || meta.course || "General").slice(0, 80),
           subtopic: sanitizeString(qMeta.subtopicTag || "General").slice(0, 80),
           correct: answer?.correct ?? false,
+          skillNodeId: qMeta.skillNodeId,
         };
       });
       await updateKnowledgeGraph(user.id, questId, kgUpdates);
+      if (isApCalculusAbSubject(meta.subject || meta.course)) {
+        await scheduleApCalcReviews(user.id, kgUpdates);
+      }
     } catch {
       // Non-critical — don't fail finalization if KG update errors
+    }
+
+    try {
+      if (isApCalculusAbSubject(meta.subject || meta.course)) {
+        const resultByIndex = qs.map((_, i) => byIndex.get(i)?.correct ?? false);
+        const verifiedQuestions = qs.map((q) => {
+          const qMeta = q as typeof q & { skillNodeId?: string };
+          return { id: q.id, skillNodeId: qMeta.skillNodeId };
+        });
+        await recordVerifiedFirstAttemptsForQuest(
+          user.id,
+          questId,
+          meta.subject || meta.course || AP_CALC_AB_SUBJECT,
+          verifiedQuestions,
+          resultByIndex
+        );
+
+        const postSessionResults = qs.map((q, i) => {
+          const qMeta = q as typeof q & { skillNodeId?: string };
+          return {
+            skillNodeId: qMeta.skillNodeId,
+            correct: byIndex.get(i)?.correct ?? false,
+          };
+        });
+        await recordPostSessionTargetResults(user.id, postSessionResults);
+      }
+    } catch {
+      // Non-critical — verified first attempt recording must not block completion
+    }
+
+    try {
+      if (
+        isApCalculusAbSubject(meta.subject || meta.course) &&
+        finalizeOptions.telemetry
+      ) {
+        await recordQuestTelemetryLog(user.id, questId, finalizeOptions.telemetry);
+      }
+    } catch {
+      /* non-critical — telemetry is a soft Guide signal only */
     }
 
     revalidatePath("/student/quest");
@@ -671,6 +773,7 @@ export async function finalizePracticeQuest(
     }
 
     let breakthrough: BreakthroughCelebration | null = null;
+    let sessionBreakthrough: SessionBreakthroughLine[] = [];
     try {
       breakthrough = await detectBreakthroughsAfterQuest({
         studentId: user.id,
@@ -678,6 +781,14 @@ export async function finalizePracticeQuest(
         subject: meta.subject || meta.course || "General",
         triggeredBy: "quest",
       });
+    } catch {
+      /* non-critical */
+    }
+
+    try {
+      if (isApCalculusAbSubject(meta.subject || meta.course)) {
+        sessionBreakthrough = await getSessionBreakthroughLines(user.id);
+      }
     } catch {
       /* non-critical */
     }
@@ -690,6 +801,7 @@ export async function finalizePracticeQuest(
         streakDays: xpFinal?.streak_days,
       },
       breakthrough,
+      sessionBreakthrough: sessionBreakthrough.length > 0 ? sessionBreakthrough : undefined,
     };
   } catch (e) {
     return {

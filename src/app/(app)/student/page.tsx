@@ -37,7 +37,6 @@ import {
   getLocalHour,
   greetingForHour,
   isStreakAtRisk18h,
-  rankRecommendedGuides,
 } from "@/features/student-profile/student-dashboard-helpers";
 import { getUpcomingSessionBriefs } from "@/features/pre-session-brief/brief";
 import { Button } from "@/shared/ui/button";
@@ -142,12 +141,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         : "Guide"),
     tutor_avatar_url: s.tutor?.avatar_url ?? null,
   }));
-
-  const recommendedGuides = rankRecommendedGuides(
-    studentCourses.map((c) => c.course_name),
-    tutorExpertise,
-    availability,
-  );
 
   const weekRange = getWeekRangeUTC(now);
 
@@ -322,12 +315,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           <DeferredTopRivalCard rivalData={rivalData} />
 
           <DeferredStudentCommandCenterClient
+            userId={user.id}
             studentCourses={studentCourses}
             upcomingSessions={upcomingForClient}
             availability={availability}
             availableCourses={courses}
             tutorExpertise={tutorExpertise}
-            recommendedGuides={recommendedGuides}
             displayTimeZone={timeZone}
             guideImpactByTutorId={guideImpactByTutorId}
             questHistorySubjects={questHistorySubjects}

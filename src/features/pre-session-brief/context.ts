@@ -11,6 +11,10 @@ import {
   isGuideContextCacheFresh,
   subjectsLooselyMatch,
 } from "@/features/pre-session-brief/context-pure";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
+import { getAverageSessionFocusSignal } from "@/features/quest/record-telemetry-log";
+import { loadVerifiedGaps } from "@/features/pre-session-brief/verified-gaps";
 import {
   preSessionContextSchema,
   type PreSessionContext,
@@ -71,6 +75,20 @@ async function weakestConceptsFromTags(
   studentId: string,
   subject: string,
 ): Promise<{ label: string; accuracyPercent: number }[]> {
+  if (isApCalculusAbSubject(subject)) {
+    try {
+      const weakest = await getWeakestNodes(studentId, subject, 3);
+      if (weakest.length > 0) {
+        return weakest.map((node) => ({
+          label: `${node.unitName} · ${node.nodeName}`,
+          accuracyPercent: computeAccuracyPercent(node.correctCount, node.attemptsCount),
+        }));
+      }
+    } catch {
+      /* fall through to tag-based path */
+    }
+  }
+
   const since = new Date(Date.now() - MS_30D).toISOString();
   const { data: tags } = await admin
     .from("quest_topic_tags")
@@ -266,6 +284,10 @@ async function buildPerformanceSummary(params: {
     divisionInfo.divisionKey,
   );
 
+  const sessionFocusSignal = isApCalculusAbSubject(params.subject)
+    ? await getAverageSessionFocusSignal(params.studentId, params.subject, 5)
+    : null;
+
   const totalXp = xpRow?.total_xp ?? 0;
   const rank = getAccountLevelFromTotalXp(totalXp);
 
@@ -281,6 +303,7 @@ async function buildPerformanceSummary(params: {
     divisionPosition: divisionInfo.divisionPosition,
     divisionKey: divisionInfo.divisionKey,
     lastSessionTopic: lastTopic,
+    sessionFocusSignal,
   };
 }
 
@@ -364,6 +387,10 @@ async function buildFreshContext(
     : null;
 
   const cachedAt = new Date().toISOString();
+  const verifiedGaps = isApCalculusAbSubject(String(session.course))
+    ? await loadVerifiedGaps(studentId, String(session.course), 3)
+    : null;
+
   const payload: PreSessionContext = {
     sessionId,
     subject: String(session.course),
@@ -379,6 +406,7 @@ async function buildFreshContext(
           message: breakthroughBuilt.message,
         }
       : null,
+    verifiedGaps,
     cachedAt,
   };
 

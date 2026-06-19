@@ -33,8 +33,6 @@ async function deleteUserDataInternal(userId: string): Promise<void> {
   // Best-effort deletion order across user-linked tables.
   // Keep failures isolated so one table does not block full data deletion.
   const tasks: Array<() => Promise<unknown>> = [
-    async () => admin.from("resolve_study_notes").delete().eq("user_id", uid),
-    async () => admin.from("resolve_problems").delete().eq("user_id", uid),
     async () => admin.from("institution_members").delete().eq("user_id", uid),
     async () => admin.from("push_subscriptions").delete().eq("user_id", uid),
     async () => admin.from("user_settings").delete().eq("user_id", uid),
@@ -50,7 +48,6 @@ async function deleteUserDataInternal(userId: string): Promise<void> {
     async () => admin.from("user_quest_progress").delete().eq("user_id", uid),
     async () => admin.from("user_xp").delete().eq("user_id", uid),
     async () => admin.from("xp_award_ledger").delete().eq("user_id", uid),
-    async () => admin.from("clan_members").delete().eq("user_id", uid),
     async () => admin.from("duel_queue").delete().eq("user_id", uid),
     async () =>
       admin

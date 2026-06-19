@@ -7,6 +7,15 @@ import {
   type GuestTryQuestion,
 } from "@/features/quest/guest-try-types";
 import { buildGuestMixedFallbackPack } from "@/features/quest/guest-mixed-fallback";
+import {
+  AP_CALC_AB_UNAVAILABLE_MESSAGE,
+  isApCalculusAbSubject,
+} from "@/features/quest/ap-calc-ab-subject";
+import {
+  GUEST_AP_CALC_TRY_COUNT,
+  selectGuestTryItemBankQuestions,
+} from "@/features/quest/guest-item-bank-selector";
+import { shuffleGuestTryPack } from "@/features/quest/guest-try-shuffle";
 
 function parseGuestCookie(raw: string | null) {
   if (!raw) return { date: null, count: 0 };
@@ -55,26 +64,46 @@ export async function POST(req: Request) {
     }
 
     const subjectTrim = subject.slice(0, 120);
-    const gen = await generateGuestTryQuestPack({
-      subject: subjectTrim,
-      difficulty: "advanced",
-      questionCount: TRY_QUEST_COUNT,
-    });
-
     let questions: GuestTryQuestion[];
-    if (!("error" in gen) && gen.questions.length >= TRY_QUEST_COUNT) {
-      questions = gen.questions.slice(0, TRY_QUEST_COUNT).filter(isPlayableGuestTryQuestion);
+
+    if (isApCalculusAbSubject(subjectTrim)) {
+      const bankQuestions = await selectGuestTryItemBankQuestions();
+      if (bankQuestions.length < GUEST_AP_CALC_TRY_COUNT) {
+        return NextResponse.json(
+          { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE },
+          { status: 503 },
+        );
+      }
+      questions = bankQuestions.filter(isPlayableGuestTryQuestion);
+      if (questions.length < GUEST_AP_CALC_TRY_COUNT) {
+        return NextResponse.json(
+          { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE },
+          { status: 503 },
+        );
+      }
     } else {
-      questions = [];
+      const gen = await generateGuestTryQuestPack({
+        subject: subjectTrim,
+        difficulty: "advanced",
+        questionCount: TRY_QUEST_COUNT,
+      });
+
+      if (!("error" in gen) && gen.questions.length >= TRY_QUEST_COUNT) {
+        questions = gen.questions.slice(0, TRY_QUEST_COUNT).filter(isPlayableGuestTryQuestion);
+      } else {
+        questions = [];
+      }
+      if (questions.length < TRY_QUEST_COUNT) {
+        questions = buildGuestMixedFallbackPack(subjectTrim);
+      }
+      const hydrated = await hydrateGuestTryQuestionImages(subjectTrim, questions);
+      questions = "error" in hydrated ? questions : hydrated.questions;
     }
-    if (questions.length < TRY_QUEST_COUNT) {
-      questions = buildGuestMixedFallbackPack(subjectTrim);
-    }
-    const hydrated = await hydrateGuestTryQuestionImages(subjectTrim, questions);
-    const hydratedQuestions = "error" in hydrated ? questions : hydrated.questions;
+
+    questions = shuffleGuestTryPack(questions);
 
     const next = { date: today, count: ENFORCE_GUEST_DAILY_LIMIT ? count + 1 : 0 };
-    const res = NextResponse.json({ success: true, questions: hydratedQuestions });
+    const res = NextResponse.json({ success: true, questions });
     res.headers.set(
       "Set-Cookie",
       `guest_quests=${encodeURIComponent(JSON.stringify(next))}; Path=/; Max-Age=86400; SameSite=Lax`,

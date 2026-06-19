@@ -18,6 +18,10 @@ import {
   type NextStepRecommendation,
   type AdaptiveContext,
 } from "@/features/learning-path/knowledge-graph-lib";
+import {
+  AP_CALC_AB_SUBJECT,
+  isApCalculusAbSubject,
+} from "@/features/quest/ap-calc-ab-subject";
 
 // ─── DB row mapper ────────────────────────────────────────────────────────────
 
@@ -28,14 +32,87 @@ function rowToNode(row: Record<string, unknown>): KnowledgeNode {
     subject: String(row.subject ?? ""),
     topic: String(row.topic ?? ""),
     subtopic: String(row.subtopic ?? ""),
+    skillNodeId: typeof row.skill_node_id === "string" ? row.skill_node_id : null,
     masteryScore: Number(row.mastery_score ?? 0),
     attempts: Number(row.attempts ?? 0),
     correct: Number(row.correct ?? 0),
     correctStreak: Number(row.correct_streak ?? 0),
+    firstAttemptCorrect:
+      typeof row.first_attempt_correct === "boolean" ? row.first_attempt_correct : null,
     lastSeenAt: typeof row.last_seen_at === "string" ? row.last_seen_at : null,
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
   };
+}
+
+async function upsertApCalcSkillNode(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  questId: string,
+  update: KnowledgeNodeUpdate,
+  now: string
+): Promise<void> {
+  const skillNodeId = update.skillNodeId;
+  if (!skillNodeId) return;
+
+  const { data: skillNode, error: skillNodeError } = await admin
+    .from("skill_nodes")
+    .select("id, subject, unit_name, node_name")
+    .eq("id", skillNodeId)
+    .maybeSingle();
+
+  if (skillNodeError || !skillNode) return;
+
+  const subject = AP_CALC_AB_SUBJECT;
+  const topic = skillNode.unit_name;
+  const subtopic = skillNode.node_name;
+
+  const { data: existing } = await admin
+    .from("student_knowledge_nodes")
+    .select("mastery_score, attempts, correct, correct_streak, first_attempt_correct")
+    .eq("user_id", userId)
+    .eq("skill_node_id", skillNodeId)
+    .maybeSingle();
+
+  const currentScore = (existing?.mastery_score as number | null) ?? 0;
+  const currentStreak = (existing?.correct_streak as number | null) ?? 0;
+  const currentAttempts = (existing?.attempts as number | null) ?? 0;
+  const currentCorrect = (existing?.correct as number | null) ?? 0;
+  const { newScore, newStreak } = computeMasteryDelta(currentScore, update.correct, currentStreak);
+
+  const firstAttemptCorrect = existing
+    ? (existing.first_attempt_correct as boolean | null | undefined) ?? null
+    : update.correct;
+
+  await admin.from("student_knowledge_nodes").upsert(
+    {
+      user_id: userId,
+      subject,
+      topic,
+      subtopic,
+      skill_node_id: skillNodeId,
+      mastery_score: newScore,
+      attempts: currentAttempts + 1,
+      correct: currentCorrect + (update.correct ? 1 : 0),
+      correct_streak: newStreak,
+      first_attempt_correct: firstAttemptCorrect,
+      last_seen_at: now,
+    },
+    { onConflict: "user_id,skill_node_id" }
+  );
+
+  await admin.from("quest_topic_tags").upsert(
+    {
+      quest_id: questId,
+      user_id: userId,
+      subject,
+      topic,
+      subtopic,
+      correct: update.correct,
+      skill_node_id: skillNodeId,
+    },
+    { onConflict: "quest_id,user_id,subject,topic,subtopic" }
+  );
 }
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
@@ -131,6 +208,11 @@ export async function updateKnowledgeGraph(
     const { subject, topic, subtopic, correct } = update;
     if (!subject?.trim() || !topic?.trim() || !subtopic?.trim()) continue;
 
+    if (isApCalculusAbSubject(subject) && update.skillNodeId) {
+      await upsertApCalcSkillNode(admin, userId, questId, update, now);
+      continue;
+    }
+
     // Fetch existing node
     const { data: existing } = await admin
       .from("student_knowledge_nodes")
@@ -172,6 +254,7 @@ export async function updateKnowledgeGraph(
         topic,
         subtopic,
         correct,
+        skill_node_id: update.skillNodeId ?? null,
       },
       { onConflict: "quest_id,user_id,subject,topic,subtopic" }
     );

@@ -6,6 +6,9 @@ import { formatDateInZone, formatTimeRangeInZone } from "@/shared/core/time-form
 import { getPreSessionContext } from "@/features/pre-session-brief/context";
 import { isPreSessionContextWindowOpen } from "@/features/pre-session-brief/context-pure";
 import type { PreSessionContext } from "@/features/pre-session-brief/types";
+import { formatSessionFocusSignal } from "@/features/analytics/utils/biometric-friction";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { formatVerifiedGapLine } from "@/features/pre-session-brief/verified-gaps";
 
 function signed(n: number): string {
   if (n > 0) return `+${n}`;
@@ -143,6 +146,22 @@ export function GuidePreSessionContextBody({ context }: { context: PreSessionCon
           ) : null}
         </ul>
       </div>
+
+      {isApCalculusAbSubject(context.subject) && context.verifiedGaps ? (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">
+            Verified gaps
+          </p>
+          <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
+            {context.verifiedGaps.nodes.map((gap) => (
+              <li key={`${gap.unitName}-${gap.nodeName}`}>{formatVerifiedGapLine(gap)}</li>
+            ))}
+            {context.verifiedGaps.sessionFocusSignal != null ? (
+              <li>{formatSessionFocusSignal(context.verifiedGaps.sessionFocusSignal)}</li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
 
       {context.aiBrief ? (
         <div>

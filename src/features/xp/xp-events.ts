@@ -15,6 +15,24 @@ export interface XpAwardEvent {
   nextObjective?: string;
   /** Optional semantic trigger for UI loop states */
   trigger?: "quest" | "duel" | "streak" | "session" | "generic";
+  /** Optional headline under the XP amount */
+  message?: string;
+}
+
+export function xpRewardMessage(event: Pick<XpAwardEvent, "message" | "trigger">): string {
+  if (event.message) return event.message;
+  switch (event.trigger) {
+    case "quest":
+      return "Quest complete!";
+    case "duel":
+      return "Duel reward unlocked!";
+    case "streak":
+      return "Streak bonus!";
+    case "session":
+      return "Session reward!";
+    default:
+      return "XP earned!";
+  }
 }
 
 type XpAwardListener = (event: XpAwardEvent) => void;
