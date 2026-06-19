@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 
 const WireframeDottedGlobe = dynamic(
   () => import("@/shared/ui/wireframe-dotted-globe").then((m) => m.WireframeDottedGlobe),
@@ -24,7 +25,7 @@ const VISION =
   "You put in the hours. You still do not know if it stuck. Mentrixa tells you the truth against real people before it costs you.";
 
 export function SocialProofStrip() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = usePrefersReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
   const [motionReady, setMotionReady] = useState(false);

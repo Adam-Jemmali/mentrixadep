@@ -8,6 +8,7 @@ import {
 import {
   RankBadge as XpRankBadge,
   type RankBadgeSize,
+  type RankBadgeSurface,
 } from "@/features/xp/components/rank-badge";
 
 type LegacySizeKey = "xs" | "sm" | "md" | "lg" | "xl";
@@ -31,6 +32,7 @@ export function RankBadge({
   locked = false,
   showGlow = false,
   priority: _priority = false,
+  surface = "default",
   className,
 }: {
   rank: AccountRankVisual;
@@ -39,17 +41,19 @@ export function RankBadge({
   locked?: boolean;
   showGlow?: boolean;
   priority?: boolean;
+  surface?: RankBadgeSurface;
   className?: string;
 }) {
   return (
     <XpRankBadge
       rank={{ level: rank.level, title: rank.title }}
       size={LEGACY_SIZE[size]}
+      surface={surface}
       animate={showGlow && active}
       className={cn(
         active && "opacity-100",
-        !active && "opacity-90",
-        locked && "opacity-40 grayscale",
+        !active && !locked && "opacity-95",
+        locked && (surface === "onDark" ? "opacity-70 saturate-[0.65]" : "opacity-40 grayscale"),
         className,
       )}
     />

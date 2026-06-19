@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useReducedMotion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { HeroHeadlineAnimated } from "@/features/marketing/landing/v2/sections/hero-headline-animated";
 
 type Props = {
@@ -21,7 +21,7 @@ function HeroHeadlineStatic({ className }: Props) {
 }
 
 export function HeroHeadline({ className }: Props) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = usePrefersReducedMotion();
   const [animReady, setAnimReady] = useState(false);
 
   useEffect(() => {

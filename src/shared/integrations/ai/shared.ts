@@ -173,10 +173,19 @@ export async function withBackoff<T>(fn: () => Promise<T>): Promise<T> {
 
 export type DailyLimitAction = "quest_gen" | "duel_questions" | "session_package_gen" | "session_package_regen";
 
+/** Guest /try routes use cookie limits — do not consume logged-in daily AI quotas. */
+export function isGuestAiUserId(userId: string): boolean {
+  return userId.startsWith("guest:");
+}
+
 export async function incrementDailyLimit(
   userId: string,
   action: DailyLimitAction
 ): Promise<{ count: number; allowed: boolean }> {
+  if (isGuestAiUserId(userId)) {
+    return { count: 0, allowed: true };
+  }
+
   const limits: Record<DailyLimitAction, number> = {
     quest_gen: 10,
     duel_questions: 20,

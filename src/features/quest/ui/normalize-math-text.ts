@@ -79,7 +79,8 @@ export function normalizeMathText(input: string): string {
 
 export function textContainsMath(input: string): boolean {
   const normalized = normalizeMathText(input);
-  return /\\\(|\\\$|\$\$|\$[^$\n]+\$|\\[a-zA-Z]/.test(normalized);
+  if (/\\\(|\\\$|\$\$|\$[^$\n]+\$|\\[a-zA-Z]/.test(normalized)) return true;
+  return /\blim\s*[\_(]?|\^|[+\-*/]\s*\(|[a-zA-Z]\([a-zA-Z]\)\s*=/.test(input);
 }
 
 let katexWarmPromise: Promise<typeof import("katex")> | null = null;

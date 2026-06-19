@@ -18,6 +18,7 @@ export const adaptiveTurnRequestSchema = z.object({
   priorWorldState: z
     .object({
       scenarioTitle: z.string().min(1).max(400),
+      scenarioPrinciple: z.string().min(1).max(600).optional(),
       stepIndex: z.number().int().min(1).max(5),
       stepTotal: z.number().int().min(1).max(5),
       scenarioHealth: z.number().min(0).max(100),

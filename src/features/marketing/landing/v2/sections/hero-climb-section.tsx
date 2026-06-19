@@ -81,7 +81,7 @@ export function HeroClimbSection() {
               className="mx-auto mt-5 max-w-xl text-pretty text-[15px] leading-relaxed text-slate-300/95 sm:text-base lg:mx-0"
             >
               Mentrixa is a public ranked arena. Compete daily. See what breaks. Fix it with a
-              verified expert. Free to start. $39 when you need a breakthrough.
+              verified expert.$39 when you need a breakthrough.
             </motion.p>
 
           

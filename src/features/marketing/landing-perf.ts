@@ -10,7 +10,6 @@ export function useLowEndMode() {
   const [lowEnd, setLowEnd] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
     const cores = typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : 4;
     const deviceMemory = typeof (navigator as Navigator & { deviceMemory?: number }).deviceMemory === "number"
@@ -18,7 +17,6 @@ export function useLowEndMode() {
       : 8;
     const isSlowNetwork = connection?.effectiveType === "2g" || connection?.effectiveType === "slow-2g";
     const nextLowEnd =
-      media.matches ||
       Boolean(connection?.saveData) ||
       isSlowNetwork ||
       cores <= 4 ||

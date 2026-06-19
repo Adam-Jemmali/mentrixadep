@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
+import { getAccountLevelFromTotalXp, MENTRIXER_MIN_XP } from "@/features/xp/levels";
 import {
   getAccountRankByLevel,
   normalizeRankTitle,
@@ -12,7 +12,7 @@ import {
 } from "@/features/quest/ap-calc-ab-subject";
 
 export const MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE = 5;
-export const MAX_XP_FOR_RANK_SCALE = 6001;
+export const MAX_XP_FOR_RANK_SCALE = MENTRIXER_MIN_XP;
 
 export type VerifiedFirstAttemptRankStats = {
   verifiedCount: number;

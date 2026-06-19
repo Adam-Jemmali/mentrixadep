@@ -6,7 +6,6 @@ import {
   AnimatePresence,
   useInView,
   useMotionValueEvent,
-  useReducedMotion,
   useScroll,
   useTransform,
 } from "framer-motion";
@@ -30,7 +29,6 @@ const RANK_MOTIVATION: Record<AccountRankKey, string> = {
 
 export function RankLadderShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
-  const reducedMotion = useReducedMotion();
   const { cinematic, mounted, reduced } = useLandingMotion();
   const isInView = useInView(sectionRef, { amount: 0.35, once: false });
   const [activeIndex, setActiveIndex] = useState(0);
@@ -46,7 +44,7 @@ export function RankLadderShowcase() {
   const scrollIndex = useTransform(scrollYProgress, [0.2, 0.75], [0, ACCOUNT_RANK_VISUALS.length - 1]);
 
   useMotionValueEvent(scrollIndex, "change", (v) => {
-    if (reducedMotion || !cinematic) return;
+    if (reduced || !cinematic) return;
     const next = Math.round(v);
     if (next >= 0 && next < ACCOUNT_RANK_VISUALS.length) {
       setActiveIndex(next);
@@ -57,12 +55,12 @@ export function RankLadderShowcase() {
   });
 
   useEffect(() => {
-    if (!isInView || reducedMotion || !cinematic || scrollDriving) return;
+    if (!isInView || reduced || !cinematic || scrollDriving) return;
     const id = window.setInterval(() => {
       setActiveIndex((i) => (i + 1) % ACCOUNT_RANK_VISUALS.length);
     }, 3200);
     return () => window.clearInterval(id);
-  }, [isInView, reducedMotion, cinematic, scrollDriving]);
+  }, [isInView, reduced, cinematic, scrollDriving]);
 
   useEffect(() => {
     return () => {
@@ -152,12 +150,13 @@ export function RankLadderShowcase() {
                   rank={active}
                   size="xl"
                   active
+                  surface="onDark"
                   showGlow={active.key === "mentrixer" || active.key === "apex"}
                   priority
                 />
               </motion.div>
-              <RankTitle rank={active} className="text-lg font-bold text-white" />
-              <p className="text-xs font-medium tabular-nums text-slate-400">
+              <RankTitle rank={active} tone="dark" className="text-lg font-bold text-white" />
+              <p className="text-xs font-medium tabular-nums text-slate-300">
                 {active.minXp.toLocaleString()} XP
                 {active.maxXp != null ? ` to ${active.maxXp.toLocaleString()} XP` : "+"}
               </p>
@@ -178,14 +177,14 @@ export function RankLadderShowcase() {
                   whileTap={cinematic ? { scale: 0.97 } : undefined}
                   animate={{
                     scale: isActive ? 1.05 : 1,
-                    opacity: isActive ? 1 : 0.55,
+                    opacity: isActive ? 1 : 0.88,
                   }}
                   transition={{ type: "spring", stiffness: 320, damping: 24 }}
                   className={cn(
                     "group relative flex shrink-0 snap-center cursor-pointer flex-col items-center gap-2 rounded-2xl border p-3",
                     isActive
-                      ? "border-white/25 bg-slate-950/90"
-                      : "border-white/8 bg-slate-950/50 hover:border-white/15",
+                      ? "border-white/35 bg-slate-900/95"
+                      : "border-white/20 bg-slate-900/75 hover:border-white/30 hover:bg-slate-900/90",
                   )}
                   style={
                     isActive
@@ -202,12 +201,15 @@ export function RankLadderShowcase() {
                     rank={rank}
                     size="md"
                     active={isActive}
-                    locked={!isActive && i > activeIndex}
+                    surface="onDark"
                     showGlow={isActive && (rank.key === "mentrixer" || rank.key === "apex")}
                   />
                   <span
-                    className="text-[10px] font-bold uppercase tracking-wide"
-                    style={{ color: isActive ? rank.labelOnDark : "#94A3B8" }}
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-wide",
+                      !isActive && "opacity-85",
+                    )}
+                    style={{ color: rank.labelOnDark }}
                   >
                     {normalizeRankTitle(rank.title)}
                   </span>

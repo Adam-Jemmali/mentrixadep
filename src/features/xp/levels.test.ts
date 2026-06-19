@@ -5,6 +5,7 @@ import {
   getDivisionTierFromXp,
   getLevelFromXp,
   levelUpDetected,
+  MENTRIXER_MIN_XP,
 } from "@/features/xp/levels";
 
 describe("getAccountLevelFromTotalXp", () => {
@@ -15,14 +16,14 @@ describe("getAccountLevelFromTotalXp", () => {
     expect(a.minXp).toBe(0);
   });
 
-  it("maps 100 XP to Wanderer (top of tier)", () => {
-    const a = getAccountLevelFromTotalXp(100);
+  it("maps 200 XP to Wanderer (top of tier)", () => {
+    const a = getAccountLevelFromTotalXp(200);
     expect(a.level).toBe(1);
     expect(a.title).toBe("WANDERER");
   });
 
-  it("maps 101 XP to Seeker (level 2)", () => {
-    const a = getAccountLevelFromTotalXp(101);
+  it("maps 201 XP to Seeker (level 2)", () => {
+    const a = getAccountLevelFromTotalXp(201);
     expect(a.level).toBe(2);
     expect(a.title).toBe("SEEKER");
   });
@@ -30,12 +31,12 @@ describe("getAccountLevelFromTotalXp", () => {
   it("maps boundaries for each account tier", () => {
     const cases: { xp: number; level: number; title: string }[] = [
       { xp: 0, level: 1, title: "WANDERER" },
-      { xp: 101, level: 2, title: "SEEKER" },
-      { xp: 301, level: 3, title: "SCHOLAR" },
-      { xp: 701, level: 4, title: "CONTENDER" },
-      { xp: 1501, level: 5, title: "RIVAL" },
-      { xp: 3001, level: 6, title: "APEX" },
-      { xp: 6001, level: 7, title: "MENTRIXER" },
+      { xp: 201, level: 2, title: "SEEKER" },
+      { xp: 651, level: 3, title: "SCHOLAR" },
+      { xp: 1_801, level: 4, title: "CONTENDER" },
+      { xp: 5_001, level: 5, title: "RIVAL" },
+      { xp: 12_501, level: 6, title: "APEX" },
+      { xp: MENTRIXER_MIN_XP, level: 7, title: "MENTRIXER" },
     ];
     for (const c of cases) {
       const a = getAccountLevelFromTotalXp(c.xp);
@@ -45,9 +46,9 @@ describe("getAccountLevelFromTotalXp", () => {
   });
 
   it("handles exact tier upper bounds (still that tier)", () => {
-    expect(getAccountLevelFromTotalXp(100).level).toBe(1);
-    expect(getAccountLevelFromTotalXp(300).level).toBe(2);
-    expect(getAccountLevelFromTotalXp(700).level).toBe(3);
+    expect(getAccountLevelFromTotalXp(200).level).toBe(1);
+    expect(getAccountLevelFromTotalXp(650).level).toBe(2);
+    expect(getAccountLevelFromTotalXp(1_800).level).toBe(3);
   });
 
   it("clamps negative XP to 0", () => {
@@ -64,23 +65,23 @@ describe("getAccountLevelFromTotalXp", () => {
   });
 
   it("floors fractional XP", () => {
-    const a = getAccountLevelFromTotalXp(100.9);
-    expect(a.xpIntoLevel).toBe(100);
+    const a = getAccountLevelFromTotalXp(200.9);
+    expect(a.xpIntoLevel).toBe(200);
   });
 });
 
 describe("levelUpDetected", () => {
   it("is false when staying in the same level", () => {
     expect(levelUpDetected(0, 50)).toBe(false);
-    expect(levelUpDetected(50, 100)).toBe(false);
+    expect(levelUpDetected(50, 200)).toBe(false);
   });
 
   it("is true when crossing from Wanderer to Seeker", () => {
-    expect(levelUpDetected(100, 101)).toBe(true);
+    expect(levelUpDetected(200, 201)).toBe(true);
   });
 
   it("is false at exact boundary when both totals map to same level", () => {
-    expect(levelUpDetected(100, 100)).toBe(false);
+    expect(levelUpDetected(200, 200)).toBe(false);
   });
 
   it("is false when both are already Mentrixer", () => {
@@ -97,6 +98,10 @@ describe("ACCOUNT_LEVELS shape", () => {
         expect(cur.minXp).toBe(prev.maxXp + 1);
       }
     }
+  });
+
+  it("requires substantially more XP for Mentrixer than the old ladder", () => {
+    expect(MENTRIXER_MIN_XP).toBeGreaterThan(6_001);
   });
 });
 

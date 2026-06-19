@@ -108,6 +108,7 @@ export function AccountRankLadder({
                     size={isCurrent ? "lg" : earned ? "sm" : "xs"}
                     active={isCurrent}
                     locked={locked}
+                    surface={isArena ? "onDark" : "default"}
                     showGlow={isCurrent}
                   />
                   <RankTitle

@@ -36,7 +36,7 @@ const TIERS: TierCard[] = [
     tagline: "$0 forever",
     priceMain: "$0",
     priceSub: "No card. No expiry.",
-    buttonText: "Start free →",
+    buttonText: "Start free ",
     buttonLink: "/auth/signup",
     icon: <Swords className="h-6 w-6 text-indigo-600" aria-hidden />,
     features: [

@@ -12,7 +12,7 @@ const SIDES: DualPathSide[] = [
       "Quest daily. Duel peers. Rank updates in public.",
       "Stuck? Book a Guide who sees your history and drills the right gap.",
     ],
-    cta: "Start free →",
+    cta: "Start free ",
     href: "/auth/signup",
     tone: "blue",
   },

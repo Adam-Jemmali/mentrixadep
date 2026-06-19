@@ -35,7 +35,7 @@
 
 .section-container { max-width: 80rem; margin-left: auto; margin-right: auto; width: 100%; }
 * { box-sizing: border-box; touch-action: pan-y; }
-html { scroll-behavior: auto; }
+html { position: relative; scroll-behavior: auto; }
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;

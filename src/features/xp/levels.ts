@@ -4,16 +4,19 @@
  */
 
 // ─── Account levels (total XP) ─────────────────────────────────────────────
-
+/** Steep ladder — Mentrixer is intentionally rare (~25k+ XP). */
 export const ACCOUNT_LEVELS = [
-  { level: 1, title: "WANDERER", minXp: 0, maxXp: 100 },
-  { level: 2, title: "SEEKER", minXp: 101, maxXp: 300 },
-  { level: 3, title: "SCHOLAR", minXp: 301, maxXp: 700 },
-  { level: 4, title: "CONTENDER", minXp: 701, maxXp: 1500 },
-  { level: 5, title: "RIVAL", minXp: 1501, maxXp: 3000 },
-  { level: 6, title: "APEX", minXp: 3001, maxXp: 6000 },
-  { level: 7, title: "MENTRIXER", minXp: 6001, maxXp: null },
+  { level: 1, title: "WANDERER", minXp: 0, maxXp: 200 },
+  { level: 2, title: "SEEKER", minXp: 201, maxXp: 650 },
+  { level: 3, title: "SCHOLAR", minXp: 651, maxXp: 1_800 },
+  { level: 4, title: "CONTENDER", minXp: 1_801, maxXp: 5_000 },
+  { level: 5, title: "RIVAL", minXp: 5_001, maxXp: 12_500 },
+  { level: 6, title: "APEX", minXp: 12_501, maxXp: 25_000 },
+  { level: 7, title: "MENTRIXER", minXp: 25_001, maxXp: null },
 ] as const;
+
+/** Minimum total XP for top rank — used for percentile scaling and marketing copy. */
+export const MENTRIXER_MIN_XP = ACCOUNT_LEVELS[ACCOUNT_LEVELS.length - 1]!.minXp;
 
 export interface AccountLevelInfo {
   level: number;

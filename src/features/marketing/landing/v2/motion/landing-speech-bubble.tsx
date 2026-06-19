@@ -47,7 +47,7 @@ export function LandingSpeechBubble({
             TONE_STYLES[tone],
           )}
         >
-          <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.22em] text-white/55">{label}</p>
+          <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.22em] text-white/75">{label}</p>
           <p className="min-h-[2.75rem] text-sm font-semibold leading-snug sm:text-[15px]">
             <TypewriterText text={message} speed={speed} resetKey={message} />
           </p>

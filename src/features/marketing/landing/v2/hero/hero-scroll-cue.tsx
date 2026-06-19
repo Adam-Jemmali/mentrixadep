@@ -1,13 +1,14 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { ChevronDown } from "lucide-react";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { useMounted } from "@/features/marketing/landing/v2/motion/use-mounted";
 
 export function HeroScrollCue() {
   const mounted = useMounted();
-  const reduced = useReducedMotion();
+  const reduced = usePrefersReducedMotion();
   const { canLoop } = useLandingMotion();
 
   if (!mounted || reduced || !canLoop) return null;

@@ -3,12 +3,23 @@
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import type { AccountLevelInfo } from "@/features/xp/levels";
-import { getAccountRankByLevel, normalizeRankTitle, type AccountRankKey } from "@/features/xp/rank-icons";
+import {
+  getAccountRankByLevel,
+  normalizeRankTitle,
+  type AccountRankKey,
+} from "@/features/xp/rank-icons";
 
 /** Account level row used by rank badge UI. */
 export type AccountLevel = Pick<AccountLevelInfo, "level" | "title">;
 
 export type RankBadgeSize = "sm" | "md" | "lg" | "xl";
+export type RankBadgeSurface = "default" | "onDark";
+
+/** Boost muted emblem colors on dark badge surfaces (canonical SVGs in /public/icons). */
+const ON_DARK_ICON_FILTER: Partial<Record<AccountRankKey, string>> = {
+  wanderer: "brightness(1.65) contrast(1.12) saturate(0.9)",
+  seeker: "brightness(1.35) contrast(1.08)",
+};
 
 export interface RankBadgeProps {
   rank: AccountLevel;
@@ -16,6 +27,8 @@ export interface RankBadgeProps {
   showLabel?: boolean;
   /** Background behind the label — use `dark` on marketing / rank card pages. */
   labelTone?: "light" | "dark";
+  /** `onDark` uses bright vector icons + lit badge frame for dark page sections. */
+  surface?: RankBadgeSurface;
   /** Pulse animation — e.g. on fresh rank achievement. */
   animate?: boolean;
   className?: string;
@@ -37,6 +50,7 @@ export function RankBadge({
   size = "md",
   showLabel = false,
   labelTone = "light",
+  surface = "default",
   animate = false,
   className,
 }: RankBadgeProps) {
@@ -44,20 +58,28 @@ export function RankBadge({
   const labelColor = labelTone === "dark" ? visual.labelOnDark : visual.labelOnLight;
   const px = SIZE_PX[size];
   const isMentrixer = visual.key === "mentrixer";
+  const onDark = surface === "onDark";
+  const iconFilter = onDark ? ON_DARK_ICON_FILTER[visual.key] : undefined;
 
   return (
     <div className={cn("inline-flex flex-col items-center gap-1.5", className)}>
       <motion.div
         className={cn(
-          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#0A0A0A]/90",
-          isMentrixer && "ring-1 ring-[#D4A017]/40",
+          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl",
+          onDark
+            ? "border-2 bg-gradient-to-b from-slate-800/98 to-slate-950/98 ring-1 ring-white/10"
+            : "bg-[#0A0A0A]/90",
+          isMentrixer && (onDark ? "ring-amber-300/35" : "ring-1 ring-[#D4A017]/40"),
         )}
         style={{
           width: px,
           height: px,
-          boxShadow: isMentrixer
-            ? `0 0 ${Math.round(px * 0.35)}px ${visual.colorMuted}, 0 0 0 1px ${visual.color}55`
-            : `0 8px 24px -10px ${visual.colorMuted}`,
+          borderColor: onDark ? `${visual.color}99` : undefined,
+          boxShadow: onDark
+            ? `0 0 ${Math.round(px * 0.45)}px ${visual.colorMuted}, 0 8px 24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14)`
+            : isMentrixer
+              ? `0 0 ${Math.round(px * 0.35)}px ${visual.colorMuted}, 0 0 0 1px ${visual.color}55`
+              : `0 8px 24px -10px ${visual.colorMuted}`,
         }}
         animate={
           animate
@@ -78,7 +100,14 @@ export function RankBadge({
           <div
             className="pointer-events-none absolute inset-[10%] rounded-full"
             style={{
-              background: `radial-gradient(circle, ${visual.colorMuted} 0%, transparent 72%)`,
+              background: `radial-gradient(circle, ${onDark ? "rgba(253,230,138,0.35)" : visual.colorMuted} 0%, transparent 72%)`,
+            }}
+          />
+        ) : onDark ? (
+          <div
+            className="pointer-events-none absolute inset-[8%] rounded-full opacity-80"
+            style={{
+              background: `radial-gradient(circle, ${visual.colorMuted} 0%, transparent 70%)`,
             }}
           />
         ) : null}
@@ -86,7 +115,11 @@ export function RankBadge({
           src={visual.iconSrc}
           alt=""
           aria-hidden
-          className="relative z-[1] h-[72%] w-[72%] object-contain"
+          className={cn(
+            "relative z-[1] h-[72%] w-[72%] object-contain",
+            onDark && "drop-shadow-[0_0_10px_rgba(255,255,255,0.22)]",
+          )}
+          style={iconFilter ? { filter: iconFilter } : undefined}
         />
       </motion.div>
       {showLabel ? (

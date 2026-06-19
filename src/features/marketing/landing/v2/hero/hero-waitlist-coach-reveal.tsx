@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { cn } from "@/shared/core/utils";
 import { easeOutExpo, springBouncy } from "@/features/marketing/landing/v2/motion/landing-motion";
 
@@ -88,7 +89,7 @@ function Highlight({
 }
 
 export function HeroWaitlistCoachReveal({ data }: { data: CoachRevealData }) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = usePrefersReducedMotion();
   const isTutor = data.role === "tutor";
   const count = data.sliceCount;
   const countLabel = count === 1 ? "icon" : "icons";

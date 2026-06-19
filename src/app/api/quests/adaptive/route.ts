@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getCurrentUser } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
@@ -8,9 +7,11 @@ import {
   generateAdaptiveTurn,
   buildAdaptiveTurnFallback,
   type AdaptiveTurnResponse,
+  type AdaptiveWorldState,
 } from "@/shared/integrations/ai/adaptive-quest";
 import { adaptiveTurnRequestSchema } from "@/features/quest/adaptive-classic-quest-schemas";
 import type { AdaptiveClassicMetadata } from "@/features/quest/adaptive-classic-quest-schemas";
+import { normalizePriorWorldState } from "@/features/quest/adaptive-quest-steps";
 import { persistAdaptiveTurnState } from "@/features/quest/adaptive-classic-quest";
 import {
   isQuestHardLimitMessage,
@@ -22,7 +23,7 @@ export const dynamic = "force-dynamic";
 function resolveAdaptiveTurn(
   generated: Awaited<ReturnType<typeof generateAdaptiveTurn>>,
   message: string,
-  priorWorldState: z.infer<typeof adaptiveTurnRequestSchema>["priorWorldState"],
+  priorWorldState: AdaptiveWorldState | null,
   problemPrompt: string
 ): AdaptiveTurnResponse {
   if ("error" in generated && generated.error) {
@@ -77,12 +78,14 @@ export async function POST(req: Request) {
         ? meta.initialPrompt.trim()
         : message;
 
+    const normalizedPrior = normalizePriorWorldState(priorWorldState, problemPrompt);
+
     const generated = await generateAdaptiveTurn(
-      { subject, problemPrompt, message, priorWorldState },
+      { subject, problemPrompt, message, priorWorldState: normalizedPrior },
       user.id
     );
 
-    const result = resolveAdaptiveTurn(generated, message, priorWorldState, problemPrompt);
+    const result = resolveAdaptiveTurn(generated, message, normalizedPrior, problemPrompt);
 
     await persistAdaptiveTurnState(
       questId,

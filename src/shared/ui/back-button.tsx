@@ -8,15 +8,19 @@ import { cn } from "@/shared/core/utils";
 interface BackButtonProps {
   className?: string;
   onClick?: () => void;
+  /** When set, navigates here instead of browser history back. */
+  href?: string;
   role?: "student" | "tutor";
 }
 
-export function BackButton({ className, onClick, role = "student" }: BackButtonProps) {
+export function BackButton({ className, onClick, href, role = "student" }: BackButtonProps) {
   const router = useRouter();
 
   const handleBack = () => {
     if (onClick) {
       onClick();
+    } else if (href) {
+      router.push(href);
     } else {
       router.back();
     }

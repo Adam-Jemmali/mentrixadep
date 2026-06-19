@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { TypewriterText } from "@/features/marketing/landing/v2/motion/typewriter-text";
 import { cn } from "@/shared/core/utils";
+import { IMAGE_QUALITY_ICON } from "@/shared/core/image-defaults";
 import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import {
   scaleIn,
@@ -150,8 +151,20 @@ export function FlowStepsSection() {
                 <span className="text-[10px] font-bold tabular-nums text-slate-600">??</span>
               )}
               <div className="relative mt-3 flex items-center gap-3">
-                <motion.span className="relative h-9 w-9 shrink-0" animate={cinematic ? iconFloat : undefined}>
-                  <Image src={step.icon} alt="" fill className="object-contain" sizes="36px" quality={65} loading="lazy" />
+                <motion.span
+                  className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10"
+                  animate={cinematic ? iconFloat : undefined}
+                >
+                  <Image
+                    src={step.icon}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="object-contain brightness-0 invert"
+                    sizes="36px"
+                    quality={IMAGE_QUALITY_ICON}
+                    loading="lazy"
+                  />
                 </motion.span>
                 <h3 className="text-base font-bold text-white">{step.title}</h3>
               </div>

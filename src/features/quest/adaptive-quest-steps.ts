@@ -14,23 +14,31 @@ export function cleanTopicLabel(topic: string): string {
 
 export function buildScenarioTitle(topic: string): string {
   const label = cleanTopicLabel(topic);
-  return `Your classmate asks: "Can you teach me ${label} before our quiz?"`;
+  return `You're coaching someone through ${label} using a real-world analogy — each step connects the scenario back to the idea behind their question.`;
+}
+
+export function buildScenarioPrinciple(topic: string): string {
+  const label = cleanTopicLabel(topic);
+  return `Core principle: build step-by-step understanding of ${label} through a relevant analogy, then answer the original question directly.`;
 }
 
 export function buildStepChallenge(topic: string, stepIndex: number, stepTotal = ADAPTIVE_STEP_TOTAL): string {
   const label = cleanTopicLabel(topic);
+  const originalQ = topic.trim().slice(0, 400);
+
   if (stepIndex <= 1) {
-    return `Step 1 of ${stepTotal}: State the core idea of ${label} in one sentence.`;
+    return `Step 1 of ${stepTotal}: Pick a familiar real-world situation that works like ${label}. In 2–3 sentences, explain which part of that analogy maps to the core idea behind the question.`;
   }
   if (stepIndex === 2) {
-    return `Step 2 of ${stepTotal}: Give a tiny worked example (3 to 5 lines) for ${label}.`;
+    return `Step 2 of ${stepTotal}: Stay in your analogy — walk through one small decision step by step. What would you check or do first, and why? Tie each step back to ${label}.`;
   }
-  return `Step 3 of ${stepTotal}: Name one common mistake with ${label} and how to avoid it.`;
+  return `Step 3 of ${stepTotal}: Answer the original question directly: "${originalQ}" Give a complete answer that would pass on an exam or assignment, using what the analogy taught you.`;
 }
 
 export function createOpeningWorldState(topic: string): AdaptiveWorldState {
   return {
     scenarioTitle: buildScenarioTitle(topic),
+    scenarioPrinciple: buildScenarioPrinciple(topic),
     stepIndex: 1,
     stepTotal: ADAPTIVE_STEP_TOTAL,
     scenarioHealth: 85,
@@ -59,7 +67,7 @@ export function advanceAdaptiveWorldState(
         scenarioHealth: Math.max(35, prior.scenarioHealth - 5),
       },
       isResolved: false,
-      feedback: `Step ${prior.stepIndex} still needs more detail. ${prior.currentChallenge}`,
+      feedback: `Step ${prior.stepIndex} still needs more detail. Re-read the scenario principle, then try again: ${prior.currentChallenge}`,
     };
   }
 
@@ -68,10 +76,10 @@ export function advanceAdaptiveWorldState(
       worldState: {
         ...prior,
         scenarioHealth: 100,
-        currentChallenge: "Challenge complete.",
+        currentChallenge: "Challenge complete — you answered the original question.",
       },
       isResolved: true,
-      feedback: "You finished all three steps with a clear explanation. Challenge complete.",
+      feedback: "You worked through the analogy and answered the original question. Challenge complete.",
     };
   }
 
@@ -86,8 +94,10 @@ export function advanceAdaptiveWorldState(
     },
     isResolved: done,
     feedback: done
-      ? "You finished all three steps with a clear explanation. Challenge complete."
-      : `Step ${prior.stepIndex} complete. Now do step ${nextStep}.`,
+      ? "You worked through the analogy and answered the original question. Challenge complete."
+      : nextStep === prior.stepTotal
+        ? `Step ${prior.stepIndex} complete. Final step: answer the original question directly.`
+        : `Step ${prior.stepIndex} complete. Step ${nextStep} goes deeper in the same analogy.`,
   };
 }
 
@@ -114,6 +124,10 @@ export function normalizeAdaptiveWorldState(
       typeof row.scenarioTitle === "string" && row.scenarioTitle.trim()
         ? row.scenarioTitle.trim().slice(0, 400)
         : base.scenarioTitle,
+    scenarioPrinciple:
+      typeof row.scenarioPrinciple === "string" && row.scenarioPrinciple.trim()
+        ? row.scenarioPrinciple.trim().slice(0, 600)
+        : base.scenarioPrinciple,
     stepIndex,
     stepTotal,
     scenarioHealth:
@@ -133,7 +147,13 @@ export function normalizeAdaptiveWorldState(
   };
 }
 
+export function normalizePriorWorldState(raw: unknown, topic: string): AdaptiveWorldState | null {
+  if (!raw || typeof raw !== "object") return null;
+  return normalizeAdaptiveWorldState(raw, null, topic);
+}
+
 export function openingAdaptiveFeedback(topic: string): string {
   const title = buildScenarioTitle(topic);
-  return `${title} Work through 3 short steps. Start with step 1 only.`;
+  const principle = buildScenarioPrinciple(topic);
+  return `${title} ${principle} Three steps: two build understanding through the analogy, then you answer the original question to pass. Start with step 1.`;
 }

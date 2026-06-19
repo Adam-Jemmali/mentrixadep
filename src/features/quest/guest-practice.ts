@@ -16,6 +16,8 @@ import {
   selectGuestTryItemBankQuestions,
 } from "@/features/quest/guest-item-bank-selector";
 import { shuffleGuestTryPack } from "@/features/quest/guest-try-shuffle";
+import { GUEST_TRY_QUEST_COUNT } from "@/features/quest/guest-try-constants";
+import { curateGuestTryStudentPack } from "@/features/quest/guest-try-pack-curate";
 
 function parseGuestCookie(raw: string | null) {
   if (!raw) return { date: null, count: 0 };
@@ -33,7 +35,6 @@ function todayIso() {
   return d.toISOString().slice(0, 10);
 }
 
-const TRY_QUEST_COUNT = 5;
 const ENFORCE_GUEST_DAILY_LIMIT = process.env.NODE_ENV === "production";
 
 export async function POST(req: Request) {
@@ -85,20 +86,25 @@ export async function POST(req: Request) {
       const gen = await generateGuestTryQuestPack({
         subject: subjectTrim,
         difficulty: "advanced",
-        questionCount: TRY_QUEST_COUNT,
+        questionCount: GUEST_TRY_QUEST_COUNT,
       });
 
-      if (!("error" in gen) && gen.questions.length >= TRY_QUEST_COUNT) {
-        questions = gen.questions.slice(0, TRY_QUEST_COUNT).filter(isPlayableGuestTryQuestion);
+      if (!("error" in gen) && gen.questions.length >= GUEST_TRY_QUEST_COUNT) {
+        questions = curateGuestTryStudentPack(
+          gen.questions.filter(isPlayableGuestTryQuestion),
+          subjectTrim,
+        );
       } else {
         questions = [];
       }
-      if (questions.length < TRY_QUEST_COUNT) {
-        questions = buildGuestMixedFallbackPack(subjectTrim);
+      if (questions.length < GUEST_TRY_QUEST_COUNT) {
+        questions = curateGuestTryStudentPack(buildGuestMixedFallbackPack(subjectTrim), subjectTrim);
       }
-      const hydrated = await hydrateGuestTryQuestionImages(subjectTrim, questions);
-      questions = "error" in hydrated ? questions : hydrated.questions;
     }
+
+    const hydrated = await hydrateGuestTryQuestionImages(subjectTrim, questions);
+    questions = "error" in hydrated ? questions : hydrated.questions;
+    questions = questions.filter(isPlayableGuestTryQuestion);
 
     questions = shuffleGuestTryPack(questions);
 

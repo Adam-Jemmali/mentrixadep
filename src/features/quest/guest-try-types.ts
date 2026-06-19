@@ -1,6 +1,12 @@
 /** Try Quest (marketing guest demo) — mixed modalities; validated server-side before JSON response. */
 
-export type GuestTryQuestionKind = "mcq" | "true_false" | "short_answer" | "image_mcq" | "drag_rank";
+export type GuestTryQuestionKind =
+  | "mcq"
+  | "true_false"
+  | "short_answer"
+  | "problem_solving"
+  | "image_mcq"
+  | "drag_rank";
 
 export type GuestTryQuestion = {
   id: string;
@@ -94,13 +100,17 @@ export function formatGuestTryReferenceAnswerDisplay(referenceRaw: string): stri
   return splitGuestTryShortAnswerAlternatives(referenceRaw.trim())
     .map((x) => x.trim())
     .filter(Boolean)
-    .join(" · ");
+    .join(", ");
 }
 
 const GUEST_TRY_KIND_UI: Record<GuestTryQuestionKind, { badge: string; hint: string }> = {
-  mcq: { badge: "Deep cut MCQ", hint: "Wrong answers are meant to look tempting." },
+  mcq: { badge: "Multiple choice", hint: "Exam style. Distractors are meant to look plausible." },
   true_false: { badge: "True / False", hint: "Read every qualifier in the statement." },
-  short_answer: { badge: "Sharp recall", hint: "Short phrase — synonyms usually count." },
+  short_answer: { badge: "Short answer", hint: "Concise response. Equivalent wording usually counts." },
+  problem_solving: {
+    badge: "Problem solving",
+    hint: "Multi step. Show your reasoning and state a clear final answer.",
+  },
   image_mcq: { badge: "Visual pick", hint: "Choose the image that best matches the question." },
   drag_rank: { badge: "Drag to rank", hint: "Put the steps or levels in the right order." },
 };
@@ -110,11 +120,17 @@ export function guestTryKindUi(kind: GuestTryQuestionKind): { badge: string; hin
 }
 
 /** Client/server guard so incomplete AI rows never render empty grids. */
+export function isTrustedGuestVisualPickUrl(url: string): boolean {
+  const trimmed = url.trim().toLowerCase();
+  return trimmed.startsWith("data:image/svg+xml");
+}
+
 export function isPlayableGuestTryQuestion(q: GuestTryQuestion): boolean {
   if (!q.prompt || q.prompt.length < 8) return false;
   if (!q.explanation || q.explanation.length < 4) return false;
   switch (q.kind) {
     case "short_answer":
+    case "problem_solving":
       return typeof q.referenceAnswer === "string" && q.referenceAnswer.trim().length >= 2;
     case "true_false":
     case "mcq":
@@ -128,7 +144,8 @@ export function isPlayableGuestTryQuestion(q: GuestTryQuestion): boolean {
     case "image_mcq":
       const hasRenderedOptionImages =
         Array.isArray(q.optionImageUrls) &&
-        q.optionImageUrls.length === 4;
+        q.optionImageUrls.length === 4 &&
+        q.optionImageUrls.every(isTrustedGuestVisualPickUrl);
       const hasImagePrompts =
         Array.isArray(q.optionImagePrompts) &&
         q.optionImagePrompts.length === 4 &&
@@ -160,8 +177,11 @@ function clampPrompt(s: string, max: number) {
  * Marketing Try Quest: models often emit `[Biology] …` or wrap stems in `[ … ]`.
  * KaTeX elsewhere also treats `$…$` oddly — guest prompts forbid LaTeX, so we normalize here.
  */
-export function stripGuestTryPromptDecorators(raw: string): string {
-  let s = raw.trim().replace(/\$/g, "");
+export function stripGuestTryPromptDecorators(raw: string, opts?: { preserveMath?: boolean }): string {
+  let s = raw.trim();
+  if (!opts?.preserveMath) {
+    s = s.replace(/\$/g, "");
+  }
   for (let i = 0; i < 12; i++) {
     const next = s.replace(/^\[[^\]]{1,180}\]\s*/, "").trim();
     if (next === s) break;
@@ -249,6 +269,23 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
     };
   }
 
+  if (kindRaw === "problem_solving") {
+    const ref =
+      typeof o.referenceAnswer === "string"
+        ? o.referenceAnswer.trim().slice(0, 4000)
+        : "";
+    if (ref.length < 2) return null;
+    return {
+      id,
+      kind: "problem_solving",
+      prompt,
+      explanation,
+      promptImageUrl,
+      promptImagePrompt,
+      referenceAnswer: ref,
+    };
+  }
+
   if (kindRaw === "true_false") {
     let ci: number | null = null;
     if (typeof o.correctTrue === "boolean") {
@@ -305,13 +342,17 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
           .filter((x) => typeof x === "string")
           .map((x) => String(x).trim().slice(0, 500))
       : [];
-    const optionImageUrls = Array.isArray(o.optionImageUrls)
+    const rawOptionImageUrls = Array.isArray(o.optionImageUrls)
       ? o.optionImageUrls
           .filter((x) => typeof x === "string")
           .map((x) => String(x).trim().slice(0, 1000))
       : [];
+    const optionImageUrls =
+      rawOptionImageUrls.length === 4 && rawOptionImageUrls.every(isTrustedGuestVisualPickUrl)
+        ? rawOptionImageUrls
+        : undefined;
     if (!captions || ci == null) return null;
-    if (optionImagePrompts.length !== 4 && optionImageUrls.length !== 4) return null;
+    if (optionImagePrompts.length !== 4 && !optionImageUrls) return null;
     return {
       id,
       kind: "image_mcq",
@@ -320,7 +361,7 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
       promptImageUrl,
       promptImagePrompt,
       options: captions,
-      optionImageUrls: optionImageUrls.length === 4 ? optionImageUrls : undefined,
+      optionImageUrls,
       optionImagePrompts: optionImagePrompts.length === 4 ? optionImagePrompts : undefined,
       correctIndex: ci,
     };

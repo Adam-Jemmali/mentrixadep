@@ -1,27 +1,31 @@
 "use client";
 
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { QuestClassicWorkspace } from "./quest-classic-workspace";
 import { QuestPracticeWorkspace } from "./quest-practice-workspace";
+import { GuestQuestClient } from "@/app/(marketing)/try/guest-quest-client";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { BackButton } from "@/shared/ui/back-button";
 
 export function QuestPageClient({
   subjectOptions,
+  guestMode = false,
 }: {
   subjectOptions: { key: string; name: string }[];
+  guestMode?: boolean;
 }) {
   const searchParams = useSearchParams();
-  const onboardingMode = searchParams.get("onboarding") === "true";
+  const onboardingMode = !guestMode && searchParams.get("onboarding") === "true";
   const initialTab = onboardingMode
     ? "practice"
-    : searchParams.get("tab") === "practice"
-      ? "practice"
-      : "classic";
+    : searchParams.get("tab") === "classic"
+      ? "classic"
+      : "practice";
   const [activeTab, setActiveTab] = useState<"practice" | "classic">(initialTab);
 
   if (onboardingMode) {
@@ -38,9 +42,7 @@ export function QuestPageClient({
   }
 
   return (
-    <div
-      className={`${mentrixStudent.pageBg} min-h-0 md:min-h-[calc(100dvh-3.5rem)]`}
-    >
+    <div className={guestMode ? "w-full" : `${mentrixStudent.pageBg} min-h-0 md:min-h-[calc(100dvh-3.5rem)]`}>
       <Tabs
         value={activeTab}
         onValueChange={(next) =>
@@ -48,18 +50,35 @@ export function QuestPageClient({
         }
         className="w-full"
       >
-        <div className="mb-4">
-          <BackButton />
-        </div>
+        {!guestMode ? (
+          <div className="mb-4">
+            <BackButton />
+          </div>
+        ) : null}
+
+        {guestMode ? (
+          <div className="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50/90 px-4 py-3 text-sm leading-relaxed text-indigo-950 shadow-sm">
+            Full Quest preview: practice packs, problem solver, and adaptive challenge scenarios.{" "}
+            <Link href="/auth/signup" className="font-semibold underline underline-offset-2">
+              Sign up free
+            </Link>{" "}
+            to save rank, XP, and progress.
+          </div>
+        ) : null}
+
         <TiltCard
           tiltLimit={2}
           className="mx-surface-light block rounded-none border-b border-violet-200 px-4 pt-5 shadow-[0_4px_24px_-12px_rgba(15,23,42,0.08)] sm:px-6"
         >
-          <p className={mentrixStudent.sectionEyebrowOnLight}>Mentrixer training</p>
+          <p className={mentrixStudent.sectionEyebrowOnLight}>
+            {guestMode ? "Quest preview" : "Mentrixer training"}
+          </p>
           <h1 className={`mt-1 text-lg font-bold sm:text-xl h-[28px] ${mentrixStudent.textOnLight}`}>
             <Typewriter text="Quest workspace" speed={70} waitTime={8000} />
           </h1>
-          <p className={`mt-0.5 text-sm ${mentrixStudent.textMutedOnLight}`}>Practice now. Build streak.</p>
+          <p className={`mt-0.5 text-sm ${mentrixStudent.textMutedOnLight}`}>
+            {guestMode ? "Same tabs students use. Preview only until you sign up." : "Practice now. Build streak."}
+          </p>
           <TabsList className="mt-4 inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl bg-violet-100/80 p-1.5 sm:w-auto">
             <TabsTrigger
               value="practice"
@@ -76,10 +95,22 @@ export function QuestPageClient({
           </TabsList>
         </TiltCard>
         <TabsContent value="practice" className="mt-0 focus-visible:outline-none">
-          <QuestPracticeWorkspace subjectOptions={subjectOptions} />
+          {guestMode ? (
+            <GuestQuestClient defaultSubjects={subjectOptions} embedded />
+          ) : (
+            <QuestPracticeWorkspace subjectOptions={subjectOptions} />
+          )}
         </TabsContent>
         <TabsContent value="classic" className="mt-0 min-h-0 focus-visible:outline-none md:min-h-[calc(100dvh-3.5rem)]">
-          <QuestClassicWorkspace />
+          <QuestClassicWorkspace
+            guestMode={guestMode}
+            showGuestBanner={false}
+            embedded={guestMode}
+            guestSubjectName={
+              subjectOptions[0]?.name.replace(/\s+Division$/i, "").trim() ?? "General"
+            }
+            onGuestTryPractice={() => setActiveTab("practice")}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -33,6 +33,9 @@
     "src/app/api/guest-practice/route.ts": {
       "maxDuration": 60
     },
+    "src/app/api/guest-classic-quest/route.ts": {
+      "maxDuration": 60
+    },
     "src/app/api/**/route.ts": {
       "maxDuration": 10
     }

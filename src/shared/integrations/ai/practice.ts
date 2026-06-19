@@ -121,17 +121,24 @@ function classifyVisualDomain(
   prompt: string
 ): "math" | "economics" | "biology" | "history" | "physics" | "chemistry" | "computer_science" | "geography" | "generic" {
   const s = `${subject} ${prompt}`.toLowerCase();
+  if (
+    /(math|algebra|calculus|\basymptote\b|equation|derivative|integral|\blogarithm\b|\blog\s*\(|(^|[^\w])ln\s*\(|function|f\(x\)|parabola|hyperbola|quadratic|cartesian|graph of|x\^2|x²)/.test(
+      s,
+    )
+  )
+    return "math";
   if (/(economics|supply|demand|market|inflation|gdp|elasticity|equilibrium)/.test(s)) return "economics";
   if (/(biology|cell|nucleus|membrane|mitochond|dna|organism|enzyme)/.test(s)) return "biology";
-  if (/(history|president|war|independence|treaty|empire|revolution|cold war|century)/.test(s)) return "history";
-  if (/(physics|velocity|acceleration|force|circuit|wave|energy|momentum|field)/.test(s)) return "physics";
+  if (
+    /(history|\bpresident\b|\bcold war\b|\bwar\b|\bindependence\b|\btreaty\b|\bempire\b|\brevolution\b|\bcentury\b)/.test(
+      s,
+    )
+  )
+    return "history";
+  if (/(physics|velocity|acceleration|force|circuit|wave|energy|momentum|\bfield\b)/.test(s)) return "physics";
   if (/(chemistry|molecule|reaction|equilibrium|acid|base|bond|periodic|stoichiometry)/.test(s)) return "chemistry";
   if (/(computer|programming|algorithm|runtime|complexity|graph traversal|data structure|binary tree|sorting)/.test(s)) return "computer_science";
   if (/(geography|map|latitude|longitude|topography|river|continent|climate)/.test(s)) return "geography";
-  if (
-    /(math|algebra|calculus|\basymptote\b|equation|derivative|integral|\blogarithm\b|\blog\s*\(|(^|[^\w])ln\s*\(|function|f\(x\))/.test(s)
-  )
-    return "math";
   return "generic";
 }
 
@@ -274,12 +281,6 @@ function buildBiologySvg(_seed: number, prompt: string = ""): string {
   if (p.includes("fungal") || p.includes("fungi")) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><rect x="96" y="96" width="320" height="320" rx="16" fill="#fdf4ff" stroke="#7e22ce" stroke-width="6"/><ellipse cx="256" cy="248" rx="52" ry="42" fill="#ede9fe" stroke="#6d28d9" stroke-width="4"/><circle cx="256" cy="248" r="14" fill="#7c3aed"/><ellipse cx="170" cy="320" rx="30" ry="20" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2" opacity="0.8"/><text x="256" y="460" font-size="16" fill="#6d28d9" text-anchor="middle">Fungal Cell</text></svg>`;
   }
-  if (p.includes("neuron")) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><circle cx="256" cy="256" r="48" fill="#dbeafe" stroke="#1d4ed8" stroke-width="4"/><line x1="256" y1="208" x2="256" y2="90" stroke="#1d4ed8" stroke-width="4"/><line x1="212" y1="228" x2="120" y2="160" stroke="#1d4ed8" stroke-width="3"/><line x1="300" y1="228" x2="392" y2="160" stroke="#1d4ed8" stroke-width="3"/><line x1="212" y1="286" x2="110" y2="330" stroke="#1d4ed8" stroke-width="3"/><line x1="256" y1="304" x2="256" y2="430" stroke="#2563eb" stroke-width="6"/><text x="256" y="460" font-size="16" fill="#1d4ed8" text-anchor="middle">Neuron</text></svg>`;
-  }
-  if (p.includes("dna") || p.includes("double helix") || p.includes("double-helix")) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><path d="M180 80 C220 120 220 200 180 256 C140 312 140 392 180 432" fill="none" stroke="#2563eb" stroke-width="5"/><path d="M332 80 C292 120 292 200 332 256 C372 312 372 392 332 432" fill="none" stroke="#dc2626" stroke-width="5"/><line x1="200" y1="130" x2="312" y2="150" stroke="#64748b" stroke-width="2"/><line x1="188" y1="190" x2="324" y2="210" stroke="#64748b" stroke-width="2"/><line x1="188" y1="250" x2="324" y2="270" stroke="#64748b" stroke-width="2"/><line x1="200" y1="310" x2="312" y2="330" stroke="#64748b" stroke-width="2"/><line x1="212" y1="370" x2="300" y2="390" stroke="#64748b" stroke-width="2"/><text x="256" y="470" font-size="16" fill="#1e40af" text-anchor="middle">DNA Double Helix</text></svg>`;
-  }
   if (p.includes("red blood") || p.includes("biconcave") || p.includes("erythrocyte")) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><ellipse cx="180" cy="220" rx="52" ry="28" fill="#fecaca" stroke="#dc2626" stroke-width="3"/><ellipse cx="332" cy="280" rx="48" ry="26" fill="#fecaca" stroke="#dc2626" stroke-width="3"/><ellipse cx="256" cy="360" rx="50" ry="27" fill="#fecaca" stroke="#dc2626" stroke-width="3"/><text x="256" y="450" font-size="16" fill="#991b1b" text-anchor="middle">Red Blood Cells</text></svg>`;
   }
@@ -288,6 +289,12 @@ function buildBiologySvg(_seed: number, prompt: string = ""): string {
   }
   if (p.includes("epithelial")) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><rect x="100" y="220" width="60" height="80" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><rect x="170" y="220" width="60" height="80" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><rect x="240" y="220" width="60" height="80" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><rect x="310" y="220" width="60" height="80" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><rect x="380" y="220" width="60" height="80" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><text x="256" y="360" font-size="16" fill="#1d4ed8" text-anchor="middle">Epithelial Tissue Layer</text></svg>`;
+  }
+  if (p.includes("neuron") || p.includes("dendrite") || p.includes("axon") || p.includes("soma")) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><circle cx="256" cy="256" r="48" fill="#dbeafe" stroke="#1d4ed8" stroke-width="4"/><line x1="256" y1="208" x2="256" y2="90" stroke="#1d4ed8" stroke-width="4"/><line x1="212" y1="228" x2="120" y2="160" stroke="#1d4ed8" stroke-width="3"/><line x1="300" y1="228" x2="392" y2="160" stroke="#1d4ed8" stroke-width="3"/><line x1="212" y1="286" x2="110" y2="330" stroke="#1d4ed8" stroke-width="3"/><line x1="256" y1="304" x2="256" y2="430" stroke="#2563eb" stroke-width="6"/><text x="256" y="460" font-size="16" fill="#1d4ed8" text-anchor="middle">Neuron</text></svg>`;
+  }
+  if (p.includes("dna") || p.includes("double helix") || p.includes("double-helix")) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><path d="M180 80 C220 120 220 200 180 256 C140 312 140 392 180 432" fill="none" stroke="#2563eb" stroke-width="5"/><path d="M332 80 C292 120 292 200 332 256 C372 312 372 392 332 432" fill="none" stroke="#dc2626" stroke-width="5"/><line x1="200" y1="130" x2="312" y2="150" stroke="#64748b" stroke-width="2"/><line x1="188" y1="190" x2="324" y2="210" stroke="#64748b" stroke-width="2"/><line x1="188" y1="250" x2="324" y2="270" stroke="#64748b" stroke-width="2"/><line x1="200" y1="310" x2="312" y2="330" stroke="#64748b" stroke-width="2"/><line x1="212" y1="370" x2="300" y2="390" stroke="#64748b" stroke-width="2"/><text x="256" y="470" font-size="16" fill="#1e40af" text-anchor="middle">DNA Double Helix</text></svg>`;
   }
   if (p.includes("phospholipid") || p.includes("bilayer")) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><circle cx="140" cy="220" r="16" fill="#2563eb"/><circle cx="200" cy="220" r="16" fill="#2563eb"/><circle cx="260" cy="220" r="16" fill="#2563eb"/><circle cx="320" cy="220" r="16" fill="#2563eb"/><circle cx="380" cy="220" r="16" fill="#2563eb"/><line x1="140" y1="236" x2="140" y2="276" stroke="#64748b" stroke-width="3"/><line x1="200" y1="236" x2="200" y2="276" stroke="#64748b" stroke-width="3"/><line x1="260" y1="236" x2="260" y2="276" stroke="#64748b" stroke-width="3"/><line x1="320" y1="236" x2="320" y2="276" stroke="#64748b" stroke-width="3"/><line x1="380" y1="236" x2="380" y2="276" stroke="#64748b" stroke-width="3"/><circle cx="140" cy="292" r="16" fill="#2563eb"/><circle cx="200" cy="292" r="16" fill="#2563eb"/><circle cx="260" cy="292" r="16" fill="#2563eb"/><circle cx="320" cy="292" r="16" fill="#2563eb"/><circle cx="380" cy="292" r="16" fill="#2563eb"/><text x="256" y="380" font-size="16" fill="#334155" text-anchor="middle">Phospholipid Bilayer</text></svg>`;
@@ -530,7 +537,7 @@ function resolveGuestTryOptionImageUrl(
 ): string {
   const label = optionPrompt.trim() || `${runSubject} option ${slot.optionIndex + 1}`;
   const disambig = `${label} · ${slot.questionId} · opt${slot.optionIndex + 1}${slot.repairNonce != null ? ` · r${slot.repairNonce}` : ""}`;
-  return localFallbackSvgDataUrl(`${runSubject.trim()} ${label}`, disambig);
+  return localFallbackSvgDataUrl(runSubject.trim() || "General", disambig);
 }
 
 // ── Wikipedia / Wikimedia image pipeline ─────────────────────────────────────
@@ -713,28 +720,53 @@ function fallbackPngFromPrompt(prompt: string, subject: string, slot?: ChartOpti
 
 function normalizeImageUrlForCompare(url: string): string { return url.trim().toLowerCase(); }
 
-function hasDuplicateUrls(urls: string[]): boolean {
+function svgVisualSignature(dataUrl: string): string {
+  try {
+    const payload = dataUrl.split(",")[1] ?? "";
+    const svg = dataUrl.includes(";base64,") ? atob(payload) : decodeURIComponent(payload);
+    return svg.replace(/<metadata>[\s\S]*?<\/metadata>/gi, "").replace(/\s+/g, " ").trim().toLowerCase();
+  } catch {
+    return normalizeImageUrlForCompare(dataUrl);
+  }
+}
+
+function hasDuplicateVisuals(urls: string[]): boolean {
   const seen = new Set<string>();
-  for (const u of urls) { const k = normalizeImageUrlForCompare(u); if (seen.has(k)) return true; seen.add(k); }
+  for (const u of urls) {
+    const k = svgVisualSignature(u);
+    if (seen.has(k)) return true;
+    seen.add(k);
+  }
   return false;
 }
 
+function optionVisualPrompt(
+  optionPrompts: string[],
+  optionLabels: string[],
+  index: number,
+  runSubject: string,
+  pass = 0,
+): string {
+  const optPrompt = optionPrompts[index]?.trim() ?? "";
+  const label = optionLabels[index]?.trim() ?? "";
+  if (pass === 0) {
+    return [optPrompt, label].filter(Boolean).join(" · ") || `${runSubject} exam visual option ${String.fromCharCode(65 + index)}`;
+  }
+  if (pass === 1) return label || optPrompt || `${runSubject} exam visual option ${String.fromCharCode(65 + index)}`;
+  return `${label || optPrompt} · distinct exam diagram ${String.fromCharCode(65 + index)}`;
+}
+
 function repairDuplicateOptionImageUrls(urls: string[], optionPrompts: string[], optionLabels: string[], subject: string, questionId: string): string[] {
-  const out = urls.slice(0, 4);
   const runSubject = subject.split("|")[0]?.trim() || subject;
-  for (let iter = 0; iter < 16; iter++) {
-    if (!hasDuplicateUrls(out)) break;
-    const seen = new Set<string>();
-    for (let i = 0; i < out.length; i++) {
-      let key = normalizeImageUrlForCompare(out[i] ?? "");
-      if (seen.has(key)) {
-        const p = optionPrompts[i]?.trim() || optionLabels[i]?.trim() || `${runSubject} visual answer ${i + 1}`;
-        const slot = { questionId, optionIndex: i, repairNonce: iter + 1 };
-        out[i] = resolveGuestTryOptionImageUrl(p, runSubject, slot);
-        key = normalizeImageUrlForCompare(out[i] ?? "");
-      }
-      seen.add(key);
-    }
+  let out = urls.slice(0, 4);
+  for (let pass = 0; pass < 4 && hasDuplicateVisuals(out); pass++) {
+    out = [0, 1, 2, 3].map((i) =>
+      resolveGuestTryOptionImageUrl(optionVisualPrompt(optionPrompts, optionLabels, i, runSubject, pass), runSubject, {
+        questionId,
+        optionIndex: i,
+        repairNonce: pass > 0 ? pass : undefined,
+      }),
+    );
   }
   return out;
 }
@@ -842,6 +874,28 @@ function guestTryHydrationSubjectLine(runSubject: string, q: GuestTryQuestion): 
 // EXPORTED FUNCTIONS
 // ============================================
 
+function buildGuestImageMcqOptionUrls(
+  q: GuestTryQuestion,
+  runSubject: string,
+  questionChartId: string,
+): string[] {
+  const prompts = Array.isArray(q.optionImagePrompts) ? q.optionImagePrompts : [];
+  const labels = q.options ?? [];
+  const subjectLine = guestTryHydrationSubjectLine(runSubject, q);
+  const urls = [0, 1, 2, 3].map((idx) => {
+    const promptText =
+      prompts[idx]?.trim() ||
+      labels[idx]?.trim() ||
+      `${runSubject} visual option ${String.fromCharCode(65 + idx)}`;
+    const optionOnly = [promptText, labels[idx]?.trim()].filter(Boolean).join(" · ");
+    return resolveGuestTryOptionImageUrl(optionOnly, runSubject, {
+      questionId: questionChartId,
+      optionIndex: idx,
+    });
+  });
+  return repairDuplicateOptionImageUrls(urls, prompts, labels, subjectLine, questionChartId);
+}
+
 export async function hydrateGuestTryQuestionImages(
   subject: string,
   questions: GuestTryQuestion[]
@@ -855,45 +909,33 @@ export async function hydrateGuestTryQuestionImages(
       const questionChartId = next.id?.trim().replace(/\s+/g, "_") || `gq_${hashString32(`${runSubject}::${next.prompt ?? ""}`).toString(36)}`;
 
       if (!next.promptImageUrl && next.promptImagePrompt) {
-        next.promptImageUrl = await resolveImageUrl(next.promptImagePrompt, subjectLine);
-      }
-      if (next.kind === "image_mcq" && Array.isArray(next.optionImagePrompts) && next.optionImagePrompts.length === 4) {
-        const prompts = next.optionImagePrompts;
-        const labels = next.options ?? [];
-        next.optionImageUrls = prompts.map((p, idx) => {
-          const label = (p ?? "").trim() || labels[idx] || `${runSubject} option ${idx + 1}`;
-          return resolveGuestTryOptionImageUrl(label, runSubject, { questionId: questionChartId, optionIndex: idx });
-        });
-      }
-      if (next.kind === "image_mcq" && Array.isArray(next.optionImageUrls) && next.optionImageUrls.length === 4) {
-        const prompts = Array.isArray(next.optionImagePrompts) ? next.optionImagePrompts : [];
-        const labels = next.options ?? [];
-        next.optionImageUrls = repairDuplicateOptionImageUrls(next.optionImageUrls, prompts, labels, subjectLine, questionChartId);
-      }
-      if (next.kind === "image_mcq" && (!next.optionImageUrls || next.optionImageUrls.length !== 4)) {
-        const labels = next.options ?? [`${runSubject} candidate 1`, `${runSubject} candidate 2`, `${runSubject} candidate 3`, `${runSubject} candidate 4`];
-        next.optionImageUrls = labels.slice(0, 4).map((label, idx) =>
-          resolveGuestTryOptionImageUrl(label, runSubject, { questionId: questionChartId, optionIndex: idx }),
+        next.promptImageUrl = resolveGuestTryOptionImageUrl(
+          `${next.prompt ?? ""} · ${next.promptImagePrompt}`,
+          runSubject,
+          { questionId: questionChartId, optionIndex: 0 },
         );
-        next.optionImageUrls = repairDuplicateOptionImageUrls(next.optionImageUrls, [], labels, subjectLine, questionChartId);
       }
+
+      if (next.kind === "image_mcq") {
+        next.optionImageUrls = buildGuestImageMcqOptionUrls(next, runSubject, questionChartId);
+      }
+
       out.push(next);
     }
     return { questions: out };
   } catch (err) {
     const resilient = questions.map((q) => {
       const next: GuestTryQuestion = { ...q };
-      const subjectLine = guestTryHydrationSubjectLine(runSubject, next);
       const questionChartId = next.id?.trim().replace(/\s+/g, "_") || `gq_${hashString32(`${runSubject}::${next.prompt ?? ""}`).toString(36)}`;
-      if (!next.promptImageUrl && next.promptImagePrompt) next.promptImageUrl = fallbackPngFromPrompt(next.promptImagePrompt, subjectLine);
+      if (!next.promptImageUrl && next.promptImagePrompt) {
+        next.promptImageUrl = resolveGuestTryOptionImageUrl(
+          `${next.prompt ?? ""} · ${next.promptImagePrompt}`,
+          runSubject,
+          { questionId: questionChartId, optionIndex: 0 },
+        );
+      }
       if (next.kind === "image_mcq") {
-        const labels = next.options ?? [`${runSubject} candidate 1`, `${runSubject} candidate 2`, `${runSubject} candidate 3`, `${runSubject} candidate 4`];
-        const prompts = Array.isArray(next.optionImagePrompts) ? next.optionImagePrompts : [];
-        next.optionImageUrls = labels.slice(0, 4).map((label, idx) => {
-          const prompt = prompts[idx]?.trim() || label;
-          return resolveGuestTryOptionImageUrl(prompt, runSubject, { questionId: questionChartId, optionIndex: idx });
-        });
-        next.optionImageUrls = repairDuplicateOptionImageUrls(next.optionImageUrls, prompts, labels, subjectLine, questionChartId);
+        next.optionImageUrls = buildGuestImageMcqOptionUrls(next, runSubject, questionChartId);
       }
       return next;
     });
@@ -1117,13 +1159,15 @@ export async function generateGuestTryQuestPack(params: {
     const diff = params.difficulty;
     const mixedGeneral = isGeneralMixedGuestSubject(subject);
 
-    const kindSchedule = `Emit exactly ${n} objects. Use this kind schedule:\n- q0: "mcq"\n- q1: "drag_rank"\n- q2: "image_mcq"\n- q3: "short_answer"\n- q4: "image_mcq"\n- q5: "mcq"\n- q6: "true_false"\n- q7: "drag_rank"\n${n > 8 ? `- q8 … q${n - 1}: alternate "mcq" and "image_mcq"` : ""}`;
+    const kindSchedule = `Emit exactly ${n} objects. Match the logged-in student Practice Pack skill assessment:\n- q0: "mcq" (AP/college prep; hard distractors)\n- q1: "problem_solving"\n- q2: "problem_solving"\n- q3: "short_answer"\n- q4: "image_mcq"\n- q5: "problem_solving"\n- q6: "mcq"\n- q7: "drag_rank"\n- q8: "short_answer" or "problem_solving"\n- q9: "mcq" or "problem_solving"\n${n > 10 ? `- q10 … q${n - 1}: alternate "problem_solving" and "mcq"` : ""}\nMinimum 3 "problem_solving" items. Do NOT emit "true_false" (max 0).`;
+
+    const problemSolvingRules = `For kind "problem_solving": include referenceAnswer with acceptable final results (use | for alternates). Each prompt MUST require 2+ reasoning steps. No trivia. LaTeX allowed: \\( ... \\) or $ ... $. These items verify multi step skill.`;
 
     const dragRankRules = `For kind "drag_rank": include rankItems (array of 3–6 unique strings) in the CORRECT order (easiest→hardest, earliest→latest, or steps in sequence). No correctIndex. Example: rankItems ["Wanderer","Seeker","Scholar","Contender"].`;
 
     const imageMcqRules = `For kind "image_mcq": exactly 4 options AND 4 optionImagePrompts. Each optionImagePrompt MUST describe a DISTINCT visual — never reuse the same diagram type for distractors. Wrong options should look plausible but clearly different (e.g. H2O vs CO2 vs NH3 vs CH4 Lewis structures, not four identical molecules).`;
 
-    const systemPrompt = `You write short assessment items for a marketing demo. Return ONLY valid JSON:\n{ "questions": [ ... exactly ${n} objects ... ] }\n\nShared fields for every item:\n- id: string "q0" … "q${n - 1}"\n- kind: one of mcq | true_false | short_answer | image_mcq | drag_rank\n- prompt: question text\n- explanation: 1–3 sentences\n\n${kindSchedule}\n\n${dragRankRules}\n\n${imageMcqRules}\n\ndifficulty calibration: tier="${diff}".\n\n${mixedGeneral ? "MIXED MODE: Rotate across disciplines." : `SUBJECT MODE ("${subject}"): Every item must stay strictly within ${subject}.`}\n\n${mixedGeneral ? "" : `Visual playbook for "${subject}":\n- ${subjectVisualPlaybook(subject)}`}\n\nDo not wrap JSON in markdown.`;
+    const systemPrompt = `You write Practice Pack questions in the same format students prove in Quest (Tab 1). Return ONLY valid JSON:\n{ "questions": [ ... exactly ${n} objects ... ] }\n\nShared fields for every item:\n- id: string "q0" … "q${n - 1}"\n- kind: one of mcq | short_answer | problem_solving | image_mcq | drag_rank\n- prompt: question text\n- explanation: 1–3 sentences\n\n${kindSchedule}\n\n${problemSolvingRules}\n\n${dragRankRules}\n\n${imageMcqRules}\n\ndifficulty calibration: tier="${diff}" = AP/college prep exam rigor. No middle school recall. Multi step reasoning required. Distractors must be plausible.\n\n${mixedGeneral ? "MIXED MODE: Rotate across disciplines." : `SUBJECT MODE ("${subject}"): Every item must stay strictly within ${subject}.`}\n\n${mixedGeneral ? "" : `Visual playbook for "${subject}":\n- ${subjectVisualPlaybook(subject)}`}\n\nDo not wrap JSON in markdown.`;
     const userContent = mixedGeneral
       ? `Subject: General (mixed STEM preview)\nDifficulty: ${diff}\nGenerate ${n} items.`
       : `Subject: ${subject}\nDifficulty: ${diff}\nGenerate ${n} items.`;

@@ -3,7 +3,12 @@
  * Badge SVGs live in /public/icons/*.svg (680×330 emblem + labels).
  */
 
-import { getAccountLevelFromTotalXp, type AccountLevelInfo, type LevelTier } from "@/features/xp/levels";
+import {
+  ACCOUNT_LEVELS,
+  getAccountLevelFromTotalXp,
+  type AccountLevelInfo,
+  type LevelTier,
+} from "@/features/xp/levels";
 
 export type AccountRankKey =
   | "wanderer"
@@ -31,92 +36,87 @@ export interface AccountRankVisual {
   maxXp: number | null;
 }
 
-export const ACCOUNT_RANK_VISUALS: readonly AccountRankVisual[] = [
+const RANK_STYLE_BASE = [
   {
     level: 1,
-    key: "wanderer",
+    key: "wanderer" as const,
     title: "Wanderer",
     iconSrc: "/icons/wanderer.svg",
     color: "#64748B",
     colorMuted: "rgba(100, 116, 139, 0.22)",
     labelOnDark: "#CBD5E1",
     labelOnLight: "#475569",
-    minXp: 0,
-    maxXp: 100,
   },
   {
     level: 2,
-    key: "seeker",
+    key: "seeker" as const,
     title: "Seeker",
     iconSrc: "/icons/seeker.svg",
     color: "#94A3B8",
     colorMuted: "rgba(148, 163, 184, 0.22)",
     labelOnDark: "#E2E8F0",
     labelOnLight: "#475569",
-    minXp: 101,
-    maxXp: 300,
   },
   {
     level: 3,
-    key: "scholar",
+    key: "scholar" as const,
     title: "Scholar",
     iconSrc: "/icons/scholar.svg",
     color: "#38BDF8",
     colorMuted: "rgba(56, 189, 248, 0.22)",
     labelOnDark: "#BAE6FD",
     labelOnLight: "#0369A1",
-    minXp: 301,
-    maxXp: 700,
   },
   {
     level: 4,
-    key: "contender",
+    key: "contender" as const,
     title: "Contender",
     iconSrc: "/icons/contender.svg",
     color: "#2563EB",
     colorMuted: "rgba(37, 99, 235, 0.22)",
     labelOnDark: "#93C5FD",
     labelOnLight: "#1D4ED8",
-    minXp: 701,
-    maxXp: 1500,
   },
   {
     level: 5,
-    key: "rival",
+    key: "rival" as const,
     title: "Rival",
     iconSrc: "/icons/rival.svg",
     color: "#4F46E5",
     colorMuted: "rgba(79, 70, 229, 0.24)",
     labelOnDark: "#A5B4FC",
     labelOnLight: "#4338CA",
-    minXp: 1501,
-    maxXp: 3000,
   },
   {
     level: 6,
-    key: "apex",
+    key: "apex" as const,
     title: "Apex",
     iconSrc: "/icons/apex.svg",
     color: "#7C3AED",
     colorMuted: "rgba(124, 58, 237, 0.26)",
     labelOnDark: "#C4B5FD",
     labelOnLight: "#6D28D9",
-    minXp: 3001,
-    maxXp: 6000,
   },
   {
     level: 7,
-    key: "mentrixer",
+    key: "mentrixer" as const,
     title: "Mentrixer",
     iconSrc: "/icons/mentrixer-rank.svg",
     color: "#D4A017",
     colorMuted: "rgba(212, 160, 23, 0.28)",
     labelOnDark: "#F5D76E",
     labelOnLight: "#92400E",
-    minXp: 6001,
-    maxXp: null,
   },
 ] as const;
+
+export const ACCOUNT_RANK_VISUALS: readonly AccountRankVisual[] = RANK_STYLE_BASE.map((style) => {
+  const xp = ACCOUNT_LEVELS.find((row) => row.level === style.level)!;
+  return {
+    ...style,
+    minXp: xp.minXp,
+    maxXp: xp.maxXp,
+  };
+});
 
 /** Square crop centered on emblem (matches all rank SVG root viewBox). */
 export const RANK_SVG_VIEWBOX = "210 25 260 260";

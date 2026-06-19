@@ -1,11 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { runGsapAction, useGsapEffect } from "@/shared/core/gsap-lazy";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import { submitQuest, submitQuestAnswer, type QuestGoal, type QuestMode } from "@/features/quest/classic-quest";
+import {
+  submitGuestClassicAnswer,
+  submitGuestClassicQuest,
+  startGuestAdaptiveQuest,
+  sendGuestAdaptiveTurn,
+  completeGuestAdaptiveQuest,
+} from "@/features/quest/guest-classic-client";
 import {
   completeAdaptiveClassicQuest,
   startAdaptiveClassicQuest,
@@ -14,6 +22,9 @@ import type { AdaptiveWorldState } from "@/shared/integrations/ai/adaptive-quest
 import { getCurrentUserXp } from "@/features/quest/quest-reads";
 import { BackButton } from "@/shared/ui/back-button";
 import { emitXpAward } from "@/features/xp/xp-events";
+import { computeGuestTryWouldXp } from "@/features/quest/guest-try-recents";
+import { buildGuestClassicSolverSummary } from "@/features/quest/guest-try-skill-summary";
+import { GuestTryResultsPanel } from "@/features/quest/ui/guest-try-results-panel";
 import { QuestIllustration } from "@/components/illustrations";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
@@ -74,9 +85,26 @@ function isValidQuestResponse(value: unknown): value is QuestResponse {
   );
 }
 
-export function QuestClassicWorkspace() {
+export function QuestClassicWorkspace({
+  guestMode = false,
+  showGuestBanner = true,
+  guestSubjectName = "General",
+  onGuestTryPractice,
+  embedded = false,
+}: {
+  guestMode?: boolean;
+  showGuestBanner?: boolean;
+  guestSubjectName?: string;
+  onGuestTryPractice?: () => void;
+  embedded?: boolean;
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const recentKey = guestMode ? "mentrixa_guest_classic_quests" : RECENT_KEY;
+  const activeQuestSessionKey = guestMode
+    ? "mentrixa_guest_active_quest_v1"
+    : ACTIVE_QUEST_SESSION_KEY;
 
   const [prompt, setPrompt] = useState("");
   const [goal, setGoal] = useState<QuestGoal>("exam");
@@ -106,6 +134,10 @@ export function QuestClassicWorkspace() {
   const [adaptiveFeedback, setAdaptiveFeedback] = useState<string[]>([]);
   const [adaptiveSessionActive, setAdaptiveSessionActive] = useState(false);
   const [adaptiveInitialPrompt, setAdaptiveInitialPrompt] = useState("");
+  const [guestResultsVisible, setGuestResultsVisible] = useState(false);
+  const [guestSolverCorrect, setGuestSolverCorrect] = useState(false);
+  const [guestSolverReview, setGuestSolverReview] = useState("");
+  const guestSolverPromptRef = useRef("");
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const rightPaneRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +145,14 @@ export function QuestClassicWorkspace() {
 
   const focusSolverPane = () => {
     rightPaneRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const finishGuestSolverRun = (correct: boolean, reviewText: string, problemPrompt: string) => {
+    guestSolverPromptRef.current = problemPrompt.trim();
+    setGuestSolverCorrect(correct);
+    setGuestSolverReview(reviewText.trim());
+    setGuestResultsVisible(true);
+    setQuestCompleted(true);
   };
 
   // hydrate from URL
@@ -126,7 +166,7 @@ export function QuestClassicWorkspace() {
     if (typeof window === "undefined") return;
     if (searchParams.get("prompt")?.trim()) return;
 
-    const raw = window.sessionStorage.getItem(ACTIVE_QUEST_SESSION_KEY);
+    const raw = window.sessionStorage.getItem(activeQuestSessionKey);
     if (!raw) return;
 
     try {
@@ -140,7 +180,7 @@ export function QuestClassicWorkspace() {
         typeof parsed.prompt !== "string" ||
         !isValidQuestResponse(parsed.currentQuest)
       ) {
-        window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+        window.sessionStorage.removeItem(activeQuestSessionKey);
         return;
       }
 
@@ -166,7 +206,7 @@ export function QuestClassicWorkspace() {
         typeof parsed.lastXpAwarded === "number" ? parsed.lastXpAwarded : null,
       );
     } catch {
-      window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+      window.sessionStorage.removeItem(activeQuestSessionKey);
     }
   }, [searchParams]);
 
@@ -189,7 +229,7 @@ export function QuestClassicWorkspace() {
       lastXpAwarded,
     };
 
-    window.sessionStorage.setItem(ACTIVE_QUEST_SESSION_KEY, JSON.stringify(snapshot));
+    window.sessionStorage.setItem(activeQuestSessionKey, JSON.stringify(snapshot));
   }, [
     currentQuest,
     prompt,
@@ -206,7 +246,7 @@ export function QuestClassicWorkspace() {
   // load recent
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(RECENT_KEY);
+    const raw = window.localStorage.getItem(recentKey);
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
@@ -227,10 +267,11 @@ export function QuestClassicWorkspace() {
     } catch {
       setRecentQuests([]);
     }
-  }, []);
+  }, [recentKey]);
 
   // load XP
   useEffect(() => {
+    if (guestMode) return;
     (async () => {
       const result = await getCurrentUserXp();
       if (result && !("error" in result)) {
@@ -238,14 +279,14 @@ export function QuestClassicWorkspace() {
         setStreakDays(result.streakDays);
       }
     })();
-  }, []);
+  }, [guestMode]);
 
   const addToRecent = (text: string, payload?: QuestResponse) => {
     if (!text.trim() || typeof window === "undefined") return;
     const item: RecentItem = { text: text.trim(), payload, completedLocally: false };
     setRecentQuests((prev) => {
       const next = [item, ...prev.filter((q) => q.text !== text.trim())].slice(0, MAX_RECENT);
-      window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      window.localStorage.setItem(recentKey, JSON.stringify(next));
       return next;
     });
   };
@@ -257,7 +298,7 @@ export function QuestClassicWorkspace() {
       const next = prev.map((q) =>
         q.text.trim() === t ? { ...q, completedLocally: true } : q,
       );
-      window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      window.localStorage.setItem(recentKey, JSON.stringify(next));
       return next;
     });
   };
@@ -266,7 +307,7 @@ export function QuestClassicWorkspace() {
     if (typeof window === "undefined") return;
     setRecentQuests((prev) => {
       const next = prev.filter((q) => q.text !== text);
-      window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      window.localStorage.setItem(recentKey, JSON.stringify(next));
       return next;
     });
   };
@@ -295,7 +336,9 @@ export function QuestClassicWorkspace() {
 
     let questId = adaptiveQuestId;
     if (!questId) {
-      const started = await startAdaptiveClassicQuest(text, goal, mode, adaptiveSubjectLabel);
+      const started = guestMode
+        ? await startGuestAdaptiveQuest(text, goal, mode, adaptiveSubjectLabel)
+        : await startAdaptiveClassicQuest(text, goal, mode, adaptiveSubjectLabel);
       if ("error" in started) {
         setIsLoading(false);
         setSubmitError(started.message);
@@ -310,6 +353,55 @@ export function QuestClassicWorkspace() {
     }
 
     try {
+      if (guestMode) {
+        const turn = await sendGuestAdaptiveTurn({
+          questId,
+          message: text,
+          priorWorldState: adaptiveWorldState,
+          subject: adaptiveSubjectLabel,
+        });
+        if ("message" in turn) {
+          setSubmitError(turn.message);
+          if (!adaptiveWorldState) {
+            resetAdaptiveSession();
+            setPrompt(text);
+          }
+          setIsLoading(false);
+          return;
+        }
+        const turnResult = turn;
+        setAdaptiveFeedback((prev) => [...prev, turnResult.feedback]);
+        setAdaptiveWorldState(turnResult.updatedWorldState);
+        setPrompt("");
+        if (turnResult.isResolved) {
+          const fin = await completeGuestAdaptiveQuest(questId);
+          if (fin && "error" in fin) {
+            setRecordError(fin.message);
+          } else if (fin) {
+            markRecentCompleted(adaptiveInitialPrompt || text);
+            setPrompt(adaptiveInitialPrompt || text);
+            setLastXpAwarded(fin.xpAwarded ?? 0);
+            setXpThisSession((s) => s + (fin.xpAwarded ?? 0));
+            finishGuestSolverRun(
+              true,
+              turnResult.feedback || "Adaptive challenge complete.",
+              adaptiveInitialPrompt || text,
+            );
+            if ((fin.xpAwarded ?? 0) > 0) {
+              emitXpAward({
+                amount: fin.xpAwarded ?? 0,
+                totalXp: fin.totalXp ?? totalXp,
+                trigger: "quest",
+                message: "Adaptive challenge complete! (Preview. Sign up to save)",
+              });
+            }
+          }
+        }
+        setIsLoading(false);
+        focusSolverPane();
+        return;
+      }
+
       const res = await fetch("/api/quests/adaptive", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -364,8 +456,10 @@ export function QuestClassicWorkspace() {
           }
         }
       }
-    } catch {
-      setSubmitError("Adaptive challenge failed. Try again.");
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Adaptive challenge failed. Try again.",
+      );
       if (!adaptiveWorldState) {
         resetAdaptiveSession();
         setPrompt(text);
@@ -391,7 +485,9 @@ export function QuestClassicWorkspace() {
 
     setIsLoading(true);
 
-    const result = await submitQuest(text, goal, mode);
+    const result = guestMode
+      ? await submitGuestClassicQuest(text, goal, mode)
+      : await submitQuest(text, goal, mode);
 
     if ("error" in result && result.error) {
       setIsLoading(false);
@@ -445,7 +541,7 @@ export function QuestClassicWorkspace() {
         questCompleted: false,
         lastXpAwarded: null,
       };
-      window.sessionStorage.setItem(ACTIVE_QUEST_SESSION_KEY, JSON.stringify(snapshot));
+      window.sessionStorage.setItem(activeQuestSessionKey, JSON.stringify(snapshot));
     }
 
     setCurrentQuest(payload);
@@ -485,12 +581,19 @@ export function QuestClassicWorkspace() {
     setAnswerFeedback(null);
     setSubmittingAnswer(true);
     try {
-      const result = await submitQuestAnswer(
-        currentQuest.questId,
-        answer,
-        currentQuest.goal ?? goal,
-        currentQuest.mode,
-      );
+      const result = guestMode
+        ? await submitGuestClassicAnswer(
+            currentQuest.questId,
+            answer,
+            currentQuest.goal ?? goal,
+            currentQuest.mode,
+          )
+        : await submitQuestAnswer(
+            currentQuest.questId,
+            answer,
+            currentQuest.goal ?? goal,
+            currentQuest.mode,
+          );
       if (!result) {
         setRecordError("Something went wrong. Please try again.");
         return;
@@ -501,12 +604,42 @@ export function QuestClassicWorkspace() {
           result.message.toLowerCase().includes("already finished")
         ) {
           markRecentCompleted(prompt);
-          setQuestCompleted(true);
-          setLastXpAwarded(null);
+          if (guestMode) {
+            finishGuestSolverRun(true, "You already completed this preview quest.", prompt);
+          } else {
+            setQuestCompleted(true);
+            setLastXpAwarded(null);
+          }
           setRecordError(null);
           return;
         }
         setRecordError(result.message);
+        return;
+      }
+      if (guestMode) {
+        const reviewText =
+          result.feedback ??
+          (result.correct
+            ? "Strong work on this problem."
+            : "Review the hints and explanation, then sign up to keep practicing.");
+        finishGuestSolverRun(result.correct, reviewText, prompt);
+        markRecentCompleted(prompt);
+        setLastXpAwarded(result.correct ? (result.xpAwarded ?? 0) : 0);
+        if (result.correct) {
+          setXpThisSession((s) => s + (result.xpAwarded ?? 0));
+          setUserAnswer("");
+          setAnswerFeedback(null);
+          if ((result.xpAwarded ?? 0) > 0) {
+            emitXpAward({
+              amount: result.xpAwarded ?? 0,
+              totalXp: result.totalXp ?? totalXp,
+              trigger: "quest",
+              message: "Quest complete! (Preview. Sign up to save)",
+            });
+          }
+        } else {
+          setAnswerFeedback(reviewText);
+        }
         return;
       }
       if (result.correct) {
@@ -524,6 +657,9 @@ export function QuestClassicWorkspace() {
             amount: result.xpAwarded ?? 0,
             totalXp: result.totalXp ?? totalXp,
             trigger: "quest",
+            message: guestMode
+              ? "Quest complete! (Preview. Sign up to save)"
+              : undefined,
           });
         }
       } else {
@@ -562,7 +698,7 @@ export function QuestClassicWorkspace() {
       setReasoningShown(false);
       setSolutionShown(false);
       if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+        window.sessionStorage.removeItem(activeQuestSessionKey);
       }
     }
 
@@ -597,7 +733,7 @@ export function QuestClassicWorkspace() {
     setSubmitError(null);
     setPrompt("");
     if (typeof window !== "undefined") {
-      window.sessionStorage.removeItem(ACTIVE_QUEST_SESSION_KEY);
+      window.sessionStorage.removeItem(activeQuestSessionKey);
     }
     focusSolverPane();
     requestAnimationFrame(() => textareaRef.current?.focus());
@@ -627,7 +763,7 @@ export function QuestClassicWorkspace() {
           questCompleted: isDone,
           lastXpAwarded: null,
         };
-        window.sessionStorage.setItem(ACTIVE_QUEST_SESSION_KEY, JSON.stringify(snapshot));
+        window.sessionStorage.setItem(activeQuestSessionKey, JSON.stringify(snapshot));
       }
 
       setCurrentQuest(item.payload);
@@ -712,16 +848,55 @@ export function QuestClassicWorkspace() {
 
   const allHintsRevealed = totalHints > 0 ? hintsRevealed >= totalHints : true;
 
+  if (guestMode && guestResultsVisible) {
+    const problemPrompt =
+      guestSolverPromptRef.current || prompt.trim() || adaptiveInitialPrompt.trim();
+    const skillSummary = buildGuestClassicSolverSummary(
+      problemPrompt,
+      guestSolverCorrect,
+      guestSolverReview ||
+        currentQuest?.reasoning ||
+        "Review your approach and try the practice pack for more reps.",
+    );
+    const wouldXp = computeGuestTryWouldXp(guestSolverCorrect ? 1 : 0, 1);
+
+    return (
+      <GuestTryResultsPanel
+        embedded={embedded}
+        subjectName={guestSubjectName}
+        correct={guestSolverCorrect ? 1 : 0}
+        total={1}
+        streakRecord={guestSolverCorrect ? 1 : 0}
+        wouldXp={wouldXp}
+        skillSummary={skillSummary}
+        onRunAnother={onGuestTryPractice}
+        runAnotherLabel="Try a practice pack"
+        signupHint="Create your free account to save rank, XP, and unlimited problem solving"
+      />
+    );
+  }
+
   return (
     <div className="mx-surface-light relative bg-white">
+      {guestMode && showGuestBanner ? (
+        <div className="border-b border-indigo-200 bg-indigo-50/90 px-4 py-3 text-sm leading-relaxed text-indigo-950">
+          Same Problem solver students use. Pick exam prep, interview prep, or assignment help.{" "}
+          <Link href="/auth/signup" className="font-semibold underline underline-offset-2">
+            Sign up free
+          </Link>{" "}
+          to save quests, XP, and rank.
+        </div>
+      ) : null}
       <QuestIllustration />
       <div className="grid min-h-0 grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] md:h-[calc(100dvh-3.5rem)] md:max-h-[calc(100dvh-3.5rem)]">
         {/* LEFT PANE */}
         <aside className="relative min-h-0 border-b border-slate-200 mx-surface-light bg-white md:h-full md:border-b-0 md:border-r flex flex-col justify-between overflow-y-auto">
           <div className="flex-1 px-5 pt-6 pb-4">
-            <div className="mb-6">
-              <BackButton />
-            </div>
+            {!guestMode ? (
+              <div className="mb-6">
+                <BackButton />
+              </div>
+            ) : null}
 
             <div className="mb-4">
               <p className={`${mentrixStudent.sectionEyebrowOnLight} mb-2`}>
@@ -788,7 +963,17 @@ export function QuestClassicWorkspace() {
 
             {adaptiveMode && adaptiveWorldState && (
               <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
-                <p className="text-xs font-semibold text-indigo-800 uppercase tracking-[0.14em]">
+                {adaptiveWorldState.scenarioPrinciple ? (
+                  <>
+                    <p className="text-xs font-semibold text-indigo-800 uppercase tracking-[0.14em]">
+                      Scenario principle
+                    </p>
+                    <p className="mt-1 text-sm text-indigo-950 leading-relaxed">
+                      {adaptiveWorldState.scenarioPrinciple}
+                    </p>
+                  </>
+                ) : null}
+                <p className={`text-xs font-semibold text-indigo-800 uppercase tracking-[0.14em] ${adaptiveWorldState.scenarioPrinciple ? "mt-3" : ""}`}>
                   Step {adaptiveWorldState.stepIndex} of {adaptiveWorldState.stepTotal}
                 </p>
                 <p className="mt-2 text-sm text-indigo-950 leading-relaxed">
@@ -931,7 +1116,11 @@ export function QuestClassicWorkspace() {
                 className="h-full w-full origin-left bg-gradient-to-r from-emerald-400 via-mentrixa-500 to-indigo-500"
               />
             </div>
-            <span>{totalXp} XP</span>
+            <span>
+              {guestMode
+                ? `${totalXp + xpThisSession} XP preview`
+                : `${totalXp} XP`}
+            </span>
           </div>
         </aside>
 
@@ -963,6 +1152,14 @@ export function QuestClassicWorkspace() {
                     <p className="text-zinc-900 leading-relaxed mb-4">
                       {adaptiveWorldState.scenarioTitle}
                     </p>
+                    {adaptiveWorldState.scenarioPrinciple ? (
+                      <>
+                        <p className="text-xs font-mono text-violet-700 mb-2">Scenario principle</p>
+                        <p className="text-zinc-800 leading-relaxed mb-4">
+                          {adaptiveWorldState.scenarioPrinciple}
+                        </p>
+                      </>
+                    ) : null}
                     <p className="text-xs font-mono text-violet-700 mb-2">
                       Step {adaptiveWorldState.stepIndex} of {adaptiveWorldState.stepTotal}
                     </p>
@@ -1115,12 +1312,20 @@ export function QuestClassicWorkspace() {
                           {questCompleted ? (
                             <div className="flex flex-col gap-3">
                               <p className="text-sm font-medium text-zinc-800">Quest complete!</p>
-                              {lastXpAwarded == null && (
+                              {guestMode ? (
+                                <p className="text-xs text-zinc-600 leading-relaxed">
+                                  XP preview only.{" "}
+                                  <Link href="/auth/signup" className="font-semibold underline underline-offset-2">
+                                    Sign up free
+                                  </Link>{" "}
+                                  to save this quest and earn real rank progress.
+                                </p>
+                              ) : lastXpAwarded == null ? (
                                 <p className="text-xs text-zinc-600 leading-relaxed">
                                   This run is saved in Recents for review only. To answer again for XP, start
                                   a new attempt with the same wording.
                                 </p>
-                              )}
+                              ) : null}
                               <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
                                 <Button size="sm" onClick={handleAskAnother}>
                                   Ask another question

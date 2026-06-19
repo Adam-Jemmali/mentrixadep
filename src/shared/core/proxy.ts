@@ -39,6 +39,7 @@ const publicRoutes = new Set([
   /** Stripe redirects here when Checkout is cancelled — unlock slot without requiring session cookie. */
   "/api/stripe/checkout/cancel-return",
   "/api/guest-practice",
+  "/api/guest-classic-quest",
   "/auth/signin",
   "/auth/signup",
   "/auth/activate",

@@ -3,8 +3,389 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/shared/integrations/supabase/client";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import {
+  getAccountRankFromTotalXp,
+  normalizeRankTitle,
+  type AccountRankVisual,
+} from "@/features/xp/rank-icons";
 
-/** Client-side OG-style score card → WebP download. */
+type ScoreCardPayload = {
+  title: string;
+  playerName: string;
+  correct: number | null;
+  total: number | null;
+  accuracy: number | null;
+  xp: number;
+  isPreview: boolean;
+  dateLabel: string;
+  rank: AccountRankVisual & { levelInfo: ReturnType<typeof getAccountRankFromTotalXp>["levelInfo"] };
+  nextRankLabel: string | null;
+};
+
+function parseScorePayload(
+  title: string,
+  scoreLine: string,
+  xpLine: string,
+  playerName: string,
+): ScoreCardPayload {
+  const frac = scoreLine.match(/(\d+)\s*\/\s*(\d+)/);
+  const pct = scoreLine.match(/(\d+)\s*%/);
+  const correct = frac ? Number(frac[1]) : null;
+  const total = frac ? Number(frac[2]) : null;
+  const accuracy =
+    pct != null
+      ? Number(pct[1])
+      : correct != null && total != null && total > 0
+        ? Math.round((correct / total) * 100)
+        : null;
+  const xp = Number.parseInt((xpLine.match(/[0-9,]+/)?.[0] ?? "0").replace(/,/g, ""), 10) || 0;
+  const rank = getAccountRankFromTotalXp(xp);
+  const nextRankLabel =
+    rank.levelInfo.xpToNextLevel != null
+      ? `${rank.levelInfo.xpToNextLevel.toLocaleString()} XP → next rank`
+      : null;
+
+  return {
+    title: title.trim() || "Quest run",
+    playerName: playerName.trim() || "Mentrixer",
+    correct,
+    total,
+    accuracy,
+    xp,
+    isPreview: xpLine.toLowerCase().includes("preview"),
+    dateLabel: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(
+      new Date(),
+    ),
+    rank,
+    nextRankLabel,
+  };
+}
+
+function accentForAccuracy(accuracy: number | null): { primary: string; glow: string; muted: string } {
+  if (accuracy == null) {
+    return { primary: "#60a5fa", glow: "rgba(96,165,250,0.45)", muted: "rgba(96,165,250,0.14)" };
+  }
+  if (accuracy >= 90) {
+    return { primary: "#34d399", glow: "rgba(52,211,153,0.5)", muted: "rgba(52,211,153,0.16)" };
+  }
+  if (accuracy >= 70) {
+    return { primary: "#38bdf8", glow: "rgba(56,189,248,0.45)", muted: "rgba(56,189,248,0.14)" };
+  }
+  if (accuracy >= 50) {
+    return { primary: "#fbbf24", glow: "rgba(251,191,36,0.4)", muted: "rgba(251,191,36,0.14)" };
+  }
+  return { primary: "#94a3b8", glow: "rgba(148,163,184,0.35)", muted: "rgba(148,163,184,0.1)" };
+}
+
+async function safeLoadImage(src: string): Promise<HTMLImageElement | null> {
+  return await new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+function drawProgressRing(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  stroke: number,
+  pct: number,
+  color: string,
+  trackColor: string,
+) {
+  const start = -Math.PI / 2;
+  const end = start + (Math.min(100, Math.max(0, pct)) / 100) * Math.PI * 2;
+
+  ctx.lineWidth = stroke;
+  ctx.lineCap = "round";
+
+  ctx.strokeStyle = trackColor;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 14;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, start, end);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function drawRankEmblem(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  rank: AccountRankVisual,
+  icon: HTMLImageElement | null,
+) {
+  roundRect(ctx, x, y, size, size, 18);
+  ctx.fillStyle = "rgba(15,23,42,0.92)";
+  ctx.fill();
+  ctx.strokeStyle = rank.color;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.save();
+  roundRect(ctx, x + 8, y + 8, size - 16, size - 16, 14);
+  ctx.clip();
+  const glow = ctx.createRadialGradient(x + size / 2, y + size / 2, 8, x + size / 2, y + size / 2, size / 2);
+  glow.addColorStop(0, rank.colorMuted);
+  glow.addColorStop(1, "transparent");
+  ctx.fillStyle = glow;
+  ctx.fillRect(x, y, size, size);
+  ctx.restore();
+
+  if (icon) {
+    const pad = size * 0.22;
+    ctx.drawImage(icon, x + pad, y + pad, size - pad * 2, size - pad * 2);
+  }
+
+  ctx.shadowColor = rank.colorMuted;
+  ctx.shadowBlur = 28;
+  roundRect(ctx, x, y, size, size, 18);
+  ctx.strokeStyle = `${rank.color}88`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function drawStatBlock(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  label: string,
+  value: string,
+  accent: string,
+) {
+  roundRect(ctx, x, y, w, h, 16);
+  ctx.fillStyle = "rgba(15,23,42,0.78)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.1)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(148,163,184,0.9)";
+  ctx.font = "700 11px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(label, x + 20, y + 32);
+
+  ctx.fillStyle = accent;
+  ctx.font = "800 44px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(value, x + 18, y + h - 22);
+}
+
+function drawRankProgressBar(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  rank: ScoreCardPayload["rank"],
+  accent: string,
+) {
+  const span =
+    rank.levelInfo.maxXp != null ? rank.levelInfo.maxXp - rank.levelInfo.minXp + 1 : 100;
+  const pct = Math.min(100, Math.round((rank.levelInfo.xpIntoLevel / span) * 100));
+
+  roundRect(ctx, x, y, w, 10, 5);
+  ctx.fillStyle = "rgba(255,255,255,0.1)";
+  ctx.fill();
+
+  if (pct > 0) {
+    roundRect(ctx, x, y, Math.max(10, (w * pct) / 100), 10, 5);
+    const grad = ctx.createLinearGradient(x, 0, x + w, 0);
+    grad.addColorStop(0, accent);
+    grad.addColorStop(1, rank.color);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+}
+
+function drawScoreCredentialCard(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  data: ScoreCardPayload,
+  logo: HTMLImageElement | null,
+  avatar: HTMLImageElement | null,
+  rankIcon: HTMLImageElement | null,
+) {
+  const accent = accentForAccuracy(data.accuracy);
+  const scoreDisplay =
+    data.correct != null && data.total != null ? `${data.correct}/${data.total}` : "—";
+  const accuracyDisplay = data.accuracy != null ? `${data.accuracy}%` : "—";
+  const titleClean = data.title.length > 40 ? `${data.title.slice(0, 37)}…` : data.title;
+  const rankTitle = normalizeRankTitle(data.rank.title);
+
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, "#04080f");
+  bg.addColorStop(1, "#0b1528");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const spot = ctx.createRadialGradient(380, 280, 20, 380, 280, 340);
+  spot.addColorStop(0, accent.muted);
+  spot.addColorStop(1, "transparent");
+  ctx.fillStyle = spot;
+  ctx.fillRect(0, 0, w, h);
+
+  roundRect(ctx, 20, 20, w - 40, h - 40, 22);
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  if (logo) {
+    ctx.drawImage(logo, 48, 44, 52, 52);
+  }
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "800 32px system-ui, -apple-system, Segoe UI, sans-serif";
+  ctx.fillText(titleClean, 112, 78);
+
+  ctx.fillStyle = data.rank.labelOnDark;
+  ctx.font = "700 14px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(rankTitle.toUpperCase(), 112, 104);
+
+  drawRankEmblem(ctx, w - 168, 48, 120, data.rank, rankIcon);
+
+  const ringCx = 320;
+  const ringCy = 310;
+  const ringR = 118;
+  drawProgressRing(
+    ctx,
+    ringCx,
+    ringCy,
+    ringR,
+    18,
+    data.accuracy ?? 0,
+    accent.primary,
+    "rgba(255,255,255,0.08)",
+  );
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "800 72px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(scoreDisplay, ringCx, ringCy + 8);
+
+  ctx.fillStyle = accent.primary;
+  ctx.font = "800 36px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(accuracyDisplay, ringCx, ringCy + 52);
+  ctx.textAlign = "left";
+
+  const tileY = 468;
+  const tileH = 108;
+  const gap = 16;
+  const tileW = (w - 96 - gap * 2) / 3;
+
+  drawStatBlock(
+    ctx,
+    48,
+    tileY,
+    tileW,
+    tileH,
+    "CORRECT",
+    data.correct != null ? String(data.correct) : "—",
+    accent.primary,
+  );
+  drawStatBlock(ctx, 48 + tileW + gap, tileY, tileW, tileH, "ACCURACY", accuracyDisplay, accent.primary);
+  drawStatBlock(ctx, 48 + (tileW + gap) * 2, tileY, tileW, tileH, "XP", `+${data.xp}`, data.rank.color);
+
+  const metaX = 520;
+  const metaY = 200;
+
+  ctx.fillStyle = "#f1f5f9";
+  ctx.font = "800 56px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(accuracyDisplay, metaX, metaY);
+
+  ctx.fillStyle = "rgba(148,163,184,0.95)";
+  ctx.font = "600 13px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText("ACCURACY THIS RUN", metaX, metaY + 28);
+
+  ctx.fillStyle = accent.primary;
+  ctx.font = "800 48px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(`+${data.xp}`, metaX, metaY + 88);
+
+  ctx.fillStyle = "rgba(148,163,184,0.95)";
+  ctx.font = "600 13px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(data.isPreview ? "XP PREVIEW (SAME AS STUDENTS)" : "XP TOWARD GLOBAL RANK", metaX, metaY + 112);
+
+  drawRankProgressBar(ctx, metaX, metaY + 136, w - metaX - 56, data.rank, accent.primary);
+
+  if (data.nextRankLabel) {
+    ctx.fillStyle = "rgba(203,213,225,0.85)";
+    ctx.font = "600 13px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillText(data.nextRankLabel, metaX, metaY + 168);
+  }
+
+  const footerY = h - 72;
+  const avatarSize = 48;
+
+  if (avatar) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(48 + avatarSize / 2, footerY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(avatar, 48, footerY, avatarSize, avatarSize);
+    ctx.restore();
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(48 + avatarSize / 2, footerY + avatarSize / 2, avatarSize / 2 - 1, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(48 + avatarSize / 2, footerY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.1)";
+    ctx.fill();
+    const initials = (data.playerName.match(/\b\w/g)?.slice(0, 2).join("") || "M").toUpperCase();
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "700 18px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(initials, 48 + avatarSize / 2, footerY + avatarSize / 2 + 6);
+    ctx.textAlign = "left";
+  }
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "700 20px system-ui, sans-serif";
+  ctx.fillText(data.playerName.slice(0, 24), 108, footerY + 22);
+
+  ctx.fillStyle = data.rank.labelOnDark;
+  ctx.font = "600 13px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(`${rankTitle} · ${data.dateLabel}`, 108, footerY + 44);
+
+  ctx.fillStyle = "rgba(148,163,184,0.7)";
+  ctx.font = "600 12px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.textAlign = "right";
+  ctx.fillText("mentrixa.one", w - 48, footerY + 32);
+  ctx.textAlign = "left";
+}
+
+/** Client-side performance card → WebP download. */
 export function ShareScoreCardButton({
   title,
   scoreLine,
@@ -80,16 +461,10 @@ export function ShareScoreCardButton({
     };
   }, [playerName, playerAvatarUrl]);
 
-  const comebackCopy = useMemo(() => {
-    const xp = Number.parseInt((xpLine.match(/[0-9,]+/)?.[0] ?? "0").replace(/,/g, ""), 10) || 0;
-    if (xp >= 150) {
-      return "Momentum unlocked. Share it, then defend your streak tomorrow.";
-    }
-    if (xp >= 80) {
-      return "Strong run. Post it now and come back for an even cleaner score.";
-    }
-    return "Small wins stack fast. Share this run and jump back in for +XP.";
-  }, [xpLine]);
+  const cardPayload = useMemo(
+    () => parseScorePayload(title, scoreLine, xpLine, resolvedName),
+    [title, scoreLine, xpLine, resolvedName],
+  );
 
   const download = async () => {
     const w = 1200;
@@ -100,232 +475,36 @@ export function ShareScoreCardButton({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const variant: "competitive" | "achievement" =
-      Math.random() < 0.5 ? "competitive" : "achievement";
+    const [logoImg, avatarImg, rankIconImg] = await Promise.all([
+      safeLoadImage(MENTRIXA_LOGO_PNG),
+      resolvedAvatarUrl ? safeLoadImage(resolvedAvatarUrl) : Promise.resolve(null),
+      safeLoadImage(cardPayload.rank.iconSrc),
+    ]);
 
-    const safeLoadImage = async (src: string): Promise<HTMLImageElement | null> => {
-      return await new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = src;
-      });
-    };
+    drawScoreCredentialCard(ctx, w, h, cardPayload, logoImg, avatarImg, rankIconImg);
 
-    const logoImg = await safeLoadImage(MENTRIXA_LOGO_PNG);
-    const mentrixerImg = await safeLoadImage("/icons/mentrixer.svg");
-    const avatar = resolvedAvatarUrl ? await safeLoadImage(resolvedAvatarUrl) : null;
-
-    const drawAvatar = (x: number, y: number, size: number) => {
-      if (avatar) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(avatar, x, y, size, size);
-        ctx.restore();
-
-        ctx.strokeStyle = "rgba(255,255,255,0.75)";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(x + size / 2, y + size / 2, size / 2 - 1, 0, Math.PI * 2);
-        ctx.stroke();
-        return;
-      }
-
-      ctx.fillStyle = "rgba(255,255,255,0.15)";
-      ctx.beginPath();
-      ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-      ctx.fill();
-
-      const initials = (resolvedName.match(/\b\w/g)?.slice(0, 2).join("") || "M").toUpperCase();
-      ctx.fillStyle = "#e2e8f0";
-      ctx.font = "700 34px system-ui, sans-serif";
-      ctx.fillText(initials, x + 25, y + 60);
-    };
-
-    if (variant === "competitive") {
-      const g = ctx.createLinearGradient(0, 0, w, h);
-      g.addColorStop(0, "#070f1e");
-      g.addColorStop(0.45, "#12284a");
-      g.addColorStop(1, "#0d4f75");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.fillStyle = "rgba(255,255,255,0.12)";
-      ctx.beginPath();
-      ctx.arc(w * 0.85, h * 0.15, 120, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(14, 165, 233, 0.15)";
-      ctx.beginPath();
-      ctx.arc(w * 0.18, h * 0.86, 180, 0, Math.PI * 2);
-      ctx.fill();
-
-      for (let i = 0; i < 5; i += 1) {
-        const y = 130 + i * 34;
-        ctx.strokeStyle = `rgba(148, 163, 184, ${0.12 - i * 0.015})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(640, y);
-        ctx.bezierCurveTo(760, y - 26, 930, y + 24, 1130, y - 8);
-        ctx.stroke();
-      }
-
-      if (logoImg) {
-        ctx.globalAlpha = 0.98;
-        ctx.drawImage(logoImg, 74, 48, 72, 72);
-        ctx.globalAlpha = 1;
-      }
-
-      if (mentrixerImg) {
-        ctx.globalAlpha = 0.95;
-        ctx.drawImage(mentrixerImg, w - 180, 58, 94, 94);
-        ctx.globalAlpha = 1;
-      }
-
-      drawAvatar(82, 470, 92);
-
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "700 44px system-ui, sans-serif";
-      ctx.fillText("Mentrixa Quest", 166, 96);
-
-      ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.font = "600 20px system-ui, sans-serif";
-      ctx.fillText("Share the score. Return stronger.", 166, 126);
-
-      ctx.font = "700 34px system-ui, sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      const t = title.slice(0, 56);
-      ctx.fillText(t, 82, 214);
-
-      ctx.font = "800 56px system-ui, sans-serif";
-      ctx.fillStyle = "#67e8f9";
-      ctx.fillText(scoreLine, 82, 310);
-
-      ctx.font = "700 32px system-ui, sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.fillText(xpLine, 84, 366);
-
-      ctx.fillStyle = "rgba(255,255,255,0.86)";
-      ctx.font = "600 24px system-ui, sans-serif";
-      ctx.fillText(comebackCopy.slice(0, 74), 84, 430);
-
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.font = "700 26px system-ui, sans-serif";
-      ctx.fillText(resolvedName.slice(0, 26), 192, 522);
-
-      ctx.fillStyle = "rgba(196, 223, 255, 0.92)";
-      ctx.font = "600 20px system-ui, sans-serif";
-      ctx.fillText("Mentrixer", 192, 552);
-
-      ctx.fillStyle = "rgba(224,242,254,0.9)";
-      ctx.font = "700 18px system-ui, sans-serif";
-      ctx.fillText("Next mission: Beat this score in your next run.", 84, h - 52);
-
-      ctx.font = "600 18px system-ui, sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.fillText("mentrixa.one", w - 200, h - 52);
-    } else {
-      const g = ctx.createLinearGradient(0, 0, w, h);
-      g.addColorStop(0, "#1b114a");
-      g.addColorStop(0.45, "#2b1f70");
-      g.addColorStop(1, "#113353");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.fillStyle = "rgba(255,255,255,0.1)";
-      for (let i = 0; i < 10; i += 1) {
-        ctx.fillRect(40 + i * 120, 0, 2, h);
-      }
-
-      for (let i = 0; i < 6; i += 1) {
-        ctx.strokeStyle = `rgba(186, 230, 253, ${0.12 - i * 0.01})`;
-        ctx.lineWidth = 3 - i * 0.25;
-        ctx.beginPath();
-        ctx.moveTo(0, 110 + i * 56);
-        ctx.quadraticCurveTo(410, 70 + i * 42, w, 120 + i * 48);
-        ctx.stroke();
-      }
-
-      ctx.fillStyle = "rgba(103,232,249,0.15)";
-      ctx.fillRect(62, 148, 420, 248);
-
-      if (logoImg) {
-        ctx.globalAlpha = 0.98;
-        ctx.drawImage(logoImg, 74, 48, 70, 70);
-        ctx.globalAlpha = 1;
-      }
-
-      if (mentrixerImg) {
-        ctx.globalAlpha = 0.93;
-        ctx.drawImage(mentrixerImg, w - 206, 50, 128, 128);
-        ctx.globalAlpha = 1;
-      }
-
-      drawAvatar(74, 468, 96);
-
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "700 42px system-ui, sans-serif";
-      ctx.fillText("Mentrixa Quest", 160, 94);
-
-      ctx.fillStyle = "rgba(226,232,240,0.95)";
-      ctx.font = "600 20px system-ui, sans-serif";
-      ctx.fillText("Progress worth posting !", 160, 124);
-
-      ctx.fillStyle = "rgba(255,255,255,0.94)";
-      ctx.font = "700 30px system-ui, sans-serif";
-      ctx.fillText(title.slice(0, 58), 84, 208);
-
-      ctx.fillStyle = "#a5f3fc";
-      ctx.font = "800 60px system-ui, sans-serif";
-      ctx.fillText(scoreLine, 84, 298);
-
-      ctx.fillStyle = "rgba(224,242,254,0.98)";
-      ctx.font = "700 34px system-ui, sans-serif";
-      ctx.fillText(xpLine, 84, 352);
-
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.font = "600 24px system-ui, sans-serif";
-      ctx.fillText(comebackCopy.slice(0, 72), 84, 416);
-
-      ctx.fillStyle = "rgba(255,255,255,0.95)";
-      ctx.font = "700 28px system-ui, sans-serif";
-      ctx.fillText(resolvedName.slice(0, 26), 190, 523);
-
-      ctx.fillStyle = "rgba(191, 219, 254, 0.96)";
-      ctx.font = "600 20px system-ui, sans-serif";
-      ctx.fillText("Mentrixer", 190, 554);
-
-      ctx.fillStyle = "rgba(125,211,252,0.96)";
-      ctx.font = "700 20px system-ui, sans-serif";
-      ctx.fillText("Replay now. Keep your edge. You proved what you know!", 84, h - 52);
-
-      ctx.font = "600 18px system-ui, sans-serif";
-      ctx.fillStyle = "rgba(255,255,255,0.62)";
-      ctx.fillText("mentrixa.one", w - 200, h - 52);
-    }
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "mentrixa-quest-score.webp";
-      a.click();
-      URL.revokeObjectURL(url);
-    }, "image/webp");
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "mentrixa-performance-record.webp";
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      "image/webp",
+      0.92,
+    );
   };
 
   return (
     <button
       type="button"
       onClick={() => void download()}
-      className="inline-flex items-center rounded-full border border-mentrixa-200 bg-white px-3.5 py-2 text-sm font-semibold text-mentrixa-700 transition hover:border-mentrixa-400 hover:bg-mentrixa-50"
+      className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-cyan-300/50 hover:bg-white/15"
     >
-      Share score image
+      Download performance card
     </button>
   );
 }

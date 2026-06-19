@@ -39,14 +39,35 @@ export function SeekerRankIcon({ color, className }: IconProps) {
   );
 }
 
-/** Open book with upward arrow rising from the spine. */
+/** Open book with upward arrow rising from the spine (matches public/icons/scholar.svg). */
 export function ScholarRankIcon({ color, className }: IconProps) {
   return (
     <svg {...svgProps(className)}>
-      <path d="M10 14c0-2 4-3 8-3 4 0 6 1 6 1s2-1 6-1 8 1 8 3v22c0 0-4-2-8-2s-6 2-6 2-2-2-6-2-8 2V14Z" stroke={color} strokeWidth="2" strokeLinejoin="round" />
-      <path d="M24 11v22" stroke={color} strokeWidth="1.5" opacity="0.55" />
-      <path d="M24 18v10M20 22h8" stroke={color} strokeWidth="2" strokeLinecap="round" />
-      <path d="M24 12 20 16h8L24 12Z" fill={color} />
+      <path
+        d="M24 30 C21 28.5 17 28 14 28.5 L14 36 C17 35.2 21 35.5 24 36.5"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M24 30 C27 28.5 31 28 34 28.5 L34 36 C31 35.2 27 35.5 24 36.5"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line x1="24" y1="30" x2="24" y2="36.5" stroke={color} strokeWidth="1.25" opacity="0.55" />
+      <line x1="24" y1="28.5" x2="24" y2="10" stroke={color} strokeWidth="1.75" strokeLinecap="round" />
+      <polyline
+        points="19,14 24,10 29,14"
+        stroke={color}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <polygon points="24,8 21.5,13 26.5,13" fill={color} opacity="0.55" />
     </svg>
   );
 }
@@ -66,12 +87,27 @@ export function ContenderRankIcon({ color, className }: IconProps) {
   );
 }
 
-/** Two crossed lightning bolts forming an X. */
+/** Crossed lightning bolts with center spark (matches public/icons/rival.svg). */
 export function RivalRankIcon({ color, className }: IconProps) {
   return (
     <svg {...svgProps(className)}>
-      <path d="M28 8 18 22h7l-5 18 14-18h-7l1-14Z" fill={color} />
-      <path d="M20 8 10 22h7l-5 18 14-18h-7l1-14Z" fill={color} opacity="0.72" />
+      <polyline
+        points="29,12 21,22 25,24 36,36"
+        stroke={color}
+        strokeWidth="2.1"
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        fill="none"
+      />
+      <polyline
+        points="19,12 27,22 23,24 12,36"
+        stroke={color}
+        strokeWidth="2.1"
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        fill="none"
+      />
+      <polygon points="24,20 25.5,22.5 28,23 25.5,24.5 24,27 22.5,24.5 20,23 22.5,22.5" fill={color} opacity="0.75" />
     </svg>
   );
 }

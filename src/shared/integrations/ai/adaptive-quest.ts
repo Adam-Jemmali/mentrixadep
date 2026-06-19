@@ -24,6 +24,8 @@ export type AdaptiveDifficultyLevel = "beginner" | "intermediate" | "advanced";
 
 export type AdaptiveWorldState = {
   scenarioTitle: string;
+  /** One sentence: the core principle the scenario analogies teach toward the learner's question. */
+  scenarioPrinciple: string;
   stepIndex: number;
   stepTotal: number;
   scenarioHealth: number;
@@ -88,22 +90,29 @@ export async function generateAdaptiveTurn(
     const stateJson = JSON.stringify(params.priorWorldState);
 
     const systemPrompt = isOpeningTurn
-      ? `You run a 3-step teaching scenario for this learner question:
+      ? `You run a 3-step scenario challenge for this learner question:
 "${problemPrompt}"
 Study context: ${subject}.
 
+PEDAGOGY (required):
+- Use a MEANINGFUL ANALOGY: a concrete everyday situation (workshop, kitchen, sports, commute, clinic, code review, etc.) that maps step-by-step to the concept in the learner's question — not a generic "classmate asks" frame unless the analogy itself is vivid.
+- scenarioPrinciple: ONE clear sentence naming the core principle or skill the scenario teaches — must tie directly to the learner's question.
+- scenarioTitle: the vivid analogy scenario (what situation the learner is "in").
+- Steps 1–2 stay inside the analogy so the learner THINKS and UNDERSTANDS before answering.
+- Step 3 MUST require answering the ORIGINAL question verbatim: "Answer the original question: ${problemPrompt.slice(0, 500)}" — that final answer is how they pass.
+
 FIRST TURN:
-- Set scenarioTitle to a concrete situation (peer study, interview prep, tutoring session).
-- Set stepIndex to 1 and stepTotal to 3.
-- currentChallenge must be "Step 1 of 3: ..." with one focused task only.
-- feedback introduces the scenario in plain language (max 220 chars).
-- isResolved must be false.
+- stepIndex 1, stepTotal 3
+- currentChallenge: "Step 1 of 3: ..." — map one part of the analogy to the principle (one focused task only)
+- feedback: introduce scenario + state the principle plainly (max 260 chars)
+- isResolved: false
 
 JSON only:
 {
   "feedback": string,
   "updatedWorldState": {
     "scenarioTitle": string,
+    "scenarioPrinciple": string,
     "stepIndex": number,
     "stepTotal": 3,
     "scenarioHealth": number,
@@ -112,19 +121,25 @@ JSON only:
   },
   "isResolved": boolean
 }`
-      : `You run a 3-step teaching scenario for:
+      : `You run a 3-step scenario challenge for:
 "${problemPrompt}"
 Study context: ${subject}.
 Current state: ${stateJson}
 Learner answer for current step: ${message}
 
+PEDAGOGY (required):
+- Keep scenarioTitle and scenarioPrinciple consistent with the opening turn.
+- Step 1 → Step 2: extend the SAME analogy with a concrete mini-decision (walk through one choice step by step).
+- Step 2 → Step 3: currentChallenge MUST begin "Step 3 of 3: Answer the original question:" and quote "${problemPrompt.slice(0, 500)}" — learner must give a complete, gradable answer to pass.
+- Steps 1–2 build understanding via the analogy; step 3 is the real answer to the question asked.
+
 RULES:
 - If the learner answer is substantive for the current step, accept it:
   - increment stepIndex
-  - set a NEW currentChallenge for the next step (never repeat the same challenge text)
-  - feedback: "Step N complete. Now do step N+1." style, max 220 chars
-- If answer is weak or off-topic, keep same stepIndex and give one specific hint.
-- If stepIndex reaches stepTotal and the final answer is substantive, set isResolved true.
+  - set a NEW currentChallenge for the next step (never repeat challenge text)
+  - feedback: "Step N complete." + what step N+1 focuses on (max 260 chars)
+- If answer is weak or off-topic, keep same stepIndex; hint must reference the analogy or scenarioPrinciple.
+- isResolved true ONLY when stepIndex was stepTotal AND the learner's answer substantively answers the original question "${problemPrompt.slice(0, 500)}".
 - Never ask them to re-explain the whole topic after they already completed a step.
 
 JSON only:
@@ -132,6 +147,7 @@ JSON only:
   "feedback": string,
   "updatedWorldState": {
     "scenarioTitle": string,
+    "scenarioPrinciple": string,
     "stepIndex": number,
     "stepTotal": number,
     "scenarioHealth": number,

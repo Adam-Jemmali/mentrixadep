@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import Image from "next/image";
 import { motion, Reorder } from "framer-motion";
 import { cn } from "@/shared/core/utils";
+import { IMAGE_QUALITY_ICON } from "@/shared/core/image-defaults";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
@@ -114,7 +115,7 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
   }, []);
 
   return (
-    <div className="mt-10 rounded-3xl border border-white/10 bg-slate-950/50 p-4 sm:p-6">
+    <div className="relative mt-10 rounded-3xl border border-white/10 bg-slate-950/50 p-4 sm:p-6">
       <LandingSpeechBubble message={coach.message} tone={coach.tone} label="Get the order right" className="mx-auto mb-5" />
 
       <Reorder.Group
@@ -171,15 +172,16 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
                   <span className="text-[10px] font-bold text-slate-500">?</span>
                 )}
               </span>
-              <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-xl pointer-events-none">
+              <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 pointer-events-none">
                 <Image
                   src={step.icon}
                   alt=""
-                  fill
+                  width={22}
+                  height={22}
                   draggable={false}
-                  className="pointer-events-none object-cover"
+                  className="pointer-events-none object-contain brightness-0 invert"
                   sizes="40px"
-                  quality={65}
+                  quality={IMAGE_QUALITY_ICON}
                 />
               </span>
               <span className="text-sm font-bold text-white">{step.title}</span>
