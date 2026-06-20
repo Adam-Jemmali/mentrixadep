@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Button } from "@/shared/ui/button";
@@ -40,6 +39,7 @@ import {
 } from "@/features/quest/guest-try-recents";
 import { buildGuestTrySkillSummary } from "@/features/quest/guest-try-skill-summary";
 import { GuestTryResultsPanel } from "@/features/quest/ui/guest-try-results-panel";
+import { GuestTryRankPreview } from "@/features/quest/ui/guest-try-rank-preview";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {

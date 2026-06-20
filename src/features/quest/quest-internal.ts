@@ -61,7 +61,7 @@ export function isQuestHardLimitMessage(input: unknown): boolean {
 
 export function buildQuestFallbackResponse(
   prompt: string,
-  goal: QuestGoal,
+  _goal: QuestGoal,
   mode: QuestMode
 ): QuestExplanationResponse {
   const curated = matchCuratedQuestFallback(prompt, mode);

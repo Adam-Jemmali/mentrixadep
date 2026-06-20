@@ -47,5 +47,5 @@ export async function getWeakestNodes(
   });
 
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => mapWeakestRow(row as Record<string, unknown>));
+  return ((data ?? []) as Record<string, unknown>[]).map(mapWeakestRow);
 }

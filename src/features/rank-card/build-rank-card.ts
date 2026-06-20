@@ -289,7 +289,7 @@ function accuracyTrendFromQuests(rows: QuestRow[], subject: string): RankCardSub
 
 export async function buildRankCardSubjects(
   studentId: string,
-  totalXp: number,
+  _totalXp: number,
 ): Promise<RankCardSubject[]> {
   const admin = createAdminClient();
   const since90 = new Date(Date.now() - MS_90D).toISOString();

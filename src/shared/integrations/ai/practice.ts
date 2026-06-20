@@ -529,6 +529,8 @@ function localFallbackSvgDataUrl(subject: string, prompt: string): string {
   return svgToDataUrl(appendSvgUniqueMarker(svg, seed));
 }
 
+type ChartOptionSlot = { questionId: string; optionIndex: number; repairNonce?: number };
+
 /** Guest Try image_mcq options always use local exam SVGs — no Wikipedia/QuickChart. */
 function resolveGuestTryOptionImageUrl(
   optionPrompt: string,
@@ -538,184 +540,6 @@ function resolveGuestTryOptionImageUrl(
   const label = optionPrompt.trim() || `${runSubject} option ${slot.optionIndex + 1}`;
   const disambig = `${label} · ${slot.questionId} · opt${slot.optionIndex + 1}${slot.repairNonce != null ? ` · r${slot.repairNonce}` : ""}`;
   return localFallbackSvgDataUrl(runSubject.trim() || "General", disambig);
-}
-
-// ── Wikipedia / Wikimedia image pipeline ─────────────────────────────────────
-
-function extractPersonNameFromPrompt(prompt: string): string | null {
-  const ofMatch = prompt.match(/\bof\s+([A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'.'-]+){0,4})/);
-  if (ofMatch?.[1]?.trim()) return ofMatch[1].trim();
-  const leadMatch = prompt.match(/^([A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'.'-]+){0,4})\s*,/);
-  if (leadMatch?.[1]?.trim()) return leadMatch[1].trim();
-  return null;
-}
-
-async function fetchWikipediaPortrait(personName: string): Promise<string | null> {
-  try {
-    const slug = encodeURIComponent(personName.trim().replace(/\s+/g, "_"));
-    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${slug}`, {
-      headers: { "User-Agent": "Mentrixa-Education/1.0 (contact@mentrixa.com)" },
-      signal: AbortSignal.timeout(5_000),
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { thumbnail?: { source?: string } };
-    return data.thumbnail?.source ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function promptToWikipediaQuery(prompt: string, subject: string): string | null {
-  const p = prompt.toLowerCase();
-  const domain = classifyVisualDomain(subject, prompt);
-  if (domain === "history") {
-    const personName = extractPersonNameFromPrompt(prompt);
-    if (personName) return personName;
-    if (p.includes("continental congress")) return "Continental Congress";
-    if (p.includes("cold war")) return "Cold War";
-    return null;
-  }
-  if (domain === "biology") {
-    if (p.includes("plant cell")) return "Plant cell";
-    if (p.includes("animal cell")) return "Animal cell";
-    if (p.includes("dna")) return "DNA";
-    return null;
-  }
-  if (domain === "physics") {
-    if (p.includes("series") && p.includes("circuit")) return null;
-    if (p.includes("parallel") && p.includes("circuit")) return null;
-    if (p.includes("velocity") && p.includes("time")) return null;
-    if (p.includes("free body")) return "Free body diagram";
-    return null;
-  }
-  if (domain === "chemistry") {
-    if (p.includes("h2o") || p.includes("water")) return "Water";
-    if (p.includes("periodic table")) return "Periodic table";
-    return null;
-  }
-  if (domain === "computer_science") {
-    if (p.includes("binary search tree") || p.includes("bst")) return "Binary search tree";
-    if (p.includes("linked list")) return "Linked list";
-    return null;
-  }
-  if (domain === "geography") {
-    if (p.includes("south america")) return "South America";
-    if (p.includes("africa")) return "Africa";
-    return null;
-  }
-  if (domain === "economics") {
-    if (p.includes("supply") && p.includes("demand")) return null;
-    return null;
-  }
-  if (domain === "math") {
-    if (p.includes("logarithm") || (p.includes("log") && p.includes("function"))) return "Logarithm";
-    return null;
-  }
-  return null;
-}
-
-type ChartOptionSlot = { questionId: string; optionIndex: number; repairNonce?: number };
-
-function applyChartSlotWatermark(cfg: Record<string, unknown>, slot: ChartOptionSlot): void {
-  const opts = ((cfg.options ??= {}) as Record<string, unknown>);
-  const plugins = ((opts.plugins ??= {}) as Record<string, unknown>);
-  const prev = plugins.title as { display?: boolean; text?: string } | undefined;
-  const tag = `${slot.questionId}-opt${slot.optionIndex + 1}${slot.repairNonce != null ? `-r${slot.repairNonce}` : ""}`;
-  plugins.title = { display: true, text: `${prev?.text ?? "Chart"} · ${tag}` };
-}
-
-function buildQuickChartUrlFromPrompt(prompt: string, subject: string, slot?: ChartOptionSlot): string {
-  const p = prompt.toLowerCase();
-  const domain = classifyVisualDomain(subject, prompt);
-  const seed = hashString32(`${subject}::${prompt}`);
-  const subjectIsEconomics = /econom/.test(subject.toLowerCase());
-
-  const economicsConfig = () => {
-    const demandShift = p.includes("demand") && p.includes("shift");
-    const supplyShift = p.includes("supply") && p.includes("shift");
-    const rightish = p.includes("right") || p.includes("higher") || p.includes("increase");
-    const leftish = p.includes("left") || p.includes("lower") || p.includes("decrease");
-    const d1 = [9, 7, 5, 3, 1];
-    const d2Right = [11, 9, 7, 5, 3];
-    const d2Left = [7, 5, 3, 1, 0];
-    const s1 = [1, 3, 5, 7, 9];
-    const s2Right = [0, 1, 3, 5, 7];
-    const s2Left = [2, 4, 6, 8, 10];
-    const demandLine = (demandShift && rightish) ? d2Right : (demandShift && leftish) ? d2Left : d1;
-    const supplyLine = (supplyShift && rightish) ? s2Right : (supplyShift && leftish) ? s2Left : s1;
-    const title = `Supply-Demand ${prompt.slice(0, 24)}`;
-    return {
-      type: "line",
-      data: {
-        labels: ["Q1", "Q2", "Q3", "Q4", "Q5"],
-        datasets: [
-          { label: "Demand", data: demandLine, borderColor: "#2563eb", fill: false },
-          { label: "Supply", data: supplyLine, borderColor: "#dc2626", fill: false },
-        ],
-      },
-      options: { plugins: { title: { display: true, text: title } }, scales: { x: { title: { display: true, text: "Quantity" } }, y: { title: { display: true, text: "Price" } } } },
-    };
-  };
-
-  const mathConfig = () => {
-    const xs = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
-    let ys: (number | null)[] = xs.map((x) => x);
-    let label = "Linear f(x)=x";
-    if (p.includes("log") || p.includes("logarithm")) { ys = xs.map((x) => (x > 0 ? Math.log(x) * 2 : null)); label = "Log f(x)=log x"; }
-    else if (p.includes("quadratic") || p.includes("parabola")) { ys = xs.map((x) => 0.5 * x * x); label = "Upward parabola"; }
-    else if (p.includes("exponential") || p.includes("e^x")) { ys = xs.map((x) => Math.round(Math.exp(x / 2) * 10) / 10); label = "Exponential"; }
-    return {
-      type: "line",
-      data: { labels: xs.map((x) => String(x)), datasets: [{ label, data: ys, borderColor: "#2563eb", fill: false }] },
-      options: { plugins: { title: { display: true, text: label } }, scales: { x: { title: { display: true, text: "x" } }, y: { title: { display: true, text: "y" } } } },
-    };
-  };
-
-  const genericConfig = {
-    type: "bar",
-    data: { labels: ["A", "B", "C", "D", "E"], datasets: [{ label: prompt.slice(0, 48), data: [seed % 9 + 1, (seed >> 3) % 9 + 1, (seed >> 6) % 9 + 1, (seed >> 9) % 9 + 1, (seed >> 12) % 9 + 1], backgroundColor: "#60a5fa" }] },
-    options: { plugins: { title: { display: true, text: `Exam visual: ${subject}` } }, scales: { y: { beginAtZero: true } } },
-  };
-
-  const cfg = domain === "economics" || subjectIsEconomics ? economicsConfig()
-    : domain === "math" || p.includes("graph") || p.includes("curve") || p.includes("asymptote") ? mathConfig()
-    : genericConfig;
-
-  const cfgObj = cfg as Record<string, unknown>;
-  if (slot) applyChartSlotWatermark(cfgObj, slot);
-  return `https://quickchart.io/chart?width=720&height=460&format=png&c=${encodeURIComponent(JSON.stringify(cfgObj))}`;
-}
-
-async function fetchWikimediaImageByQuery(query: string): Promise<string | null> {
-  try {
-    const q = encodeURIComponent(query.trim());
-    const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime&format=json&origin=*`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(7_000), cache: "no-store" });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { query?: { pages?: Record<string, { imageinfo?: Array<{ url?: string; mime?: string }> }> } };
-    const pages = data.query?.pages ? Object.values(data.query.pages) : [];
-    for (const page of pages) {
-      const info = page.imageinfo?.[0];
-      const u = info?.url ?? "";
-      const mime = info?.mime ?? "";
-      if (!u) continue;
-      if (mime.includes("svg") || u.toLowerCase().endsWith(".svg")) continue;
-      return u;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function fallbackPngFromPrompt(prompt: string, subject: string, slot?: ChartOptionSlot): string {
-  const domain = classifyVisualDomain(subject, prompt);
-  const disambig = slot != null
-    ? `${prompt} [chart:${slot.questionId} i:${slot.optionIndex + 1}${slot.repairNonce != null ? ` r:${slot.repairNonce}` : ""}]`
-    : prompt;
-  if (domain !== "economics" && domain !== "math") return localFallbackSvgDataUrl(subject, disambig);
-  return buildQuickChartUrlFromPrompt(prompt, subject, slot);
 }
 
 function normalizeImageUrlForCompare(url: string): string { return url.trim().toLowerCase(); }
@@ -771,95 +595,6 @@ function repairDuplicateOptionImageUrls(urls: string[], optionPrompts: string[],
   return out;
 }
 
-function shouldUseLocalExamDiagram(prompt: string, subject: string): boolean {
-  const domain = classifyVisualDomain(subject, prompt);
-  const p = prompt.toLowerCase();
-  if (domain === "chemistry") {
-    return (
-      p.includes("lewis") ||
-      p.includes("dot structure") ||
-      p.includes("h2o") ||
-      p.includes("water") ||
-      p.includes("co2") ||
-      p.includes("carbon dioxide") ||
-      p.includes("nh3") ||
-      p.includes("ammonia") ||
-      p.includes("ch4") ||
-      p.includes("methane") ||
-      p.includes("tetrahedral") ||
-      p.includes("periodic table") ||
-      p.includes("group 1") ||
-      p.includes("group 17") ||
-      p.includes("group 18") ||
-      p.includes("alkali") ||
-      p.includes("halogen") ||
-      p.includes("noble gas") ||
-      p.includes("d-block") ||
-      p.includes("transition metal") ||
-      p.includes("exothermic") ||
-      p.includes("endothermic") ||
-      p.includes("energy diagram") ||
-      p.includes("reaction coordinate")
-    );
-  }
-  if (domain === "physics") {
-    return (
-      p.includes("circuit") ||
-      p.includes("interference") ||
-      p.includes("velocity") ||
-      p.includes("displacement") ||
-      p.includes("wave diagram")
-    );
-  }
-  if (domain === "computer_science") {
-    return (
-      p.includes("binary search") ||
-      p.includes("linked list") ||
-      p.includes("merge sort") ||
-      p.includes("bubble sort") ||
-      p.includes("hash table") ||
-      p.includes("min-heap")
-    );
-  }
-  if (domain === "biology") {
-    return p.includes("cell") || p.includes("neuron") || p.includes("bacterial") || p.includes("plant cell");
-  }
-  if (domain === "history") {
-    return p.includes("portrait") || p.includes("continental congress") || p.includes("cold war");
-  }
-  if (domain === "geography") {
-    return p.includes("south america") || p.includes("africa") || p.includes("map");
-  }
-  return false;
-}
-
-async function resolveImageUrl(prompt: string, subject: string, slot?: ChartOptionSlot): Promise<string> {
-  const domain = classifyVisualDomain(subject, prompt);
-  const p = prompt.toLowerCase();
-  const promptLooksLikeAxesPlot = p.includes("graph") || p.includes("curve") || p.includes("asymptote") || p.includes("velocity-time") || p.includes("displacement-time");
-  const graphLike = domain === "economics" || domain === "math" || (domain === "physics" && promptLooksLikeAxesPlot) || (domain === "generic" && promptLooksLikeAxesPlot);
-  if (graphLike) return buildQuickChartUrlFromPrompt(prompt, subject, slot);
-
-  if (shouldUseLocalExamDiagram(prompt, subject)) {
-    return fallbackPngFromPrompt(prompt, subject, slot);
-  }
-
-  const wikiQuery = promptToWikipediaQuery(prompt, subject);
-  if (wikiQuery) {
-    const thumbnail = await fetchWikipediaPortrait(wikiQuery);
-    if (thumbnail) return thumbnail;
-    const commonsFromWiki = await fetchWikimediaImageByQuery(wikiQuery);
-    if (commonsFromWiki) return commonsFromWiki;
-  }
-
-  const commonsByPrompt = await fetchWikimediaImageByQuery(prompt);
-  if (commonsByPrompt) return commonsByPrompt;
-  const commonsBySubjectPrompt = await fetchWikimediaImageByQuery(`${subject} ${prompt}`);
-  if (commonsBySubjectPrompt) return commonsBySubjectPrompt;
-
-  return fallbackPngFromPrompt(prompt, subject, slot);
-}
-
 function guestTryHydrationSubjectLine(runSubject: string, q: GuestTryQuestion): string {
   const run = runSubject.trim() || "General";
   const chunks: string[] = [run];
@@ -905,7 +640,6 @@ export async function hydrateGuestTryQuestionImages(
     const out: GuestTryQuestion[] = [];
     for (const q of questions) {
       const next: GuestTryQuestion = { ...q };
-      const subjectLine = guestTryHydrationSubjectLine(runSubject, next);
       const questionChartId = next.id?.trim().replace(/\s+/g, "_") || `gq_${hashString32(`${runSubject}::${next.prompt ?? ""}`).toString(36)}`;
 
       if (!next.promptImageUrl && next.promptImagePrompt) {

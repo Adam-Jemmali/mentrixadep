@@ -32,7 +32,7 @@ function resolveAdaptiveTurn(
     }
     return buildAdaptiveTurnFallback(message, priorWorldState, problemPrompt);
   }
-  return generated;
+  return generated as AdaptiveTurnResponse;
 }
 
 export async function POST(req: Request) {

@@ -23,6 +23,13 @@ const SUBJECT = "AP Calculus AB";
 const BATCH_DELAY_MS = 400;
 const REVIEWED_BY = "gemini-auto";
 
+type SkillNodeJoin = {
+  node_name: string;
+  node_slug: string;
+  description: string | null;
+  common_misconceptions: string[] | null;
+};
+
 type PendingRow = {
   id: string;
   skill_node_id: string;
@@ -31,13 +38,23 @@ type PendingRow = {
   correct_answer: string;
   explanation: string;
   distractor_tags: unknown;
-  skill_nodes: {
-    node_name: string;
-    node_slug: string;
-    description: string | null;
-    common_misconceptions: string[] | null;
-  } | null;
+  skill_nodes: SkillNodeJoin | null;
 };
+
+function normalizePendingRow(raw: {
+  id: string;
+  skill_node_id: string;
+  prompt: string;
+  options: unknown;
+  correct_answer: string;
+  explanation: string;
+  distractor_tags: unknown;
+  skill_nodes: SkillNodeJoin | SkillNodeJoin[] | null;
+}): PendingRow {
+  const skillNodes = raw.skill_nodes;
+  const node = Array.isArray(skillNodes) ? (skillNodes[0] ?? null) : skillNodes;
+  return { ...raw, skill_nodes: node };
+}
 
 function loadEnv(): void {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -132,7 +149,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const rows = (data ?? []) as PendingRow[];
+  const rows = (data ?? []).map(normalizePendingRow);
   if (rows.length === 0) {
     console.log("No pending_review items to verify.");
     return;

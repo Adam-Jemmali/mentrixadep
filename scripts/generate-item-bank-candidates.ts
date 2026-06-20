@@ -47,8 +47,6 @@ const responseSchema = z.object({
 
 type SkillNodeRow = SkillNodeRef & { id: string };
 
-type GeneratedQuestion = z.infer<typeof questionSchema>;
-
 function loadEnv(): void {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   for (const file of [".env.local", ".env"]) {

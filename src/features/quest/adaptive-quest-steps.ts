@@ -1,4 +1,4 @@
-import type { AdaptiveDifficultyLevel, AdaptiveWorldState } from "@/shared/integrations/ai/adaptive-quest";
+import type { AdaptiveWorldState } from "@/shared/integrations/ai/adaptive-quest";
 
 export const ADAPTIVE_STEP_TOTAL = 3;
 
