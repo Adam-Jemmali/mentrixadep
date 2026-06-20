@@ -295,7 +295,7 @@ export function ItemReviewClient({ stats, nodeBreakdown, groups }: ItemReviewCli
               Item Review Queue
             </h1>
             <p className="text-sm text-slate-400 mt-0.5">
-              AP Calculus AB item bank · Goal: at least 3 approved items per skill node
+              AP Calculus AB item bank · Auto verified by Gemini on generate. Optional manual override only.
             </p>
           </div>
           {stats.pending > 0 && (

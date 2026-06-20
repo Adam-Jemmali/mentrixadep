@@ -25,6 +25,8 @@
     "analyze": "cross-env ANALYZE=true next build --webpack",
     "push:vapid": "node scripts/generate-vapid-keys.mjs",
     "types:generate": "node scripts/generate-types.mjs",
+    "item-bank:generate": "npx tsx scripts/generate-item-bank-candidates.ts",
+    "item-bank:auto-verify": "npx tsx scripts/auto-verify-item-bank.ts",
     "audit:ci": "npm audit --audit-level=moderate",
     "load:smoke": "k6 run load-tests/smoke.js",
     "load:track": "k6 run load-tests/track.js",
