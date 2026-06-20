@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { OrganizationJsonLd } from "@/components/organization-json-ld";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/shared/core/site";
@@ -154,6 +155,7 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <DevServiceWorkerGuard />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
