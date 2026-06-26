@@ -8,7 +8,7 @@ import { StudyPackagePanel } from "./study-package-panel";
 import { DeletePastSessionButton } from "@/components/delete-past-session-button";
 import { RateSessionForm } from "../rate-session-form";
 import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
-import { Badge } from "@/shared/ui/badge";
+import { CourseTagChip, SessionStatusChip } from "@/shared/ui/chip-patterns";
 import { Button } from "@/shared/ui/button";
 import {
   Collapsible,
@@ -108,9 +108,7 @@ export function PastSessionCard({
             />
             <div className="min-w-0">
               <p className="truncate font-medium text-slate-900">{name}</p>
-              <Badge variant="outline" className="mt-1 text-[10px] font-mono border-slate-300">
-                {session.course}
-              </Badge>
+              <CourseTagChip course={session.course} className="mt-1" />
               <p className="mt-2 text-sm text-slate-600">
                 {formatDateInZone(session.start_time, displayTimeZone)} · {formatTimeInZone(session.start_time, displayTimeZone)} –{" "}
                 {formatTimeInZone(session.end_time, displayTimeZone)}
@@ -119,17 +117,11 @@ export function PastSessionCard({
           </div>
 
           <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
-            {statusLower === "cancelled" ? (
-              <Badge variant="outline" className="border-slate-300 bg-slate-100 text-slate-700">
-                Cancelled
-              </Badge>
-            ) : sessionDoneForUi ? (
-              <Badge variant="outline" className="border-slate-800 bg-slate-900 text-white">
-                Completed
-              </Badge>
-            ) : (
-              <Badge variant="outline">Ended</Badge>
-            )}
+            <SessionStatusChip
+              status={
+                isCancelled ? "cancelled" : sessionDoneForUi ? "completed" : "ended"
+              }
+            />
 
             {hasRating ? (
               <div className="flex items-center gap-1" aria-label={`Rated ${rating} out of 5`}>

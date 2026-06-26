@@ -3,7 +3,7 @@
 import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { createClient } from "@/shared/integrations/supabase/server";
-import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
+import type { GuideImpactEntry, GuideImpactNodeEntry } from "@/features/guide-impact/impact-score-pure";
 
 function mapRow(row: {
   subject: string;
@@ -15,6 +15,46 @@ function mapRow(row: {
     impactScore: Number(row.impact_score),
     sessionsCounted: row.sessions_counted,
   };
+}
+
+function mapNodeRow(row: {
+  skill_node_id: string;
+  node_name: string;
+  subject: string;
+  impact_score: number | string;
+  students_counted: number;
+  after_accuracy: number | string;
+  before_accuracy: number | string;
+  impact_lift: number | string;
+}): GuideImpactNodeEntry {
+  return {
+    skillNodeId: row.skill_node_id,
+    nodeName: row.node_name,
+    subject: row.subject,
+    impactScore: Number(row.impact_score),
+    studentsCounted: row.students_counted,
+    afterAccuracy: Number(row.after_accuracy),
+    beforeAccuracy: Number(row.before_accuracy),
+    impactLift: Number(row.impact_lift),
+  };
+}
+
+export async function getGuideImpactNodeScoresForTutor(
+  guideId: string,
+): Promise<GuideImpactNodeEntry[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("guide_impact_node_scores")
+    .select(
+      "skill_node_id, node_name, subject, impact_score, students_counted, after_accuracy, before_accuracy, impact_lift"
+    )
+    .eq("guide_id", guideId)
+    .gte("students_counted", 3)
+    .order("impact_lift", { ascending: false })
+    .order("impact_score", { ascending: false });
+
+  if (error) return [];
+  return (data ?? []).map(mapNodeRow);
 }
 
 export async function getGuideImpactScoresForTutor(guideId: string): Promise<GuideImpactEntry[]> {

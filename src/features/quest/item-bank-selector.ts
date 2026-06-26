@@ -13,6 +13,7 @@ type SkillNodeRow = {
   node_name: string;
   node_slug: string;
   display_order: number;
+  exam_stakes: string | null;
 };
 
 type ItemBankRow = {
@@ -23,6 +24,26 @@ type ItemBankRow = {
   correct_answer: string;
   explanation: string;
 };
+
+export function computePracticePackQuestionCount(count: number): number {
+  return Math.min(10, Math.max(5, Math.floor(count)));
+}
+
+export function pickNeededNodeIds(prioritizedNodeIds: string[], targetCount: number): string[] {
+  const needed: string[] = [];
+  for (const id of prioritizedNodeIds) {
+    if (!needed.includes(id)) needed.push(id);
+    if (needed.length >= targetCount) break;
+  }
+  return needed;
+}
+
+export function hasApprovedCoverageForNodes(
+  neededNodeIds: string[],
+  itemsByNode: ReadonlyMap<string, ItemBankRow[]>
+): boolean {
+  return neededNodeIds.every((nodeId) => (itemsByNode.get(nodeId)?.length ?? 0) > 0);
+}
 
 function parseOptions(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -140,6 +161,7 @@ function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): Practice
     topicTag: node.unit_name,
     subtopicTag: node.node_name,
     unitNumber: node.unit_number,
+    examStakes: node.exam_stakes?.trim() || undefined,
   };
 }
 
@@ -150,12 +172,12 @@ export async function selectItemBankQuestions(
 ): Promise<PracticeQuestionMcq[]> {
   if (!isApCalculusAbSubject(subject)) return [];
 
-  const targetCount = Math.min(10, Math.max(5, Math.floor(count)));
+  const targetCount = computePracticePackQuestionCount(count);
   const admin = createAdminClient();
 
   const { data: nodes, error: nodesError } = await admin
     .from("skill_nodes")
-    .select("id, unit_number, unit_name, node_name, node_slug, display_order")
+    .select("id, unit_number, unit_name, node_name, node_slug, display_order, exam_stakes")
     .eq("subject", AP_CALC_AB_SUBJECT)
     .order("display_order");
 
@@ -191,40 +213,33 @@ export async function selectItemBankQuestions(
     itemsByNode.set(row.skill_node_id, list);
   }
 
+  const neededNodeIds = pickNeededNodeIds(prioritizedNodeIds, targetCount);
+  if (
+    neededNodeIds.length < targetCount ||
+    !hasApprovedCoverageForNodes(neededNodeIds, itemsByNode)
+  ) {
+    return [];
+  }
+
   const selected: PracticeQuestionMcq[] = [];
   const usedItemIds = new Set<string>();
-  const nodeQueue = [...prioritizedNodeIds];
 
-  while (selected.length < targetCount && nodeQueue.length > 0) {
-    const nodeId = nodeQueue.shift()!;
-    nodeQueue.push(nodeId);
-
+  for (const nodeId of neededNodeIds) {
     const pool = shuffle(itemsByNode.get(nodeId) ?? []);
     const item = pool.find((row) => !usedItemIds.has(row.id));
-    if (!item) continue;
+    if (!item) return [];
 
     const node = nodeById.get(nodeId);
-    if (!node) continue;
+    if (!node) return [];
 
     const question = itemToPracticeQuestion(item, node);
-    if (!question) continue;
+    if (!question) return [];
 
     usedItemIds.add(item.id);
     selected.push(question);
   }
 
-  if (selected.length < targetCount) {
-    const remainder = shuffle(items as ItemBankRow[]).filter((row) => !usedItemIds.has(row.id));
-    for (const item of remainder) {
-      if (selected.length >= targetCount) break;
-      const node = nodeById.get(item.skill_node_id);
-      if (!node) continue;
-      const question = itemToPracticeQuestion(item, node);
-      if (!question) continue;
-      usedItemIds.add(item.id);
-      selected.push(question);
-    }
-  }
+  if (selected.length < targetCount) return [];
 
   return selected;
 }

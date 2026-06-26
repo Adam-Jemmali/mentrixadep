@@ -13,19 +13,15 @@ import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import {
-  generatePracticeQuestPack,
   gradePracticeWrittenAnswer,
-  generateMistakeReview,
 } from "@/shared/integrations/ai";
-import { buildPracticeFallbackQuestions } from "@/features/quest/practice-fallback-questions";
 import { shufflePracticePackMcqOptions } from "@/features/quest/practice-mcq-shuffle";
 import {
   AP_CALC_AB_SUBJECT,
   AP_CALC_AB_UNAVAILABLE_MESSAGE,
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
-import { selectItemBankQuestions } from "@/features/quest/item-bank-selector";
-import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
+import { selectItemBankQuestions, computePracticePackQuestionCount } from "@/features/quest/item-bank-selector";
 import { applyXpAward } from "@/features/xp/xp-awards";
 
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
@@ -33,8 +29,21 @@ import { XP } from "@/features/xp/xp-constants";
 import { sanitizeString } from "@/shared/core/security";
 import { updateKnowledgeGraph } from "@/features/learning-path/knowledge-graph";
 import { scheduleApCalcReviews } from "@/features/learning-path/schedule-ap-calc-reviews";
-import { recordVerifiedFirstAttemptsForQuest } from "@/features/quest/record-verified-first-attempts";
+import {
+  formatVerifiedRankNextAction,
+  formatVerifiedRankVerdict,
+  loadVerifiedFirstAttemptRankStats,
+} from "@/features/xp/calibrated-rank";
+import {
+  ensureVerifiedFirstAttemptsFromSession,
+  recordVerifiedFirstAttemptForNode,
+} from "@/features/quest/record-verified-first-attempts";
 import { recordQuestTelemetryLog } from "@/features/quest/record-telemetry-log";
+import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
+import {
+  pickQuestMasteryHighlight,
+  snapshotPackNodesFromGrid,
+} from "@/features/mastery-grid/mastery-grid-pure";
 import { z } from "zod";
 import { trackEvent } from "@/shared/integrations/analytics";
 import type {
@@ -166,78 +175,39 @@ export async function createPracticeQuest(
     }
 
     const subject = sanitizeString(input.subject).slice(0, 120);
-    if (subject.length < 2) {
-      return { success: false, error: "Please enter a subject." };
+    if (!isApCalculusAbSubject(subject)) {
+      return {
+        success: false,
+        error:
+          "Only AP Calculus AB verified practice is available. Other subjects unlock after the same skill-tree and item-bank review.",
+      };
     }
 
     const qc = input.questionCount ?? 5 + Math.floor(Math.random() * 6);
     const timeLimitSec = Math.min(60 * 60, Math.max(5 * 60, input.timeLimitSec ?? DEFAULT_TIME_SEC));
+    const requiredCount = computePracticePackQuestionCount(qc);
 
-    const admin = createAdminClient();
-    const { data: xpRow } = await admin
-      .from("user_xp")
-      .select("total_xp")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    const totalXp = xpRow?.total_xp ?? 0;
-    const levelInfo = getAccountLevelFromTotalXp(totalXp);
-
-    let questions: PracticeQuestion[];
-
-    if (isApCalculusAbSubject(subject)) {
-      const bankQuestions = await selectItemBankQuestions(user.id, subject, qc);
-      if (bankQuestions.length === 0) {
-        return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
-      }
-      questions = bankQuestions;
-    } else {
-      const gen = await generatePracticeQuestPack(
-        {
-          subject,
-          difficulty: input.difficulty,
-          packType: input.packType,
-          accountLevelTitle: levelInfo.title,
-          questionCount: qc,
-        },
-        user.id,
-      );
-
-      const generated =
-        "error" in gen && gen.error
-          ? isPracticeHardLimitMessage(gen.message)
-            ? null
-            : buildPracticeFallbackQuestions(subject, input.packType, qc)
-          : (gen as { questions: PracticeQuestion[] }).questions;
-
-      if (!generated || !generated.length) {
-        return {
-          success: false,
-          error:
-            "error" in gen && gen.error ? gen.message : "Could not generate practice pack.",
-        };
-      }
-      questions = generated;
+    const bankQuestions = await selectItemBankQuestions(user.id, AP_CALC_AB_SUBJECT, qc);
+    if (bankQuestions.length < requiredCount) {
+      return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
     }
-
-    questions = shufflePracticePackMcqOptions(questions);
+    const questions = shufflePracticePackMcqOptions(bankQuestions);
 
     const meta: PracticePackMetadata = {
       questKind: "practice_pack",
-      subject: isApCalculusAbSubject(subject) ? AP_CALC_AB_SUBJECT : subject,
+      subject: AP_CALC_AB_SUBJECT,
       difficulty: input.difficulty,
-      packType: isApCalculusAbSubject(subject) ? "mcq" : input.packType,
-      accountLevelTitle: levelInfo.title,
+      packType: "mcq",
+      accountLevelTitle: "Mentrixer",
       questionCount: questions.length,
       timeLimitSec,
-      course: isApCalculusAbSubject(subject) ? AP_CALC_AB_SUBJECT : subject,
+      course: AP_CALC_AB_SUBJECT,
       questions,
       mcqOptionsShuffled: true,
     };
 
     const supabase = await createClient();
-    const title = isApCalculusAbSubject(subject)
-      ? `Practice: ${AP_CALC_AB_SUBJECT} — ${input.difficulty} (mcq)`
-      : `Practice: ${subject} — ${input.difficulty} (${input.packType})`;
+    const title = `Practice: ${AP_CALC_AB_SUBJECT} — ${input.difficulty} (mcq)`;
     const { data: quest, error: insErr } = await supabase
       .from("quests")
       .insert({
@@ -288,6 +258,8 @@ export type PracticeQuestionPublic =
       id: string;
       prompt: string;
       options: string[];
+      subtopicTag?: string;
+      examStakes?: string;
     }
   | {
       index: number;
@@ -295,6 +267,8 @@ export type PracticeQuestionPublic =
       kind: "short_answer" | "problem_solving";
       id: string;
       prompt: string;
+      subtopicTag?: string;
+      examStakes?: string;
     };
 
 async function loadPackForUser(
@@ -340,6 +314,8 @@ export async function getPracticeQuestionPublic(
       id: q.id,
       prompt: q.prompt,
       options: q.options,
+      subtopicTag: q.subtopicTag,
+      examStakes: q.examStakes,
     };
   }
   return {
@@ -348,6 +324,8 @@ export async function getPracticeQuestionPublic(
     kind: q.kind,
     id: q.id,
     prompt: q.prompt,
+    subtopicTag: "subtopicTag" in q && typeof q.subtopicTag === "string" ? q.subtopicTag : undefined,
+    examStakes: "examStakes" in q && typeof q.examStakes === "string" ? q.examStakes : undefined,
   };
 }
 
@@ -367,6 +345,22 @@ export async function startPracticeSession(questId: string): Promise<{ success: 
     const user = await requireRole(["student", "admin"]);
     const loaded = await loadPackForUser(questId, user.id);
     if (!loaded.ok) return { success: false, error: loaded.error };
+    const { meta } = loaded;
+
+    let masteryBeforePack = meta.masteryBeforePack;
+    if (
+      !masteryBeforePack &&
+      isApCalculusAbSubject(meta.subject || meta.course)
+    ) {
+      const packNodeOrder = meta.questions
+        .map((q) => (q as PracticeQuestionMcq).skillNodeId)
+        .filter((id): id is string => Boolean(id));
+      if (packNodeOrder.length > 0) {
+        const grid = await loadMasteryGrid(user.id);
+        masteryBeforePack = snapshotPackNodesFromGrid(grid, [...new Set(packNodeOrder)]);
+      }
+    }
+
     await patchPackMetadata(questId, (m) => {
       if (m.session?.startedAt) return m;
       const base = m.mcqOptionsShuffled
@@ -381,7 +375,11 @@ export async function startPracticeSession(questId: string): Promise<{ success: 
         currentIndex: 0,
         answers: [],
       };
-      return { ...base, session };
+      return {
+        ...base,
+        session,
+        ...(masteryBeforePack ? { masteryBeforePack } : {}),
+      };
     });
     return { success: true };
   } catch (e) {
@@ -409,12 +407,28 @@ export async function submitPracticeMcq(
   const q = meta.questions[questionIndex] as PracticeQuestion | undefined;
   if (!q || q.kind !== "mcq") return { error: "Invalid question." };
   const mcq = q as PracticeQuestionMcq;
+
+  const priorAnswer = meta.session?.answers.find((a) => a.index === questionIndex);
+  if (priorAnswer) {
+    return { error: "This answer is locked — first attempt only." };
+  }
+
   const correct = selectedIndex === mcq.correctIndex;
   const ans: PracticeSessionAnswer = {
     questionId: q.id,
     index: questionIndex,
     correct,
   };
+
+  if (isApCalculusAbSubject(meta.subject || meta.course) && mcq.skillNodeId) {
+    await recordVerifiedFirstAttemptForNode(
+      user.id,
+      mcq.skillNodeId,
+      q.id,
+      correct
+    );
+  }
+
   await patchPackMetadata(questId, (m) => {
     const session = m.session ?? {
       startedAt: new Date().toISOString(),
@@ -593,6 +607,30 @@ export async function finalizePracticeQuest(
     const divisionKey =
       (await getDivisionKeyForCourse(meta.course)) ?? "general";
 
+    let rankVerdict: string | undefined;
+    let rankNextAction: string | undefined;
+    let newVerifiedSkills: number | undefined;
+
+    if (isApCalculusAbSubject(meta.subject || meta.course)) {
+      const verifiedBefore = await loadVerifiedFirstAttemptRankStats(user.id);
+      const resultByIndex = qs.map((_, i) => byIndex.get(i)?.correct ?? false);
+      const verifiedQuestions = qs.map((q) => {
+        const qMeta = q as typeof q & { skillNodeId?: string };
+        return { id: q.id, skillNodeId: qMeta.skillNodeId };
+      });
+      await ensureVerifiedFirstAttemptsFromSession(
+        user.id,
+        questId,
+        meta.subject || meta.course || AP_CALC_AB_SUBJECT,
+        verifiedQuestions,
+        resultByIndex
+      );
+      const verifiedAfter = await loadVerifiedFirstAttemptRankStats(user.id);
+      newVerifiedSkills = Math.max(0, verifiedAfter.verifiedCount - verifiedBefore.verifiedCount);
+      rankVerdict = formatVerifiedRankVerdict(verifiedAfter) ?? undefined;
+      rankNextAction = formatVerifiedRankNextAction(verifiedAfter);
+    }
+
     let xpAwarded = 0;
     let perfectBonus = 0;
 
@@ -629,27 +667,6 @@ export async function finalizePracticeQuest(
       .maybeSingle();
 
     const mistakeReviews: NonNullable<PracticePackResult["mistakeReviews"]> = [];
-    for (let i = 0; i < qs.length; i++) {
-      const a = byIndex.get(i);
-      if (a?.correct) continue;
-      const qq = qs[i]!;
-      const u =
-        a?.userResponse ??
-        (qq.kind === "mcq" ? "(no selection)" : "(no answer)");
-      const ref =
-        qq.kind === "mcq"
-          ? (qq as PracticeQuestionMcq).options[(qq as PracticeQuestionMcq).correctIndex] ?? ""
-          : qq.referenceAnswer;
-      const rev = await generateMistakeReview(qq.prompt, ref, u, user.id);
-      if (typeof rev === "string") {
-        mistakeReviews.push({
-          questionId: qq.id,
-          prompt: qq.prompt.slice(0, 200),
-          review: rev,
-        });
-      }
-      if (mistakeReviews.length >= 8) break;
-    }
 
     const result: PracticePackResult = {
       correct,
@@ -658,6 +675,9 @@ export async function finalizePracticeQuest(
       xpAwarded,
       perfectBonus,
       mistakeReviews,
+      rankVerdict,
+      rankNextAction,
+      newVerifiedSkills,
     };
 
     await admin
@@ -702,19 +722,6 @@ export async function finalizePracticeQuest(
 
     try {
       if (isApCalculusAbSubject(meta.subject || meta.course)) {
-        const resultByIndex = qs.map((_, i) => byIndex.get(i)?.correct ?? false);
-        const verifiedQuestions = qs.map((q) => {
-          const qMeta = q as typeof q & { skillNodeId?: string };
-          return { id: q.id, skillNodeId: qMeta.skillNodeId };
-        });
-        await recordVerifiedFirstAttemptsForQuest(
-          user.id,
-          questId,
-          meta.subject || meta.course || AP_CALC_AB_SUBJECT,
-          verifiedQuestions,
-          resultByIndex
-        );
-
         const postSessionResults = qs.map((q, i) => {
           const qMeta = q as typeof q & { skillNodeId?: string };
           return {
@@ -725,7 +732,7 @@ export async function finalizePracticeQuest(
         await recordPostSessionTargetResults(user.id, postSessionResults);
       }
     } catch {
-      // Non-critical — verified first attempt recording must not block completion
+      // Non-critical — post-session target recording must not block completion
     }
 
     try {
@@ -737,6 +744,27 @@ export async function finalizePracticeQuest(
       }
     } catch {
       /* non-critical — telemetry is a soft Guide signal only */
+    }
+
+    let masteryGrid: PracticePackResult["masteryGrid"];
+    let masteryHighlight: PracticePackResult["masteryHighlight"];
+    if (isApCalculusAbSubject(meta.subject || meta.course) && meta.masteryBeforePack) {
+      try {
+        const packNodeOrder = qs
+          .map((q) => (q as PracticeQuestionMcq).skillNodeId)
+          .filter((id): id is string => Boolean(id));
+        masteryGrid = await loadMasteryGrid(user.id);
+        masteryHighlight =
+          pickQuestMasteryHighlight(meta.masteryBeforePack, masteryGrid, packNodeOrder) ?? undefined;
+        result.masteryGrid = masteryGrid;
+        result.masteryHighlight = masteryHighlight;
+        await patchPackMetadata(questId, (m) => ({
+          ...m,
+          result,
+        }));
+      } catch {
+        /* non-critical — mastery receipt must not block completion */
+      }
     }
 
     revalidatePath("/student/quest");

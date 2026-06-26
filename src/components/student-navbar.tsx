@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/shared/core/utils";
 import { signOut } from "@/features/auth/auth";
@@ -19,6 +18,8 @@ import {
 } from "@/shared/ui/resizable-navbar";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
+import { NavProfileAvatar } from "@/components/nav-profile-avatar";
+import { useProfileBadgeCount } from "@/shared/hooks/use-profile-badge-count";
 import { StudentNavRankStrip } from "@/features/student-profile/ui/student-nav-rank-strip";
 import { ArenaMusicMuteToggle } from "@/features/student-profile/ui/arena-music-mute-toggle";
 import {
@@ -84,31 +85,22 @@ function getInitials(displayName: string | null | undefined, email?: string | nu
   return part.charAt(0).toUpperCase();
 }
 
-function ProfileAvatar({ avatarUrl, initials }: { avatarUrl: string | null | undefined; initials: string }) {
-  const [broken, setBroken] = useState(false);
-
-  useEffect(() => {
-    setBroken(false);
-  }, [avatarUrl]);
-
-  if (avatarUrl && !broken) {
-    return (
-      <Image
-        src={avatarUrl}
-        alt=""
-        width={32}
-        height={32}
-        unoptimized
-        className="h-8 w-8 rounded-full object-cover border border-white/15 shrink-0"
-        onError={() => setBroken(true)}
-      />
-    );
-  }
-
+function ProfileAvatar({
+  avatarUrl,
+  initials,
+  badgeCount,
+}: {
+  avatarUrl: string | null | undefined;
+  initials: string;
+  badgeCount: number;
+}) {
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-xs font-semibold text-white">
-      {initials}
-    </div>
+    <NavProfileAvatar
+      avatarUrl={avatarUrl}
+      initials={initials}
+      badgeCount={badgeCount}
+      badgeNoun="pending session request"
+    />
   );
 }
 
@@ -186,6 +178,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
 
   const initials = user ? getInitials(user.displayName, user.email) : "M";
   const profileHref = user ? `/student/${user.id}` : "/student";
+  const profileBadgeCount = useProfileBadgeCount(user?.id, user?.role ?? "student");
 
   useEffect(() => {
     router.prefetch("/student");
@@ -241,7 +234,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
               aria-label="Open profile menu"
               aria-expanded={profileMenuOpen}
             >
-              <ProfileAvatar avatarUrl={user?.avatarUrl} initials={initials} />
+              <ProfileAvatar avatarUrl={user?.avatarUrl} initials={initials} badgeCount={profileBadgeCount} />
             </button>
 
             {profileMenuOpen && (
@@ -293,7 +286,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   aria-label="Open profile menu"
                   aria-expanded={profileMenuOpen}
                 >
-                  <ProfileAvatar avatarUrl={user?.avatarUrl} initials={initials} />
+                  <ProfileAvatar avatarUrl={user?.avatarUrl} initials={initials} badgeCount={profileBadgeCount} />
                 </button>
                 <MobileNavToggle isOpen={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)} />
               </div>

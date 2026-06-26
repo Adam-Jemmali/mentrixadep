@@ -49,6 +49,10 @@ export type StudentProfileData = {
   /** Best subject line for share copy (owner). */
   rankCardTopSubject: string | null;
   rankCardTopAccuracy: number;
+  rankCardPassportVerdict: string | null;
+  rankCardCalibratedTitle: string | null;
+  /** AP Calculus AB verified first-attempt skill count. */
+  verifiedSkillCount: number;
 };
 
 /** XP progress width within current account level (0–1) for UI. */

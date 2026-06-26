@@ -13,7 +13,6 @@ export interface PlatformMetrics {
   sessionsMonth: number;
   revenueMonth: number;
   activeQuests: number;
-  pendingApprovals: number;
   activeDuels: number;
   activeDivisionWars: number;
   securityEvents24h: number;
@@ -35,7 +34,6 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
     sessionsWeekRes,
     sessionsMonthRes,
     activeQuestsRes,
-    pendingApprovalsRes,
     activeDuelsRes,
     activeDivisionWarsRes,
     securityEvents24h,
@@ -45,7 +43,6 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
     adminClient.from("sessions").select("id", { count: "exact" }).gte("created_at", weekStart),
     adminClient.from("sessions").select("id, price_per_session", { count: "exact" }).gte("created_at", monthStart).neq("status", "cancelled"),
     adminClient.from("user_quest_progress").select("id", { count: "exact" }).eq("status", "in_progress"),
-    adminClient.from("registration_requests").select("id", { count: "exact" }).eq("status", "pending"),
     adminClient.from("skill_duels").select("id", { count: "exact" }).eq("status", "active"),
     adminClient.from("division_wars").select("id", { count: "exact" }).eq("status", "active"),
     countRecentSecurityEvents(securitySince),
@@ -67,7 +64,6 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
     sessionsMonth: sessionsMonthRes.count ?? 0,
     revenueMonth,
     activeQuests: activeQuestsRes.count ?? 0,
-    pendingApprovals: pendingApprovalsRes.count ?? 0,
     activeDuels: activeDuelsRes.count ?? 0,
     activeDivisionWars: activeDivisionWarsRes.count ?? 0,
     securityEvents24h,

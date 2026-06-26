@@ -43,9 +43,9 @@ async function fetchAutoApproveRegistrationsEnabled(): Promise<boolean> {
       .select("value")
       .eq("key", "auto_approve_registrations")
       .single();
-    return data?.value?.enabled === true;
+    return data?.value?.enabled !== false;
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -115,7 +115,7 @@ export async function applyRoleAndSyncProfile(
     throw new Error("Your access request was not approved. Contact support@mentrixa.one for assistance.");
   }
 
-  const approved = !waitlistEnabled || waitlistStatus === "approved" || (role === "student" && autoApprove);
+  const approved = !waitlistEnabled || waitlistStatus === "approved" || autoApprove;
 
   const admin = createAdminClient();
   const { error: uErr } = await admin
@@ -451,7 +451,7 @@ export async function signUp(formData: FormData) {
       success: true,
       sessionEstablished,
       email,
-      message: "Registration request submitted. Please wait for admin approval.",
+      message: "Registration complete. Continue with account setup.",
     };
   } catch (error) {
     return { error: sanitizeError(error) };

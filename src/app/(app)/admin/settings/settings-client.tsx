@@ -2,6 +2,17 @@
 
 import { updateSystemSetting } from "@/features/admin/system-settings";
 import type { SystemSettings } from "@/features/admin/system-settings";
+import { MentrixaFormField } from "@/shared/ui/form-patterns";
+import { MentrixaAdminNumberField } from "@/shared/ui/number-field-patterns";
+import { MentrixaSeparatorStack } from "@/shared/ui/separator-patterns";
+import {
+  adminFieldMessage,
+  validateMfaCode,
+} from "@/shared/ui/form-messages-pure";
+import {
+  validateAdminQuestsPerDay,
+  validatePlatformFeePercent,
+} from "@/shared/ui/number-field-messages-pure";
 
 
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -72,34 +83,6 @@ function SettingRow({
         </div>
       </div>
       {children}
-    </div>
-  );
-}
-
-function NumberInput({
-  value,
-  onChange,
-  min,
-  max,
-  suffix,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  min?: number;
-  max?: number;
-  suffix?: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        min={min}
-        max={max}
-        className="w-20 px-3 py-1.5 text-[13px] font-medium text-slate-900 border border-[#E5E7EB] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-300 text-center transition-all"
-      />
-      {suffix && <span className="text-[12px] text-slate-500">{suffix}</span>}
     </div>
   );
 }
@@ -277,39 +260,13 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
         <p className="text-[13px] text-slate-500 mt-1">Control platform behaviour, features, and limits</p>
       </div>
 
-      {/* Registration section */}
-      <section className="mb-6">
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/approved.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Registration</p>
-        </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
-          <SettingRow
-            label="Auto-approve registrations"
-            description="When enabled, new learners and guides are approved instantly without manual review."
-            img="/images/approved.webp"
-          >
-            <div className="flex items-center gap-3">
-              {savedKey === "auto_approve_registrations" && (
-                <span className="text-[11px] text-emerald-600 font-medium">Saved</span>
-              )}
-              <Toggle
-                checked={settings.autoApproveRegistrations}
-                disabled={isPending}
-                onChange={(v) => updateToggle("auto_approve_registrations", "autoApproveRegistrations", "enabled", v)}
-              />
-            </div>
-          </SettingRow>
-        </div>
-      </section>
-
       {/* Quests section */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
           <Image src="/images/quest.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Quests</p>
         </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
           <SettingRow
             label="Max quests per day"
             description="Limit how many AI-generated quests a learner can start per calendar day."
@@ -319,11 +276,15 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
               {savedKey === "max_quests_per_day" && (
                 <span className="text-[11px] text-emerald-600 font-medium">Saved</span>
               )}
-              <NumberInput
+              <MentrixaAdminNumberField
+                label="Max quests per day"
+                fieldId="max_quests_per_day"
                 value={settings.maxQuestsPerDay}
-                min={1}
-                max={100}
+                minValue={1}
+                maxValue={100}
                 suffix="/ day"
+                validate={validateAdminQuestsPerDay}
+                isDisabled={isPending}
                 onChange={(v) => {
                   setSettings((prev) => ({ ...prev, maxQuestsPerDay: v }));
                   save("max_quests_per_day", { value: v });
@@ -340,7 +301,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <Image src="/images/admin.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Payments</p>
         </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
           <SettingRow
             label="Platform fee percentage"
             description="Percentage of each session payment retained by Mentrixa before paying out guides."
@@ -350,11 +311,15 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
               {savedKey === "platform_fee_percent" && (
                 <span className="text-[11px] text-emerald-600 font-medium">Saved</span>
               )}
-              <NumberInput
+              <MentrixaAdminNumberField
+                label="Platform fee percentage"
+                fieldId="platform_fee_percent"
                 value={settings.platformFeePercent}
-                min={0}
-                max={50}
+                minValue={0}
+                maxValue={50}
                 suffix="%"
+                validate={validatePlatformFeePercent}
+                isDisabled={isPending}
                 onChange={(v) => {
                   setSettings((prev) => ({ ...prev, platformFeePercent: v }));
                   save("platform_fee_percent", { value: v });
@@ -371,19 +336,20 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <Image src="/images/admin.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Admin Security</p>
         </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
-          <SettingRow
-            label="Admin 2FA (Authenticator app)"
-            description="Protect your admin account with one-time codes from an authenticator app."
-            img="/images/admin.webp"
-          >
-            <div className="flex items-center gap-3">
-              <span className={`text-[11px] font-medium ${enrolledFactorId ? "text-emerald-600" : "text-slate-500"}`}>
-                {enrolledFactorId ? "Enabled" : "Not enabled"}
-              </span>
-            </div>
-          </SettingRow>
-          <div className="px-5 py-4">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+          <MentrixaSeparatorStack surface="settings">
+            <SettingRow
+              label="Admin 2FA (Authenticator app)"
+              description="Protect your admin account with one-time codes from an authenticator app."
+              img="/images/admin.webp"
+            >
+              <div className="flex items-center gap-3">
+                <span className={`text-[11px] font-medium ${enrolledFactorId ? "text-emerald-600" : "text-slate-500"}`}>
+                  {enrolledFactorId ? "Enabled" : "Not enabled"}
+                </span>
+              </div>
+            </SettingRow>
+            <div className="px-5 py-4">
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -422,16 +388,18 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
                   className="inline-block rounded bg-white p-2 border border-slate-200"
                   dangerouslySetInnerHTML={{ __html: pendingFactorQrSvg }}
                 />
-                <div className="mt-3 flex items-center gap-2">
-                  <input
-                    type="text"
+                <div className="mt-3 flex flex-wrap items-end gap-2">
+                  <MentrixaFormField
+                    label="Authenticator code"
+                    value={verifyCode}
+                    onChange={(value) => setVerifyCode(value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="123456"
                     inputMode="numeric"
                     pattern="\d{6}"
                     maxLength={6}
-                    placeholder="123456"
-                    value={verifyCode}
-                    onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="w-28 px-3 py-2 text-[12px] rounded-lg border border-slate-300 bg-white"
+                    validate={validateMfaCode}
+                    message={adminFieldMessage("mfa_code")}
+                    className="max-w-[10rem]"
                   />
                   <button
                     type="button"
@@ -447,7 +415,8 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
 
             {mfaError ? <p className="mt-3 text-[12px] text-red-600">{mfaError}</p> : null}
             {mfaMessage ? <p className="mt-3 text-[12px] text-emerald-600">{mfaMessage}</p> : null}
-          </div>
+            </div>
+          </MentrixaSeparatorStack>
         </div>
       </section>
 
@@ -456,7 +425,8 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <Image src="/images/sword.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Feature Flags</p>
         </div>
-        <div className="bg-white border border-[#E5E7EB] rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
+        <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+          <MentrixaSeparatorStack surface="settings">
           <SettingRow
             label="Skill duels"
             description="Allow learners to challenge each other to real-time quiz duels."
@@ -489,6 +459,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
               />
             </div>
           </SettingRow>
+          </MentrixaSeparatorStack>
         </div>
       </section>
 
@@ -498,7 +469,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <Image src="/images/pending.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
           <p className="text-[11px] font-semibold text-red-400 uppercase tracking-wider">Maintenance</p>
         </div>
-        <div className="bg-white border border-red-100 rounded-xl divide-y divide-[#F3F4F6] overflow-hidden">
+        <div className="bg-white border border-red-100 rounded-xl overflow-hidden">
           <SettingRow
             label="Maintenance mode"
             description="When on, all non-admin users see a maintenance page. Use during deployments or critical fixes."

@@ -5,25 +5,17 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
-  ClipboardList,
   Settings,
   ShieldCheck,
   ChevronRight,
-  BadgeCheck,
-  BarChart2,
   ArrowLeftRight,
-  FileCheck2,
 } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/admin/reconciliation", label: "Reconciliation", icon: ArrowLeftRight },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/registrations", label: "Registrations", icon: ClipboardList },
-  { href: "/admin/verification", label: "Verification", icon: BadgeCheck },
-  { href: "/admin/item-review", label: "Item Review", icon: FileCheck2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

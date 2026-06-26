@@ -4,7 +4,7 @@ import { TutorAvatar } from "./tutor-avatar";
 import { JoinVideoCallButton } from "@/features/video/join-video-call-button";
 import { CancelSessionButton } from "../cancel-session-button";
 import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
-import { Badge } from "@/shared/ui/badge";
+import { CourseTagChip, SessionStatusChip } from "@/shared/ui/chip-patterns";
 import type { StudentSessionTutorProfile } from "@/features/booking/session-lists";
 
 type Session = {
@@ -25,7 +25,6 @@ export function UpcomingSessionCard({
 }) {
   const emailPrefix = session.tutor.email?.split("@")[0] ?? "Guide";
   const name = session.tutor.display_name?.trim() || emailPrefix;
-  const st = (session.status ?? "scheduled").toLowerCase();
 
   return (
     <article
@@ -40,9 +39,7 @@ export function UpcomingSessionCard({
         />
         <div className="min-w-0">
           <p className="truncate font-medium text-slate-900">{name}</p>
-          <Badge variant="outline" className="mt-1 text-[10px] font-mono border-slate-300">
-            {session.course}
-          </Badge>
+          <CourseTagChip course={session.course} className="mt-1" />
           <p className="mt-2 text-sm text-slate-600">
             {formatDateInZone(session.start_time, displayTimeZone)} · {formatTimeInZone(session.start_time, displayTimeZone)} – {formatTimeInZone(session.end_time, displayTimeZone)}
           </p>
@@ -50,16 +47,7 @@ export function UpcomingSessionCard({
       </div>
 
       <div className="flex flex-col sm:items-end gap-2 shrink-0">
-        <Badge
-          variant="outline"
-          className={
-            st === "scheduled"
-              ? "border-slate-200 bg-slate-50 text-slate-800"
-              : "border-slate-200 bg-white text-slate-700"
-          }
-        >
-          {st === "scheduled" ? "Scheduled" : session.status ?? "Scheduled"}
-        </Badge>
+        <SessionStatusChip status={session.status ?? "scheduled"} />
         <div className="flex flex-wrap items-center gap-2">
           <JoinVideoCallButton
             sessionId={session.id}

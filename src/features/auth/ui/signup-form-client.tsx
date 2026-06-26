@@ -565,7 +565,7 @@ export function SignupFormClient({
       />
       <p className="mt-2 text-xs text-slate-500 leading-relaxed">
         After you choose Google, <span className="font-medium text-slate-700">stay on this page</span>. We show access
-        request confirmation (same as email below) or, if you are already approved, next steps to activate your account.
+        request confirmation.
       </p>
 
       <div className="relative my-6">

@@ -920,6 +920,63 @@ export type Database = {
           },
         ]
       }
+      guide_impact_node_scores: {
+        Row: {
+          after_accuracy: number
+          before_accuracy: number
+          guide_id: string
+          id: string
+          impact_lift: number
+          impact_score: number
+          last_calculated: string
+          node_name: string
+          skill_node_id: string
+          students_counted: number
+          subject: string
+        }
+        Insert: {
+          after_accuracy?: number
+          before_accuracy?: number
+          guide_id: string
+          id?: string
+          impact_lift?: number
+          impact_score?: number
+          last_calculated?: string
+          node_name: string
+          skill_node_id: string
+          students_counted?: number
+          subject: string
+        }
+        Update: {
+          after_accuracy?: number
+          before_accuracy?: number
+          guide_id?: string
+          id?: string
+          impact_lift?: number
+          impact_score?: number
+          last_calculated?: string
+          node_name?: string
+          skill_node_id?: string
+          students_counted?: number
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_impact_node_scores_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_impact_node_scores_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       institution_members: {
         Row: {
           added_at: string
@@ -1797,6 +1854,7 @@ export type Database = {
           post_session_checked_at: string | null
           post_session_correct: boolean | null
           pre_session_correct: boolean | null
+          retest_scheduled_at: string | null
           session_id: string
           skill_node_id: string
         }
@@ -1805,6 +1863,7 @@ export type Database = {
           post_session_checked_at?: string | null
           post_session_correct?: boolean | null
           pre_session_correct?: boolean | null
+          retest_scheduled_at?: string | null
           session_id: string
           skill_node_id: string
         }
@@ -1813,6 +1872,7 @@ export type Database = {
           post_session_checked_at?: string | null
           post_session_correct?: boolean | null
           pre_session_correct?: boolean | null
+          retest_scheduled_at?: string | null
           session_id?: string
           skill_node_id?: string
         }
@@ -2026,6 +2086,41 @@ export type Database = {
           },
         ]
       }
+      skill_node_weekly_demand: {
+        Row: {
+          computed_at: string
+          node_name: string
+          skill_node_id: string
+          subject: string
+          weak_student_count: number
+          week_start: string
+        }
+        Insert: {
+          computed_at?: string
+          node_name: string
+          skill_node_id: string
+          subject: string
+          weak_student_count?: number
+          week_start: string
+        }
+        Update: {
+          computed_at?: string
+          node_name?: string
+          skill_node_id?: string
+          subject?: string
+          weak_student_count?: number
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_node_weekly_demand_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_nodes: {
         Row: {
           common_misconceptions: string[] | null
@@ -2109,6 +2204,103 @@ export type Database = {
           {
             foreignKeyName: "student_courses_student_id_fkey"
             columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_subscriptions: {
+        Row: {
+          billing_interval: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          last_reconciled_at: string | null
+          local_status: string
+          mismatch_detail: string | null
+          mismatch_flagged_at: string | null
+          stripe_customer_id: string | null
+          stripe_status: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_interval: string
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          last_reconciled_at?: string | null
+          local_status: string
+          mismatch_detail?: string | null
+          mismatch_flagged_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_status?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_interval?: string
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          last_reconciled_at?: string | null
+          local_status?: string
+          mismatch_detail?: string | null
+          mismatch_flagged_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_status?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_status_mismatches: {
+        Row: {
+          detail: string | null
+          flagged_at: string
+          id: string
+          local_status: string
+          resolved_at: string | null
+          stripe_status: string
+          stripe_subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          detail?: string | null
+          flagged_at?: string
+          id?: string
+          local_status: string
+          resolved_at?: string | null
+          stripe_status: string
+          stripe_subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          detail?: string | null
+          flagged_at?: string
+          id?: string
+          local_status?: string
+          resolved_at?: string | null
+          stripe_status?: string
+          stripe_subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_status_mismatches_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -2878,6 +3070,38 @@ export type Database = {
           },
         ]
       }
+      ap_calc_verified_rank_cache: {
+        Row: {
+          accuracy_percent: number
+          percentile: number | null
+          updated_at: string
+          user_id: string
+          verified_count: number
+        }
+        Insert: {
+          accuracy_percent?: number
+          percentile?: number | null
+          updated_at?: string
+          user_id: string
+          verified_count?: number
+        }
+        Update: {
+          accuracy_percent?: number
+          percentile?: number | null
+          updated_at?: string
+          user_id?: string
+          verified_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ap_calc_verified_rank_cache_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_recordings: {
         Row: {
           created_at: string
@@ -3152,6 +3376,7 @@ export type Database = {
       is_approved_student: { Args: { user_id: string }; Returns: boolean }
       is_approved_tutor: { Args: { user_id: string }; Returns: boolean }
       is_auto_approve_registrations: { Args: never; Returns: boolean }
+      refresh_ap_calc_verified_rank_cache: { Args: never; Returns: undefined }
       refresh_division_leaderboard_mv: { Args: never; Returns: undefined }
       refresh_guide_impact_mv: { Args: never; Returns: undefined }
       registration_request_by_identity_email: {
@@ -3176,6 +3401,7 @@ export type Database = {
       student_hub_snapshot: { Args: { p_user_id: string }; Returns: Json }
       sync_all_guide_ranks: { Args: never; Returns: undefined }
       sync_guide_impact_scores: { Args: never; Returns: undefined }
+      sync_skill_node_weekly_demand: { Args: never; Returns: number }
       utc_week_monday: { Args: { p_ts?: string }; Returns: string }
     }
     Enums: {

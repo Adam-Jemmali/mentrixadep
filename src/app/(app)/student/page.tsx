@@ -14,9 +14,15 @@ import { getTopRival } from "@/features/divisions/top-rival";
 import { getQuestAccuracyTrend } from "@/features/quest/quest-reads";
 import { getActiveProgressSnapshot } from "@/features/progress-snapshot/reads";
 import type { StudentCourse, UserXp } from "@/shared/types/database";
-import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
+import {
+  formatVerifiedRankNextAction,
+  formatVerifiedRankVerdict,
+  getCalibratedRank,
+} from "@/features/xp/calibrated-rank";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RankBreakdownPopover } from "@/shared/ui/popover-patterns";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
@@ -47,6 +53,8 @@ import {
   getStudentQuestCourseNames,
 } from "@/features/guide-impact/reads";
 import { getGuideRanksMap } from "@/features/guide-rank/reads";
+import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
+import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -62,7 +70,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, calibratedRank, masteryGrid] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -71,6 +79,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       getTopRival(),
       getQuestAccuracyTrend(user.id),
       getActiveProgressSnapshot().catch(() => null),
+      getCalibratedRank(user.id, AP_CALC_AB_SUBJECT),
+      loadMasteryGrid(user.id).catch(() => null),
     ]);
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
@@ -97,16 +107,30 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const lastActivityAt = (userXp?.last_activity_at as string | null | undefined) ?? null;
   const streakAtRisk = isStreakAtRisk18h(streak, lastActivityAt);
 
-  const accountLevel = getAccountLevelFromTotalXp(totalXp);
-  const accountRank = getAccountRankFromTotalXp(totalXp);
-  const levelProgressDenom =
-    accountLevel.xpToNextLevel != null
-      ? accountLevel.xpIntoLevel + accountLevel.xpToNextLevel
-      : 1;
-  const tierProgressPct =
-    accountLevel.xpToNextLevel != null && levelProgressDenom > 0
-      ? Math.min(100, Math.round((accountLevel.xpIntoLevel / levelProgressDenom) * 100))
-      : 100;
+  const accountRank =
+    calibratedRank.source === "verified_first_attempt"
+      ? calibratedRank.visual
+      : getAccountRankFromTotalXp(totalXp);
+  const rankVerdict = formatVerifiedRankVerdict(
+    calibratedRank.verifiedStats ?? {
+      verifiedCount: 0,
+      accuracyPercent: 0,
+      percentile: null,
+    }
+  );
+  const rankNextAction = formatVerifiedRankNextAction(
+    calibratedRank.verifiedStats ?? {
+      verifiedCount: 0,
+      accuracyPercent: 0,
+      percentile: null,
+    }
+  );
+  const verifiedRankStats =
+    calibratedRank.verifiedStats ?? {
+      verifiedCount: 0,
+      accuracyPercent: 0,
+      percentile: null,
+    };
 
   const sessionsCompleted = pastSessions.filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -155,8 +179,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             <div className="max-w-xl space-y-4">
               <div>
                 <StudentHeroGreeting greeting={greeting} firstName={firstName} />
-                <p className="mt-2 h-[20px] text-sm text-white/90">
-                  Keep your streak. Keep proving what you know.
+                <p className="mt-2 text-sm text-white/90">
+                  {rankVerdict}
                 </p>
               </div>
 
@@ -169,32 +193,25 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                   >
                     {normalizeRankTitle(accountRank.title)}
                   </p>
-                  <p className="text-xs font-mono tabular-nums text-white/85">
-                    Rank {accountRank.level}
-                    <span className="text-white/50"> · </span>
-                    {totalXp.toLocaleString()} XP
-                    {accountLevel.xpToNextLevel != null
-                      ? ` · ${accountLevel.xpToNextLevel.toLocaleString()} to next`
-                      : " · max rank"}
+                  <p className="text-xs text-white/85">
+                    {calibratedRank.source === "verified_first_attempt"
+                      ? "Verified rank · first attempts only"
+                      : `${totalXp.toLocaleString()} XP streak progress`}
+                    {streak > 0 ? (
+                      <>
+                        <span className="text-white/50"> · </span>
+                        {streak}d streak
+                      </>
+                    ) : null}
                   </p>
+                  <div className="mt-2">
+                    <RankBreakdownPopover stats={verifiedRankStats} tone="dark" />
+                  </div>
                 </div>
               </div>
 
-              <div className="max-w-md space-y-2">
-                <div className="flex justify-between text-xs text-white/80">
-                  <span>Level progress</span>
-                  <span className="tabular-nums">{tierProgressPct}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-white/25">
-                  <div
-                    className="h-full rounded-full transition-[width] duration-300 ease-out shadow-sm"
-                    style={{
-                      width: `${tierProgressPct}%`,
-                      background: `linear-gradient(90deg, ${accountRank.color}cc, ${accountRank.color})`,
-                      boxShadow: `0 0 12px ${accountRank.colorMuted}`,
-                    }}
-                  />
-                </div>
+              <div className="max-w-md rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white/90">
+                <p className="font-medium text-white">{rankNextAction}</p>
               </div>
 
               {streak > 0 && (
@@ -246,6 +263,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             </div>
           </div>
         </div>
+
+        {masteryGrid ? (
+          <div className="mt-8">
+            <MasteryGrid data={masteryGrid} showLegend />
+          </div>
+        ) : null}
 
         <div className="mt-8 space-y-6">
           {progressSnapshot ? (

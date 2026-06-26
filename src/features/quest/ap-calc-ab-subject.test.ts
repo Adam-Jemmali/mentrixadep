@@ -30,6 +30,8 @@ describe("normalizeNodeKey", () => {
 describe("constants", () => {
   it("exposes unavailable message", () => {
     expect(AP_CALC_AB_SUBJECT).toBe("AP Calculus AB");
-    expect(AP_CALC_AB_UNAVAILABLE_MESSAGE).toContain("being prepared");
+    expect(AP_CALC_AB_UNAVAILABLE_MESSAGE).toBe(
+      "AP Calculus AB practice is being prepared for this topic. Check back shortly."
+    );
   });
 });

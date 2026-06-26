@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AuthUser } from "@/shared/core/auth";
 import { FirstLoginTourPanel } from "@/components/first-login-tour-panel";
+import { OnboardingStepsProgressBar } from "@/shared/ui/progress-bar-patterns";
 
 type StudentTourStep = {
   id: string;
@@ -186,6 +187,13 @@ export function StudentFirstLoginTour({ user }: { user: AuthUser }) {
           Skip
         </button>
       </div>
+
+      <OnboardingStepsProgressBar
+        currentStep={currentStep + 1}
+        totalSteps={steps.length}
+        tone="dark"
+        className="mb-3"
+      />
 
       <h2 id="student-tour-title" className="text-base font-bold leading-snug text-blue-500">
         {step.title}

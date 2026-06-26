@@ -211,6 +211,20 @@ export interface GuideImpactScoreDbRow {
   last_calculated: string;
 }
 
+export interface GuideImpactNodeScoreDbRow {
+  id: string;
+  guide_id: string;
+  skill_node_id: string;
+  node_name: string;
+  subject: string;
+  impact_score: number;
+  students_counted: number;
+  after_accuracy: number;
+  before_accuracy: number;
+  impact_lift: number;
+  last_calculated: string;
+}
+
 export interface GuideImpactHistoryDbRow {
   id: string;
   guide_id: string;
@@ -726,6 +740,14 @@ export interface Database {
           last_calculated?: string;
         };
         Update: Partial<GuideImpactScoreDbRow>;
+      };
+      guide_impact_node_scores: {
+        Row: GuideImpactNodeScoreDbRow;
+        Insert: Omit<GuideImpactNodeScoreDbRow, "id" | "last_calculated"> & {
+          id?: string;
+          last_calculated?: string;
+        };
+        Update: Partial<GuideImpactNodeScoreDbRow>;
       };
       guide_impact_history: {
         Row: GuideImpactHistoryDbRow;

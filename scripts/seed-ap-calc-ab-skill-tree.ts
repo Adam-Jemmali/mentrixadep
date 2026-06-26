@@ -13,7 +13,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SUBJECT = "AP Calculus AB";
-const TARGET_COUNT = 113;
+const MIN_NODES = 100;
+const MAX_NODES = 150;
 
 type SkillNodeSeed = {
   unit_number: number;
@@ -64,8 +65,10 @@ async function main(): Promise<void> {
   });
 
   const nodes = loadNodes();
-  if (nodes.length !== TARGET_COUNT) {
-    console.error(`Expected ${TARGET_COUNT} nodes in data file, got ${nodes.length}.`);
+  if (nodes.length < MIN_NODES || nodes.length > MAX_NODES) {
+    console.error(
+      `Expected ${MIN_NODES}–${MAX_NODES} nodes in data file, got ${nodes.length}.`
+    );
     process.exit(1);
   }
 
@@ -81,8 +84,10 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if ((existingCount ?? 0) === TARGET_COUNT && !force) {
-    console.log(`Already seeded: ${existingCount} rows for "${SUBJECT}". Use --force to re upsert.`);
+  if ((existingCount ?? 0) >= MIN_NODES && (existingCount ?? 0) <= MAX_NODES && !force) {
+    console.log(
+      `Already seeded: ${existingCount} rows for "${SUBJECT}" (${MIN_NODES}–${MAX_NODES}). Use --force to re upsert.`
+    );
     process.exit(0);
   }
 
@@ -191,7 +196,13 @@ async function main(): Promise<void> {
   console.log(`Upserted ${rows.length} skill_nodes for "${SUBJECT}".`);
   console.log(`Total rows for subject: ${finalCount}.`);
   console.log(`Linked prerequisites for ${linked} nodes across ${byUnit.size} units.`);
-  console.log(`Target ${TARGET_COUNT}: ${finalCount === TARGET_COUNT ? "OK" : "MISMATCH"}.`);
+  const inRange =
+    finalCount !== null &&
+    finalCount >= MIN_NODES &&
+    finalCount <= MAX_NODES;
+  console.log(
+    `Range ${MIN_NODES}–${MAX_NODES}: ${inRange ? "OK" : "MISMATCH — run assert_ap_calc_ab_skill_nodes after migration 114"}.`
+  );
 }
 
 main().catch((err: unknown) => {

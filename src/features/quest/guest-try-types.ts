@@ -32,6 +32,8 @@ export type GuestTryQuestion = {
   unitNumber?: number;
   unitName?: string;
   nodeName?: string;
+  distractorTags?: Record<string, string>;
+  examStakes?: string;
 };
 
 /** Normalize common math typings so 3x^2, 3*x**2, and 3x² all align for grading. */

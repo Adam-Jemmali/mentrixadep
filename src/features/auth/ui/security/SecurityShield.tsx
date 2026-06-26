@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 /**
  * Visual Trust Indicator: SecurityShield
@@ -29,7 +30,7 @@ export function SecurityShield() {
     }
   }, []);
 
-  if (status === "loading") return <div className="w-5 h-5 animate-pulse bg-slate-200 rounded-full" />;
+  if (status === "loading") return <Skeleton className="h-5 w-5 rounded-full" aria-hidden />;
 
   return (
     <div className="flex items-center gap-2 group cursor-help transition-all duration-300">

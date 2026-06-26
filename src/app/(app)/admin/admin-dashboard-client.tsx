@@ -2,37 +2,22 @@
 
 import type { PlatformMetrics } from "@/features/admin/admin-dashboard";
 
-
 import Link from "next/link";
+import { MentrixaSeparatorStack } from "@/shared/ui/separator-patterns";
 import {
   Users,
   BookOpen,
   DollarSign,
   Zap,
-  Clock,
   Swords,
   Shield,
-  CheckCircle2,
   ArrowRight,
   TrendingUp,
   AlertCircle,
 } from "lucide-react";
 
-import type { RegistrationRequest } from "@/shared/types/database";
-
-interface UnverifiedCourse {
-  id: string;
-  tutor_id: string;
-  course_name: string;
-  proof_description: string;
-  tutor_email: string | null;
-  created_at: string;
-}
-
 interface Props {
   metrics: PlatformMetrics | null;
-  pendingRequests: RegistrationRequest[];
-  unverifiedCourses: UnverifiedCourse[];
 }
 
 function MetricCard({
@@ -72,30 +57,18 @@ function MetricCard({
   return content;
 }
 
-function relativeTime(iso: string) {
-  const delta = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(delta / 60_000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
-
-export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCourses }: Props) {
+export function AdminDashboardClient({ metrics }: Props) {
   const m = metrics;
 
   return (
     <div className="max-w-6xl mx-auto dash-animate-in">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Platform Overview</h1>
         <p className="text-[13px] text-slate-500 mt-1">
-          Live snapshot · auto-refreshes every 30 seconds
+          Live snapshot for ops and revenue health
         </p>
       </div>
 
-      {/* Metrics grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <MetricCard
           label="Total users"
@@ -118,25 +91,18 @@ export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCours
           sub="Gross session value"
           icon={DollarSign}
           accent="bg-amber-50"
+          href="/admin/reconciliation"
         />
         <MetricCard
           label="Active quests"
           value={m?.activeQuests ?? "—"}
-          sub="In-progress right now"
+          sub="In progress right now"
           icon={Zap}
           accent="bg-violet-50"
         />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <MetricCard
-          label="Pending approvals"
-          value={m?.pendingApprovals ?? "—"}
-          sub="Awaiting review"
-          icon={Clock}
-          accent="bg-orange-50"
-          href="/admin/registrations"
-        />
         <MetricCard
           label="Active duels"
           value={m?.activeDuels ?? "—"}
@@ -152,17 +118,6 @@ export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCours
           accent="bg-teal-50"
         />
         <MetricCard
-          label="Course reviews"
-          value={unverifiedCourses.length}
-          sub="Pending verification"
-          icon={CheckCircle2}
-          accent="bg-slate-100"
-          href="/admin/users"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <MetricCard
           label="Security events"
           value={m?.securityEvents24h ?? "—"}
           sub="Last 24 hours"
@@ -171,65 +126,16 @@ export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCours
         />
       </div>
 
-      {/* Two-column lower sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending registrations */}
-        <div className="dash-section bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#F3F4F6] flex items-center justify-between">
-            <div>
-              <p className="text-[13px] font-semibold text-slate-900">Pending Registrations</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">{pendingRequests.length} awaiting review</p>
-            </div>
-            <Link
-              href="/admin/registrations"
-              className="text-[11px] text-slate-500 hover:text-slate-900 font-medium transition-colors flex items-center gap-1"
-            >
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {pendingRequests.length === 0 ? (
-            <div className="px-5 py-10 text-center">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-[13px] text-slate-500">Queue is clear</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-[#F3F4F6]">
-              {pendingRequests.slice(0, 5).map((req) => (
-                <div key={req.id} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div>
-                    <p className="text-[13px] font-medium text-slate-900">{req.email}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${req.role === "tutor" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}>
-                        {req.role === "tutor" ? "Guide" : "Learner"}
-                      </span>
-                      <span className="text-[11px] text-slate-400">{relativeTime(req.created_at)}</span>
-                    </div>
-                  </div>
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" strokeWidth={1.8} />
-                </div>
-              ))}
-              {pendingRequests.length > 5 && (
-                <div className="px-5 py-3">
-                  <Link href="/admin/registrations" className="text-[12px] text-slate-400 hover:text-slate-600 transition-colors">
-                    +{pendingRequests.length - 5} more →
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Quick links */}
         <div className="dash-section bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-[#F3F4F6]">
-            <p className="text-[13px] font-semibold text-slate-900">Quick Actions</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Common admin operations</p>
+            <p className="text-[13px] font-semibold text-slate-900">Quick actions</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Suspend users or inspect payment pipeline issues</p>
           </div>
-          <div className="divide-y divide-[#F3F4F6]">
+          <MentrixaSeparatorStack surface="dashboard">
             {[
-              { href: "/admin/registrations", label: "Review tutor applications", sub: `${pendingRequests.filter(r => r.role === "tutor").length} pending`, icon: ClipboardCheck },
-              { href: "/admin/users", label: "Manage all users", sub: `${m?.totalUsers ?? 0} total`, icon: Users },
+              { href: "/admin/users", label: "Manage users", sub: `${m?.totalUsers ?? 0} total`, icon: Users },
+              { href: "/admin/reconciliation", label: "Payment reconciliation", sub: "Stripe and ledger drift", icon: ArrowLeftRight },
               { href: "/admin/settings", label: "Platform settings", sub: "Features, fees, limits", icon: SettingsIcon },
             ].map(({ href, label, sub, icon: Icon }) => (
               <Link
@@ -247,77 +153,57 @@ export function AdminDashboardClient({ metrics, pendingRequests, unverifiedCours
                 <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
               </Link>
             ))}
-          </div>
-
-          {/* Platform health indicators */}
-          <div className="px-5 py-4 bg-[#F9FAFB] border-t border-[#F3F4F6]">
-            <p className="text-[11px] font-medium text-slate-500 mb-3">Platform Health</p>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto mb-1" />
-                <p className="text-[10px] text-slate-500">Auth</p>
-              </div>
-              <div className="text-center">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto mb-1" />
-                <p className="text-[10px] text-slate-500">Database</p>
-              </div>
-              <div className="text-center">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto mb-1" />
-                <p className="text-[10px] text-slate-500">Payments</p>
-              </div>
-            </div>
-          </div>
+          </MentrixaSeparatorStack>
         </div>
-      </div>
 
-      {/* Sessions trend row */}
-      <div className="mt-6 dash-section bg-white border border-[#E5E7EB] rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-[13px] font-semibold text-slate-900">Session Activity</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Rolling 30-day window</p>
-          </div>
-          <TrendingUp className="w-4 h-4 text-slate-300" strokeWidth={1.8} />
-        </div>
-        <div className="grid grid-cols-3 gap-6">
-          {[
-            { label: "Today", value: m?.sessionsToday ?? 0, max: Math.max(m?.sessionsToday ?? 0, 1) },
-            { label: "This week", value: m?.sessionsWeek ?? 0, max: Math.max(m?.sessionsWeek ?? 0, 1) },
-            { label: "This month", value: m?.sessionsMonth ?? 0, max: Math.max(m?.sessionsMonth ?? 0, 1) },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <div className="flex items-end justify-between mb-2">
-                <p className="text-[11px] text-slate-500 font-medium">{label}</p>
-                <p className="text-[18px] font-semibold text-slate-900 leading-none">{value}</p>
-              </div>
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-slate-900 rounded-full transition-all duration-700"
-                  style={{
-                    width: `${Math.min(
-                      label === "Today" ? (value / Math.max(m?.sessionsMonth ?? 1, 1)) * 100 * 30 :
-                      label === "This week" ? (value / Math.max(m?.sessionsMonth ?? 1, 1)) * 100 * 4.3 :
-                      100,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
+        <div className="dash-section bg-white border border-[#E5E7EB] rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[13px] font-semibold text-slate-900">Session activity</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Rolling 30-day window</p>
             </div>
-          ))}
+            <TrendingUp className="w-4 h-4 text-slate-300" strokeWidth={1.8} />
+          </div>
+          <div className="grid grid-cols-3 gap-6">
+            {[
+              { label: "Today", value: m?.sessionsToday ?? 0 },
+              { label: "This week", value: m?.sessionsWeek ?? 0 },
+              { label: "This month", value: m?.sessionsMonth ?? 0 },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <div className="flex items-end justify-between mb-2">
+                  <p className="text-[11px] text-slate-500 font-medium">{label}</p>
+                  <p className="text-[18px] font-semibold text-slate-900 leading-none">{value}</p>
+                </div>
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-slate-900 rounded-full transition-all duration-700"
+                    style={{
+                      width: `${Math.min(
+                        label === "Today" ? (value / Math.max(m?.sessionsMonth ?? 1, 1)) * 100 * 30 :
+                        label === "This week" ? (value / Math.max(m?.sessionsMonth ?? 1, 1)) * 100 * 4.3 :
+                        100,
+                        100
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Icon aliases for the quick actions section
-function ClipboardCheck(props: React.SVGProps<SVGSVGElement> & { strokeWidth?: number }) {
+function ArrowLeftRight(props: React.SVGProps<SVGSVGElement> & { strokeWidth?: number }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-      <rect x="9" y="3" width="6" height="4" rx="1" />
-      <path d="m9 12 2 2 4-4" />
+      <path d="M8 3 4 7l4 4" />
+      <path d="M4 7h16" />
+      <path d="m16 21 4-4-4-4" />
+      <path d="M20 17H4" />
     </svg>
   );
 }

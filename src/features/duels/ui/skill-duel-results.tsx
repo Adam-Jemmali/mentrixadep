@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, Clock, Sparkles, Swords, Target, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { QuestKindMetaTag } from "@/shared/ui/meta-tag-patterns";
 import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { cn } from "@/shared/core/utils";
@@ -312,9 +313,7 @@ export function SkillDuelResults({
                   <span className="font-mono text-xs font-bold text-slate-500">
                     R{round.index + 1}
                   </span>
-                  <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
-                    {kindLabel(round.question.type)}
-                  </span>
+                  <QuestKindMetaTag label={kindLabel(round.question.type)} tone="light" />
                   <OutcomeBadge outcome={round.outcome} />
                 </div>
                 <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">

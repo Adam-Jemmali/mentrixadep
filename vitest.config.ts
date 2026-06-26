@@ -13,6 +13,7 @@ export default defineConfig({
       "src/features/**/*.test.ts",
       "src/shared/**/*.test.ts",
       "tests/unit/**/*.test.ts",
+      "scripts/**/*.test.ts",
     ],
     passWithNoTests: false,
   },

@@ -6,15 +6,10 @@ import { formatDateInZone, formatTimeRangeInZone } from "@/shared/core/time-form
 import { getPreSessionContext } from "@/features/pre-session-brief/context";
 import { isPreSessionContextWindowOpen } from "@/features/pre-session-brief/context-pure";
 import type { PreSessionContext } from "@/features/pre-session-brief/types";
-import { formatSessionFocusSignal } from "@/features/analytics/utils/biometric-friction";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
-import { formatVerifiedGapLine } from "@/features/pre-session-brief/verified-gaps";
-
-function signed(n: number): string {
-  if (n > 0) return `+${n}`;
-  if (n < 0) return `${n}`;
-  return "0";
-}
+import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
+import { MentrixaDrawer } from "@/shared/ui/drawer-patterns";
+import { guideMasteryGridDrawerMessage } from "@/shared/ui/drawer-messages-pure";
 
 export function GuidePreSessionContextPanel({
   sessionId,
@@ -39,6 +34,7 @@ export function GuidePreSessionContextPanel({
   const [pending, startTransition] = useTransition();
 
   const windowOpen = isPreSessionContextWindowOpen(startTime);
+  const masteryCopy = guideMasteryGridDrawerMessage(studentName, course);
 
   function toggle() {
     if (!windowOpen) return;
@@ -51,13 +47,13 @@ export function GuidePreSessionContextPanel({
       try {
         const data = await getPreSessionContext(sessionId, guideId);
         if (!data) {
-          setError("Could not load student context.");
+          setError("Could not load student mastery grid.");
           return;
         }
         setCtx(data);
         setOpen(true);
       } catch {
-        setError("Could not load student context.");
+        setError("Could not load student mastery grid.");
       }
     });
   }
@@ -81,130 +77,71 @@ export function GuidePreSessionContextPanel({
           disabled={!windowOpen || pending}
           onClick={toggle}
         >
-          {pending ? "Loading…" : open ? "Hide context" : "View student context"}
+          {pending ? "Loading…" : open ? "Hide mastery grid" : "View mastery grid"}
         </Button>
       </div>
       {!windowOpen ? (
         <p className="mt-2 text-[11px] text-slate-500">
-          Student context unlocks 2 hours before the session.
+          Student mastery grid unlocks 2 hours before the session.
         </p>
       ) : null}
       {error ? <p className="mt-2 text-[11px] text-red-600">{error}</p> : null}
-      {open && ctx ? <GuidePreSessionContextBody context={ctx} /> : null}
+      {open && ctx ? (
+        <div className="mt-3 hidden border-t border-indigo-100 pt-3 lg:block">
+          <GuidePreSessionContextBody context={ctx} />
+        </div>
+      ) : null}
+      {ctx ? (
+        <div className="lg:hidden">
+          <MentrixaDrawer
+            isOpen={open}
+            onOpenChange={setOpen}
+            placement="bottom"
+            tone="light"
+            brandKind="guide"
+            title={masteryCopy.title}
+            description={masteryCopy.description}
+            bodyClassName="p-0"
+          >
+            <div className="p-4">
+              <GuidePreSessionContextBody context={ctx} embedded />
+              <p className="mt-4 text-xs leading-relaxed text-slate-500">
+                {masteryCopy.verdict} {masteryCopy.nextAction}
+              </p>
+            </div>
+          </MentrixaDrawer>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-export function GuidePreSessionContextBody({ context }: { context: PreSessionContext }) {
-  const p = context.performance;
-  const trend = signed(p.questAccuracyTrendDelta);
+export function GuidePreSessionContextBody({
+  context,
+  embedded = false,
+}: {
+  context: PreSessionContext;
+  embedded?: boolean;
+}) {
+  const shellClass = embedded ? "" : "mt-3 border-t border-indigo-100 pt-3";
+
+  if (!isApCalculusAbSubject(context.subject) || !context.masteryGrid) {
+    return (
+      <p className={`${shellClass} text-xs text-slate-600`}>
+        Mastery grid is not available for this subject yet.
+      </p>
+    );
+  }
 
   return (
-    <div className="mt-3 space-y-4 border-t border-indigo-100 pt-3 text-sm">
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">
-          Student performance summary
-        </p>
-        <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
-          <li>
-            Quest accuracy in {context.subject} (last 30 days):{" "}
-            <strong>{p.questAccuracyLast30Days}%</strong>
-            <span className="text-slate-500"> · Trend: {trend}% vs previous 30 days</span>
-          </li>
-          {p.weakestConcepts.length > 0 ? (
-            <li>
-              <span className="font-medium">Weakest concepts:</span>
-              <ol className="mt-1 list-decimal pl-4">
-                {p.weakestConcepts.map((c) => (
-                  <li key={c.label}>
-                    {c.label}: {c.accuracyPercent}% accuracy
-                  </li>
-                ))}
-              </ol>
-            </li>
-          ) : null}
-          <li>
-            Duel record in {context.subject}:{" "}
-            <strong>
-              {p.duelWins}-{p.duelLosses}
-            </strong>{" "}
-            this month
-          </li>
-          <li>
-            Current rank: <strong>{p.currentRankTitle}</strong>
-            {p.divisionPosition != null ? (
-              <span>
-                {" "}
-                · Division position: <strong>#{p.divisionPosition}</strong>
-              </span>
-            ) : null}
-          </li>
-          {p.lastSessionTopic ? (
-            <li>
-              Last session topic: <strong>{p.lastSessionTopic}</strong>
-            </li>
-          ) : null}
-        </ul>
-      </div>
-
-      {isApCalculusAbSubject(context.subject) && context.verifiedGaps ? (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">
-            Verified gaps
-          </p>
-          <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
-            {context.verifiedGaps.nodes.map((gap) => (
-              <li key={`${gap.unitName}-${gap.nodeName}`}>{formatVerifiedGapLine(gap)}</li>
-            ))}
-            {context.verifiedGaps.sessionFocusSignal != null ? (
-              <li>{formatSessionFocusSignal(context.verifiedGaps.sessionFocusSignal)}</li>
-            ) : null}
-          </ul>
-        </div>
-      ) : null}
-
-      {context.aiBrief ? (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">AI brief</p>
-          <div className="mt-2 space-y-2 text-xs text-slate-700">
-            {context.aiBrief.likelyCoverage.length > 0 ? (
-              <div>
-                <p className="font-medium">Likely topics to cover</p>
-                <ul className="mt-1 list-disc pl-4">
-                  {context.aiBrief.likelyCoverage.map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {context.aiBrief.warmUpExercise.prompt ? (
-              <div>
-                <p className="font-medium">Suggested warm-up</p>
-                <p className="mt-1 text-slate-600">{context.aiBrief.warmUpExercise.prompt}</p>
-              </div>
-            ) : null}
-            {context.aiBrief.questionsToAsk.length > 0 ? (
-              <div>
-                <p className="font-medium">Questions the student should ask</p>
-                <ul className="mt-1 list-disc pl-4">
-                  {context.aiBrief.questionsToAsk.map((q) => (
-                    <li key={q}>{q}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : (
-        <p className="text-xs text-slate-500">AI brief generates about 2 hours before the session.</p>
-      )}
-
-      {context.breakthrough ? (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-xs text-emerald-950">
-          <p className="font-bold uppercase tracking-wide text-emerald-800">Breakthrough potential</p>
-          <p className="mt-1">{context.breakthrough.message}</p>
-        </div>
-      ) : null}
+    <div className={shellClass}>
+      <MasteryGrid
+        data={context.masteryGrid}
+        showLegend
+        readOnly
+        pinnedNodeIds={context.sessionTargetNodeIds}
+        remainderCollapsed
+      />
     </div>
   );
 }

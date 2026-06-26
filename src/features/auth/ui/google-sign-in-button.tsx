@@ -6,6 +6,7 @@ import { createClient } from "@/shared/integrations/supabase/client";
 import { setOAuthCookiesClient } from "@/shared/integrations/oauth-auth";
 import { loadGoogleGsiScript } from "@/shared/integrations/google-gsi-loader";
 import { toUserFacingAuthError } from "@/shared/core/user-facing-error";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const buttonClassName =
   "w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none";
@@ -278,10 +279,7 @@ export function GoogleSignInButton({
   return (
     <div className="space-y-2 w-full">
       {gsiLoading ? (
-        <div
-          className="h-11 w-full animate-pulse rounded-lg border border-slate-200 bg-slate-100"
-          aria-hidden
-        />
+        <Skeleton className="h-11 w-full rounded-lg border border-slate-200" aria-hidden />
       ) : null}
       <div
         className={`w-full min-h-[44px] flex justify-center [&>div]:!w-full ${busy || gsiLoading ? "opacity-60 pointer-events-none" : ""} ${gsiLoading ? "sr-only absolute h-0 overflow-hidden" : ""}`}

@@ -7,6 +7,7 @@ import { deleteAvailability, setAvailabilityActive } from "@/features/tutor/avai
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatTimeRangeInZone } from "@/shared/core/time-format";
 import { Badge } from "@/shared/ui/badge";
+import { MentrixaCountBadge } from "@/shared/ui/badge-patterns";
 import { Button } from "@/shared/ui/button";
 import { Switch } from "@/shared/ui/switch";
 import {
@@ -147,11 +148,17 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                                 <span className="text-xs font-bold tabular-nums text-slate-800">
                                   ${(cents / 100).toFixed(2)} CAD
                                 </span>
-                                {pending > 0 && (
-                                  <Badge variant="outline" className="border-amber-400 bg-amber-50 text-[10px] font-semibold text-amber-950">
+                                {pending > 0 ? (
+                                  <MentrixaCountBadge
+                                    count={pending}
+                                    color="warning"
+                                    variant="soft"
+                                    className="normal-case tracking-normal px-2"
+                                    label={`${pending} pending booking${pending === 1 ? "" : "s"}`}
+                                  >
                                     {pending} pending booking{pending === 1 ? "" : "s"}
-                                  </Badge>
-                                )}
+                                  </MentrixaCountBadge>
+                                ) : null}
                                 {!active && (
                                   <Badge variant="outline" className="border-slate-400 text-[10px] font-semibold text-slate-800">
                                     Hidden from learners

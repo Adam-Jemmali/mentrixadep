@@ -5,7 +5,7 @@ import Image from "next/image";
 import { formatSlotRangeInZone, formatTimeInZone } from "@/shared/core/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
 import { Input } from "@/shared/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { MentrixaFilterSelect } from "@/shared/ui/select-patterns";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
+import { CourseTagChip } from "@/shared/ui/chip-patterns";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 import { splitSessionPriceCents, getStudentSessionCheckoutCents } from "@/features/booking/booking-pricing";
 import { Typewriter } from "@/shared/ui/typewriter";
@@ -203,36 +203,28 @@ export function AvailabilityBrowser({
         className="mb-3 min-h-11 text-xs bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
       />
 
-      <Select value={courseFilter} onValueChange={setCourseFilter}>
-        <SelectTrigger
-          aria-label="Filter guides by course"
-          className="mb-4 min-h-11 text-xs bg-white border-slate-200 text-slate-900"
-        >
-          <SelectValue placeholder="All courses" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All courses</SelectItem>
-          {courses.map((course) => (
-            <SelectItem key={course} value={course}>
-              {course}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <MentrixaFilterSelect
+        aria-label="Filter guides by course"
+        className="mb-4 w-full max-w-xs"
+        value={courseFilter}
+        onChange={setCourseFilter}
+        placeholder="All courses"
+        options={[
+          { id: "all", label: "All courses" },
+          ...courses.map((course) => ({ id: course, label: course })),
+        ]}
+      />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as "impact" | "name")}>
-          <SelectTrigger
-            aria-label="Sort guides"
-            className="min-h-9 w-[160px] text-xs bg-white border-slate-200 text-slate-900"
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="impact">Highest Impact</SelectItem>
-            <SelectItem value="name">Name (A–Z)</SelectItem>
-          </SelectContent>
-        </Select>
+        <MentrixaFilterSelect
+          aria-label="Sort guides"
+          value={sortBy}
+          onChange={(v) => setSortBy(v as "impact" | "name")}
+          options={[
+            { id: "impact", label: "Highest Impact" },
+            { id: "name", label: "Name (A–Z)" },
+          ]}
+        />
         <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-slate-600">
           <input
             type="checkbox"
@@ -278,14 +270,7 @@ export function AvailabilityBrowser({
                       <span className="block truncate text-sm font-medium text-slate-900">{guide.name}</span>
                       <span className="block truncate text-xs text-slate-500">{guide.email}</span>
                     </div>
-                    {hasVerifiedCourse && (
-                      <Badge
-                        variant="outline"
-                        className="border-slate-200 bg-slate-50 px-1.5 py-0 text-[10px] font-medium text-slate-700"
-                      >
-                        Verified
-                      </Badge>
-                    )}
+                    {hasVerifiedCourse ? <CourseTagChip course="Verified" className="normal-case" /> : null}
                     {guideRankByTutorId[tutorId] ? (
                       <GuideRankBadge
                         rankKey={guideRankByTutorId[tutorId]!}

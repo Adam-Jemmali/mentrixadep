@@ -1,5 +1,11 @@
 /** Practice pack quests — stored in quests.metadata (questKind: "practice_pack"). */
 
+import type {
+  MasteryGridData,
+  MasteryPackNodeSnapshot,
+  QuestMasteryHighlight,
+} from "@/features/mastery-grid/types";
+
 export type PracticeDifficulty = "beginner" | "intermediate" | "advanced";
 export type PracticePackType = "mcq" | "short_answer" | "problem_solving";
 
@@ -17,6 +23,8 @@ export interface PracticeQuestionMcq {
   topicTag?: string;
   subtopicTag?: string;
   unitNumber?: number;
+  /** From skill_nodes.exam_stakes — shown as Exam stakes tooltip in quest UI. */
+  examStakes?: string;
 }
 
 export interface PracticeQuestionWritten {
@@ -48,6 +56,8 @@ export interface PracticePackMetadata {
   /** Breakthrough adaptive follow-up */
   breakthroughEventId?: string;
   focusSubtopic?: string;
+  /** Mastery states for pack nodes at session start (AP Calculus AB). */
+  masteryBeforePack?: Record<string, MasteryPackNodeSnapshot>;
 }
 
 export interface PracticeSessionAnswer {
@@ -72,4 +82,10 @@ export interface PracticePackResult {
   xpAwarded: number;
   perfectBonus: number;
   mistakeReviews?: { questionId: string; prompt: string; review: string }[];
+  /** Verified-first-attempt rank receipt (AP Calculus AB). */
+  rankVerdict?: string;
+  rankNextAction?: string;
+  newVerifiedSkills?: number;
+  masteryGrid?: MasteryGridData;
+  masteryHighlight?: QuestMasteryHighlight;
 }

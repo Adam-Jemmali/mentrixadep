@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronDown, Calendar, Clock, DollarSign, Globe, Check, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronDown, Calendar, Clock, DollarSign, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 import { createAvailabilitySlots } from "@/features/tutor/availability";
 import { useAdminViewContext } from "@/components/admin-view-context";
@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/shared/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
-import { APP_TIMEZONES } from "@/shared/core/timezones";
+import { MentrixaSelect, MentrixaTimezoneSelect } from "@/shared/ui/select-patterns";
 import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/features/booking/availability-schemas";
 import {
   describeAvailabilityScheduleIssue,
@@ -69,7 +69,6 @@ export function CreateAvailabilityCard({
   
   // UI State
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
-  const [isTimezoneDropdownOpen, setIsTimezoneDropdownOpen] = useState(false);
   const [showConfirmationView, setShowConfirmationView] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +77,6 @@ export function CreateAvailabilityCard({
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const timezoneRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const shouldAnimate = enableAnimations && !shouldReduceMotion;
 
@@ -143,9 +141,6 @@ export function CreateAvailabilityCard({
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsSubjectDropdownOpen(false);
-      }
-      if (timezoneRef.current && !timezoneRef.current.contains(event.target as Node)) {
-        setIsTimezoneDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -394,28 +389,25 @@ export function CreateAvailabilityCard({
           <motion.div variants={shouldAnimate ? itemVariants : {}} className="space-y-4 px-6 pb-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Start time</label>
-                <div className="relative">
-                  <select 
-                    value={startTime} 
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setStartTime(next);
-                      setError(null);
-                      setSuccessMessage(null);
-                    }}
-                    aria-invalid={timesLookInvalid}
-                    className={cn(
-                      "w-full appearance-none rounded-lg border-2 bg-white p-2.5 pr-9 font-semibold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 [&>option]:bg-white [&>option]:text-slate-900",
-                      timesLookInvalid ? "border-amber-500 ring-amber-200 focus:ring-amber-400" : "border-slate-300 focus:ring-indigo-500",
-                    )}
-                  >
-                    {(startTimesValid.length ? startTimesValid : times).map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                  <Clock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
-                </div>
+                <MentrixaSelect
+                  label="Start time"
+                  brandKind="guide"
+                  value={startTime}
+                  onChange={(id) => {
+                    if (!id) return;
+                    setStartTime(id);
+                    setError(null);
+                    setSuccessMessage(null);
+                  }}
+                  options={(startTimesValid.length ? startTimesValid : times).map((t) => ({
+                    id: t,
+                    label: t,
+                  }))}
+                  triggerClassName={cn(
+                    "font-semibold tabular-nums",
+                    timesLookInvalid && "border-amber-500 ring-amber-200",
+                  )}
+                />
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Session end</label>
@@ -462,45 +454,12 @@ export function CreateAvailabilityCard({
                 </div>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Timezone</label>
-                <div className="relative" ref={timezoneRef}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsTimezoneDropdownOpen(!isTimezoneDropdownOpen)}
-                    className={cn(
-                      "h-auto w-full justify-between rounded-lg border-2 border-slate-300 bg-white p-2.5 text-left font-semibold text-slate-900 shadow-sm hover:bg-slate-50",
-                      isTimezoneDropdownOpen && "border-indigo-500 ring-2 ring-indigo-200"
-                    )}
-                  >
-                    <span className="truncate text-xs">{timezone}</span>
-                    <Globe className="ml-1 h-4 w-4 shrink-0 text-slate-600" />
-                  </Button>
-                  <AnimatePresence>
-                    {isTimezoneDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
-                        className="absolute bottom-full left-0 right-0 z-[100] mb-2 max-h-48 overflow-y-auto rounded-lg border-2 border-slate-300 bg-white shadow-xl"
-                      >
-                        {APP_TIMEZONES.map((tz) => (
-                          <button
-                            key={tz}
-                            type="button"
-                            onClick={() => { setTimezone(tz); setIsTimezoneDropdownOpen(false); }}
-                            className={cn(
-                              "w-full border-b border-slate-100 p-2 text-left text-xs font-medium transition-colors last:border-b-0",
-                              tz === timezone ? "bg-indigo-100 text-indigo-950" : "bg-white text-slate-900 hover:bg-indigo-50"
-                            )}
-                          >
-                            {tz}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                <MentrixaTimezoneSelect
+                  value={timezone}
+                  onChange={setTimezone}
+                  label="Timezone"
+                  brandKind="guide"
+                />
               </div>
             </div>
           </motion.div>

@@ -1,5 +1,11 @@
 import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
+import { buildPassportVerdict, passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
 import { supabaseRestSelect } from "@/shared/integrations/supabase/rest-fetch";
+import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
+import {
+  getAccountLevelFromTotalXp,
+  MENTRIXER_MIN_XP,
+} from "@/features/xp/levels";
 
 export type OgRankCardData =
   | { status: "not_found" }
@@ -8,9 +14,11 @@ export type OgRankCardData =
       status: "ok";
       username: string;
       displayName: string;
-      globalRankLevel: number;
-      globalRankTitle: string;
-      subjectLine: string;
+      rankLevel: number;
+      rankTitle: string;
+      passportVerdictText: string;
+      topPercentGold: number | null;
+      verifiedSkillCount: number;
     };
 
 type SettingsRow = {
@@ -28,50 +36,15 @@ type XpRow = {
   total_xp: number | null;
 };
 
-type QuestProgressRow = {
-  num_attempts: number | null;
-  quests: { metadata: Record<string, unknown> | null } | { metadata: Record<string, unknown> | null }[] | null;
+type RankCacheRow = {
+  verified_count: number | null;
+  percentile: number | string | null;
 };
 
-function computeAccuracyPercent(correct: number, total: number): number {
-  if (total <= 0) return 0;
-  return Math.round((correct / total) * 100);
-}
-
-function topSubjectLineFromQuests(rows: QuestProgressRow[]): string | null {
-  const byCourse = new Map<string, { correct: number; total: number }>();
-
-  for (const row of rows) {
-    const quest = Array.isArray(row.quests) ? row.quests[0] : row.quests;
-    const meta = quest?.metadata;
-    const course =
-      typeof meta?.course === "string" && meta.course.trim() ? meta.course.trim() : "General";
-
-    let correct = 1;
-    let total = row.num_attempts || 1;
-    const result = meta?.result as { correct?: number; total?: number } | undefined;
-    if (result?.correct !== undefined) {
-      correct = result.correct;
-      total = result.total || row.num_attempts || 1;
-    }
-
-    const agg = byCourse.get(course) ?? { correct: 0, total: 0 };
-    agg.correct += correct;
-    agg.total += total;
-    byCourse.set(course, agg);
-  }
-
-  let bestCourse: string | null = null;
-  let bestAgg: { correct: number; total: number } | null = null;
-  for (const [course, agg] of byCourse) {
-    if (!bestAgg || agg.total > bestAgg.total) {
-      bestCourse = course;
-      bestAgg = agg;
-    }
-  }
-
-  if (!bestCourse || !bestAgg || bestAgg.total <= 0) return null;
-  return `${bestCourse} · ${computeAccuracyPercent(bestAgg.correct, bestAgg.total)}% accuracy`;
+function rankLevelFromPercentile(percentile: number): number {
+  const clamped = Math.max(0, Math.min(100, percentile));
+  const virtualXp = Math.round((clamped / 100) * MENTRIXER_MIN_XP);
+  return getAccountLevelFromTotalXp(virtualXp).level;
 }
 
 /** Edge-safe loader for OG images — avoids @supabase/supabase-js and full rank-card build. */
@@ -93,7 +66,7 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
 
   const studentId = settings.user_id;
 
-  const [userRows, xpRows, questRows] = await Promise.all([
+  const [userRows, xpRows, rankCacheRows] = await Promise.all([
     supabaseRestSelect<UserRow>(
       "users",
       `id=eq.${encodeURIComponent(studentId)}&select=role,approved&limit=1`,
@@ -102,9 +75,9 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
       "user_xp",
       `user_id=eq.${encodeURIComponent(studentId)}&select=total_xp&limit=1`,
     ),
-    supabaseRestSelect<QuestProgressRow>(
-      "user_quest_progress",
-      `user_id=eq.${encodeURIComponent(studentId)}&status=eq.completed&select=num_attempts,quests(metadata)&order=last_attempt_at.desc&limit=80`,
+    supabaseRestSelect<RankCacheRow>(
+      "ap_calc_verified_rank_cache",
+      `user_id=eq.${encodeURIComponent(studentId)}&select=verified_count,percentile&limit=1`,
     ),
   ]);
 
@@ -114,20 +87,37 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
   }
 
   const totalXp = xpRows[0]?.total_xp ?? 0;
-  const globalRank = rankFromTotalXp(totalXp);
+  const verifiedSkillCount = Number(rankCacheRows[0]?.verified_count ?? 0);
+  const rawPercentile = rankCacheRows[0]?.percentile;
+  const percentile =
+    rawPercentile == null || Number.isNaN(Number(rawPercentile))
+      ? null
+      : Number(rawPercentile);
+
+  const passportVerdict = buildPassportVerdict({
+    verifiedCount: verifiedSkillCount,
+    percentile,
+  });
+
+  const rankLevel =
+    passportVerdict.kind === "ranked" && percentile != null
+      ? rankLevelFromPercentile(percentile)
+      : rankFromTotalXp(totalXp).level;
+  const rankVisual = getAccountRankByLevel(rankLevel);
+
   const displayName =
     (typeof settings.display_name === "string" && settings.display_name.trim()
       ? settings.display_name.trim()
       : username) || "Mentrixer";
 
-  const subjectLine = topSubjectLineFromQuests(questRows) ?? "Competitive arena record";
-
   return {
     status: "ok",
     username,
     displayName,
-    globalRankLevel: globalRank.level,
-    globalRankTitle: globalRank.title,
-    subjectLine,
+    rankLevel,
+    rankTitle: normalizeRankTitle(rankVisual.title),
+    passportVerdictText: passportVerdictPlainText(passportVerdict),
+    topPercentGold: passportVerdict.kind === "ranked" ? passportVerdict.topPercent : null,
+    verifiedSkillCount,
   };
 }

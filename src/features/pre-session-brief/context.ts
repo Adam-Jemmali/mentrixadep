@@ -15,6 +15,8 @@ import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
 import { getAverageSessionFocusSignal } from "@/features/quest/record-telemetry-log";
 import { loadVerifiedGaps } from "@/features/pre-session-brief/verified-gaps";
+import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
+import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
 import {
   preSessionContextSchema,
   type PreSessionContext,
@@ -391,6 +393,21 @@ async function buildFreshContext(
     ? await loadVerifiedGaps(studentId, String(session.course), 3)
     : null;
 
+  const masteryGrid = isApCalculusAbSubject(String(session.course))
+    ? await loadMasteryGrid(studentId).catch(() => null)
+    : null;
+
+  let sessionTargetNodeIds: string[] | undefined;
+  if (isApCalculusAbSubject(String(session.course))) {
+    await seedSessionTargetNodes(sessionId, studentId, String(session.course)).catch(() => {});
+    const { data: targetRows } = await admin
+      .from("session_target_nodes")
+      .select("skill_node_id")
+      .eq("session_id", sessionId)
+      .order("id", { ascending: true });
+    sessionTargetNodeIds = (targetRows ?? []).map((row) => String(row.skill_node_id));
+  }
+
   const payload: PreSessionContext = {
     sessionId,
     subject: String(session.course),
@@ -407,6 +424,8 @@ async function buildFreshContext(
         }
       : null,
     verifiedGaps,
+    masteryGrid,
+    sessionTargetNodeIds,
     cachedAt,
   };
 

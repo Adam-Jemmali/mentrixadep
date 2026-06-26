@@ -46,6 +46,11 @@ export const DeferredPricingSection = dynamic(
   { loading: () => <SectionFallback className="min-h-[520px]" /> },
 );
 
+export const DeferredLandingFaqSection = dynamic(
+  () => import("@/features/marketing/landing/v2/sections/landing-faq-section").then((m) => m.LandingFaqSection),
+  { loading: () => <SectionFallback className="min-h-[360px]" /> },
+);
+
 export const DeferredLandingFooterBlock = dynamic(
   () => import("@/features/marketing/landing/v2/sections/landing-footer-block").then((m) => m.LandingFooterBlock),
   { loading: () => <SectionFallback className="min-h-[200px]" /> },

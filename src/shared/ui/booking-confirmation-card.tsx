@@ -7,6 +7,9 @@ import Image from "next/image";
 import { Button } from "@/shared/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { BookingPriceBreakdown } from "@/features/booking/booking-price-breakdown";
+import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { formatUsdFromCents } from "@/features/duels/duel-reward";
+import { PriceBreakdownPopover } from "@/shared/ui/popover-patterns";
 import { TutorAvatar } from "@/app/(app)/student/session-components/tutor-avatar";
 
 interface BookingConfirmationCardProps {
@@ -43,6 +46,7 @@ export function BookingConfirmationCard({
 }: BookingConfirmationCardProps) {
   const shouldReduceMotion = useReducedMotion();
   const shouldAnimate = enableAnimations && !shouldReduceMotion;
+  const priceSplit = splitSessionPriceCents(priceCents);
 
   const containerVariants = {
     hidden: { opacity: 0, scale: 0.95 },
@@ -140,11 +144,16 @@ export function BookingConfirmationCard({
 
         {/* Pricing */}
         <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-5 bg-slate-900 border border-slate-800 rounded-xl shadow-inner">
-          <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="w-4 h-4 text-blue-400" />
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pricing Breakdown</p>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-blue-400" />
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pricing</p>
+            </div>
+            <PriceBreakdownPopover sessionPriceCents={priceCents} />
           </div>
-          <div className="text-slate-100">
+          <p className="text-2xl font-bold tabular-nums text-white">{formatUsdFromCents(priceSplit.totalCents)}</p>
+          <p className="mt-1 text-xs text-slate-400">Total due at Stripe checkout</p>
+          <div className="mt-4 hidden sm:block text-slate-100">
             <BookingPriceBreakdown sessionPriceCents={priceCents} />
           </div>
           <div className="mt-4 pt-4 border-t border-slate-800 flex items-start gap-3">

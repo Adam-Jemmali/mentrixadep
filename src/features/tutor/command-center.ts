@@ -25,6 +25,8 @@ import {
 } from "@/features/guide-rank/calculate-pure";
 import type { GuideRankProgress } from "@/features/guide-rank/calculate-pure";
 import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
+import type { GuideDemandSignal } from "@/features/demand-signal/demand-signal-pure";
+import { loadGuideDemandSignals } from "@/features/demand-signal/reads";
 
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
@@ -78,6 +80,7 @@ export type TutorCommandCenterPayload = {
   impactScores: GuideImpactEntry[];
   impactHistoryLast30Days: { date: string; impactScore: number }[];
   completedSessionsTotal: number;
+  demandSignals: GuideDemandSignal[];
 };
 
 function fallbackTutorCommandCenterPayload(
@@ -126,6 +129,7 @@ function fallbackTutorCommandCenterPayload(
     impactScores: [],
     impactHistoryLast30Days: [],
     completedSessionsTotal: 0,
+    demandSignals: [],
   };
 }
 
@@ -354,6 +358,21 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       impactHistoryLast30Days = [];
     }
 
+    const verifiedCourseNames = (tutorCourses ?? [])
+      .filter((course) => course.verified)
+      .map((course) => String(course.course_name));
+    const demandSignals = await loadTutorSection(
+      "demandSignals",
+      () =>
+        loadGuideDemandSignals({
+          verifiedCourseNames,
+          openAvailability: (availability ?? []).map((slot) => ({
+            course: String(slot.course),
+          })),
+        }),
+      [],
+    );
+
     let calendarAvailability = calAvailRes.data ?? [];
     const calAvailIds = calendarAvailability.map((a) => a.id);
     if (calAvailIds.length > 0) {
@@ -413,6 +432,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       impactScores,
       impactHistoryLast30Days,
       completedSessionsTotal,
+      demandSignals,
     };
 
     logTutorLoader("payload-built", {

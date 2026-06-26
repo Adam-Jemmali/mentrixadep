@@ -33,6 +33,12 @@ const NODE_DELAY_MS = 1000;
 const GENERATION_TIMEOUT_MS = 90_000;
 const REVIEWED_BY = "gemini-auto";
 
+const MIN_GLOBAL_APPROVED = 300;
+const MAX_GLOBAL_APPROVED = 500;
+const TARGET_PER_NODE = 4;
+const MAX_PER_NODE = 5;
+const MAX_GENERATION_ROUNDS_PER_NODE = 3;
+
 const questionSchema = z.object({
   prompt: z.string().min(10),
   options: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1), z.string().min(1)]),
@@ -178,6 +184,7 @@ async function main(): Promise<void> {
 
   const args = process.argv.slice(2);
   const force = args.includes("--force");
+  const fillOnly = !args.includes("--no-fill");
   const limitArg = args.find((a) => a.startsWith("--limit="))?.split("=")[1]
     ?? (args.includes("--limit") ? args[args.indexOf("--limit") + 1] : undefined);
   const limit = limitArg ? Number.parseInt(limitArg, 10) : undefined;
@@ -213,68 +220,120 @@ async function main(): Promise<void> {
     .from("item_bank")
     .select("skill_node_id, status")
     .in("skill_node_id", queue.map((n) => n.id))
-    .in("status", ["approved", "pending_review"]);
+    .eq("status", "approved");
 
   if (existingError) {
     console.error("Failed to check existing items:", existingError.message);
     process.exit(1);
   }
 
-  const existingByNode = new Map<string, number>();
+  const approvedByNode = new Map<string, number>();
   for (const row of existingItems ?? []) {
-    existingByNode.set(row.skill_node_id, (existingByNode.get(row.skill_node_id) ?? 0) + 1);
+    approvedByNode.set(row.skill_node_id, (approvedByNode.get(row.skill_node_id) ?? 0) + 1);
   }
 
-  console.log(`Processing ${queue.length} skill nodes for "${SUBJECT}" with auto verification.`);
+  let globalApproved = [...approvedByNode.values()].reduce((sum, n) => sum + n, 0);
+
+  if (fillOnly && !force) {
+    queue = queue
+      .filter((node) => {
+        const count = approvedByNode.get(node.id) ?? 0;
+        return count < TARGET_PER_NODE || globalApproved < MIN_GLOBAL_APPROVED;
+      })
+      .sort(
+        (a, b) =>
+          (approvedByNode.get(a.id) ?? 0) - (approvedByNode.get(b.id) ?? 0)
+      );
+  }
+
+  console.log(
+    `Processing ${queue.length} skill nodes for "${SUBJECT}" (global approved: ${globalApproved}, target ${MIN_GLOBAL_APPROVED}–${MAX_GLOBAL_APPROVED}).`
+  );
+  console.log("Auto verify on generate. Inserts status=approved only.");
 
   let totalInserted = 0;
   let nodesProcessed = 0;
-  const reviewedAt = new Date().toISOString();
 
   for (let i = 0; i < queue.length; i++) {
-    const node = queue[i]!;
-    const existingCount = existingByNode.get(node.id) ?? 0;
+    if (globalApproved >= MAX_GLOBAL_APPROVED) {
+      console.log(`Global cap ${MAX_GLOBAL_APPROVED} reached. Stopping.`);
+      break;
+    }
 
-    if (existingCount > 0 && !force) {
-      console.log(`[skip] ${node.node_name} (${existingCount} existing)`);
+    const node = queue[i]!;
+    const existingCount = approvedByNode.get(node.id) ?? 0;
+
+    if (!force && existingCount >= MAX_PER_NODE) {
+      console.log(`[skip] ${node.node_name} (${existingCount} approved, at cap)`);
+      continue;
+    }
+
+    if (!force && fillOnly && existingCount >= TARGET_PER_NODE && globalApproved >= MIN_GLOBAL_APPROVED) {
+      console.log(`[skip] ${node.node_name} (${existingCount} approved, node target met)`);
       continue;
     }
 
     if (i > 0) await sleep(NODE_DELAY_MS);
 
-    try {
-      const generated = await generateForNode(apiKey, node);
-      const verified = await verifyBatch(apiKey, node, generated);
+    const nodeTarget = Math.min(TARGET_PER_NODE, MAX_PER_NODE);
+    let rounds = 0;
+    let insertedForNode = 0;
 
-      if (verified.length === 0) {
-        console.error(`${node.node_name}: no questions passed auto verification`);
-        continue;
+    while (
+      (approvedByNode.get(node.id) ?? 0) < nodeTarget &&
+      globalApproved < MAX_GLOBAL_APPROVED &&
+      rounds < MAX_GENERATION_ROUNDS_PER_NODE
+    ) {
+      rounds++;
+      try {
+        const generated = await generateForNode(apiKey, node);
+        const verified = await verifyBatch(apiKey, node, generated);
+
+        if (verified.length === 0) {
+          console.error(`  ${node.node_name} round ${rounds}: no questions passed verifier`);
+          continue;
+        }
+
+        const slotsNeeded = Math.min(
+          nodeTarget - (approvedByNode.get(node.id) ?? 0),
+          MAX_GLOBAL_APPROVED - globalApproved,
+          verified.length
+        );
+        const toInsert = verified.slice(0, Math.max(1, slotsNeeded));
+        const reviewedAt = new Date().toISOString();
+
+        const rows = toInsert.map((q) => ({
+          skill_node_id: node.id,
+          question_type: "mcq",
+          prompt: q.prompt.trim(),
+          options: q.options,
+          correct_answer: q.correct_answer.trim(),
+          explanation: q.explanation.trim(),
+          distractor_tags: q.distractor_tags,
+          difficulty_rating: 1000,
+          status: "approved",
+          reviewed_by: REVIEWED_BY,
+          reviewed_at: reviewedAt,
+        }));
+
+        const { error: insertError } = await supabase.from("item_bank").insert(rows);
+        if (insertError) throw new Error(insertError.message);
+
+        insertedForNode += rows.length;
+        totalInserted += rows.length;
+        globalApproved += rows.length;
+        approvedByNode.set(node.id, (approvedByNode.get(node.id) ?? 0) + rows.length);
+
+        console.log(
+          `  ${node.node_name} round ${rounds}: +${rows.length} approved (${generated.length - verified.length} failed verify)`
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`  ${node.node_name} round ${rounds}: ${message}`);
       }
-
-      const rows = verified.map((q) => ({
-        skill_node_id: node.id,
-        question_type: "mcq",
-        prompt: q.prompt.trim(),
-        options: q.options,
-        correct_answer: q.correct_answer.trim(),
-        explanation: q.explanation.trim(),
-        distractor_tags: q.distractor_tags,
-        difficulty_rating: 1000,
-        status: "approved",
-        reviewed_by: REVIEWED_BY,
-        reviewed_at: reviewedAt,
-      }));
-
-      const { error: insertError } = await supabase.from("item_bank").insert(rows);
-      if (insertError) throw new Error(insertError.message);
-
-      totalInserted += rows.length;
-      nodesProcessed++;
-      console.log(`${node.node_name}: ${rows.length} approved (${generated.length - verified.length} rejected by verifier)`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`${node.node_name}: failed — ${message}`);
     }
+
+    if (insertedForNode > 0) nodesProcessed++;
   }
 
   const { count: approvedCount, error: approvedError } = await supabase
@@ -287,8 +346,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`Done. Nodes processed: ${nodesProcessed}. Inserted this run: ${totalInserted}.`);
-  console.log(`Total approved in item_bank: ${approvedCount ?? 0}.`);
+  const total = approvedCount ?? 0;
+  const inRange = total >= MIN_GLOBAL_APPROVED && total <= MAX_GLOBAL_APPROVED;
+
+  console.log(`Done. Nodes touched: ${nodesProcessed}. Inserted this run: ${totalInserted}.`);
+  console.log(`Total approved in item_bank: ${total}.`);
+  console.log(
+    `Target ${MIN_GLOBAL_APPROVED}–${MAX_GLOBAL_APPROVED}: ${inRange ? "OK" : "KEEP GENERATING — npm run item-bank:generate"}`
+  );
 }
 
 main().catch((err: unknown) => {

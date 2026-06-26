@@ -23,6 +23,12 @@ import {
   sendStudioPackageReadyEmail,
   type SessionRowForPackage,
 } from "@/features/studio-ai/studio-internal";
+import { scheduleSessionRetestsOnPublish } from "@/features/breakthrough-events/schedule-session-retests";
+import type { StudioRetestScheduleResult } from "@/features/breakthrough-events/schedule-session-retests";
+
+export type StudioPublishRetestConfirmation = StudioRetestScheduleResult & {
+  studentDisplayName: string;
+};
 
 export interface TutorSessionWithPackage {
   id: string;
@@ -751,7 +757,10 @@ export async function saveStudioPackageDraft(
 export async function publishStudioPackage(
   sessionId: string,
   onBehalfOfTutorId?: string,
-): Promise<{ package: SessionAiPackage } | { error: string }> {
+): Promise<
+  | { package: SessionAiPackage; retestConfirmation: StudioPublishRetestConfirmation | null }
+  | { error: string }
+> {
   try {
     const user = await requireRole(["tutor", "admin"]);
     const validSessionId = validateUUID(sessionId);
@@ -798,6 +807,43 @@ export async function publishStudioPackage(
     const pkg = updated as SessionAiPackage;
     void sendStudioPackageReadyEmail(adminClient, validSessionId, session.course, pkg);
 
+    let retestConfirmation: StudioPublishRetestConfirmation | null = null;
+    try {
+      const { data: studentSettings } = await adminClient
+        .from("user_settings")
+        .select("display_name")
+        .eq("user_id", session.student_id)
+        .maybeSingle();
+
+      let studentDisplayName = studentSettings?.display_name?.trim() ?? "";
+      if (!studentDisplayName) {
+        const { data: authUser } = await adminClient.auth.admin.getUserById(session.student_id);
+        const email = authUser?.user?.email ?? "";
+        studentDisplayName = email.split("@")[0] || "Student";
+      }
+
+      const followUpTopics = Array.isArray(pkg.follow_up_topics)
+        ? pkg.follow_up_topics.map(String)
+        : [];
+
+      const scheduled = await scheduleSessionRetestsOnPublish({
+        sessionId: validSessionId,
+        studentId: session.student_id,
+        course: String(session.course),
+        publishedAt: now,
+        followUpTopics,
+      });
+
+      if (scheduled) {
+        retestConfirmation = {
+          ...scheduled,
+          studentDisplayName,
+        };
+      }
+    } catch (scheduleErr) {
+      console.warn("[Studio] retest schedule failed (non-critical):", scheduleErr);
+    }
+
     try {
       await applyXpAward(
         session.tutor_id,
@@ -811,7 +857,7 @@ export async function publishStudioPackage(
 
     revalidatePath("/tutor/sessions-ai");
     revalidatePath("/student");
-    return { package: pkg };
+    return { package: pkg, retestConfirmation };
   } catch (err) {
     if (err instanceof Error) {
       return { error: err.message };

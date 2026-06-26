@@ -8,6 +8,13 @@ export const BREAKTHROUGH_SESSION_PRICE_CENTS = 3900;
 export const MOMENTUM_PACK_PRICE_CENTS = 9900;
 export const MOMENTUM_PACK_SESSION_COUNT = 3;
 
+/** Momentum subscription — tier three billing (CAD cents). */
+export const MOMENTUM_SUBSCRIPTION_MONTHLY_CENTS = 2900;
+export const MOMENTUM_SUBSCRIPTION_ANNUAL_CENTS = 24900;
+
+/** Reduced session rate for active Momentum subscribers (CAD cents). */
+export const MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS = 2900;
+
 /** Guide payout on a $39 session (85%). */
 export const GUIDE_PAYOUT_ON_BREAKTHROUGH_CENTS = 3315;
 
@@ -17,6 +24,20 @@ export function formatStudentBreakthroughPrice(): string {
 
 export function formatStudentMomentumPackPrice(): string {
   return "$99 CAD";
+}
+
+export function formatStudentMomentumSubscriptionMonthlyPrice(): string {
+  return "$29 CAD per month";
+}
+
+export function formatStudentMomentumSubscriptionAnnualPrice(): string {
+  return "$249 CAD per year";
+}
+
+export function getMomentumSubscriptionCents(interval: "monthly" | "annual"): number {
+  return interval === "annual"
+    ? MOMENTUM_SUBSCRIPTION_ANNUAL_CENTS
+    : MOMENTUM_SUBSCRIPTION_MONTHLY_CENTS;
 }
 
 /** Amount charged at Stripe checkout for a single Guide session. */

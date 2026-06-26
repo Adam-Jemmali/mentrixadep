@@ -7,6 +7,14 @@ import { parseReferrerSource } from "@/features/rank-card/referrer";
 import type { RankCardResult } from "@/features/rank-card/types";
 import { trackEvent } from "@/shared/integrations/analytics";
 import { getActiveWarBadgesForUser } from "@/features/division-wars/war-notifications";
+import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
+import { loadPassportBreakthroughReceipts } from "@/features/rank-card/load-passport-breakthroughs";
+import { buildPassportVerdict } from "@/features/rank-card/rank-passport-pure";
+import {
+  getApCalcVerifiedRankStats,
+  getCalibratedRank,
+} from "@/features/xp/calibrated-rank";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 
 type LoadOptions = {
   referrer?: string | null;
@@ -58,9 +66,19 @@ export async function getRankCardByUsername(
 
   const totalXp = xpRow?.total_xp ?? 0;
   const globalRank = rankFromTotalXp(totalXp);
-  const subjects = await buildRankCardSubjects(studentId, totalXp);
+  const calibrated = await getCalibratedRank(studentId, AP_CALC_AB_SUBJECT);
+  const verifiedStats = await getApCalcVerifiedRankStats(studentId);
+  const [subjects, warBadges, masteryGrid, breakthroughReceipts] = await Promise.all([
+    buildRankCardSubjects(studentId, totalXp),
+    getActiveWarBadgesForUser(studentId),
+    loadMasteryGrid(studentId).catch(() => null),
+    loadPassportBreakthroughReceipts(studentId).catch(() => []),
+  ]);
   const topSubject = subjects[0] ?? null;
-  const warBadges = await getActiveWarBadgesForUser(studentId);
+  const passportVerdict = buildPassportVerdict({
+    verifiedCount: verifiedStats.verifiedCount,
+    percentile: verifiedStats.percentile,
+  });
 
   if (!options.skipAnalytics) {
     void trackEvent("rank_card_viewed", {
@@ -78,10 +96,17 @@ export async function getRankCardByUsername(
     displayName,
     globalRankTitle: globalRank.title,
     globalRankLevel: globalRank.level,
+    rankTitle: calibrated.title,
+    rankLevel: calibrated.level,
     totalXp,
+    verifiedPercentile: verifiedStats.percentile,
+    verifiedSkillCount: verifiedStats.verifiedCount,
+    passportVerdict,
+    breakthroughReceipts,
     subjects,
     topSubject,
     warBadges,
+    masteryGrid,
     isPrivate: false as const,
   };
 }

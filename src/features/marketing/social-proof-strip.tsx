@@ -4,14 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 const WireframeDottedGlobe = dynamic(
   () => import("@/shared/ui/wireframe-dotted-globe").then((m) => m.WireframeDottedGlobe),
   {
     ssr: false,
     loading: () => (
-      <div
-        className="mx-auto aspect-[17/10] w-full max-w-[680px] animate-pulse rounded-2xl bg-indigo-950/40"
+      <Skeleton
+        tone="dark"
+        className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-2xl"
         aria-hidden
       />
     ),

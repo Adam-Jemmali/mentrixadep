@@ -20,6 +20,11 @@ import {
 } from "@/shared/integrations/email";
 import { checkInstitutionCredits, consumeInstitutionCredit } from "@/features/institutions/institution-credits";
 import { recordSecurityEvent } from "@/shared/core/security/security-events";
+import {
+  handleMomentumSubscriptionCheckoutCompleted,
+  handleStripeSubscriptionDeleted,
+  handleStripeSubscriptionUpdated,
+} from "@/features/payments/subscription-webhook-handlers";
 
 function stripe(): Stripe {
   return getStripeServer();
@@ -130,6 +135,11 @@ async function fetchAvailabilityDetails(availabilityId: string) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  if (session.metadata?.checkout_kind === "momentum_subscription") {
+    await handleMomentumSubscriptionCheckoutCompleted(session);
+    return;
+  }
+
   const availabilityId =
     session.metadata?.availability_id ?? session.metadata?.availabilityId;
   const studentId =
@@ -413,6 +423,16 @@ export async function POST(req: NextRequest) {
 
       case "account.updated": {
         await applyStripeAccountWebhookUpdate(event.data.object as Stripe.Account);
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        await handleStripeSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        await handleStripeSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
       }
 

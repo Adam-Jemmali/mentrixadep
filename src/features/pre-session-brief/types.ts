@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { masteryGridDataSchema } from "@/features/mastery-grid/schema";
 
 export const preSessionVerifiedGapNodeSchema = z.object({
   unitName: z.string(),
@@ -61,6 +62,8 @@ export const preSessionContextSchema = z.object({
   aiBrief: preSessionAiBriefSchema.nullable(),
   breakthrough: preSessionBreakthroughSchema.nullable(),
   verifiedGaps: preSessionVerifiedGapsSchema.nullable().optional(),
+  sessionTargetNodeIds: z.array(z.string().uuid()).optional(),
+  masteryGrid: masteryGridDataSchema.nullable().optional(),
   cachedAt: z.string(),
 });
 

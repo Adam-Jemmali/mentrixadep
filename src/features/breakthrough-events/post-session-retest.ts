@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { isStudioRetestDue } from "@/features/breakthrough-events/schedule-session-retests-pure";
 
 export type SessionBreakthroughLine = {
   nodeName: string;
@@ -69,11 +70,12 @@ export async function getPendingPostSessionTargetNodeIds(
   for (const sessionId of sessionIds) {
     const { data: targets } = await admin
       .from("session_target_nodes")
-      .select("skill_node_id")
+      .select("skill_node_id, retest_scheduled_at")
       .eq("session_id", sessionId)
       .is("post_session_checked_at", null);
 
     const pending = (targets ?? [])
+      .filter((row) => isStudioRetestDue(row.retest_scheduled_at as string | null))
       .map((row) => row.skill_node_id)
       .filter((id) => (validNodeIds ? validNodeIds.has(id) : true));
 

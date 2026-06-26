@@ -18,6 +18,8 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { readUiPerfTier } from "@/shared/core/ui-performance";
 import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
+import { NavProfileAvatar } from "@/components/nav-profile-avatar";
+import { useProfileBadgeCount } from "@/shared/hooks/use-profile-badge-count";
 
 const STUDENT_LINKS = [
   { href: "/student", label: "Home" },
@@ -73,32 +75,19 @@ function profilePageHref(role: string | undefined, userId: string): string | nul
 function NavAvatarButton({
   avatarUrl,
   initials,
+  badgeCount,
 }: {
   avatarUrl: string | null | undefined;
   initials: string;
+  badgeCount: number;
 }) {
-  const [broken, setBroken] = useState(false);
-  useEffect(() => {
-    setBroken(false);
-  }, [avatarUrl]);
-
-  if (avatarUrl && !broken) {
-    return (
-      <Image
-        src={avatarUrl}
-        alt=""
-        width={32}
-        height={32}
-        unoptimized
-        className="w-8 h-8 rounded-full object-cover border border-white/15 shrink-0"
-        onError={() => setBroken(true)}
-      />
-    );
-  }
   return (
-    <div className="w-8 h-8 rounded-full bg-white/10 border border-white/15 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-      {initials}
-    </div>
+    <NavProfileAvatar
+      avatarUrl={avatarUrl}
+      initials={initials}
+      badgeCount={badgeCount}
+      badgeNoun="pending review"
+    />
   );
 }
 
@@ -130,6 +119,7 @@ function NavigationInner({ user }: NavigationProps) {
   }, [user, appShellLocked]);
   const profileHref = user && !appShellLocked ? profilePageHref(user.role, user.id) : null;
   const initials = user ? getInitials(user.displayName, user.email) : "M";
+  const profileBadgeCount = useProfileBadgeCount(user?.id, user?.role ?? null);
   const primaryLabel =
     user?.displayName?.trim() ||
     user?.email?.split("@")[0] ||
@@ -248,7 +238,7 @@ function NavigationInner({ user }: NavigationProps) {
                 className="hidden md:flex items-center gap-2 rounded-full px-1.5 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
                 aria-label="Open account menu"
               >
-                <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
+                <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} badgeCount={profileBadgeCount} />
                 <span className="hidden sm:flex flex-col items-start leading-tight min-w-0">
                   <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
                     Account
@@ -353,7 +343,7 @@ function NavigationInner({ user }: NavigationProps) {
                 </SheetHeader>
                 {user ? (
                   <div className="mt-6 flex items-center gap-3">
-                    <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} />
+                    <NavAvatarButton avatarUrl={user.avatarUrl} initials={initials} badgeCount={profileBadgeCount} />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-white truncate">{primaryLabel}</p>
                       <p className="text-xs text-slate-500 truncate">{user.email}</p>

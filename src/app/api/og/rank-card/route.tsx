@@ -1,9 +1,12 @@
 import { ImageResponse } from "next/og";
 import { loadOgRankCardData } from "@/features/rank-card/og-rank-card-data";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 
 /** Node runtime — @vercel/og exceeds the 1 MB Edge bundle limit on Hobby. */
 export const runtime = "nodejs";
+
+const VERIFIED_GOLD = "#D4A017";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -20,7 +23,8 @@ export async function GET(request: Request) {
     return new Response("Not found", { status: 404 });
   }
 
-  const rankVisual = getAccountRankByLevel(card.globalRankLevel);
+  const rankVisual = getAccountRankByLevel(card.rankLevel);
+  const isTopTier = rankVisual.key === "mentrixer";
 
   return new ImageResponse(
     (
@@ -32,41 +36,41 @@ export async function GET(request: Request) {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 56,
-          background: "linear-gradient(145deg, #070d1a 0%, #0b1220 50%, #111827 100%)",
+          background: "linear-gradient(145deg, #070d1a 0%, #0B1220 50%, #0F172A 100%)",
           color: "#f8fafc",
           fontFamily: "system-ui, sans-serif",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "0.08em", color: "#818cf8" }}>
-              MENTRIXA
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 760 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "0.16em", color: "#a5b4fc" }}>
+              VERIFIED RANK PASSPORT
             </div>
-            <div style={{ fontSize: 48, fontWeight: 900, fontStyle: "italic" }}>{card.displayName}</div>
+            <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.05 }}>{card.displayName}</div>
             <div
               style={{
-                fontSize: 22,
-                color: rankVisual.color,
+                fontSize: 20,
                 fontWeight: 700,
+                letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                letterSpacing: "0.12em",
+                color: isTopTier ? VERIFIED_GOLD : rankVisual.color,
               }}
             >
-              {normalizeRankTitle(card.globalRankTitle)}
+              {normalizeRankTitle(card.rankTitle)}
             </div>
           </div>
           <div
             style={{
-              width: 120,
-              height: 120,
-              borderRadius: 24,
+              width: 108,
+              height: 108,
+              borderRadius: 20,
               background: "#0A0A0A",
-              border: `3px solid ${rankVisual.color}`,
+              border: `3px solid ${isTopTier ? VERIFIED_GOLD : rankVisual.color}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 52,
-              boxShadow: `0 0 40px ${rankVisual.colorMuted}`,
+              fontSize: 44,
+              color: isTopTier ? VERIFIED_GOLD : rankVisual.color,
             }}
           >
             ★
@@ -75,24 +79,41 @@ export async function GET(request: Request) {
 
         <div
           style={{
-            marginTop: 40,
+            marginTop: 28,
             padding: 32,
             borderRadius: 24,
-            background: "rgba(15, 23, 42, 0.75)",
-            border: "1px solid rgba(129, 140, 248, 0.25)",
+            background: "rgba(15, 23, 42, 0.92)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
           }}
         >
-          <div style={{ fontSize: 16, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.15em" }}>
-            Verified competitive performance
-          </div>
-          <div style={{ marginTop: 12, fontSize: 32, fontWeight: 700 }}>{card.subjectLine}</div>
-          <div style={{ marginTop: 8, fontSize: 18, color: "#64748b" }}>
-            mentrixa.one/rank/{username}
-          </div>
+          {card.topPercentGold != null ? (
+            <div style={{ fontSize: 34, fontWeight: 700, lineHeight: 1.25, color: "#f8fafc" }}>
+              Top{" "}
+              <span style={{ color: VERIFIED_GOLD, fontWeight: 900 }}>{card.topPercentGold}</span>{" "}
+              percent of everyone verified on {AP_CALC_AB_SUBJECT}, first attempt only, no retakes
+            </div>
+          ) : (
+            <div style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.35, color: "#e2e8f0" }}>
+              {card.passportVerdictText}
+            </div>
+          )}
+          {card.verifiedSkillCount > 0 ? (
+            <div style={{ fontSize: 16, color: "#64748b" }}>
+              {card.verifiedSkillCount} verified skill{card.verifiedSkillCount === 1 ? "" : "s"}
+            </div>
+          ) : null}
         </div>
 
-        <div style={{ fontSize: 14, color: "#475569", marginTop: 24 }}>
-          Not self-reported · Demonstrated under pressure against real competition
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 14, color: "#64748b" }}>
+            Server verified. First attempts only.
+          </div>
+          <div style={{ fontSize: 18, color: "#94a3b8", fontFamily: "monospace" }}>
+            mentrixa.one/rank/{username}
+          </div>
         </div>
       </div>
     ),

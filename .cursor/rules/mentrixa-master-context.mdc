@@ -1,0 +1,71 @@
+---
+description: Mentrixa master identity, mechanic, AI rules, design system, and architecture constraints (PROMPT 001)
+alwaysApply: true
+---
+
+# PROMPT 001 — Master Context (Mentrixa final build)
+
+Production app: **mentrixa.one**. This is the legit final version, built around one identity. Read every constraint before writing code.
+
+## The identity
+
+Every screen answers one question: **what is true about me right now that was not true yesterday, compared to someone real.** This is not a tagline. It governs every UI decision.
+
+## The mechanic
+
+**Verified First Attempt.** The first time a user sees a question from a given skill node, that result is permanent and is the only thing counting toward rank. One unique constraint on `(user_id, skill_node_id)` in `verified_first_attempts`, enforced server side, zero exceptions. Practice after first encounter never moves rank.
+
+## The one skill
+
+**AP Calculus AB only.** Practice picker scoped to it exclusively until a second subject passes the same bar: real skill tree, reviewed item bank, sufficient first attempt volume for a real percentile.
+
+## AI rule (absolute)
+
+No Gemini call generates a quiz question or a live coaching answer anywhere in the product. The **only** permitted Gemini call converts a real recorded Guide session transcript into a session package, gated by Guide review before publish. All quest, duel, and diagnostic content is selected from a reviewed item bank, never generated live.
+
+## Design system
+
+| Token | Value | Use |
+|-------|-------|-----|
+| Primary violet | `#7C3AED` | Brand, CTAs |
+| Indigo accent | `#6366F1` | Secondary brand |
+| Dark navy shells | `#0B1220`, `#0F172A` | App backgrounds |
+| Gold | `#D4A017` | **Verified truth only**: top rank, verified percentile number, Guide Impact Score badge. Never decorative. |
+| Cyan | `#22D3EE` | Landing hero only |
+
+Fonts: **Geist** and **Geist Mono** primary. **Playfair Display** reserved for the rank reveal moment only.
+
+Copy: no emoji. No hyphens used as bullet markers. Concise copy, short sentences, no filler.
+
+## Architecture
+
+- Next.js App Router
+- Vertical feature slices in `src/features/`
+- Thin route shells under 15 lines in `src/app/`
+- Supabase Postgres with RLS on every table
+- Numbered migrations in `supabase/` — **never edit existing ones**, new migrations only
+- Server actions as the mutation layer
+- Vercel crons plus Postgres `background_jobs` queue for async work
+
+## Rules
+
+1. Never modify an existing migration
+2. RLS enabled on every new table and any table that should need RLS
+3. Every server action calls `requireAuth` or `requireRole`
+4. Zod for all input validation
+5. Regenerate types after every schema change (`npm run types:generate`)
+6. Run tests after every change
+7. No live Gemini call outside the one Studio transcript-to-package rule above
+8. Every output ends in a **verdict sentence** and a **next action**, never a bare number or bare list
+9. Gold color only on verified truth elements, never decorative, anywhere in the product
+
+## Equal weight: Mentrixer and Guide
+
+Mentrixer rank and Guide Impact Score are the same category of unforgeable proof. Guide Impact is measured first-attempt movement, not star ratings or likeability.
+
+## Kill list (do not reintroduce)
+
+- Screenshot-to-answer flows and free-text AI coaching surfaces
+- Subjects outside AP Calculus AB in the practice picker (hidden until bar is met)
+- Paywalling Arena, Mastery Grid, or public rank page
+- Score panels that show a number without a verdict

@@ -5,21 +5,21 @@ import Link from "next/link";
 import Image from "next/image";
 import { submitContactFeedback } from "@/features/marketing/contact";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
-import { Textarea } from "@/shared/ui/textarea";
+import { MentrixaContactCategoryRadioGroup } from "@/shared/ui/radio-group-patterns";
+import {
+  MentrixaFieldset,
+  MentrixaForm,
+  MentrixaFormField,
+} from "@/shared/ui/form-patterns";
+import {
+  contactFormFieldMessage,
+  contactFormFieldsetMessage,
+  validateEmailAddress,
+  validateRequiredText,
+} from "@/shared/ui/form-messages-pure";
 import { ContactSocialLinks } from "@/features/marketing/contact-ui/contact-social-links";
 import { gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
-import { cn } from "@/shared/core/utils";
 import { Mail } from "lucide-react";
-
-const CATEGORIES: { value: "feedback" | "bug" | "billing" | "partnership" | "other"; label: string }[] = [
-  { value: "feedback", label: "Product feedback & ideas" },
-  { value: "bug", label: "Something broke" },
-  { value: "billing", label: "Billing & payments" },
-  { value: "partnership", label: "Partnership / press" },
-  { value: "other", label: "Other" },
-];
 
 type Props = {
   /** Shown in mailto — should match where `CONTACT_INBOX_EMAIL` delivers. */
@@ -113,96 +113,74 @@ export function ContactPageClient({ feedbackEmail }: Props) {
 
       
 
-      <form
+      <MentrixaForm
         onSubmit={onSubmit}
-        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm md:p-8"
+        tone="light"
+        className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm md:p-8"
       >
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="contact-name" className="text-slate-800">
-              Name
-            </Label>
-            <Input
-              id="contact-name"
+        <MentrixaFieldset
+          legend="Send feedback"
+          description="Pick a category and tell us what to fix or build next."
+          tone="light"
+          message={contactFormFieldsetMessage()}
+          actions={
+            <div className="flex flex-wrap items-center gap-4">
+              <Button type="submit" className="min-w-[160px]" disabled={pending}>
+                {pending ? "Sending…" : "Send feedback"}
+              </Button>
+              <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-black/80">
+                <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-black/5">
+                  <Image src="/mentrixalogo/logo.webp" alt="Mentrixa" width={45} height={45} />
+                </span>
+                Return to homepage
+              </Link>
+            </div>
+          }
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MentrixaFormField
+              label="Name"
               name="name"
-              required
+              isRequired
               placeholder="Your name"
-              className="h-11 text-slate-900 placeholder:text-slate-500"
               autoComplete="name"
+              validate={(value) => validateRequiredText(value, "Name")}
+              message={contactFormFieldMessage("name")}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contact-email" className="text-slate-800">
-              Email
-            </Label>
-            <Input
-              id="contact-email"
+            <MentrixaFormField
+              label="Email"
               name="email"
               type="email"
-              required
+              isRequired
               placeholder="you@example.com"
-              className="h-11 text-slate-900 placeholder:text-slate-500"
               autoComplete="email"
+              validate={validateEmailAddress}
+              message={contactFormFieldMessage("email")}
             />
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="contact-category" className="text-slate-800">
-            What&apos;s this about?
-          </Label>
-          <select
-            id="contact-category"
-            name="category"
-            required
-            className={cn(
-              "flex h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900",
-              "ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:ring-offset-2",
-            )}
-            defaultValue="feedback"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          <MentrixaContactCategoryRadioGroup />
 
-        <div className="space-y-2">
-          <Label htmlFor="contact-message" className="text-slate-800">
-            Your message
-          </Label>
-          <Textarea
-            id="contact-message"
+          <MentrixaFormField
+            label="Your message"
             name="message"
-            required
+            multiline
             rows={6}
+            isRequired
             placeholder="Share feedback, ideas, or what we should fix. The more specific, the faster we can help."
-            className="min-h-[140px] resize-y text-slate-900 placeholder:text-slate-500"
+            validate={(value) => validateRequiredText(value, "Message")}
+            message={contactFormFieldMessage("message")}
           />
-        </div>
 
-        {error ? (
-          <p className="text-sm text-red-600" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-4 pt-1">
-          <Button type="submit" className="min-w-[160px]" disabled={pending}>
-            {pending ? "Sending…" : "Send feedback"}
-          </Button>
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-black/80">
-            <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-black/5">
-              <Image src="/mentrixalogo/logo.webp" alt="Mentrixa" width={45} height={45} />
-            </span>
-            Return to homepage
-          </Link>
-        </div>
-      </form>
+          {error ? (
+            <p className="text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </MentrixaFieldset>
+      </MentrixaForm>
 
 
       <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-6 shadow-sm md:p-8">

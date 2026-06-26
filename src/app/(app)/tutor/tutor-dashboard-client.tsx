@@ -18,6 +18,7 @@ import { formatDate } from "@/shared/core/time-format";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { TutorHeroGreeting } from "@/features/tutor/ui/tutor-hero-greeting";
 import { Typewriter } from "@/shared/ui/typewriter";
+import { MentrixaCountBadge } from "@/shared/ui/badge-patterns";
 
 type AnySession = {
   id: string;
@@ -339,7 +340,10 @@ export function TutorDashboardClient({
                 value="requests"
                 className="rounded-none bg-transparent px-0 mr-6 pb-2 text-xs font-medium data-[state=active]:border-b-2 data-[state=active]:border-slate-900 data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-400 border-b-2 border-transparent"
               >
-                Requests ({pendingCount})
+                <span className="inline-flex items-center gap-2">
+                  Requests
+                  <MentrixaCountBadge count={pendingCount} color="danger" variant="soft" />
+                </span>
               </TabsTrigger>
               <TabsTrigger
                 value="upcoming"

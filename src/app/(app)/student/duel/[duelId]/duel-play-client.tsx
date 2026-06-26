@@ -19,6 +19,7 @@ import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
 import { SkillDuelChoiceBoard } from "@/features/duels/ui/skill-duel-choice-board";
 import { SkillDuelResults } from "@/features/duels/ui/skill-duel-results";
 import { TiltCard } from "@/shared/ui/tilt-card";
+import { QuestKindMetaTag } from "@/shared/ui/meta-tag-patterns";
 import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
@@ -615,9 +616,7 @@ export function DuelPlayClient({ duel, side }: Props) {
             >
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
-                    {kindLabel(q.type)}
-                  </span>
+                  <QuestKindMetaTag label={kindLabel(q.type)} tone="light" />
                   <p className="text-[11px] text-slate-500 max-w-lg leading-snug">
                     {kindHint(q.type)}
                   </p>

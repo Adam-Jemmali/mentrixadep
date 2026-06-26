@@ -5,10 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { BackButton } from "@/shared/ui/back-button";
-import { Input } from "@/shared/ui/input";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
 import { warmKatex } from "@/features/quest/ui/normalize-math-text";
-import { ShareScoreCardButton } from "@/features/quest/ui/share-score-card";
 import {
   createPracticeQuest,
   startPracticeSession,
@@ -20,18 +18,36 @@ import {
 } from "@/features/quest/practice-quest";
 import { emitXpAward } from "@/features/xp/xp-events";
 import { trackClientEvent } from "@/shared/integrations/use-track";
-import type { PracticeDifficulty, PracticePackType } from "@/features/quest/practice-quest-types";
+import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { DivisionFocusSelect } from "@/features/student-profile/ui/division-focus-select";
 import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
-import { SessionBreakthroughCard } from "@/features/breakthrough-events/session-breakthrough-card";
 import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
-import type { SessionBreakthroughLine } from "@/features/breakthrough-events/post-session-retest";
 import { useBiometricTelemetry } from "@/shared/hooks/useBiometricTelemetry";
-import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
+import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/load-mastery-grid";
+import { QuestMasteryDonePanel } from "@/features/mastery-grid/quest-mastery-done-panel";
+import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
+import {
+  OnboardingQuestProgressBar,
+  QuestSessionProgressBar,
+} from "@/shared/ui/progress-bar-patterns";
+import { QuestPackLoadPendingPanel } from "@/shared/ui/spinner-patterns";
+import { QuestTimerProgressCircle } from "@/shared/ui/progress-circle-patterns";
+import { ExamStakesLabel } from "@/shared/ui/tooltip-patterns";
+import { ApCalcSkillGlyph } from "@/features/quest/ui/ap-calc-skill-glyph";
+import {
+  PracticeWrongAnswerAlert,
+  isPracticeLockedAttemptError,
+  PracticeLockedAttemptAlert,
+} from "@/shared/ui/alert-patterns";
+import {
+  ExamStakesDisclosure,
+  VerifiedFirstAttemptDisclosure,
+} from "@/shared/ui/disclosure-patterns";
+import { QuestPracticeToolsDrawer } from "@/features/quest/ui/quest-practice-tools-drawer";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "beginner", label: "Beginner" },
@@ -39,24 +55,10 @@ const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "advanced", label: "Advanced" },
 ];
 
-const PACK_TYPES: { value: PracticePackType; label: string; desc: string }[] = [
-  { value: "mcq", label: "Multiple choice", desc: "Instant feedback, 4 options each" },
-  {
-    value: "short_answer",
-    label: "Short answer",
-    desc: "Written response with feedback on your reasoning",
-  },
-  {
-    value: "problem_solving",
-    label: "Problem solving",
-    desc: "Deeper prompts graded against a model answer (math may use LaTeX)",
-  },
-];
-
 type Phase = "wizard" | "run" | "done";
 
 export function QuestPracticeWorkspace({
-  subjectOptions,
+  subjectOptions: _subjectOptions,
   onboardingMode = false,
 }: {
   subjectOptions: { key: string; name: string }[];
@@ -65,10 +67,7 @@ export function QuestPracticeWorkspace({
   const router = useRouter();
   const tier = useUiPerfTier();
   const [phase, setPhase] = useState<Phase>("wizard");
-  const [subjectKey, setSubjectKey] = useState(subjectOptions[0]?.key ?? "general");
-  const [customSubject, setCustomSubject] = useState("");
   const [difficulty, setDifficulty] = useState<PracticeDifficulty>("intermediate");
-  const [packType, setPackType] = useState<PracticePackType>("mcq");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -96,12 +95,19 @@ export function QuestPracticeWorkspace({
     perfect: boolean;
     xpAwarded: number;
     perfectBonus: number;
+    rankVerdict?: string;
+    rankNextAction?: string;
+    newVerifiedSkills?: number;
     mistakeReviews?: { questionId: string; prompt: string; review: string }[];
     totalXp?: number;
+    streakDays?: number;
+    masteryGrid?: MasteryGridData;
+    masteryHighlight?: QuestMasteryHighlight;
   } | null>(null);
+  const [lockedQuestionIndices, setLockedQuestionIndices] = useState<Set<number>>(new Set());
   const [breakthroughCelebration, setBreakthroughCelebration] =
     useState<BreakthroughCelebration | null>(null);
-  const [sessionBreakthrough, setSessionBreakthrough] = useState<SessionBreakthroughLine[]>([]);
+  const [fallbackMasteryGrid, setFallbackMasteryGrid] = useState<MasteryGridData | null>(null);
   const [activeSubject, setActiveSubject] = useState("");
 
   const telemetry = useBiometricTelemetry(phase === "run");
@@ -185,7 +191,6 @@ export function QuestPracticeWorkspace({
             if (fin.success) {
               setDoneResult(fin.result);
               if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
-              setSessionBreakthrough(fin.sessionBreakthrough ?? []);
               if (onboardingMode) {
                 completeOnboardingQuest();
               } else {
@@ -218,20 +223,13 @@ export function QuestPracticeWorkspace({
 
   const beginPack = async () => {
     setErr(null);
-    const picked = subjectOptions.find((o) => o.key === subjectKey);
-    const subj =
-      customSubject.trim() ||
-      (picked ? picked.name.replace(/\s+Division$/i, "").trim() || picked.key : "General");
-    if (subj.length < 2) {
-      setErr("Choose or enter a subject.");
-      return;
-    }
+    setLockedQuestionIndices(new Set());
     setBusy(true);
-    setActiveSubject(subj);
+    setActiveSubject(AP_CALC_AB_SUBJECT);
     const res = await createPracticeQuest({
-      subject: subj,
+      subject: AP_CALC_AB_SUBJECT,
       difficulty: onboardingMode ? "intermediate" : difficulty,
-      packType: onboardingMode ? "mcq" : packType,
+      packType: "mcq",
       questionCount: onboardingMode ? 5 : undefined,
     });
     setBusy(false);
@@ -263,13 +261,30 @@ export function QuestPracticeWorkspace({
     completeOnboardingQuest();
   }, [onboardingMode, phase, doneResult, completeOnboardingQuest]);
 
+  useEffect(() => {
+    if (phase !== "done" || doneResult?.masteryGrid) {
+      setFallbackMasteryGrid(null);
+      return;
+    }
+    let cancelled = false;
+    void getMasteryGridForCurrentUser()
+      .then((data) => {
+        if (!cancelled) setFallbackMasteryGrid(data);
+      })
+      .catch(() => {
+        if (!cancelled) setFallbackMasteryGrid(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, doneResult?.masteryGrid]);
+
   const finishRun = async (id: string) => {
     stopTimer();
     const fin = await finalizePracticeQuest(id, buildFinalizeOptions());
       if (fin.success) {
       setDoneResult(fin.result);
       if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
-      setSessionBreakthrough(fin.sessionBreakthrough ?? []);
       const xpTotal = (fin.result.xpAwarded ?? 0) + (fin.result.perfectBonus ?? 0);
       if (xpTotal > 0) {
         emitXpAward({
@@ -300,7 +315,6 @@ export function QuestPracticeWorkspace({
       return;
     }
     setBreakthroughCelebration(null);
-    setSessionBreakthrough([]);
     setDoneResult(null);
     setQuestId(res.questId);
     await resumeQuestRun(res.questId);
@@ -322,6 +336,7 @@ export function QuestPracticeWorkspace({
       correctIndex: r.correctIndex,
       canContinue: !r.finished,
     });
+    setLockedQuestionIndices((prev) => new Set(prev).add(qIndex));
     if (r.correct && !r.finished) {
       setCorrectCelebration({ explanation: r.explanation, mode: "mcq" });
     }
@@ -374,13 +389,14 @@ export function QuestPracticeWorkspace({
 
   const goPrevQuestion = async () => {
     if (!questId || busy || qIndex <= 0) return;
+    const prev = qIndex - 1;
+    if (lockedQuestionIndices.has(prev)) return;
     setMcqResult(null);
     setMcqPicked(null);
     setCorrectCelebration(null);
     setWrittenFeedback(null);
     setWrittenAwaitingContinue(false);
     setWritten("");
-    const prev = qIndex - 1;
     setQIndex(prev);
     await loadQuestion(questId, prev);
   };
@@ -394,29 +410,16 @@ export function QuestPracticeWorkspace({
     }
   };
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
-
   if (phase === "wizard") {
     return (
       <div className="relative mx-auto max-w-xl px-4 py-10">
         {busy ? (
           <div
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/95 backdrop-blur-sm"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/95 px-8 backdrop-blur-sm"
             aria-busy="true"
             aria-live="polite"
           >
-            <div
-              className="h-9 w-9 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent motion-reduce:animate-none motion-reduce:border-indigo-400"
-              aria-hidden
-            />
-            <p className={`mt-4 text-sm font-semibold ${mentrixStudent.textOnLight}`}>Building your pack…</p>
-            <p className={`mt-1 max-w-[14rem] text-center text-xs ${mentrixStudent.textMutedOnLight}`}>
-              AI may take a few seconds — hang tight.
-            </p>
+            <QuestPackLoadPendingPanel className="max-w-xs" />
           </div>
         ) : null}
         {!onboardingMode ? (
@@ -429,34 +432,32 @@ export function QuestPracticeWorkspace({
           {onboardingMode ? "First quest" : "Practice packs"}
         </p>
         <h1 className={`mt-2 text-2xl font-bold ${mentrixStudent.textOnLight}`}>
-          {onboardingMode ? "Pick your subject" : "New quest"}
+          {onboardingMode ? "Your first verified skills" : "Verified practice pack"}
         </h1>
         <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
           {onboardingMode
-            ? "Five quick questions. Your rank starts here."
-            : "Short drills built for where you are right now. Get instant feedback, track your progress, and earn XP as you go."}
+            ? "Five first attempts from the AP Calculus AB item bank. Each answer is permanent."
+            : null}
         </p>
+
+        {!onboardingMode ? (
+          <div className="mt-4">
+            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} />
+          </div>
+        ) : null}
+
+        {onboardingMode ? (
+          <div className="mt-6">
+            <OnboardingQuestProgressBar phase="wizard" />
+          </div>
+        ) : null}
 
         <div className="mt-8 space-y-6">
           <div>
             <label className={`text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>Subject</label>
-            <DivisionFocusSelect
-              value={subjectKey}
-              onValueChange={(v) => {
-                if (v) setSubjectKey(v);
-              }}
-              divisions={subjectOptions}
-              showNoneOption={false}
-              triggerClassName="mt-1"
-            />
-            {!onboardingMode && (
-              <Input
-                className="mt-2 border-violet-200 bg-white text-zinc-950 placeholder:text-zinc-500"
-                placeholder="Or type a custom subject…"
-                value={customSubject}
-                onChange={(e) => setCustomSubject(e.target.value)}
-              />
-            )}
+            <p className={`mt-2 rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm font-semibold ${mentrixStudent.textOnLight}`}>
+              {AP_CALC_AB_SUBJECT}
+            </p>
           </div>
 
           {!onboardingMode && (
@@ -481,33 +482,16 @@ export function QuestPracticeWorkspace({
             </div>
           )}
 
-          {!onboardingMode && (
-            <div>
-              <label className={`text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>Question type</label>
-              <div className="mt-2 grid gap-2">
-                {PACK_TYPES.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => setPackType(p.value)}
-                    className={`text-left rounded-xl border p-3 text-sm ${
-                      packType === p.value
-                        ? "border-indigo-500 bg-indigo-50"
-                        : "border-violet-200 bg-white"
-                    }`}
-                  >
-                    <span className={`font-semibold ${mentrixStudent.textOnLight}`}>{p.label}</span>
-                    <span className={`mt-0.5 block text-xs ${mentrixStudent.textMutedOnLight}`}>{p.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {err && <p className="text-sm font-medium text-red-700">{err}</p>}
+          {err ? (
+            isPracticeLockedAttemptError(err) ? (
+              <PracticeLockedAttemptAlert />
+            ) : (
+              <p className="text-sm font-medium text-red-700">{err}</p>
+            )
+          ) : null}
 
           <Button className="w-full" variant="workbenchPrimary" disabled={busy} onClick={() => void beginPack()}>
-            {busy ? "Generating…" : onboardingMode ? "Start your first quest" : "Generate quest"}
+            {busy ? "Loading pack…" : onboardingMode ? "Start your first quest" : "Start verified pack"}
           </Button>
         </div>
         </div>
@@ -516,56 +500,59 @@ export function QuestPracticeWorkspace({
   }
 
   if (phase === "done" && doneResult) {
-    const xpTotal = (doneResult.xpAwarded ?? 0) + (doneResult.perfectBonus ?? 0);
+    const grid = doneResult.masteryGrid ?? fallbackMasteryGrid;
+    const highlight = doneResult.masteryHighlight;
+    const verdictLine =
+      highlight?.verdictLine ??
+      (grid ? grid.nextActionLine : "Your mastery grid is updating.");
+
     return (
       <>
-        <div className={`${mentrixStudent.card} mx-auto max-w-lg px-6 py-10 text-center`}>
-          <h2 className={`text-2xl font-bold ${mentrixStudent.textOnLight}`}>Quest complete</h2>
-          <p className="mt-4 text-4xl font-mono font-bold text-indigo-600">
-            {doneResult.correct}/{doneResult.total}
-          </p>
-          <p className="mt-2 text-sm text-slate-600">
-            {doneResult.perfect ? "Perfect score — bonus XP included." : "Nice work keep practicing."}
-          </p>
-          {doneResult.mistakeReviews && doneResult.mistakeReviews.length > 0 && (
-            <div className="mt-8 text-left border border-slate-200 rounded-lg p-4 bg-white">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
-                Review mistakes
-              </p>
-              <ul className="space-y-4">
-                {doneResult.mistakeReviews.map((m) => (
-                  <li key={m.questionId}>
-                    <p className="text-xs text-slate-500 line-clamp-2">{m.prompt}</p>
-                    <p className="text-sm text-slate-800 mt-1">{m.review}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {sessionBreakthrough.length > 0 ? (
-            <SessionBreakthroughCard lines={sessionBreakthrough} />
-          ) : null}
-          <div className="mt-8 flex flex-col items-center gap-3">
-            <ShareScoreCardButton
-              title="Quest score"
-              scoreLine={`Score ${doneResult.correct}/${doneResult.total}`}
-              xpLine={`+${xpTotal} XP`}
-            />
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPhase("wizard");
-                setQuestId(null);
-                setDoneResult(null);
-                setBreakthroughCelebration(null);
-                setSessionBreakthrough([]);
-                setErr(null);
-              }}
-            >
-              New quest
-            </Button>
+        {onboardingMode ? (
+          <div className="mx-auto max-w-3xl px-4 pt-4">
+            <OnboardingQuestProgressBar phase="done" />
           </div>
-        </div>
+        ) : null}
+        {grid ? (
+          <QuestMasteryDonePanel
+            grid={grid}
+            verdictLine={verdictLine}
+            nextActionLine={grid.nextActionLine}
+            highlightTransition={
+              highlight && !highlight.unchanged
+                ? {
+                    nodeId: highlight.nodeId,
+                    fromState: highlight.fromState,
+                    toState: highlight.toState,
+                  }
+                : undefined
+            }
+            xpAwarded={doneResult.xpAwarded}
+            perfectBonus={doneResult.perfectBonus}
+            streakDays={doneResult.streakDays}
+            onNewPack={() => {
+              setPhase("wizard");
+              setQuestId(null);
+              setDoneResult(null);
+              setFallbackMasteryGrid(null);
+              setBreakthroughCelebration(null);
+              setLockedQuestionIndices(new Set());
+              setErr(null);
+            }}
+          />
+        ) : (
+          <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+            <div className={`${mentrixStudent.cardArena} p-8 text-center`}>
+              <div
+                className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent motion-reduce:animate-none"
+                aria-hidden
+              />
+              <p className={`mt-4 text-sm ${mentrixStudent.textMutedOnDark}`}>
+                Updating your mastery map…
+              </p>
+            </div>
+          </div>
+        )}
         {breakthroughCelebration ? (
           <BreakthroughCelebrationOverlay
             celebration={breakthroughCelebration}
@@ -578,8 +565,8 @@ export function QuestPracticeWorkspace({
   }
 
   if (phase === "run" && question) {
-    const progress = ((qIndex + 1) / question.total) * 100;
     return (
+      <>
       <div
         className={`${mentrixStudent.card} mx-auto max-w-3xl touch-pan-y px-4 py-6 sm:p-8`}
         onTouchStart={(e) => {
@@ -596,24 +583,25 @@ export function QuestPracticeWorkspace({
           else void goPrevQuestion();
         }}
       >
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="mb-4 flex items-center justify-between gap-4">
           <p className={`text-xs font-mono ${mentrixStudent.textMutedOnLight}`}>
             Q{qIndex + 1}/{question.total}
           </p>
-          <p
-            className={`text-sm font-mono font-semibold ${
-              timeLeft < 120 ? "text-red-600" : mentrixStudent.textOnLight
-            }`}
-          >
-            {formatTime(timeLeft)}
-          </p>
-        </div>
-        <div className="h-2 rounded-full bg-violet-100 overflow-hidden mb-8">
-          <motion.div
-            className="h-full bg-indigo-600"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
+          <QuestTimerProgressCircle
+            timeLeftSec={timeLeft}
+            timeLimitSec={timeLimitSec}
           />
+        </div>
+        <div className="mb-8">
+          {onboardingMode ? (
+            <OnboardingQuestProgressBar
+              phase="run"
+              questionIndex={qIndex}
+              questionTotal={question.total}
+            />
+          ) : (
+            <QuestSessionProgressBar value={((qIndex + 1) / question.total) * 100} />
+          )}
         </div>
 
         <AnimatePresence mode="wait">
@@ -624,6 +612,25 @@ export function QuestPracticeWorkspace({
             exit={{ opacity: 0, y: -8 }}
             className="space-y-6"
           >
+            {(question.examStakes || question.subtopicTag) && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  {question.subtopicTag ? (
+                    <div className="flex items-center gap-2.5">
+                      <ApCalcSkillGlyph nodeName={question.subtopicTag} size="sm" />
+                      <span className="text-xs font-semibold text-slate-700">{question.subtopicTag}</span>
+                    </div>
+                  ) : null}
+                  {question.examStakes ? (
+                    <ExamStakesLabel examStakes={question.examStakes} tone="light" />
+                  ) : null}
+                </div>
+                {question.examStakes ? (
+                  <ExamStakesDisclosure examStakes={question.examStakes} />
+                ) : null}
+              </div>
+            )}
+
             {question.kind === "mcq" ? (
               <PromptWithMath text={question.prompt} />
             ) : question.kind === "problem_solving" ? (
@@ -690,19 +697,12 @@ export function QuestPracticeWorkspace({
             )}
 
             {question.kind === "mcq" && mcqResult && !mcqResult.correct && (
-              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm mx-surface-light">
-                <p className={`font-semibold mb-1 ${mentrixStudent.textOnLight}`}>Not quite</p>
-                <p className={mentrixStudent.textMutedOnLight}>{mcqResult.explanation}</p>
-                {mcqResult.canContinue && !busy && (
-                  <Button
-                    className="mt-4 border-indigo-300 bg-white text-indigo-950 hover:bg-indigo-50"
-                    variant="outline"
-                    onClick={() => void mcqNext()}
-                  >
-                    Next question
-                  </Button>
-                )}
-              </div>
+              <PracticeWrongAnswerAlert
+                explanation={mcqResult.explanation}
+                onContinue={mcqResult.canContinue && !busy ? () => void mcqNext() : undefined}
+                busy={busy}
+                className="mx-surface-light"
+              />
             )}
           </motion.div>
         </AnimatePresence>
@@ -717,8 +717,25 @@ export function QuestPracticeWorkspace({
           }}
         />
 
-        {err && <p className="mt-4 text-sm text-red-600">{err}</p>}
+        {err ? (
+          <div className="mt-4">
+            {isPracticeLockedAttemptError(err) ? (
+              <PracticeLockedAttemptAlert />
+            ) : (
+              <p className="text-sm text-red-600">{err}</p>
+            )}
+          </div>
+        ) : null}
       </div>
+      <QuestPracticeToolsDrawer
+        questionIndex={qIndex}
+        questionTotal={question.total}
+        timeLeftSec={timeLeft}
+        timeLimitSec={timeLimitSec}
+        subtopicTag={question.subtopicTag}
+        examStakes={question.examStakes}
+      />
+      </>
     );
   }
 

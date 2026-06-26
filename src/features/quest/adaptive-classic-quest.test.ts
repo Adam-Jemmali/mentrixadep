@@ -39,8 +39,6 @@ describe("adaptive classic quest AI fallback", () => {
       currentChallenge:
         'Step 3 of 3: Answer the original question directly: "Explain dynamic programming." Give a complete answer.',
     };
-    const answer =
-      "Dynamic programming breaks a problem into overlapping subproblems, stores each result once, and reuses them to avoid redundant work — like memoizing recursive calls in a table.";
     const progressed = advanceAdaptiveWorldState(step3, "Explain dynamic programming.", true);
     expect(progressed.isResolved).toBe(true);
     expect(progressed.feedback).toContain("original question");

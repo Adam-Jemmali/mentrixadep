@@ -15,6 +15,12 @@ import type {
 } from "@/features/student-profile/student-profile-lib";
 import { ensureRankCardUsername } from "@/features/rank-card/ensure-username";
 import { buildRankCardSubjects } from "@/features/rank-card/build-rank-card";
+import {
+  buildPassportVerdict,
+  passportVerdictPlainText,
+} from "@/features/rank-card/rank-passport-pure";
+import { getApCalcVerifiedRankStats, getCalibratedRank } from "@/features/xp/calibrated-rank";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 
 export type {
   StudentProfileAchievement,
@@ -226,12 +232,27 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
 
   let rankCardTopSubject: string | null = courses[0] ?? null;
   let rankCardTopAccuracy = 0;
+  let rankCardPassportVerdict: string | null = null;
+  let rankCardCalibratedTitle: string | null = null;
+  const verifiedStats = await getApCalcVerifiedRankStats(parsed.id).catch(() => ({
+    verifiedCount: 0,
+    accuracyPercent: 0,
+    percentile: null,
+  }));
   if (access === "owner") {
     const subjects = await buildRankCardSubjects(parsed.id, totalXp);
     if (subjects[0]) {
       rankCardTopSubject = subjects[0].subject;
       rankCardTopAccuracy = subjects[0].currentAccuracy;
     }
+    const calibrated = await getCalibratedRank(parsed.id, AP_CALC_AB_SUBJECT);
+    rankCardPassportVerdict = passportVerdictPlainText(
+      buildPassportVerdict({
+        verifiedCount: verifiedStats.verifiedCount,
+        percentile: verifiedStats.percentile,
+      }),
+    );
+    rankCardCalibratedTitle = calibrated.title;
   }
 
   const out: StudentProfileData = {
@@ -261,6 +282,9 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     rankCardPublic,
     rankCardTopSubject,
     rankCardTopAccuracy,
+    rankCardPassportVerdict,
+    rankCardCalibratedTitle,
+    verifiedSkillCount: verifiedStats.verifiedCount,
   };
   return out;
 }

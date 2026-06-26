@@ -4,16 +4,69 @@ export type GuideImpactEntry = {
   sessionsCounted: number;
 };
 
+export type GuideImpactNodeEntry = {
+  skillNodeId: string;
+  nodeName: string;
+  subject: string;
+  impactScore: number;
+  studentsCounted: number;
+  afterAccuracy: number;
+  beforeAccuracy: number;
+  impactLift: number;
+};
+
+/** Matches Mastery Grid node color states. */
+export type ImpactNodeColorState = "none" | "weak" | "proficient" | "verified";
+
+export function impactNodeScoreToState(score: number): ImpactNodeColorState {
+  if (score >= 85) return "verified";
+  if (score >= 70) return "proficient";
+  if (score > 0) return "weak";
+  return "none";
+}
+
+export const IMPACT_NODE_STATE_CLASS: Record<ImpactNodeColorState, string> = {
+  none: "border-slate-300/80 bg-slate-100 text-slate-600",
+  weak: "border-amber-300/80 bg-amber-100 text-amber-950",
+  proficient: "border-emerald-300/80 bg-emerald-100 text-emerald-950",
+  verified: "border-[#D4A017]/90 bg-[#D4A017]/15 text-[#0B1220]",
+};
+
+export const IMPACT_NODE_SCORE_CLASS: Record<ImpactNodeColorState, string> = {
+  none: "text-slate-600",
+  weak: "text-amber-900",
+  proficient: "text-emerald-900",
+  verified: "text-[#D4A017]",
+};
+
 export type ImpactColorTier = "green" | "yellow" | "gray";
 
 export function impactScoreColorTier(score: number): ImpactColorTier {
-  if (score > 80) return "green";
-  if (score >= 60) return "yellow";
+  const state = impactNodeScoreToState(score);
+  if (state === "verified" || state === "proficient") return "green";
+  if (state === "weak") return "yellow";
   return "gray";
 }
 
 export function formatImpactScoreLabel(score: number): string {
   return `${Math.round(score)}/100 Impact Score`;
+}
+
+export function formatImpactNodeChipLabel(nodeName: string, score: number): string {
+  return `${nodeName} · ${Math.round(score)}`;
+}
+
+export function formatImpactScoreVerdict(
+  score: number,
+  sessionsCounted: number,
+  subject?: string,
+): string {
+  const subjectPart = subject ? ` in ${subject}` : "";
+  return `Students improved first-attempt accuracy on ${Math.round(score)}% of post-session skill checks${subjectPart} — based on ${sessionsCounted} completed sessions.`;
+}
+
+export function formatImpactNodeVerdict(entry: GuideImpactNodeEntry): string {
+  return `${entry.nodeName}: ${Math.round(entry.afterAccuracy)}% first-attempt accuracy after sessions, vs ${Math.round(entry.beforeAccuracy)}% before, across ${entry.studentsCounted} students.`;
 }
 
 export function subjectsMatch(a: string, b: string): boolean {
@@ -69,3 +122,10 @@ export const IMPACT_SCORE_TIER_CLASS: Record<ImpactColorTier, string> = {
   yellow: "border-amber-200 bg-amber-50 text-amber-900",
   gray: "border-slate-200 bg-slate-50 text-slate-600",
 };
+
+export function sortImpactNodesByLift(entries: GuideImpactNodeEntry[]): GuideImpactNodeEntry[] {
+  return [...entries].sort((a, b) => {
+    if (b.impactLift !== a.impactLift) return b.impactLift - a.impactLift;
+    return b.impactScore - a.impactScore;
+  });
+}

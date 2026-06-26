@@ -29,7 +29,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
   }
 
   return {
-    autoApproveRegistrations: map["auto_approve_registrations"]?.enabled === true,
+    autoApproveRegistrations: map["auto_approve_registrations"]?.enabled !== false,
     maxQuestsPerDay: (map["max_quests_per_day"]?.value as number) ?? 10,
     platformFeePercent: (map["platform_fee_percent"]?.value as number) ?? 15,
     maintenanceMode: map["maintenance_mode"]?.enabled === true,

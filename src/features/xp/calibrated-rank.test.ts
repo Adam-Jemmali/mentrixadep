@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   formatOrdinalPercentile,
   formatVerifiedFirstAttemptSummary,
+  formatVerifiedRankNextAction,
+  formatVerifiedRankVerdict,
+  rankLevelFromAccuracy,
   rankLevelFromPercentile,
 } from "@/features/xp/calibrated-rank";
 
@@ -11,6 +14,14 @@ describe("rankLevelFromPercentile", () => {
     expect(rankLevelFromPercentile(100)).toBe(7);
     expect(rankLevelFromPercentile(50)).toBeGreaterThan(1);
     expect(rankLevelFromPercentile(50)).toBeLessThan(7);
+  });
+});
+
+describe("rankLevelFromAccuracy", () => {
+  it("uses the same XP ladder scale as percentile", () => {
+    expect(rankLevelFromAccuracy(0)).toBe(1);
+    expect(rankLevelFromAccuracy(100)).toBe(7);
+    expect(rankLevelFromAccuracy(50)).toBe(rankLevelFromPercentile(50));
   });
 });
 
@@ -45,5 +56,27 @@ describe("formatVerifiedFirstAttemptSummary", () => {
         percentile: null,
       })
     ).toBeNull();
+  });
+});
+
+describe("formatVerifiedRankVerdict", () => {
+  it("builds percentile receipt when eligible", () => {
+    expect(
+      formatVerifiedRankVerdict({
+        verifiedCount: 12,
+        accuracyPercent: 76,
+        percentile: 11,
+      })
+    ).toContain("76% first-attempt accuracy");
+  });
+
+  it("guides user before five verified skills", () => {
+    expect(
+      formatVerifiedRankNextAction({
+        verifiedCount: 2,
+        accuracyPercent: 50,
+        percentile: null,
+      })
+    ).toContain("verify 3 more");
   });
 });

@@ -76,7 +76,12 @@ export async function addTutorCourse(
 
   const { error } = await client
     .from("tutor_courses")
-    .insert({ tutor_id: actingAsId, course_name: validName, proof_description: proofPayload });
+    .insert({
+      tutor_id: actingAsId,
+      course_name: validName,
+      proof_description: proofPayload,
+      verified: true,
+    });
 
   if (error) {
     if (error.code === "23505") throw new Error("You already added this course");

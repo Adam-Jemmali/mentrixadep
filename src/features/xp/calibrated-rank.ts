@@ -12,6 +12,7 @@ import {
 } from "@/features/quest/ap-calc-ab-subject";
 
 export const MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE = 5;
+/** Mentrixer min XP — scales percentile onto the seven account rank tiers. */
 export const MAX_XP_FOR_RANK_SCALE = MENTRIXER_MIN_XP;
 
 export type VerifiedFirstAttemptRankStats = {
@@ -30,6 +31,13 @@ export type CalibratedRank = {
 
 export function rankLevelFromPercentile(percentile: number): number {
   const clamped = Math.max(0, Math.min(100, percentile));
+  const virtualXp = Math.round((clamped / 100) * MAX_XP_FOR_RANK_SCALE);
+  return getAccountLevelFromTotalXp(virtualXp).level;
+}
+
+/** Map first-attempt accuracy (0–100) onto rank tiers using the same XP ladder scale. */
+export function rankLevelFromAccuracy(accuracyPercent: number): number {
+  const clamped = Math.max(0, Math.min(100, accuracyPercent));
   const virtualXp = Math.round((clamped / 100) * MAX_XP_FOR_RANK_SCALE);
   return getAccountLevelFromTotalXp(virtualXp).level;
 }
@@ -60,15 +68,42 @@ export function formatVerifiedFirstAttemptSummary(
   return `${stats.accuracyPercent} percent first attempt accuracy across ${stats.verifiedCount} verified AP Calculus AB skills, ${formatOrdinalPercentile(stats.percentile)}`;
 }
 
+/** Receipt-style verdict for in-app surfaces (rank card, hub, quest complete). */
+export function formatVerifiedRankVerdict(stats: VerifiedFirstAttemptRankStats): null | string {
+  if (
+    stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
+    stats.percentile != null
+  ) {
+    return `${stats.accuracyPercent}% first-attempt accuracy across ${stats.verifiedCount} verified AP Calculus AB skills — ${formatOrdinalPercentile(stats.percentile)} of everyone tested.`;
+  }
+  if (stats.verifiedCount > 0) {
+    return `${stats.verifiedCount} skill${stats.verifiedCount === 1 ? "" : "s"} verified at ${stats.accuracyPercent}% first-attempt accuracy. Percentile unlocks after ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} skills.`;
+  }
+  return null;
+}
+
+export function formatVerifiedRankNextAction(stats: VerifiedFirstAttemptRankStats): string {
+  const remaining = MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE - stats.verifiedCount;
+  if (
+    stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
+    stats.percentile != null
+  ) {
+    return "Next: attempt a skill you have not seen yet to move your percentile.";
+  }
+  if (remaining > 0 && stats.verifiedCount > 0) {
+    return `Next: verify ${remaining} more skill${remaining === 1 ? "" : "s"} to unlock your comparative percentile.`;
+  }
+  return "Next: start a verified practice pack and answer skills you have not encountered.";
+}
+
 export async function loadVerifiedFirstAttemptRankStats(
   userId: string
 ): Promise<VerifiedFirstAttemptRankStats> {
   const admin = createAdminClient();
   try {
-    const { data, error } = await (admin as ReturnType<typeof createAdminClient>).rpc(
-      "get_verified_first_attempt_rank" as "get_weakest_nodes",
-      { p_user_id: userId } as never
-    );
+    const { data, error } = await admin.rpc("get_verified_first_attempt_rank", {
+      p_user_id: userId,
+    });
 
     if (error || !data) {
       return { verifiedCount: 0, accuracyPercent: 0, percentile: null };

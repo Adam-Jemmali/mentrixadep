@@ -2,37 +2,28 @@
 
 import { useCallback, useState } from "react";
 import Image from "next/image";
-import { buildRankCardShareTweet } from "@/features/rank-card/calculate-pure";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 
 type Props = {
   username: string;
   siteUrl: string;
-  topSubject: string | null;
+  passportVerdict: string;
   rankTitle: string;
-  accuracy: number;
   className?: string;
 };
 
 export function RankCardShareButton({
   username,
   siteUrl,
-  topSubject,
+  passportVerdict,
   rankTitle,
-  accuracy,
   className,
 }: Props) {
   const [copied, setCopied] = useState(false);
   const cardUrl = `${siteUrl.replace(/\/$/, "")}/rank/${username}`;
 
-  const tweetText = buildRankCardShareTweet({
-    subject: topSubject ?? "arena",
-    rankTitle,
-    accuracy,
-    username,
-    siteUrl: siteUrl.replace(/\/$/, ""),
-  });
+  const tweetText = `Verified AP Calculus AB rank: ${passportVerdict} · ${rankTitle} · ${cardUrl}`;
 
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
   const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(cardUrl)}`;
@@ -56,11 +47,10 @@ export function RankCardShareButton({
     >
       <div className="mb-6 space-y-3">
         <h2 className="text-sm font-black uppercase tracking-[0.25em] text-indigo-950">
-          Share your Rank Card
+          Share your verified passport
         </h2>
         <p className="max-w-md text-sm leading-relaxed text-slate-600">
-          Public proof of competitive performance — verified quest, duel, and Guide session data.
-          Live at{" "}
+          Public proof from first attempts only. Live at{" "}
           <span className="font-mono font-semibold text-indigo-700">
             mentrixa.one/rank/{username}
           </span>
@@ -72,7 +62,10 @@ export function RankCardShareButton({
           Share preview
         </p>
         <p className="mt-2 text-sm font-medium leading-relaxed text-indigo-950">
-          {topSubject ?? "Arena"} · {rankTitle} · {accuracy}% accuracy
+          {passportVerdict}
+        </p>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+          {rankTitle}
         </p>
       </div>
 
@@ -119,7 +112,7 @@ export function RankCardShareButton({
           className="h-8 w-8 opacity-60"
         />
         <p className="text-[11px] leading-relaxed text-slate-500">
-          Employers and peers see live rank data — not self-reported course completion.
+          Anyone with the link sees your verified mastery map and percentile.
         </p>
       </div>
     </section>

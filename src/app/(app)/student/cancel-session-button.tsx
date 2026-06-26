@@ -5,6 +5,7 @@ import { studentCancelSession } from "@/features/booking/cancellation";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 import { isStudentCancelRefundEligible } from "@/features/booking/refund-eligibility";
+import { CancelBookingConfirmDialog } from "@/shared/ui/alert-dialog-patterns";
 
 interface CancelSessionButtonProps {
   sessionId: string;
@@ -24,10 +25,10 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
   const canCancel = minutesUntilStart > 24 * 60;
   const willBeRefunded = isStudentCancelRefundEligible(startTime);
 
-  async function handleCancel() {
+  async function handleCancel(): Promise<boolean> {
     if (!canCancel) {
       setError("Cannot cancel session less than 24 hours before start time");
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -40,10 +41,14 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
         const refundMsg = result.refunded ? ` You'll receive a refund of $${(result.refundCents || 0) / 100}.` : "";
         setSuccessMessage(`Session cancelled.${refundMsg}`);
         setTimeout(() => router.refresh(), 1500);
+        return true;
       }
+      setLoading(false);
+      return false;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to cancel session");
       setLoading(false);
+      return false;
     }
   }
 
@@ -67,13 +72,20 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
         <p className="text-xs text-green-600 dark:text-green-400 font-medium max-w-[150px] text-right">{successMessage}</p>
       )}
       <div className="flex flex-col items-end gap-1">
-        <button
-          onClick={handleCancel}
-          disabled={loading}
-          className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-red-400 disabled:to-red-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow transition-all"
-        >
-          {loading ? "Cancelling..." : "Cancel"}
-        </button>
+        <CancelBookingConfirmDialog
+          refundEligible={willBeRefunded}
+          confirming={loading}
+          onConfirm={handleCancel}
+          trigger={
+            <button
+              type="button"
+              disabled={loading}
+              className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-red-400 disabled:to-red-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow transition-all"
+            >
+              {loading ? "Cancelling..." : "Cancel"}
+            </button>
+          }
+        />
         {willBeRefunded && (
           <span className="text-xs text-slate-500">
             (100% refund eligible)
@@ -83,4 +95,3 @@ export function CancelSessionButton({ sessionId, startTime }: CancelSessionButto
     </div>
   );
 }
-

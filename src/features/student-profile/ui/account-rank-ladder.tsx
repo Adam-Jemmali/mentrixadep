@@ -8,6 +8,7 @@ import {
 } from "@/features/xp/rank-icons";
 import { RankBadge, RankTitle } from "@/features/student-profile/ui/rank-badge";
 import { AccountRankXpDisplay } from "@/features/student-profile/ui/account-rank-xp-display";
+import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
 
 /**
  * Valorant-inspired account rank rail: locked past = earned glow,
@@ -63,27 +64,14 @@ export function AccountRankLadder({
         {/* Progress to next */}
         {xpToNext != null ? (
           <div className="mt-5">
-            <div className="mb-1.5 flex justify-between text-[10px] font-semibold uppercase tracking-wide">
-              <span className={isArena ? "text-zinc-400" : "text-zinc-500"}>Rank progress</span>
-              <span className={isArena ? "text-zinc-300" : "text-zinc-700"} style={{ color: isArena ? undefined : current.labelOnLight }}>
-                {progressPct}%
-              </span>
-            </div>
-            <div
-              className={cn(
-                "h-2 overflow-hidden rounded-full",
-                isArena ? "bg-white/10" : "bg-violet-100",
-              )}
-            >
-              <div
-                className="h-full rounded-full transition-[width] duration-500"
-                style={{
-                  width: `${progressPct}%`,
-                  background: `linear-gradient(90deg, ${current.color}99, ${current.color})`,
-                  boxShadow: isArena ? `0 0 12px ${current.colorMuted}` : undefined,
-                }}
-              />
-            </div>
+            <XpTierProgressBar
+              value={progressPct}
+              tone={isArena ? "dark" : "light"}
+              fillStyle={{
+                background: `linear-gradient(90deg, ${current.color}99, ${current.color})`,
+                boxShadow: isArena ? `0 0 12px ${current.colorMuted}` : undefined,
+              }}
+            />
           </div>
         ) : null}
 

@@ -24,13 +24,17 @@ import {
   type GuestTryQuestion,
 } from "@/features/quest/guest-try-types";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
-import { buildApCalcGuestResultsSummary } from "@/features/quest/guest-try-results";
+import { buildApCalcGuestDiagnosticVerdict } from "@/features/quest/guest-try-results";
 import { shuffleGuestTryPack } from "@/features/quest/guest-try-shuffle";
 import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
 import { GuestVisualPickImage } from "@/features/quest/ui/guest-visual-pick-image";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
 import { warmKatex } from "@/features/quest/ui/normalize-math-text";
 import { guestTryTimeLimitSec } from "@/features/quest/guest-try-constants";
+import { QuestTimerProgressCircle } from "@/shared/ui/progress-circle-patterns";
+import { ExamStakesLabel } from "@/shared/ui/tooltip-patterns";
+import { QuestKindMetaTag } from "@/shared/ui/meta-tag-patterns";
+import { ApCalcSkillGlyph } from "@/features/quest/ui/ap-calc-skill-glyph";
 import {
   computeGuestTryWouldXp,
   loadGuestTryRecents,
@@ -40,6 +44,7 @@ import {
 import { buildGuestTrySkillSummary } from "@/features/quest/guest-try-skill-summary";
 import { GuestTryResultsPanel } from "@/features/quest/ui/guest-try-results-panel";
 import { GuestTryRankPreview } from "@/features/quest/ui/guest-try-rank-preview";
+import { GuestTryDiagnosticLanding } from "@/features/quest/ui/guest-try-diagnostic-landing";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
@@ -154,9 +159,11 @@ function shuffleStrings(items: string[]): string[] {
 export function GuestQuestClient({
   defaultSubjects,
   embedded = false,
+  diagnosticMode = false,
 }: {
   defaultSubjects: { key: string; name: string }[];
   embedded?: boolean;
+  diagnosticMode?: boolean;
 }) {
   const router = useRouter();
   const tier = useUiPerfTier();
@@ -171,6 +178,7 @@ export function GuestQuestClient({
   const [rankOrder, setRankOrder] = useState<string[]>([]);
   const [rankSubmitted, setRankSubmitted] = useState(false);
   const [results, setResults] = useState<boolean[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -179,14 +187,9 @@ export function GuestQuestClient({
   const xpEmittedRef = useRef(false);
   const maxPendingXp = XP.QUEST_COMPLETE + XP.QUEST_PERFECT_BONUS;
   const [timeLeft, setTimeLeft] = useState(0);
+  const [timeLimitSec, setTimeLimitSec] = useState(0);
   const timeLeftRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const formatTimer = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
 
   const clearGuestTimer = () => {
     if (timerRef.current) {
@@ -243,9 +246,9 @@ export function GuestQuestClient({
     };
   }, [phase]);
 
-  // Trigger confetti when entering results phase
+  // Trigger confetti when entering results phase (non-AP diagnostic legacy packs only)
   useEffect(() => {
-    if (phase === "done" && tier !== "lite") {
+    if (phase === "done" && tier !== "lite" && !isApCalculusAbSubject(subjectName)) {
       import("@/features/xp/confetti-burst").then((m) => {
         void m.fireRatingConfetti();
         if (isPerfect) setTimeout(() => void m.fireLevelUpConfetti(), 1200);
@@ -264,6 +267,7 @@ export function GuestQuestClient({
     }
     const limit = guestTryTimeLimitSec(questions.length);
     timeLeftRef.current = limit;
+    setTimeLimitSec(limit);
     setTimeLeft(limit);
     clearGuestTimer();
     timerRef.current = setInterval(() => {
@@ -323,6 +327,7 @@ export function GuestQuestClient({
       setQuestions(shuffleGuestTryPack(cleaned));
       setQIndex(0);
       setResults([]);
+      setSelectedIndices([]);
       xpEmittedRef.current = false;
       setCorrectCelebrationOpen(false);
       setPhase("run");
@@ -347,6 +352,7 @@ export function GuestQuestClient({
       hapticOutcome(correct);
       return next;
     });
+    setSelectedIndices((picks) => [...picks, idx]);
     if (correct) setCorrectCelebrationOpen(true);
   };
 
@@ -396,6 +402,25 @@ export function GuestQuestClient({
   };
 
   if (phase === "wizard") {
+    const apCalcOnly =
+      (diagnosticMode || embedded) &&
+      defaultSubjects.length === 1 &&
+      isApCalculusAbSubject(defaultSubjects[0]?.name ?? "");
+
+    if (apCalcOnly) {
+      return (
+        <GuestTryDiagnosticLanding
+          embedded={embedded}
+          busy={busy}
+          err={err}
+          onStart={() => {
+            playClickSound();
+            void start();
+          }}
+        />
+      );
+    }
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -599,14 +624,11 @@ export function GuestQuestClient({
                 Q{qIndex + 1} / {questions.length}
               </span>
               <div className="flex items-center gap-3">
-                <span
-                  className={cn(
-                    "text-sm font-mono font-semibold tabular-nums",
-                    timeLeft > 0 && timeLeft < 120 ? "text-red-600" : "text-slate-600",
-                  )}
-                >
-                  {formatTimer(timeLeft)}
-                </span>
+                <QuestTimerProgressCircle
+                  timeLeftSec={timeLeft}
+                  timeLimitSec={timeLimitSec || guestTryTimeLimitSec(questions.length)}
+                  size="md"
+                />
                 <span className="text-xs font-medium text-slate-500">{Math.round(progress)}%</span>
               </div>
             </div>
@@ -622,9 +644,7 @@ export function GuestQuestClient({
 
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
-                {kindUi.badge}
-              </span>
+              <QuestKindMetaTag label={kindUi.badge} tone="light" />
               <p className="text-[11px] text-slate-500 max-w-lg leading-snug">{kindUi.hint}</p>
             </div>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap mt-0.5">
@@ -634,8 +654,14 @@ export function GuestQuestClient({
 
           {/* Question card */}
           <TiltCard tiltLimit={2} className="rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)] p-6 sm:p-8 block">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-             
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              {q.nodeName ? (
+                <div className="flex items-center gap-2.5">
+                  <ApCalcSkillGlyph nodeName={q.nodeName} size="sm" />
+                  <span className="text-xs font-semibold text-slate-700">{q.nodeName}</span>
+                </div>
+              ) : null}
+              {q.examStakes ? <ExamStakesLabel examStakes={q.examStakes} tone="light" /> : null}
             </div>
 
             {q.promptImageUrl ? (
@@ -954,8 +980,8 @@ export function GuestQuestClient({
     const correct = results.filter(Boolean).length;
     const streakRecord = bestStreakInRun(results);
     const wouldXp = computeGuestTryWouldXp(correct, questions.length);
-    const apCalcSummary = isApCalculusAbSubject(subjectName)
-      ? buildApCalcGuestResultsSummary(questions, results)
+    const apCalcVerdict = isApCalculusAbSubject(subjectName)
+      ? buildApCalcGuestDiagnosticVerdict(questions, results, selectedIndices)
       : null;
     const skillSummary = buildGuestTrySkillSummary(questions, results, subjectName);
 
@@ -968,12 +994,13 @@ export function GuestQuestClient({
         streakRecord={streakRecord}
         wouldXp={wouldXp}
         skillSummary={skillSummary}
-        apCalcSummary={apCalcSummary}
+        apCalcVerdict={apCalcVerdict}
         onRunAnother={() => {
           playClickSound();
           setPhase("wizard");
           setQuestions(null);
           setResults([]);
+          setSelectedIndices([]);
           xpEmittedRef.current = false;
         }}
       />

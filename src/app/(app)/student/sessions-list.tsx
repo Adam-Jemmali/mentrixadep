@@ -7,12 +7,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
+import { SessionStatusChip } from "@/shared/ui/chip-patterns";
 import { UpcomingSessionCard } from "./session-components/upcoming-session-card";
 import { PastSessionCard } from "./session-components/past-session-card";
 import { RateSessionFloating } from "./session-components/rate-session-floating";
 import { StudentWeekCalendar } from "./student-week-calendar";
-import { cn } from "@/shared/core/utils";
 import { TutorAvatar } from "./session-components/tutor-avatar";
 import { Clock, Calendar as CalendarIcon, History as HistoryIcon, Send } from "lucide-react";
 import { StudentSessionTutorProfile } from "@/features/booking/session-lists";
@@ -523,9 +522,7 @@ export function SessionsList({
                           </div>
                         </div>
                         <div className="text-right">
-                          <Badge variant={request.status === "rejected" ? "outline" : "default"} className={cn("text-[10px] uppercase font-bold px-2 py-0.5", request.status === "rejected" && "text-red-400 border-red-500/30 bg-red-500/10")}>
-                            {request.status}
-                          </Badge>
+                          <SessionStatusChip status={request.status} tone="dark" />
                           <p className="text-[10px] text-white/65 mt-1">Sent recently</p>
                         </div>
                       </div>

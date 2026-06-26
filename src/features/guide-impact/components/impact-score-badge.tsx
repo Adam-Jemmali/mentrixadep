@@ -1,6 +1,7 @@
 import { cn } from "@/shared/core/utils";
 import {
   formatImpactScoreLabel,
+  formatImpactScoreVerdict,
   impactScoreColorTier,
   IMPACT_SCORE_TIER_CLASS,
   type GuideImpactEntry,
@@ -38,8 +39,8 @@ export function ImpactScoreBadge({
         {formatImpactScoreLabel(impactScore)}
         {subject ? ` · ${subject}` : ""}
       </span>
-      <span className="text-[10px] text-slate-500">
-        Based on {sessionsCounted} student accuracy improvements
+      <span className="text-[10px] text-slate-500 leading-snug">
+        {formatImpactScoreVerdict(impactScore, sessionsCounted, subject)}
       </span>
     </div>
   );

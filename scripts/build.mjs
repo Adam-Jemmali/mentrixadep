@@ -5,11 +5,27 @@ import process from "node:process";
 import { applyLocalEnvOverrides } from "./load-local-env.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const isWindows = process.platform === "win32";
+const forceTurbo = process.argv.includes("--turbo") || process.argv.includes("--turbopack");
+const forceWebpack = process.argv.includes("--webpack");
+
+let useWebpack;
+if (forceWebpack) useWebpack = true;
+else if (forceTurbo) useWebpack = false;
+else useWebpack = isWindows;
 
 applyLocalEnvOverrides(root);
 
 const nextBin = join(root, "node_modules", "next", "dist", "bin", "next");
-const child = spawn(process.execPath, [nextBin, "build"], {
+const args = ["build", ...(useWebpack ? ["--webpack"] : [])];
+
+if (useWebpack && isWindows && !forceWebpack) {
+  console.log(
+    "[build] Windows: using webpack (avoids Turbopack canary compile bugs). Use `npm run build -- --turbo` to force Turbopack.\n",
+  );
+}
+
+const child = spawn(process.execPath, [nextBin, ...args], {
   cwd: root,
   stdio: "inherit",
   env: process.env,

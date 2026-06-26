@@ -29,9 +29,9 @@ function roleLabel(role: OnboardingRole): string {
 
 function defaultRequestedMessage(role: OnboardingRole, emailed: boolean, email: string): string {
   if (emailed) {
-    return `You're in onboarding as a ${roleLabel(role)}. We sent "Onboarding request received" to ${email}. Check spam if you do not see it. We will email again when an admin approves your access.`;
+    return `You're approved as a ${roleLabel(role)}. We sent onboarding details to ${email}. Check spam if you do not see it. Continue with account setup.`;
   }
-  return `You're in onboarding as a ${roleLabel(role)}. Your request is saved; confirmation email is delayed — check back shortly or contact support@mentrixa.one.`;
+  return `You're approved as a ${roleLabel(role)}. Continue account setup with this email, or contact support@mentrixa.one if you need help.`;
 }
 
 /**

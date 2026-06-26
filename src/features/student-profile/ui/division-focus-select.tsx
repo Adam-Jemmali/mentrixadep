@@ -1,24 +1,10 @@
 "use client";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/shared/ui/select";
 import { cn } from "@/shared/core/utils";
 import { CircleSlash2, resolveDivisionFocusIcon } from "@/features/divisions/division-focus-icons";
+import { MentrixaSelect } from "@/shared/ui/select-patterns";
 
 export type DivisionFocusOption = { key: string; name: string };
-
-const TRIGGER_CLASS =
-  "h-11 rounded-xl border border-indigo-200 bg-white text-slate-950 shadow-sm focus:ring-2 focus:ring-indigo-500/30";
-
-const CONTENT_CLASS =
-  "z-[120] max-h-72 border border-indigo-200 bg-white text-slate-950 shadow-xl";
-
-const ITEM_CLASS =
-  "py-2 text-slate-900 data-[highlighted]:bg-indigo-50 data-[highlighted]:text-slate-950 data-[state=checked]:bg-indigo-100/70 data-[state=checked]:text-slate-950";
 
 type DivisionFocusSelectProps = {
   value: string | null;
@@ -42,23 +28,28 @@ export function DivisionFocusSelect({
   className,
   triggerClassName,
 }: DivisionFocusSelectProps) {
-  const selected = divisions.find((d) => d.key === value) ?? null;
+  const options = divisions.map((d) => ({ id: d.key, label: d.name }));
 
   return (
-    <Select
+    <MentrixaSelect
+      options={options}
       value={showNoneOption ? (value ?? "__none__") : (value ?? divisions[0]?.key ?? "")}
-      onValueChange={(v) => onValueChange(v === "__none__" ? null : v)}
+      onChange={(id) => onValueChange(id === "__none__" || id == null ? null : id)}
+      noneOption={showNoneOption ? { id: "__none__", label: noneLabel } : undefined}
       disabled={disabled}
-    >
-      <SelectTrigger className={cn(TRIGGER_CLASS, triggerClassName, className)}>
-        {selected ? (
+      className={className}
+      triggerClassName={cn("h-11", triggerClassName)}
+      brandKind="mentrixer"
+      placeholder={noneLabel}
+      renderValue={(option) =>
+        option ? (
           <span className="flex items-center gap-2.5 truncate">
             {(() => {
-              const Icon = resolveDivisionFocusIcon(selected.key, selected.name);
+              const Icon = resolveDivisionFocusIcon(option.id, option.label);
               return <Icon className="h-4 w-4 shrink-0 text-indigo-500" aria-hidden />;
             })()}
             <span className="truncate font-mono text-[12px] font-semibold tracking-[0.08em] text-slate-950">
-              {selected.name}
+              {option.label}
             </span>
           </span>
         ) : (
@@ -68,33 +59,29 @@ export function DivisionFocusSelect({
               {noneLabel}
             </span>
           </span>
-        )}
-      </SelectTrigger>
-      <SelectContent className={CONTENT_CLASS}>
-        {showNoneOption ? (
-          <SelectItem value="__none__" className={ITEM_CLASS}>
+        )
+      }
+      renderOption={(option) => {
+        if (option.id === "__none__") {
+          return (
             <span className="flex items-center gap-2.5">
               <CircleSlash2 className="h-4 w-4 text-slate-400" aria-hidden />
               <span className="font-mono text-[13px] font-semibold tracking-[0.08em] text-slate-800">
                 {noneLabel}
               </span>
             </span>
-          </SelectItem>
-        ) : null}
-        {divisions.map((d) => {
-          const Icon = resolveDivisionFocusIcon(d.key, d.name);
-          return (
-            <SelectItem key={d.key} value={d.key} className={ITEM_CLASS}>
-              <span className="flex items-center gap-2.5">
-                <Icon className="h-4 w-4 text-indigo-500" aria-hidden />
-                <span className="font-mono text-[13px] font-semibold tracking-[0.08em] text-slate-950">
-                  {d.name}
-                </span>
-              </span>
-            </SelectItem>
           );
-        })}
-      </SelectContent>
-    </Select>
+        }
+        const Icon = resolveDivisionFocusIcon(option.id, option.label);
+        return (
+          <span className="flex items-center gap-2.5">
+            <Icon className="h-4 w-4 text-indigo-500" aria-hidden />
+            <span className="font-mono text-[13px] font-semibold tracking-[0.08em] text-slate-950">
+              {option.label}
+            </span>
+          </span>
+        );
+      }}
+    />
   );
 }

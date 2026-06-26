@@ -1,39 +1,37 @@
 "use client";
 
-import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { QuestClassicWorkspace } from "./quest-classic-workspace";
 import { QuestPracticeWorkspace } from "./quest-practice-workspace";
 import { GuestQuestClient } from "@/app/(marketing)/try/guest-quest-client";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { BackButton } from "@/shared/ui/back-button";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { OnboardingStepsProgressBar } from "@/shared/ui/progress-bar-patterns";
+import { VerifiedFirstAttemptAlert } from "@/shared/ui/alert-patterns";
+import { VerifiedFirstAttemptDisclosure } from "@/shared/ui/disclosure-patterns";
 
 export function QuestPageClient({
   subjectOptions,
   guestMode = false,
+  diagnosticMode = false,
 }: {
   subjectOptions: { key: string; name: string }[];
   guestMode?: boolean;
+  diagnosticMode?: boolean;
 }) {
   const searchParams = useSearchParams();
   const onboardingMode = !guestMode && searchParams.get("onboarding") === "true";
-  const initialTab = onboardingMode
-    ? "practice"
-    : searchParams.get("tab") === "classic"
-      ? "classic"
-      : "practice";
-  const [activeTab, setActiveTab] = useState<"practice" | "classic">(initialTab);
 
   if (onboardingMode) {
     return (
       <div className={`${mentrixStudent.pageBg} min-h-screen`}>
-        <div className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6">
-          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm leading-relaxed text-indigo-950 shadow-sm">
-            Your rank starts at zero. This Quest moves it. Pick your subject and prove what you know.
+        <div className="mx-auto w-full max-w-5xl space-y-3 px-4 pt-4 sm:px-6">
+          <OnboardingStepsProgressBar currentStep={1} totalSteps={5} tone="light" />
+          <VerifiedFirstAttemptAlert kind="onboarding" subjectLabel={AP_CALC_AB_SUBJECT} />
+          <div className="mt-3">
+            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} />
           </div>
         </div>
         <QuestPracticeWorkspace subjectOptions={subjectOptions} onboardingMode />
@@ -42,77 +40,50 @@ export function QuestPageClient({
   }
 
   return (
-    <div className={guestMode ? "w-full" : `${mentrixStudent.pageBg} min-h-0 md:min-h-[calc(100dvh-3.5rem)]`}>
-      <Tabs
-        value={activeTab}
-        onValueChange={(next) =>
-          setActiveTab(next === "classic" ? "classic" : "practice")
-        }
-        className="w-full"
-      >
-        {!guestMode ? (
-          <div className="mb-4">
-            <BackButton />
-          </div>
-        ) : null}
+    <div
+      className={
+        guestMode ? "w-full" : `${mentrixStudent.pageBg} min-h-0 md:min-h-[calc(100dvh-3.5rem)]`
+      }
+    >
+      {!guestMode ? (
+        <div className="mb-4 px-4 pt-4 sm:px-6">
+          <BackButton />
+        </div>
+      ) : null}
 
-        {guestMode ? (
-          <div className="mb-4 rounded-2xl border border-indigo-200 bg-indigo-50/90 px-4 py-3 text-sm leading-relaxed text-indigo-950 shadow-sm">
-            Full Quest preview: practice packs, problem solver, and adaptive challenge scenarios.{" "}
-            <Link href="/auth/signup" className="font-semibold underline underline-offset-2">
-              Sign up free
-            </Link>{" "}
-            to save rank, XP, and progress.
+      {guestMode && !diagnosticMode ? (
+        <div className="mx-4 mb-4 sm:mx-6">
+          <VerifiedFirstAttemptAlert kind="guest_preview" subjectLabel={AP_CALC_AB_SUBJECT} />
+          <div className="mt-3">
+            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} />
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
+      {!diagnosticMode ? (
         <TiltCard
           tiltLimit={2}
           className="mx-surface-light block rounded-none border-b border-violet-200 px-4 pt-5 shadow-[0_4px_24px_-12px_rgba(15,23,42,0.08)] sm:px-6"
         >
           <p className={mentrixStudent.sectionEyebrowOnLight}>
-            {guestMode ? "Quest preview" : "Mentrixer training"}
+            {guestMode ? "Quest preview" : "Verified practice"}
           </p>
-          <h1 className={`mt-1 text-lg font-bold sm:text-xl h-[28px] ${mentrixStudent.textOnLight}`}>
-            <Typewriter text="Quest workspace" speed={70} waitTime={8000} />
+          <h1 className={`mt-1 h-[28px] text-lg font-bold sm:text-xl ${mentrixStudent.textOnLight}`}>
+            <Typewriter text={AP_CALC_AB_SUBJECT} speed={70} waitTime={8000} />
           </h1>
           <p className={`mt-0.5 text-sm ${mentrixStudent.textMutedOnLight}`}>
-            {guestMode ? "Same tabs students use. Preview only until you sign up." : "Practice now. Build streak."}
+            {guestMode
+              ? "Same verified item bank students use. Preview only until you sign up."
+              : "First attempt per skill counts toward rank. Practice after that never moves it."}
           </p>
-          <TabsList className="mt-4 inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl bg-violet-100/80 p-1.5 sm:w-auto">
-            <TabsTrigger
-              value="practice"
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-700 data-[state=active]:bg-white data-[state=active]:text-indigo-800 data-[state=active]:shadow-md"
-            >
-              Practice packs
-            </TabsTrigger>
-            <TabsTrigger
-              value="classic"
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-zinc-700 data-[state=active]:bg-white data-[state=active]:text-indigo-800 data-[state=active]:shadow-md"
-            >
-              Problem solver
-            </TabsTrigger>
-          </TabsList>
         </TiltCard>
-        <TabsContent value="practice" className="mt-0 focus-visible:outline-none">
-          {guestMode ? (
-            <GuestQuestClient defaultSubjects={subjectOptions} embedded />
-          ) : (
-            <QuestPracticeWorkspace subjectOptions={subjectOptions} />
-          )}
-        </TabsContent>
-        <TabsContent value="classic" className="mt-0 min-h-0 focus-visible:outline-none md:min-h-[calc(100dvh-3.5rem)]">
-          <QuestClassicWorkspace
-            guestMode={guestMode}
-            showGuestBanner={false}
-            embedded={guestMode}
-            guestSubjectName={
-              subjectOptions[0]?.name.replace(/\s+Division$/i, "").trim() ?? "General"
-            }
-            onGuestTryPractice={() => setActiveTab("practice")}
-          />
-        </TabsContent>
-      </Tabs>
+      ) : null}
+
+      {guestMode ? (
+        <GuestQuestClient defaultSubjects={subjectOptions} embedded diagnosticMode={diagnosticMode} />
+      ) : (
+        <QuestPracticeWorkspace subjectOptions={subjectOptions} />
+      )}
     </div>
   );
 }

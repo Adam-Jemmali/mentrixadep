@@ -15,7 +15,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { Label } from "@/shared/ui/label";
-import { APP_TIMEZONES } from "@/shared/core/timezones";
+import { MentrixaTimezoneSelect } from "@/shared/ui/select-patterns";
 import {
   motion,
   AnimatePresence,
@@ -33,46 +33,21 @@ import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/ran
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { RankCardShareButton } from "@/features/rank-card/rank-card-share-button";
 import { getSiteUrl } from "@/shared/core/site";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { VerifiedNodesProgressCircle } from "@/shared/ui/progress-circle-patterns";
+import { ClearAvatarConfirmDialog } from "@/shared/ui/alert-dialog-patterns";
+import { MentrixaTabsGroup } from "@/shared/ui/tabs-patterns";
+import { profileTabMessage, profileTabsAriaLabel } from "@/shared/ui/tabs-messages-pure";
+import {
+  MentrixaSettingsSwitch,
+  MentrixaSettingsSwitchGroup,
+} from "@/shared/ui/switch-patterns";
+import {
+  notificationSwitchGroupAriaLabel,
+  privacySwitchGroupAriaLabel,
+} from "@/shared/ui/switch-messages-pure";
 
 // ─── Shared Battle UI Components ─────────────────────────────────────────────
-
-function ProfileToggle({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-indigo-50 py-4 last:border-b-0">
-      <div className="space-y-1">
-        <p className="text-sm font-bold text-indigo-900">{label}</p>
-        <p className="text-[11px] text-slate-500 leading-relaxed">{description}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2",
-          checked ? "bg-indigo-600" : "bg-indigo-100",
-        )}
-        role="switch"
-        aria-checked={checked}
-      >
-        <span
-          className={cn(
-            "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200",
-            checked ? "translate-x-5" : "translate-x-0",
-          )}
-        />
-      </button>
-    </div>
-  );
-}
 
 function XpBar({ data }: { data: StudentProfileData }) {
   const [reduce, setReduce] = useState(false);
@@ -207,23 +182,12 @@ function StudentProfileFormSection({
               />
             </div>
             <div>
-              <Label htmlFor="tz" className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
-                Temporal Focus (Timezone)
-              </Label>
-              <select
-                id="tz"
+              <MentrixaTimezoneSelect
                 value={form.timezone}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, timezone: e.target.value }))
-                }
-                className={cn(inputClasses, "flex h-11 w-full rounded-xl border px-4 text-sm focus-visible:outline-none focus-visible:ring-2")}
-              >
-                {APP_TIMEZONES.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
+                onChange={(tz) => setForm((f) => ({ ...f, timezone: tz }))}
+                label="Temporal Focus (Timezone)"
+                brandKind="mentrixer"
+              />
             </div>
           </div>
 
@@ -262,56 +226,67 @@ function StudentProfileFormSection({
               />
             </div>
 
-            <div className="flex flex-col justify-center">
-               <ProfileToggle
+            <MentrixaSettingsSwitchGroup ariaLabel={privacySwitchGroupAriaLabel()} tone="light">
+              <MentrixaSettingsSwitch
                 label="Global Profile Visibility"
                 description="Allow other Mentrixers and Guides to find your profile."
-                checked={form.profile_visible_to_tutors}
+                isSelected={form.profile_visible_to_tutors}
                 onChange={(v) => setForm((f) => ({ ...f, profile_visible_to_tutors: v }))}
+                settingId="profile_visible_to_tutors"
               />
-              <ProfileToggle
+              <MentrixaSettingsSwitch
                 label="Duel Invitations"
                 description="Enable 1v1 skill challenges from peers."
-                checked={form.duel_opt_in}
+                isSelected={form.duel_opt_in}
                 onChange={(v) => setForm((f) => ({ ...f, duel_opt_in: v }))}
+                settingId="duel_opt_in"
               />
-              <ProfileToggle
+              <MentrixaSettingsSwitch
                 label="Public Rank Card"
-                description="Share verified quest, duel, and Guide data at mentrixa.one/rank/[username]. On by default."
-                checked={form.rank_card_public}
+                description="Share your verified rank passport at mentrixa.one/rank/[username]. On by default."
+                isSelected={form.rank_card_public}
                 onChange={(v) => setForm((f) => ({ ...f, rank_card_public: v }))}
+                settingId="rank_card_public"
               />
-            </div>
+            </MentrixaSettingsSwitchGroup>
           </div>
 
           <div className="border-t border-indigo-50 pt-8">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6">Signal Settings (Notifications)</h3>
-            <div className="grid gap-x-10 gap-y-2 sm:grid-cols-2">
-              <ProfileToggle
+            <MentrixaSettingsSwitchGroup
+              ariaLabel={notificationSwitchGroupAriaLabel()}
+              tone="light"
+              layout="grid"
+            >
+              <MentrixaSettingsSwitch
                 label="Session Alarms"
                 description="T-minus 60 min session alerts."
-                checked={form.email_session_reminders}
+                isSelected={form.email_session_reminders}
                 onChange={(v) => setForm((f) => ({ ...f, email_session_reminders: v }))}
+                settingId="email_session_reminders"
               />
-              <ProfileToggle
+              <MentrixaSettingsSwitch
                 label="Contract Confirmed"
                 description="Alert when a session is finalized."
-                checked={form.email_session_booked}
+                isSelected={form.email_session_booked}
                 onChange={(v) => setForm((f) => ({ ...f, email_session_booked: v }))}
+                settingId="email_session_booked"
               />
-              <ProfileToggle
+              <MentrixaSettingsSwitch
                 label="Weekly After-Action Report"
                 description="Weekly intelligence digest."
-                checked={form.email_weekly_summary}
+                isSelected={form.email_weekly_summary}
                 onChange={(v) => setForm((f) => ({ ...f, email_weekly_summary: v }))}
+                settingId="email_weekly_summary"
               />
-              <ProfileToggle
+              <MentrixaSettingsSwitch
                 label="Direct Intelligence"
                 description="Updates from Mentrixa HQ."
-                checked={form.email_marketing}
+                isSelected={form.email_marketing}
                 onChange={(v) => setForm((f) => ({ ...f, email_marketing: v }))}
+                settingId="email_marketing"
               />
-            </div>
+            </MentrixaSettingsSwitchGroup>
           </div>
         </div>
 
@@ -332,6 +307,108 @@ function StudentProfileFormSection({
           </Button>
         </div>
     </section>
+  );
+}
+
+// ─── Profile tab panels ───────────────────────────────────────────────────────
+
+function ProfileStandingSections({ data }: { data: StudentProfileData }) {
+  return (
+    <div className="grid gap-10 lg:grid-cols-2">
+      <div className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">
+            Division Standing
+          </h2>
+          <Image src={MENTRIXA_LOGO_PNG} alt="" width={20} height={20} className="opacity-30" />
+        </div>
+        <ul className="space-y-4">
+          {data.divisionBadges.length === 0 ? (
+            <li className="rounded-2xl border-2 border-dashed border-indigo-50 py-4 text-center text-xs italic text-slate-400">
+              No battle data available.
+            </li>
+          ) : (
+            data.divisionBadges.map((d) => (
+              <li
+                key={d.key}
+                className="group flex flex-col gap-2 rounded-2xl border border-indigo-50 bg-slate-50/30 p-4 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-md"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-black italic tracking-tight text-indigo-900">
+                    {d.name}
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">
+                    {d.tierLabel}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-1.5 max-w-[140px] flex-1 overflow-hidden rounded-full bg-indigo-100">
+                    <div className="h-full w-[60%] bg-indigo-500" />
+                  </div>
+                  <span className="font-mono text-[11px] tabular-nums text-indigo-400">
+                    {d.xp.toLocaleString()} XP
+                  </span>
+                </div>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+
+      <div className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
+        <h2 className="mb-8 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">
+          Battle Log
+        </h2>
+        <ul className="space-y-6">
+          {data.recentAchievements.length === 0 ? (
+            <li className="rounded-2xl border-2 border-dashed border-indigo-50 py-4 text-center text-xs italic text-slate-400">
+              Battle history empty.
+            </li>
+          ) : (
+            data.recentAchievements.map((a) => (
+              <li key={a.id} className="flex gap-4">
+                <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500 shadow-md shadow-indigo-500/20" />
+                <div className="space-y-1">
+                  <p className="text-xs font-bold leading-relaxed text-indigo-900">{a.summary}</p>
+                  <p className="text-[10px] font-black uppercase tracking-tight text-indigo-300">
+                    {new Intl.DateTimeFormat(undefined, {
+                      dateStyle: "medium",
+                    }).format(new Date(a.completedAt))}
+                  </p>
+                </div>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function ProfileShareSections({
+  data,
+  accountRank,
+  referral,
+}: {
+  data: StudentProfileData;
+  accountRank: ReturnType<typeof getAccountRankFromTotalXp>;
+  referral?: ReferralDashboardData | null;
+}) {
+  return (
+    <div className="space-y-10">
+      {data.rankCardUsername && data.rankCardPublic ? (
+        <RankCardShareButton
+          username={data.rankCardUsername}
+          siteUrl={getSiteUrl()}
+          passportVerdict={
+            data.rankCardPassportVerdict ??
+            "Verified AP Calculus AB rank passport on Mentrixa."
+          }
+          rankTitle={normalizeRankTitle(data.rankCardCalibratedTitle ?? accountRank.title)}
+        />
+      ) : null}
+      {referral ? <ReferralProgramSection initial={referral} /> : null}
+    </div>
   );
 }
 
@@ -397,14 +474,16 @@ export function StudentProfileClient({
     }
   }
 
-  async function onClearAvatar() {
+  async function onClearAvatar(): Promise<boolean> {
     setErr(null);
     const res = await clearStudentAvatar();
-    if (!res.success) setErr(res.error);
-    else {
-      router.refresh();
-      setToast(true);
+    if (!res.success) {
+      setErr(res.error);
+      return false;
     }
+    router.refresh();
+    setToast(true);
+    return true;
   }
 
   return (
@@ -449,7 +528,9 @@ export function StudentProfileClient({
             <div className="flex flex-col gap-10 sm:flex-row sm:items-start">
               <div className="flex shrink-0 flex-col items-center gap-6 sm:items-start">
                 <div className="group relative h-40 w-40 overflow-hidden rounded-[2.5rem] border-2 border-indigo-50 bg-indigo-50/50 shadow-xl sm:h-48 sm:w-48">
-                  {data.avatarUrl ? (
+                  {uploading ? (
+                    <Skeleton className="h-full w-full rounded-[2.5rem]" aria-label="Uploading avatar" />
+                  ) : data.avatarUrl ? (
                     <Image
                       src={data.avatarUrl}
                       alt=""
@@ -508,13 +589,19 @@ export function StudentProfileClient({
                         onChange={onAvatarPick}
                       />
                       {data.avatarUrl && (
-                        <button
-                          onClick={() => void onClearAvatar()}
-                          disabled={uploading}
-                          className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 disabled:opacity-30"
-                        >
-                          Reset Image
-                        </button>
+                        <ClearAvatarConfirmDialog
+                          confirming={uploading}
+                          onConfirm={onClearAvatar}
+                          trigger={
+                            <button
+                              type="button"
+                              disabled={uploading}
+                              className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 disabled:opacity-30"
+                            >
+                              Reset Image
+                            </button>
+                          }
+                        />
                       )}
                     </div>
                     {err && (
@@ -539,6 +626,12 @@ export function StudentProfileClient({
 
                 <div className="mt-10 flex flex-col gap-8 sm:flex-row sm:flex-wrap sm:items-center">
                   <div className="flex items-center gap-4">
+                    <div className="hidden flex-col items-center gap-1 sm:flex">
+                      <VerifiedNodesProgressCircle verifiedCount={data.verifiedSkillCount} size="lg" />
+                      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-indigo-400">
+                        Verified nodes
+                      </p>
+                    </div>
                     <RankBadge
                       rank={accountRank}
                       size="lg"
@@ -572,7 +665,13 @@ export function StudentProfileClient({
                   </div>
                 </div>
 
-                <div className="mt-10 max-w-sm">
+                <div className="mt-10 max-w-sm space-y-4">
+                  <div className="flex items-center gap-3 sm:hidden">
+                    <VerifiedNodesProgressCircle verifiedCount={data.verifiedSkillCount} size="md" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-500">
+                      Verified nodes on first attempt
+                    </p>
+                  </div>
                   <XpBar data={data} />
                 </div>
               </div>
@@ -603,104 +702,58 @@ export function StudentProfileClient({
           </div>
         </div>
 
-        {/* SECONDARY INFO GRID */}
-        <div className="mt-12 grid gap-10 lg:grid-cols-3">
-          
-          {/* Left Column: Form & Settings (Occupies 2/3) */}
-          <div className="lg:col-span-2 space-y-10">
-             {data.viewer === "owner" && data.privateSettings ? (
-                <StudentProfileFormSection
-                  key={data.studentId}
-                  initial={data.privateSettings}
-                  divisions={data.divisions}
-                  onSaved={() => {
-                    router.refresh();
-                    setToast(true);
-                  }}
-                />
-              ) : null}
-              
-              {data.viewer === "owner" ? <AccountSecurityPanel /> : null}
+        {data.viewer === "owner" ? (
+          <div className="mt-12">
+            <MentrixaTabsGroup
+              ariaLabel={profileTabsAriaLabel()}
+              tone="light"
+              defaultSelectedKey="identity"
+              brandKind="mentrixer"
+              items={[
+                {
+                  id: "identity",
+                  ...profileTabMessage("identity"),
+                  panel: (
+                    <div className="space-y-10">
+                      {data.privateSettings ? (
+                        <StudentProfileFormSection
+                          key={data.studentId}
+                          initial={data.privateSettings}
+                          divisions={data.divisions}
+                          onSaved={() => {
+                            router.refresh();
+                            setToast(true);
+                          }}
+                        />
+                      ) : null}
+                      <AccountSecurityPanel />
+                    </div>
+                  ),
+                },
+                {
+                  id: "standing",
+                  ...profileTabMessage("standing"),
+                  panel: <ProfileStandingSections data={data} />,
+                },
+                {
+                  id: "share",
+                  ...profileTabMessage("share"),
+                  panel: (
+                    <ProfileShareSections
+                      data={data}
+                      accountRank={accountRank}
+                      referral={referral}
+                    />
+                  ),
+                },
+              ]}
+            />
           </div>
-
-          {/* Right Column: Badges & Achievements */}
-          <div className="space-y-10">
-            
-            {/* Division Badges */}
-            <div className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">Division Standing</h2>
-                <Image src={MENTRIXA_LOGO_PNG} alt="" width={20} height={20} className="opacity-30" />
-              </div>
-              
-              <ul className="space-y-4">
-                {data.divisionBadges.length === 0 ? (
-                  <li className="text-xs italic text-slate-400 text-center py-4 border-2 border-dashed border-indigo-50 rounded-2xl">No battle data available.</li>
-                ) : (
-                  data.divisionBadges.map((d) => (
-                    <li
-                      key={d.key}
-                      className="group flex flex-col gap-2 rounded-2xl border border-indigo-50 bg-slate-50/30 p-4 transition-all hover:bg-white hover:shadow-md hover:border-indigo-100"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-black italic tracking-tight text-indigo-900">{d.name}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">{d.tierLabel}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="h-1.5 flex-1 max-w-[140px] rounded-full bg-indigo-100 overflow-hidden">
-                           <div className="h-full bg-indigo-500 w-[60%]" />
-                        </div>
-                        <span className="font-mono text-[11px] tabular-nums text-indigo-400">
-                          {d.xp.toLocaleString()} XP
-                        </span>
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-
-            {/* Achievements */}
-            <div className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
-              <h2 className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950 mb-8">Battle Log</h2>
-              <ul className="space-y-6">
-                {data.recentAchievements.length === 0 ? (
-                  <li className="text-xs italic text-slate-400 text-center py-4 border-2 border-dashed border-indigo-50 rounded-2xl">Battle history empty.</li>
-                ) : (
-                  data.recentAchievements.map((a) => (
-                    <li key={a.id} className="flex gap-4">
-                      <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500 shadow-md shadow-indigo-500/20" />
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold leading-relaxed text-indigo-900">{a.summary}</p>
-                        <p className="text-[10px] font-black text-indigo-300 uppercase tracking-tight">
-                          {new Intl.DateTimeFormat(undefined, {
-                            dateStyle: "medium",
-                          }).format(new Date(a.completedAt))}
-                        </p>
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-
-            {/* Referral Section (If applicable) */}
-            {data.viewer === "owner" && data.rankCardUsername && data.rankCardPublic ? (
-              <RankCardShareButton
-                username={data.rankCardUsername}
-                siteUrl={getSiteUrl()}
-                topSubject={data.rankCardTopSubject}
-                rankTitle={normalizeRankTitle(accountRank.title)}
-                accuracy={data.rankCardTopAccuracy}
-              />
-            ) : null}
-
-            {data.viewer === "owner" && referral ? (
-              <ReferralProgramSection initial={referral} />
-            ) : null}
-            
+        ) : (
+          <div className="mt-12 max-w-3xl">
+            <ProfileStandingSections data={data} />
           </div>
-        </div>
+        )}
       </main>
 
       <SaveToast open={toast} onClose={() => setToast(false)} />

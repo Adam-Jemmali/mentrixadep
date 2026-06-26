@@ -15,6 +15,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { BookingPriceBreakdown } from "@/features/booking/booking-price-breakdown";
+import { PriceBreakdownPopover } from "@/shared/ui/popover-patterns";
 import { splitSessionPriceCents, formatStudentBreakthroughPrice, getStudentSessionCheckoutCents } from "@/features/booking/booking-pricing";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
@@ -23,17 +24,16 @@ import { Typewriter } from "@/shared/ui/typewriter";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { Label } from "@/shared/ui/label";
-import { APP_TIMEZONES } from "@/shared/core/timezones";
+import { MentrixaTimezoneSelect, MentrixaSelect, bufferSelectOptions, durationSelectOptions } from "@/shared/ui/select-patterns";
 import { updateUserSettings, type UserSettings } from "@/features/settings/user-settings";
 import { cn } from "@/shared/core/utils";
 import { TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES } from "@/features/tutor/teaching-defaults";
 import { TutorQualityBadge } from "@/components/tutor-quality-badge";
-import {
-  ImpactScoreBadge,
-  ImpactScoreBreakdown,
-} from "@/features/guide-impact/components/impact-score-badge";
-import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
-import { pickImpactForSubject, subjectsMatch } from "@/features/guide-impact/impact-score-pure";
+import { ImpactScoreBreakdown } from "@/features/guide-impact/components/impact-score-badge";
+import { GuideImpactNodeChips } from "@/features/guide-impact/components/guide-impact-node-chips";
+import type { GuideImpactEntry, GuideImpactNodeEntry } from "@/features/guide-impact/impact-score-pure";
+import { subjectsMatch } from "@/features/guide-impact/impact-score-pure";
+import { GuideBookingSlotPicker } from "@/features/booking/ui/guide-booking-slot-picker";
 import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
 import type { GuideBreakthrough } from "@/features/guide-rank/reads";
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -69,6 +69,7 @@ interface Profile {
   /** Public guide bio from user_settings — shown in Guide Snapshot after “Update Identity”. */
   bio?: string | null;
   impactScores?: GuideImpactEntry[];
+  impactNodeScores?: GuideImpactNodeEntry[];
   guideRank?: string;
   avgImpactScore?: number | null;
   responseRatePercent?: number | null;
@@ -84,16 +85,6 @@ interface TutorProfileClientProps {
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
-
-function getDayLabel(iso: string): Day {
-  const d = new Date(iso).getDay(); // 0=Sun
-  const labels: Day[] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return (labels[d] ?? "Mon") as Day;
-}
-
-
 
 function formatPrice(cents: number | null): string {
   if (cents == null) return "$25.00";
@@ -208,45 +199,39 @@ function TutorProfileFormSection({
           />
         </div>
 
-        <div>
-          <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Timezone</Label>
-          <select
-            value={form.timezone}
-            onChange={e => setForm(f => ({ ...f, timezone: e.target.value }))}
-            className={cn(inputClasses, "flex h-11 w-full rounded-xl border px-4 text-sm focus-visible:outline-none focus-visible:ring-2")}
-          >
-            {APP_TIMEZONES.map(tz => (
-              <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
-            ))}
-          </select>
-        </div>
+        <MentrixaTimezoneSelect
+          value={form.timezone}
+          onChange={(tz) => setForm((f) => ({ ...f, timezone: tz }))}
+          label="Timezone"
+          brandKind="guide"
+        />
 
         <div className="border-t border-indigo-50 pt-8">
           <h3 className="mb-6 text-[10px] font-black uppercase tracking-widest text-indigo-400">Teaching Defaults</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label className="text-xs text-slate-500">Default duration</Label>
-              <select
-                value={form.session_default_duration}
-                onChange={e => setForm(f => ({ ...f, session_default_duration: Number(e.target.value) }))}
-                className="mt-1.5 flex h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-xs text-indigo-900"
-              >
-                {TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES.map((d) => (
-                  <option key={d} value={d}>{d} minutes</option>
-                ))}
-              </select>
+              <MentrixaSelect
+                label="Default duration"
+                brandKind="guide"
+                options={durationSelectOptions(TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES)}
+                value={String(form.session_default_duration)}
+                onChange={(id) =>
+                  id && setForm((f) => ({ ...f, session_default_duration: Number(id) }))
+                }
+                triggerClassName="mt-1.5 text-xs"
+              />
             </div>
             <div>
-              <Label className="text-xs text-slate-500">Buffer between sessions</Label>
-              <select
-                value={form.session_buffer_minutes}
-                onChange={e => setForm(f => ({ ...f, session_buffer_minutes: Number(e.target.value) }))}
-                className="mt-1.5 flex h-10 w-full rounded-xl border border-indigo-100 bg-white px-3 text-xs text-indigo-900"
-              >
-                {BUFFER_OPTIONS.map(b => (
-                  <option key={b} value={b}>{b === 0 ? "No buffer" : `${b} minutes`}</option>
-                ))}
-              </select>
+              <MentrixaSelect
+                label="Buffer between sessions"
+                brandKind="guide"
+                options={bufferSelectOptions(BUFFER_OPTIONS)}
+                value={String(form.session_buffer_minutes)}
+                onChange={(id) =>
+                  id && setForm((f) => ({ ...f, session_buffer_minutes: Number(id) }))
+                }
+                triggerClassName="mt-1.5 text-xs"
+              />
             </div>
           </div>
         </div>
@@ -310,14 +295,6 @@ export function TutorProfileClient({
     });
   }, [profile.availability]);
 
-  // Day filter (next 14 days only)
-  const [selectedDay] = useState<Day | "All">("All");
-
-  const filteredSlots =
-    selectedDay === "All"
-      ? bookableSlots
-      : bookableSlots.filter((s) => getDayLabel(s.start_time) === selectedDay);
-
   const trimmedGuideBio = (profile.bio ?? "").trim();
   const guideSnapshotText =
     trimmedGuideBio.length > 0
@@ -325,16 +302,7 @@ export function TutorProfileClient({
       : `Teaching ${profile.courses.length > 0 ? profile.courses.slice(0, 2).join(" • ") : "multi-subject sessions"} with clarity, structure, and momentum.`;
 
   const impactScores = profile.impactScores ?? [];
-  const eligibleImpact = impactScores.filter((e) => e.sessionsCounted >= 3);
-  const primaryImpact =
-    eligibleImpact.length > 0
-      ? eligibleImpact.reduce((top, cur) => (cur.impactScore > top.impactScore ? cur : top))
-      : null;
-  const courseImpact =
-    profile.courses.length > 0
-      ? pickImpactForSubject(eligibleImpact, profile.courses[0] ?? "")
-      : primaryImpact;
-  const headlineImpact = courseImpact ?? primaryImpact;
+  const impactNodeScores = profile.impactNodeScores ?? [];
 
   // Booking dialog
   const [dialogSlot, setDialogSlot] = useState<AvailabilitySlot | null>(null);
@@ -375,7 +343,7 @@ export function TutorProfileClient({
       { opacity: 0, y: 6 },
       { opacity: 1, y: 0, stagger: 0.04, duration: 0.25, ease: "power2.out" },
     );
-  }, [filteredSlots.length, selectedDay]);
+  }, [bookableSlots.length]);
 
   useGsapScrollTriggerEffect((gsap, ScrollTrigger) => {
     const total = profile.ratingCount;
@@ -481,13 +449,6 @@ export function TutorProfileClient({
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <GuideRankBadge rankKey={profile.guideRank ?? "practitioner"} size="lg" />
-                {headlineImpact && headlineImpact.sessionsCounted >= 3 ? (
-                  <ImpactScoreBadge
-                    impactScore={headlineImpact.impactScore}
-                    sessionsCounted={headlineImpact.sessionsCounted}
-                    subject={impactScores.length > 1 ? headlineImpact.subject : undefined}
-                  />
-                ) : null}
               </div>
               <h1
                 ref={nameRef}
@@ -622,43 +583,28 @@ export function TutorProfileClient({
               <h2 className="mb-6 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">
                 Availability Grid
               </h2>
-              {filteredSlots.length === 0 ? (
-                <p className="rounded-2xl border-2 border-dashed border-indigo-50 py-4 text-center text-xs italic text-slate-400">
-                  No open slots in the next 14 days.
-                </p>
+              <GuideBookingSlotPicker
+                slots={bookableSlots}
+                tutorTimezone={profile.tutorTimezone}
+                canBook={!isOwnProfile && viewerRole !== "tutor"}
+                onBookSlot={setDialogSlot}
+                formatPrice={(baseCents) => formatPriceFromBaseSessionCents(baseCents, true)}
+              />
+            </section>
+
+            <section className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
+              {impactNodeScores.length > 0 ? (
+                <GuideImpactNodeChips entries={impactNodeScores} />
               ) : (
-                <ul className="space-y-3">
-                  {filteredSlots.map((slot) => (
-                    <li
-                      key={slot.id}
-                      className="avail-row flex flex-col gap-3 rounded-2xl border border-indigo-50 bg-slate-50/30 p-4 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="space-y-1">
-                        <p className="text-sm font-black italic tracking-tight text-indigo-900">{slot.course}</p>
-                        <p className="text-xs text-slate-500">
-                          {formatSlotRangeInZone(slot.start_time, slot.end_time, profile.tutorTimezone)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-black uppercase tracking-widest text-indigo-500">
-                          {formatPriceFromBaseSessionCents(
-                            slot.price_per_session,
-                            !isOwnProfile && viewerRole !== "tutor",
-                          )}
-                        </span>
-                        {(!isOwnProfile && viewerRole !== "tutor") ? (
-                          <Button
-                            type="button"
-                            onClick={() => setDialogSlot(slot)}
-                            className="h-9 rounded-xl bg-indigo-600 px-4 text-[10px] font-black uppercase tracking-wider text-white hover:bg-indigo-500"
-                          >
-                            Book
-                          </Button>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700">
+                    Guide Impact Score
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Per-skill verified impact appears after this Guide has taught at least three
+                    students on a node.
+                  </p>
+                </div>
               )}
             </section>
 
@@ -796,9 +742,15 @@ export function TutorProfileClient({
               </div>
 
               <div className="relative rounded-lg border-2 border-mentrixa-600 bg-mentrixa-50 px-4 py-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-800 mb-3">
-                  Pricing
-                </p>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-800">
+                    Pricing
+                  </p>
+                  <PriceBreakdownPopover
+                    sessionPriceCents={getStudentSessionCheckoutCents()}
+                    tone="dark"
+                  />
+                </div>
                 <BookingPriceBreakdown
                   sessionPriceCents={getStudentSessionCheckoutCents()}
                 />

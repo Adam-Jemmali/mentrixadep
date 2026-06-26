@@ -1,7 +1,7 @@
 export const AP_CALC_AB_SUBJECT = "AP Calculus AB";
 
 export const AP_CALC_AB_UNAVAILABLE_MESSAGE =
-  "AP Calculus AB practice is being prepared. Check back shortly.";
+  "AP Calculus AB practice is being prepared for this topic. Check back shortly.";
 
 export function isApCalculusAbSubject(subject: string): boolean {
   const normalized = subject

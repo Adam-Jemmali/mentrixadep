@@ -19,9 +19,10 @@ import {
   VideoOff,
   Wifi,
   WifiOff,
-  ChevronDown,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
+import { MentrixaSelect } from "@/shared/ui/select-patterns";
 import {
   stopMediaStream,
   isMediaPermissionDenied,
@@ -93,28 +94,19 @@ function DeviceSelector({
   if (devices.length <= 1) return null;
 
   return (
-    <div className="relative">
-      <label className="block text-[10px] font-medium uppercase tracking-widest text-white/40 mb-1">
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          value={selected}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none rounded-md border border-white/10 bg-white/5 px-3 py-2 pr-8 text-xs text-white/80 focus:outline-none focus:border-white/25 transition-colors"
-        >
-          {devices.map((d) => (
-            <option key={d.deviceId} value={d.deviceId} className="bg-slate-900">
-              {d.label || `Device ${d.deviceId.slice(0, 8)}`}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          size={12}
-          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40"
-        />
-      </div>
-    </div>
+    <MentrixaSelect
+      tone="video"
+      variant="secondary"
+      aria-label={label}
+      label={label}
+      brandKind="mentrixa"
+      value={selected}
+      onChange={(id) => id && onChange(id)}
+      options={devices.map((d) => ({
+        id: d.deviceId,
+        label: d.label || `Device ${d.deviceId.slice(0, 8)}`,
+      }))}
+    />
   );
 }
 

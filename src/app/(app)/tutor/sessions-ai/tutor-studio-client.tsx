@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { runGsapAction, useGsapEffect } from "@/shared/core/gsap-lazy";
 import { deleteStudioPackage, publishStudioPackage, saveStudioPackageDraft, type TutorSessionWithPackage } from "@/features/studio-ai/studio-packages";
+import { formatStudioRetestConfirmationLine } from "@/features/breakthrough-events/schedule-session-retests-pure";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import type { SessionAiPackage } from "@/shared/types/database";
 import { formatDate } from "@/shared/core/time-format";
-import { Badge } from "@/shared/ui/badge";
+import { CourseTagChip } from "@/shared/ui/chip-patterns";
+import { MentrixaTabsGroup } from "@/shared/ui/tabs-patterns";
+import { studioFilterTabMessage, studioFilterTabsAriaLabel } from "@/shared/ui/tabs-messages-pure";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -18,7 +21,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/ui/select";
+} from "@/shared/ui/radix-select";
 import { Loader2, MessageSquare, Copy, Save, Send, CheckCircle2, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -117,6 +120,7 @@ export function TutorStudioClient({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [retestConfirmBySession, setRetestConfirmBySession] = useState<Record<string, string>>({});
   const [removingId, setRemovingId] = useState<string | null>(null);
   const { viewingAsUserId } = useAdminViewContext();
   const router = useRouter();
@@ -397,27 +401,36 @@ export function TutorStudioClient({
       </header>
 
       <div className="relative mb-6 rounded-2xl border border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.65)_0%,rgba(255,255,255,1)_100%)] px-4 py-4 shadow-[0_10px_30px_-24px_rgba(79,70,229,0.6)]">
-        <div className="flex flex-wrap gap-3">
+        <div className="space-y-3">
+          <MentrixaTabsGroup
+            ariaLabel={studioFilterTabsAriaLabel()}
+            tone="workbench"
+            variant="secondary"
+            selectedKey={packageFilter}
+            onSelectionChange={(key) => setPackageFilter(key as PackageFilter)}
+            brandKind="guide"
+            suppressPanelFooter
+            panelClassName="hidden"
+            listClassName="w-full sm:w-auto"
+            items={(["all", "generated", "pending"] as const).map((id) => ({
+              id,
+              ...studioFilterTabMessage(id),
+              panel: <span className="sr-only">{studioFilterTabMessage(id).label}</span>,
+            }))}
+          />
+          <p className="text-xs leading-relaxed text-slate-600">
+            {studioFilterTabMessage(packageFilter).verdict}{" "}
+            {studioFilterTabMessage(packageFilter).nextAction}
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by course or learner…"
             className="h-10 min-w-[220px] flex-1 border-indigo-100 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:border-indigo-300 focus-visible:ring-indigo-200"
           />
-
-          <Select
-            value={packageFilter}
-            onValueChange={(value) => setPackageFilter(value as PackageFilter)}
-          >
-            <SelectTrigger className="h-10 w-[150px] border-indigo-100 bg-white text-xs text-slate-700 focus-visible:border-indigo-300 focus-visible:ring-indigo-200">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All sessions</SelectItem>
-              <SelectItem value="generated">Published</SelectItem>
-              <SelectItem value="pending">No package yet</SelectItem>
-            </SelectContent>
-          </Select>
 
           <Select value={courseFilter} onValueChange={setCourseFilter}>
             <SelectTrigger className="h-10 w-[170px] border-indigo-100 bg-white text-xs text-slate-700 focus-visible:border-indigo-300 focus-visible:ring-indigo-200">
@@ -505,9 +518,7 @@ export function TutorStudioClient({
                   }}
                 >
                   <td className="px-4 py-3 align-middle">
-                    <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-[11px] font-bold text-indigo-900">
-                      {session.course}
-                    </Badge>
+                    <CourseTagChip course={session.course} />
                   </td>
                   <td className="px-4 py-3 align-middle text-sm font-bold text-slate-900">{learnerLabel}</td>
                   <td className="px-4 py-3 align-middle text-sm text-slate-600">{formatDate(session.start_time)}</td>
@@ -680,8 +691,21 @@ export function TutorStudioClient({
                             setErrorByRow((prev) => ({ ...prev, [session.id]: res.error }));
                             return;
                           }
+                          if (res.retestConfirmation) {
+                            const line = formatStudioRetestConfirmationLine(
+                              res.retestConfirmation.studentDisplayName,
+                              res.retestConfirmation.retestScheduledAt,
+                              res.retestConfirmation.skillsCovered,
+                              (iso) => formatDate(iso),
+                            );
+                            setRetestConfirmBySession((prev) => ({
+                              ...prev,
+                              [session.id]: line,
+                            }));
+                          }
                           router.refresh();
                         }}
+                        retestConfirmationLine={retestConfirmBySession[session.id]}
                         onRegenerate={() => void handleRegenerate(session.id)}
                       />
                     </td>
@@ -767,6 +791,7 @@ function SessionPackageEditor({
   onSave,
   onPublish,
   onRegenerate,
+  retestConfirmationLine,
 }: {
   sessionId: string;
   pkg: SessionAiPackage;
@@ -784,6 +809,7 @@ function SessionPackageEditor({
   onSave: (draft: DraftEdit) => Promise<void>;
   onPublish: () => Promise<void>;
   onRegenerate: () => void;
+  retestConfirmationLine?: string;
 }) {
   const [draft, setDraft] = useState<DraftEdit>(() => pkgToDraft(pkg));
 
@@ -852,9 +878,14 @@ function SessionPackageEditor({
                   Send to learner
                 </Button>
               ) : (
-                <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/30">
-                  <CheckCircle2 className="h-4 w-4 text-blue-300" />
-                  <span className="text-xs font-bold text-blue-50">Published</span>
+                <div className="flex flex-col items-start gap-2">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/30">
+                    <CheckCircle2 className="h-4 w-4 text-blue-300" />
+                    <span className="text-xs font-bold text-blue-50">Published</span>
+                  </div>
+                  {retestConfirmationLine ? (
+                    <p className="text-xs font-medium text-blue-100/95">{retestConfirmationLine}</p>
+                  ) : null}
                 </div>
               )}
 

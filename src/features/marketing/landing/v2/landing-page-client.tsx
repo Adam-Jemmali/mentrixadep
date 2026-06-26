@@ -10,6 +10,7 @@ import {
   DeferredFeaturesBentoSection,
   DeferredFlowStepsSection,
   DeferredLandingFooterBlock,
+  DeferredLandingFaqSection,
   DeferredOutcomesSection,
   DeferredPricingSection,
   DeferredRankLadderShowcase,
@@ -119,6 +120,8 @@ export function LandingPageClient() {
       >
         <DeferredPricingSection />
       </motion.div>
+
+      <DeferredLandingFaqSection />
 
       <DeferredLandingFooterBlock />
     </div>

@@ -14,13 +14,12 @@ import { CreateAvailabilityCard } from "@/shared/ui/create-availability-card";
 import { CourseManager } from "./course-manager";
 import { TutorAvatar } from "../student/session-components/tutor-avatar";
 import { Button } from "@/shared/ui/button";
+import { MentrixaDrawer } from "@/shared/ui/drawer-patterns";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui/dialog";
+  guideEarningsDrawerMessage,
+  guideSessionRequestsDrawerMessage,
+} from "@/shared/ui/drawer-messages-pure";
+import { MentrixaCountBadge } from "@/shared/ui/badge-patterns";
 import { formatDateInZone } from "@/shared/core/time-format";
 import { TutorPayoutDashboard } from "./payout-dashboard";
 import { TutorHubRealtimeRefresh } from "@/components/tutor-hub-realtime-refresh";
@@ -32,17 +31,15 @@ import { HeroGuideBounce } from "@/features/tutor/ui/hero-guide-bounce";
 import { PreSessionContextSection } from "@/features/pre-session-brief/pre-session-context-section";
 import { GuideRankProgressCard } from "@/features/guide-rank/components/guide-rank-progress-card";
 import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
+import { GuideDemandSignalCard } from "@/features/demand-signal/components/guide-demand-signal-card";
+import { GuideImpactDisclosure } from "@/shared/ui/disclosure-patterns";
+import { ChartSkeleton } from "@/shared/ui/skeleton-patterns";
 
 const TutorImpactTrendChart = dynamic(
   () => import("./tutor-impact-trend-chart").then((m) => m.TutorImpactTrendChart),
   {
     ssr: false,
-    loading: () => (
-      <div
-        className="h-[220px] w-full min-w-0 animate-pulse rounded bg-slate-100"
-        aria-hidden
-      />
-    ),
+    loading: () => <ChartSkeleton />,
   },
 );
 
@@ -50,12 +47,7 @@ const TutorEarningsChart = dynamic(
   () => import("./tutor-earnings-chart").then((m) => m.TutorEarningsChart),
   {
     ssr: false,
-    loading: () => (
-      <div
-        className="h-[220px] w-full min-w-0 animate-pulse rounded bg-slate-100"
-        aria-hidden
-      />
-    ),
+    loading: () => <ChartSkeleton />,
   },
 );
 
@@ -74,10 +66,14 @@ export function TutorCommandCenterClient({
 }) {
 
   const [addOpen, setAddOpen] = useState(false);
+  const [requestsOpen, setRequestsOpen] = useState(false);
+  const [earningsOpen, setEarningsOpen] = useState(false);
   const [slotsCreatedNotice, setSlotsCreatedNotice] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const connectParam = searchParams.get("connect");
+  const sessionRequestsCopy = guideSessionRequestsDrawerMessage();
+  const earningsCopy = guideEarningsDrawerMessage();
 
   useEffect(() => {
     if (!slotsCreatedNotice) return;
@@ -166,25 +162,26 @@ export function TutorCommandCenterClient({
         </div>
       </header>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-h-[95vh] max-w-2xl overflow-y-auto p-0 border-none bg-transparent shadow-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Add availability</DialogTitle>
-            <DialogDescription>
-              Learners only see slots that match your listed courses.
-            </DialogDescription>
-          </DialogHeader>
-          <CreateAvailabilityCard
-            tutorCourseNames={data.tutorCourses.map((c) => c.course_name)}
-            defaultTimezone={data.tutorTimezone}
-            sessionDefaultDurationMinutes={data.sessionDefaultDurationMinutes}
-            onSlotsCreated={() => {
-              setAddOpen(false);
-              setSlotsCreatedNotice(true);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      <MentrixaDrawer
+        isOpen={addOpen}
+        onOpenChange={setAddOpen}
+        placement="right"
+        tone="light"
+        brandKind="guide"
+        hideHeader
+        bodyClassName="p-0"
+        contentClassName="!max-w-2xl"
+      >
+        <CreateAvailabilityCard
+          tutorCourseNames={data.tutorCourses.map((c) => c.course_name)}
+          defaultTimezone={data.tutorTimezone}
+          sessionDefaultDurationMinutes={data.sessionDefaultDurationMinutes}
+          onSlotsCreated={() => {
+            setAddOpen(false);
+            setSlotsCreatedNotice(true);
+          }}
+        />
+      </MentrixaDrawer>
 
       {/* Metrics */}
       <section className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
@@ -282,6 +279,11 @@ export function TutorCommandCenterClient({
         </div>
       </section>
 
+      <GuideDemandSignalCard
+        signals={data.demandSignals}
+        onOpenAvailability={() => setAddOpen(true)}
+      />
+
       {data.upcomingSessions.length > 0 ? (
         <PreSessionContextSection
           guideId={data.tutorId}
@@ -296,6 +298,9 @@ export function TutorCommandCenterClient({
             <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>
               Your top performing subjects
             </h2>
+            <div className="mb-4">
+              <GuideImpactDisclosure />
+            </div>
             <ul className="divide-y divide-slate-100">
               {data.impactScores
                 .filter((s) => s.sessionsCounted >= 3)
@@ -314,7 +319,66 @@ export function TutorCommandCenterClient({
       ) : null}
 
       {/* Actions + chart */}
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div className="mb-4 flex flex-wrap gap-2 lg:hidden">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-9 border-slate-200 text-xs"
+          onClick={() => setRequestsOpen(true)}
+        >
+          <span className="inline-flex items-center gap-2">
+            Session requests
+            <MentrixaCountBadge count={pending} color="danger" variant="soft" />
+          </span>
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-9 border-slate-200 text-xs"
+          onClick={() => setEarningsOpen(true)}
+        >
+          Earnings trend
+        </Button>
+      </div>
+
+      <MentrixaDrawer
+        isOpen={requestsOpen}
+        onOpenChange={setRequestsOpen}
+        placement="right"
+        tone="light"
+        brandKind="guide"
+        title={sessionRequestsCopy.title}
+        description={sessionRequestsCopy.description}
+        bodyClassName="p-0"
+      >
+        <div className="p-4">
+          <SessionRequestsList sessionRequests={sessionRequests} displayTimezone={data.tutorTimezone} />
+          <p className={`mt-4 text-xs leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
+            {sessionRequestsCopy.verdict} {sessionRequestsCopy.nextAction}
+          </p>
+        </div>
+      </MentrixaDrawer>
+
+      <MentrixaDrawer
+        isOpen={earningsOpen}
+        onOpenChange={setEarningsOpen}
+        placement="right"
+        tone="light"
+        brandKind="guide"
+        title={earningsCopy.title}
+        description={earningsCopy.description}
+      >
+        <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
+          <TutorEarningsChart data={earningsLast30Days} />
+        </div>
+        <p className={`mt-4 text-xs leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
+          {earningsCopy.verdict} {earningsCopy.nextAction}
+        </p>
+      </MentrixaDrawer>
+
+      <div className="hidden gap-6 lg:grid lg:grid-cols-12">
         <section className="lg:col-span-7 min-w-0">
           <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
             <div className="mb-4">

@@ -111,7 +111,7 @@ export async function sendWaitlistReceivedEmail(
     </p>
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">
       You're in Mentrixa onboarding as a <strong style="color:#eee;">${escapeHtml(roleLabel)}</strong>.
-      We will email you as soon as an admin approves your access.
+      Continue with account setup using this email. Check spam if you do not see our message.
     </p>
     <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0 0 20px;">
       Until approval, sign in and sign up stay locked for this email.

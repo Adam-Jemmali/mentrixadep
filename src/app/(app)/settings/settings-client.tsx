@@ -10,15 +10,35 @@ import {
 } from "@/features/settings/user-settings";
 import { isNextRedirectError } from "@/shared/core/is-next-redirect-error";
 import { createClient } from "@/shared/integrations/supabase/client";
-import { APP_TIMEZONES } from "@/shared/core/timezones";
+import { MentrixaTimezoneSelect } from "@/shared/ui/select-patterns";
+import { MentrixaNumberField } from "@/shared/ui/number-field-patterns";
+import { MentrixaSettingsSectionDivider } from "@/shared/ui/separator-patterns";
+import {
+  guideSessionNumberFieldMessage,
+  validateSessionBufferMinutes,
+  validateSessionDurationMinutes,
+} from "@/shared/ui/number-field-messages-pure";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Textarea } from "@/shared/ui/textarea";
 import Image from "next/image";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
-
-const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
-const BUFFER_OPTIONS = [0, 5, 10, 15, 30, 60] as const;
+import {
+  MentrixaSettingsSwitch,
+  MentrixaSettingsSwitchGroup,
+} from "@/shared/ui/switch-patterns";
+import {
+  MentrixaFieldset,
+  MentrixaFormField,
+} from "@/shared/ui/form-patterns";
+import {
+  settingsPasswordFieldMessage,
+  settingsPasswordFieldsetMessage,
+  settingsProfileFieldMessage,
+  settingsProfileFieldsetMessage,
+  validateNewPassword,
+} from "@/shared/ui/form-messages-pure";
+import {
+  notificationSwitchGroupAriaLabel,
+} from "@/shared/ui/switch-messages-pure";
 
 interface SettingsUser {
   id: string;
@@ -188,8 +208,13 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
         </p>
 
         {/* ── Profile ──────────────────────────────────────────────── */}
-        <Section title="Profile" description="Your public identity on Mentrixa.">
-          <div className="flex items-start gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+        <MentrixaFieldset
+          legend="Profile"
+          description="Your public identity on Mentrixa."
+          tone="dark"
+          message={settingsProfileFieldsetMessage()}
+        >
+          <div className="flex items-start gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
             <div className="relative h-20 w-20 overflow-hidden rounded-full border border-slate-700 bg-slate-950">
               {settings.avatar_url ? (
                 <Image
@@ -251,39 +276,42 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             </div>
           </div>
 
-          <Field label="Email">
-            <Input value={user.email} disabled className="border-slate-700 bg-slate-900 text-slate-400" />
-            <p className="mt-1 text-xs text-slate-500">
-              Email cannot be changed. Contact support if needed.
-            </p>
-          </Field>
+          <MentrixaFormField
+            label="Email"
+            value={user.email}
+            isReadOnly
+            tone="dark"
+            hint="Email cannot be changed. Contact support if needed."
+            message={settingsProfileFieldMessage("email")}
+            suppressFooter
+          />
 
-          <Field label="Display name">
-            <Input
-              className="border-slate-700 bg-slate-900 text-slate-100"
-              value={settings.display_name ?? ""}
-              onChange={(e) => update("display_name", e.target.value || null)}
-              placeholder={user.email.split("@")[0]}
-              maxLength={100}
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              Shown to {isTutor ? "students" : "tutors"} and on your profile.
-            </p>
-          </Field>
+          <MentrixaFormField
+            label="Display name"
+            value={settings.display_name ?? ""}
+            onChange={(v) => update("display_name", v || null)}
+            placeholder={user.email.split("@")[0]}
+            maxLength={100}
+            tone="dark"
+            message={settingsProfileFieldMessage("display_name")}
+          />
 
-          <Field label="Bio">
-            <Textarea
-              value={settings.bio ?? ""}
-              onChange={(e) => update("bio", e.target.value || null)}
-              placeholder={isTutor ? "What you teach, your style, and what learners should know." : "Tell tutors a little about your goals."}
-              maxLength={280}
-              rows={4}
-              className="resize-none border-slate-700 bg-slate-900 text-slate-100"
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              Keep it short so your profile reads cleanly.
-            </p>
-          </Field>
+          <MentrixaFormField
+            label="Bio"
+            multiline
+            rows={4}
+            value={settings.bio ?? ""}
+            onChange={(v) => update("bio", v || null)}
+            placeholder={
+              isTutor
+                ? "What you teach, your style, and what learners should know."
+                : "Tell tutors a little about your goals."
+            }
+            maxLength={280}
+            tone="dark"
+            hint="Keep it short so your profile reads cleanly."
+            message={settingsProfileFieldMessage("bio")}
+          />
 
           <Field label="Role">
             <div className="flex items-center gap-2">
@@ -302,17 +330,12 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           </Field>
 
           <Field label="Timezone">
-            <select
+            <MentrixaTimezoneSelect
               value={settings.timezone}
-              onChange={(e) => update("timezone", e.target.value)}
-              className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
-            >
-              {APP_TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
+              onChange={(tz) => update("timezone", tz)}
+              tone="dark"
+              brandKind={isTutor ? "guide" : "mentrixer"}
+            />
             <p className="mt-1 text-xs text-slate-500">
               Used for session times and email reminders.
             </p>
@@ -325,48 +348,68 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
               </p>
             </Field>
           )}
-        </Section>
+        </MentrixaFieldset>
 
         {/* ── Notifications ────────────────────────────────────────── */}
         <Section title="Email notifications" description="Choose which emails you receive.">
-          <Toggle
-            label="Session reminders"
-            description="Receive a reminder 1 hour before your session starts."
-            checked={settings.email_session_reminders}
-            onChange={(v) => update("email_session_reminders", v)}
-          />
-          <Toggle
-            label="Session booked"
-            description={
-              isTutor
-                ? "When a student books a session with you."
-                : "Confirmation when you book a session."
-            }
-            checked={settings.email_session_booked}
-            onChange={(v) => update("email_session_booked", v)}
-          />
-          <Toggle
-            label="Session cancelled"
-            description="When a session is cancelled by either party."
-            checked={settings.email_session_cancelled}
-            onChange={(v) => update("email_session_cancelled", v)}
-          />
-          <Toggle
-            label="Weekly summary"
-            description={
-              isTutor
-                ? "Weekly report with sessions taught, revenue, and ratings."
-                : "Weekly digest of your learning progress and XP."
-            }
-            checked={settings.email_weekly_summary}
-            onChange={(v) => update("email_weekly_summary", v)}
-          />
-          <Toggle
-            label="Product updates"
-            description="New features, tips, and announcements from Mentrixa."
-            checked={settings.email_marketing}
-            onChange={(v) => update("email_marketing", v)}
-          />
+          <MentrixaSettingsSwitchGroup
+            ariaLabel={notificationSwitchGroupAriaLabel()}
+            tone="dark"
+          >
+            <MentrixaSettingsSwitch
+              label="Session reminders"
+              description="Receive a reminder 1 hour before your session starts."
+              isSelected={settings.email_session_reminders}
+              onChange={(v) => update("email_session_reminders", v)}
+              settingId="email_session_reminders"
+              isTutor={isTutor}
+              tone="dark"
+            />
+            <MentrixaSettingsSwitch
+              label="Session booked"
+              description={
+                isTutor
+                  ? "When a student books a session with you."
+                  : "Confirmation when you book a session."
+              }
+              isSelected={settings.email_session_booked}
+              onChange={(v) => update("email_session_booked", v)}
+              settingId="email_session_booked"
+              isTutor={isTutor}
+              tone="dark"
+            />
+            <MentrixaSettingsSwitch
+              label="Session cancelled"
+              description="When a session is cancelled by either party."
+              isSelected={settings.email_session_cancelled}
+              onChange={(v) => update("email_session_cancelled", v)}
+              settingId="email_session_cancelled"
+              isTutor={isTutor}
+              tone="dark"
+            />
+            <MentrixaSettingsSwitch
+              label="Weekly summary"
+              description={
+                isTutor
+                  ? "Weekly report with sessions taught, revenue, and ratings."
+                  : "Weekly digest of your learning progress and XP."
+              }
+              isSelected={settings.email_weekly_summary}
+              onChange={(v) => update("email_weekly_summary", v)}
+              settingId="email_weekly_summary"
+              isTutor={isTutor}
+              tone="dark"
+            />
+            <MentrixaSettingsSwitch
+              label="Product updates"
+              description="New features, tips, and announcements from Mentrixa."
+              isSelected={settings.email_marketing}
+              onChange={(v) => update("email_marketing", v)}
+              settingId="email_marketing"
+              isTutor={isTutor}
+              tone="dark"
+            />
+          </MentrixaSettingsSwitchGroup>
         </Section>
 
         {/* ── Session preferences (tutors only) ────────────────────── */}
@@ -376,38 +419,33 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             description="Default values when creating new availability slots."
           >
             <Field label="Default session duration">
-              <select
+              <MentrixaNumberField
+                label="Default session duration"
+                tone="dark"
                 value={settings.session_default_duration}
-                onChange={(e) =>
-                  update("session_default_duration", Number(e.target.value))
-                }
-                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
-              >
-                {DURATION_OPTIONS.map((d) => (
-                  <option key={d} value={d}>
-                    {d} minutes
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => update("session_default_duration", v)}
+                minValue={15}
+                maxValue={120}
+                step={15}
+                suffix="minutes"
+                validate={validateSessionDurationMinutes}
+                message={guideSessionNumberFieldMessage("session_default_duration")}
+              />
             </Field>
 
             <Field label="Buffer between sessions">
-              <select
+              <MentrixaNumberField
+                label="Buffer between sessions"
+                tone="dark"
                 value={settings.session_buffer_minutes}
-                onChange={(e) =>
-                  update("session_buffer_minutes", Number(e.target.value))
-                }
-                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
-              >
-                {BUFFER_OPTIONS.map((b) => (
-                  <option key={b} value={b}>
-                    {b === 0 ? "No buffer" : `${b} minutes`}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-slate-500">
-                Minimum gap between consecutive sessions.
-              </p>
+                onChange={(v) => update("session_buffer_minutes", v)}
+                minValue={0}
+                maxValue={60}
+                step={5}
+                suffix="minutes"
+                validate={validateSessionBufferMinutes}
+                message={guideSessionNumberFieldMessage("session_buffer_minutes")}
+              />
             </Field>
           </Section>
         )}
@@ -417,11 +455,13 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             title="Skill duels"
             description="Other learners can send you a pending challenge. You accept to generate the same quiz for both."
           >
-            <Toggle
+            <MentrixaSettingsSwitch
               label="Accept duel challenges from other learners"
               description="When off, no one can challenge you until you turn this on."
-              checked={settings.duel_opt_in}
+              isSelected={settings.duel_opt_in}
               onChange={(v) => update("duel_opt_in", v)}
+              settingId="duel_opt_in"
+              tone="dark"
             />
           </Section>
         )}
@@ -432,11 +472,14 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
             title="Admin preferences"
             description="Settings specific to your admin role."
           >
-            <Toggle
+            <MentrixaSettingsSwitch
               label="Weekly summary"
               description="Receive a weekly email with platform stats: new users, sessions, revenue."
-              checked={settings.email_weekly_summary}
+              isSelected={settings.email_weekly_summary}
               onChange={(v) => update("email_weekly_summary", v)}
+              settingId="email_weekly_summary"
+              isTutor={isTutor}
+              tone="dark"
             />
           </Section>
         )}
@@ -454,62 +497,74 @@ export function SettingsClient({ user, settings: initial }: SettingsClientProps)
           )}
         </div>
 
-        <hr className="mb-8 border-slate-800" />
+        <MentrixaSettingsSectionDivider />
 
         {/* ── Change password ──────────────────────────────────────── */}
-        <Section title="Change password" description="Update your sign-in password.">
-          <Field label="Current password">
-            <Input
-              className="border-slate-700 bg-slate-900 text-slate-100"
-              type="password"
-              value={currentPw}
-              onChange={(e) => setCurrentPw(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-            />
-          </Field>
-          <Field label="New password">
-            <Input
-              className="border-slate-700 bg-slate-900 text-slate-100"
-              type="password"
-              value={newPw}
-              onChange={(e) => setNewPw(e.target.value)}
-              placeholder="Min. 8 characters"
-              autoComplete="new-password"
-            />
-          </Field>
-          <Field label="Confirm new password">
-            <Input
-              className="border-slate-700 bg-slate-900 text-slate-100"
-              type="password"
-              value={confirmPw}
-              onChange={(e) => setConfirmPw(e.target.value)}
-              placeholder="Re-enter new password"
-              autoComplete="new-password"
-            />
-          </Field>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handlePasswordChange}
-              disabled={pwSaving || !currentPw || !newPw || !confirmPw}
-              className="border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
-            >
-              {pwSaving ? "Updating..." : "Update password"}
-            </Button>
-            {pwMsg && (
-              <span
-                className={`text-sm font-medium ${
-                  pwMsg.type === "ok" ? "text-indigo-400" : "text-red-400"
-                }`}
+        <MentrixaFieldset
+          legend="Change password"
+          description="Update your sign-in password."
+          tone="dark"
+          message={settingsPasswordFieldsetMessage()}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                onClick={handlePasswordChange}
+                disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+                className="border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
               >
-                {pwMsg.text}
-              </span>
-            )}
-          </div>
-        </Section>
+                {pwSaving ? "Updating..." : "Update password"}
+              </Button>
+              {pwMsg ? (
+                <span
+                  className={`text-sm font-medium ${
+                    pwMsg.type === "ok" ? "text-indigo-400" : "text-red-400"
+                  }`}
+                >
+                  {pwMsg.text}
+                </span>
+              ) : null}
+            </>
+          }
+        >
+          <MentrixaFormField
+            label="Current password"
+            type="password"
+            value={currentPw}
+            onChange={setCurrentPw}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            tone="dark"
+            message={settingsPasswordFieldMessage("current_password")}
+          />
+          <MentrixaFormField
+            label="New password"
+            type="password"
+            value={newPw}
+            onChange={setNewPw}
+            placeholder="Min. 8 characters"
+            autoComplete="new-password"
+            validate={validateNewPassword}
+            tone="dark"
+            hint="Must be at least 8 characters with 1 uppercase and 1 number"
+            message={settingsPasswordFieldMessage("new_password")}
+          />
+          <MentrixaFormField
+            label="Confirm new password"
+            type="password"
+            value={confirmPw}
+            onChange={setConfirmPw}
+            placeholder="Re-enter new password"
+            autoComplete="new-password"
+            validate={(value) =>
+              value && newPw && value !== newPw ? "Passwords do not match" : null
+            }
+            tone="dark"
+            message={settingsPasswordFieldMessage("confirm_password")}
+          />
+        </MentrixaFieldset>
 
-        <hr className="mb-8 border-slate-800" />
+        <MentrixaSettingsSectionDivider />
 
         {/* ── Danger zone ──────────────────────────────────────────── */}
         <Section
@@ -603,42 +658,6 @@ function Field({
         {label}
       </label>
       {children}
-    </div>
-  );
-}
-
-function Toggle({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 py-2">
-      <div>
-        <p className="text-sm font-medium text-slate-100">{label}</p>
-        <p className="mt-1 text-sm text-slate-400">{description}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-slate-700 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
-          checked ? "bg-indigo-600" : "bg-slate-800"
-        }`}
-        role="switch"
-        aria-checked={checked}
-      >
-        <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-slate-100 transition duration-200 ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
     </div>
   );
 }

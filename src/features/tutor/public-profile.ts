@@ -125,6 +125,27 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     sessionsCounted: row.sessions_counted,
   }));
 
+  const { data: impactNodeRows } = await adminClient
+    .from("guide_impact_node_scores")
+    .select(
+      "skill_node_id, node_name, subject, impact_score, students_counted, after_accuracy, before_accuracy, impact_lift"
+    )
+    .eq("guide_id", tutorId)
+    .gte("students_counted", 3)
+    .order("impact_lift", { ascending: false })
+    .order("impact_score", { ascending: false });
+
+  const impactNodeScores = (impactNodeRows ?? []).map((row) => ({
+    skillNodeId: row.skill_node_id as string,
+    nodeName: row.node_name as string,
+    subject: row.subject as string,
+    impactScore: Number(row.impact_score),
+    studentsCounted: row.students_counted as number,
+    afterAccuracy: Number(row.after_accuracy),
+    beforeAccuracy: Number(row.before_accuracy),
+    impactLift: Number(row.impact_lift),
+  }));
+
   const avgImpactScore = averageImpactScore(impactScores);
 
   const { data: tutorCourseRows } = await adminClient
@@ -178,6 +199,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     tutorTimezone,
     bio,
     impactScores,
+    impactNodeScores,
     guideRank: (tutorUser as { guide_rank?: string }).guide_rank ?? "practitioner",
     avgImpactScore,
     responseRatePercent,

@@ -12,7 +12,6 @@ import {
   getRateLimitId,
 } from "@/shared/core/security";
 import {
-  sendVerificationStartedEmail,
   sendVerificationApprovedEmail,
   sendVerificationRejectedEmail,
   sendVerificationBlacklistedEmail,
@@ -470,18 +469,40 @@ export async function createVerificationForUser(
 ) {
   const adminClient = createAdminClient();
   const validId = validateUUID(userId);
-
+  const now = new Date().toISOString();
   const deadlineHours = role === "tutor" ? 24 : 48;
   const deadline = new Date(Date.now() + deadlineHours * 3_600_000).toISOString();
 
   const { data: existing } = await adminClient
     .from("user_verifications")
-    .select("id")
+    .select("id, status")
     .eq("user_id", validId)
-    .in("status", ["pending", "in_review", "info_requested"])
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  if (existing) return { verificationId: existing.id };
+  if (existing?.status === "approved") {
+    return { verificationId: existing.id };
+  }
+
+  if (existing && ["pending", "in_review", "info_requested"].includes(existing.status)) {
+    await adminClient
+      .from("user_verifications")
+      .update({
+        status: "approved",
+        reviewed_at: now,
+        deadline_at: deadline,
+        updated_at: now,
+      })
+      .eq("id", existing.id);
+
+    await adminClient
+      .from("users")
+      .update({ verification_id: existing.id, verification_status: "approved" })
+      .eq("id", validId);
+
+    return { verificationId: existing.id };
+  }
 
   const { data, error } = await adminClient
     .from("user_verifications")
@@ -489,7 +510,8 @@ export async function createVerificationForUser(
       user_id: validId,
       role,
       deadline_at: deadline,
-      status: "pending",
+      status: "approved",
+      reviewed_at: now,
     })
     .select("id")
     .single();
@@ -499,21 +521,19 @@ export async function createVerificationForUser(
   await adminClient.from("verification_audit_log").insert({
     verification_id: data.id,
     user_id: validId,
-    action: "submitted",
-    notes: "Verification created on registration",
+    action: "approved",
+    notes: "Auto-approved on registration",
   });
 
   await adminClient
     .from("users")
-    .update({ verification_id: data.id, verification_status: "pending" })
+    .update({ verification_id: data.id, verification_status: "approved" })
     .eq("id", validId);
 
-  // Fire-and-forget email
-  sendVerificationStartedEmail({
+  sendVerificationApprovedEmail({
     email,
     displayName,
     role,
-    deadlineHours,
   }).catch(() => {});
 
   return { verificationId: data.id };

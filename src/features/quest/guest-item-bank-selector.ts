@@ -2,14 +2,17 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { GuestTryQuestion } from "@/features/quest/guest-try-types";
 
-export const GUEST_AP_CALC_TRY_COUNT = 10;
-export const GUEST_AP_CALC_MIN_SKILL_NODES = 5;
+/** Guest diagnostic: five questions, three distinct skill nodes minimum. */
+export const GUEST_AP_CALC_DIAGNOSTIC_COUNT = 5;
+export const GUEST_AP_CALC_MIN_SKILL_NODES = 3;
+export const GUEST_AP_CALC_TRY_COUNT = GUEST_AP_CALC_DIAGNOSTIC_COUNT;
 
 type SkillNodeRow = {
   id: string;
   unit_number: number;
   unit_name: string;
   node_name: string;
+  exam_stakes: string | null;
 };
 
 type ItemBankRow = {
@@ -20,11 +23,21 @@ type ItemBankRow = {
   options: unknown;
   correct_answer: string;
   explanation: string;
+  distractor_tags: unknown;
 };
 
 function parseOptions(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is string => typeof entry === "string");
+}
+
+function parseDistractorTags(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, tag] of Object.entries(value)) {
+    if (typeof tag === "string") out[key] = tag;
+  }
+  return out;
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -100,10 +113,12 @@ function itemToGuestTryQuestion(
     explanation: item.explanation,
     options,
     correctIndex,
+    distractorTags: parseDistractorTags(item.distractor_tags),
     skillNodeId: item.skill_node_id,
     unitNumber: node.unit_number,
     unitName: node.unit_name,
     nodeName: node.node_name,
+    examStakes: node.exam_stakes?.trim() || undefined,
   };
 }
 
@@ -112,7 +127,7 @@ export async function selectGuestTryItemBankQuestions(): Promise<GuestTryQuestio
 
   const { data: nodes, error: nodesError } = await admin
     .from("skill_nodes")
-    .select("id, unit_number, unit_name, node_name")
+    .select("id, unit_number, unit_name, node_name, exam_stakes")
     .eq("subject", AP_CALC_AB_SUBJECT)
     .order("display_order");
 
@@ -125,7 +140,7 @@ export async function selectGuestTryItemBankQuestions(): Promise<GuestTryQuestio
   const { data: items, error: itemsError } = await admin
     .from("item_bank")
     .select(
-      "id, skill_node_id, question_type, prompt, options, correct_answer, explanation"
+      "id, skill_node_id, question_type, prompt, options, correct_answer, explanation, distractor_tags"
     )
     .eq("status", "approved")
     .eq("question_type", "mcq")
@@ -143,10 +158,7 @@ export async function selectGuestTryItemBankQuestions(): Promise<GuestTryQuestio
   const eligibleNodes = skillNodes.filter((node) => (itemsByNode.get(node.id)?.length ?? 0) > 0);
   if (eligibleNodes.length < GUEST_AP_CALC_MIN_SKILL_NODES) return [];
 
-  const seedNodeIds = pickWeightedUniqueNodeIds(
-    eligibleNodes,
-    GUEST_AP_CALC_MIN_SKILL_NODES
-  );
+  const seedNodeIds = pickWeightedUniqueNodeIds(eligibleNodes, GUEST_AP_CALC_MIN_SKILL_NODES);
   const selected: GuestTryQuestion[] = [];
   const usedItemIds = new Set<string>();
 
@@ -164,30 +176,29 @@ export async function selectGuestTryItemBankQuestions(): Promise<GuestTryQuestio
   const distinctNodes = new Set(selected.map((q) => q.skillNodeId).filter(Boolean));
   if (distinctNodes.size < GUEST_AP_CALC_MIN_SKILL_NODES) return [];
 
-  while (selected.length < GUEST_AP_CALC_TRY_COUNT) {
-    const nodeId = pickWeightedNodeId(eligibleNodes);
+  while (selected.length < GUEST_AP_CALC_DIAGNOSTIC_COUNT) {
+    const nodesWithItems = eligibleNodes.filter((node) =>
+      (itemsByNode.get(node.id) ?? []).some((item) => !usedItemIds.has(item.id))
+    );
+    if (nodesWithItems.length === 0) break;
+
+    const nodeId = pickWeightedNodeId(nodesWithItems);
     if (!nodeId) break;
+
     const item = pickRandomUnusedItem(itemsByNode.get(nodeId), usedItemIds);
-    if (!item) {
-      const anyUnused = shuffle(items as ItemBankRow[]).find((row) => !usedItemIds.has(row.id));
-      if (!anyUnused) break;
-      const node = nodeById.get(anyUnused.skill_node_id);
-      if (!node) break;
-      const question = itemToGuestTryQuestion(anyUnused, node);
-      if (!question) break;
-      usedItemIds.add(anyUnused.id);
-      selected.push(question);
-      continue;
-    }
+    if (!item) break;
+
     const node = nodeById.get(nodeId);
     if (!node) break;
+
     const question = itemToGuestTryQuestion(item, node);
     if (!question) break;
+
     usedItemIds.add(item.id);
     selected.push(question);
   }
 
-  if (selected.length < GUEST_AP_CALC_TRY_COUNT) return [];
+  if (selected.length < GUEST_AP_CALC_DIAGNOSTIC_COUNT) return [];
 
   return shuffle(selected);
 }

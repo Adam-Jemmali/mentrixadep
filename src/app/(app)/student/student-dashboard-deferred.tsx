@@ -8,31 +8,21 @@ import type { StudentCommandCenterClient } from "./student-command-center-client
 import type { TopRivalCard } from "@/features/divisions/top-rival-card";
 import type { PreSessionBriefCard } from "@/features/pre-session-brief/brief-card";
 import type { StudentStudyPackageNotifier } from "./student-study-package-notifier";
-
-const rankLadderFallback = (
-  <div
-    className="min-h-[11rem] rounded-2xl border border-violet-200 bg-white/90"
-    aria-hidden
-  />
-);
-
-const statStripFallback = (
-  <div
-    className="grid min-h-[5.5rem] grid-cols-2 gap-3 sm:grid-cols-4"
-    aria-hidden
-  >
-    {Array.from({ length: 4 }).map((_, i) => (
-      <div key={i} className="rounded-2xl border border-violet-200 bg-white/90" />
-    ))}
-  </div>
-);
+import {
+  BriefCardSkeleton,
+  CommandCenterSkeleton,
+  ProgressSnapshotSkeleton,
+  RankLadderSkeleton,
+  SessionsListSkeleton,
+  SkeletonStatGrid,
+} from "@/shared/ui/skeleton-patterns";
 
 export const DeferredAccountRankLadder = dynamic(
   () =>
     import("@/features/student-profile/ui/account-rank-ladder").then((m) => ({
       default: m.AccountRankLadder,
     })),
-  { loading: () => rankLadderFallback },
+  { loading: () => <RankLadderSkeleton /> },
 ) as typeof AccountRankLadder;
 
 export const DeferredStudentStatStripMotion = dynamic(
@@ -40,7 +30,7 @@ export const DeferredStudentStatStripMotion = dynamic(
     import("./student-stat-strip-motion").then((m) => ({
       default: m.StudentStatStripMotion,
     })),
-  { loading: () => statStripFallback },
+  { loading: () => <SkeletonStatGrid /> },
 ) as typeof StudentStatStripMotion;
 
 export const DeferredHeroMentrixerBounce = dynamic(
@@ -56,11 +46,7 @@ export const DeferredStudentCommandCenterClient = dynamic(
     import("./student-command-center-client").then((m) => ({
       default: m.StudentCommandCenterClient,
     })),
-  {
-    loading: () => (
-      <div className="min-h-[18rem] rounded-2xl border border-violet-200 bg-white/90" aria-hidden />
-    ),
-  },
+  { loading: () => <CommandCenterSkeleton /> },
 ) as typeof StudentCommandCenterClient;
 
 export const DeferredTopRivalCard = dynamic(
@@ -76,7 +62,7 @@ export const DeferredPreSessionBriefCard = dynamic(
     import("@/features/pre-session-brief/brief-card").then((m) => ({
       default: m.PreSessionBriefCard,
     })),
-  { loading: () => <div className="min-h-[5rem] rounded-2xl border border-violet-200 bg-white/90" aria-hidden /> },
+  { loading: () => <BriefCardSkeleton /> },
 ) as typeof PreSessionBriefCard;
 
 export const DeferredStudentStudyPackageNotifier = dynamic(
@@ -89,11 +75,7 @@ export const DeferredStudentStudyPackageNotifier = dynamic(
 
 const DeferredSessionsListInner = dynamic(
   () => import("./sessions-list").then((m) => ({ default: m.SessionsList })),
-  {
-    loading: () => (
-      <div className="min-h-[12rem] rounded-2xl border border-violet-200 bg-white" aria-hidden />
-    ),
-  },
+  { loading: () => <SessionsListSkeleton /> },
 );
 
 export function DeferredSessionsList(
@@ -108,8 +90,6 @@ export const DeferredProgressSnapshotCard = dynamic(
       default: m.ProgressSnapshotCard,
     })),
   {
-    loading: () => (
-      <div className="min-h-[8rem] rounded-2xl border border-violet-200 bg-white/90" aria-hidden />
-    ),
+    loading: () => <ProgressSnapshotSkeleton />,
   },
 );
