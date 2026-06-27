@@ -68,11 +68,13 @@ export async function getDivisionsCatalog(): Promise<
     .select("key, name, description")
     .eq("active", true)
     .order("name", { ascending: true });
-  return (data ?? []).map((d) => ({
-    key: d.key,
-    name: d.name,
-    description: d.description ?? null,
-  }));
+  return (data ?? [])
+    .filter((d) => d.name === "AP Calculus AB")
+    .map((d) => ({
+      key: d.key,
+      name: d.name,
+      description: d.description ?? null,
+    }));
 }
 
 /**

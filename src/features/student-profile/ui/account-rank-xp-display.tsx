@@ -127,39 +127,7 @@ export function AccountRankXpDisplay({
               >
                 {normalizeRankTitle(current.title)}
               </h2>
-              {nextRank ? (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-2 py-1",
-                    isArena
-                      ? "border-white/15 bg-white/5"
-                      : "border-violet-200 bg-white",
-                  )}
-                  title={`Next: ${normalizeRankTitle(nextRank.title)}`}
-                >
-                  <span
-                    className={cn(
-                      "text-[9px] font-black uppercase tracking-widest",
-                      isArena ? "text-zinc-400" : "text-zinc-500",
-                    )}
-                  >
-                    →
-                  </span>
-                  <RankBadge
-                    rank={nextRank}
-                    size="sm"
-                    active
-                    showGlow={nextRank.key === "mentrixer"}
-                    className="!h-10 !w-10"
-                  />
-                  <span
-                    className="pr-1 text-xs font-bold uppercase tracking-wide"
-                    style={{ color: isArena ? nextRank.labelOnDark : nextRank.labelOnLight }}
-                  >
-                    {normalizeRankTitle(nextRank.title)}
-                  </span>
-                </span>
-              ) : null}
+
             </div>
           </div>
         </div>
@@ -265,22 +233,7 @@ export function AccountRankXpDisplay({
                     XP
                   </span>
                 </div>
-                <span className={cn("text-[10px] font-bold uppercase", isArena ? "text-zinc-500" : "text-zinc-400")}>
-                  to
-                </span>
-                <RankBadge
-                  rank={nextRank}
-                  size="md"
-                  active
-                  showGlow={nextRank.key === "mentrixer"}
-                  className="!h-12 !w-12"
-                />
-                <span
-                  className="text-sm font-black uppercase italic tracking-tight"
-                  style={{ color: isArena ? nextRank.labelOnDark : nextRank.labelOnLight }}
-                >
-                  {normalizeRankTitle(nextRank.title)}
-                </span>
+
               </div>
             </div>
           </XpMetricCard>

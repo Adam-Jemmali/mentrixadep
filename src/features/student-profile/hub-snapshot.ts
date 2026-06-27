@@ -124,10 +124,10 @@ async function loadStudentHubSnapshot(userId: string): Promise<StudentHubSnapsho
   return {
     user_xp: raw["user_xp"] && typeof raw["user_xp"] === "object" ? (raw["user_xp"] as Record<string, unknown>) : null,
     user_settings: userSettings,
-    student_courses: studentCourses,
+    student_courses: studentCourses.filter(c => c.course === "AP Calculus AB"),
     has_pending_requests: Boolean(raw["has_pending_requests"]),
     tutor_expertise: tutorExpertise,
-    available_courses: availableCourses,
+    available_courses: availableCourses.filter(c => c === "AP Calculus AB"),
     in_progress_quest: inProgress,
   };
 }

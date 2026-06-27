@@ -84,18 +84,19 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     ]);
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
-  const [guideImpactByTutorId, questHistorySubjects, guideRankByTutorId] = await Promise.all([
+  const [guideImpactByTutorId, rawQuestHistorySubjects, guideRankByTutorId] = await Promise.all([
     getGuideImpactScoresMap(tutorIdsForImpact).catch(() => ({})),
     getStudentQuestCourseNames(user.id).catch(() => [] as string[]),
     getGuideRanksMap(tutorIdsForImpact).catch(() => ({})),
   ]);
+  const questHistorySubjects = rawQuestHistorySubjects.filter((s) => s === AP_CALC_AB_SUBJECT);
 
   const { upcomingSessions, pastSessions } = sessionsBundle;
 
   const userXp = (snapshot.user_xp as UserXp | null) ?? null;
   const studentCourses = snapshot.student_courses as unknown as StudentCourse[];
   const tutorExpertise = snapshot.tutor_expertise;
-  const courses = snapshot.available_courses;
+  const courses = snapshot.available_courses.filter((c) => c === AP_CALC_AB_SUBJECT);
 
   const settingsRow = snapshot.user_settings;
   const timeZone = settingsRow?.timezone?.trim() || "UTC";

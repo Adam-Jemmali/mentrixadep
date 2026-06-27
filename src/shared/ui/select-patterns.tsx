@@ -126,7 +126,7 @@ export function MentrixaSelect({
         </Select.Value>
         <Select.Indicator />
       </Select.Trigger>
-      <Select.Popover>
+      <Select.Popover className="max-h-64 overflow-y-auto">
         <ListBox>
           {noneOption ? (
             <ListBox.Item id={noneOption.id} textValue={noneOption.label}>
