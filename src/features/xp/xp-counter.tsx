@@ -12,7 +12,7 @@ export function XpCounter({ totalXp }: XpCounterProps) {
   const [displayXp, setDisplayXp] = useState(totalXp);
   const [pulse, setPulse] = useState(false);
   const [nextObjective, setNextObjective] = useState<string | null>(null);
-  const pulseTimeoutRef = useRef<NodeJS.Timeout>();
+  const pulseTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     setDisplayXp(totalXp);

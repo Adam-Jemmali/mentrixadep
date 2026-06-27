@@ -105,7 +105,7 @@ export default function ParticleAnimation({ className }: ParticleAnimationProps)
     });
 
     const particlesRef = useRef<Particle[]>([]);
-    const animationIdRef = useRef<number>();
+    const animationIdRef = useRef<number | undefined>(undefined);
 
     useEffect(() => {
         const mouse = mouseRef.current;

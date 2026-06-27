@@ -133,7 +133,7 @@ export function ParticleTextEffect({
   tone = "onLight",
 }: ParticleTextEffectProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
   const lastFrameTsRef = useRef(0)
   const isVisibleRef = useRef(true)
   const particlesRef = useRef<Particle[]>([])
