@@ -12,16 +12,16 @@ const forceWebpack = process.argv.includes("--webpack");
 let useWebpack;
 if (forceWebpack) useWebpack = true;
 else if (forceTurbo) useWebpack = false;
-else useWebpack = isWindows;
+else useWebpack = true; // Temporary: force Webpack everywhere due to Turbopack canary bugs
 
 applyLocalEnvOverrides(root);
 
 const nextBin = join(root, "node_modules", "next", "dist", "bin", "next");
 const args = ["build", ...(useWebpack ? ["--webpack"] : [])];
 
-if (useWebpack && isWindows && !forceWebpack) {
+if (useWebpack && !forceWebpack) {
   console.log(
-    "[build] Windows: using webpack (avoids Turbopack canary compile bugs). Use `npm run build -- --turbo` to force Turbopack.\n",
+    "[build] Using webpack by default (avoids Turbopack canary compile bugs). Use `npm run build -- --turbo` to force Turbopack.\n",
   );
 }
 
