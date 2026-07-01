@@ -12,14 +12,12 @@ import {
 interface Props {
   focusedDivisionKey: string | null;
   divisionsCatalog: { key: string; name: string; description: string | null }[];
-  currentDivisionKey: string | null;
   xpByKey?: Record<string, number>;
 }
 
 export function FocusDivisionPicker({
   focusedDivisionKey,
   divisionsCatalog,
-  currentDivisionKey,
   xpByKey,
 }: Props) {
   return (

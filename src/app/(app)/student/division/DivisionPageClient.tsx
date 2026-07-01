@@ -285,7 +285,6 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
               <FocusDivisionPicker
                 focusedDivisionKey={focusedDivisionKey}
                 divisionsCatalog={divisionsCatalog}
-                currentDivisionKey={divisionKey}
                 xpByKey={xpByDivisionKey}
               />
             )}
@@ -320,7 +319,6 @@ export function DivisionPageClient(props: DivisionPageClientProps) {
             <FocusDivisionPicker
               focusedDivisionKey={focusedDivisionKey}
               divisionsCatalog={divisionsCatalog}
-              currentDivisionKey={null}
               xpByKey={xpByDivisionKey}
             />
           )}
