@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { cn } from "@/shared/core/utils";
 import { mentrixProfileType } from "@/features/student-profile/mentrix-profile-typography";
 
 /** Routes that share profile-parity typography (not the profile editor itself). */
@@ -16,5 +17,9 @@ export function StudentProductTypography({
     return children;
   }
 
-  return <div className={mentrixProfileType.scope}>{children}</div>;
+  return (
+    <div className={cn(mentrixProfileType.scope, "min-h-[calc(100dvh-4.75rem)] bg-mentrixa-app")}>
+      {children}
+    </div>
+  );
 }

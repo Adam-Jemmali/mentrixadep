@@ -26,12 +26,12 @@ export function QuestPageClient({
 
   if (onboardingMode) {
     return (
-      <div className={`${mentrixStudent.pageBg} min-h-screen`}>
+      <div className="min-h-[calc(100dvh-4.75rem)]">
         <div className="mx-auto w-full max-w-5xl space-y-3 px-4 pt-4 sm:px-6">
-          <OnboardingStepsProgressBar currentStep={1} totalSteps={5} tone="light" />
-          <VerifiedFirstAttemptAlert kind="onboarding" subjectLabel={AP_CALC_AB_SUBJECT} />
+          <OnboardingStepsProgressBar currentStep={1} totalSteps={5} tone="dark" />
+          <VerifiedFirstAttemptAlert kind="onboarding" subjectLabel={AP_CALC_AB_SUBJECT} tone="dark" />
           <div className="mt-3">
-            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} />
+            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} tone="dark" />
           </div>
         </div>
         <QuestPracticeWorkspace subjectOptions={subjectOptions} onboardingMode />
@@ -42,7 +42,7 @@ export function QuestPageClient({
   return (
     <div
       className={
-        guestMode ? "w-full" : `${mentrixStudent.pageBg} min-h-0 md:min-h-[calc(100dvh-3.5rem)]`
+        guestMode ? "w-full" : "min-h-[calc(100dvh-4.75rem)]"
       }
     >
       {!guestMode ? (

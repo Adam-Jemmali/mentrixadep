@@ -7,13 +7,13 @@ import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
  */
 export const mentrixStudent = {
   pageBgHub:
-    "relative min-h-screen isolate overflow-hidden antialiased text-white",
+    "bg-mentrixa-app relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-white",
 
   pageBg:
-    "mx-shell-workbench relative min-h-screen isolate overflow-hidden antialiased text-white before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']",
+    "mx-shell-workbench relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-white before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']",
 
   pageBgArena:
-    "mx-shell-arena relative min-h-screen isolate overflow-hidden antialiased text-white before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.05] before:content-['']",
+    "mx-shell-arena relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-white before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.05] before:content-['']",
 
   main: "max-w-7xl mx-auto px-4 sm:px-6 py-8",
   mainWide: "max-w-6xl mx-auto px-4 sm:px-6 py-8",

@@ -35,6 +35,7 @@ type NavItemsProps = {
   onItemClick?: (item: { name: string; link: string }) => void;
   onItemPointerDown?: (item: { name: string; link: string }) => void;
   onItemHover?: (item: { name: string; link: string }) => void;
+  isActive?: (link: string) => boolean;
 };
 
 type MobileNavProps = {
@@ -118,7 +119,14 @@ export const NavBody = ({ children, className, visible, solid = false }: NavBody
   );
 };
 
-export const NavItems = ({ items, className, onItemClick, onItemPointerDown, onItemHover }: NavItemsProps) => {
+export const NavItems = ({
+  items,
+  className,
+  onItemClick,
+  onItemPointerDown,
+  onItemHover,
+  isActive,
+}: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
   const router = useRouter();
   const tier = useUiPerfTier();
@@ -126,7 +134,9 @@ export const NavItems = ({ items, className, onItemClick, onItemPointerDown, onI
   const navItemClass =
     "hidden flex-1 flex-row items-center justify-center gap-1 text-sm font-medium text-white/70 transition-colors duration-150 ease-out hover:text-white lg:flex";
 
-  const links = items.map((item, idx) => (
+  const links = items.map((item, idx) => {
+    const active = isActive?.(item.link) ?? false;
+    return (
     <Link
       key={item.link}
       href={item.link}
@@ -138,23 +148,31 @@ export const NavItems = ({ items, className, onItemClick, onItemPointerDown, onI
       }}
       onPointerDown={() => onItemPointerDown?.(item)}
       onClick={() => onItemClick?.(item)}
-      className="relative px-4 py-2 text-[13px] text-current transition-opacity duration-150 ease-out hover:opacity-100"
+      className={cn(
+        "relative px-4 py-2 text-[13px] text-current transition-opacity duration-150 ease-out hover:opacity-100",
+        active && "font-black text-white",
+      )}
+      aria-current={active ? "page" : undefined}
     >
-      {hovered === idx &&
+      {active ? (
+        <span className="absolute inset-0 rounded-full border border-violet-400/55 bg-gradient-to-r from-[#7C3AED]/35 to-[#6366F1]/35 shadow-[0_0_20px_-6px_rgba(124,58,237,0.55)]" />
+      ) : null}
+      {hovered === idx && !active &&
         (tier === "lite" ? (
-          <span className="absolute inset-0 h-full w-full rounded-full bg-white/10" />
+          <span className="absolute inset-0 h-full w-full rounded-full bg-violet-500/15" />
         ) : (
           <motion.div
             layoutId="hovered"
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
-            className="absolute inset-0 h-full w-full rounded-full bg-white/10"
+            className="absolute inset-0 h-full w-full rounded-full bg-violet-500/15"
           />
         ))}
       <span className="relative z-20">
         <BubbleText text={item.name} className="text-current" />
       </span>
     </Link>
-  ));
+  );
+  });
 
   return tier === "lite" ? (
     <div className={cn(navItemClass, className)} onMouseLeave={() => setHovered(null)}>

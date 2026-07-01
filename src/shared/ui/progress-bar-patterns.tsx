@@ -72,40 +72,47 @@ export function XpTierProgressBar({
   const isDark = tone === "dark";
 
   return (
-    <ProgressBar
-      aria-label={label}
-      value={clamped}
-      minValue={0}
-      maxValue={100}
-      size="sm"
-      color="accent"
-      data-progress-tone={tone}
-      className={cn("gap-1.5", className)}
-    >
-      <span
-        style={{ gridArea: "label" }}
-        className={cn(
-          "text-[10px] font-semibold uppercase tracking-wide",
-          isDark ? "text-zinc-400" : "text-zinc-500",
-        )}
+    <div className={cn("w-full", className)}>
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <span
+          className={cn(
+            "min-w-0 text-[10px] font-semibold uppercase tracking-wide",
+            isDark ? "text-zinc-400" : "text-zinc-500",
+          )}
+        >
+          <MentrixaBrandLabel kind="mentrixer" label={label} />
+        </span>
+        <span
+          className={cn(
+            "shrink-0 text-xs font-bold tabular-nums leading-none",
+            isDark ? "text-violet-100" : "text-zinc-700",
+          )}
+          aria-hidden
+        >
+          {clamped}%
+        </span>
+      </div>
+      <ProgressBar
+        aria-label={`${label}: ${clamped}%`}
+        value={clamped}
+        minValue={0}
+        maxValue={100}
+        size="sm"
+        color="accent"
+        data-progress-tone={tone}
+        className="progress-bar--track-only gap-0"
       >
-        <MentrixaBrandLabel kind="mentrixer" label={label} />
-      </span>
-      <ProgressBar.Output
-        className={cn(
-          "text-[10px] font-semibold tabular-nums",
-          isDark ? "text-zinc-300" : "text-zinc-700",
-        )}
-      />
-      <ProgressBar.Track
-        className={cn(
-          "h-2 rounded-full",
-          isDark ? "bg-white/10" : "bg-violet-100",
-        )}
-      >
-        <ProgressBar.Fill className="rounded-full" style={fillStyle} />
-      </ProgressBar.Track>
-    </ProgressBar>
+        <ProgressBar.Output className="sr-only" />
+        <ProgressBar.Track
+          className={cn(
+            "h-2 rounded-full",
+            isDark ? "bg-white/10" : "bg-violet-100",
+          )}
+        >
+          <ProgressBar.Fill className="rounded-full" style={fillStyle} />
+        </ProgressBar.Track>
+      </ProgressBar>
+    </div>
   );
 }
 

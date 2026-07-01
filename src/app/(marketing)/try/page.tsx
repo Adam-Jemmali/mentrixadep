@@ -11,7 +11,7 @@ export default function TryPage() {
     <TryQuestShell>
       <div className={`${mentrixStudent.mainWide} py-8`}>
         <div className="mb-6">
-          <BackButton href="/" />
+          <BackButton href="/" variant="light" />
         </div>
         <GuestQuestClient defaultSubjects={AP_CALC_SUBJECT_OPTIONS} diagnosticMode />
       </div>

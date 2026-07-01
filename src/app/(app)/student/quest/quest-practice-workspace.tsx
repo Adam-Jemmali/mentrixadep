@@ -19,7 +19,7 @@ import {
 import { emitXpAward } from "@/features/xp/xp-events";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixProfileType, mentrixBrandUi } from "@/features/student-profile/mentrix-student-ui";
 import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
 import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
@@ -407,13 +407,13 @@ export function QuestPracticeWorkspace({
           </div>
         ) : null}
         <div className={`${mentrixStudent.card} p-6 sm:p-8`}>
-        <p className={mentrixStudent.sectionEyebrowOnLight}>
+        <p className={mentrixStudent.sectionEyebrow}>
           {onboardingMode ? "First quest" : "Practice packs"}
         </p>
-        <h1 className={`mt-2 text-2xl font-bold ${mentrixStudent.textOnLight}`}>
+        <h1 className={`mt-2 ${mentrixProfileType.cardTitleOnDark}`}>
           {onboardingMode ? "Your first verified skills" : "Verified practice pack"}
         </h1>
-        <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
+        <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
           {onboardingMode
             ? "Five first attempts from the AP Calculus AB item bank. Each answer is permanent."
             : null}
@@ -421,7 +421,7 @@ export function QuestPracticeWorkspace({
 
         {!onboardingMode ? (
           <div className="mt-4">
-            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} />
+            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} tone="dark" />
           </div>
         ) : null}
 
@@ -433,26 +433,24 @@ export function QuestPracticeWorkspace({
 
         <div className="mt-8 space-y-6">
           <div>
-            <label className={`text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>Subject</label>
-            <p className={`mt-2 rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm font-semibold ${mentrixStudent.textOnLight}`}>
+            <label className={`text-xs font-medium ${mentrixStudent.textMutedOnDark}`}>Subject</label>
+            <p className={`mt-2 rounded-xl border border-violet-500/35 bg-indigo-950/55 px-4 py-3 text-sm font-semibold text-violet-50`}>
               {AP_CALC_AB_SUBJECT}
             </p>
           </div>
 
           {!onboardingMode && (
             <div>
-              <label className={`text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>Difficulty</label>
+              <label className={`text-xs font-medium ${mentrixStudent.textMutedOnDark}`}>Difficulty</label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {DIFFICULTIES.map((d) => (
                   <button
                     key={d.value}
                     type="button"
                     onClick={() => setDifficulty(d.value)}
-                    className={`rounded-lg border px-3 py-1.5 text-sm ${
-                      difficulty === d.value
-                        ? "border-indigo-500 bg-indigo-50 text-indigo-950"
-                        : "border-violet-500/35 bg-indigo-950/55 text-violet-100"
-                    }`}
+                    className={
+                      difficulty === d.value ? mentrixBrandUi.chipActive : mentrixBrandUi.chipIdle
+                    }
                   >
                     {d.label}
                   </button>
@@ -465,7 +463,7 @@ export function QuestPracticeWorkspace({
             isPracticeLockedAttemptError(err) ? (
               <PracticeLockedAttemptAlert />
             ) : (
-              <p className="text-sm font-medium text-red-700">{err}</p>
+              <p className="text-sm font-medium text-red-300">{err}</p>
             )
           ) : null}
 

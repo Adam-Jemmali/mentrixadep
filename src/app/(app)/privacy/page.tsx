@@ -37,7 +37,7 @@ export default function PrivacyPage() {
   return (
     <div className="max-w-4xl mx-auto py-20 px-6 space-y-12 relative">
       <div className="fixed top-20 left-6 z-50">
-        <BackButton />
+        <BackButton variant="light" />
       </div>
 
       <header className="space-y-8 flex flex-col items-center text-center">

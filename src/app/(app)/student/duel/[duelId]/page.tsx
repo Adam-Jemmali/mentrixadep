@@ -4,6 +4,7 @@ import { getDuelForUser } from "@/features/duels/duel-reads";
 import { DuelPlayClient } from "./duel-play-client";
 import { DuelInviteeActions } from "./duel-invitee-actions";
 import { BackButton } from "@/shared/ui/back-button";
+import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 
 interface Props {
   params: Promise<{ duelId: string }>;
@@ -29,18 +30,18 @@ export default async function DuelDetailPage({ params }: Props) {
     user.id === duel.opponent_student_id;
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <main className="mx-panel-brand mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className={mentrixStudent.pageBgArena}>
+      <main className={`${mentrixStudent.mainSlim} mx-panel-brand`}>
         <div className="mb-6 flex items-center justify-between gap-4">
           <BackButton />
-          <span className="font-mono text-xs uppercase tracking-wide text-zinc-500">
+          <span className="font-mono text-xs uppercase tracking-wide text-violet-300/80">
             {duel.status}
           </span>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+        <h1 className={`${mentrixProfileType.pageTitleOnDark} sm:text-2xl`}>
           Skill duel
         </h1>
-        <p className="mt-1 font-mono text-sm text-zinc-600">{duel.division_key}</p>
+        <p className="mt-1 font-mono text-sm text-violet-200/80">{duel.division_key}</p>
 
         <div className="mt-8 space-y-6">
           {showInviteeActions && <DuelInviteeActions duelId={duel.id} />}

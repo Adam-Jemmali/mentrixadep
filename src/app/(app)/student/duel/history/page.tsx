@@ -5,7 +5,7 @@ import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getHeadToHeadSummary } from "@/features/duels/duel-reward";
 import { Button } from "@/shared/ui/button";
-import { DuelRowActions } from "@/features/student-profile/ui/duel-row-actions";
+import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 
 export const metadata = { title: "Duel history · Mentrixa" };
 
@@ -66,53 +66,53 @@ export default async function DuelHistoryPage() {
   headToHead.sort((a, b) => b.played - a.played);
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <main className="mx-surface-light mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="flex items-center justify-between gap-4 mb-8">
-          <Button variant="ghost" size="sm" asChild>
+    <div className={mentrixStudent.pageBgArena}>
+      <main className={`${mentrixStudent.mainSlim} space-y-8`}>
+        <div className="flex items-center justify-between gap-4">
+          <Button variant="ghost" size="sm" className="text-violet-200 hover:text-white hover:bg-violet-500/10" asChild>
             <Link href="/student/duel">← Skill duels</Link>
           </Button>
         </div>
 
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Duel history
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Wins, ties, and XP from duels. Streak bonuses and specialist badges
-          appear in your activity feed when you earn them.
-        </p>
+        <div>
+          <h1 className={mentrixProfileType.pageTitleOnDark}>Duel history</h1>
+          <p className={`mt-1 ${mentrixProfileType.pageSubtitleOnDark}`}>
+            Wins, ties, and XP from duels. Streak bonuses and specialist badges
+            appear in your activity feed when you earn them.
+          </p>
+        </div>
 
         {stats ? (
-          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className={`${mentrixStudent.cardMuted} px-3 py-3`}>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-violet-300/70">
                 Finished
               </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-white">
                 {stats.totalCompleted}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            <div className={`${mentrixStudent.cardMuted} px-3 py-3`}>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-violet-300/70">
                 Wins
               </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-white">
                 {stats.wins}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            <div className={`${mentrixStudent.cardMuted} px-3 py-3`}>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-violet-300/70">
                 Losses
               </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-white">
                 {stats.losses}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-3 py-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            <div className={`${mentrixStudent.cardMuted} px-3 py-3`}>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-violet-300/70">
                 Duels XP
               </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-white">
                 {stats.xpFromDuels}
               </p>
             </div>
@@ -121,17 +121,17 @@ export default async function DuelHistoryPage() {
 
         {stats && stats.byDivision.length > 0 ? (
           <div className="mt-10">
-            <h2 className="text-sm font-medium text-slate-900">By subject</h2>
-            <ul className="mt-3 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+            <h2 className={mentrixProfileType.cardTitleOnDark}>By subject</h2>
+            <ul className={`mt-3 divide-y divide-indigo-500/20 ${mentrixStudent.cardMuted} overflow-hidden`}>
               {stats.byDivision.map((d) => (
                 <li
                   key={d.division_key}
                   className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
                 >
-                  <span className="text-slate-800">{divName(d.division_key)}</span>
-                  <span className="text-slate-500 tabular-nums">
+                  <span className="text-violet-50">{divName(d.division_key)}</span>
+                  <span className="text-violet-200/80 tabular-nums">
                     {d.wins}W / {d.played - d.wins}L
-                    <span className="text-slate-300"> · </span>
+                    <span className="text-violet-400/50"> · </span>
                     {d.played} played
                   </span>
                 </li>
@@ -142,20 +142,20 @@ export default async function DuelHistoryPage() {
 
         {headToHead.length > 0 ? (
           <div className="mt-10">
-            <h2 className="text-sm font-medium text-slate-900">
+            <h2 className={mentrixProfileType.cardTitleOnDark}>
               Head-to-head (learners you’ve faced before)
             </h2>
-            <ul className="mt-3 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+            <ul className={`mt-3 divide-y divide-indigo-500/20 ${mentrixStudent.cardMuted} overflow-hidden`}>
               {headToHead.map((h) => (
                 <li
                   key={h.id}
                   className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
                 >
-                  <span className="font-medium text-slate-900">{h.label}</span>
-                  <span className="text-slate-600 tabular-nums">
+                  <span className="font-medium text-violet-50">{h.label}</span>
+                  <span className="text-violet-200/85 tabular-nums">
                     {h.myWins}–{h.theirWins}
                     {h.ties > 0 ? ` (${h.ties}D)` : ""}
-                    <span className="text-slate-400"> · {h.played} total</span>
+                    <span className="text-violet-300/60"> · {h.played} total</span>
                   </span>
                 </li>
               ))}
@@ -164,13 +164,13 @@ export default async function DuelHistoryPage() {
         ) : null}
 
         <div className="mt-10">
-          <h2 className="text-sm font-medium text-slate-900">Recent duels</h2>
+          <h2 className={mentrixProfileType.cardTitleOnDark}>Recent duels</h2>
           {rows.filter((r) => r.status === "completed").length === 0 ? (
-            <p className="mt-3 text-sm text-slate-500">
+            <p className="mt-3 text-sm text-violet-200/80">
               No completed duels yet. Win or lose, you’ll see results here.
             </p>
           ) : (
-            <ul className="mt-3 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+            <ul className={`mt-3 divide-y divide-indigo-500/20 ${mentrixStudent.cardMuted} overflow-hidden`}>
               {rows
                 .filter((r) => r.status === "completed")
                 .slice(0, 20)

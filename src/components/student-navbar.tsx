@@ -211,6 +211,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
             onItemClick={handleNavItemClick}
             onItemPointerDown={handleArenaNavPointerDown}
             onItemHover={handleArenaNavHover}
+            isActive={isActive}
           />
 
           {/* Rank, XP & streak */}
@@ -331,8 +332,8 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive(item.link)
-                      ? "bg-white/20 text-white"
-                      : "text-white/95 hover:bg-white/8 hover:text-white"
+                      ? "border border-violet-400/50 bg-gradient-to-r from-[#7C3AED]/35 to-[#6366F1]/35 text-white"
+                      : "text-white/95 hover:bg-violet-500/10 hover:text-white"
                   )}
                 >
                   <BubbleText text={item.name} className="text-current" />

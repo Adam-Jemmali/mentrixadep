@@ -498,6 +498,7 @@ export function RootLayoutClient({
     isApprovedStudent && pathname === "/student/quest" && searchParams.get("onboarding") === "true";
   const isWorkbenchRoute =
     pathname.includes("/quest") ||
+    pathname.includes("/mastery") ||
     pathname.includes("/sessions-ai");
   const isArenaRoute =
     pathname.includes("/duel") ||

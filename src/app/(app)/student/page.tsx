@@ -17,7 +17,7 @@ import type { StudentCourse, UserXp } from "@/shared/types/database";
 import {
   formatVerifiedRankNextAction,
   formatVerifiedRankVerdict,
-  getCalibratedRank,
+  loadVerifiedFirstAttemptRankStats,
 } from "@/features/xp/calibrated-rank";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
@@ -72,7 +72,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, calibratedRank, masteryGrid, activeGoal] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -81,7 +81,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       getTopRival(),
       getQuestAccuracyTrend(user.id),
       getActiveProgressSnapshot().catch(() => null),
-      getCalibratedRank(user.id, AP_CALC_AB_SUBJECT),
+      loadVerifiedFirstAttemptRankStats(user.id),
       loadMasteryGrid(user.id).catch(() => null),
       loadActiveStudentGoalForViewer(AP_CALC_AB_SUBJECT),
     ]);
@@ -111,30 +111,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const lastActivityAt = (userXp?.last_activity_at as string | null | undefined) ?? null;
   const streakAtRisk = isStreakAtRisk18h(streak, lastActivityAt);
 
-  const accountRank =
-    calibratedRank.source === "verified_first_attempt"
-      ? calibratedRank.visual
-      : getAccountRankFromTotalXp(totalXp);
-  const rankVerdict = formatVerifiedRankVerdict(
-    calibratedRank.verifiedStats ?? {
-      verifiedCount: 0,
-      accuracyPercent: 0,
-      percentile: null,
-    }
-  );
-  const rankNextAction = formatVerifiedRankNextAction(
-    calibratedRank.verifiedStats ?? {
-      verifiedCount: 0,
-      accuracyPercent: 0,
-      percentile: null,
-    }
-  );
-  const verifiedRankStats =
-    calibratedRank.verifiedStats ?? {
-      verifiedCount: 0,
-      accuracyPercent: 0,
-      percentile: null,
-    };
+  const accountRank = getAccountRankFromTotalXp(totalXp);
+  const rankVerdict = formatVerifiedRankVerdict(verifiedRankStats);
+  const rankNextAction = formatVerifiedRankNextAction(verifiedRankStats);
 
   const sessionsCompleted = pastSessions.filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -198,9 +177,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     {normalizeRankTitle(accountRank.title)}
                   </p>
                   <p className="text-xs text-white/85">
-                    {calibratedRank.source === "verified_first_attempt"
-                      ? "Verified rank · first attempts only"
-                      : `${totalXp.toLocaleString()} XP streak progress`}
+                    Account rank · {totalXp.toLocaleString()} XP
                     {streak > 0 ? (
                       <>
                         <span className="text-white/50"> · </span>

@@ -74,7 +74,7 @@ export function formatVerifiedRankVerdict(stats: VerifiedFirstAttemptRankStats):
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
     stats.percentile != null
   ) {
-    return `${stats.accuracyPercent}% first-attempt accuracy across ${stats.verifiedCount} verified AP Calculus AB skills — ${formatOrdinalPercentile(stats.percentile)} of everyone tested.`;
+    return `${stats.accuracyPercent}% first-attempt accuracy across ${stats.verifiedCount} verified AP Calculus AB skills  ${formatOrdinalPercentile(stats.percentile)} of everyone tested.`;
   }
   if (stats.verifiedCount > 0) {
     return `${stats.verifiedCount} skill${stats.verifiedCount === 1 ? "" : "s"} verified at ${stats.accuracyPercent}% first-attempt accuracy. Percentile unlocks after ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} skills.`;

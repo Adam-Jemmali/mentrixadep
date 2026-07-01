@@ -9,7 +9,7 @@ import {
   playMentrixaLoadingOnce,
   unlockMentrixaAudioFromUserGesture,
 } from "@/shared/integrations/mentrixa-sounds";
-import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
 
@@ -54,8 +54,8 @@ export function StudentNavRankStrip() {
     });
   }, []);
 
-  const rankLevel = ctx.rankLevel ?? 1;
-  const rank = getAccountRankByLevel(rankLevel);
+  const totalXp = ctx.totalXp ?? 0;
+  const accountRank = getAccountRankFromTotalXp(totalXp);
   const streak = ctx.streakDays ?? 0;
   const modeLabel = pathname.includes("/duel") || pathname.includes("/division")
     ? "Arena"
@@ -63,10 +63,7 @@ export function StudentNavRankStrip() {
       ? "Workbench"
       : null;
 
-  const title =
-    ctx.rankSource === "verified_first_attempt" && ctx.rankTitle
-      ? normalizeRankTitle(ctx.rankTitle)
-      : normalizeRankTitle(rank.title);
+  const title = normalizeRankTitle(accountRank.title);
 
   return (
     <Link
@@ -80,11 +77,11 @@ export function StudentNavRankStrip() {
       )}
       title={ctx.rankVerdict ?? "Your verified rank"}
     >
-      <RankBadge rank={{ ...rank, title }} size="sm" active showGlow={rank.key === "mentrixer"} />
+      <RankBadge rank={accountRank} size="sm" active showGlow={accountRank.key === "mentrixer"} />
       <div className="flex min-w-0 flex-col leading-tight">
         <span
           className="truncate text-[10px] font-bold uppercase tracking-wide"
-          style={{ color: rank.labelOnDark }}
+          style={{ color: accountRank.labelOnDark }}
         >
           {title}
         </span>
