@@ -20,6 +20,7 @@ import type { SessionAiPackage } from "@/shared/types/database";
 import { useLevelInfo } from "@/features/xp/mentrixa-ranks";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { readUiPerfTier } from "@/shared/core/ui-performance";
+import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
