@@ -7,6 +7,7 @@ import {
   MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE,
   type VerifiedFirstAttemptRankStats,
 } from "@/features/xp/calibrated-rank";
+import { RANK_PROOFS_LABEL } from "@/features/xp/rank-proofs-labels";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 
 export type MentrixaPopoverMessage = {
@@ -30,7 +31,7 @@ export function rankBreakdownPopoverRows(
 ): { label: string; value: string }[] {
   const rows = [
     {
-      label: "Verified skills",
+      label: RANK_PROOFS_LABEL,
       value: String(stats.verifiedCount),
     },
     {
@@ -47,7 +48,7 @@ export function rankBreakdownPopoverRows(
   } else {
     rows.push({
       label: "Percentile status",
-      value: `Unlocks at ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} verified skills`,
+      value: `Unlocks at ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} ${RANK_PROOFS_LABEL.toLowerCase()}`,
     });
   }
 

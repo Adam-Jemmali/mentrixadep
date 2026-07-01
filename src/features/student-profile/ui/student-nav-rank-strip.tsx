@@ -11,6 +11,7 @@ import {
 } from "@/shared/integrations/mentrixa-sounds";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
 
 type PwaRankContext = {
   totalXp?: number;
@@ -88,7 +89,7 @@ export function StudentNavRankStrip() {
           {title}
         </span>
         <span className="line-clamp-2 text-[9px] leading-snug text-white/75">
-          {ctx.rankVerdict ?? `${ctx.verifiedCount ?? 0} verified skills`}
+          {ctx.rankVerdict ?? rankProofsCountLabel(ctx.verifiedCount ?? 0)}
         </span>
         {streak > 0 ? (
           <span className="text-[9px] font-mono tabular-nums text-amber-200/90">{streak}d streak</span>

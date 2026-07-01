@@ -38,7 +38,7 @@ export function landingFaqCategories(): MentrixaAccordionFaqCategory[] {
           id: "percentile",
           title: "When do I get a percentile?",
           body: "Your verified percentile unlocks after five distinct skill nodes have a recorded first attempt. Until then you see progress, not a public comparison number.",
-          verdict: "Five verified skills is the bar for a real percentile.",
+          verdict: "Five rank proofs is the bar for a real percentile.",
           nextAction: "Finish onboarding quests or run practice until five nodes lock.",
         },
         {

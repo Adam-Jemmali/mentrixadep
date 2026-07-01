@@ -35,6 +35,7 @@ import { RankCardShareButton } from "@/features/rank-card/rank-card-share-button
 import { getSiteUrl } from "@/shared/core/site";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { VerifiedNodesProgressCircle } from "@/shared/ui/progress-circle-patterns";
+import { RANK_PROOFS_DETAIL, RANK_PROOFS_LABEL } from "@/features/xp/rank-proofs-labels";
 import { ClearAvatarConfirmDialog } from "@/shared/ui/alert-dialog-patterns";
 import { MentrixaTabsGroup } from "@/shared/ui/tabs-patterns";
 import { profileTabMessage, profileTabsAriaLabel } from "@/shared/ui/tabs-messages-pure";
@@ -635,7 +636,7 @@ export function StudentProfileClient({
                     <div className="hidden flex-col items-center gap-1 sm:flex">
                       <VerifiedNodesProgressCircle verifiedCount={data.verifiedSkillCount} size="lg" />
                       <p className="text-[9px] font-black uppercase tracking-[0.14em] text-indigo-400">
-                        Verified nodes
+                        {RANK_PROOFS_LABEL}
                       </p>
                     </div>
                     <RankBadge
@@ -674,9 +675,12 @@ export function StudentProfileClient({
                 <div className="mt-10 max-w-sm space-y-4">
                   <div className="flex items-center gap-3 sm:hidden">
                     <VerifiedNodesProgressCircle verifiedCount={data.verifiedSkillCount} size="md" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-500">
-                      Verified nodes on first attempt
-                    </p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-500">
+                        {RANK_PROOFS_LABEL}
+                      </p>
+                      <p className="text-[10px] leading-snug text-slate-500">{RANK_PROOFS_DETAIL}</p>
+                    </div>
                   </div>
                   <XpBar data={data} />
                 </div>

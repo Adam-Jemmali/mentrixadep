@@ -10,6 +10,7 @@ import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 import { RankBreakdownPopover } from "@/shared/ui/popover-patterns";
 import { passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
 
 const VERIFIED_GOLD = "#D4A017";
 
@@ -94,7 +95,7 @@ export function RankCardPublicPage({ data }: { data: RankCardData }) {
         {data.verifiedSkillCount > 0 ? (
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <p className="font-mono text-xs tabular-nums text-slate-500">
-              {data.verifiedSkillCount} verified skill{data.verifiedSkillCount === 1 ? "" : "s"}
+              {rankProofsCountLabel(data.verifiedSkillCount)}
               {data.verifiedPercentile != null
                 ? ` · ${Math.round(data.verifiedPercentile)}th percentile cohort accuracy`
                 : ""}

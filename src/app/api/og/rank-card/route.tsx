@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { loadOgRankCardData } from "@/features/rank-card/og-rank-card-data";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
 
 /** Node runtime — @vercel/og exceeds the 1 MB Edge bundle limit on Hobby. */
 export const runtime = "nodejs";
@@ -102,7 +103,7 @@ export async function GET(request: Request) {
           )}
           {card.verifiedSkillCount > 0 ? (
             <div style={{ fontSize: 16, color: "#64748b" }}>
-              {card.verifiedSkillCount} verified skill{card.verifiedSkillCount === 1 ? "" : "s"}
+              {rankProofsCountLabel(card.verifiedSkillCount)}
             </div>
           ) : null}
         </div>

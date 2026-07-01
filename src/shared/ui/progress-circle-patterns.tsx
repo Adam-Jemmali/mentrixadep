@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE } from "@/features/xp/calibrated-rank";
+import { RANK_PROOFS_LABEL } from "@/features/xp/rank-proofs-labels";
 import { cn } from "@/shared/core/utils";
 import { ProgressCircle } from "@/shared/ui/progress-circle";
 import { MentrixaBrandMark } from "@/shared/ui/mentrixa-ui-brand";
@@ -135,7 +136,7 @@ export function VerifiedNodesProgressCircle({
       centerClassName="flex-col"
     >
       <ProgressCircle
-        aria-label={`${count} of ${goal} skill nodes verified on first attempt`}
+        aria-label={`${count} of ${goal} ${RANK_PROOFS_LABEL.toLowerCase()} recorded`}
         value={value}
         minValue={0}
         maxValue={100}
