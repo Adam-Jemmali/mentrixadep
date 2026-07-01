@@ -14,7 +14,7 @@ export function profileTabMessage(tab: MentrixaProfileTabId): MentrixaTabMessage
       return {
         label: "Identity",
         verdict: "Your display name and privacy settings shape how Guides see you before sessions.",
-        nextAction: "Keep rank card public if you want a shareable verified passport.",
+        nextAction: "Keep rank card public.",
       };
     case "standing":
       return {
