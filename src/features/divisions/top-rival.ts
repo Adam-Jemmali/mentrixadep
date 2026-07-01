@@ -3,7 +3,6 @@
 import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import {
-  AP_CALC_AB_DIVISION_KEY,
   AP_CALC_AB_DIVISION_NAME,
   resolveArenaDivisionKey,
   sumArenaDivisionXp,

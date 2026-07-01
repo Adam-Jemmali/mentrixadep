@@ -66,7 +66,7 @@ export function QuestPageClient({
           className="mx-surface-light block rounded-none border-b border-violet-200 px-4 pt-5 shadow-[0_4px_24px_-12px_rgba(15,23,42,0.08)] sm:px-6"
         >
           <p className={mentrixStudent.sectionEyebrowOnLight}>
-            {guestMode ? "Quest preview" : "Verified practice"}
+            {guestMode ? "Quest preview" : null}
           </p>
           <h1 className={`mt-1 h-[28px] text-lg font-bold sm:text-xl ${mentrixStudent.textOnLight}`}>
             <Typewriter text={AP_CALC_AB_SUBJECT} speed={70} waitTime={8000} />
