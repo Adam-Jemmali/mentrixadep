@@ -221,7 +221,7 @@ export interface PreSessionBriefEmailData {
   };
 }
 
-/** AI-generated Pre-Session Brief — structured sections in HTML. */
+/** Verified pre-session brief — structured sections in HTML. */
 export async function sendPreSessionBriefEmail(
   studentEmail: string,
   data: PreSessionBriefEmailData
@@ -260,7 +260,7 @@ export async function sendPreSessionBriefEmail(
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 12px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
     <p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 20px;">
       Your <strong style="color:#eee;">${escapeHtml(data.course)}</strong> session starts at <strong style="color:#eee;">${escapeHtml(startLabel)}</strong>.
-      Here's your AI-prepared brief — two minutes of reading, a lot more value in the session.
+      Here's your verified pre-session receipt from rolling stats and item bank warm-ups.
     </p>
 
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 20px;border-collapse:collapse;">

@@ -30,6 +30,19 @@ function isHobbyCompatibleCronSchedule(schedule: string): boolean {
   return true;
 }
 
+/** Batch/materialized crons run weekly (Monday UTC) — not hourly or daily. */
+const WEEKLY_BATCH_CRON_PATHS = new Set([
+  "/api/cron/refresh-division-leaderboard",
+  "/api/cron/refresh-guide-impact",
+  "/api/cron/reconcile-subscriptions",
+  "/api/cron/sync-peer-comparison",
+]);
+
+function isWeeklyMondayCronSchedule(schedule: string): boolean {
+  const parts = schedule.trim().split(/\s+/);
+  return parts.length >= 5 && parts[4] === "1";
+}
+
 describe("vercel cron config", () => {
   it("uses Hobby-compatible schedules (at most once per day)", () => {
     const cfg = readVercelConfig();
@@ -38,6 +51,19 @@ describe("vercel cron config", () => {
       expect(
         isHobbyCompatibleCronSchedule(cron.schedule),
         `Cron ${cron.path} schedule "${cron.schedule}" runs more than once per day (Vercel Hobby deploy will fail)`,
+      ).toBe(true);
+    }
+  });
+
+  it("schedules batch materialized crons weekly on Monday UTC", () => {
+    const cfg = readVercelConfig();
+    const crons = cfg.crons ?? [];
+    for (const path of WEEKLY_BATCH_CRON_PATHS) {
+      const cron = crons.find((c) => c.path === path);
+      expect(cron, `Missing cron for ${path}`).toBeTruthy();
+      expect(
+        isWeeklyMondayCronSchedule(cron!.schedule),
+        `Expected weekly Monday schedule for ${path}, got "${cron!.schedule}"`,
       ).toBe(true);
     }
   });

@@ -48,7 +48,7 @@ export type DiagnosticVerdict = {
 };
 
 const DEFAULT_STAKES =
-  "This skill is part of the official AP Calculus AB course and exam.";
+  "";
 
 const CTA_LABEL = "Save this and start fixing it" as const;
 

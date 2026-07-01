@@ -3,15 +3,18 @@
 import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import {
-  buildAdaptiveContext,
   pickDownstreamSubtopics,
   type KnowledgeNode,
 } from "@/features/learning-path/knowledge-graph-lib";
-import { getRecentQuestSubtopics } from "@/features/learning-path/knowledge-graph";
-import { generateAdaptiveQuestPack } from "@/shared/integrations/ai/practice";
 import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import type { PracticePackMetadata, PracticeQuestion } from "@/features/quest/practice-quest-types";
 import { createClient } from "@/shared/integrations/supabase/server";
+import { selectBreakthroughPack } from "@/features/breakthrough-events/breakthrough-item-bank";
+import { resolveApCalcAbSkillNodeForConcept } from "@/features/breakthrough-events/resolve-skill-node";
+import {
+  addInterventionRetestDelay,
+} from "@/features/intervention-retests/schedule-intervention-retests-pure";
+import { scheduleInterventionRetestsForNodes } from "@/features/intervention-retests/schedule-intervention-retests";
 
 async function loadKnowledgeNodes(
   admin: ReturnType<typeof createAdminClient>,
@@ -91,7 +94,23 @@ export async function createNextBreakthroughQuest(
     .maybeSingle();
 
   if (!queueRow) {
-    return { success: false, error: "No adaptive quest queued." };
+    return { success: false, error: "No breakthrough practice queued." };
+  }
+
+  const skillNode = await resolveApCalcAbSkillNodeForConcept(
+    admin,
+    queueRow.target_subtopic,
+  );
+  if (!skillNode) {
+    return {
+      success: false,
+      error: `Your breakthrough on ${queueRow.target_subtopic} is confirmed. Your follow-up practice is being prepared. Check back tomorrow.`,
+    };
+  }
+
+  const pack = await selectBreakthroughPack(user.id, skillNode.id);
+  if ("error" in pack) {
+    return { success: false, error: pack.error };
   }
 
   const { data: xpRow } = await admin
@@ -101,35 +120,7 @@ export async function createNextBreakthroughQuest(
     .maybeSingle();
   const levelInfo = getAccountLevelFromTotalXp(xpRow?.total_xp ?? 0);
 
-  const nodes = await loadKnowledgeNodes(admin, user.id);
-  const adaptiveContext = buildAdaptiveContext(nodes);
-  adaptiveContext.weakSubtopics = [
-    {
-      subject: queueRow.subject,
-      topic: queueRow.topic,
-      subtopic: queueRow.target_subtopic,
-      mastery: 20,
-    },
-  ];
-
-  const recentSubtopics = await getRecentQuestSubtopics(user.id);
-  const gen = await generateAdaptiveQuestPack(
-    {
-      subject: queueRow.subject,
-      packType: "mcq",
-      accountLevelTitle: levelInfo.title,
-      questionCount: 5,
-      adaptiveContext,
-      recentSubtopics,
-    },
-    user.id,
-  );
-
-  if ("error" in gen && gen.error) {
-    return { success: false, error: gen.message ?? "Could not generate adaptive quest." };
-  }
-
-  const questions = (gen as { questions: PracticeQuestion[] }).questions;
+  const questions = pack.questions as PracticeQuestion[];
   const meta: PracticePackMetadata = {
     questKind: "practice_pack",
     subject: queueRow.subject,
@@ -170,6 +161,15 @@ export async function createNextBreakthroughQuest(
     quest_id: quest.id,
     status: "in_progress",
     num_attempts: 0,
+  });
+
+  const scheduledFor = addInterventionRetestDelay(new Date(), "breakthrough").toISOString();
+  void scheduleInterventionRetestsForNodes({
+    sourceType: "breakthrough",
+    sourceId: eventId,
+    userId: user.id,
+    skillNodeIds: [skillNode.id],
+    scheduledAt: scheduledFor,
   });
 
   return {

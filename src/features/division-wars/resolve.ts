@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Internal division war resolution — server-only imports (cron).
+ * Not a server action module; never import from client components.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUtcWeekMondayString } from "@/features/divisions/division-week";
@@ -9,6 +12,7 @@ import { processDivisionWarMatchmaking } from "@/features/division-wars/matchmak
 
 const BADGE_DAYS = 7;
 
+/** Internal only — closes active wars for the week and grants winner XP. */
 export async function processDivisionWarResolution(asOf: Date = new Date()): Promise<{
   weekClosed: string;
   warsResolved: number;
@@ -140,13 +144,13 @@ async function resolveSingleWar(
   return { resolved: true, xpGranted };
 }
 
-/** Sunday resolution + optional next-week prep (matchmaking runs Monday cron). */
+/** Internal only — Sunday resolution step (matchmaking runs on Monday cron). */
 export async function processDivisionWarWeeklyCycle(asOf: Date = new Date()) {
   const resolution = await processDivisionWarResolution(asOf);
   return resolution;
 }
 
-/** Called from Monday division-weekly cron after leaderboard awards. */
+/** Internal only — Monday war start (called from division-weekly cron). */
 export async function processDivisionWarWeeklyStart(asOf: Date = new Date()) {
   return processDivisionWarMatchmaking(asOf);
 }

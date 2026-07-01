@@ -21,11 +21,13 @@ import { applyDuelMetaRewards } from "@/features/duels/duel-reward";
 import {
   bothSidesReady,
   isQueueStyleMatchSource,
+  loadApCalcAbSkillNodeIds,
   randomAiOpponentAnswers,
-  resolveDuelQuestionPack,
+  selectDuelQuestions,
   scoreAnswers,
   type DuelReadyRow,
 } from "@/features/duels/duel-internal";
+import { DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE } from "@/features/duels/duel-item-bank-pure";
 
 export async function activateSkillDuelSession(
   duelId: string
@@ -88,17 +90,17 @@ export async function activateSkillDuelSession(
       };
     }
 
-    const { data: div } = await admin
-      .from("divisions")
-      .select("key, name")
-      .eq("key", duel.division_key)
-      .maybeSingle();
+    const nodeIds = await loadApCalcAbSkillNodeIds(admin);
+    if (!nodeIds.length) {
+      return { success: false, error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
+    }
 
-    const questions = await resolveDuelQuestionPack(
-      div?.name ?? duel.division_key,
-      duel.division_key,
-      user.id
-    );
+    const pack = await selectDuelQuestions(id.id, nodeIds);
+    if ("error" in pack) {
+      return { success: false, error: pack.error };
+    }
+
+    const { questions, itemBankIds } = pack;
 
     const opponentAnswers =
       duel.is_ai_opponent === true ? randomAiOpponentAnswers(questions) : null;
@@ -108,6 +110,7 @@ export async function activateSkillDuelSession(
       .update({
         status: "active",
         questions: questions as unknown as Record<string, unknown>,
+        item_bank_ids: itemBankIds,
         ...(opponentAnswers ? { opponent_answers: opponentAnswers } : {}),
         updated_at: new Date().toISOString(),
       })
@@ -214,6 +217,7 @@ export async function createAiDuelFromQueue(
         division_key: div.key,
         status: "pending",
         questions: [] as unknown as Record<string, unknown>,
+        item_bank_ids: [],
         student_answers: null,
         opponent_answers: null,
         reward_amount_cents: 0,

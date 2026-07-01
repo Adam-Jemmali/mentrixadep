@@ -13,10 +13,8 @@ function slice(start, end) {
 }
 
 const internal = `import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import { generateDuelQuestions } from "@/shared/integrations/ai";
 import type { SkillDuelQuestion } from "@/shared/types/database";
-import { DUEL_QUESTION_COUNT } from "@/features/duels/duel-constants";
-import { buildSkillDuelFallbackPack } from "@/features/duels/duel-fallback-questions";
+import { selectDuelQuestions } from "@/features/duels/duel-internal";
 
 ${slice(24, 51)}
 

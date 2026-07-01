@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Internal rank-card username provisioning — server-only imports.
+ * Not a server action module; never import from client components.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isValidRankCardUsername, suggestRankCardUsername } from "@/features/rank-card/username";
@@ -12,9 +15,7 @@ async function isUsernameTaken(admin: ReturnType<typeof createAdminClient>, user
   return Boolean(data);
 }
 
-/**
- * Ensures the student has a unique public rank card slug. Idempotent when already set.
- */
+/** Internal only — ensures a unique public rank card slug. Idempotent when already set. */
 export async function ensureRankCardUsername(
   userId: string,
   displayName: string,

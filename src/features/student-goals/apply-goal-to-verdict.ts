@@ -1,11 +1,14 @@
-"use server";
+/**
+ * Internal goal verdict enrichment — server-only imports (verdict-engine / cron).
+ * Not a server action module; never import from client components.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
 import { loadVerifiedRankCache } from "@/features/guidance/verdict-materialized-reads";
 import { VERIFIED_NODE_SUCCESS_THRESHOLD } from "@/features/student-goals/types";
-import { loadActiveStudentGoal } from "@/features/student-goals/load-student-goal";
+import { loadActiveStudentGoalInternal } from "@/features/student-goals/load-student-goal";
 import {
   applyGoalToVerdict,
   type GoalVerdictContext,
@@ -64,7 +67,7 @@ export async function applyActiveGoalToVerdict(
   userId: string,
   verdict: Verdict,
 ): Promise<Verdict> {
-  const goal = await loadActiveStudentGoal(userId, AP_CALC_AB_SUBJECT);
+  const goal = await loadActiveStudentGoalInternal(userId, AP_CALC_AB_SUBJECT);
   if (!goal) return verdict;
 
   const [rank, nodeCounts, highestImpactNode] = await Promise.all([

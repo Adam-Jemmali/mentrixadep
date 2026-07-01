@@ -8,7 +8,7 @@ import { trackEvent } from "@/shared/integrations/analytics";
 import type { QuestGoal, QuestMode } from "@/features/quest/quest-internal";
 import type { AdaptiveWorldState } from "@/shared/integrations/ai/adaptive-quest";
 import type { AdaptiveClassicMetadata } from "@/features/quest/adaptive-classic-quest-schemas";
-import type { SubmitQuestAnswerResult } from "@/features/quest/classic-quest";
+import type { SubmitQuestAnswerResult } from "@/features/quest/quest-internal";
 import { applyXpAward } from "@/features/xp/xp-awards";
 import { XP } from "@/features/xp/xp-constants";
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";

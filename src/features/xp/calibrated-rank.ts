@@ -93,7 +93,7 @@ export function formatVerifiedRankNextAction(stats: VerifiedFirstAttemptRankStat
   if (remaining > 0 && stats.verifiedCount > 0) {
     return `Next: verify ${remaining} more skill${remaining === 1 ? "" : "s"} to unlock your comparative percentile.`;
   }
-  return "Next: start a verified practice pack and answer skills you have not encountered.";
+  return "Next: Answer skills you have not encountered.";
 }
 
 export async function loadVerifiedFirstAttemptRankStats(

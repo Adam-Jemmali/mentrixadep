@@ -365,7 +365,7 @@ export function FirstSequenceHeroContent() {
                   Get unstuck. Stay ahead. Prove you improved.
                 </p>
                 <p className="mt-2 text-sm text-white/75 leading-relaxed">
-                  Book a live expert. Get AI-generated practice from your real session. Climb your subject&apos;s leaderboard.
+                  Book a live expert. Practice built from a reviewed question bank, not generated on the fly. Climb your subject&apos;s leaderboard.
                 </p>
               </div>
             ) : null}

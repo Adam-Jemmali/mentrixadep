@@ -383,6 +383,8 @@ export interface SkillDuel {
   division_key: string;
   status: "pending" | "active" | "completed" | "declined" | "cancelled";
   questions: SkillDuelQuestion[];
+  /** Ordered item_bank ids for the active question pack. */
+  item_bank_ids?: string[];
   student_answers: number[] | null;
   opponent_answers: number[] | null;
   student_score: number | null;

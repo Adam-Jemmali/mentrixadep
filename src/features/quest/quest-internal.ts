@@ -10,6 +10,17 @@ import {
 export type QuestGoal = "exam" | "interview" | "assignment";
 export type QuestMode = "coach" | "exam";
 
+export interface SubmitQuestAnswerResult {
+  correct: boolean;
+  feedback?: string;
+  xpAwarded?: number;
+  totalXp?: number;
+  streakDays?: number;
+}
+
+export const REMOVED_QUEST_API_BODY =
+  "This endpoint has been removed. Use the item bank practice path instead.";
+
 export const submitQuestSchema = z.object({
   prompt: z.string().min(1).max(5000),
   goal: z.enum(["exam", "interview", "assignment"]),

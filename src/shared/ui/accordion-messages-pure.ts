@@ -30,9 +30,9 @@ export function landingFaqCategories(): MentrixaAccordionFaqCategory[] {
         {
           id: "what-counts",
           title: "What moves my rank?",
-          body: "Only your first attempt on each AP Calculus AB skill node counts. That result is permanent and compared to other Mentrixers on the same node.",
-          verdict: "Practice after the first encounter never changes rank.",
-          nextAction: "Pick a skill you have not verified yet and run a quest pack.",
+          body: "AP Calculus AB firsts set rank",
+          verdict: "Practice never rewrites rank",
+          nextAction: "Run unverified skill quests",
         },
         {
           id: "percentile",
@@ -110,7 +110,7 @@ export function skillTreeUnitAccordionFooter(unit: MasteryGridUnit): {
   if (weak > 0) {
     return {
       verdict: `${weak} skill${weak === 1 ? "" : "s"} in this unit still need a verified first attempt.`,
-      nextAction: "Run quest practice on an unverified node in this unit.",
+      nextAction: "Run quest practice.",
     };
   }
   return {

@@ -1,5 +1,9 @@
 import { requireRole } from "@/shared/core/auth";
 import { getDivisionHubCards } from "@/features/divisions/divisions";
+import {
+  arenaLeaguePageSubtitle,
+  arenaLeaguePageTitle,
+} from "@/features/divisions/arena-hub-messages-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { DivisionHubClient } from "./division-hub-client";
 
@@ -15,9 +19,9 @@ export default async function DivisionsHubPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className={mentrixStudent.sectionEyebrow}>Arena</p>
-            <h1 className={`mt-2 ${mentrixStudent.pageTitle}`}>AP Calculus AB league</h1>
+            <h1 className={`mt-2 ${mentrixStudent.pageTitle}`}>{arenaLeaguePageTitle()}</h1>
             <p className={`mt-2 max-w-xl ${mentrixStudent.pageSubtitle}`}>
-              Climb the weekly verified XP board with other Mentrixers on the only skill tree we ship today.
+              {arenaLeaguePageSubtitle()}
             </p>
           </div>
         </div>

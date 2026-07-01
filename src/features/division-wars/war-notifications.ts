@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Internal division war notifications — server-only imports.
+ * Not a server action module; never import from client components.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { trackEvent } from "@/shared/integrations/analytics";

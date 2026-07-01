@@ -280,9 +280,7 @@ export function StudentCommandCenterClient({
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">
           Prove what you know everywhere you can
         </p>
-        <p className={`mt-1 mb-4 text-sm ${mentrixStudent.textMutedOnDark}`}>
-          Pick a Guide, lock a slot, show up ready to level up.
-        </p>
+       
         <AvailabilityBrowser
           availability={availability}
           courses={availableCourses}

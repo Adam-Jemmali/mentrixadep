@@ -2155,6 +2155,7 @@ export type Database = {
           id: string
           initiator_id: string | null
           is_ai_opponent: boolean
+          item_bank_ids: string[]
           match_source: string | null
           opponent_answers: number[] | null
           opponent_hidden_at: string | null
@@ -2179,6 +2180,7 @@ export type Database = {
           id?: string
           initiator_id?: string | null
           is_ai_opponent?: boolean
+          item_bank_ids?: string[]
           match_source?: string | null
           opponent_answers?: number[] | null
           opponent_hidden_at?: string | null
@@ -2203,6 +2205,7 @@ export type Database = {
           id?: string
           initiator_id?: string | null
           is_ai_opponent?: boolean
+          item_bank_ids?: string[]
           match_source?: string | null
           opponent_answers?: number[] | null
           opponent_hidden_at?: string | null

@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Internal recording transcription workers — server-only imports (cron / background_jobs).
+ * Not a server action module; never import from client components.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { validateUUID } from "@/shared/core/security";
@@ -20,6 +23,7 @@ import {
   waitForGeminiFileActive,
 } from "@/features/studio-ai/transcription-internal";
 
+/** Internal only — claims and processes queued transcription jobs. */
 export async function processPendingRecordingTranscriptionJobs(
   limit: number = 1,
 ): Promise<{ claimed: number; completed: number; retried: number; failed: number }> {
@@ -156,6 +160,7 @@ export async function processPendingRecordingTranscriptionJobs(
   }
 }
 
+/** Internal only — enqueues transcription jobs for completed sessions. */
 export async function enqueueRecordingTranscriptionJobsForSessions(
   sessionIds: string[],
 ): Promise<{ queued: number; existing: number; failed: number }> {

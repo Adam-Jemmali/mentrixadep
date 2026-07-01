@@ -1,8 +1,12 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import { generateDuelQuestions } from "@/shared/integrations/ai";
 import type { SkillDuelQuestion } from "@/shared/types/database";
-import { DUEL_QUESTION_COUNT } from "@/features/duels/duel-constants";
-import { buildSkillDuelFallbackPack } from "@/features/duels/duel-fallback-questions";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import {
+  DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE,
+  duelRowsToQuestionPack,
+  pickDuelItemBankRows,
+  type DuelItemBankRow,
+} from "@/features/duels/duel-item-bank-pure";
 
 type MatchSource = "direct" | "clan" | "queue";
 
@@ -33,25 +37,54 @@ export function randomAiOpponentAnswers(questions: SkillDuelQuestion[]): number[
   );
 }
 
-export async function resolveDuelQuestionPack(
-  divisionName: string,
-  divisionKey: string,
-  userId: string
-): Promise<SkillDuelQuestion[]> {
-  const gen = await generateDuelQuestions(
-    divisionName,
-    divisionKey,
-    userId,
-    DUEL_QUESTION_COUNT
-  );
-  if ("error" in gen && gen.error) {
-    return buildSkillDuelFallbackPack(divisionName, divisionKey, DUEL_QUESTION_COUNT);
+export async function loadApCalcAbSkillNodeIds(
+  admin: ReturnType<typeof createAdminClient>,
+): Promise<string[]> {
+  const { data, error } = await admin
+    .from("skill_nodes")
+    .select("id")
+    .eq("subject", AP_CALC_AB_SUBJECT);
+
+  if (error || !data?.length) return [];
+  return data.map((row) => row.id);
+}
+
+export async function selectDuelQuestions(
+  _duelId: string,
+  nodeIds: string[],
+): Promise<
+  { questions: SkillDuelQuestion[]; itemBankIds: string[] } | { error: string }
+> {
+  const admin = createAdminClient();
+  const allNodeIds = await loadApCalcAbSkillNodeIds(admin);
+  if (!allNodeIds.length) {
+    return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
   }
-  const list = (gen as { questions: SkillDuelQuestion[] }).questions;
-  if (!Array.isArray(list) || list.length < 3) {
-    return buildSkillDuelFallbackPack(divisionName, divisionKey, DUEL_QUESTION_COUNT);
+
+  const scopedNodeIds = nodeIds.length > 0 ? nodeIds : allNodeIds;
+  const primaryNodeIds = new Set(scopedNodeIds);
+
+  const { data: items, error: itemsError } = await admin
+    .from("item_bank")
+    .select("id, skill_node_id, prompt, options, correct_answer")
+    .eq("status", "approved")
+    .in("skill_node_id", allNodeIds);
+
+  if (itemsError || !items?.length) {
+    return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
   }
-  return list;
+
+  const picked = pickDuelItemBankRows(items as DuelItemBankRow[], primaryNodeIds);
+  if (!picked.length) {
+    return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
+  }
+
+  const pack = duelRowsToQuestionPack(picked);
+  if (!pack) {
+    return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
+  }
+
+  return pack;
 }
 
 export function scoreAnswers(
@@ -84,6 +117,7 @@ export async function insertPendingSkillDuel(
       division_key: divisionKey,
       status: "pending",
       questions: [],
+      item_bank_ids: [],
       reward_amount_cents: 0,
       match_source: matchSource,
     })

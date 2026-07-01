@@ -9,7 +9,11 @@ import { Info, Users } from "lucide-react";
 import type { DivisionHubCard } from "@/features/divisions/divisions";
 import { joinDivision } from "@/features/divisions/divisions";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
-import { AP_CALC_AB_DIVISION_NAME } from "@/features/divisions/ap-calc-ab-division";
+import {
+  arenaLeagueCardDescriptionFallback,
+  arenaLeaguePanelEyebrow,
+  arenaLeaguePanelHint,
+} from "@/features/divisions/arena-hub-messages-pure";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -56,12 +60,10 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
             arenaDivisionFocus.eyebrow,
           )}
         >
-          {AP_CALC_AB_DIVISION_NAME} league
+          {arenaLeaguePanelEyebrow()}
         </p>
         <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
-          Join to climb the weekly board. The{" "}
-          <span className="font-semibold text-cyan-300">cyan outline</span> marks your home
-          focus.
+          {arenaLeaguePanelHint()}
         </p>
 
         {initialCards.length === 0 ? (
@@ -132,7 +134,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                   </div>
 
                   <p className="mt-4 line-clamp-2 flex-1 text-xs font-medium leading-relaxed text-slate-500">
-                    {c.description || "Compete in this division and climb the global leaderboards."}
+                    {arenaLeagueCardDescriptionFallback()}
                   </p>
 
                   <div className="mt-6 flex items-center justify-between gap-3">

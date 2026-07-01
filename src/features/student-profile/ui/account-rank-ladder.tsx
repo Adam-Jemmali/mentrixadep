@@ -126,7 +126,6 @@ export function AccountRankLadder({
 
         {isArena && current.level < 7 ? (
           <p className="mt-4 text-center text-[11px] leading-relaxed text-violet-200/70">
-            Win duels and complete quests to climb.{" "}
             <span className="font-semibold" style={{ color: "#F5D76E" }}>
               Become a Mentrixer
             </span>{" "}

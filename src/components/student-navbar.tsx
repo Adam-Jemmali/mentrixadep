@@ -40,10 +40,6 @@ const BubbleText = dynamic(
   () => import("@/shared/ui/bubble-text").then((m) => ({ default: m.BubbleText })),
   { ssr: false, loading: () => null },
 );
-const SecurityShield = dynamic(
-  () => import("@/features/auth/ui/security/SecurityShield").then((m) => ({ default: m.SecurityShield })),
-  { ssr: false, loading: () => null },
-);
 
 /** Solid shell — light profile/workbench pages must not bleed through the bar. */
 const STUDENT_NAV_DESKTOP_SHELL =
@@ -216,13 +212,10 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
             onItemHover={handleArenaNavHover}
           />
 
-          {/* Rank, XP, streak & security */}
+          {/* Rank, XP & streak */}
           <div className="ml-2 hidden items-center gap-2 sm:ml-4 md:flex">
             <StudentNavRankStrip />
             <ArenaMusicMuteToggle />
-            <div className="hidden lg:block px-2 py-1 rounded-full bg-white/5 border border-white/5 hover:border-white/10 transition">
-              <SecurityShield />
-            </div>
           </div>
 
           {/* Profile Menu */}

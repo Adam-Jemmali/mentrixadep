@@ -1,10 +1,14 @@
-"use server";
+/**
+ * Internal division war matchmaking — server-only imports (cron).
+ * Not a server action module; never import from client components.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUtcWeekMondayString, getUtcWeekSundayString } from "@/features/divisions/division-week";
 import { pairDivisionsForWar, type DivisionMatchCandidate } from "@/features/division-wars/scoring-pure";
 import { notifyDivisionWarMembers } from "@/features/division-wars/war-notifications";
 
+/** Internal only — pairs active divisions for the current war week. */
 export async function processDivisionWarMatchmaking(asOf: Date = new Date()): Promise<{
   weekStart: string;
   warsCreated: number;

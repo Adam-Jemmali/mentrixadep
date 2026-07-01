@@ -1,6 +1,4 @@
-"use server";
-
-import { requireRole } from "@/shared/core/auth";
+import { requireAuth, requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import type { StudentGoal, StudentGoalType } from "@/features/student-goals/types";
@@ -30,7 +28,8 @@ function mapGoalRow(row: GoalRow): StudentGoal {
   };
 }
 
-export async function loadActiveStudentGoal(
+/** Internal only — trusted server callers (cron / verdict pipeline). */
+export async function loadActiveStudentGoalInternal(
   userId: string,
   subject = AP_CALC_AB_SUBJECT,
 ): Promise<StudentGoal | null> {
@@ -49,9 +48,19 @@ export async function loadActiveStudentGoal(
   return mapGoalRow(data as GoalRow);
 }
 
+/** Auth-gated read — returns null unless the caller owns the goal or is admin. */
+export async function loadActiveStudentGoal(
+  userId: string,
+  subject = AP_CALC_AB_SUBJECT,
+): Promise<StudentGoal | null> {
+  const user = await requireAuth();
+  if (user.id !== userId && user.role !== "admin") return null;
+  return loadActiveStudentGoalInternal(userId, subject);
+}
+
 export async function loadActiveStudentGoalForViewer(
   subject = AP_CALC_AB_SUBJECT,
 ): Promise<StudentGoal | null> {
   const user = await requireRole(["student", "admin"]);
-  return loadActiveStudentGoal(user.id, subject);
+  return loadActiveStudentGoalInternal(user.id, subject);
 }

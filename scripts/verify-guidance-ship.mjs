@@ -144,10 +144,13 @@ if (read("supabase/127-user-notifications.sql").includes("intervention_retests_g
 const vercel = read("vercel.json");
 if (vercel.includes('"/api/cron/sync-peer-comparison"')) {
   const hourly = /sync-peer-comparison[\s\S]*?"schedule":\s*"0 \* \* \* \*"/.test(vercel);
+  const weekly = /sync-peer-comparison[\s\S]*?"schedule":\s*"\d+ \d+ \* \* 1"/.test(vercel);
   if (hourly) {
-    fail("Peer comparison cron", "hourly schedule blocks Vercel Hobby deploys — use daily in vercel.json");
+    fail("Peer comparison cron", "hourly schedule blocks Vercel Hobby deploys — use weekly in vercel.json");
+  } else if (weekly) {
+    pass("Peer comparison cron", "weekly schedule (Monday UTC, Vercel only)");
   } else {
-    pass("Peer comparison cron", "daily schedule (Hobby-safe)");
+    fail("Peer comparison cron", "expected weekly Monday schedule in vercel.json");
   }
 } else {
   fail("Peer comparison cron", "route missing from vercel.json");

@@ -6,7 +6,7 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import type { UserXp } from "@/shared/types/database";
 import { XP } from "@/features/xp/xp-constants";
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
-import type { QuestGoal, QuestMode } from "@/features/quest/classic-quest";
+import type { QuestGoal, QuestMode } from "@/features/quest/quest-internal";
 
 export interface UserXpResult {
   totalXp: number;

@@ -296,8 +296,8 @@ export function buildRankDeltaVerdict(
     namedDrivers.length > 0
       ? `This period's verified first attempts on ${namedDrivers.join(", ")} drove the shift.`
       : accDelta === 0
-        ? "No new verified first attempts changed your rolling accuracy this period."
-        : "New verified first attempts this period updated your rolling accuracy.";
+        ? ""
+        : "";
 
   const nextUnverified = drivingNodes.find((node) => !node.isCorrect);
   if (nextUnverified?.nodeName) {

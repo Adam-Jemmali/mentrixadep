@@ -58,6 +58,15 @@ jobs:
       - name: Unit tests
         run: npm run test:ci
 
+      - name: RLS policy tests
+        run: npx tsx scripts/test-rls-policies.ts
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.RLS_TEST_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.RLS_TEST_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.RLS_TEST_SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RLS_TEST_USER_EMAIL: ${{ secrets.RLS_TEST_USER_EMAIL }}
+          RLS_TEST_USER_PASSWORD: ${{ secrets.RLS_TEST_USER_PASSWORD }}
+
       - name: Build
         run: npm run build
 

@@ -7,27 +7,44 @@ import {
   verifiedFirstAttemptDisclosureMessage,
 } from "@/shared/ui/disclosure-messages-pure";
 
+const FOUR_WORD_MAX = /^\S+(?:\s+\S+){0,3}$/;
+
+function expectAtMostFourWords(value: string): void {
+  expect(value.trim()).toMatch(FOUR_WORD_MAX);
+}
+
 describe("disclosure messages", () => {
-  it("frames verified first attempt as permanent rank proof", () => {
+  it("keeps verified first attempt copy at four words max", () => {
     const msg = verifiedFirstAttemptDisclosureMessage("AP Calculus AB");
-    expect(msg.triggerLabel).toMatch(/verified first attempt/i);
+    expectAtMostFourWords(msg.triggerLabel);
+    expectAtMostFourWords(msg.body);
+    expectAtMostFourWords(msg.verdict);
+    expectAtMostFourWords(msg.nextAction);
+    expect(msg.triggerLabel).toMatch(/verified attempt/i);
     expect(msg.body).toMatch(/AP Calculus AB/i);
     expect(msg.verdict).toMatch(/never rewrites rank/i);
   });
 
-  it("keeps guide impact on first-attempt lift", () => {
+  it("keeps guide impact copy at four words max", () => {
     const msg = guideImpactDisclosureMessage();
-    expect(msg.body).toMatch(/first-attempt lift/i);
-    expect(msg.nextAction).toMatch(/first attempt/i);
+    expectAtMostFourWords(msg.triggerLabel);
+    expectAtMostFourWords(msg.body);
+    expectAtMostFourWords(msg.verdict);
+    expectAtMostFourWords(msg.nextAction);
+    expect(msg.body).toMatch(/verified rank/i);
   });
 
-  it("includes exam stakes detail in body", () => {
+  it("truncates exam stakes body to four words", () => {
     const msg = examStakesDisclosureMessage("Limits appear on both MCQ sections.");
-    expect(msg.body).toContain("Limits appear on both MCQ sections.");
+    expect(msg.body).toBe("Limits appear on both");
   });
 
-  it("routes momentum subscription copy through pricing verdict", () => {
+  it("keeps momentum subscription copy at four words max", () => {
     const msg = momentumSubscriptionDisclosureMessage();
+    expectAtMostFourWords(msg.triggerLabel);
+    expectAtMostFourWords(msg.body);
+    expectAtMostFourWords(msg.verdict);
+    expectAtMostFourWords(msg.nextAction);
     expect(msg.body).toMatch(/paywall/i);
     expect(mentrixaDisclosureMessage("momentum_subscription").triggerLabel).toBe(msg.triggerLabel);
   });

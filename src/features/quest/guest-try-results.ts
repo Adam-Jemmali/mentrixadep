@@ -187,7 +187,7 @@ export function buildApCalcGuestDiagnosticVerdict(
 
   const stakesSentence =
     weakest.examStakes?.trim() ||
-    "This skill is part of the official AP Calculus AB course and exam.";
+    "";
   const examStakes = weakest.examStakes?.trim() || undefined;
 
   if (allCorrect) {

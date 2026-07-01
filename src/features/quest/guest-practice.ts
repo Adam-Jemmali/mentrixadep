@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { getClientIpFromRequest } from "@/shared/core/security";
 import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
-import { generateGuestTryQuestPack, hydrateGuestTryQuestionImages } from "@/shared/integrations/ai";
 import {
   isPlayableGuestTryQuestion,
   type GuestTryQuestion,
 } from "@/features/quest/guest-try-types";
-import { buildGuestMixedFallbackPack } from "@/features/quest/guest-mixed-fallback";
 import {
   AP_CALC_AB_UNAVAILABLE_MESSAGE,
+  GUEST_NON_AP_CALC_SUBJECT_MESSAGE,
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
 import {
@@ -16,8 +15,6 @@ import {
   selectGuestTryItemBankQuestions,
 } from "@/features/quest/guest-item-bank-selector";
 import { shuffleGuestTryPack } from "@/features/quest/guest-try-shuffle";
-import { GUEST_TRY_QUEST_COUNT } from "@/features/quest/guest-try-constants";
-import { curateGuestTryStudentPack } from "@/features/quest/guest-try-pack-curate";
 
 function parseGuestCookie(raw: string | null) {
   if (!raw) return { date: null, count: 0 };
@@ -65,46 +62,33 @@ export async function POST(req: Request) {
     }
 
     const subjectTrim = subject.slice(0, 120);
-    let questions: GuestTryQuestion[];
 
-    if (isApCalculusAbSubject(subjectTrim)) {
-      const bankQuestions = await selectGuestTryItemBankQuestions();
-      if (bankQuestions.length < GUEST_AP_CALC_TRY_COUNT) {
-        return NextResponse.json(
-          { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE },
-          { status: 503 },
-        );
-      }
-      questions = bankQuestions.filter(isPlayableGuestTryQuestion);
-      if (questions.length < GUEST_AP_CALC_TRY_COUNT) {
-        return NextResponse.json(
-          { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE },
-          { status: 503 },
-        );
-      }
-    } else {
-      const gen = await generateGuestTryQuestPack({
-        subject: subjectTrim,
-        difficulty: "advanced",
-        questionCount: GUEST_TRY_QUEST_COUNT,
-      });
-
-      if (!("error" in gen) && gen.questions.length >= GUEST_TRY_QUEST_COUNT) {
-        questions = curateGuestTryStudentPack(
-          gen.questions.filter(isPlayableGuestTryQuestion),
-          subjectTrim,
-        );
-      } else {
-        questions = [];
-      }
-      if (questions.length < GUEST_TRY_QUEST_COUNT) {
-        questions = curateGuestTryStudentPack(buildGuestMixedFallbackPack(subjectTrim), subjectTrim);
-      }
+    if (!isApCalculusAbSubject(subjectTrim)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "subject_unavailable",
+          error: GUEST_NON_AP_CALC_SUBJECT_MESSAGE,
+        },
+        { status: 422 },
+      );
     }
 
-    const hydrated = await hydrateGuestTryQuestionImages(subjectTrim, questions);
-    questions = "error" in hydrated ? questions : hydrated.questions;
-    questions = questions.filter(isPlayableGuestTryQuestion);
+    const bankQuestions = await selectGuestTryItemBankQuestions();
+    if (bankQuestions.length < GUEST_AP_CALC_TRY_COUNT) {
+      return NextResponse.json(
+        { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE },
+        { status: 503 },
+      );
+    }
+
+    let questions: GuestTryQuestion[] = bankQuestions.filter(isPlayableGuestTryQuestion);
+    if (questions.length < GUEST_AP_CALC_TRY_COUNT) {
+      return NextResponse.json(
+        { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE },
+        { status: 503 },
+      );
+    }
 
     questions = shuffleGuestTryPack(questions);
 

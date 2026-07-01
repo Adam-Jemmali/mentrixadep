@@ -8,10 +8,10 @@
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { requireRole } from "@/shared/core/auth";
-import { generatePreSessionBrief, type PreSessionBrief } from "@/shared/integrations/ai";
 import { sendPreSessionBriefEmail } from "@/shared/integrations/email";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { buildDeterministicPreSessionBrief } from "@/features/pre-session-brief/build-brief";
+import type { PreSessionBrief } from "@/features/pre-session-brief/brief-types";
+import { mapBriefRow } from "@/features/pre-session-brief/context-mapper";
 
 export interface StoredPreSessionBrief {
   id: string;
@@ -22,165 +22,6 @@ export interface StoredPreSessionBrief {
   questionsToAsk: string[];
   createdAt: string;
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Pull the quest mistake topics for a student in a given course.
- * Uses user_quest_progress + quests metadata to find failure patterns.
- */
-async function getWeakAreasForStudent(
-  studentId: string,
-  course: string
-): Promise<string[]> {
-  const admin = createAdminClient();
-
-  // Get failed/incomplete quest attempts with metadata tags
-  const { data: progress } = await admin
-    .from("user_quest_progress")
-    .select("quest_id, num_attempts, status")
-    .eq("user_id", studentId)
-    .in("status", ["in_progress", "not_started"])
-    .order("num_attempts", { ascending: false })
-    .limit(20);
-
-  if (!progress || progress.length === 0) return [];
-
-  const questIds = progress.map((p) => p.quest_id as string);
-
-  const { data: quests } = await admin
-    .from("quests")
-    .select("id, prompt, metadata")
-    .in("id", questIds);
-
-  if (!quests) return [];
-
-  // Extract topic tags from metadata or first 80 chars of prompt
-  const weakAreas: string[] = [];
-  for (const q of quests) {
-    const meta = q.metadata as Record<string, unknown> | null;
-    const tags = Array.isArray(meta?.tags)
-      ? (meta!.tags as unknown[]).filter((t) => typeof t === "string").map(String)
-      : [];
-
-    if (tags.length > 0) {
-      weakAreas.push(...tags.slice(0, 2));
-    } else {
-      // Use first 80 chars of prompt as topic hint
-      const hint = String(q.prompt ?? "").slice(0, 80).trim();
-      if (hint.length > 8) weakAreas.push(hint);
-    }
-  }
-
-  // Filter to course-relevant (loose match) and deduplicate
-  const courseLower = course.toLowerCase();
-  const relevant = weakAreas.filter((w) => {
-    const wl = w.toLowerCase();
-    return (
-      wl.includes(courseLower.split(" ")[0] ?? "") ||
-      courseLower.includes(wl.slice(0, 6))
-    );
-  });
-
-  // Fall back to all if no course-filtered match
-  const final = relevant.length > 0 ? relevant : weakAreas;
-  return [...new Set(final)].slice(0, 6);
-}
-
-/**
- * Pull recent quest topics the student has practiced (completed quests).
- */
-async function getRecentQuestTopics(studentId: string): Promise<string[]> {
-  const admin = createAdminClient();
-
-  const { data: progress } = await admin
-    .from("user_quest_progress")
-    .select("quest_id")
-    .eq("user_id", studentId)
-    .eq("status", "completed")
-    .order("last_attempt_at", { ascending: false })
-    .limit(10);
-
-  if (!progress || progress.length === 0) return [];
-
-  const questIds = progress.map((p) => p.quest_id as string);
-  const { data: quests } = await admin
-    .from("quests")
-    .select("prompt, metadata")
-    .in("id", questIds);
-
-  if (!quests) return [];
-
-  const topics: string[] = [];
-  for (const q of quests) {
-    const meta = q.metadata as Record<string, unknown> | null;
-    const tags = Array.isArray(meta?.tags)
-      ? (meta!.tags as unknown[]).filter((t) => typeof t === "string").map(String)
-      : [];
-    if (tags.length > 0) {
-      topics.push(tags[0]!);
-    } else {
-      const hint = String(q.prompt ?? "").slice(0, 60).trim();
-      if (hint.length > 8) topics.push(hint);
-    }
-  }
-
-  return [...new Set(topics)].slice(0, 6);
-}
-
-/**
- * Get how many confirmed sessions a student has had for a given course.
- */
-async function getSessionNumberForCourse(
-  studentId: string,
-  course: string
-): Promise<number> {
-  const admin = createAdminClient();
-  const { count } = await admin
-    .from("sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("student_id", studentId)
-    .eq("course", course)
-    .neq("status", "cancelled");
-
-  return (count ?? 0) + 1; // +1 = this upcoming session
-}
-
-/**
- * Get last 2 AI package summaries for the student in this course (continuity context).
- */
-async function getPriorSessionSummaries(
-  studentId: string,
-  course: string
-): Promise<string[]> {
-  const admin = createAdminClient();
-
-  // Join sessions → session_ai_packages
-  const { data: sessions } = await admin
-    .from("sessions")
-    .select("id")
-    .eq("student_id", studentId)
-    .eq("course", course)
-    .eq("status", "completed")
-    .order("start_time", { ascending: false })
-    .limit(3);
-
-  if (!sessions || sessions.length === 0) return [];
-
-  const sessionIds = sessions.map((s) => s.id as string);
-  const { data: packages } = await admin
-    .from("session_ai_packages")
-    .select("summary")
-    .in("session_id", sessionIds)
-    .not("summary", "is", null)
-    .limit(2);
-
-  return (packages ?? [])
-    .map((p) => String(p.summary ?? "").trim())
-    .filter((s) => s.length > 10);
-}
-
-// ─── Core generation ─────────────────────────────────────────────────────────
 
 /**
  * Generate, store, and email a Pre-Session Brief for a session.
@@ -199,7 +40,6 @@ export async function generateAndStorePreSessionBrief(params: {
 }): Promise<{ ok: true; brief: StoredPreSessionBrief } | { ok: false; reason: string }> {
   const admin = createAdminClient();
 
-  // Idempotency: skip if already generated
   const { data: existing } = await admin
     .from("session_briefs")
     .select("id, created_at, likely_coverage, weak_spots, warm_up_title, warm_up_prompt, warm_up_hint, questions_to_ask")
@@ -213,33 +53,24 @@ export async function generateAndStorePreSessionBrief(params: {
     };
   }
 
-  // Gather context in parallel
-  const [weakAreas, recentTopics, sessionNumber, priorSummaries] = await Promise.all([
-    getWeakAreasForStudent(params.studentId, params.course),
-    getRecentQuestTopics(params.studentId),
-    getSessionNumberForCourse(params.studentId, params.course),
-    getPriorSessionSummaries(params.studentId, params.course),
-  ]);
+  const { data: session } = await admin
+    .from("sessions")
+    .select("tutor_id")
+    .eq("id", params.sessionId)
+    .maybeSingle();
 
-  const result = await generatePreSessionBrief(
-    {
-      course: params.course,
-      sessionNumber,
-      durationMinutes: params.durationMinutes,
-      weakAreas,
-      recentQuestTopics: recentTopics,
-      priorSessionSummaries: priorSummaries,
-    },
-    params.studentId
-  );
+  const built = await buildDeterministicPreSessionBrief({
+    studentId: params.studentId,
+    guideId: session?.tutor_id ? String(session.tutor_id) : null,
+    course: params.course,
+  });
 
-  if ("error" in result) {
-    return { ok: false, reason: result.message };
+  if (!built.ok) {
+    return { ok: false, reason: built.reason };
   }
 
-  const brief = result as PreSessionBrief;
+  const brief: PreSessionBrief = built.brief;
 
-  // Persist
   const { data: inserted, error: insertError } = await admin
     .from("session_briefs")
     .insert({
@@ -264,7 +95,6 @@ export async function generateAndStorePreSessionBrief(params: {
     .update({ guide_context_cached_at: null })
     .eq("session_id", params.sessionId);
 
-  // Send email
   if (params.sendEmail !== false) {
     await sendPreSessionBriefEmail(params.studentEmail, {
       displayName: params.studentDisplayName,
@@ -274,7 +104,6 @@ export async function generateAndStorePreSessionBrief(params: {
       brief,
     });
 
-    // Mark email sent
     await admin
       .from("session_briefs")
       .update({ email_sent_at: new Date().toISOString() })
@@ -294,14 +123,8 @@ export async function generateAndStorePreSessionBrief(params: {
   return { ok: true, brief: stored };
 }
 
-// ─── Student-facing read ──────────────────────────────────────────────────────
-
-/**
- * Fetch a brief for a session the current authenticated student owns.
- * Returns null if none has been generated yet.
- */
 export async function getPreSessionBriefForSession(
-  sessionId: string
+  sessionId: string,
 ): Promise<StoredPreSessionBrief | null> {
   const user = await requireRole(["student", "admin"]);
   const admin = createAdminClient();
@@ -309,7 +132,7 @@ export async function getPreSessionBriefForSession(
   const { data } = await admin
     .from("session_briefs")
     .select(
-      "id, created_at, likely_coverage, weak_spots, warm_up_title, warm_up_prompt, warm_up_hint, questions_to_ask"
+      "id, created_at, likely_coverage, weak_spots, warm_up_title, warm_up_prompt, warm_up_hint, questions_to_ask",
     )
     .eq("session_id", sessionId)
     .eq("student_id", user.id)
@@ -319,9 +142,6 @@ export async function getPreSessionBriefForSession(
   return mapBriefRow(data, sessionId);
 }
 
-/**
- * Fetch all briefs for the current student's upcoming sessions (for hub card).
- */
 export async function getUpcomingSessionBriefs(): Promise<
   Array<StoredPreSessionBrief & { sessionCourse: string; sessionStartTime: string }>
 > {
@@ -330,7 +150,6 @@ export async function getUpcomingSessionBriefs(): Promise<
 
   const oneDayFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-  // Get upcoming sessions in the next 24 hours
   const { data: sessions } = await admin
     .from("sessions")
     .select("id, course, start_time")
@@ -347,7 +166,7 @@ export async function getUpcomingSessionBriefs(): Promise<
   const { data: briefs } = await admin
     .from("session_briefs")
     .select(
-      "id, session_id, created_at, likely_coverage, weak_spots, warm_up_title, warm_up_prompt, warm_up_hint, questions_to_ask"
+      "id, session_id, created_at, likely_coverage, weak_spots, warm_up_title, warm_up_prompt, warm_up_hint, questions_to_ask",
     )
     .in("session_id", sessionIds);
 
@@ -362,5 +181,3 @@ export async function getUpcomingSessionBriefs(): Promise<
     };
   });
 }
-
-import { mapBriefRow } from "@/features/pre-session-brief/context-mapper";

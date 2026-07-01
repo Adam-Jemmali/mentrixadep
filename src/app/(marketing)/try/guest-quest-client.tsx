@@ -23,7 +23,7 @@ import {
   stripGuestTryPromptDecorators,
   type GuestTryQuestion,
 } from "@/features/quest/guest-try-types";
-import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { isApCalculusAbSubject, GUEST_NON_AP_CALC_SUBJECT_MESSAGE, AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { buildApCalcGuestDiagnosticVerdict } from "@/features/quest/guest-try-results";
 import { shuffleGuestTryPack } from "@/features/quest/guest-try-shuffle";
 import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
@@ -214,6 +214,17 @@ export function GuestQuestClient({
   const [timeLimitSec, setTimeLimitSec] = useState(0);
   const timeLeftRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const apCalcSubjectOption =
+    defaultSubjects.find((subject) => isApCalculusAbSubject(subject.name)) ??
+    ({ key: "ap-calculus-ab", name: AP_CALC_AB_SUBJECT } as const);
+  const guestSubjectUnavailable = !isApCalculusAbSubject(subjectName);
+
+  const switchToApCalcSubject = () => {
+    setSubjectKey(apCalcSubjectOption.key);
+    setSubjectName(apCalcSubjectOption.name);
+    setErr(null);
+  };
 
   const apCalcStepTrace =
     diagnosticMode &&
@@ -447,7 +458,11 @@ export function GuestQuestClient({
       });
       const j = await res.json();
       if (!j.success) {
-        setErr(j.error || "Could not generate demo quest.");
+        if (j.code === "subject_unavailable") {
+          setErr(j.error || GUEST_NON_AP_CALC_SUBJECT_MESSAGE);
+        } else {
+          setErr(j.error || "Could not load demo practice pack.");
+        }
         setBusy(false);
         return;
       }
@@ -698,17 +713,34 @@ export function GuestQuestClient({
           </div>
 
           <div className="mt-5">
-            <Button
-              className="w-full h-11 text-base font-semibold flex items-center justify-center gap-2"
-              onClick={() => {
-                playClickSound();
-                start();
-              }}
-              disabled={busy}
-            >
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={18} height={18} className="h-[18px] w-[18px]" />
-              {busy ? "Building your practice pack…" : "Start practice pack"}
-            </Button>
+            {guestSubjectUnavailable ? (
+              <div className="rounded-xl border border-violet-200 bg-violet-50/90 px-4 py-4 text-left shadow-sm">
+                <p className="text-sm leading-relaxed text-slate-800">
+                  {GUEST_NON_AP_CALC_SUBJECT_MESSAGE}
+                </p>
+                <Button
+                  className="mt-4 w-full h-11 text-base font-semibold"
+                  onClick={() => {
+                    playClickSound();
+                    switchToApCalcSubject();
+                  }}
+                >
+                  Try AP Calculus AB now
+                </Button>
+              </div>
+            ) : (
+              <Button
+                className="w-full h-11 text-base font-semibold flex items-center justify-center gap-2"
+                onClick={() => {
+                  playClickSound();
+                  start();
+                }}
+                disabled={busy}
+              >
+                <Image src={MENTRIXA_LOGO_PNG} alt="" width={18} height={18} className="h-[18px] w-[18px]" />
+                {busy ? "Loading your practice pack…" : "Start practice pack"}
+              </Button>
+            )}
           </div>
         </TiltCard>
       </motion.div>

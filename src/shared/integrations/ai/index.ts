@@ -6,7 +6,6 @@
 export * from "./shared";
 export * from "./quest";
 export * from "./studio";
-export * from "./duel";
 export * from "./practice";
 export * from "./brief";
 export * from "./resolve";

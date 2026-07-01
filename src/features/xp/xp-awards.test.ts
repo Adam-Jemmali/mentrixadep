@@ -60,14 +60,14 @@ describe("applyXpAward (mocked Supabase)", () => {
 
   it("returns levelUp when crossing a level boundary", async () => {
     mockAdmin.setUserXp({
-      total_xp: 95,
+      total_xp: 195,
       streak_days: 0,
       last_activity_date: null,
       last_activity_at: null,
       division_xp: {},
     });
     const r = await applyXpAward(userId, 10, "boundary:test", null);
-    expect(r.totalXp).toBe(105);
+    expect(r.totalXp).toBe(205);
     expect(r.levelUp).toEqual({ fromLevel: 1, toLevel: 2, title: "SEEKER" });
   });
 });

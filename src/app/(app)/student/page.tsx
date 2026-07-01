@@ -56,7 +56,7 @@ import {
 import { getGuideRanksMap } from "@/features/guide-rank/reads";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
-import { loadActiveStudentGoal } from "@/features/student-goals/load-student-goal";
+import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -83,7 +83,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       getActiveProgressSnapshot().catch(() => null),
       getCalibratedRank(user.id, AP_CALC_AB_SUBJECT),
       loadMasteryGrid(user.id).catch(() => null),
-      loadActiveStudentGoal(user.id, AP_CALC_AB_SUBJECT),
+      loadActiveStudentGoalForViewer(AP_CALC_AB_SUBJECT),
     ]);
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
@@ -229,7 +229,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
             <div className="flex flex-col items-start gap-3 lg:items-end shrink-0">
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                <Button variant="outline" size="sm" className="min-h-11 text-xs bg-white text-zinc-900 hover:bg-slate-100" asChild>
                   <Link
                     href={`/student/${user.id}`}
                     className="inline-flex min-h-11 items-center gap-1.5 px-3"
@@ -245,7 +245,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     Profile & Settings
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" className="min-h-11 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+                <Button variant="outline" size="sm" className="min-h-11 text-xs bg-white text-zinc-900 hover:bg-slate-100" asChild>
                   <Link
                     href="/student/quest"
                     className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"

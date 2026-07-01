@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Internal XP award pipeline — server-only imports.
+ * Not a server action module; never import from client components.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUtcWeekMondayString } from "@/features/divisions/division-week";
@@ -17,10 +20,7 @@ export type ApplyXpAwardResult = {
   streakBroken?: boolean;
 };
 
-/**
- * Idempotent XP award: ledger insert → user_xp update → optional level-up row.
- * Use distinct award_key per logical event (e.g. session_complete:{uuid}).
- */
+/** Internal only — idempotent XP award via service role (ledger → user_xp → achievements). */
 export async function applyXpAward(
   userId: string,
   amount: number,
@@ -175,7 +175,7 @@ export async function applyXpAward(
   };
 }
 
-/** Process completed sessions: session XP, daily bonus, welcome, referral. Called from cron (service role). */
+/** Internal only — cron worker for session completion XP grants. */
 export async function processPendingSessionXpAwards(): Promise<{
   processed: number;
   errors: string[];
@@ -297,6 +297,7 @@ export async function processPendingSessionXpAwards(): Promise<{
   return { processed, errors };
 }
 
+/** Internal only — streak banner state; called from /api streak route with session auth. */
 export async function getStreakUiState(userId: string): Promise<{
   streakDays: number;
   atRisk: boolean;

@@ -1,13 +1,12 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import {
-  AP_CALC_AB_SUBJECT,
   isApCalculusAbSubject,
-  normalizeNodeKey,
 } from "@/features/quest/ap-calc-ab-subject";
 import {
   addInterventionRetestDelay,
   type InterventionSourceType,
 } from "@/features/intervention-retests/schedule-intervention-retests-pure";
+import { resolveApCalcAbSkillNodeForConcept } from "@/features/breakthrough-events/resolve-skill-node";
 
 type ScheduleRow = {
   source_type: InterventionSourceType;
@@ -143,25 +142,7 @@ export async function scheduleBreakthroughRetest(params: {
   if (!isApCalculusAbSubject(params.subject)) return 0;
 
   const admin = createAdminClient();
-  const normalizedConcept = normalizeNodeKey(params.concept);
-  if (!normalizedConcept) return 0;
-
-  const { data: nodes } = await admin
-    .from("skill_nodes")
-    .select("id, node_name, node_slug")
-    .eq("subject", AP_CALC_AB_SUBJECT);
-
-  const match = (nodes ?? []).find((node) => {
-    const name = normalizeNodeKey(String(node.node_name));
-    const slug = normalizeNodeKey(String(node.node_slug));
-    return (
-      normalizedConcept === name ||
-      normalizedConcept === slug ||
-      normalizedConcept.includes(name) ||
-      name.includes(normalizedConcept)
-    );
-  });
-
+  const match = await resolveApCalcAbSkillNodeForConcept(admin, params.concept);
   if (!match) return 0;
 
   const detectedAt = params.detectedAt ?? new Date().toISOString();
@@ -174,7 +155,7 @@ export async function scheduleBreakthroughRetest(params: {
     sourceType: "breakthrough",
     sourceId: params.eventId,
     userId: params.studentId,
-    skillNodeIds: [String(match.id)],
+    skillNodeIds: [match.id],
     scheduledAt: scheduledFor,
   });
 }
