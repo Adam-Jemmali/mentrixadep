@@ -144,8 +144,11 @@ if (read("supabase/127-user-notifications.sql").includes("intervention_retests_g
 const vercel = read("vercel.json");
 if (vercel.includes('"/api/cron/sync-peer-comparison"')) {
   const hourly = /sync-peer-comparison[\s\S]*?"schedule":\s*"0 \* \* \* \*"/.test(vercel);
-  if (hourly) pass("Peer comparison cron", "hourly schedule");
-  else warn("Peer comparison cron", "present but not hourly — update vercel.json to 0 * * * *");
+  if (hourly) {
+    fail("Peer comparison cron", "hourly schedule blocks Vercel Hobby deploys — use daily in vercel.json");
+  } else {
+    pass("Peer comparison cron", "daily schedule (Hobby-safe)");
+  }
 } else {
   fail("Peer comparison cron", "route missing from vercel.json");
 }

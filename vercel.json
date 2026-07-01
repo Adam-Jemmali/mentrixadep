@@ -132,7 +132,7 @@
     },
     {
       "path": "/api/cron/sync-peer-comparison",
-      "schedule": "0 * * * *"
+      "schedule": "15 3 * * *"
     }
   ]
 }
