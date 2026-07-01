@@ -6,6 +6,7 @@ import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData, MasteryGridNode, MasteryNodeState } from "@/features/mastery-grid/types";
 import { splitMasteryGridByPinned, VERIFIED_GOLD } from "@/features/mastery-grid/mastery-grid-pure";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import {
   skillTreeUnitAccordionFooter,
   skillTreeUnitTriggerLabel,
@@ -354,7 +355,11 @@ export function MasteryGrid({
       </div>
 
       {!hideNextAction ? (
-        <p className="mt-5 text-sm font-medium text-slate-100">{data.nextActionLine}</p>
+        data.verdict ? (
+          <VerdictPanel verdict={data.verdict} tone="dark" className="mt-5" />
+        ) : (
+          <p className="mt-5 text-sm font-medium text-slate-100">{data.nextActionLine}</p>
+        )
       ) : null}
     </section>
   );

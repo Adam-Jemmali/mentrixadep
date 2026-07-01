@@ -23,13 +23,13 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
 import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
-import { useBiometricTelemetry } from "@/shared/hooks/useBiometricTelemetry";
-import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/load-mastery-grid";
 import { QuestMasteryDonePanel } from "@/features/mastery-grid/quest-mastery-done-panel";
 import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import {
   OnboardingQuestProgressBar,
   QuestSessionProgressBar,
@@ -103,18 +103,12 @@ export function QuestPracticeWorkspace({
     streakDays?: number;
     masteryGrid?: MasteryGridData;
     masteryHighlight?: QuestMasteryHighlight;
+    questVerdict?: Verdict;
   } | null>(null);
   const [lockedQuestionIndices, setLockedQuestionIndices] = useState<Set<number>>(new Set());
   const [breakthroughCelebration, setBreakthroughCelebration] =
     useState<BreakthroughCelebration | null>(null);
   const [fallbackMasteryGrid, setFallbackMasteryGrid] = useState<MasteryGridData | null>(null);
-  const [activeSubject, setActiveSubject] = useState("");
-
-  const telemetry = useBiometricTelemetry(phase === "run");
-  const telemetryRef = useRef(telemetry);
-  useEffect(() => {
-    telemetryRef.current = telemetry;
-  }, [telemetry]);
 
   useEffect(() => {
     if (phase === "run") void warmKatex();
@@ -126,23 +120,9 @@ export function QuestPracticeWorkspace({
   const onboardingCompleteRef = useRef(false);
   const touchStartX = useRef<number | null>(null);
 
-  const buildFinalizeOptions = useCallback(
-    (timedOut = false) => {
-      const base = timedOut ? { timedOut: true as const } : {};
-      if (!isApCalculusAbSubject(activeSubject)) return base;
-      const snapshot = telemetryRef.current;
-      return {
-        ...base,
-        telemetry: {
-          keystrokeVariance: snapshot.keystrokeVariance,
-          tabFocusLeaks: snapshot.tabFocusLeaks,
-          frictionScore: snapshot.frictionScore,
-          isAnomalyDetected: snapshot.isAnomalyDetected,
-        },
-      };
-    },
-    [activeSubject],
-  );
+  const buildFinalizeOptions = useCallback((timedOut = false) => {
+    return timedOut ? { timedOut: true as const } : {};
+  }, []);
 
   const completeOnboardingQuest = useCallback(() => {
     if (onboardingCompleteRef.current) return;
@@ -225,7 +205,6 @@ export function QuestPracticeWorkspace({
     setErr(null);
     setLockedQuestionIndices(new Set());
     setBusy(true);
-    setActiveSubject(AP_CALC_AB_SUBJECT);
     const res = await createPracticeQuest({
       subject: AP_CALC_AB_SUBJECT,
       difficulty: onboardingMode ? "intermediate" : difficulty,
@@ -502,9 +481,7 @@ export function QuestPracticeWorkspace({
   if (phase === "done" && doneResult) {
     const grid = doneResult.masteryGrid ?? fallbackMasteryGrid;
     const highlight = doneResult.masteryHighlight;
-    const verdictLine =
-      highlight?.verdictLine ??
-      (grid ? grid.nextActionLine : "Your mastery grid is updating.");
+    const verdict = doneResult.questVerdict;
 
     return (
       <>
@@ -513,11 +490,10 @@ export function QuestPracticeWorkspace({
             <OnboardingQuestProgressBar phase="done" />
           </div>
         ) : null}
-        {grid ? (
+        {grid && verdict ? (
           <QuestMasteryDonePanel
             grid={grid}
-            verdictLine={verdictLine}
-            nextActionLine={grid.nextActionLine}
+            verdict={verdict}
             highlightTransition={
               highlight && !highlight.unchanged
                 ? {
@@ -527,6 +503,8 @@ export function QuestPracticeWorkspace({
                   }
                 : undefined
             }
+            correct={doneResult.correct}
+            total={doneResult.total}
             xpAwarded={doneResult.xpAwarded}
             perfectBonus={doneResult.perfectBonus}
             streakDays={doneResult.streakDays}

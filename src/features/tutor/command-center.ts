@@ -27,6 +27,12 @@ import type { GuideRankProgress } from "@/features/guide-rank/calculate-pure";
 import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
 import type { GuideDemandSignal } from "@/features/demand-signal/demand-signal-pure";
 import { loadGuideDemandSignals } from "@/features/demand-signal/reads";
+import { getVerdict } from "@/features/guidance/verdict-engine";
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+import {
+  loadGuideNotifications,
+  type GuideNotificationEntry,
+} from "@/features/notifications/load-guide-notifications";
 
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
@@ -78,9 +84,11 @@ export type TutorCommandCenterPayload = {
   guideRank: string;
   rankProgress: GuideRankProgress;
   impactScores: GuideImpactEntry[];
+  impactVerdict: Verdict | null;
   impactHistoryLast30Days: { date: string; impactScore: number }[];
   completedSessionsTotal: number;
   demandSignals: GuideDemandSignal[];
+  guideNotifications: GuideNotificationEntry[];
 };
 
 function fallbackTutorCommandCenterPayload(
@@ -127,9 +135,11 @@ function fallbackTutorCommandCenterPayload(
       maxImpactScore: 0,
     }),
     impactScores: [],
+    impactVerdict: null,
     impactHistoryLast30Days: [],
     completedSessionsTotal: 0,
     demandSignals: [],
+    guideNotifications: [],
   };
 }
 
@@ -358,6 +368,18 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       impactHistoryLast30Days = [];
     }
 
+    let impactVerdict: Verdict | null = null;
+    try {
+      impactVerdict = await getVerdict({
+        type: "impact_score",
+        userId: tutorId,
+        scope: { guideId: tutorId },
+        value: maxImpactScore(impactScores),
+      });
+    } catch {
+      impactVerdict = null;
+    }
+
     const verifiedCourseNames = (tutorCourses ?? [])
       .filter((course) => course.verified)
       .map((course) => String(course.course_name));
@@ -370,6 +392,12 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
             course: String(slot.course),
           })),
         }),
+      [],
+    );
+
+    const guideNotifications = await loadTutorSection(
+      "guideNotifications",
+      () => loadGuideNotifications(tutorId),
       [],
     );
 
@@ -430,9 +458,11 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       guideRank,
       rankProgress,
       impactScores,
+      impactVerdict,
       impactHistoryLast30Days,
       completedSessionsTotal,
       demandSignals,
+      guideNotifications,
     };
 
     logTutorLoader("payload-built", {

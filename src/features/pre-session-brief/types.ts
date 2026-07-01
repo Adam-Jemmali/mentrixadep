@@ -11,7 +11,6 @@ export const preSessionVerifiedGapNodeSchema = z.object({
 
 export const preSessionVerifiedGapsSchema = z.object({
   nodes: z.array(preSessionVerifiedGapNodeSchema).max(3),
-  sessionFocusSignal: z.number().min(0.1).max(1).nullable(),
 });
 
 export type VerifiedGapsSummary = z.infer<typeof preSessionVerifiedGapsSchema>;
@@ -32,7 +31,6 @@ export const preSessionPerformanceSchema = z.object({
   divisionPosition: z.number().int().min(1).nullable(),
   divisionKey: z.string().nullable(),
   lastSessionTopic: z.string().nullable(),
-  sessionFocusSignal: z.number().min(0.1).max(1).nullable().optional(),
 });
 
 export const preSessionAiBriefSchema = z.object({

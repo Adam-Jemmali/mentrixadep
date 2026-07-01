@@ -73,6 +73,14 @@ export const DeferredStudentStudyPackageNotifier = dynamic(
   { loading: () => null, ssr: false },
 ) as typeof StudentStudyPackageNotifier;
 
+export const DeferredStudentGoalCaptureCard = dynamic(
+  () =>
+    import("@/features/student-goals/student-goal-capture-card").then((m) => ({
+      default: m.StudentGoalCaptureCard,
+    })),
+  { loading: () => null, ssr: false },
+);
+
 const DeferredSessionsListInner = dynamic(
   () => import("./sessions-list").then((m) => ({ default: m.SessionsList })),
   { loading: () => <SessionsListSkeleton /> },

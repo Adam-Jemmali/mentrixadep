@@ -6,6 +6,8 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { createPayoutLedgerForSession } from "@/features/payments/payout-ledger";
 import { autoGenerateStudioPackagesForCompletedSessions } from "@/features/studio-ai/studio-packages";
+import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
+import { scheduleSessionCompletionRetests } from "@/features/intervention-retests/schedule-intervention-retests";
 import type { Session } from "@/shared/types/database";
 import { validateUUID } from "@/shared/core/security";
 import {
@@ -155,7 +157,7 @@ export async function completeSession(sessionId: string, onBehalfOfUserId?: stri
 
   const { data: session, error: sessionError } = await client
     .from("sessions")
-    .select("id, tutor_id, status, completed")
+    .select("id, tutor_id, status, completed, student_id, course")
     .eq("id", validSessionId)
     .eq("tutor_id", actingAsId)
     .single();
@@ -181,6 +183,19 @@ export async function completeSession(sessionId: string, onBehalfOfUserId?: stri
 
   if (updateError) {
     throw new Error(`Failed to complete session: ${updateError.message}`);
+  }
+
+  const completedAt = new Date().toISOString();
+  try {
+    await seedSessionTargetNodes(validSessionId, session.student_id, String(session.course ?? ""));
+    await scheduleSessionCompletionRetests({
+      sessionId: validSessionId,
+      studentId: session.student_id,
+      course: String(session.course ?? ""),
+      completedAt,
+    });
+  } catch (retestErr) {
+    console.error("[completeSession] intervention retest schedule failed", validSessionId, retestErr);
   }
 
   try {

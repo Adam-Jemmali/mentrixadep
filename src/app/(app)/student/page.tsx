@@ -34,6 +34,7 @@ import {
   DeferredProgressSnapshotCard,
   DeferredSessionsList,
   DeferredStudentCommandCenterClient,
+  DeferredStudentGoalCaptureCard,
   DeferredStudentStatStripMotion,
   DeferredStudentStudyPackageNotifier,
   DeferredTopRivalCard,
@@ -55,6 +56,7 @@ import {
 import { getGuideRanksMap } from "@/features/guide-rank/reads";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
+import { loadActiveStudentGoal } from "@/features/student-goals/load-student-goal";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -70,7 +72,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, calibratedRank, masteryGrid] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, calibratedRank, masteryGrid, activeGoal] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -81,6 +83,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       getActiveProgressSnapshot().catch(() => null),
       getCalibratedRank(user.id, AP_CALC_AB_SUBJECT),
       loadMasteryGrid(user.id).catch(() => null),
+      loadActiveStudentGoal(user.id, AP_CALC_AB_SUBJECT),
     ]);
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
@@ -264,6 +267,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             </div>
           </div>
         </div>
+
+        {!activeGoal ? (
+          <div className="mt-6">
+            <DeferredStudentGoalCaptureCard subject={AP_CALC_AB_SUBJECT} />
+          </div>
+        ) : null}
 
         {masteryGrid ? (
           <div className="mt-8">

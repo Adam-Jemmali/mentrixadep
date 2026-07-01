@@ -3,6 +3,19 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/shared/integrations/supabase/client";
 
+async function loadTutorUnreadNotificationCount(userId: string): Promise<number> {
+  const supabase = createClient();
+  const { count, error } = await supabase
+    .from("user_notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("kind", "intervention_retest_complete")
+    .is("read_at", null);
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
 async function loadTutorPendingRequestCount(userId: string): Promise<number> {
   const supabase = createClient();
   const { data: availability, error: availabilityError } = await supabase
@@ -52,7 +65,8 @@ export function useProfileBadgeCount(
     async function refresh() {
       const next =
         role === "tutor"
-          ? await loadTutorPendingRequestCount(userId!)
+          ? (await loadTutorPendingRequestCount(userId!)) +
+            (await loadTutorUnreadNotificationCount(userId!))
           : await loadStudentPendingRequestCount(userId!);
       if (!cancelled) setCount(next);
     }

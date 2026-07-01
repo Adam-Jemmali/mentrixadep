@@ -40,6 +40,8 @@ const publicRoutes = new Set([
   "/api/stripe/checkout/cancel-return",
   "/api/guest-practice",
   "/api/guest-classic-quest",
+  "/api/guest-diagnostic/start",
+  "/api/guest-diagnostic/comparison",
   "/auth/signin",
   "/auth/signup",
   "/auth/activate",

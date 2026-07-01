@@ -4,15 +4,13 @@ import {
   calculateMemoryStrengthBase,
   DEFAULT_COGNITIVE_FRICTION,
 } from "@/features/analytics/utils/ebbinghausScheduler";
-import { getAverageSessionFocusSignal } from "@/features/quest/record-telemetry-log";
 import type { KnowledgeNodeUpdate } from "@/features/learning-path/knowledge-graph-lib";
-import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 
-export async function getUserCognitiveFriction(userId: string): Promise<number> {
-  const average = await getAverageSessionFocusSignal(userId, AP_CALC_AB_SUBJECT, 5);
-  if (average != null) return average;
+export async function getUserCognitiveFriction(_userId: string): Promise<number> {
   return DEFAULT_COGNITIVE_FRICTION;
 }
+
 export async function scheduleApCalcReviews(
   userId: string,
   updates: KnowledgeNodeUpdate[],

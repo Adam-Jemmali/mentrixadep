@@ -370,6 +370,8 @@ export interface SkillDuelQuestion {
   correctIndex: number;
   /** Defaults to mcq when omitted (4 choices). */
   type?: "mcq" | "tf" | "flashcard";
+  /** When set, duel loss schedules a closed-loop retest on this node. */
+  skillNodeId?: string;
 }
 
 export interface SkillDuel {

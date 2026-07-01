@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
-import { getAverageSessionFocusSignal } from "@/features/quest/record-telemetry-log";
 import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import type { VerifiedGapsSummary } from "@/features/pre-session-brief/types";
 
@@ -58,8 +57,6 @@ export async function loadVerifiedGaps(
     studentId,
     weakest.map((node) => node.id)
   );
-  const sessionFocusSignal = await getAverageSessionFocusSignal(studentId, subject, 5);
-
   return {
     nodes: weakest.map((node) => ({
       unitName: node.unitName,
@@ -70,6 +67,5 @@ export async function loadVerifiedGaps(
       attemptsCount: node.attemptsCount,
       correctCount: node.correctCount,
     })),
-    sessionFocusSignal,
   };
 }

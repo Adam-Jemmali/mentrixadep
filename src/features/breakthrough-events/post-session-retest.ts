@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
-import { isStudioRetestDue } from "@/features/breakthrough-events/schedule-session-retests-pure";
+import { isInterventionRetestDue } from "@/features/intervention-retests/schedule-intervention-retests-pure";
 
 export type SessionBreakthroughLine = {
   nodeName: string;
@@ -23,7 +23,7 @@ export function preSessionWasNotCorrect(pre: boolean | null): boolean {
 export function isGuaranteeEvaluationReady(
   targets: { post_session_correct: boolean | null }[],
   sessionEndTime: string,
-  nowMs = Date.now()
+  nowMs = Date.now(),
 ): boolean {
   if (targets.length !== 3) return false;
   const allPostSet = targets.every((t) => t.post_session_correct !== null);
@@ -41,56 +41,41 @@ export function shouldRefundAccuracyGuarantee(
   return improved.length === 0;
 }
 
-async function recentApCalcSessionIds(
-  admin: ReturnType<typeof createAdminClient>,
-  studentId: string,
-  limit = 10
-): Promise<string[]> {
-  const { data: sessions } = await admin
-    .from("sessions")
-    .select("id, course")
-    .eq("student_id", studentId)
-    .eq("status", "completed")
-    .order("end_time", { ascending: false })
-    .limit(limit);
-
-  return (sessions ?? [])
-    .filter((row) => isApCalculusAbSubject(row.course))
-    .map((row) => row.id);
-}
-
-export async function getPendingPostSessionTargetNodeIds(
+export async function getPendingInterventionRetestNodeIds(
   userId: string,
-  validNodeIds?: Set<string>
+  validNodeIds?: Set<string>,
 ): Promise<string[]> {
   const admin = createAdminClient();
-  const sessionIds = await recentApCalcSessionIds(admin, userId, 15);
-  if (sessionIds.length === 0) return [];
+  const { data: rows } = await admin
+    .from("intervention_retests")
+    .select("skill_node_id, scheduled_for")
+    .eq("user_id", userId)
+    .is("completed_at", null)
+    .order("scheduled_for", { ascending: true })
+    .limit(24);
 
-  for (const sessionId of sessionIds) {
-    const { data: targets } = await admin
-      .from("session_target_nodes")
-      .select("skill_node_id, retest_scheduled_at")
-      .eq("session_id", sessionId)
-      .is("post_session_checked_at", null);
+  const pending = (rows ?? [])
+    .filter((row) => isInterventionRetestDue(row.scheduled_for as string | null))
+    .map((row) => String(row.skill_node_id))
+    .filter((id) => (validNodeIds ? validNodeIds.has(id) : true));
 
-    const pending = (targets ?? [])
-      .filter((row) => isStudioRetestDue(row.retest_scheduled_at as string | null))
-      .map((row) => row.skill_node_id)
-      .filter((id) => (validNodeIds ? validNodeIds.has(id) : true));
+  return [...new Set(pending)];
+}
 
-    if (pending.length > 0) return pending;
-  }
-
-  return [];
+/** @deprecated Use getPendingInterventionRetestNodeIds */
+export async function getPendingPostSessionTargetNodeIds(
+  userId: string,
+  validNodeIds?: Set<string>,
+): Promise<string[]> {
+  return getPendingInterventionRetestNodeIds(userId, validNodeIds);
 }
 
 export async function recordPostSessionTargetResults(
   studentId: string,
-  results: { skillNodeId?: string; correct: boolean }[]
+  results: { skillNodeId?: string; correct: boolean }[],
 ): Promise<void> {
   const withNodes = results.filter(
-    (row): row is { skillNodeId: string; correct: boolean } => !!row.skillNodeId
+    (row): row is { skillNodeId: string; correct: boolean } => !!row.skillNodeId,
   );
   if (withNodes.length === 0) return;
 
@@ -124,6 +109,24 @@ export async function recordPostSessionTargetResults(
   }
 }
 
+async function recentApCalcSessionIds(
+  admin: ReturnType<typeof createAdminClient>,
+  studentId: string,
+  limit = 10,
+): Promise<string[]> {
+  const { data: sessions } = await admin
+    .from("sessions")
+    .select("id, course")
+    .eq("student_id", studentId)
+    .eq("status", "completed")
+    .order("end_time", { ascending: false })
+    .limit(limit);
+
+  return (sessions ?? [])
+    .filter((row) => isApCalculusAbSubject(row.course))
+    .map((row) => row.id);
+}
+
 function resolveNodeName(skillNodes: SessionTargetRow["skill_nodes"]): string {
   if (!skillNodes) return "Skill node";
   if (Array.isArray(skillNodes)) return skillNodes[0]?.node_name ?? "Skill node";
@@ -131,7 +134,7 @@ function resolveNodeName(skillNodes: SessionTargetRow["skill_nodes"]): string {
 }
 
 export async function getSessionBreakthroughLines(
-  studentId: string
+  studentId: string,
 ): Promise<SessionBreakthroughLine[]> {
   const admin = createAdminClient();
   const { data: sessions } = await admin
@@ -148,7 +151,7 @@ export async function getSessionBreakthroughLines(
     const { data: targets } = await admin
       .from("session_target_nodes")
       .select(
-        "pre_session_correct, post_session_correct, skill_nodes!session_target_nodes_skill_node_id_fkey(node_name)"
+        "pre_session_correct, post_session_correct, skill_nodes!session_target_nodes_skill_node_id_fkey(node_name)",
       )
       .eq("session_id", session.id);
 
@@ -160,7 +163,7 @@ export async function getSessionBreakthroughLines(
     if (!allPreSet || !allPostSet) continue;
 
     const flips = rows.filter(
-      (row) => preSessionWasNotCorrect(row.pre_session_correct) && row.post_session_correct === true
+      (row) => preSessionWasNotCorrect(row.pre_session_correct) && row.post_session_correct === true,
     );
     if (flips.length === 0) continue;
 

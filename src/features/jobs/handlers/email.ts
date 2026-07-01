@@ -12,6 +12,16 @@ import type { EmailJobPayload } from "@/features/jobs/types";
 import { getSiteUrl } from "@/shared/core/site";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { progressSnapshotDataSchema } from "@/features/progress-snapshot/types";
+import { z } from "zod";
+
+const verdictEmailSchema = z.object({
+  changed: z.string(),
+  reason: z.string(),
+  nextAction: z.object({
+    label: z.string(),
+    href: z.string(),
+  }),
+});
 
 export async function handleEmailJob(payload: EmailJobPayload): Promise<void> {
   const { template, to, data } = payload;
@@ -40,7 +50,11 @@ export async function handleEmailJob(payload: EmailJobPayload): Promise<void> {
       const snapshotRaw = data.snapshot;
       const parsed = progressSnapshotDataSchema.safeParse(snapshotRaw);
       if (!parsed.success) throw new Error("progress_snapshot: invalid snapshot data");
-      await sendProgressSnapshotEmail(to, { snapshot: parsed.data });
+      const weeklyVerdictParsed = verdictEmailSchema.safeParse(data.weeklyVerdict);
+      await sendProgressSnapshotEmail(to, {
+        snapshot: parsed.data,
+        weeklyVerdict: weeklyVerdictParsed.success ? weeklyVerdictParsed.data : null,
+      });
       if (snapshotId) {
         const admin = createAdminClient();
         await admin

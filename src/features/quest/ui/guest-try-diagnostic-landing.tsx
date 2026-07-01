@@ -15,13 +15,13 @@ const VERIFIED_GOLD = "#D4A017";
 const HIGHLIGHTS = [
   {
     src: "/images/quest.webp",
-    label: "5 skills sampled",
-    detail: "One question per node from the reviewed bank",
+    label: "One traced problem",
+    detail: "Step by step reasoning from the reviewed bank",
   },
   {
     src: "/images/checks.webp",
     label: "Trap tagged",
-    detail: "See the misconception Mentrixa flags on your miss",
+    detail: "See where your reasoning diverged from a strong student",
   },
   {
     src: "/icons/mentrixer-rank.svg",
@@ -72,7 +72,7 @@ export function GuestTryDiagnosticLanding({
             />
           </h1>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-slate-400 sm:text-base">
-            5 verified questions. 1 verdict, 1 trap, 1 rank passport preview.
+            1 traced problem. 1 verdict. 1 rank passport preview.
           </p>
         </div>
 

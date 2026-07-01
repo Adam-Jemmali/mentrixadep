@@ -10,6 +10,7 @@ import {
   BREAKTHROUGH_RECENT_QUESTS,
 } from "@/features/breakthrough-events/types";
 import { queueBreakthroughAdaptiveQuests } from "@/features/breakthrough-events/adaptive-quests";
+import { scheduleBreakthroughRetest } from "@/features/intervention-retests/schedule-intervention-retests";
 import { notifyGuideOfBreakthrough } from "@/features/breakthrough-events/guide-notify";
 import { trackEvent } from "@/shared/integrations/analytics";
 
@@ -156,6 +157,13 @@ export async function detectBreakthroughsAfterQuest(params: {
         subject,
         topic,
         brokenConcept: concept,
+      });
+
+      void scheduleBreakthroughRetest({
+        eventId: inserted.id,
+        studentId: params.studentId,
+        subject,
+        concept,
       });
 
       if (sessionId) {

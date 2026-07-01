@@ -4,43 +4,41 @@ import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
-import { flattenMasteryNodes } from "@/features/mastery-grid/mastery-grid-pure";
 import type { MasteryGridData, MasteryNodeState } from "@/features/mastery-grid/types";
-import { SkillNodeStrengthMeter } from "@/shared/ui/meter-patterns";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 
 export function QuestMasteryDonePanel({
   grid,
-  verdictLine,
-  nextActionLine,
+  verdict,
   highlightTransition,
+  correct,
+  total,
   xpAwarded,
   perfectBonus,
   streakDays,
   onNewPack,
 }: {
   grid: MasteryGridData;
-  verdictLine: string;
-  nextActionLine: string;
+  verdict: Verdict;
   highlightTransition?: {
     nodeId: string;
     fromState: MasteryNodeState;
     toState: MasteryNodeState;
   };
+  correct: number;
+  total: number;
   xpAwarded: number;
   perfectBonus: number;
   streakDays?: number;
   onNewPack: () => void;
 }) {
   const xpTotal = xpAwarded + perfectBonus;
-  const footnoteParts: string[] = [];
-  if (xpTotal > 0) footnoteParts.push(`+${xpTotal} XP`);
+  const secondaryParts: string[] = [`${correct}/${total} this pack`];
+  if (xpTotal > 0) secondaryParts.push(`+${xpTotal} XP`);
   if (streakDays != null && streakDays > 0) {
-    footnoteParts.push(`${streakDays} day streak`);
+    secondaryParts.push(`${streakDays} day streak`);
   }
-
-  const highlightNode = highlightTransition
-    ? flattenMasteryNodes(grid).find((node) => node.id === highlightTransition.nodeId)
-    : null;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 pb-12 sm:px-6 sm:py-10">
@@ -62,25 +60,10 @@ export function QuestMasteryDonePanel({
       />
 
       <div className="mt-5 space-y-4 rounded-2xl border border-white/10 bg-[#0F172A]/90 p-5 sm:p-6">
-        {highlightNode ? (
-          <SkillNodeStrengthMeter
-            nodeName={highlightNode.nodeName}
-            state={highlightNode.state}
-            accuracyPercent={highlightNode.accuracyPercent}
-            tone="dark"
-          />
-        ) : null}
-        <p className="text-base font-semibold leading-relaxed text-white sm:text-lg">
-          {verdictLine}
+        <VerdictPanel verdict={verdict} tone="dark" />
+        <p className="font-mono text-xs tabular-nums text-slate-500">
+          {secondaryParts.join(" · ")}
         </p>
-        <p className={`text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
-          {nextActionLine}
-        </p>
-        {footnoteParts.length > 0 ? (
-          <p className="pt-1 font-mono text-xs tabular-nums text-slate-500">
-            {footnoteParts.join(" · ")}
-          </p>
-        ) : null}
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">

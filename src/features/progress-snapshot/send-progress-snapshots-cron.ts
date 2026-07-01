@@ -7,6 +7,7 @@ import {
   studentHadSnapshotThisWeek,
 } from "@/features/progress-snapshot/calculate";
 import { subjectLineRankPhrase } from "@/features/progress-snapshot/calculate-pure";
+import { getVerdict } from "@/features/guidance/verdict-engine";
 import type { ProgressSnapshotData } from "@/features/progress-snapshot/types";
 
 const MS_7D = 7 * 24 * 60 * 60 * 1000;
@@ -78,6 +79,17 @@ export async function runSendProgressSnapshotsCron() {
       const subject = `${snapshotData.firstName} — ${subjectLineRankPhrase(snapshotData.rankChange.direction)}`;
       const weekStart = now.toISOString().slice(0, 10);
 
+      let weeklyVerdict = null;
+      try {
+        weeklyVerdict = await getVerdict({
+          type: "weekly_snapshot",
+          userId: studentId,
+          context: { snapshot: snapshotData },
+        });
+      } catch {
+        weeklyVerdict = null;
+      }
+
       jobs.push({
         jobType: "email.send",
         idempotencyKey: `progress_snapshot:${studentId}:${weekStart}`,
@@ -88,6 +100,7 @@ export async function runSendProgressSnapshotsCron() {
             snapshotId: inserted.id,
             subject,
             snapshot: snapshotData,
+            weeklyVerdict,
           },
         },
         priority: 2,

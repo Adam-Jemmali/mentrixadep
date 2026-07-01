@@ -2,7 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export function applyLocalEnvOverrides(rootDir) {
-  if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") return;
+  // Vercel production injects env vars; skip .env.local there only.
+  // `vercel dev` also sets VERCEL=1 but still needs .env.local for local secrets.
+  if (process.env.NODE_ENV === "production") return;
 
   const envPath = join(rootDir, ".env.local");
   if (!existsSync(envPath)) return;

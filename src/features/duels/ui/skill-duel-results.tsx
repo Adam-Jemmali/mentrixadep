@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { Check, Clock, Sparkles, Swords, Target, X } from "lucide-react";
+import { Swords } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { QuestKindMetaTag } from "@/shared/ui/meta-tag-patterns";
 import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { cn } from "@/shared/core/utils";
 import { emitXpAward } from "@/features/xp/xp-events";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
+import { fetchDuelResultVerdict } from "@/features/guidance/fetch-verdict-actions";
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 
 type QuestionPublic = {
   prompt: string;
@@ -108,7 +111,7 @@ export function SkillDuelResults({
   youWon,
   tie,
   xpAmount,
-  xpLine,
+  xpLine: _xpLine,
   listActionLoading,
   error,
   onRemoveFromList,
@@ -117,6 +120,7 @@ export function SkillDuelResults({
   const reducedMotion = useReducedMotion();
   const theme = getDivisionTheme(divisionKey);
   const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [verdict, setVerdict] = useState<Verdict | null>(null);
 
   const rounds = useMemo(() => {
     return questions.map((q, i) => {
@@ -144,6 +148,27 @@ export function SkillDuelResults({
     const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
     return { correct, missed, skipped, accuracy };
   }, [rounds, total]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchDuelResultVerdict({
+      yourScore,
+      theirScore,
+      total,
+      youWon,
+      tie,
+      rounds: rounds.map((round) => ({
+        nodeName: stripGuestTryPromptDecorators(round.question.prompt).slice(0, 80),
+        correctIndex: round.correctIndex ?? -1,
+        myAnswer: round.myPick ?? -1,
+      })),
+    }).then((next) => {
+      if (!cancelled) setVerdict(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rounds, theirScore, tie, total, youWon, yourScore]);
 
   const filteredRounds = useMemo(() => {
     if (filter === "all") return rounds;
@@ -193,23 +218,6 @@ export function SkillDuelResults({
               <p className="max-w-md text-sm leading-relaxed text-slate-300/95">{outcomeSubtitle}</p>
             </div>
 
-            <motion.div
-              initial={motionEnabled ? { scale: 0.9, opacity: 0 } : false}
-              animate={motionEnabled ? { scale: 1, opacity: 1 } : false}
-              transition={{ delay: 0.15, duration: 0.4 }}
-              className={cn(
-                "flex min-w-[9.5rem] flex-col items-center rounded-2xl border px-4 py-3 text-center backdrop-blur-md",
-                tie
-                  ? "border-amber-400/30 bg-amber-500/10"
-                  : youWon
-                    ? "border-emerald-400/35 bg-emerald-500/10"
-                    : "border-white/15 bg-white/5",
-              )}
-            >
-              <Sparkles className="mb-1 h-4 w-4 text-amber-300" aria-hidden />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">XP earned</p>
-              <p className="font-mono text-2xl font-black tabular-nums text-white">+{xpAmount}</p>
-            </motion.div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
@@ -228,15 +236,20 @@ export function SkillDuelResults({
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-4">
-            <StatChip icon={Target} label="Accuracy" value={`${stats.accuracy}%`} />
-            <StatChip icon={Check} label="Correct" value={String(stats.correct)} tone="emerald" />
-            <StatChip icon={X} label="Missed" value={String(stats.missed)} tone="rose" />
-            <StatChip icon={Clock} label="Timed out" value={String(stats.skipped)} tone="amber" />
-          </div>
+          {verdict ? (
+            <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-4">
+              <VerdictPanel verdict={verdict} tone="dark" />
+            </div>
+          ) : (
+            <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-400">
+              Building your match verdict…
+            </p>
+          )}
 
-          <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-medium text-indigo-100/90">
-            {xpLine}
+          <p className="font-mono text-xs tabular-nums text-slate-500">
+            {yourScore}/{total} vs {theirScore}/{total}
+            {` · ${stats.accuracy}% accuracy`}
+            {xpAmount > 0 ? ` · +${xpAmount} XP` : ""}
           </p>
         </div>
       </section>
@@ -512,36 +525,5 @@ function ScoreTile({
         />
       </div>
     </motion.div>
-  );
-}
-
-function StatChip({
-  icon: Icon,
-  label,
-  value,
-  tone = "slate",
-}: {
-  icon: typeof Target;
-  label: string;
-  value: string;
-  tone?: "slate" | "emerald" | "rose" | "amber";
-}) {
-  const toneClass =
-    tone === "emerald"
-      ? "text-emerald-300"
-      : tone === "rose"
-        ? "text-rose-300"
-        : tone === "amber"
-          ? "text-amber-300"
-          : "text-indigo-200";
-
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2.5">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-        <Icon className={cn("h-3.5 w-3.5", toneClass)} aria-hidden />
-        {label}
-      </div>
-      <p className={cn("mt-1 font-mono text-xl font-black tabular-nums", toneClass)}>{value}</p>
-    </div>
   );
 }

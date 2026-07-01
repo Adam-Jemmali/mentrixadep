@@ -46,6 +46,11 @@ import { GuestTryResultsPanel } from "@/features/quest/ui/guest-try-results-pane
 import { GuestTryRankPreview } from "@/features/quest/ui/guest-try-rank-preview";
 import { GuestTryDiagnosticLanding } from "@/features/quest/ui/guest-try-diagnostic-landing";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
+import { StepTraceInput } from "@/features/diagnostics/step-trace-input";
+import { getDiagnosticVerdict, type DiagnosticVerdict } from "@/features/diagnostics/diagnostic-verdict";
+import { StepTraceDiagnosticResults } from "@/features/diagnostics/step-trace-diagnostic-results";
+import type { StepTraceProblem, StepTraceCompletion } from "@/features/diagnostics/step-trace-types";
+import type { AccuracyBucketRow } from "@/features/comparison/comparison-context-pure";
 
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
   if (!x || typeof x !== "object") return false;
@@ -191,6 +196,19 @@ export function GuestQuestClient({
   const timeLeftRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const apCalcStepTrace =
+    diagnosticMode &&
+    defaultSubjects.length === 1 &&
+    isApCalculusAbSubject(defaultSubjects[0]?.name ?? "");
+
+  const [stepTraceProblem, setStepTraceProblem] = useState<StepTraceProblem | null>(null);
+  const [stepTraceMeta, setStepTraceMeta] = useState<{
+    unitNumber?: number;
+    unitName?: string;
+    nodeSlug?: string;
+  } | null>(null);
+  const [stepTraceVerdict, setStepTraceVerdict] = useState<DiagnosticVerdict | null>(null);
+
   const clearGuestTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -287,6 +305,38 @@ export function GuestQuestClient({
   }, [subjectKey, defaultSubjects, router]);
 
   useEffect(() => {
+    if (!apCalcStepTrace || phase !== "wizard") return;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/guest-diagnostic/start", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resume: true }),
+        });
+        const j = await res.json();
+        if (cancelled || !j.success || !j.resumed || !j.problem) return;
+        setStepTraceProblem(j.problem as StepTraceProblem);
+        setStepTraceMeta({
+          unitNumber: j.unitNumber,
+          unitName: j.unitName,
+          nodeSlug: j.nodeSlug,
+        });
+        setPhase("run");
+        void warmKatex();
+      } catch {
+        // No active session — stay on landing.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apCalcStepTrace, phase]);
+
+  useEffect(() => {
     setShortAnswerText("");
     setShortSubmitted(false);
     setSelected(null);
@@ -299,6 +349,73 @@ export function GuestQuestClient({
       setRankOrder([]);
     }
   }, [qIndex, questions]);
+
+  const startStepTraceDiagnostic = async () => {
+    setErr(null);
+    setBusy(true);
+    try {
+      const res = await fetch("/api/guest-diagnostic/start", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const j = await res.json();
+      if (!j.success) {
+        setErr(j.error || "Could not load diagnostic.");
+        setBusy(false);
+        return;
+      }
+      setStepTraceProblem(j.problem as StepTraceProblem);
+      setStepTraceMeta({
+        unitNumber: j.unitNumber,
+        unitName: j.unitName,
+        nodeSlug: j.nodeSlug,
+      });
+      setStepTraceVerdict(null);
+      setPhase("run");
+      void warmKatex();
+      setBusy(false);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  };
+
+  const onStepTraceComplete = async (completion: StepTraceCompletion) => {
+    if (!stepTraceProblem) return;
+
+    let peerAccuracyBuckets: AccuracyBucketRow[] | undefined;
+    const allClean =
+      completion.steps_correct_first_try === completion.total_steps &&
+      completion.steps.every((step) => step.resolved_correctly);
+
+    if (allClean && stepTraceProblem.skillNodeId) {
+      try {
+        const res = await fetch(
+          `/api/guest-diagnostic/comparison?skillNodeId=${encodeURIComponent(stepTraceProblem.skillNodeId)}`,
+          { credentials: "include" },
+        );
+        const j = await res.json();
+        if (j.success && Array.isArray(j.buckets)) {
+          peerAccuracyBuckets = j.buckets as AccuracyBucketRow[];
+        }
+      } catch {
+        peerAccuracyBuckets = undefined;
+      }
+    }
+
+    const verdict = getDiagnosticVerdict({
+      problem: stepTraceProblem,
+      completion,
+      unitNumber: stepTraceMeta?.unitNumber,
+      unitName: stepTraceMeta?.unitName,
+      nodeSlug: stepTraceMeta?.nodeSlug,
+      peerAccuracyBuckets,
+    });
+    setStepTraceVerdict(verdict);
+    setPhase("done");
+  };
 
   const start = async () => {
     setErr(null);
@@ -415,7 +532,7 @@ export function GuestQuestClient({
           err={err}
           onStart={() => {
             playClickSound();
-            void start();
+            void startStepTraceDiagnostic();
           }}
         />
       );
@@ -576,6 +693,34 @@ export function GuestQuestClient({
           </div>
         </TiltCard>
       </motion.div>
+    );
+  }
+
+  if (phase === "run" && apCalcStepTrace && stepTraceProblem) {
+    return (
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <StepTraceInput
+          problem={stepTraceProblem}
+          variant="dark"
+          onComplete={(completion) => {
+            void onStepTraceComplete(completion);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (phase === "done" && apCalcStepTrace && stepTraceVerdict) {
+    return (
+      <StepTraceDiagnosticResults
+        verdict={stepTraceVerdict}
+        embedded={embedded}
+        onRunAnother={() => {
+          playClickSound();
+          setStepTraceVerdict(null);
+          void startStepTraceDiagnostic();
+        }}
+      />
     );
   }
 

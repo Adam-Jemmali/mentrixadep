@@ -33,7 +33,9 @@
     "audit:ci": "npm audit --audit-level=moderate",
     "load:smoke": "k6 run load-tests/smoke.js",
     "load:track": "k6 run load-tests/track.js",
-    "load:landing": "k6 run load-tests/landing.js"
+    "load:landing": "k6 run load-tests/landing.js",
+    "load:guest-diagnostic": "k6 run load-tests/guest-diagnostic.js",
+    "verify:guidance-ship": "node scripts/verify-guidance-ship.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.45.0",

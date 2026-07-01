@@ -13,7 +13,6 @@ import {
 } from "@/features/pre-session-brief/context-pure";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
-import { getAverageSessionFocusSignal } from "@/features/quest/record-telemetry-log";
 import { loadVerifiedGaps } from "@/features/pre-session-brief/verified-gaps";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
@@ -286,10 +285,6 @@ async function buildPerformanceSummary(params: {
     divisionInfo.divisionKey,
   );
 
-  const sessionFocusSignal = isApCalculusAbSubject(params.subject)
-    ? await getAverageSessionFocusSignal(params.studentId, params.subject, 5)
-    : null;
-
   const totalXp = xpRow?.total_xp ?? 0;
   const rank = getAccountLevelFromTotalXp(totalXp);
 
@@ -305,7 +300,6 @@ async function buildPerformanceSummary(params: {
     divisionPosition: divisionInfo.divisionPosition,
     divisionKey: divisionInfo.divisionKey,
     lastSessionTopic: lastTopic,
-    sessionFocusSignal,
   };
 }
 

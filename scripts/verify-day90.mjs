@@ -188,18 +188,6 @@ async function checkVerifiedFirstAttempts() {
   }
 }
 
-async function checkTelemetry() {
-  const { count, error } = await supabase
-    .from("telemetry_logs")
-    .select("*", { count: "exact", head: true });
-  if (error) return fail("Telemetry being recorded", error.message);
-  if ((count ?? 0) > 0) {
-    pass("Telemetry being recorded", `count=${count}`);
-  } else {
-    fail("Telemetry being recorded", "count=0 (expected after quest completions)");
-  }
-}
-
 async function checkSessionGuarantee() {
   const { count, error } = await supabase
     .from("session_target_nodes")
@@ -251,7 +239,6 @@ await checkNodeCoverage();
 await checkNoGeneralTopicTags();
 await checkNextReviewAt();
 await checkVerifiedFirstAttempts();
-await checkTelemetry();
 await checkSessionGuarantee();
 await checkCodePaths();
 

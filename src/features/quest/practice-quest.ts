@@ -38,8 +38,9 @@ import {
   ensureVerifiedFirstAttemptsFromSession,
   recordVerifiedFirstAttemptForNode,
 } from "@/features/quest/record-verified-first-attempts";
-import { recordQuestTelemetryLog } from "@/features/quest/record-telemetry-log";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
+import { getVerdict } from "@/features/guidance/verdict-engine";
+import { buildQuestSessionStatsFromPack } from "@/features/guidance/quest-session-stats";
 import {
   pickQuestMasteryHighlight,
   snapshotPackNodesFromGrid,
@@ -60,16 +61,8 @@ import type {
 const PRACTICE_PACKS_DAILY = 10;
 const DEFAULT_TIME_SEC = 15 * 60;
 
-const questTelemetrySchema = z.object({
-  keystrokeVariance: z.number().min(0),
-  tabFocusLeaks: z.number().int().min(0),
-  frictionScore: z.number().min(0.1).max(1),
-  isAnomalyDetected: z.boolean(),
-});
-
 const finalizePracticeOptionsSchema = z.object({
   timedOut: z.boolean().optional(),
-  telemetry: questTelemetrySchema.optional(),
 });
 
 function isPracticeHardLimitMessage(input: unknown): boolean {
@@ -523,7 +516,7 @@ export async function submitPracticeWritten(
 
 export async function finalizePracticeQuest(
   questId: string,
-  options?: { timedOut?: boolean; telemetry?: z.infer<typeof questTelemetrySchema> },
+  options?: { timedOut?: boolean },
 ): Promise<
   | {
       success: true;
@@ -668,6 +661,20 @@ export async function finalizePracticeQuest(
 
     const mistakeReviews: NonNullable<PracticePackResult["mistakeReviews"]> = [];
 
+    let questVerdict: PracticePackResult["questVerdict"];
+    if (isApCalculusAbSubject(meta.subject || meta.course)) {
+      try {
+        const sessionStats = await buildQuestSessionStatsFromPack(qs, byIndex);
+        questVerdict = await getVerdict({
+          type: "quest_result",
+          userId: user.id,
+          context: { sessionStats },
+        });
+      } catch {
+        /* non-critical — verdict must not block completion */
+      }
+    }
+
     const result: PracticePackResult = {
       correct,
       total,
@@ -678,6 +685,7 @@ export async function finalizePracticeQuest(
       rankVerdict,
       rankNextAction,
       newVerifiedSkills,
+      questVerdict,
     };
 
     await admin
@@ -733,17 +741,6 @@ export async function finalizePracticeQuest(
       }
     } catch {
       // Non-critical — post-session target recording must not block completion
-    }
-
-    try {
-      if (
-        isApCalculusAbSubject(meta.subject || meta.course) &&
-        finalizeOptions.telemetry
-      ) {
-        await recordQuestTelemetryLog(user.id, questId, finalizeOptions.telemetry);
-      }
-    } catch {
-      /* non-critical — telemetry is a soft Guide signal only */
     }
 
     let masteryGrid: PracticePackResult["masteryGrid"];

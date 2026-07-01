@@ -1,3 +1,5 @@
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+
 export type MasteryNodeState = "none" | "weak" | "proficient" | "verified";
 
 export type MasteryGridNode = {
@@ -18,7 +20,9 @@ export type MasteryGridUnit = {
 export type MasteryGridData = {
   subject: string;
   units: MasteryGridUnit[];
+  /** @deprecated Use verdict — kept for tests and legacy callers */
   nextActionLine: string;
+  verdict?: Verdict;
 };
 
 export type MasteryPackNodeSnapshot = {

@@ -88,4 +88,5 @@ export interface PracticePackResult {
   newVerifiedSkills?: number;
   masteryGrid?: MasteryGridData;
   masteryHighlight?: QuestMasteryHighlight;
+  questVerdict?: import("@/features/guidance/verdict-engine-pure").Verdict;
 }

@@ -9,6 +9,7 @@ import {
   resolveMasteryNodeState,
 } from "@/features/mastery-grid/mastery-grid-pure";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
+import { loadMasteryGridRankVerdict } from "@/features/guidance/last-seen-rank-state";
 
 type SkillNodeRow = {
   id: string;
@@ -74,10 +75,13 @@ export async function loadMasteryGrid(userId: string): Promise<MasteryGridData> 
     )
   );
 
+  const verdict = await loadMasteryGridRankVerdict(userId).catch(() => null);
+
   return {
     subject: AP_CALC_AB_SUBJECT,
     units,
-    nextActionLine: buildMasteryGridNextAction(units),
+    nextActionLine: verdict?.nextAction.label ?? buildMasteryGridNextAction(units),
+    verdict: verdict ?? undefined,
   };
 }
 

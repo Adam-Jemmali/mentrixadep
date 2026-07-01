@@ -3,6 +3,8 @@ import { processPendingSessionXpAwards } from "@/features/xp/xp-awards";
 import { enqueueRecordingTranscriptionJobsForSessions } from "@/features/studio-ai/transcription-jobs";
 import { enqueueJobs } from "@/features/jobs/enqueue";
 import { cronGetHandler } from "@/shared/core/cron-auth";
+import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
+import { scheduleSessionCompletionRetests } from "@/features/intervention-retests/schedule-intervention-retests";
 
 async function runCompleteSessionsCron() {
   const supabase = createAdminClient();
@@ -22,6 +24,28 @@ async function runCompleteSessionsCron() {
   }
 
   const sessionIds = (sessionsToComplete ?? []).map((s) => s.id);
+
+  if (sessionIds.length > 0) {
+    const completedAt = new Date().toISOString();
+    const { data: completedRows } = await supabase
+      .from("sessions")
+      .select("id, student_id, course")
+      .in("id", sessionIds);
+
+    for (const session of completedRows ?? []) {
+      try {
+        await seedSessionTargetNodes(session.id, session.student_id, String(session.course ?? ""));
+        await scheduleSessionCompletionRetests({
+          sessionId: session.id,
+          studentId: session.student_id,
+          course: String(session.course ?? ""),
+          completedAt,
+        });
+      } catch (retestErr) {
+        console.error("[complete-sessions] intervention retest schedule failed", session.id, retestErr);
+      }
+    }
+  }
 
   const payoutJobs = sessionIds.map((sid) => ({
     jobType: "payout.ledger" as const,

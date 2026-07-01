@@ -33,6 +33,8 @@ import { GuideRankProgressCard } from "@/features/guide-rank/components/guide-ra
 import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
 import { GuideDemandSignalCard } from "@/features/demand-signal/components/guide-demand-signal-card";
 import { GuideImpactDisclosure } from "@/shared/ui/disclosure-patterns";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
+import { GuideNotificationsPanel } from "@/features/notifications/guide-notifications-panel";
 import { ChartSkeleton } from "@/shared/ui/skeleton-patterns";
 
 const TutorImpactTrendChart = dynamic(
@@ -284,6 +286,11 @@ export function TutorCommandCenterClient({
         onOpenAvailability={() => setAddOpen(true)}
       />
 
+      <GuideNotificationsPanel
+        notifications={data.guideNotifications}
+        displayTimeZone={data.tutorTimezone}
+      />
+
       {data.upcomingSessions.length > 0 ? (
         <PreSessionContextSection
           guideId={data.tutorId}
@@ -292,28 +299,33 @@ export function TutorCommandCenterClient({
         />
       ) : null}
 
-      {data.impactScores.filter((s) => s.sessionsCounted >= 3).length > 0 ? (
+      {data.impactScores.filter((s) => s.sessionsCounted >= 3).length > 0 || data.impactVerdict ? (
         <section className="mb-8">
           <ScrollRevealCard className={mentrixStudent.card + " p-5"}>
             <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>
-              Your top performing subjects
+              Guide Impact Score
             </h2>
+            {data.impactVerdict ? (
+              <VerdictPanel verdict={data.impactVerdict} tone="light" className="mb-5" />
+            ) : null}
             <div className="mb-4">
               <GuideImpactDisclosure />
             </div>
-            <ul className="divide-y divide-slate-100">
-              {data.impactScores
-                .filter((s) => s.sessionsCounted >= 3)
-                .slice(0, 5)
-                .map((s) => (
-                  <li key={s.subject} className="flex items-center justify-between py-3 text-sm">
-                    <span className="font-medium text-slate-800">{s.subject}</span>
-                    <span className="font-mono font-semibold tabular-nums text-indigo-700">
-                      {Math.round(s.impactScore)}/100
-                    </span>
-                  </li>
-                ))}
-            </ul>
+            {data.impactScores.filter((s) => s.sessionsCounted >= 3).length > 0 ? (
+              <ul className="divide-y divide-slate-100">
+                {data.impactScores
+                  .filter((s) => s.sessionsCounted >= 3)
+                  .slice(0, 5)
+                  .map((s) => (
+                    <li key={s.subject} className="flex items-center justify-between py-3 text-sm">
+                      <span className="font-medium text-slate-800">{s.subject}</span>
+                      <span className="font-mono text-xs font-semibold tabular-nums text-slate-500">
+                        {Math.round(s.impactScore)}/100
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            ) : null}
           </ScrollRevealCard>
         </section>
       ) : null}

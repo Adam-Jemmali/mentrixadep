@@ -6,6 +6,7 @@ import {
   resolveCoveredSkillNodeIds,
   type SkillNodeTopicRef,
 } from "@/features/breakthrough-events/schedule-session-retests-pure";
+import { scheduleStudioPackageRetests } from "@/features/intervention-retests/schedule-intervention-retests";
 import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 
 export type StudioRetestScheduleResult = {
@@ -48,7 +49,7 @@ export async function scheduleSessionRetestsOnPublish(params: {
   const retestScheduledAt = addStudioRetestDelay(publishedAt).toISOString();
   const verifiedByNode = await loadVerifiedFirstAttemptMap(params.studentId, coveredNodeIds);
 
-  let scheduledCount = 0;
+  let legacyScheduledCount = 0;
   for (const skillNodeId of coveredNodeIds) {
     const { data: existing } = await admin
       .from("session_target_nodes")
@@ -66,7 +67,7 @@ export async function scheduleSessionRetestsOnPublish(params: {
         .eq("id", existing.id)
         .is("post_session_checked_at", null);
 
-      if (!error) scheduledCount += 1;
+      if (!error) legacyScheduledCount += 1;
       continue;
     }
 
@@ -79,9 +80,17 @@ export async function scheduleSessionRetestsOnPublish(params: {
       retest_scheduled_at: retestScheduledAt,
     });
 
-    if (!error) scheduledCount += 1;
+    if (!error) legacyScheduledCount += 1;
   }
 
+  const interventionScheduled = await scheduleStudioPackageRetests({
+    sessionId: params.sessionId,
+    studentId: params.studentId,
+    skillNodeIds: coveredNodeIds,
+    publishedAt: params.publishedAt,
+  });
+
+  const scheduledCount = Math.max(legacyScheduledCount, interventionScheduled);
   if (scheduledCount === 0) return null;
 
   return {

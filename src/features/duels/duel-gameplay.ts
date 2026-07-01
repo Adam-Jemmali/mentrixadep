@@ -11,6 +11,8 @@ import {
   getRateLimitId,
 } from "@/shared/core/security";
 import type { SkillDuelQuestion } from "@/shared/types/database";
+import { resolveFirstMissedSkillNodeId } from "@/features/intervention-retests/duel-retest";
+import { scheduleDuelLossRetest } from "@/features/intervention-retests/schedule-intervention-retests";
 
 
 import { applyXpAward } from "@/features/xp/xp-awards";
@@ -496,6 +498,7 @@ async function maybeCompleteDuel(
   if (!finalized) return;
 
   const div = row.division_key;
+  const questionsWithNodes = questions as Array<SkillDuelQuestion & { skillNodeId?: string }>;
 
   if (winner === "tie") {
     await applyXpAward(row.student_id, XP.DUEL_TIE, `duel_tie:${duelId}:s`, div);
@@ -537,6 +540,23 @@ async function maybeCompleteDuel(
       );
       await applyXpAward(row.student_id, XP.DUEL_LOSS, `duel_loss:${duelId}`, div);
     }
+  }
+
+  const scheduleLossRetest = (loserId: string, loserAnswers: number[] | null) => {
+    const skillNodeId = resolveFirstMissedSkillNodeId(questionsWithNodes, loserAnswers);
+    if (!skillNodeId) return;
+    void scheduleDuelLossRetest({
+      duelId,
+      studentId: loserId,
+      skillNodeId,
+      completedAt: now,
+    });
+  };
+
+  if (winner === "opponent") {
+    scheduleLossRetest(row.student_id, sa);
+  } else if (winner === "student" && !isAi && row.opponent_student_id) {
+    scheduleLossRetest(row.opponent_student_id, oa);
   }
 
   revalidatePath("/student/duel");
