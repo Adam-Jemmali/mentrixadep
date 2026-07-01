@@ -14,7 +14,13 @@ export const mentrixBrandUi = {
   border: "border-violet-500/30",
   borderSubtle: "border-indigo-500/25",
   input:
-    "h-10 border-violet-500/30 bg-[#0B1220]/70 pl-9 text-sm text-violet-50 placeholder:text-violet-300/45 focus-visible:border-violet-400/60 focus-visible:ring-violet-500/25",
+    "h-10 border-violet-500/30 bg-[#0B1220]/70 pl-9 text-sm text-violet-50 placeholder:text-violet-200/75 focus-visible:border-violet-400/60 focus-visible:ring-violet-500/25",
+  fieldInput:
+    "w-full rounded-xl border border-violet-500/30 bg-indigo-950/55 px-4 py-2.5 text-sm text-violet-50 placeholder:text-violet-200/75 focus:outline-none focus:border-violet-400/60 focus:ring-2 focus:ring-violet-500/25",
+  fieldTextarea:
+    "w-full min-h-[6rem] resize-y rounded-xl border border-violet-500/30 bg-indigo-950/55 px-4 py-3 text-sm text-violet-50 placeholder:text-violet-200/75 focus:outline-none focus:border-violet-400/60 focus:ring-2 focus:ring-violet-500/25",
+  fieldLabel:
+    "text-[10px] font-black uppercase tracking-widest text-indigo-300",
   chipActive:
     "border-violet-400/70 bg-gradient-to-br from-[#7C3AED] to-[#6366F1] text-white shadow-md shadow-violet-600/25",
   chipIdle:

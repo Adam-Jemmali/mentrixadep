@@ -2632,6 +2632,24 @@ html.lp-landing-logo-cursor-active * {
     @apply border-violet-500/30 bg-[#0F172A] text-violet-50 shadow-xl;
   }
 
+  .mentrix-student-type-scope
+    :where(.mx-panel-brand, .mx-panel-brand-muted, .mx-panel-arena, .mx-panel-workbench)
+    :where(
+      input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+      textarea
+    ) {
+    @apply border-violet-500/30 bg-indigo-950/55 text-violet-50 placeholder:text-violet-200/75;
+  }
+
+  .mentrix-student-type-scope
+    :where(.mx-panel-brand, .mx-panel-brand-muted, .mx-panel-arena, .mx-panel-workbench)
+    :where(
+      input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):focus,
+      textarea:focus
+    ) {
+    @apply border-violet-400/60 outline-none ring-2 ring-violet-500/25;
+  }
+
   .mentrix-student-type-scope :where(.mx-panel-arena, .mx-panel-workbench) :where(h1, h2, h3, h4) {
     @apply font-black uppercase tracking-[0.08em] text-white;
   }
