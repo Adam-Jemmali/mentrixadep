@@ -71,8 +71,8 @@ export function masteryNodeDetailPopoverMessage(
   if (state === "verified") {
     return {
       title: nodeName,
-      verdict: "Verified first attempt is locked for rank on this node.",
-      nextAction: "Practice again for mastery, not to reroll rank.",
+      verdict: "",
+      nextAction: "",
     };
   }
   if (accuracyPercent != null) {

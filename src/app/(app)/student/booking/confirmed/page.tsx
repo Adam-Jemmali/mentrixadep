@@ -7,6 +7,10 @@ import { formatDate } from "@/shared/core/time-format";
 import { formatDurationLabel, getSessionDurationMinutes } from "@/shared/integrations/stripe/checkout-copy";
 import { AddToCalendarButton } from "./add-to-calendar-button";
 import { getStudentSessionCheckoutCents, splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import {
+  getStudentSubscription,
+  isMomentumSubscriptionActive,
+} from "@/features/payments/student-subscription";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { GlassTimeCard } from "@/shared/ui/glass-time-card";
@@ -47,8 +51,12 @@ export default async function BookingConfirmedPage({ searchParams }: PageProps) 
     notFound();
   }
 
+  const subscription = await getStudentSubscription(user.id);
+  const momentumSubscriber = isMomentumSubscriptionActive(subscription);
   const durationMin = getSessionDurationMinutes(availability.start_time, availability.end_time);
-  const price = splitSessionPriceCents(getStudentSessionCheckoutCents());
+  const price = splitSessionPriceCents(
+    getStudentSessionCheckoutCents({ momentumSubscriber }),
+  );
 
   return (
     <div className="min-h-screen bg-mentrixa-app text-white relative overflow-hidden flex items-center justify-center py-12 px-4">

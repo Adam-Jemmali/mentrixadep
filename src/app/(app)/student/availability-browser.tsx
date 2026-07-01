@@ -68,6 +68,8 @@ interface AvailabilityBrowserProps {
   guideRankByTutorId?: Record<string, string>;
   /** Courses the student has completed quests in — drives default “Highest Impact” sort. */
   questHistorySubjects?: string[];
+  /** Active Momentum subscription — member session rate at checkout. */
+  momentumSubscriber?: boolean;
 }
 
 export function AvailabilityBrowser({
@@ -80,6 +82,7 @@ export function AvailabilityBrowser({
   guideImpactByTutorId = {},
   guideRankByTutorId = {},
   questHistorySubjects = [],
+  momentumSubscriber = false,
 }: AvailabilityBrowserProps) {
   const [query, setQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>(
@@ -141,7 +144,7 @@ export function AvailabilityBrowser({
           name,
           email,
           avatarUrl,
-          priceCents: getStudentSessionCheckoutCents(),
+          priceCents: getStudentSessionCheckoutCents({ momentumSubscriber }),
           rating: 4.8,
           sessions: 24,
           impactScore: courseImpact?.impactScore ?? 0,
@@ -185,7 +188,7 @@ export function AvailabilityBrowser({
         }
         return a.name.localeCompare(b.name);
       });
-  }, [availability, query, courseFilter, guideImpactByTutorId, minImpact80, sortBy]);
+  }, [availability, query, courseFilter, guideImpactByTutorId, minImpact80, sortBy, momentumSubscriber]);
 
   return (
     <aside>
@@ -325,6 +328,7 @@ export function AvailabilityBrowser({
         onOpenChange={(open) => !open && setSelectedSlot(null)}
         tutorExpertise={tutorExpertise}
         displayTimeZone={displayTimeZone}
+        momentumSubscriber={momentumSubscriber}
       />
     </aside>
   );
@@ -335,11 +339,13 @@ function BookingDialog({
   onOpenChange,
   tutorExpertise = {},
   displayTimeZone = "UTC",
+  momentumSubscriber = false,
 }: {
   slot: Availability | null;
   onOpenChange: (open: boolean) => void;
   tutorExpertise?: Record<string, TutorExpertiseEntry[]>;
   displayTimeZone?: string;
+  momentumSubscriber?: boolean;
 }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -349,7 +355,7 @@ function BookingDialog({
   }, [slot?.id]);
   if (!slot) return null;
 
-  const priceCents = getStudentSessionCheckoutCents();
+  const priceCents = getStudentSessionCheckoutCents({ momentumSubscriber });
   const durationMin = getSessionDurationMinutes(slot.start_time, slot.end_time);
   const scheduleLine = `${formatSlotRangeInZone(slot.start_time, slot.end_time, displayTimeZone)} · ${formatDurationLabel(durationMin)}`;
   const expertise = slot.tutor_id ? (tutorExpertise[slot.tutor_id] ?? []) : [];
@@ -405,6 +411,7 @@ function BookingDialog({
           scheduleLine={scheduleLine}
           qualifications={courseExpertise?.proof_description}
           priceCents={priceCents}
+          momentumSubscriber={momentumSubscriber}
           onConfirm={handleBook}
           onCancel={() => onOpenChange(false)}
           loading={checkoutBusy}

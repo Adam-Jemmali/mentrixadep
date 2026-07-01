@@ -7,7 +7,9 @@ import Image from "next/image";
 import { Button } from "@/shared/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { BookingPriceBreakdown } from "@/features/booking/booking-price-breakdown";
-import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import Link from "next/link";
+import { splitSessionPriceCents, formatStudentBreakthroughPrice } from "@/features/booking/booking-pricing";
+import { momentumSubscriberSessionPriceLabel } from "@/features/payments/momentum-membership-pure";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 import { PriceBreakdownPopover } from "@/shared/ui/popover-patterns";
 import { TutorAvatar } from "@/app/(app)/student/session-components/tutor-avatar";
@@ -25,6 +27,7 @@ interface BookingConfirmationCardProps {
   loading?: boolean;
   /** Shown above footer actions when checkout start fails (e.g. slot locked by another learner). */
   errorMessage?: string | null;
+  momentumSubscriber?: boolean;
   className?: string;
   enableAnimations?: boolean;
 }
@@ -41,6 +44,7 @@ export function BookingConfirmationCard({
   onCancel,
   loading = false,
   errorMessage = null,
+  momentumSubscriber = false,
   className,
   enableAnimations = true,
 }: BookingConfirmationCardProps) {
@@ -152,7 +156,22 @@ export function BookingConfirmationCard({
             <PriceBreakdownPopover sessionPriceCents={priceCents} />
           </div>
           <p className="text-2xl font-bold tabular-nums text-white">{formatUsdFromCents(priceSplit.totalCents)}</p>
-          <p className="mt-1 text-xs text-slate-400">Total due at Stripe checkout</p>
+          <p className="mt-1 text-xs text-slate-400">
+            {momentumSubscriber ? "Momentum member rate at Stripe checkout" : "Total due at Stripe checkout"}
+          </p>
+          {momentumSubscriber ? (
+            <p className="mt-2 text-xs font-medium text-emerald-400/90">
+              Momentum member session rate applied.
+            </p>
+          ) : (
+            <p className="mt-2 text-xs leading-relaxed text-slate-400">
+              Pay as you go is {formatStudentBreakthroughPrice()}. Momentum members book at{" "}
+              {momentumSubscriberSessionPriceLabel()} per session.{" "}
+              <Link href="/student/subscribe" className="font-medium text-indigo-400 underline hover:text-indigo-300">
+                View Momentum plan
+              </Link>
+            </p>
+          )}
           <div className="mt-4 hidden sm:block text-slate-100">
             <BookingPriceBreakdown sessionPriceCents={priceCents} />
           </div>

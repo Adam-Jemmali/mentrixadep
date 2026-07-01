@@ -245,6 +245,13 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 >
                   View Profile
                 </Link>
+                <Link
+                  href="/student/subscribe"
+                  onClick={() => setProfileMenuOpen(false)}
+                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+                >
+                  Momentum membership
+                </Link>
                 <ArenaMusicMuteToggle variant="menu" />
                 <button
                   type="button"
@@ -303,6 +310,16 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
                   View Profile
+                </Link>
+                <Link
+                  href="/student/subscribe"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    setMobileNavOpen(false);
+                  }}
+                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+                >
+                  Momentum membership
                 </Link>
                 <div className="border-t border-slate-100">
                   <ArenaMusicMuteToggle variant="menu" />

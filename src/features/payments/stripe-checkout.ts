@@ -7,6 +7,10 @@ import { getStripeServer } from "@/shared/integrations/stripe/server";
 import { getSiteUrl } from "@/shared/core/site";
 import { mentrixaCheckoutBrandingWithAssets } from "@/shared/integrations/stripe/checkout-copy";
 import { getStudentSessionCheckoutCents, splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import {
+  getStudentSubscription,
+  isMomentumSubscriptionActive,
+} from "@/features/payments/student-subscription";
 import { captureUnexpectedError, withStripeApiSpan } from "@/shared/integrations/observability";
 import { trackEvent } from "@/shared/integrations/analytics";
 import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
@@ -360,7 +364,9 @@ export async function POST(req: NextRequest) {
       // Non-critical fallback.
     }
 
-    const sessionPriceCents = getStudentSessionCheckoutCents();
+    const subscription = await getStudentSubscription(user.id);
+    const momentumSubscriber = isMomentumSubscriptionActive(subscription);
+    const sessionPriceCents = getStudentSessionCheckoutCents({ momentumSubscriber });
     const split = splitSessionPriceCents(sessionPriceCents);
 
     const appOrigin = resolveAppOrigin(req);

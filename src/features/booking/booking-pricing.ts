@@ -41,8 +41,12 @@ export function getMomentumSubscriptionCents(interval: "monthly" | "annual"): nu
 }
 
 /** Amount charged at Stripe checkout for a single Guide session. */
-export function getStudentSessionCheckoutCents(): number {
-  return BREAKTHROUGH_SESSION_PRICE_CENTS;
+export function getStudentSessionCheckoutCents(options?: {
+  momentumSubscriber?: boolean;
+}): number {
+  return options?.momentumSubscriber
+    ? MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS
+    : BREAKTHROUGH_SESSION_PRICE_CENTS;
 }
 
 /** Reduced platform fee for bundle purchases (10% in bps). */

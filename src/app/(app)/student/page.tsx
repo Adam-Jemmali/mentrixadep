@@ -57,6 +57,11 @@ import { getGuideRanksMap } from "@/features/guide-rank/reads";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
+import {
+  getStudentSubscription,
+  isMomentumSubscriptionActive,
+} from "@/features/payments/student-subscription";
+import { MomentumMembershipHubCard } from "@/features/student-profile/ui/momentum-membership-hub-card";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -72,7 +77,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, subscription] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -84,7 +89,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       loadVerifiedFirstAttemptRankStats(user.id),
       loadMasteryGrid(user.id).catch(() => null),
       loadActiveStudentGoalForViewer(AP_CALC_AB_SUBJECT),
+      getStudentSubscription(user.id),
     ]);
+
+  const momentumSubscriber = isMomentumSubscriptionActive(subscription);
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
   const [guideImpactByTutorId, rawQuestHistorySubjects, guideRankByTutorId] = await Promise.all([
@@ -257,6 +265,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         ) : null}
 
+        {!momentumSubscriber ? (
+          <div className="mt-8">
+            <MomentumMembershipHubCard />
+          </div>
+        ) : null}
+
         <div className="mt-8 space-y-6">
           {progressSnapshot ? (
             <DeferredProgressSnapshotCard snapshot={progressSnapshot} />
@@ -335,6 +349,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             guideImpactByTutorId={guideImpactByTutorId}
             questHistorySubjects={questHistorySubjects}
             guideRankByTutorId={guideRankByTutorId}
+            momentumSubscriber={momentumSubscriber}
           />
 
           <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getStudentProfile } from "@/features/student-profile/student-profile";
 import { getReferralDashboardData } from "@/features/referrals/referrals";
+import { getStudentSubscription } from "@/features/payments/student-subscription";
 import { StudentProfileClient } from "./student-profile-client";
 
 interface Props {
@@ -25,6 +26,14 @@ export default async function StudentPublicProfilePage({ params }: Props) {
 
   const referral =
     data.viewer === "owner" ? await getReferralDashboardData() : null;
+  const subscription =
+    data.viewer === "owner" ? await getStudentSubscription(data.studentId) : null;
 
-  return <StudentProfileClient data={data} referral={referral} />;
+  return (
+    <StudentProfileClient
+      data={data}
+      referral={referral}
+      subscription={subscription}
+    />
+  );
 }

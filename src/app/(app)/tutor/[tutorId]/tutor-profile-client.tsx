@@ -82,6 +82,7 @@ interface TutorProfileClientProps {
   isAuthenticated: boolean;
   isOwnProfile?: boolean;
   viewerRole?: "student" | "tutor" | "admin" | null;
+  momentumSubscriber?: boolean;
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -279,9 +280,9 @@ function TutorProfileFormSection({
 
 export function TutorProfileClient({
   profile,
- 
   isOwnProfile = false,
   viewerRole = null,
+  momentumSubscriber = false,
 }: TutorProfileClientProps) {
   const router = useRouter();
   const nameRef = useRef<HTMLHeadingElement>(null);
@@ -749,12 +750,12 @@ export function TutorProfileClient({
                     Pricing
                   </p>
                   <PriceBreakdownPopover
-                    sessionPriceCents={getStudentSessionCheckoutCents()}
+                    sessionPriceCents={getStudentSessionCheckoutCents({ momentumSubscriber })}
                     tone="dark"
                   />
                 </div>
                 <BookingPriceBreakdown
-                  sessionPriceCents={getStudentSessionCheckoutCents()}
+                  sessionPriceCents={getStudentSessionCheckoutCents({ momentumSubscriber })}
                 />
                 <p className="mt-4 border-t-2 border-mentrixa-200 pt-3 text-sm font-medium leading-relaxed text-neutral-900">
                   Stripe lists the session and 15% platform fee separately. If you decline this request, the

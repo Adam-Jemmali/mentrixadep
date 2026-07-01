@@ -47,6 +47,8 @@ import {
   notificationSwitchGroupAriaLabel,
   privacySwitchGroupAriaLabel,
 } from "@/shared/ui/switch-messages-pure";
+import { MomentumMembershipPanel } from "@/features/student-profile/ui/momentum-membership-panel";
+import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
 
 // ─── Shared Battle UI Components ─────────────────────────────────────────────
 
@@ -424,9 +426,11 @@ function ProfileShareSections({
 export function StudentProfileClient({
   data,
   referral,
+  subscription = null,
 }: {
   data: StudentProfileData;
   referral?: ReferralDashboardData | null;
+  subscription?: StudentSubscriptionRow | null;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -738,6 +742,13 @@ export function StudentProfileClient({
                       ) : null}
                       <AccountSecurityPanel />
                     </div>
+                  ),
+                },
+                {
+                  id: "membership",
+                  ...profileTabMessage("membership"),
+                  panel: (
+                    <MomentumMembershipPanel subscription={subscription} variant="profile" />
                   ),
                 },
                 {

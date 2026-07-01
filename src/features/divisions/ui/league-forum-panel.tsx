@@ -387,7 +387,7 @@ export function LeagueForumPanel({
               type="button"
               variant="ghost"
               size="sm"
-              className="gap-1.5"
+              className="gap-1.5 hover:bg-purple-500"
               onClick={() => {
                 setActiveThread(null);
                 setReplyBody("");

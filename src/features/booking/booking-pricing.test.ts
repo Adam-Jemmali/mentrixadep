@@ -30,6 +30,10 @@ describe("flat student pricing", () => {
     expect(split.platformFeeCents).toBe(585);
   });
 
+  it("charges $29 CAD per session for active Momentum subscribers", () => {
+    expect(getStudentSessionCheckoutCents({ momentumSubscriber: true })).toBe(2900);
+  });
+
   it("momentum pack is $99 for three sessions", () => {
     expect(MOMENTUM_PACK_PRICE_CENTS).toBe(9900);
     expect(MOMENTUM_PACK_PRICE_CENTS).toBe(BREAKTHROUGH_SESSION_PRICE_CENTS * 3 - 1800);

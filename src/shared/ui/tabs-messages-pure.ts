@@ -1,4 +1,4 @@
-export type MentrixaProfileTabId = "identity" | "standing" | "share";
+export type MentrixaProfileTabId = "identity" | "membership" | "standing" | "share";
 
 export type MentrixaStudioFilterTabId = "all" | "generated" | "pending";
 
@@ -15,6 +15,12 @@ export function profileTabMessage(tab: MentrixaProfileTabId): MentrixaTabMessage
         label: "Identity",
         verdict: "Your display name and privacy settings shape how Guides see you before sessions.",
         nextAction: "Keep rank card public.",
+      };
+    case "membership":
+      return {
+        label: "Membership",
+        verdict: "Momentum is the subscription plan for Guide session perks. Arena rank stays free.",
+        nextAction: "Compare Breakthrough pay as you go vs Momentum member session pricing.",
       };
     case "standing":
       return {
