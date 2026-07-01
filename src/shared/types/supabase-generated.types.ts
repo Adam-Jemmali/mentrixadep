@@ -508,6 +508,11 @@ export type Database = {
           division_key: string
           id: string
           user_id: string
+          parent_id: string | null
+          thread_id: string | null
+          title: string | null
+          image_path: string | null
+          image_status: string
         }
         Insert: {
           body: string
@@ -515,6 +520,11 @@ export type Database = {
           division_key: string
           id?: string
           user_id: string
+          parent_id?: string | null
+          thread_id?: string | null
+          title?: string | null
+          image_path?: string | null
+          image_status?: string
         }
         Update: {
           body?: string
@@ -522,6 +532,11 @@ export type Database = {
           division_key?: string
           id?: string
           user_id?: string
+          parent_id?: string | null
+          thread_id?: string | null
+          title?: string | null
+          image_path?: string | null
+          image_status?: string
         }
         Relationships: [
           {

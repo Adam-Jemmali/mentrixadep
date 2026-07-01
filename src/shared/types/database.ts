@@ -462,6 +462,11 @@ export interface DivisionMessageRow {
   user_id: string;
   body: string;
   created_at: string;
+  parent_id: string | null;
+  thread_id: string | null;
+  title: string | null;
+  image_path: string | null;
+  image_status: "none" | "approved" | "pending" | "rejected";
 }
 
 export interface DivisionWinnerRow {

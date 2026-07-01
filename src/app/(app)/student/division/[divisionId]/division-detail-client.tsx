@@ -7,7 +7,6 @@ import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { 
   ChevronRight, 
-  MessageSquare, 
   Trophy, 
   Target, 
   Flame,
@@ -15,7 +14,8 @@ import {
   Users
 } from "lucide-react";
 import type { DivisionDetailPayload } from "@/features/divisions/divisions";
-import { joinDivision, postDivisionMessage } from "@/features/divisions/divisions";
+import { joinDivision } from "@/features/divisions/divisions";
+import { LeagueForumPanel } from "@/features/divisions/ui/league-forum-panel";
 import { setFocusedDivision } from "@/features/divisions/leaderboard";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -63,7 +63,6 @@ export function DivisionDetailClient({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [msg, setMsg] = useState("");
   const [banner, setBanner] = useState<string | null>(null);
   const theme = getDivisionTheme(divisionKey);
 
@@ -82,22 +81,6 @@ export function DivisionDetailClient({
       const r = await setFocusedDivision(divisionKey);
       setBanner(r.success ? "Focused division updated." : r.error);
       if (r.success) router.refresh();
-    });
-  };
-
-  const onPost = (e: React.FormEvent) => {
-    e.preventDefault();
-    setBanner(null);
-    const text = msg.trim();
-    if (!text) return;
-    startTransition(async () => {
-      const r = await postDivisionMessage(divisionKey, text);
-      if (!r.success) {
-        setBanner(r.error);
-        return;
-      }
-      setMsg("");
-      router.refresh();
     });
   };
 
@@ -265,7 +248,7 @@ export function DivisionDetailClient({
 
           </div>
 
-          {/* SIDEBAR - Activity & Chat */}
+          {/* SIDEBAR - Activity */}
           <aside className="lg:col-span-4 space-y-12 lg:sticky lg:top-8 lg:self-start">
             
             {/* RECENT ACTIVITY */}
@@ -285,7 +268,7 @@ export function DivisionDetailClient({
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
                         key={`${a.userId}-${a.completedAt}-${i}`} 
-                        className="p-4 flex gap-3 hover:bg-slate-50 transition-colors"
+                        className="p-4 flex gap-3 hover:bg-purple-500 transition-colors"
                       >
                          <div className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                             <Image src="/images/xp.webp" alt="" width={12} height={12} unoptimized />
@@ -302,73 +285,14 @@ export function DivisionDetailClient({
                 </ul>
               </div>
             </section>
-
-            {/* DISCUSSION */}
-            <section className="space-y-6 flex flex-col h-[600px]">
-              <div className="flex items-center justify-between px-2">
-                 <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-indigo-600" />
-                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Discussion</h2>
-                 </div>
-                
-              </div>
-              
-              <div className={cn(mentrixStudent.card, "flex-1 flex flex-col min-h-[400px] bg-slate-50/50 backdrop-blur-sm")}>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {initial.messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                       <MessageSquare className="w-8 h-8 text-slate-200 mb-2" />
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Quiet in here...</p>
-                    </div>
-                  ) : (
-                    initial.messages.map((m) => (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        key={m.id} 
-                        className="group"
-                      >
-                         <div className="flex items-baseline justify-between gap-2 mb-1">
-                            <span className="text-[10px] font-black italic text-slate-400 uppercase">{m.displayName}</span>
-                            <span suppressHydrationWarning className="text-[8px] font-bold text-slate-300 uppercase">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                         </div>
-                         <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm text-xs text-slate-700 leading-relaxed break-words">
-                            {m.body}
-                         </div>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
-
-                <div className="p-4 bg-white border-t border-slate-100">
-                  {initial.isMember ? (
-                    <form onSubmit={onPost} className="relative">
-                      <textarea
-                        value={msg}
-                        onChange={(e) => setMsg(e.target.value)}
-                        rows={2}
-                        maxLength={4000}
-                        placeholder="Say something to your division…"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none pr-12"
-                      />
-                      <button 
-                        type="submit" 
-                        disabled={isPending || !msg.trim()}
-                        className="absolute right-3 bottom-3 p-1.5 rounded-xl bg-indigo-600 text-white disabled:opacity-30 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-indigo-500/20"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </form>
-                  ) : (
-                    <div className="text-center p-2">
-                       <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 italic">Join to participate</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
           </aside>
         </div>
+
+        <LeagueForumPanel
+          divisionKey={divisionKey}
+          initialThreads={initial.forumThreads}
+          isMember={initial.isMember}
+        />
       </div>
     </div>
   );

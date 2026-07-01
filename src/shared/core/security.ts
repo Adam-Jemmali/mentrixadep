@@ -418,6 +418,8 @@ export const RATE_LIMITS = {
   duelCreate: { maxRequests: 8, windowMs: 60 * 60 * 1000 },
   duelSubmit: { maxRequests: 40, windowMs: 60 * 1000 },
   duelQueueJoin: { maxRequests: 30, windowMs: 60 * 1000 },
+  divisionForumPost: { maxRequests: 20, windowMs: 15 * 60 * 1000 },
+  divisionForumImage: { maxRequests: 10, windowMs: 15 * 60 * 1000 },
 } as const;
 
 /**

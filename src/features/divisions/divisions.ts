@@ -5,7 +5,7 @@ import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUtcWeekMondayString } from "@/features/divisions/division-week";
 import { getDivisionTierFromXp } from "@/features/xp/levels";
-import { assertNoBlockedLanguage } from "@/shared/core/security";
+import { getDivisionForumThreads } from "@/features/divisions/division-forum";
 import { getDivisionKeyForCourse, getDivisionLeaderboard, type LeaderboardEntry } from "@/features/divisions/leaderboard";
 import { getDivisionWarPanel } from "@/features/division-wars/reads";
 import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
@@ -369,69 +369,16 @@ export async function getUpcomingDuelsForDivision(
   }));
 }
 
+/** @deprecated Use getDivisionForumThreads */
 export async function getDivisionMessages(divisionKey: string, limit = 80) {
-  await requireRole(["student", "admin"]);
-  const admin = createAdminClient();
-
-  const { data: rows } = await admin
-    .from("division_messages")
-    .select("id, user_id, body, created_at")
-    .eq("division_key", divisionKey)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  const list = (rows ?? []).slice().reverse();
-  const ids = list.map((r) => r.user_id);
-  const names = await resolveDisplayNames(admin, ids);
-
-  return list.map((r) => ({
-    id: r.id,
-    userId: r.user_id,
-    displayName: names[r.user_id] ?? "Member",
-    body: r.body,
-    createdAt: r.created_at,
+  const threads = await getDivisionForumThreads(divisionKey, limit);
+  return threads.map((t) => ({
+    id: t.id,
+    userId: t.userId,
+    displayName: t.displayName,
+    body: t.title ? `${t.title}\n\n${t.body}` : t.body,
+    createdAt: t.createdAt,
   }));
-}
-
-export async function postDivisionMessage(
-  divisionKey: string,
-  body: string,
-): Promise<{ success: true } | { success: false; error: string }> {
-  try {
-    const user = await requireRole(["student", "admin"]);
-    const admin = createAdminClient();
-    const key = divisionKey.trim();
-    const text = body.trim();
-    if (text.length < 1 || text.length > 4000) {
-      return { success: false, error: "Message must be 1–4000 characters." };
-    }
-    assertNoBlockedLanguage(text, "division chat message");
-
-    const { data: mem } = await admin
-      .from("user_divisions")
-      .select("division_key")
-      .eq("user_id", user.id)
-      .eq("division_key", key)
-      .maybeSingle();
-    if (!mem) {
-      return { success: false, error: "Join this division to participate in the board." };
-    }
-
-    const { error } = await admin.from("division_messages").insert({
-      division_key: key,
-      user_id: user.id,
-      body: text,
-    });
-    if (error) return { success: false, error: error.message };
-
-    revalidatePath(`/student/division/${key}`);
-    return { success: true };
-  } catch (e) {
-    return {
-      success: false,
-      error: e instanceof Error ? e.message : "Could not post message.",
-    };
-  }
 }
 
 export async function isUserDivisionMember(userId: string, divisionKey: string): Promise<boolean> {
@@ -455,13 +402,13 @@ export async function loadDivisionDetailPage(divisionKey: string, userId: string
   const admin = createAdminClient();
   const weekStart = getUtcWeekMondayString();
 
-  const [weekly, allTime, activity, duels, messages, isMember, memberCountRes, divisionWar] =
+  const [weekly, allTime, activity, duels, forumThreads, isMember, memberCountRes, divisionWar] =
     await Promise.all([
     getWeeklyDivisionLeaderboard(divisionKey, userId, 50),
     getDivisionLeaderboard(divisionKey, userId, 50),
     getDivisionActivityFeed(divisionKey, 3),
     getUpcomingDuelsForDivision(divisionKey, 12),
-    getDivisionMessages(divisionKey, 80),
+    getDivisionForumThreads(divisionKey, 40),
     isUserDivisionMember(userId, divisionKey),
     admin.from("user_divisions").select("*", { count: "exact", head: true }).eq("division_key", divisionKey.trim()),
     getDivisionWarPanel(divisionKey, userId),
@@ -495,7 +442,14 @@ export async function loadDivisionDetailPage(divisionKey: string, userId: string
     allTimeLeaderboard: allTime as LeaderboardEntry[],
     activity,
     duels,
-    messages,
+    forumThreads,
+    messages: forumThreads.map((t) => ({
+      id: t.id,
+      userId: t.userId,
+      displayName: t.displayName,
+      body: t.title,
+      createdAt: t.createdAt,
+    })),
     isMember,
     memberCount,
     weeklyPoolXp,
