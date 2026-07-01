@@ -4,6 +4,10 @@ import {
   parseStepTraceSequence,
   type StepTraceProblem,
 } from "@/features/diagnostics/step-trace-types";
+import {
+  pickGuestStepTraceBankEntry,
+  type GuestStepTraceBankEntry,
+} from "@/features/diagnostics/guest-step-trace-bank";
 
 type SkillNodeJoin = {
   node_name: string;
@@ -22,6 +26,12 @@ type StepTraceItemRow = {
   skill_nodes: SkillNodeJoin | SkillNodeJoin[] | null;
 };
 
+export type GuestStepTraceSelection = StepTraceProblem & {
+  unitNumber: number;
+  unitName: string;
+  nodeSlug?: string;
+};
+
 function pickOne<T>(items: T[]): T | null {
   if (items.length === 0) return null;
   const index = Math.floor(Math.random() * items.length);
@@ -34,17 +44,48 @@ function resolveSkillNode(raw: StepTraceItemRow["skill_nodes"]): SkillNodeJoin |
   return raw;
 }
 
+async function resolveSkillNodeIdBySlug(nodeSlug: string): Promise<string | undefined> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("skill_nodes")
+    .select("id")
+    .eq("subject", AP_CALC_AB_SUBJECT)
+    .eq("node_slug", nodeSlug)
+    .maybeSingle();
+
+  if (error || !data?.id) return undefined;
+  return data.id;
+}
+
+function bankEntryToSelection(
+  entry: GuestStepTraceBankEntry,
+  skillNodeId?: string,
+): GuestStepTraceSelection {
+  return {
+    itemId: entry.itemId,
+    prompt: entry.prompt,
+    stepSequence: entry.stepSequence,
+    skillNodeId,
+    nodeName: entry.nodeName,
+    unitNumber: entry.unitNumber,
+    unitName: entry.unitName,
+    nodeSlug: entry.nodeSlug,
+    examStakes: entry.examStakes,
+  };
+}
+
+async function selectFromOfflineBank(): Promise<GuestStepTraceSelection | null> {
+  const entry = pickGuestStepTraceBankEntry();
+  if (!entry) return null;
+  const skillNodeId = await resolveSkillNodeIdBySlug(entry.nodeSlug);
+  return bankEntryToSelection(entry, skillNodeId);
+}
+
 /**
  * Single indexed read against approved step-trace rows — no live generation.
- * Curated pool is small (15–20 items); in-memory pick keeps response time flat.
+ * Falls back to the offline reviewed bank when item_bank.step_sequence is not seeded.
  */
-export async function selectGuestStepTraceItem(): Promise<
-  (StepTraceProblem & {
-    unitNumber: number;
-    unitName: string;
-    nodeSlug?: string;
-  }) | null
-> {
+export async function selectGuestStepTraceItem(): Promise<GuestStepTraceSelection | null> {
   const admin = createAdminClient();
 
   const { data, error } = await admin
@@ -69,33 +110,35 @@ export async function selectGuestStepTraceItem(): Promise<
     .not("step_sequence", "is", null)
     .eq("skill_nodes.subject", AP_CALC_AB_SUBJECT);
 
-  if (error || !data?.length) return null;
+  if (!error && data?.length) {
+    const eligible: Array<{
+      row: StepTraceItemRow;
+      node: SkillNodeJoin;
+      sequence: NonNullable<ReturnType<typeof parseStepTraceSequence>>;
+    }> = [];
 
-  const eligible: Array<{
-    row: StepTraceItemRow;
-    node: SkillNodeJoin;
-    sequence: NonNullable<ReturnType<typeof parseStepTraceSequence>>;
-  }> = [];
+    for (const row of data as StepTraceItemRow[]) {
+      const sequence = parseStepTraceSequence(row.step_sequence);
+      const node = resolveSkillNode(row.skill_nodes);
+      if (!sequence || !node?.node_name) continue;
+      eligible.push({ row, node, sequence });
+    }
 
-  for (const row of data as StepTraceItemRow[]) {
-    const sequence = parseStepTraceSequence(row.step_sequence);
-    const node = resolveSkillNode(row.skill_nodes);
-    if (!sequence || !node?.node_name) continue;
-    eligible.push({ row, node, sequence });
+    const picked = pickOne(eligible);
+    if (picked) {
+      return {
+        itemId: picked.row.id,
+        prompt: picked.row.prompt,
+        stepSequence: picked.sequence,
+        skillNodeId: picked.row.skill_node_id,
+        nodeName: picked.node.node_name,
+        unitNumber: picked.node.unit_number,
+        unitName: picked.node.unit_name,
+        nodeSlug: picked.node.node_slug?.trim() || undefined,
+        examStakes: picked.node.exam_stakes?.trim() || undefined,
+      };
+    }
   }
 
-  const picked = pickOne(eligible);
-  if (!picked) return null;
-
-  return {
-    itemId: picked.row.id,
-    prompt: picked.row.prompt,
-    stepSequence: picked.sequence,
-    skillNodeId: picked.row.skill_node_id,
-    nodeName: picked.node.node_name,
-    unitNumber: picked.node.unit_number,
-    unitName: picked.node.unit_name,
-    nodeSlug: picked.node.node_slug?.trim() || undefined,
-    examStakes: picked.node.exam_stakes?.trim() || undefined,
-  };
+  return selectFromOfflineBank();
 }
