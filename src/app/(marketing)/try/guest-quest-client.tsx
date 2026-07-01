@@ -52,6 +52,25 @@ import { StepTraceDiagnosticResults } from "@/features/diagnostics/step-trace-di
 import type { StepTraceProblem, StepTraceCompletion } from "@/features/diagnostics/step-trace-types";
 import type { AccuracyBucketRow } from "@/features/comparison/comparison-context-pure";
 
+function formatGuestDiagnosticStartError(
+  res: Response,
+  body: { error?: string; retryAfterSeconds?: number; success?: boolean },
+): string {
+  if (res.status === 429) {
+    const retry = Number(body.retryAfterSeconds);
+    if (Number.isFinite(retry) && retry > 0) {
+      const minutes = Math.max(1, Math.ceil(retry / 60));
+      return minutes === 1
+        ? "You started too many demos from this network. Wait about a minute, then try again."
+        : `You started too many demos from this network. Wait about ${minutes} minutes, then try again.`;
+    }
+    if (body.error?.includes("Daily demo limit")) {
+      return "You used all 3 free demos today. Come back tomorrow or sign up to keep your rank.";
+    }
+  }
+  return body.error || "Could not load diagnostic.";
+}
+
 function isGuestTryQuestion(x: unknown): x is GuestTryQuestion {
   if (!x || typeof x !== "object") return false;
   const o = x as Record<string, unknown>;
@@ -362,7 +381,7 @@ export function GuestQuestClient({
       });
       const j = await res.json();
       if (!j.success) {
-        setErr(j.error || "Could not load diagnostic.");
+        setErr(formatGuestDiagnosticStartError(res, j));
         setBusy(false);
         return;
       }

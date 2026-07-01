@@ -37,9 +37,6 @@ const resumeBodySchema = z.object({
 export async function POST(req: Request) {
   try {
     const ip = getClientIpFromRequest({ headers: req.headers });
-    const routeBlocked = await enforceApiRouteRateLimit("guest.practice", { ip });
-    if (routeBlocked) return routeBlocked;
-
     const cookieHeader = req.headers.get("cookie");
     const body = resumeBodySchema.safeParse(await req.json().catch(() => ({})));
     const wantsResume = body.success && body.data.resume === true;
@@ -56,7 +53,12 @@ export async function POST(req: Request) {
           nodeSlug: existing.nodeSlug,
         });
       }
+      // Page load resume probe — never starts a session or counts toward limits.
+      return NextResponse.json({ success: true, resumed: false });
     }
+
+    const routeBlocked = await enforceApiRouteRateLimit("guest.diagnostic", { ip });
+    if (routeBlocked) return routeBlocked;
 
     let guestQuestCount = 0;
     const guestQuestMatch = cookieHeader?.match(/guest_quests=([^;]+)/);
