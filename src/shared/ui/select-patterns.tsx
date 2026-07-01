@@ -172,6 +172,7 @@ export function MentrixaTimezoneSelect({
   brandKind = "mentrixer",
   className,
   disabled,
+  triggerClassName,
 }: {
   value: string;
   onChange: (tz: string) => void;
@@ -181,6 +182,7 @@ export function MentrixaTimezoneSelect({
   brandKind?: MentrixaBrandKind;
   className?: string;
   disabled?: boolean;
+  triggerClassName?: string;
 }) {
   const options = APP_TIMEZONES.map((tz) => ({
     id: tz,
@@ -197,6 +199,7 @@ export function MentrixaTimezoneSelect({
       description={description}
       tone={tone}
       className={className}
+      triggerClassName={cn("h-10 max-h-10", triggerClassName)}
       disabled={disabled}
       placeholder="Choose timezone"
     />

@@ -199,12 +199,14 @@ function TutorProfileFormSection({
           />
         </div>
 
-        <MentrixaTimezoneSelect
-          value={form.timezone}
-          onChange={(tz) => setForm((f) => ({ ...f, timezone: tz }))}
-          label="Timezone"
-          brandKind="guide"
-        />
+        <div className="self-start">
+          <MentrixaTimezoneSelect
+            value={form.timezone}
+            onChange={(tz) => setForm((f) => ({ ...f, timezone: tz }))}
+            label="Timezone"
+            brandKind="guide"
+          />
+        </div>
 
         <div className="border-t border-indigo-50 pt-8">
           <h3 className="mb-6 text-[10px] font-black uppercase tracking-widest text-indigo-400">Teaching Defaults</h3>

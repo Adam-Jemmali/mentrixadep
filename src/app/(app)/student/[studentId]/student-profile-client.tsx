@@ -181,7 +181,7 @@ function StudentProfileFormSection({
                 maxLength={100}
               />
             </div>
-            <div>
+            <div className="self-start">
               <MentrixaTimezoneSelect
                 value={form.timezone}
                 onChange={(tz) => setForm((f) => ({ ...f, timezone: tz }))}
@@ -193,7 +193,7 @@ function StudentProfileFormSection({
 
           <div>
             <Label htmlFor="bio" className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
-              Personal Creed (Bio)
+              Personal Creed 
             </Label>
             <Textarea
               id="bio"

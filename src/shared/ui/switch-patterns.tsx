@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Switch, SwitchGroup, Description } from "@/shared/ui/hero-switch";
+import { Switch } from "@/shared/ui/switch";
 import { cn } from "@/shared/core/utils";
 import {
   settingsSwitchMessage,
@@ -13,6 +13,13 @@ export type MentrixaSwitchTone = "light" | "dark";
 const TONE_CLASS: Record<MentrixaSwitchTone, string> = {
   light: "mentrixa-switch--light",
   dark: "mentrixa-switch--dark",
+};
+
+const SWITCH_CONTROL_CLASS: Record<MentrixaSwitchTone, string> = {
+  light:
+    "h-6 w-11 shrink-0 border-transparent bg-indigo-100 shadow-none data-[state=checked]:bg-indigo-600 [&>span]:h-5 [&>span]:w-5 [&>span]:translate-x-0.5 data-[state=checked]:[&>span]:translate-x-5",
+  dark:
+    "h-6 w-11 shrink-0 border border-slate-700 bg-slate-800 shadow-none data-[state=checked]:border-transparent data-[state=checked]:bg-indigo-600 [&>span]:h-5 [&>span]:w-5 [&>span]:translate-x-0.5 data-[state=checked]:[&>span]:translate-x-5",
 };
 
 export function MentrixaSettingsSwitch({
@@ -48,28 +55,27 @@ export function MentrixaSettingsSwitch({
   const showFooter = !suppressFooter && (resolvedVerdict || resolvedNextAction);
 
   return (
-    <Switch
-      isSelected={isSelected}
-      onChange={onChange}
-      isDisabled={isDisabled}
-      className={cn("mentrixa-switch", TONE_CLASS[tone], className)}
-    >
-      <Switch.Content className="mentrixa-switch__content">
+    <div className={cn("mentrixa-switch", TONE_CLASS[tone], className)}>
+      <div className="mentrixa-switch__content">
         <div className="mentrixa-switch__text min-w-0 flex-1">
           <span className="mentrixa-switch__label">{label}</span>
-          <Description className="mentrixa-switch__description">{description}</Description>
+          <span className="mentrixa-switch__description">{description}</span>
         </div>
-        <Switch.Control className="mentrixa-switch__control shrink-0">
-          <Switch.Thumb className="mentrixa-switch__thumb" />
-        </Switch.Control>
-      </Switch.Content>
+        <Switch
+          checked={isSelected}
+          onCheckedChange={onChange}
+          disabled={isDisabled}
+          aria-label={label}
+          className={SWITCH_CONTROL_CLASS[tone]}
+        />
+      </div>
       {showFooter ? (
         <p className="mentrixa-switch__footer">
           {resolvedVerdict ? <span>{resolvedVerdict} </span> : null}
           {resolvedNextAction ? <span className="opacity-90">{resolvedNextAction}</span> : null}
         </p>
       ) : null}
-    </Switch>
+    </div>
   );
 }
 
@@ -87,7 +93,8 @@ export function MentrixaSettingsSwitchGroup({
   className?: string;
 }) {
   return (
-    <SwitchGroup
+    <div
+      role="group"
       aria-label={ariaLabel}
       className={cn(
         "mentrixa-switch-group",
@@ -97,6 +104,6 @@ export function MentrixaSettingsSwitchGroup({
       )}
     >
       {children}
-    </SwitchGroup>
+    </div>
   );
 }
