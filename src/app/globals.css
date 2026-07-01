@@ -2512,6 +2512,44 @@ html.lp-landing-logo-cursor-active * {
     @apply pe-8;
   }
 
+  /* Profile-parity typography: home · skills · quest · league · duel */
+  .mentrix-student-type-scope {
+    font-family: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mentrix-student-type-scope :where(.font-bold, .font-semibold) {
+    font-weight: 900;
+  }
+
+  .mentrix-student-type-scope :where(.mx-surface-light) :where(h2, h3, h4) {
+    @apply font-black uppercase tracking-[0.08em] text-indigo-950;
+  }
+
+  .mentrix-student-type-scope :where(.mx-surface-light) :where(h1) {
+    @apply font-black italic tracking-tight text-indigo-950 normal-case;
+  }
+
+  .mentrix-student-type-scope :where(.mx-surface-light) :where(thead th) {
+    @apply font-black uppercase tracking-widest text-indigo-400;
+  }
+
+  .mentrix-student-type-scope :where(.mx-surface-light) :where(tbody td) {
+    @apply font-medium text-indigo-950;
+  }
+
+  .mentrix-student-type-scope :where(.mx-panel-arena, .mx-panel-workbench) :where(h1, h2, h3, h4) {
+    @apply font-black uppercase tracking-[0.08em] text-white;
+  }
+
+  .mentrix-student-type-scope :where([class*="heroGradient"]) :where(h1, h2, h3) {
+    @apply font-black italic normal-case tracking-tight text-white;
+  }
+
+  .mentrix-student-type-scope :where([class*="heroGradient"]) :where(p) {
+    @apply font-medium italic;
+  }
+
   /* HeroUI Alert (Tailwind v3 compatible) */
   .mentrixa-alert[data-slot="alert-root"] {
     @apply flex w-full flex-row items-start gap-3 rounded-2xl border px-4 py-3 shadow-sm;

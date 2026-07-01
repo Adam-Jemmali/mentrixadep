@@ -26,7 +26,7 @@ export function profileTabMessage(tab: MentrixaProfileTabId): MentrixaTabMessage
       return {
         label: "Share",
         verdict: "Your public rank passport shows verified first attempts only.",
-        nextAction: "Share the link after five verified skills unlock percentile.",
+        nextAction: "Keep rank card public if you want a shareable verified passport.",
       };
   }
 }

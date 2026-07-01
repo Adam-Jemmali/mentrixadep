@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import {
   buildMasteryGridNextAction,
@@ -21,15 +21,15 @@ export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className={mentrixStudent.sectionEyebrow}>Verified skill tree</p>
-          <p className="mt-1 text-sm text-violet-100/90">{data.subject}</p>
-          <p className="mt-2 text-xs text-violet-200/75">
+          <p className="mt-1 text-sm font-medium italic text-violet-100/90">{data.subject}</p>
+          <p className={`mt-2 ${mentrixProfileType.statLabelOnDark}`}>
             {summary.verifiedCount} verified · {summary.proficientCount} proficient ·{" "}
             {summary.totalNodes} skills
           </p>
         </div>
         <Link
           href="/student/mastery"
-          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-violet-600 px-4 text-xs font-semibold text-white transition hover:bg-violet-500"
+          className={mentrixProfileType.ctaPrimary}
         >
           Open skill tree
         </Link>
@@ -50,9 +50,7 @@ export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
 
       {weakest.length > 0 ? (
         <div className="mt-4 space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-200/90">
-            Weakest right now
-          </p>
+          <p className={mentrixProfileType.labelOnDark}>Weakest right now</p>
           {weakest.map((node) => (
             <SkillNodeStrengthMeter
               key={node.id}
@@ -65,7 +63,7 @@ export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
         </div>
       ) : null}
 
-      <p className="mt-4 text-sm font-medium text-slate-100">{nextAction}</p>
+      <p className={`mt-4 ${mentrixProfileType.bodyOnDark}`}>{nextAction}</p>
     </section>
   );
 }

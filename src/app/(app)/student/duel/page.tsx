@@ -6,7 +6,7 @@ import { getCachedUserMetaBatch } from "@/shared/core/user-meta-cache";
 import { DuelHub } from "./duel-hub";
 import { AccountRankLadder } from "@/features/student-profile/ui/account-rank-ladder";
 import { YourDuelsList } from "@/features/student-profile/ui/your-duels-list";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
 
@@ -92,10 +92,10 @@ export default async function StudentDuelsPage() {
       <div className={mentrixStudent.mainWide}>
         <div className="mb-10">
           <p className={mentrixStudent.sectionEyebrow}>PvP training</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
+          <h1 className={`mt-2 ${mentrixProfileType.pageTitleDisplay}`}>
             AP Calculus AB duels
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
+          <p className={`mt-2 ${mentrixProfileType.pageSubtitleOnDark}`}>
             Timed battles on the only skill tree we ship. Match real Mentrixers or spar while you wait.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default async function StudentDuelsPage() {
         {stats && stats.totalCompleted > 0 ? (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className={mentrixProfileType.statLabel}>
                 Record
               </p>
               <div className="mt-1 h-12 w-full max-w-[200px]">
@@ -113,10 +113,10 @@ export default async function StudentDuelsPage() {
               </div>
             </TiltCard>
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className={mentrixProfileType.statLabel}>
                 Duels XP
               </p>
-              <p className="mt-0.5 text-sm font-semibold text-zinc-900 tabular-nums">
+              <p className={`mt-0.5 ${mentrixProfileType.statValue}`}>
                 {stats.xpFromDuels} XP
               </p>
             </TiltCard>
@@ -135,7 +135,7 @@ export default async function StudentDuelsPage() {
 
 
         <TiltCard tiltLimit={3} className={`${mentrixStudent.card} mt-8 overflow-hidden p-0 block`}>
-          <div className="border-b border-zinc-100 px-4 py-3 text-xs font-bold uppercase tracking-wide text-zinc-500">
+          <div className={`border-b border-zinc-100 px-4 py-3 ${mentrixProfileType.label}`}>
             Your duels
           </div>
           <YourDuelsList initialRows={rows} myId={myId} nameById={nameById} />

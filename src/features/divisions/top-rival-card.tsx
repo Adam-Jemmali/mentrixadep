@@ -7,6 +7,7 @@ import { cn } from "@/shared/core/utils";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import type { TopRivalData } from "@/features/divisions/top-rival";
 import { AP_CALC_AB_DIVISION_NAME } from "@/features/divisions/ap-calc-ab-division";
+import { mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 import { TiltCard } from "@/shared/ui/tilt-card";
 
 interface Props {
@@ -31,13 +32,13 @@ export function TopRivalCard({ rivalData, className }: Props) {
             "flex flex-col justify-center p-6 sm:w-64 shrink-0",
             isRank1 ? "bg-blue-50/50" : "bg-indigo-50/50"
           )}>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            <p className={mentrixProfileType.labelMuted}>
               {AP_CALC_AB_DIVISION_NAME} league
             </p>
-            <h3 className="mt-1 text-lg font-bold text-slate-900">
+            <h3 className={`mt-1 font-mono text-lg font-black italic tracking-tight text-indigo-950`}>
               {isRank1 ? "Rank #1" : `Rank #${rivalData.myRank}`}
             </h3>
-            <p className="mt-1 text-xs text-slate-500 font-mono italic">
+            <p className={`mt-1 ${mentrixProfileType.statValue} text-xs`}>
               {rivalData.myXp?.toLocaleString()} XP
             </p>
           </div>
@@ -55,10 +56,10 @@ export function TopRivalCard({ rivalData, className }: Props) {
                   />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">
+                  <p className={mentrixProfileType.label}>
                     {isRank1 ? "CONGRATULATIONS" : "YOUR RIVAL"}
                   </p>
-                  <p className="text-base font-black uppercase italic tracking-tight text-slate-900 sm:text-lg">
+                  <p className="text-base font-black uppercase italic tracking-tight text-indigo-950 sm:text-lg">
                     {isRank1 ? "You are at the top!" : rivalData.rivalName}
                   </p>
                   {!isRank1 && (
@@ -82,8 +83,9 @@ export function TopRivalCard({ rivalData, className }: Props) {
                 <Link
                   href={isRank1 ? "/student/duel" : "/student/quest"}
                   className={cn(
-                    "inline-flex h-10 items-center rounded-xl px-5 text-xs font-bold uppercase tracking-widest transition-all",
-                    isRank1 
+                    "inline-flex h-10 items-center rounded-xl px-5 transition-all",
+                    mentrixProfileType.cta,
+                    isRank1
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500"
                       : "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 hover:bg-indigo-500"
                   )}

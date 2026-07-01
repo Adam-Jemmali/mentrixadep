@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { ScrollRevealCard } from "@/shared/ui/card";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
 import { AvailabilityBrowser } from "./availability-browser";
 import { StudentSubjectFocus } from "./student-subject-focus";
@@ -135,8 +135,8 @@ export function StudentCommandCenterClient({
         <ScrollRevealCard className={`${mentrixStudent.card} min-h-[22rem] p-5 sm:p-6`}>
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Today</p>
-              <h2 className="text-base font-bold text-zinc-900">Upcoming sessions</h2>
+              <p className={mentrixProfileType.label}>Today</p>
+              <h2 className={mentrixProfileType.cardTitle}>Upcoming sessions</h2>
             </div>
             <Link
               href="#sessions-history"
@@ -216,7 +216,7 @@ export function StudentCommandCenterClient({
 
         <div className="space-y-6">
           <ScrollRevealCard className={`${mentrixStudent.card} min-h-[11rem] p-5`}>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Quick actions</p>
+            <p className={mentrixProfileType.label}>Quick actions</p>
             <div className="mt-3 space-y-2">
               <Link href="/student/quest" className="flex min-h-11 items-center justify-between rounded-md border border-indigo-200 bg-indigo-50/80 px-3 py-2 text-xs font-medium text-indigo-900 transition hover:bg-indigo-50">
                 <span className="inline-flex items-center gap-2"><Image src="/images/quest.webp" alt="" width={16} height={16} aria-hidden /> Start daily quest</span>
@@ -238,7 +238,7 @@ export function StudentCommandCenterClient({
       {matchmakerGuides.length > 0 && (
         <ScrollRevealCard className={`${mentrixStudent.card} p-5 sm:p-6`}>
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-zinc-900">Recommended guides</h2>
+            <h2 className={mentrixProfileType.cardTitle}>Recommended guides</h2>
             <User className="w-4 h-4 opacity-50" />
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -286,8 +286,8 @@ export function StudentCommandCenterClient({
 
       <section id="browse-guides" className="scroll-mt-24">
 
-        <h2 className={`mt-1 text-lg font-bold ${mentrixStudent.textOnDark}`}>Browse & book</h2>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">
+        <h2 className={`mt-1 ${mentrixProfileType.sectionTitleOnDark}`}>Browse & book</h2>
+        <p className={`mt-1 ${mentrixProfileType.labelOnDark}`}>
           Prove what you know everywhere you can
         </p>
        

@@ -6,6 +6,7 @@ import { addStudentCourse, removeStudentCourse } from "@/features/booking/studen
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 import { SHIPPED_SUBJECT_CATALOG } from "@/features/quest/shipped-subjects";
+import { mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 
 export type StudentCourseChip = { id: string; course_name: string };
 
@@ -72,9 +73,9 @@ export function StudentCourseChips({
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_24px_-10px_rgba(15,23,42,0.12)] sm:p-5">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Focus</p>
-        <h2 className="mt-1 text-base font-bold text-slate-900">My courses</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className={mentrixProfileType.label}>Focus</p>
+        <h2 className={`mt-1 ${mentrixProfileType.cardTitle}`}>My courses</h2>
+        <p className={`mt-1 ${mentrixProfileType.bodyItalic}`}>
           Tap a subject to filter sessions and guides below.
         </p>
       </div>

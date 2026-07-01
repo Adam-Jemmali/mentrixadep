@@ -1,5 +1,7 @@
+import { StudentProductTypography } from "./student-product-typography";
+
 export default function StudentSectionLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return children;
+  return <StudentProductTypography>{children}</StudentProductTypography>;
 }

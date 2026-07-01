@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 import { QuestPracticeWorkspace } from "./quest-practice-workspace";
 import { GuestQuestClient } from "@/app/(marketing)/try/guest-quest-client";
 import { Typewriter } from "@/shared/ui/typewriter";
@@ -68,10 +68,10 @@ export function QuestPageClient({
           <p className={mentrixStudent.sectionEyebrowOnLight}>
             {guestMode ? "Quest preview" : null}
           </p>
-          <h1 className={`mt-1 h-[28px] text-lg font-bold sm:text-xl ${mentrixStudent.textOnLight}`}>
+          <h1 className={`mt-1 h-[28px] ${mentrixProfileType.pageTitle}`}>
             <Typewriter text={AP_CALC_AB_SUBJECT} speed={70} waitTime={8000} />
           </h1>
-          <p className={`mt-0.5 text-sm ${mentrixStudent.textMutedOnLight}`}>
+          <p className={`mt-0.5 ${mentrixProfileType.pageSubtitle}`}>
             {guestMode
               ? "Same verified item bank students use. Preview only until you sign up."
               : "First attempt per skill counts toward rank. Practice after that never moves it."}

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { cn } from "@/shared/core/utils";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import {
   filterMasteryNodesByQuery,
@@ -53,18 +53,15 @@ export function MasteryGridExplorer({
       <section className={`${mentrixStudent.card} space-y-5 p-5 sm:p-6`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Link
-              href="/student"
-              className="text-xs font-medium text-violet-700 transition hover:text-violet-900"
-            >
+            <Link href="/student" className={mentrixProfileType.link}>
               Back to home
             </Link>
-            <h1 className={`mt-2 text-xl font-bold ${mentrixStudent.textOnLight}`}>Skill tree</h1>
-            <p className={`mt-1 text-sm ${mentrixStudent.textMutedOnLight}`}>
+            <h1 className={`mt-2 ${mentrixProfileType.pageTitle}`}>Skill tree</h1>
+            <p className={`mt-1 ${mentrixProfileType.pageSubtitle}`}>
               One subject, one unit at a time. Search scales to hundreds of skills without stacking the home page.
             </p>
           </div>
-          <p className={`text-xs ${mentrixStudent.textMutedOnLight}`}>
+          <p className={mentrixProfileType.statLabel}>
             {summary.verifiedCount} verified · {summary.totalNodes} skills · {data.units.length} units
           </p>
         </div>
