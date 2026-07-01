@@ -275,7 +275,7 @@ export function StudentCommandCenterClient({
       )}
 
       <section id="browse-guides" className="scroll-mt-24">
-        <p className={mentrixStudent.sectionEyebrow}>Guides</p>
+
         <h2 className={`mt-1 text-lg font-bold ${mentrixStudent.textOnDark}`}>Browse & book</h2>
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">
           Prove what you know everywhere you can
