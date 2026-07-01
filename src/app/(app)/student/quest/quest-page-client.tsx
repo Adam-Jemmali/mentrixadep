@@ -1,13 +1,18 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { QuestPracticeWorkspace } from "./quest-practice-workspace";
 import { GuestQuestClient } from "@/app/(marketing)/try/guest-quest-client";
-import { Typewriter } from "@/shared/ui/typewriter";
-import { TiltCard } from "@/shared/ui/tilt-card";
 import { BackButton } from "@/shared/ui/back-button";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import {
+  questGuestPageEyebrow,
+  questGuestPageSubtitle,
+  questPageEyebrow,
+  questPageSubtitle,
+  questPageTitle,
+} from "@/features/quest/quest-hub-messages-pure";
 import { OnboardingStepsProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { VerifiedFirstAttemptAlert } from "@/shared/ui/alert-patterns";
 import { VerifiedFirstAttemptDisclosure } from "@/shared/ui/disclosure-patterns";
@@ -42,11 +47,12 @@ export function QuestPageClient({
   return (
     <div
       className={
-        guestMode ? "w-full" : "min-h-[calc(100dvh-4.75rem)]"
+        guestMode ? "w-full" : mentrixStudent.pageBgArena
       }
     >
+      <div className={guestMode ? undefined : mentrixStudent.mainWide}>
       {!guestMode ? (
-        <div className="mb-4 px-4 pt-4 sm:px-6">
+        <div className="mb-4">
           <BackButton />
         </div>
       ) : null}
@@ -61,22 +67,15 @@ export function QuestPageClient({
       ) : null}
 
       {!diagnosticMode ? (
-        <TiltCard
-          tiltLimit={2}
-          className="mx-panel-brand block rounded-none border-b border-violet-500/30 px-4 pt-5 shadow-[0_4px_24px_-12px_rgba(79,70,229,0.45)] sm:px-6"
-        >
+        <div className="mb-8">
           <p className={mentrixStudent.sectionEyebrow}>
-            {guestMode ? "Quest preview" : null}
+            {guestMode ? questGuestPageEyebrow() : questPageEyebrow()}
           </p>
-          <h1 className={`mt-1 h-[28px] ${mentrixProfileType.pageTitleOnDark}`}>
-            <Typewriter text={AP_CALC_AB_SUBJECT} speed={70} waitTime={8000} />
-          </h1>
-          <p className={`mt-0.5 ${mentrixProfileType.pageSubtitleOnDark}`}>
-            {guestMode
-              ? "Same verified item bank students use. Preview only until you sign up."
-              : "First attempt per skill counts toward rank. Practice after that never moves it."}
+          <h1 className={`mt-2 ${mentrixStudent.pageTitle}`}>{questPageTitle()}</h1>
+          <p className={`mt-2 max-w-xl ${mentrixStudent.pageSubtitle}`}>
+            {guestMode ? questGuestPageSubtitle() : questPageSubtitle()}
           </p>
-        </TiltCard>
+        </div>
       ) : null}
 
       {guestMode ? (
@@ -84,6 +83,7 @@ export function QuestPageClient({
       ) : (
         <QuestPracticeWorkspace subjectOptions={subjectOptions} />
       )}
+      </div>
     </div>
   );
 }
