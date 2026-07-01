@@ -21,6 +21,7 @@ import {
 } from "@/features/rank-card/rank-passport-pure";
 import { getApCalcVerifiedRankStats, getCalibratedRank } from "@/features/xp/calibrated-rank";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { filterArenaDivisions } from "@/features/divisions/ap-calc-ab-division";
 
 export type {
   StudentProfileAchievement,
@@ -226,9 +227,10 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     };
   }
 
-  const divisions = (divRows ?? [])
-    .map((d) => ({ key: d.key, name: d.name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const divisions = filterArenaDivisions(divRows ?? []).map((d) => ({
+    key: d.key,
+    name: d.name,
+  }));
 
   let rankCardTopSubject: string | null = courses[0] ?? null;
   let rankCardTopAccuracy = 0;

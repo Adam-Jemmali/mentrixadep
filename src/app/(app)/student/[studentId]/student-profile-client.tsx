@@ -208,22 +208,28 @@ function StudentProfileFormSection({
 
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-2xl border border-indigo-50 bg-indigo-50/30 p-5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Battle Focus</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Battle focus</Label>
               <p className="mt-1 text-[11px] text-slate-500 italic">
-                Your primary division for leaderboards.
+                AP Calculus AB league and duel matchmaking.
               </p>
-              <DivisionFocusSelect
-                value={form.focused_division_key}
-                onValueChange={(v) =>
-                  setForm((f) => ({
-                    ...f,
-                    focused_division_key: v,
-                  }))
-                }
-                divisions={divisions}
-                noneLabel="None"
-                triggerClassName="mt-4"
-              />
+              {divisions.length <= 1 ? (
+                <p className="mt-4 rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
+                  {divisions[0]?.name ?? "AP Calculus AB"}
+                </p>
+              ) : (
+                <DivisionFocusSelect
+                  value={form.focused_division_key}
+                  onValueChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      focused_division_key: v,
+                    }))
+                  }
+                  divisions={divisions}
+                  noneLabel="None"
+                  triggerClassName="mt-4"
+                />
+              )}
             </div>
 
             <MentrixaSettingsSwitchGroup ariaLabel={privacySwitchGroupAriaLabel()} tone="light">

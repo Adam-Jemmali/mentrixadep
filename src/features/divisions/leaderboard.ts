@@ -7,11 +7,18 @@ import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
 import { getCachedUserMeta } from "@/shared/core/user-meta-cache";
 import { withSupabaseQuerySpan } from "@/shared/integrations/observability";
 import { getDivisionTierFromXp } from "@/features/xp/levels";
+import {
+  AP_CALC_AB_DIVISION_KEY,
+  assertAllowedArenaDivisionKey,
+  filterArenaDivisions,
+} from "@/features/divisions/ap-calc-ab-division";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 
 export async function getDivisionKeyForCourse(
   course: string
 ): Promise<string | null> {
   if (!course?.trim()) return null;
+  if (isApCalculusAbSubject(course)) return AP_CALC_AB_DIVISION_KEY;
   try {
     const adminClient = createAdminClient();
     const { data: mapRow } = await adminClient
@@ -68,13 +75,11 @@ export async function getDivisionsCatalog(): Promise<
     .select("key, name, description")
     .eq("active", true)
     .order("name", { ascending: true });
-  return (data ?? [])
-    .filter((d) => d.name === "AP Calculus AB")
-    .map((d) => ({
-      key: d.key,
-      name: d.name,
-      description: d.description ?? null,
-    }));
+  return filterArenaDivisions(data ?? []).map((d) => ({
+    key: d.key,
+    name: d.name,
+    description: d.description ?? null,
+  }));
 }
 
 /**
@@ -88,7 +93,11 @@ export async function setFocusedDivision(
     const adminClient = createAdminClient();
 
     if (divisionKey !== null && divisionKey.trim() !== "") {
-      const key = divisionKey.trim();
+      const allowed = assertAllowedArenaDivisionKey(divisionKey);
+      if (!allowed.ok) {
+        return { success: false, error: allowed.error };
+      }
+      const key = allowed.key;
       const { data: div } = await adminClient
         .from("divisions")
         .select("key")

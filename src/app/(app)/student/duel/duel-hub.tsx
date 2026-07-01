@@ -14,6 +14,9 @@ import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { DuelMatchAcceptScreen } from "@/features/duels/ui/duel-match-accept-screen";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
+import {
+  AP_CALC_AB_DIVISION_NAME,
+} from "@/features/divisions/ap-calc-ab-division";
 import { cn } from "@/shared/core/utils";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
@@ -100,6 +103,13 @@ export function DuelHub({
   );
 
   const [divisionKey, setDivisionKey] = useState(initialKey);
+  const soleDivision = divisions[0] ?? null;
+
+  useEffect(() => {
+    if (soleDivision && divisionKey !== soleDivision.key) {
+      setDivisionKey(soleDivision.key);
+    }
+  }, [soleDivision, divisionKey]);
   const [queuePhase, setQueuePhase] = useState<"idle" | "waiting">(
     initialQueueDivision ? "waiting" : "idle"
   );
@@ -753,126 +763,92 @@ export function DuelHub({
             arenaDivisionFocus.eyebrow,
           )}
         >
-          Choose duel arena
+          {AP_CALC_AB_DIVISION_NAME} duel arena
         </p>
         <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
-          Tap a subject
+          Verified first-attempt duels run on the only skill tree we ship today.
         </p>
 
-        <motion.ul
-          layout
-          className="mt-5 grid gap-5 overflow-visible sm:grid-cols-2 lg:grid-cols-3"
-        >
-        {divisions.map((d, i) => {
-          const t = getDivisionTheme(d.key);
-          const isSelected = divisionKey === d.key;
-          const isProfileFocus = preferredDivisionKey === d.key;
-          
-          return (
-            <motion.li 
-              key={d.key}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="overflow-visible p-1"
-            >
-              <div
-                role="button"
-                tabIndex={0}
-                aria-selected={isSelected}
-                onClick={() => setDivisionKey(d.key)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setDivisionKey(d.key);
-                  }
-                }}
-                className={cn(
-                  "cursor-pointer",
-                  arenaDivisionCardClasses({
-                    isSelected,
-                    isProfileFocus,
-                  }),
-                )}
-              >
-                {isSelected ? (
+        {!soleDivision ? (
+          <p className="mt-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            Duel arena is syncing. Refresh in a moment if this persists.
+          </p>
+        ) : (
+          <div className="mt-5 overflow-visible p-1">
+            {(() => {
+              const d = soleDivision;
+              const t = getDivisionTheme(d.key);
+              const isProfileFocus = preferredDivisionKey === d.key;
+
+              return (
+                <div
+                  className={cn(
+                    arenaDivisionCardClasses({
+                      isSelected: true,
+                      isProfileFocus,
+                    }),
+                  )}
+                >
                   <div
                     className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-cyan-400"
                     aria-hidden
                   />
-                ) : null}
 
-                {(isSelected || isProfileFocus) && (
-                  <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
-                    {isSelected ? (
-                      <span className="rounded-full border-2 border-cyan-200 bg-cyan-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-950 shadow-md shadow-cyan-900/40">
-                        Selected
-                      </span>
-                    ) : null}
-                    {isProfileFocus ? (
+                  {isProfileFocus ? (
+                    <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
                       <span className="rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
                         Your focus
                       </span>
-                    ) : null}
-                  </div>
-                )}
-                {/* ICON & TITLE */}
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className={cn("relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white bg-gradient-to-br shadow-lg transition-transform group-hover:scale-110", t.gradient)}>
-                      {t.emoji}
                     </div>
-                    <div className="min-w-0">
-                      <h2 className="text-lg font-black italic uppercase tracking-tighter text-slate-900 leading-none truncate">
-                        {d.name.replace(/\s+Division$/i, "")}
-                      </h2>
-                      <div className="mt-1 flex items-center gap-2">
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                           <Users className="w-3 h-3 opacity-50" />
-                           Arena Active
+                  ) : null}
+
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div
+                        className={cn(
+                          "relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-xl font-bold text-white shadow-lg",
+                          t.gradient,
+                        )}
+                      >
+                        {t.emoji}
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="truncate text-lg font-black uppercase italic leading-none tracking-tighter text-slate-900">
+                          {d.name.replace(/\s+Division$/i, "")}
+                        </h2>
+                        <div className="mt-1 flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            <Users className="h-3 w-3 opacity-50" />
+                            Arena active
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* DESCRIPTION */}
-                <p className="mt-4 text-xs font-medium leading-relaxed text-slate-500 flex-1 line-clamp-2">
-                  {d.description || "Enter the battleground for this subject."}
-                </p>
+                  <p className="mt-4 line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-slate-500">
+                    {d.description || "Timed AP Calculus AB battles against real Mentrixers."}
+                  </p>
 
-                {/* FOOTER ACTIONS */}
-                <div className="mt-6">
-                  <Button 
-                    disabled={queueLoading}
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
-                      startDuelLoopFromGesture();
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void findMatch(d.key);
-                    }}
-                    className={cn(
-                      "w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
-                      isSelected
-                        ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/35 ring-2 ring-cyan-300/80 hover:bg-cyan-500"
-                        : "bg-slate-100 text-slate-800 hover:bg-slate-200",
-                    )}
-                  >
-                    {isSelected && queueLoading ? "Searching..." : "Start Duel"}
-                  </Button>
+                  <div className="mt-6">
+                    <Button
+                      disabled={queueLoading}
+                      onPointerDown={() => {
+                        startDuelLoopFromGesture();
+                      }}
+                      onClick={() => {
+                        void findMatch(d.key);
+                      }}
+                      className="h-11 w-full rounded-xl bg-cyan-600 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-cyan-900/35 ring-2 ring-cyan-300/80 hover:bg-cyan-500"
+                    >
+                      {queueLoading ? "Searching..." : "Start duel"}
+                    </Button>
+                  </div>
                 </div>
-
-                {/* DECORATIVE LOGO */}
-                <div className="absolute -bottom-2 -right-2 p-2 opacity-[0.02] grayscale pointer-events-none group-hover:opacity-[0.05] transition-opacity">
-                   <Image src="/mentrixalogo/logo.webp" alt="" width={80} height={80} />
-                </div>
-              </div>
-            </motion.li>
-          );
-        })}
-        </motion.ul>
+              );
+            })()}
+          </div>
+        )}
       </div>
     </div>
   );

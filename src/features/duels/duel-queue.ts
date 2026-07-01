@@ -10,6 +10,7 @@ import {
   type DuelReadyRow,
 } from "@/features/duels/duel-internal";
 import { activateSkillDuelSession } from "@/features/duels/duel-gameplay";
+import { assertAllowedArenaDivisionKey } from "@/features/divisions/ap-calc-ab-division";
 
 async function tryActivateQueueMatchWhenReady(
   admin: ReturnType<typeof createAdminClient>,
@@ -69,6 +70,11 @@ export async function joinDuelQueue(
       "duel queue"
     );
 
+    const allowed = assertAllowedArenaDivisionKey(divisionKey);
+    if (!allowed.ok) {
+      return { success: false, error: allowed.error };
+    }
+
     const admin = createAdminClient();
 
     const { data: mySettings } = await admin
@@ -87,7 +93,7 @@ export async function joinDuelQueue(
     const { data: div } = await admin
       .from("divisions")
       .select("key")
-      .eq("key", divisionKey.trim())
+      .eq("key", allowed.key)
       .eq("active", true)
       .maybeSingle();
 

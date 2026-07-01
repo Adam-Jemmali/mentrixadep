@@ -9,6 +9,7 @@ import { Info, Users } from "lucide-react";
 import type { DivisionHubCard } from "@/features/divisions/divisions";
 import { joinDivision } from "@/features/divisions/divisions";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
+import { AP_CALC_AB_DIVISION_NAME } from "@/features/divisions/ap-calc-ab-division";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -55,13 +56,19 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
             arenaDivisionFocus.eyebrow,
           )}
         >
-          Choose your league arena
+          {AP_CALC_AB_DIVISION_NAME} league
         </p>
         <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
-          Join a division to climb the board. The{" "}
+          Join to climb the weekly board. The{" "}
           <span className="font-semibold text-cyan-300">cyan outline</span> marks your home
           focus.
         </p>
+
+        {initialCards.length === 0 ? (
+          <p className="mt-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            Arena is syncing. Refresh in a moment or contact support if this persists.
+          </p>
+        ) : null}
 
         <motion.ul
           layout

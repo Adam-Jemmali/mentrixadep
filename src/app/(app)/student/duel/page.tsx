@@ -91,12 +91,12 @@ export default async function StudentDuelsPage() {
     <div className={mentrixStudent.pageBgArena}>
       <div className={mentrixStudent.mainWide}>
         <div className="mb-10">
-          <p className={mentrixStudent.sectionEyebrow}>PvP training & leagues</p>
+          <p className={mentrixStudent.sectionEyebrow}>PvP training</p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
-            Skill duels
+            AP Calculus AB duels
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
-            Timed battles. Live scores. Challenge others in real-time or practice with sparring quests.
+            Timed battles on the only skill tree we ship. Match real Mentrixers or spar while you wait.
           </p>
         </div>
 

@@ -10,6 +10,10 @@ import { getDivisionKeyForCourse, getDivisionLeaderboard, type LeaderboardEntry 
 import { getDivisionWarPanel } from "@/features/division-wars/reads";
 import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
 import { createClient } from "@/shared/integrations/supabase/server";
+import {
+  assertAllowedArenaDivisionKey,
+  filterArenaDivisions,
+} from "@/features/divisions/ap-calc-ab-division";
 
 export interface WeeklyLeaderboardEntry {
   rank: number;
@@ -213,9 +217,10 @@ async function loadDivisionHubCards(userId: string): Promise<DivisionHubCard[]> 
 
 export async function getDivisionHubCards(userId: string): Promise<DivisionHubCard[]> {
   await requireRole(["student", "admin"]);
-  return withCache(cacheKeys.divisionHub(userId), cacheTtl.divisionHub, () =>
+  const cards = await withCache(cacheKeys.divisionHub(userId), cacheTtl.divisionHub, () =>
     loadDivisionHubCards(userId),
   );
+  return filterArenaDivisions(cards);
 }
 
 export async function joinDivision(
@@ -224,7 +229,11 @@ export async function joinDivision(
   try {
     const user = await requireRole(["student", "admin"]);
     const admin = createAdminClient();
-    const key = divisionKey.trim();
+    const allowed = assertAllowedArenaDivisionKey(divisionKey);
+    if (!allowed.ok) {
+      return { success: false, error: allowed.error };
+    }
+    const key = allowed.key;
     const { data: div } = await admin
       .from("divisions")
       .select("key")

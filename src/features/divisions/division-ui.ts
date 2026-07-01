@@ -13,6 +13,12 @@ export type DivisionTheme = {
 };
 
 const PRESET: Record<string, DivisionTheme> = {
+  "ap-calculus-ab": {
+    emoji: "∫",
+    gradient: "from-violet-600 via-blue-600 to-indigo-500",
+    softBg: "bg-violet-50",
+    ring: "ring-violet-400/40",
+  },
   mathematics: {
     emoji: "∑",
     gradient: "from-violet-600 via-blue-600 to-indigo-500",

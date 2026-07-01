@@ -3,6 +3,7 @@
 import { DivisionPickerCards } from "@/features/student-profile/ui/division-picker-cards";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { cn } from "@/shared/core/utils";
+import { AP_CALC_AB_DIVISION_NAME } from "@/features/divisions/ap-calc-ab-division";
 import {
   arenaDivisionFocus,
   arenaDivisionPanelClasses,
@@ -29,21 +30,11 @@ export function FocusDivisionPicker({
           arenaDivisionFocus.eyebrow,
         )}
       >
-        Your home arena
+        Your {AP_CALC_AB_DIVISION_NAME} arena
       </p>
       <p className={cn("mt-1 max-w-2xl text-xs leading-relaxed", arenaDivisionFocus.hint)}>
-        Pick where you compete on the leaderboard, earn XP, and match duels.{" "}
-        <span className="font-semibold text-cyan-300">
-          Cyan outline
-        </span>{" "}
-        = active focus.
-        {currentDivisionKey ? (
-          <>
-            {" "}
-            Smart default follows your strongest subject (now{" "}
-            {currentDivisionKey.replace(/-/g, " ")}).
-          </>
-        ) : null}
+        Leaderboard XP and duels run on the only skill tree we ship today.{" "}
+        <span className="font-semibold text-cyan-300">Cyan outline</span> = active focus.
       </p>
       <div className="mt-4">
         <DivisionPickerCards
