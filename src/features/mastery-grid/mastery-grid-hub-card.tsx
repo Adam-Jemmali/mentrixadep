@@ -20,7 +20,7 @@ export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
     <section className={`${mentrixStudent.cardArena} p-5 sm:p-6`} aria-label="Skill tree summary">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className={mentrixStudent.sectionEyebrow}>Verified skill tree</p>
+        
           <p className="mt-1 text-sm font-medium italic text-violet-100/90">{data.subject}</p>
           <p className={`mt-2 ${mentrixProfileType.statLabelOnDark}`}>
             {summary.verifiedCount} verified · {summary.proficientCount} proficient ·{" "}

@@ -19,6 +19,8 @@ import {
   type SubscriptionAlertKind,
   type VerifiedFirstAttemptAlertKind,
 } from "@/shared/ui/alert-messages-pure";
+import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 
 export type MentrixaAlertTone = "light" | "dark";
 
@@ -48,7 +50,7 @@ export function MentrixaAlert({
 }: {
   status: MentrixaAlertStatus;
   title: string;
-  description?: string;
+  description?: ReactNode;
   nextAction?: string;
   tone?: MentrixaAlertTone;
   brandKind?: MentrixaBrandKind;
@@ -199,9 +201,9 @@ export function PracticeWrongAnswerAlert({
     <MentrixaAlert
       status={message.status}
       title={message.title}
-      description={message.description}
+      description={<PromptWithMath text={explanation} variant="dark" />}
       nextAction={onContinue ? message.nextAction : undefined}
-      tone="light"
+      tone="dark"
       brandKind="mentrixer"
       showBrandIndicator={false}
       className={className}
@@ -209,8 +211,7 @@ export function PracticeWrongAnswerAlert({
         onContinue ? (
           <Button
             type="button"
-            className="mt-3 border-amber-300 bg-white text-amber-950 hover:bg-amber-50"
-            variant="outline"
+            className={`mt-3 ${mentrixBrandUi.heroBtn}`}
             onClick={onContinue}
             disabled={busy}
           >

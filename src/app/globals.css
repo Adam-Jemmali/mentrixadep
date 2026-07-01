@@ -2716,6 +2716,23 @@ html.lp-landing-logo-cursor-active * {
     @apply text-indigo-200/85;
   }
 
+  .mentrixa-alert--dark.mentrixa-alert--warning[data-slot="alert-root"] {
+    @apply border-amber-400/45 bg-amber-950/40 text-amber-50;
+  }
+
+  .mentrixa-alert--dark.mentrixa-alert--warning [data-slot="alert-title"] {
+    @apply text-amber-100;
+  }
+
+  .mentrixa-alert--dark.mentrixa-alert--warning [data-slot="alert-description"],
+  .mentrixa-alert--dark.mentrixa-alert--warning .mentrixa-alert__next-action {
+    @apply text-violet-100/90;
+  }
+
+  .mentrixa-alert--dark.mentrixa-alert--warning [data-slot="alert-description"] .katex {
+    color: inherit;
+  }
+
   /* HeroUI AlertDialog (Tailwind v3 compatible) */
   .mentrixa-alert-dialog__backdrop {
     @apply bg-slate-950/55 backdrop-blur-sm;

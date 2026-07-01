@@ -120,7 +120,7 @@ function PromptTextBlock({
   const [katex, setKatex] = useState<KatexModule["default"] | null>(null);
   const proseClass =
     variant === "dark"
-      ? "text-sm leading-relaxed text-slate-200"
+      ? "text-sm leading-relaxed text-violet-100/90"
       : "text-sm leading-relaxed text-zinc-900";
 
   useEffect(() => {

@@ -610,9 +610,9 @@ export function QuestPracticeWorkspace({
             )}
 
             {question.kind === "mcq" ? (
-              <PromptWithMath text={question.prompt} />
+              <PromptWithMath text={question.prompt} variant="dark" />
             ) : question.kind === "problem_solving" ? (
-              <PromptWithMath text={question.prompt} />
+              <PromptWithMath text={question.prompt} variant="dark" />
             ) : (
               <p className={`${mentrixStudent.textOnLight} whitespace-pre-wrap text-sm leading-relaxed`}>
                 {question.prompt}
@@ -622,13 +622,20 @@ export function QuestPracticeWorkspace({
             {question.kind === "mcq" && (
               <div className="grid gap-2 sm:grid-cols-2">
                 {question.options.map((opt, i) => {
-                  let cls =
-                    "border border-violet-500/35 bg-indigo-950/50 rounded-xl p-4 text-left text-sm text-violet-50 transition-all hover:border-violet-400/50";
+                  const base =
+                    "rounded-xl border p-4 text-left text-sm transition-all";
+                  let cls = `${base} border-violet-500/35 bg-indigo-950/50 text-violet-50 hover:border-violet-400/50`;
                   if (mcqResult) {
-                    if (i === mcqResult.correctIndex) cls += " border-emerald-500 bg-emerald-50";
-                    else if (i === mcqPicked && !mcqResult.correct)
-                      cls += " border-red-400 bg-red-50";
-                  } else if (mcqPicked === i) cls += " ring-2 ring-indigo-400";
+                    if (i === mcqResult.correctIndex) {
+                      cls = `${base} border-emerald-400/70 bg-emerald-950/55 text-emerald-100 ring-1 ring-emerald-400/35`;
+                    } else if (i === mcqPicked && !mcqResult.correct) {
+                      cls = `${base} border-red-400/70 bg-red-950/55 text-red-100 ring-1 ring-red-400/35`;
+                    } else {
+                      cls = `${base} border-indigo-500/25 bg-indigo-950/35 text-violet-200/70 opacity-80`;
+                    }
+                  } else if (mcqPicked === i) {
+                    cls = `${base} border-violet-400/70 bg-violet-950/65 text-white ring-2 ring-violet-400/60`;
+                  }
                   return (
                     <motion.button
                       key={i}
@@ -636,9 +643,9 @@ export function QuestPracticeWorkspace({
                       disabled={!!mcqResult || busy}
                       onClick={() => void onMcqSelect(i)}
                       whileTap={{ scale: 0.98 }}
-                      className={`${cls} ${mentrixStudent.textOnLight}`}
+                      className={`${cls} [&_.katex]:text-inherit`}
                     >
-                      <PromptWithMath text={opt} />
+                      <PromptWithMath text={opt} variant="dark" />
                     </motion.button>
                   );
                 })}

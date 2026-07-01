@@ -20,7 +20,7 @@ export function rankBreakdownPopoverMessage(
   stats: VerifiedFirstAttemptRankStats,
 ): MentrixaPopoverMessage {
   return {
-    title: "Verified rank breakdown",
+    title: "",
     verdict: formatVerifiedRankVerdict(stats) ?? "",
     nextAction: formatVerifiedRankNextAction(stats),
   };
