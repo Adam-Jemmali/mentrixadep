@@ -6,6 +6,7 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getHeadToHeadSummary } from "@/features/duels/duel-reward";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
+import { DuelRowActions } from "@/features/student-profile/ui/duel-row-actions";
 
 export const metadata = { title: "Duel history · Mentrixa" };
 
@@ -187,8 +188,8 @@ export default async function DuelHistoryPage() {
                       className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
                     >
                       <div>
-                        <p className="text-slate-900">vs {label}</p>
-                        <p className="text-xs text-slate-400 font-mono">
+                        <p className="text-violet-50">vs {label}</p>
+                        <p className="text-xs font-mono text-violet-300/70">
                           {divName(r.division_key)}
                         </p>
                       </div>
