@@ -5,6 +5,7 @@ import { createClient } from "@/shared/integrations/supabase/server";
 import { validateCourse, sanitizeCourseName, validateUUID, sanitizeError } from "@/shared/core/security";
 import { revalidatePath } from "next/cache";
 import { isMissingStudentCoursesRelation } from "@/features/booking/booking-internal";
+import { assertShippedSubjectName } from "@/features/quest/shipped-subjects";
 
 export async function getStudentCourses() {
   const user = await requireRole(["student", "admin"]);
@@ -30,7 +31,12 @@ export async function addStudentCourse(courseName: string) {
   const user = await requireRole(["student", "admin"]);
   const supabase = await createClient();
 
-  const validName = sanitizeCourseName(validateCourse(courseName));
+  const shipped = assertShippedSubjectName(validateCourse(courseName));
+  if (!shipped.ok) {
+    throw new Error(shipped.error);
+  }
+
+  const validName = sanitizeCourseName(shipped.name);
 
   const { error } = await supabase
     .from("student_courses")

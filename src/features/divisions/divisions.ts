@@ -11,6 +11,7 @@ import { getDivisionWarPanel } from "@/features/division-wars/reads";
 import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
 import { createClient } from "@/shared/integrations/supabase/server";
 import {
+  AP_CALC_AB_DIVISION_KEY,
   assertAllowedArenaDivisionKey,
   filterArenaDivisions,
 } from "@/features/divisions/ap-calc-ab-division";
@@ -314,7 +315,7 @@ export async function getDivisionActivityFeed(
   }
   const courseToDivKey = new Map<string, string>();
   for (const c of Array.from(courses)) {
-    courseToDivKey.set(c, (await getDivisionKeyForCourse(c)) ?? "general");
+    courseToDivKey.set(c, (await getDivisionKeyForCourse(c)) ?? AP_CALC_AB_DIVISION_KEY);
   }
 
   const out: DivisionActivityItem[] = [];
@@ -323,7 +324,7 @@ export async function getDivisionActivityFeed(
     const q = questMap.get(p.quest_id);
     const m = (q?.metadata as Record<string, unknown> | null) ?? {};
     const course = typeof m.course === "string" ? m.course.trim() : null;
-    const divKey = course ? (courseToDivKey.get(course) ?? "general") : "general";
+    const divKey = course ? (courseToDivKey.get(course) ?? AP_CALC_AB_DIVISION_KEY) : AP_CALC_AB_DIVISION_KEY;
     if (divKey !== divisionKey) continue;
     const completedAt =
       (typeof p.last_attempt_at === "string" && p.last_attempt_at) || new Date().toISOString();

@@ -25,6 +25,7 @@ import { selectItemBankQuestions, computePracticePackQuestionCount } from "@/fea
 import { applyXpAward } from "@/features/xp/xp-awards";
 
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
+import { AP_CALC_AB_DIVISION_KEY } from "@/features/divisions/ap-calc-ab-division";
 import { XP } from "@/features/xp/xp-constants";
 import { sanitizeString } from "@/shared/core/security";
 import { updateKnowledgeGraph } from "@/features/learning-path/knowledge-graph";
@@ -598,7 +599,7 @@ export async function finalizePracticeQuest(
     const total = qs.length;
     const perfect = correct === total;
     const divisionKey =
-      (await getDivisionKeyForCourse(meta.course)) ?? "general";
+      (await getDivisionKeyForCourse(meta.course)) ?? AP_CALC_AB_DIVISION_KEY;
 
     let rankVerdict: string | undefined;
     let rankNextAction: string | undefined;

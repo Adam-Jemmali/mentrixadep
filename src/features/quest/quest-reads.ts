@@ -6,6 +6,7 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import type { UserXp } from "@/shared/types/database";
 import { XP } from "@/features/xp/xp-constants";
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
+import { AP_CALC_AB_DIVISION_KEY } from "@/features/divisions/ap-calc-ab-division";
 import type { QuestGoal, QuestMode } from "@/features/quest/quest-internal";
 
 export interface UserXpResult {
@@ -76,7 +77,7 @@ export async function getStudentQuestHistory(limit = 40): Promise<QuestHistoryEn
   }
   const courseToDivKey = new Map<string, string>();
   for (const c of Array.from(courses)) {
-    courseToDivKey.set(c, (await getDivisionKeyForCourse(c)) ?? "general");
+    courseToDivKey.set(c, (await getDivisionKeyForCourse(c)) ?? AP_CALC_AB_DIVISION_KEY);
   }
 
   const entries: QuestHistoryEntry[] = [];
@@ -85,9 +86,9 @@ export async function getStudentQuestHistory(limit = 40): Promise<QuestHistoryEn
     if (!q) continue;
     const m = (q.metadata as Record<string, unknown> | null) ?? {};
     const course = typeof m.course === "string" ? m.course.trim() : null;
-    const divisionKey = course ? (courseToDivKey.get(course) ?? "general") : "general";
+    const divisionKey = course ? (courseToDivKey.get(course) ?? AP_CALC_AB_DIVISION_KEY) : AP_CALC_AB_DIVISION_KEY;
     const divisionName =
-      divNameByKey.get(divisionKey) ?? (divisionKey === "general" ? "General" : divisionKey);
+      divNameByKey.get(divisionKey) ?? AP_CALC_AB_DIVISION_KEY.replace(/-/g, " ");
 
     const goalRaw = m.goal;
     const goal: QuestGoal | null =
@@ -311,7 +312,7 @@ export async function getQuestAccuracyTrend(userId: string): Promise<QuestAccura
     const course = meta?.course || "";
     
     // Check if this quest belongs to the student's active division
-    const questDivKey = course ? courseToDiv.get(course) || "general" : "general";
+    const questDivKey = course ? courseToDiv.get(course) || AP_CALC_AB_DIVISION_KEY : AP_CALC_AB_DIVISION_KEY;
     
     if (questDivKey === divisionKey) {
       let correct = 1;

@@ -82,6 +82,26 @@ export function MentrixaSelect({
     : undefined;
 
   const optionById = new Map(options.map((o) => [o.id, o]));
+  if (noneOption) {
+    optionById.set(noneOption.id, { id: noneOption.id, label: noneOption.label });
+  }
+
+  const resolveDisplayValue = (
+    isPlaceholder: boolean,
+    selectedKey: string | null,
+  ): ReactNode => {
+    if (isPlaceholder || !selectedKey) {
+      return placeholder;
+    }
+    if (noneOption && selectedKey === noneOption.id) {
+      return renderValue ? renderValue(null) : noneOption.label;
+    }
+    const option = optionById.get(selectedKey) ?? null;
+    if (renderValue) {
+      return renderValue(option);
+    }
+    return option?.label ?? placeholder;
+  };
 
   const handleChange = (key: Key | Key[] | null) => {
     if (!onChange) return;
@@ -111,18 +131,14 @@ export function MentrixaSelect({
       ) : null}
       <Select.Trigger className={triggerClassName}>
         <Select.Value>
-          {renderValue
-            ? ({ isPlaceholder, state }) => {
-                if (isPlaceholder || state.selectedItems.length === 0) {
-                  return placeholder;
-                }
-                const id = String(state.selectedItems[0]?.key ?? "");
-                if (noneOption && id === noneOption.id) {
-                  return renderValue(null);
-                }
-                return renderValue(optionById.get(id) ?? null);
-              }
-            : undefined}
+          {({ isPlaceholder, state }) =>
+            resolveDisplayValue(
+              isPlaceholder,
+              state.selectedItems[0]?.key != null
+                ? String(state.selectedItems[0]?.key)
+                : null,
+            )
+          }
         </Select.Value>
         <Select.Indicator />
       </Select.Trigger>

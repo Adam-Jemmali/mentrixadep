@@ -55,6 +55,7 @@ function isArenaNavLink(link: string): boolean {
 
 const STUDENT_NAV_ITEMS = [
   { name: "Home", link: "/student" },
+  { name: "Skills", link: "/student/mastery" },
   { name: "Quest", link: "/student/quest" },
   { name: "League", link: "/student/division" },
   { name: "Duels", link: "/student/duel" },

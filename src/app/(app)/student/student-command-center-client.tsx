@@ -9,7 +9,11 @@ import { ScrollRevealCard } from "@/shared/ui/card";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
 import { AvailabilityBrowser } from "./availability-browser";
-import { StudentCourseChips, type StudentCourseChip } from "./student-course-chips";
+import { StudentSubjectFocus } from "./student-subject-focus";
+import {
+  defaultShippedSubjectName,
+  isSingleShippedSubject,
+} from "@/features/quest/shipped-subjects";
 import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
 import {
   formatMatchedSkillsLine,
@@ -51,7 +55,7 @@ export function StudentCommandCenterClient({
   guideRankByTutorId = {},
 }: {
   userId: string;
-  studentCourses: StudentCourseChip[];
+  studentCourses: { id: string; course_name: string }[];
   upcomingSessions: Upcoming[];
   availability: Availability[];
   availableCourses: string[];
@@ -64,13 +68,15 @@ export function StudentCommandCenterClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const singleSubject = isSingleShippedSubject();
+  const lockedSubject = defaultShippedSubjectName();
   const normalizedInitial = (searchParams.get("subject") ?? "").trim().toLowerCase();
-  const initialSelection = studentCourses.some(
-    (c) => c.course_name.trim().toLowerCase() === normalizedInitial,
-  )
-    ? studentCourses.find((c) => c.course_name.trim().toLowerCase() === normalizedInitial)
-        ?.course_name ?? "all"
-    : "all";
+  const initialSelection = singleSubject
+    ? lockedSubject
+    : studentCourses.some((c) => c.course_name.trim().toLowerCase() === normalizedInitial)
+      ? studentCourses.find((c) => c.course_name.trim().toLowerCase() === normalizedInitial)
+          ?.course_name ?? "all"
+      : "all";
   const [selectedCourse, setSelectedCourse] = useState<string | "all">(initialSelection);
   const [matchmakerGuides, setMatchmakerGuides] = useState<MatchmakerGuideResult[]>([]);
 
@@ -80,7 +86,11 @@ export function StudentCommandCenterClient({
     return upcomingSessions.filter((s) => s.course.toLowerCase().trim() === t);
   }, [upcomingSessions, selectedCourse]);
 
-  const syncFilter = selectedCourse === "all" ? "all" : selectedCourse;
+  const syncFilter = singleSubject
+    ? lockedSubject
+    : selectedCourse === "all"
+      ? "all"
+      : selectedCourse;
 
   useEffect(() => {
     router.prefetch("/student/quest");
@@ -111,7 +121,7 @@ export function StudentCommandCenterClient({
 
   return (
     <div className="space-y-8">
-      <StudentCourseChips
+      <StudentSubjectFocus
         courses={studentCourses}
         selectedCourse={selectedCourse}
         onSelectCourse={setSelectedCourse}

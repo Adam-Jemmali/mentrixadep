@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getEmailAppBaseUrl } from "@/shared/core/site";
 import { getUtcWeekMondayString } from "@/features/divisions/division-week";
+import { AP_CALC_AB_DIVISION_KEY, resolveArenaDivisionKey } from "@/features/divisions/ap-calc-ab-division";
 import { firstNameFromDisplayName } from "@/features/student-profile/student-dashboard-helpers";
 import {
   computeAccuracyDelta,
@@ -46,13 +47,7 @@ async function resolveFocusedDivision(
 
   let divisionKey = settings?.focused_division_key ?? null;
   if (!divisionKey) {
-    const { data: xp } = await admin
-      .from("user_xp")
-      .select("division_xp")
-      .eq("user_id", userId)
-      .maybeSingle();
-    const divXp = (xp?.division_xp as Record<string, number>) ?? {};
-    divisionKey = Object.entries(divXp).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "general";
+    divisionKey = resolveArenaDivisionKey();
   }
 
   const { data: division } = await admin
@@ -99,7 +94,7 @@ async function collectQuestAccuracyByWeek(
     if (!questData) continue;
     const meta = questData.metadata as Record<string, unknown> | null;
     const course = typeof meta?.course === "string" ? meta.course : "";
-    const questDivKey = course ? courseToDiv.get(course) ?? "general" : "general";
+    const questDivKey = course ? courseToDiv.get(course) ?? AP_CALC_AB_DIVISION_KEY : AP_CALC_AB_DIVISION_KEY;
     if (questDivKey !== divisionKey) continue;
 
     const completedAt = typeof row.last_attempt_at === "string" ? new Date(row.last_attempt_at) : null;

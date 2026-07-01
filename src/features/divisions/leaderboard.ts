@@ -9,8 +9,11 @@ import { withSupabaseQuerySpan } from "@/shared/integrations/observability";
 import { getDivisionTierFromXp } from "@/features/xp/levels";
 import {
   AP_CALC_AB_DIVISION_KEY,
+  AP_CALC_AB_DIVISION_NAME,
   assertAllowedArenaDivisionKey,
   filterArenaDivisions,
+  resolveArenaDivisionKey,
+  sumArenaDivisionXp,
 } from "@/features/divisions/ap-calc-ab-division";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 
@@ -157,17 +160,7 @@ export async function getStudentDivision(
 ): Promise<StudentDivisionResult | null> {
   await requireRole(["student", "admin"]);
   const adminClient = createAdminClient();
-
-  const { data: settingsRow } = await adminClient
-    .from("user_settings")
-    .select("focused_division_key")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const focusedKey =
-    typeof settingsRow?.focused_division_key === "string"
-      ? settingsRow.focused_division_key.trim()
-      : null;
+  const divisionKey = resolveArenaDivisionKey();
 
   const { data: xpRow } = await adminClient
     .from("user_xp")
@@ -176,37 +169,8 @@ export async function getStudentDivision(
     .maybeSingle();
 
   const divisionXp = (xpRow?.division_xp as Record<string, number>) ?? {};
-  const entries = Object.entries(divisionXp)
-    .filter(([, v]) => typeof v === "number" && v > 0)
-    .sort((a, b) => (b[1] as number) - (a[1] as number));
-
-  let divisionKey: string;
-  let xp: number;
-
-  if (focusedKey) {
-    const { data: focusDiv } = await adminClient
-      .from("divisions")
-      .select("key")
-      .eq("key", focusedKey)
-      .eq("active", true)
-      .maybeSingle();
-
-    if (focusDiv) {
-      divisionKey = focusedKey;
-      xp =
-        typeof divisionXp[divisionKey] === "number"
-          ? (divisionXp[divisionKey] ?? 0)
-          : 0;
-    } else if (entries.length === 0) {
-      return null;
-    } else {
-      [divisionKey, xp] = entries[0] as [string, number];
-    }
-  } else if (entries.length > 0) {
-    [divisionKey, xp] = entries[0] as [string, number];
-  } else {
-    return null;
-  }
+  const xp = sumArenaDivisionXp(divisionXp);
+  if (xp <= 0) return null;
 
   const { data: division } = await adminClient
     .from("divisions")
@@ -228,7 +192,7 @@ export async function getStudentDivision(
 
   return {
     divisionKey: division.key,
-    divisionName: division.name,
+    divisionName: AP_CALC_AB_DIVISION_NAME,
     divisionDescription: division.description ?? null,
     rank,
     divisionXp: xp,
@@ -462,48 +426,34 @@ export async function getStudentDivisionStats(
     .single();
 
   const divisionXp = (xpRow?.division_xp as Record<string, number>) ?? {};
-  const keys = Object.entries(divisionXp)
-    .filter(([, v]) => typeof v === "number" && v > 0)
-    .map(([k]) => k);
+  const xp = sumArenaDivisionXp(divisionXp);
+  if (xp <= 0) return [];
 
-  if (keys.length === 0) return [];
+  const divisionKey = resolveArenaDivisionKey();
+  const { count, error: cErr } = await adminClient
+    .from("mv_division_leaderboard")
+    .select("*", { count: "exact", head: true })
+    .eq("division_key", divisionKey)
+    .gt("division_xp", xp);
 
-  const { data: divisions } = await adminClient
-    .from("divisions")
-    .select("key, name")
-    .in("key", keys);
+  let rank: number;
+  if (!cErr) {
+    rank = (count ?? 0) + 1;
+  } else {
+    const { data: allRows } = await adminClient.from("user_xp").select("user_id, division_xp");
+    const withXp = (allRows ?? [])
+      .map((r) => sumArenaDivisionXp((r.division_xp as Record<string, number>) ?? {}))
+      .filter((v) => v > 0);
+    rank = withXp.filter((v) => v > xp).length + 1;
+  }
 
-  const divMap = new Map((divisions ?? []).map((d) => [d.key, d.name]));
-
-  const rankEntries = await Promise.all(
-    keys.map(async (key) => {
-      const xp = divisionXp[key] ?? 0;
-      const { count, error: cErr } = await adminClient
-        .from("mv_division_leaderboard")
-        .select("*", { count: "exact", head: true })
-        .eq("division_key", key)
-        .gt("division_xp", xp);
-
-      let rank: number;
-      if (!cErr) {
-        rank = (count ?? 0) + 1;
-      } else {
-        const { data: allRows } = await adminClient.from("user_xp").select("user_id, division_xp");
-        const withXp = (allRows ?? [])
-          .map((r) => (r.division_xp as Record<string, number>)?.[key] ?? 0)
-          .filter((v) => v > 0);
-        rank = withXp.filter((v) => v > xp).length + 1;
-      }
-
-      return {
-        divisionKey: key,
-        divisionName: divMap.get(key) ?? key,
-        xp,
-        level: getDivisionTierFromXp(xp),
-        rank,
-      };
-    }),
-  );
-
-  return rankEntries.sort((a, b) => b.xp - a.xp);
+  return [
+    {
+      divisionKey,
+      divisionName: AP_CALC_AB_DIVISION_NAME,
+      xp,
+      level: getDivisionTierFromXp(xp),
+      rank,
+    },
+  ];
 }

@@ -3,9 +3,9 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addStudentCourse, removeStudentCourse } from "@/features/booking/student-courses";
-import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
+import { SHIPPED_SUBJECT_CATALOG } from "@/features/quest/shipped-subjects";
 
 export type StudentCourseChip = { id: string; course_name: string };
 
@@ -18,26 +18,26 @@ export function StudentCourseChips({
   selectedCourse: string | "all";
   onSelectCourse: (course: string | "all") => void;
 }) {
-  const [courseName, setCourseName] = useState("");
   const [loading, setLoading] = useState(false);
   const [localCourses, setLocalCourses] = useState(courses);
   const [isRefreshing, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const enrolledNames = new Set(localCourses.map((c) => c.course_name.trim().toLowerCase()));
+  const enrollableSubjects = SHIPPED_SUBJECT_CATALOG.filter(
+    (subject) => !enrolledNames.has(subject.name.trim().toLowerCase()),
+  );
+
   useEffect(() => {
     setLocalCourses(courses);
   }, [courses]);
 
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
-    if (!courseName.trim()) {
-      setError("Enter a course name");
-      return;
-    }
+  async function handleAdd(subjectName: string) {
+    if (!subjectName.trim()) return;
     setLoading(true);
     setError(null);
-    const nextCourseName = courseName.trim();
+    const nextCourseName = subjectName.trim();
     const optimisticCourse: StudentCourseChip = {
       id: `temp-${Date.now()}`,
       course_name: nextCourseName,
@@ -45,8 +45,7 @@ export function StudentCourseChips({
     setLocalCourses((current) => [...current, optimisticCourse]);
     try {
       await addStudentCourse(nextCourseName);
-      setCourseName("");
-      onSelectCourse("all");
+      onSelectCourse(nextCourseName);
       startTransition(() => router.refresh());
     } catch (err) {
       setLocalCourses((current) => current.filter((c) => c.id !== optimisticCourse.id));
@@ -76,7 +75,7 @@ export function StudentCourseChips({
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Focus</p>
         <h2 className="mt-1 text-base font-bold text-slate-900">My courses</h2>
         <p className="mt-1 text-xs text-slate-500">
-          Tap a subject to filter sessions and Guides below.
+          Tap a subject to filter sessions and guides below.
         </p>
       </div>
 
@@ -135,22 +134,27 @@ export function StudentCourseChips({
         ))}
       </div>
 
-      <form onSubmit={handleAdd} className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <Input
-          value={courseName}
-          onChange={(e) => setCourseName(e.target.value)}
-          placeholder="Add a course (e.g. PROB STATS)"
-          className="h-11 w-full rounded-xl border-slate-200 bg-slate-50/80 text-sm sm:max-w-xs"
-        />
-        <Button
-          type="submit"
-          size="sm"
-          disabled={loading}
-          className="h-11 rounded-full bg-indigo-600 px-5 font-semibold text-white hover:bg-indigo-500 sm:w-auto"
-        >
-          {loading ? "Adding…" : "Add"}
-        </Button>
-      </form>
+      {enrollableSubjects.length > 0 ? (
+        <div className="mt-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            Add a skill tree
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {enrollableSubjects.map((subject) => (
+              <Button
+                key={subject.key}
+                type="button"
+                size="sm"
+                disabled={loading}
+                onClick={() => void handleAdd(subject.name)}
+                className="h-10 rounded-full bg-indigo-600 px-4 font-semibold text-white hover:bg-indigo-500"
+              >
+                {subject.name}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {isRefreshing ? <p className="mt-2 text-xs text-slate-500">Syncing courses…</p> : null}
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
     </div>

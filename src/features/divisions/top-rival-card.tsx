@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import type { TopRivalData } from "@/features/divisions/top-rival";
+import { AP_CALC_AB_DIVISION_NAME } from "@/features/divisions/ap-calc-ab-division";
 import { TiltCard } from "@/shared/ui/tilt-card";
 
 interface Props {
@@ -31,7 +32,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
             isRank1 ? "bg-blue-50/50" : "bg-indigo-50/50"
           )}>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              {rivalData.divisionName ?? "Division"}
+              {AP_CALC_AB_DIVISION_NAME} league
             </p>
             <h3 className="mt-1 text-lg font-bold text-slate-900">
               {isRank1 ? "Rank #1" : `Rank #${rivalData.myRank}`}

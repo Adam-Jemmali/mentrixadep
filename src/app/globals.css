@@ -2422,6 +2422,15 @@ html.lp-landing-logo-cursor-active * {
     @apply min-h-9 rounded-lg border-slate-200 text-[12px] font-medium text-slate-700;
   }
 
+  .mentrixa-select--filter [data-slot="select-value"] {
+    @apply text-slate-700;
+  }
+
+  .mentrixa-select--light [data-slot="select-value"],
+  .mentrixa-select--dark [data-slot="select-value"] {
+    @apply text-current;
+  }
+
   [data-slot="select-value"] {
     @apply flex-1 truncate text-start text-sm text-current;
   }

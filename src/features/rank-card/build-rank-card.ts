@@ -14,6 +14,7 @@ import {
   getCalibratedRank,
   isApCalcSubjectName,
 } from "@/features/xp/calibrated-rank";
+import { AP_CALC_AB_DIVISION_KEY } from "@/features/divisions/ap-calc-ab-division";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { RankCardBreakthrough, RankCardSubject } from "@/features/rank-card/types";
 
@@ -98,7 +99,7 @@ async function divisionKeyForSubject(
       if (key) return String(key);
     }
   }
-  return "general";
+  return AP_CALC_AB_DIVISION_KEY;
 }
 
 async function studentDuelStats(

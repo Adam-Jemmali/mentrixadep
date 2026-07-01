@@ -17,6 +17,7 @@ import { applyXpAward } from "@/features/xp/xp-awards";
 import { autoGenerateStudioPackagesForCompletedSessions } from "@/features/studio-ai/studio-packages";
 import { XP } from "@/features/xp/xp-constants";
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
+import { AP_CALC_AB_DIVISION_KEY } from "@/features/divisions/ap-calc-ab-division";
 
 export async function rateSession(
   sessionId: string,
@@ -129,8 +130,8 @@ export async function rateSession(
       }
 
       const divisionKey = session.course
-        ? (await getDivisionKeyForCourse(session.course)) ?? "general"
-        : "general";
+        ? (await getDivisionKeyForCourse(session.course)) ?? AP_CALC_AB_DIVISION_KEY
+        : AP_CALC_AB_DIVISION_KEY;
       try {
         await applyXpAward(
           actingAsId,

@@ -55,7 +55,7 @@ import {
 } from "@/features/guide-impact/reads";
 import { getGuideRanksMap } from "@/features/guide-rank/reads";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
-import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
+import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
 
 interface StudentPageProps {
@@ -276,7 +276,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
         {masteryGrid ? (
           <div className="mt-8">
-            <MasteryGrid data={masteryGrid} showLegend />
+            <MasteryGridHubCard data={masteryGrid} />
           </div>
         ) : null}
 

@@ -12,6 +12,7 @@ import {
   subjectsLooselyMatch,
 } from "@/features/pre-session-brief/context-pure";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { resolveArenaDivisionKey } from "@/features/divisions/ap-calc-ab-division";
 import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
 import { loadVerifiedGaps } from "@/features/pre-session-brief/verified-gaps";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
@@ -194,13 +195,7 @@ async function resolveDivisionForSubject(
   if (mapped) divisionKey = mapped;
 
   if (!divisionKey) {
-    const { data: xp } = await admin
-      .from("user_xp")
-      .select("division_xp")
-      .eq("user_id", studentId)
-      .maybeSingle();
-    const divXp = (xp?.division_xp as Record<string, number>) ?? {};
-    divisionKey = Object.entries(divXp).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "general";
+    divisionKey = resolveArenaDivisionKey();
   }
 
   const { data: rows } = await admin

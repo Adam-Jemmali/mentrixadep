@@ -5,6 +5,7 @@ import {
   assertAllowedArenaDivisionKey,
   filterArenaDivisions,
   isApCalcAbDivisionKey,
+  sumArenaDivisionXp,
 } from "@/features/divisions/ap-calc-ab-division";
 
 describe("ap-calc-ab-division", () => {
@@ -25,5 +26,14 @@ describe("ap-calc-ab-division", () => {
   it("rejects non-ap-calc duel division keys", () => {
     expect(assertAllowedArenaDivisionKey("biology").ok).toBe(false);
     expect(assertAllowedArenaDivisionKey(AP_CALC_AB_DIVISION_KEY).ok).toBe(true);
+  });
+
+  it("sums legacy general XP into the arena bucket", () => {
+    expect(
+      sumArenaDivisionXp({
+        general: 75,
+        "ap-calculus-ab": 10,
+      }),
+    ).toBe(85);
   });
 });

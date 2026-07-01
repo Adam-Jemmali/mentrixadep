@@ -228,3 +228,103 @@ export function splitMasteryGridByPinned(
 
   return { pinnedNodes, remainderUnits };
 }
+
+export type MasteryGridSummary = {
+  totalNodes: number;
+  verifiedCount: number;
+  proficientCount: number;
+  weakCount: number;
+  notStartedCount: number;
+  progressPercent: number;
+};
+
+export function summarizeMasteryGrid(data: MasteryGridData): MasteryGridSummary {
+  const nodes = flattenMasteryNodes(data);
+  let verifiedCount = 0;
+  let proficientCount = 0;
+  let weakCount = 0;
+  let notStartedCount = 0;
+
+  for (const node of nodes) {
+    if (node.state === "verified") verifiedCount += 1;
+    else if (node.state === "proficient") proficientCount += 1;
+    else if (node.state === "weak") weakCount += 1;
+    else notStartedCount += 1;
+  }
+
+  const totalNodes = nodes.length;
+  const progressPercent =
+    totalNodes > 0
+      ? Math.round(((verifiedCount + proficientCount) / totalNodes) * 100)
+      : 0;
+
+  return {
+    totalNodes,
+    verifiedCount,
+    proficientCount,
+    weakCount,
+    notStartedCount,
+    progressPercent,
+  };
+}
+
+export function pickWeakestMasteryNodes(
+  data: MasteryGridData,
+  limit = 3,
+): MasteryGridNode[] {
+  return flattenMasteryNodes(data)
+    .filter((node) => node.state !== "none")
+    .sort((a, b) => {
+      const accA = a.accuracyPercent ?? 0;
+      const accB = b.accuracyPercent ?? 0;
+      if (accA !== accB) return accA - accB;
+      return a.displayOrder - b.displayOrder;
+    })
+    .slice(0, limit);
+}
+
+/** Prefer the unit with the most weak nodes; otherwise the first unit. */
+export function pickDefaultMasteryUnitNumber(data: MasteryGridData): number | null {
+  if (data.units.length === 0) return null;
+
+  let best = data.units[0]!;
+  let bestWeak = -1;
+
+  for (const unit of data.units) {
+    const weakInUnit = unit.nodes.filter(
+      (node) => node.state === "weak" || node.state === "none",
+    ).length;
+    if (weakInUnit > bestWeak) {
+      bestWeak = weakInUnit;
+      best = unit;
+    }
+  }
+
+  return best.unitNumber;
+}
+
+export function filterMasteryNodesByQuery(
+  data: MasteryGridData,
+  query: string,
+): Array<MasteryGridNode & { unitNumber: number; unitName: string }> {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+
+  const matches: Array<MasteryGridNode & { unitNumber: number; unitName: string }> = [];
+  for (const unit of data.units) {
+    for (const node of unit.nodes) {
+      if (
+        node.nodeName.toLowerCase().includes(normalized) ||
+        node.nodeSlug.toLowerCase().includes(normalized)
+      ) {
+        matches.push({
+          ...node,
+          unitNumber: unit.unitNumber,
+          unitName: unit.unitName,
+        });
+      }
+    }
+  }
+
+  return matches.slice(0, 24);
+}

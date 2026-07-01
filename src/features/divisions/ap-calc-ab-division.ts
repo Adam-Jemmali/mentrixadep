@@ -8,8 +8,44 @@ export const AP_CALC_AB_DIVISION_NAME = AP_CALC_AB_SUBJECT;
 export const AP_CALC_AB_DIVISION_DESCRIPTION =
   "Limits, derivatives, integrals, and verified first attempts on the AP Calculus AB skill tree.";
 
-/** Legacy hub key kept only until migration 132 remaps XP and focus. */
+/** Legacy division keys whose XP folds into AP Calculus AB league totals. */
+export const LEGACY_DIVISION_XP_KEYS = new Set([
+  "general",
+  "mathematics",
+  "computer-science",
+  "physics",
+  "chemistry",
+  "biology",
+  "english",
+  "history",
+  "economics",
+  "data-science",
+]);
+
+/** Legacy hub key kept only until migration 135 remaps XP and focus. */
 const LEGACY_ARENA_KEYS = new Set(["mathematics"]);
+
+export function isLegacyArenaDivisionKey(key: string): boolean {
+  return LEGACY_DIVISION_XP_KEYS.has(key.trim().toLowerCase());
+}
+
+/** Single league key for arena, duels, and rival card. */
+export function resolveArenaDivisionKey(_preferred?: string | null): string {
+  return AP_CALC_AB_DIVISION_KEY;
+}
+
+/** Sum canonical + legacy bucket XP until migration 135 remaps JSONB. */
+export function sumArenaDivisionXp(divisionXp: Record<string, number> | null | undefined): number {
+  const xp = divisionXp ?? {};
+  let total = 0;
+  for (const [key, value] of Object.entries(xp)) {
+    if (typeof value !== "number" || value <= 0) continue;
+    if (isApCalcAbDivisionKey(key) || isLegacyArenaDivisionKey(key)) {
+      total += value;
+    }
+  }
+  return total;
+}
 
 export function isApCalcAbDivisionKey(key: string): boolean {
   return key.trim().toLowerCase() === AP_CALC_AB_DIVISION_KEY;

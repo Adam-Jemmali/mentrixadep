@@ -12,6 +12,7 @@ import type { SubmitQuestAnswerResult } from "@/features/quest/quest-internal";
 import { applyXpAward } from "@/features/xp/xp-awards";
 import { XP } from "@/features/xp/xp-constants";
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
+import { AP_CALC_AB_DIVISION_KEY } from "@/features/divisions/ap-calc-ab-division";
 import { recordDivisionWarQuestContribution } from "@/features/division-wars/contributions";
 
 export async function startAdaptiveClassicQuest(
@@ -151,7 +152,7 @@ export async function completeAdaptiveClassicQuest(
 
     const meta = quest?.metadata as Partial<AdaptiveClassicMetadata> | null;
     const subject = typeof meta?.subject === "string" ? meta.subject : null;
-    const divisionKey = subject ? ((await getDivisionKeyForCourse(subject)) ?? "general") : "general";
+    const divisionKey = subject ? ((await getDivisionKeyForCourse(subject)) ?? AP_CALC_AB_DIVISION_KEY) : AP_CALC_AB_DIVISION_KEY;
 
     let xpAwarded = 0;
     const xpResult = await applyXpAward(
