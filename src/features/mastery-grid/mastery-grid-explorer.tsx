@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { cn } from "@/shared/core/utils";
-import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixProfileType, mentrixBrandUi } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import {
   filterMasteryNodesByQuery,
@@ -53,15 +53,15 @@ export function MasteryGridExplorer({
       <section className={`${mentrixStudent.card} space-y-5 p-5 sm:p-6`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Link href="/student" className={mentrixProfileType.link}>
+            <Link href="/student" className={mentrixProfileType.linkOnDark}>
               Back to home
             </Link>
-            <h1 className={`mt-2 ${mentrixProfileType.pageTitle}`}>Skill tree</h1>
-            <p className={`mt-1 ${mentrixProfileType.pageSubtitle}`}>
+            <h1 className={`mt-2 ${mentrixProfileType.pageTitleOnDark}`}>Skill tree</h1>
+            <p className={`mt-1 ${mentrixProfileType.pageSubtitleOnDark}`}>
               One subject, one unit at a time. Search scales to hundreds of skills without stacking the home page.
             </p>
           </div>
-          <p className={mentrixProfileType.statLabel}>
+          <p className={mentrixProfileType.statLabelOnDark}>
             {summary.verifiedCount} verified · {summary.totalNodes} skills · {data.units.length} units
           </p>
         </div>
@@ -72,14 +72,13 @@ export function MasteryGridExplorer({
               key={subject.key}
               className={cn(
                 "inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-semibold",
-                subject.active
-                  ? "border-violet-300 bg-violet-100 text-violet-950"
-                  : "border-slate-200 bg-slate-50 text-slate-400",
+                subject.active ? mentrixBrandUi.chipActive : mentrixBrandUi.chipIdle,
+                !subject.active && "opacity-70",
               )}
             >
               {subject.name}
               {!subject.active ? (
-                <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-violet-300/60">
                   Soon
                 </span>
               ) : null}
@@ -88,12 +87,12 @@ export function MasteryGridExplorer({
         </div>
 
         <div className="relative max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search skills across all units"
-            className="h-10 border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400"
+            className={mentrixBrandUi.input}
           />
         </div>
 
@@ -113,14 +112,14 @@ export function MasteryGridExplorer({
                     className={cn(
                       "inline-flex min-h-10 max-w-[14rem] flex-col items-start rounded-xl border px-3 py-2 text-left transition",
                       active
-                        ? "border-violet-500 bg-violet-600 text-white shadow-sm shadow-violet-500/20"
-                        : "border-slate-200 bg-slate-50 text-slate-800 hover:border-violet-300 hover:bg-violet-50",
+                        ? "border-violet-400/70 bg-gradient-to-br from-[#7C3AED] to-[#6366F1] text-white shadow-md shadow-violet-600/25"
+                        : "border-indigo-500/30 bg-indigo-950/50 text-violet-100 hover:border-violet-400/45 hover:bg-violet-950/60",
                     )}
                   >
                     <span
                       className={cn(
                         "text-[11px] font-semibold uppercase tracking-wide",
-                        active ? "text-violet-100" : "text-slate-500",
+                        active ? "text-violet-100" : "text-violet-300/70",
                       )}
                     >
                       Unit {unit.unitNumber}
@@ -129,7 +128,7 @@ export function MasteryGridExplorer({
                     <span
                       className={cn(
                         "mt-1 text-[10px]",
-                        active ? "text-violet-100/90" : "text-slate-500",
+                        active ? "text-violet-100/90" : "text-violet-300/65",
                       )}
                     >
                       {unit.nodes.length} skills · {weakCount} open
@@ -144,9 +143,9 @@ export function MasteryGridExplorer({
 
       {searching ? (
         <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
-          <p className={mentrixStudent.sectionEyebrowOnLight}>Search results</p>
+          <p className={mentrixStudent.sectionEyebrow}>Search results</p>
           {searchResults.length === 0 ? (
-            <p className={`mt-3 text-sm ${mentrixStudent.textMutedOnLight}`}>No skills match that query.</p>
+            <p className={`mt-3 text-sm ${mentrixStudent.textMutedOnDark}`}>No skills match that query.</p>
           ) : (
             <ul className="mt-4 space-y-2">
               {searchResults.map((node) => (
@@ -157,10 +156,10 @@ export function MasteryGridExplorer({
                       setSearchQuery("");
                       setSelectedUnit(node.unitNumber);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:border-violet-300 hover:bg-violet-50"
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-indigo-500/30 bg-indigo-950/45 px-3 py-2 text-left transition hover:border-violet-400/45 hover:bg-violet-950/55"
                   >
-                    <span className="text-sm font-medium text-slate-900">{node.nodeName}</span>
-                    <span className="shrink-0 text-[11px] text-slate-500">
+                    <span className="text-sm font-medium text-violet-50">{node.nodeName}</span>
+                    <span className="shrink-0 text-[11px] text-violet-300/70">
                       {skillTreeUnitTriggerLabel(node.unitNumber, node.unitName)}
                     </span>
                   </button>
@@ -169,15 +168,9 @@ export function MasteryGridExplorer({
             </ul>
           )}
         </section>
-      ) : (
-        filteredData ? (
-          <MasteryGrid
-            data={filteredData}
-            showLegend
-            collapsibleUnits={false}
-          />
-        ) : null
-      )}
+      ) : filteredData ? (
+        <MasteryGrid data={filteredData} showLegend collapsibleUnits={false} />
+      ) : null}
     </div>
   );
 }

@@ -45,7 +45,7 @@ export function AccountRankLadder({
         "relative overflow-hidden rounded-2xl border",
         isArena
           ? "border-violet-500/25 bg-slate-950/60 shadow-[0_20px_50px_-24px_rgba(79,70,229,0.45)]"
-          : "mx-surface-light border-violet-200",
+          : "mx-panel-brand border-violet-500/30",
         className,
       )}
     >
@@ -59,17 +59,17 @@ export function AccountRankLadder({
       ) : null}
 
       <div className="relative px-4 py-5 sm:px-6 sm:py-6">
-        <AccountRankXpDisplay totalXp={totalXp} tone={isArena ? "arena" : "light"} />
+        <AccountRankXpDisplay totalXp={totalXp} tone="arena" />
 
         {/* Progress to next */}
         {xpToNext != null ? (
           <div className="mt-5">
             <XpTierProgressBar
               value={progressPct}
-              tone={isArena ? "dark" : "light"}
+              tone="dark"
               fillStyle={{
                 background: `linear-gradient(90deg, ${current.color}99, ${current.color})`,
-                boxShadow: isArena ? `0 0 12px ${current.colorMuted}` : undefined,
+                boxShadow: `0 0 12px ${current.colorMuted}`,
               }}
             />
           </div>
@@ -96,24 +96,24 @@ export function AccountRankLadder({
                     size={isCurrent ? "lg" : earned ? "sm" : "xs"}
                     active={isCurrent}
                     locked={locked}
-                    surface={isArena ? "onDark" : "default"}
+                    surface={isArena ? "onDark" : "onDark"}
                     showGlow={isCurrent}
                   />
                   <RankTitle
                     rank={rank}
                     active={earned}
-                    tone={isArena ? "dark" : "light"}
+                    tone={isArena ? "dark" : "dark"}
                     className={cn(
                       "mt-2 max-w-[4.5rem] truncate text-center",
                       isCurrent && "text-[11px] font-black",
-                      !earned && isArena && "opacity-50",
+                      !earned && "opacity-50",
                     )}
                   />
                   <span
                     className={cn(
                       "mt-0.5 font-mono text-[9px] tabular-nums",
-                      isArena ? "text-zinc-500" : earned ? "text-zinc-600" : "text-zinc-500",
-                      isCurrent && (isArena ? "text-zinc-300" : "text-zinc-800"),
+                      isArena ? "text-zinc-500" : "text-violet-300/70",
+                      isCurrent && (isArena ? "text-zinc-300" : "text-violet-100"),
                     )}
                   >
                     {rank.level}
@@ -137,13 +137,13 @@ export function AccountRankLadder({
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href="/student/quest"
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#6366F1] px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110"
             >
               Earn XP in Quest
             </Link>
             <Link
               href="/student/duel"
-              className="rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 hover:bg-violet-50"
+              className="rounded-lg border border-violet-400/45 bg-violet-950/50 px-3 py-1.5 text-xs font-semibold text-violet-100 hover:border-violet-300/60 hover:bg-violet-900/55"
             >
               Compete in Duels
             </Link>

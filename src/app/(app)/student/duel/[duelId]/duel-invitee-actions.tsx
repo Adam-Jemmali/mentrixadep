@@ -37,7 +37,7 @@ export function DuelInviteeActions({ duelId }: { duelId: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-3">
+    <div className="rounded-lg border border-indigo-500/30 bg-indigo-950/50 px-4 py-3 space-y-3 text-violet-100">
       <p className="text-sm text-slate-900 font-medium">You were challenged to a skill duel</p>
       <p className="text-xs text-slate-600">
         If you accept, the quiz is generated and you both answer the same questions. Highest score

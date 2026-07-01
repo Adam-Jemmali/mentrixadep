@@ -127,6 +127,44 @@ body { background:#FAFAFA; color:#0F172A; font-family:'Geist',system-ui,sans-ser
   color: #f8fafc;
 }
 
+/* Logo-gradient hub card — violet → indigo → navy (no white). */
+.mx-panel-brand {
+  border-radius: 1rem;
+  border: 1px solid rgba(124, 58, 237, 0.38);
+  background: linear-gradient(
+    155deg,
+    rgba(76, 29, 149, 0.55) 0%,
+    rgba(49, 46, 129, 0.92) 32%,
+    rgba(30, 27, 75, 0.96) 58%,
+    rgba(11, 18, 32, 0.98) 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(165, 180, 252, 0.12) inset,
+    0 22px 42px -26px rgba(79, 70, 229, 0.55);
+  color: #f5f3ff;
+}
+
+.mx-panel-brand-muted {
+  border-radius: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  background: linear-gradient(
+    180deg,
+    rgba(30, 27, 75, 0.72) 0%,
+    rgba(11, 18, 32, 0.92) 100%
+  );
+  color: #e9d5ff;
+}
+
+.mx-panel-brand :where(.text-slate-900, .text-slate-800, .text-slate-700, .text-zinc-900, .text-zinc-800, .text-indigo-950),
+.mx-panel-brand-muted :where(.text-slate-900, .text-slate-800, .text-slate-700, .text-zinc-900, .text-zinc-800, .text-indigo-950) {
+  color: #f5f3ff;
+}
+
+.mx-panel-brand :where(.text-slate-600, .text-slate-500, .text-zinc-600, .text-zinc-500),
+.mx-panel-brand-muted :where(.text-slate-600, .text-slate-500, .text-zinc-600, .text-zinc-500) {
+  color: #c4b5fd;
+}
+
 /* Dark panels: remap low-contrast dark Tailwind text utilities to light foreground. */
 .mx-panel-workbench :where(.text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600),
 .mx-panel-arena :where(.text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600) {
@@ -2522,20 +2560,49 @@ html.lp-landing-logo-cursor-active * {
     font-weight: 900;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light) :where(h2, h3, h4) {
-    @apply font-black uppercase tracking-[0.08em] text-indigo-950;
+  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(h2, h3, h4) {
+    @apply font-black uppercase tracking-[0.08em] text-violet-50;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light) :where(h1) {
-    @apply font-black italic tracking-tight text-indigo-950 normal-case;
+  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(h1) {
+    @apply font-black italic tracking-tight text-white normal-case;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light) :where(thead th) {
-    @apply font-black uppercase tracking-widest text-indigo-400;
+  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(thead th) {
+    @apply font-black uppercase tracking-widest text-indigo-300;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light) :where(tbody td) {
-    @apply font-medium text-indigo-950;
+  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(tbody td) {
+    @apply font-medium text-violet-50;
+  }
+
+  /* Remap legacy white cards inside product routes to logo palette */
+  .mentrix-student-type-scope .mx-surface-light {
+    border-radius: 1rem;
+    border: 1px solid rgba(124, 58, 237, 0.38);
+    background: linear-gradient(
+      155deg,
+      rgba(76, 29, 149, 0.55) 0%,
+      rgba(49, 46, 129, 0.92) 32%,
+      rgba(30, 27, 75, 0.96) 58%,
+      rgba(11, 18, 32, 0.98) 100%
+    );
+    box-shadow:
+      0 1px 0 rgba(165, 180, 252, 0.12) inset,
+      0 22px 42px -26px rgba(79, 70, 229, 0.55);
+    color: #f5f3ff;
+  }
+
+  .mentrix-student-type-scope .mentrixa-select--filter [data-slot="select-trigger"] {
+    @apply border-violet-500/35 bg-[#0B1220]/75 text-violet-50 shadow-none;
+  }
+
+  .mentrix-student-type-scope .mentrixa-select--filter [data-slot="select-value"] {
+    @apply text-violet-50;
+  }
+
+  .mentrix-student-type-scope .mentrixa-select--filter [data-slot="select-popover"] {
+    @apply border-violet-500/30 bg-[#0F172A] text-violet-50 shadow-xl;
   }
 
   .mentrix-student-type-scope :where(.mx-panel-arena, .mx-panel-workbench) :where(h1, h2, h3, h4) {

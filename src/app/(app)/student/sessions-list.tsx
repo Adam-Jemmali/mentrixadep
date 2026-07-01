@@ -20,9 +20,10 @@ import type { SessionAiPackage } from "@/shared/types/database";
 import { useLevelInfo } from "@/features/xp/mentrixa-ranks";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { readUiPerfTier } from "@/shared/core/ui-performance";
-import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
+import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
+const statCellClass = `${mentrixBrandUi.panel} flex flex-col rounded-2xl px-4 py-3 sm:px-5 sm:py-4`;
 
 function loadRateFloatDismissedIds(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -321,47 +322,47 @@ export function SessionsList({
       {showHeroStats ? (
         <>
           <div className="stat-cells-animate mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className={`mentrixa-stat-cell ${statCellClass}`}>
               <span
                 ref={totalXpRef}
-                className="xp-number text-2xl font-bold tabular-nums text-blue-700"
+                className="xp-number text-2xl font-bold tabular-nums text-indigo-300"
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-violet-300/75">
                 Total XP
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className={`mentrixa-stat-cell ${statCellClass}`}>
               <span
                 ref={streakRef}
                 className={`xp-number text-2xl font-bold tabular-nums ${
-                  streak > 0 ? "text-zinc-900" : "text-zinc-600"
+                  streak > 0 ? "text-white" : "text-violet-200/80"
                 }`}
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-violet-300/75">
                 Streak days
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className={`mentrixa-stat-cell ${statCellClass}`}>
               <span
                 ref={sessionsRef}
-                className="xp-number text-2xl font-bold tabular-nums text-zinc-900"
+                className="xp-number text-2xl font-bold tabular-nums text-white"
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-violet-300/75">
                 Sessions completed
               </span>
             </div>
-            <div className="mentrixa-stat-cell flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-3 shadow-sm sm:px-5 sm:py-4">
+            <div className={`mentrixa-stat-cell ${statCellClass}`}>
               <span
                 ref={ratingRef}
-                className="xp-number text-2xl font-bold tabular-nums text-zinc-900"
+                className="xp-number text-2xl font-bold tabular-nums text-white"
               />
-              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">
+              <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-violet-300/75">
                 Avg rating
               </span>
             </div>
           </div>
 
-          <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-zinc-200/90 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:px-5">
+          <div className={`mb-8 flex flex-col gap-4 ${mentrixBrandUi.panel} px-4 py-4 sm:flex-row sm:items-center sm:px-5`}>
             <div className="min-w-0 sm:min-w-[12rem]">
               <div className="flex flex-wrap items-center gap-2 sm:justify-start">
                 <span className="inline-flex items-center rounded-full border border-zinc-300 bg-zinc-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-700">
@@ -420,28 +421,28 @@ export function SessionsList({
               <TabsList className="mb-5 flex h-auto w-full gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 overflow-x-auto">
                 <TabsTrigger
                   value="schedule"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
                   <CalendarIcon className="w-3.5 h-3.5" />
                   Week
                 </TabsTrigger>
                 <TabsTrigger
                   value="upcoming"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
                   <Clock className="w-3.5 h-3.5" />
                   Upcoming ({filteredUpcoming.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="requests"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
                   <Send className="w-3.5 h-3.5" />
                   Requests ({filteredRequests.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="past"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-white data-[state=active]:text-[#1E3A5F] data-[state=active]:shadow-md transition-all gap-2"
+                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
                   <HistoryIcon className="w-3.5 h-3.5" />
                   History
@@ -471,7 +472,7 @@ export function SessionsList({
                     <p className="text-sm font-medium text-white/85">No upcoming sessions.</p>
                     <Button
                       size="sm"
-                      className="mt-5 rounded-md bg-white text-[#1E3A5F] px-6 font-semibold hover:bg-white/90"
+                      className="mt-5 rounded-md bg-gradient-to-r from-[#7C3AED] to-[#6366F1] px-6 font-semibold text-white hover:brightness-110"
                       asChild
                     >
                       <Link href="#browse-guides">Browse guides</Link>

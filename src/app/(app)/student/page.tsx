@@ -26,7 +26,7 @@ import { RankBreakdownPopover } from "@/shared/ui/popover-patterns";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent, mentrixBrandUi } from "@/features/student-profile/mentrix-student-ui";
 import {
   DeferredAccountRankLadder,
   DeferredHeroMentrixerBounce,
@@ -229,7 +229,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
             <div className="flex flex-col items-start gap-3 lg:items-end shrink-0">
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="min-h-11 text-xs bg-white text-zinc-900 hover:bg-slate-100" asChild>
+                <Button variant="outline" size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtnOutline}`} asChild>
                   <Link
                     href={`/student/${user.id}`}
                     className="inline-flex min-h-11 items-center gap-1.5 px-3"
@@ -245,16 +245,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     Profile & Settings
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" className="min-h-11 text-xs bg-white text-zinc-900 hover:bg-slate-100" asChild>
+                <Button variant="outline" size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtn}`} asChild>
                   <Link
                     href="/student/quest"
-                    className="inline-flex min-h-11 items-center gap-1.5 px-3 text-white"
+                    className="inline-flex min-h-11 items-center gap-1.5 px-3"
                   >
                     <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" aria-hidden />
                     Daily quest
                   </Link>
                 </Button>
-                <Button size="sm" className="min-h-11 text-xs bg-white text-zinc-900 hover:bg-slate-100" asChild>
+                <Button size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtnOutline}`} asChild>
                   <Link
                     href="#browse-guides"
                     className="inline-flex min-h-11 items-center gap-1.5 px-3"
@@ -297,17 +297,17 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         </div>
 
         {query.booking === "success" && (
-          <div className="mt-8 mb-2 rounded-2xl border border-emerald-200/80 bg-white px-5 py-4 text-sm text-emerald-900 shadow-sm">
-            <p className="font-medium">Payment received</p>
-            <p className="mt-1 text-emerald-900/90">
+          <div className="mt-8 mb-2 rounded-2xl border border-emerald-400/35 bg-emerald-950/40 px-5 py-4 text-sm text-emerald-100 shadow-sm">
+            <p className="font-medium text-emerald-50">Payment received</p>
+            <p className="mt-1 text-emerald-100/90">
               {query.reason === "approved"
                 ? "You have been accepted by Guide and are being redirected to your upcoming guide calls."
                 : "Waiting on your Guide to accept. You are being redirected to your upcoming guide calls."}
             </p>
-            <p className="mt-3 text-xs text-emerald-800/80">
+            <p className="mt-3 text-xs text-emerald-200/80">
               <Link
                 href="/student?sessionsTab=upcoming#sessions-history"
-                className="underline font-medium hover:text-emerald-950"
+                className="font-medium underline hover:text-emerald-50"
               >
                 Open upcoming guide calls
               </Link>
@@ -315,21 +315,21 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         )}
         {query.booking === "cancelled" && (
-          <div className="mt-8 mb-2 rounded-2xl border border-zinc-200/80 bg-white px-5 py-4 text-sm text-zinc-700 shadow-sm">
+          <div className="mt-8 mb-2 rounded-2xl border border-violet-500/30 bg-indigo-950/50 px-5 py-4 text-sm text-violet-100 shadow-sm">
             Checkout was cancelled. No charge was made.
           </div>
         )}
         {query.booking === "error" && query.reason === "slot_unavailable" && (
-          <div className="mt-8 mb-2 rounded-2xl border border-amber-200/90 bg-amber-50/90 px-5 py-4 text-sm text-amber-950 shadow-sm">
-            <p className="font-medium">That time was booked by another learner first</p>
-            <p className="mt-1 text-amber-950/90">
+          <div className="mt-8 mb-2 rounded-2xl border border-amber-400/35 bg-amber-950/35 px-5 py-4 text-sm text-amber-100 shadow-sm">
+            <p className="font-medium text-amber-50">That time was booked by another learner first</p>
+            <p className="mt-1 text-amber-100/90">
               While you were in checkout, someone else finished paying for this slot. Your payment was refunded
               automatically (typically 5–10 business days). Please choose another open time.
             </p>
           </div>
         )}
         {query.booking === "error" && query.reason !== "slot_unavailable" && (
-          <div className="mt-8 mb-2 rounded-2xl border border-red-200/80 bg-white px-5 py-4 text-sm text-red-700 shadow-sm">
+          <div className="mt-8 mb-2 rounded-2xl border border-red-400/35 bg-red-950/35 px-5 py-4 text-sm text-red-100 shadow-sm">
             Payment succeeded but booking sync failed. Please refresh once or contact support.
             {query.reason ? ` (${query.reason})` : ""}
           </div>
@@ -361,15 +361,15 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           />
 
           <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">
-            <div className="mx-surface-light mb-6 rounded-2xl px-5 py-4">
-              <p className={mentrixStudent.sectionEyebrowOnLight}>Live coaching</p>
-              <h2 className={`mt-1 text-lg font-bold ${mentrixStudent.textOnLight}`}>Sessions</h2>
-              <p className={`mt-1 text-sm ${mentrixStudent.textMutedOnLight}`}>
+            <div className={`${mentrixStudent.card} mb-6 px-5 py-4`}>
+              <p className={mentrixStudent.sectionEyebrow}>Live coaching</p>
+              <h2 className={`mt-1 text-lg font-bold ${mentrixStudent.textOnDark}`}>Sessions</h2>
+              <p className={`mt-1 text-sm ${mentrixStudent.textMutedOnDark}`}>
                 Upcoming and past guide calls.
               </p>
             </div>
             <DeferredStudentStudyPackageNotifier snapshots={studyPackageSnapshots} />
-            <Suspense fallback={<div className="min-h-[12rem] rounded-2xl border border-violet-200 bg-white" />}>
+            <Suspense fallback={<div className={`min-h-[12rem] ${mentrixStudent.card}`} />}>
               <DeferredSessionsList
                 upcomingSessions={upcomingSessions}
                 pastSessions={pastSessions}

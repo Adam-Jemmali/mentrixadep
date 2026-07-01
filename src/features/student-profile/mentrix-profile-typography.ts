@@ -42,6 +42,8 @@ export const mentrixProfileType = {
     "inline-flex items-center justify-center rounded-full bg-indigo-600 px-4 text-xs font-black uppercase italic tracking-[0.14em] text-white transition hover:bg-indigo-500",
   ctaSecondary:
     "inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 text-xs font-black uppercase italic tracking-[0.14em] text-indigo-900 transition hover:bg-indigo-100",
+  ctaSecondaryOnDark:
+    "inline-flex min-h-10 items-center rounded-full border border-violet-400/45 bg-violet-950/50 px-4 text-xs font-black uppercase italic tracking-[0.14em] text-violet-100 transition hover:border-violet-300/60 hover:bg-violet-900/55",
 
   /** Wrapper class — applied on home / skills / quest / league / duel routes */
   scope: "mentrix-student-type-scope",

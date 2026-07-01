@@ -9,6 +9,7 @@ import type { QuestAccuracyTrend } from "@/features/quest/quest-reads";
 import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/xp/components/rank-badge";
+import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 
 const container = {
   hidden: { opacity: 0 },
@@ -22,6 +23,8 @@ const item = {
   hidden: { opacity: 0, y: 6 },
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.25, 0.1, 0.25, 1] } },
 };
+
+const statCard = `${mentrixBrandUi.panel} flex rounded-2xl px-4 py-4 sm:px-5`;
 
 export function StudentStatStripMotion({
   totalXp,
@@ -44,7 +47,12 @@ export function StudentStatStripMotion({
     Number.isFinite(avgRating) && avgRating > 0 ? (Math.round(avgRating * 10) / 10).toFixed(1) : "-";
 
   const trendArrow = questAccuracy?.direction === "up" ? "↑" : questAccuracy?.direction === "down" ? "↓" : "";
-  const trendColor = questAccuracy?.direction === "up" ? "text-emerald-600" : questAccuracy?.direction === "down" ? "text-rose-600" : "text-zinc-500";
+  const trendColor =
+    questAccuracy?.direction === "up"
+      ? "text-emerald-400"
+      : questAccuracy?.direction === "down"
+        ? "text-rose-400"
+        : "text-violet-300/70";
   const accountLevel = getAccountLevelFromTotalXp(totalXp);
 
   return (
@@ -55,39 +63,63 @@ export function StudentStatStripMotion({
       animate="show"
     >
       <motion.div variants={item}>
-        <TiltCard
-          tiltLimit={12}
-          scale={1.04}
-          className="mx-surface-light flex flex-row items-center gap-3 rounded-2xl px-4 py-4 sm:px-5"
-        >
+        <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-row items-center gap-3`}>
           <RankBadge rank={accountLevel} size="lg" animate={accountRank.key === "mentrixer"} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold uppercase tracking-wide" style={{ color: accountRank.labelOnLight }}>
+            <p className="truncate text-sm font-bold uppercase tracking-wide text-violet-50">
               {normalizeRankTitle(accountRank.title)}
             </p>
-            <span className="mt-0.5 block text-[11px] uppercase tracking-wide text-zinc-500">
-              <BubbleText text={`${totalXp.toLocaleString()} XP earned`} activeColor="text-blue-500" neighborColor="text-blue-400" />
+            <span className="mt-0.5 block text-[11px] uppercase tracking-wide text-violet-300/75">
+              <BubbleText
+                text={`${totalXp.toLocaleString()} XP earned`}
+                activeColor="text-indigo-300"
+                neighborColor="text-violet-400"
+              />
             </span>
           </div>
         </TiltCard>
       </motion.div>
 
       <motion.div variants={item}>
-        <TiltCard
-          tiltLimit={12}
-          scale={1.04}
-          className="mx-surface-light flex flex-col rounded-2xl px-4 py-4 sm:px-5"
-        >
+        <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold tabular-nums text-zinc-900">
+            <span className="text-2xl font-bold tabular-nums text-white">
               {questAccuracy ? `${questAccuracy.accuracyPercent}%` : "—"}
             </span>
-            {trendArrow && (
-              <span className={`text-lg font-bold ${trendColor}`}>{trendArrow}</span>
-            )}
+            {trendArrow && <span className={`text-lg font-bold ${trendColor}`}>{trendArrow}</span>}
           </div>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500 line-clamp-1">
-            <BubbleText text={`${questAccuracy?.subject || "Quest"} Accuracy`} activeColor="text-blue-500" neighborColor="text-blue-400" />
+          <span className="mt-1 line-clamp-1 text-[11px] uppercase tracking-wide text-violet-300/75">
+            <BubbleText
+              text={`${questAccuracy?.subject || "Quest"} Accuracy`}
+              activeColor="text-indigo-300"
+              neighborColor="text-violet-400"
+            />
+          </span>
+        </TiltCard>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
+          <span className="text-2xl font-bold tabular-nums text-white">{sessionsCompleted}</span>
+          <span className="mt-1 text-[11px] uppercase tracking-wide text-violet-300/75">
+            <BubbleText
+              text="Sessions completed"
+              activeColor="text-indigo-300"
+              neighborColor="text-violet-400"
+            />
+          </span>
+        </TiltCard>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
+          <span className="text-2xl font-bold tabular-nums text-white">{ratingLabel}</span>
+          <span className="mt-1 text-[11px] uppercase tracking-wide text-violet-300/75">
+            <BubbleText
+              text="Avg. session rating"
+              activeColor="text-indigo-300"
+              neighborColor="text-violet-400"
+            />
           </span>
         </TiltCard>
       </motion.div>
@@ -96,33 +128,7 @@ export function StudentStatStripMotion({
         <TiltCard
           tiltLimit={12}
           scale={1.04}
-          className="mx-surface-light flex flex-col rounded-2xl px-4 py-4 sm:px-5"
-        >
-          <span className="text-2xl font-bold tabular-nums text-zinc-900">{sessionsCompleted}</span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
-            <BubbleText text="Sessions completed" activeColor="text-blue-500" neighborColor="text-blue-400" />
-          </span>
-        </TiltCard>
-      </motion.div>
-      <motion.div variants={item}>
-        <TiltCard
-          tiltLimit={12}
-          scale={1.04}
-          className="mx-surface-light flex flex-col rounded-2xl px-4 py-4 sm:px-5"
-        >
-          <span className="text-2xl font-bold tabular-nums text-zinc-900">{ratingLabel}</span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
-            <BubbleText text="Avg. session rating" activeColor="text-blue-500" neighborColor="text-blue-400" />
-          </span>
-        </TiltCard>
-      </motion.div>
-      <motion.div variants={item}>
-        <TiltCard
-          tiltLimit={12}
-          scale={1.04}
-          className={`flex flex-col rounded-2xl border border-zinc-200/90 bg-white px-4 py-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] sm:px-5 ${
-            streakAtRisk ? "ring-2 ring-amber-300/90" : ""
-          }`}
+          className={`${statCard} flex-col ${streakAtRisk ? "ring-2 ring-amber-400/70" : ""}`}
         >
           <span className="flex items-center gap-2">
             <Image
@@ -130,12 +136,16 @@ export function StudentStatStripMotion({
               alt="Streak"
               width={20}
               height={20}
-              className={`shrink-0 ${streakAtRisk ? "opacity-100" : "opacity-60"}`}
+              className={`shrink-0 ${streakAtRisk ? "opacity-100" : "opacity-70"}`}
             />
-            <span className="text-2xl font-bold tabular-nums text-zinc-900">{streak}</span>
+            <span className="text-2xl font-bold tabular-nums text-white">{streak}</span>
           </span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
-            <BubbleText text={streakAtRisk ? "Streak · log today" : "Day streak"} activeColor="text-blue-500" neighborColor="text-blue-400" />
+          <span className="mt-1 text-[11px] uppercase tracking-wide text-violet-300/75">
+            <BubbleText
+              text={streakAtRisk ? "Streak · log today" : "Day streak"}
+              activeColor="text-indigo-300"
+              neighborColor="text-violet-400"
+            />
           </span>
         </TiltCard>
       </motion.div>

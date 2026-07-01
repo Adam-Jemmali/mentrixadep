@@ -311,7 +311,7 @@ export function DuelPlayClient({ duel, side }: Props) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="rounded-lg border border-indigo-200 bg-white px-4 py-6 text-center space-y-4"
+          className="rounded-lg border border-violet-500/35 bg-indigo-950/55 px-4 py-6 text-center space-y-4 text-violet-50"
         >
           <div>
             <p className="text-sm font-medium text-slate-800">Match found</p>
@@ -363,7 +363,7 @@ export function DuelPlayClient({ duel, side }: Props) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center space-y-4"
+          className="rounded-lg border border-indigo-500/30 bg-indigo-950/55 px-4 py-6 text-center space-y-4 text-violet-50"
         >
           <div>
             <p className="text-sm font-medium text-slate-800">
@@ -532,7 +532,7 @@ export function DuelPlayClient({ duel, side }: Props) {
 
   if (waitingOther) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center">
+      <div className="rounded-lg border border-indigo-500/30 bg-indigo-950/55 px-4 py-8 text-center text-violet-100">
         <p className="text-sm font-medium text-slate-800">
           You finished waiting for {themLabel.toLowerCase()}
         </p>
@@ -574,7 +574,7 @@ export function DuelPlayClient({ duel, side }: Props) {
           </div>
           <div className="flex items-center gap-3">
             <div
-              className="relative h-11 w-11 shrink-0 rounded-full border border-zinc-200 bg-white"
+              className="relative h-11 w-11 shrink-0 rounded-full border border-violet-500/35 bg-indigo-950/60"
               style={{
                 background: `conic-gradient(rgb(15 23 42) ${
                   timerNorm * 360
@@ -612,7 +612,7 @@ export function DuelPlayClient({ duel, side }: Props) {
           >
             <TiltCard
               tiltLimit={2}
-              className="block rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)] sm:p-6"
+              className="block rounded-2xl border border-violet-500/35 mx-panel-brand p-5 shadow-[0_6px_18px_-12px_rgba(79,70,229,0.45)] sm:p-6"
             >
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -694,7 +694,7 @@ function LegacyDuelForm({
       {duel.questions.map((q, qi) => (
         <div
           key={qi}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+          className="rounded-2xl border border-violet-500/35 mx-panel-brand p-5 shadow-sm"
         >
           <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
             {kindLabel(q.type)} · Question {qi + 1}

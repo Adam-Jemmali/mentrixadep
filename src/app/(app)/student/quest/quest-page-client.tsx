@@ -63,15 +63,15 @@ export function QuestPageClient({
       {!diagnosticMode ? (
         <TiltCard
           tiltLimit={2}
-          className="mx-surface-light block rounded-none border-b border-violet-200 px-4 pt-5 shadow-[0_4px_24px_-12px_rgba(15,23,42,0.08)] sm:px-6"
+          className="mx-panel-brand block rounded-none border-b border-violet-500/30 px-4 pt-5 shadow-[0_4px_24px_-12px_rgba(79,70,229,0.45)] sm:px-6"
         >
-          <p className={mentrixStudent.sectionEyebrowOnLight}>
+          <p className={mentrixStudent.sectionEyebrow}>
             {guestMode ? "Quest preview" : null}
           </p>
-          <h1 className={`mt-1 h-[28px] ${mentrixProfileType.pageTitle}`}>
+          <h1 className={`mt-1 h-[28px] ${mentrixProfileType.pageTitleOnDark}`}>
             <Typewriter text={AP_CALC_AB_SUBJECT} speed={70} waitTime={8000} />
           </h1>
-          <p className={`mt-0.5 ${mentrixProfileType.pageSubtitle}`}>
+          <p className={`mt-0.5 ${mentrixProfileType.pageSubtitleOnDark}`}>
             {guestMode
               ? "Same verified item bank students use. Preview only until you sign up."
               : "First attempt per skill counts toward rank. Practice after that never moves it."}

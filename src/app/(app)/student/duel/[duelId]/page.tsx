@@ -30,7 +30,7 @@ export default async function DuelDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <main className="mx-surface-light mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+      <main className="mx-panel-brand mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-6 flex items-center justify-between gap-4">
           <BackButton />
           <span className="font-mono text-xs uppercase tracking-wide text-zinc-500">

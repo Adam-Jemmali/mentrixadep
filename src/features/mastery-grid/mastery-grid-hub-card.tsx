@@ -43,9 +43,7 @@ export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
             background: "linear-gradient(90deg, #6366F199, #7C3AED)",
           }}
         />
-        <p className="mt-2 text-[11px] text-violet-200/70">
-          {summary.progressPercent}% of skills at seventy percent or verified
-        </p>
+      
       </div>
 
       {weakest.length > 0 ? (

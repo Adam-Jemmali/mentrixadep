@@ -46,7 +46,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-3 rounded-2xl border border-slate-900/20 bg-slate-900/10 p-4 text-xs font-bold uppercase tracking-widest text-slate-900"
+          className="flex items-center gap-3 rounded-2xl border border-violet-500/30 bg-indigo-950/45 p-4 text-xs font-bold uppercase tracking-widest text-violet-100"
         >
           <Info className="h-4 w-4" />
           {error}
@@ -91,7 +91,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                 <div className={arenaDivisionCardClasses({ isSelected: isFocused })}>
                   {isFocused ? (
                     <div
-                      className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-cyan-400"
+                      className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-gradient-to-r from-[#7C3AED] to-[#6366F1]"
                       aria-hidden
                     />
                   ) : null}
@@ -115,16 +115,16 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                         {t.emoji}
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-lg font-black uppercase italic leading-none tracking-tighter text-slate-900">
+                        <h2 className="truncate text-lg font-black uppercase italic leading-none tracking-tighter text-violet-50">
                           {c.name.replace(/\s+Division$/i, "")}
                         </h2>
                         <div className="mt-1 flex items-center gap-2">
-                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-violet-300/70">
                             <Users className="h-3 w-3 opacity-50" />
                             {c.memberCount.toLocaleString()}
                           </div>
                           {c.weeklyRank != null ? (
-                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-violet-200/80">
                               <span>| Rank #{c.weeklyRank}</span>
                             </div>
                           ) : null}
@@ -133,14 +133,14 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                     </div>
                   </div>
 
-                  <p className="mt-4 line-clamp-2 flex-1 text-xs font-medium leading-relaxed text-slate-500">
+                  <p className="mt-4 line-clamp-2 flex-1 text-xs font-medium leading-relaxed text-violet-200/75">
                     {arenaLeagueCardDescriptionFallback()}
                   </p>
 
                   <div className="mt-6 flex items-center justify-between gap-3">
                     <Button
                       variant="outline"
-                      className="h-10 flex-1 rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-95"
+                      className="h-10 flex-1 rounded-xl border-violet-500/35 bg-indigo-950/50 text-[10px] font-black uppercase tracking-widest text-violet-100 transition-all hover:border-violet-400/50 hover:bg-violet-900/45 active:scale-95"
                       asChild
                     >
                       <Link href={`/student/division/${encodeURIComponent(c.key)}`}>
@@ -155,15 +155,15 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                         className={cn(
                           "h-10 flex-1 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
                           isFocused
-                            ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/35 ring-2 ring-cyan-300/80 hover:bg-cyan-500"
-                            : "bg-slate-100 text-slate-800 hover:bg-slate-200",
+                            ? "bg-gradient-to-r from-[#7C3AED] to-[#6366F1] text-white shadow-lg shadow-violet-600/30 ring-2 ring-violet-400/60 hover:brightness-110"
+                            : "border border-indigo-500/35 bg-indigo-950/50 text-violet-100 hover:border-violet-400/45 hover:bg-violet-900/45",
                         )}
                       >
                         Join
                       </Button>
                     ) : (
-                      <div className="flex items-center gap-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-3 py-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-cyan-800">
+                      <div className="flex items-center gap-1.5 rounded-xl border border-violet-400/35 bg-violet-950/45 px-3 py-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-violet-200">
                           Joined
                         </span>
                       </div>

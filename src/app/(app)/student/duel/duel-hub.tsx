@@ -744,7 +744,7 @@ export function DuelHub({
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="p-4 rounded-2xl bg-slate-900/10 border border-slate-900/20 flex items-center gap-3 text-slate-900 text-xs font-bold uppercase tracking-widest"
+          className="p-4 rounded-2xl border border-violet-500/30 bg-indigo-950/45 flex items-center gap-3 text-violet-100 text-xs font-bold uppercase tracking-widest"
         >
           <Info className="w-4 h-4" />
           {queueError}

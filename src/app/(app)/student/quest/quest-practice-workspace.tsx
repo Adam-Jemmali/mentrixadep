@@ -394,7 +394,7 @@ export function QuestPracticeWorkspace({
       <div className="relative mx-auto max-w-xl px-4 py-10">
         {busy ? (
           <div
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white/95 px-8 backdrop-blur-sm"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-[#0B1220]/92 px-8 backdrop-blur-sm"
             aria-busy="true"
             aria-live="polite"
           >
@@ -451,7 +451,7 @@ export function QuestPracticeWorkspace({
                     className={`rounded-lg border px-3 py-1.5 text-sm ${
                       difficulty === d.value
                         ? "border-indigo-500 bg-indigo-50 text-indigo-950"
-                        : "border-violet-200 bg-white text-zinc-700"
+                        : "border-violet-500/35 bg-indigo-950/55 text-violet-100"
                     }`}
                   >
                     {d.label}
@@ -623,7 +623,7 @@ export function QuestPracticeWorkspace({
               <div className="grid gap-2 sm:grid-cols-2">
                 {question.options.map((opt, i) => {
                   let cls =
-                    "border border-violet-200 bg-white rounded-xl p-4 text-left text-sm transition-all hover:border-indigo-300";
+                    "border border-violet-500/35 bg-indigo-950/50 rounded-xl p-4 text-left text-sm text-violet-50 transition-all hover:border-violet-400/50";
                   if (mcqResult) {
                     if (i === mcqResult.correctIndex) cls += " border-emerald-500 bg-emerald-50";
                     else if (i === mcqPicked && !mcqResult.correct)
@@ -648,7 +648,7 @@ export function QuestPracticeWorkspace({
             {question.kind !== "mcq" && (
               <div className="space-y-3">
                 <textarea
-                  className={`w-full min-h-[120px] rounded-lg border border-violet-200 bg-white p-3 text-sm ${mentrixStudent.textOnLight}`}
+                  className={`w-full min-h-[120px] rounded-lg border border-violet-500/35 bg-[#0B1220]/70 p-3 text-sm text-violet-50 placeholder:text-violet-300/45`}
                   placeholder="Your answer…"
                   value={written}
                   onChange={(e) => setWritten(e.target.value)}
@@ -679,7 +679,7 @@ export function QuestPracticeWorkspace({
                 explanation={mcqResult.explanation}
                 onContinue={mcqResult.canContinue && !busy ? () => void mcqNext() : undefined}
                 busy={busy}
-                className="mx-surface-light"
+                className="mx-panel-brand"
               />
             )}
           </motion.div>
