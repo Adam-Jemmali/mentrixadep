@@ -4,6 +4,7 @@ import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getStudentEntitlements, hasEntitlement } from "@/features/entitlements/entitlements";
 import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
+import type { StudentGoal } from "@/features/student-goals/types";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { loadVerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-rank";
 import {

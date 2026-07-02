@@ -6,7 +6,6 @@ async function runGrantAlumniQuarterCreditsCron() {
   return {
     rows_checked: result.checked,
     rows_granted: result.granted,
-    quarter: result.quarter,
     ...result,
   };
 }
