@@ -55,6 +55,7 @@ export function StudentCommandCenterClient({
   guideRankByTutorId = {},
   momentumSubscriber = false,
   sessionCreditAvailable = false,
+  rematchBadgesByTutorId = {},
 }: {
   userId: string;
   studentCourses: { id: string; course_name: string }[];
@@ -69,6 +70,7 @@ export function StudentCommandCenterClient({
   guideRankByTutorId?: Record<string, string>;
   momentumSubscriber?: boolean;
   sessionCreditAvailable?: boolean;
+  rematchBadgesByTutorId?: Record<string, { label: string }>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -265,6 +267,9 @@ export function StudentCommandCenterClient({
                 {matchLine ? (
                   <p className="mt-2 text-sm text-violet-200/85">{matchLine}</p>
                 ) : null}
+                {g.rematchBadgeLabel ? (
+                  <p className="mt-1 text-xs font-medium text-emerald-200/90">{g.rematchBadgeLabel}</p>
+                ) : null}
                 {g.matchedNodes.length > 0 && (
                   <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-5 text-violet-200/70">
                     {g.matchedNodes.join(", ")}
@@ -304,6 +309,7 @@ export function StudentCommandCenterClient({
           guideRankByTutorId={guideRankByTutorId}
           momentumSubscriber={momentumSubscriber}
           sessionCreditAvailable={sessionCreditAvailable}
+          rematchBadgesByTutorId={rematchBadgesByTutorId}
         />
       </section>
     </div>

@@ -36,6 +36,7 @@ export type EmailJobPayload = {
     | "movement_receipt"
     | "movement_receipt_monthly_rollup"
     | "credit_escalation"
+    | "loop_sla_grant"
     | "breakthrough_guide"
     | "raw";
   to: string;

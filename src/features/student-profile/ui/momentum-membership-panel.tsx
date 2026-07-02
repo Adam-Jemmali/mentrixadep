@@ -24,7 +24,7 @@ import { formatStudentBreakthroughPrice } from "@/features/booking/booking-prici
 import { buildMomentumRoiSummary } from "@/features/pricing/momentum-roi-pure";
 import { trajectoryIndexSocialProofLine } from "@/features/trajectory-index/trajectory-index-pure";
 import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
-import { MomentumSubscriptionDisclosure } from "@/shared/ui/disclosure-patterns";
+import { MomentumSubscriptionDisclosure, MomentumLoopSlaDisclosure } from "@/shared/ui/disclosure-patterns";
 import { MentrixaBillingIntervalRadioGroup } from "@/shared/ui/radio-group-patterns";
 
 type MomentumMembershipPanelProps = {
@@ -163,8 +163,9 @@ export function MomentumMembershipPanel({
         </ul>
       ) : null}
 
-      <div className="mt-4">
+      <div className="mt-4 space-y-3">
         <MomentumSubscriptionDisclosure />
+        <MomentumLoopSlaDisclosure />
       </div>
 
       {active && renewal ? (

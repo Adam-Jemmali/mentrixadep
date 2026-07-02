@@ -193,6 +193,34 @@ export async function buildMovementReceiptForStudent(
     }).catch(() => null);
   }
 
+  let slaGrant: MovementReceiptData["slaGrant"] = null;
+  if (entitlements.momentumActive) {
+    const { data: slaRow } = await admin
+      .from("momentum_sla_grants")
+      .select("id, granted_at, skill_nodes!momentum_sla_grants_skill_node_id_fkey(node_name)")
+      .eq("user_id", studentId)
+      .gte("granted_at", weekStart.toISOString())
+      .is("movement_receipt_logged_at", null)
+      .order("granted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (slaRow) {
+      const nodes = slaRow.skill_nodes as { node_name: string } | { node_name: string }[] | null;
+      const nodeName = Array.isArray(nodes)
+        ? nodes[0]?.node_name ?? "your target node"
+        : nodes?.node_name ?? "your target node";
+      slaGrant = {
+        nodeName,
+        grantedAt: String(slaRow.granted_at),
+      };
+      await admin
+        .from("momentum_sla_grants")
+        .update({ movement_receipt_logged_at: now.toISOString() })
+        .eq("id", slaRow.id);
+    }
+  }
+
   const payload: MovementReceiptData = {
     firstName,
     weekStart: weekStartKey,
@@ -215,6 +243,7 @@ export async function buildMovementReceiptForStudent(
       periodMonth: entitlements.sessionCreditPeriodMonth,
     },
     peer,
+    slaGrant,
   };
 
   return movementReceiptDataSchema.parse(payload);

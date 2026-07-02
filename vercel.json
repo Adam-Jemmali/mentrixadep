@@ -150,6 +150,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/cron/loop-sla-monitor",
+      "schedule": "30 4 * * *"
+    },
+    {
       "path": "/api/cron/reconcile-subscriptions",
       "schedule": "30 2 * * 1"
     },

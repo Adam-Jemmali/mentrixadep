@@ -3,6 +3,7 @@ export type MentrixaDisclosureKind =
   | "guide_impact"
   | "guide_demand_signal"
   | "momentum_subscription"
+  | "momentum_loop_sla"
   | "exam_stakes";
 
 export type MentrixaDisclosureMessage = {
@@ -55,6 +56,15 @@ export function momentumSubscriptionDisclosureMessage(): MentrixaDisclosureMessa
   };
 }
 
+export function momentumLoopSlaDisclosureMessage(): MentrixaDisclosureMessage {
+  return {
+    triggerLabel: "Loop SLA guarantee",
+    body: "Credit restored if loop fails",
+    verdict: "Book with credit, retest in 24h, and if verified movement does not improve within 7 days your credit comes back.",
+    nextAction: "Use your included session on your weakest open node.",
+  };
+}
+
 export function examStakesDisclosureMessage(examStakes: string): MentrixaDisclosureMessage {
   const detail = atMostFourWords(examStakes);
   return {
@@ -78,6 +88,8 @@ export function mentrixaDisclosureMessage(
       return guideDemandSignalDisclosureMessage();
     case "momentum_subscription":
       return momentumSubscriptionDisclosureMessage();
+    case "momentum_loop_sla":
+      return momentumLoopSlaDisclosureMessage();
     case "exam_stakes":
       return examStakesDisclosureMessage(context?.examStakes ?? "");
   }

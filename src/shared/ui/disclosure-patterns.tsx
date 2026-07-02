@@ -14,6 +14,7 @@ import {
   guideImpactDisclosureMessage,
   mentrixaDisclosureMessage,
   momentumSubscriptionDisclosureMessage,
+  momentumLoopSlaDisclosureMessage,
   verifiedFirstAttemptDisclosureMessage,
   type MentrixaDisclosureKind,
   type MentrixaDisclosureMessage,
@@ -170,6 +171,23 @@ export function MomentumSubscriptionDisclosure({
   return (
     <MentrixaDisclosureFromMessage
       message={momentumSubscriptionDisclosureMessage()}
+      tone={tone}
+      brandKind="mentrixa"
+      className={className}
+    />
+  );
+}
+
+export function MomentumLoopSlaDisclosure({
+  tone = "light",
+  className,
+}: {
+  tone?: MentrixaDisclosureTone;
+  className?: string;
+}) {
+  return (
+    <MentrixaDisclosureFromMessage
+      message={momentumLoopSlaDisclosureMessage()}
       tone={tone}
       brandKind="mentrixa"
       className={className}

@@ -66,6 +66,7 @@ interface AvailabilityBrowserProps {
   displayTimeZone?: string;
   guideImpactByTutorId?: Record<string, GuideImpactEntry[]>;
   guideRankByTutorId?: Record<string, string>;
+  rematchBadgesByTutorId?: Record<string, { label: string }>;
   /** Courses the student has completed quests in — drives default “Highest Impact” sort. */
   questHistorySubjects?: string[];
   /** Active Momentum subscription — member session rate at checkout. */
@@ -83,6 +84,7 @@ export function AvailabilityBrowser({
   displayTimeZone = "UTC",
   guideImpactByTutorId = {},
   guideRankByTutorId = {},
+  rematchBadgesByTutorId = {},
   questHistorySubjects = [],
   momentumSubscriber = false,
   sessionCreditAvailable = false,
@@ -299,6 +301,11 @@ export function AvailabilityBrowser({
                     subject={guide.impactSubject ?? undefined}
                     size="sm"
                   />
+                ) : null}
+                {rematchBadgesByTutorId[guide.tutorId]?.label ? (
+                  <p className="mt-1 text-[11px] font-medium text-emerald-200/90">
+                    {rematchBadgesByTutorId[guide.tutorId]!.label}
+                  </p>
                 ) : null}
                 <div className="mt-0.5 text-xs text-violet-200/80">
                   {guide.rating.toFixed(1)} rating · {guide.sessions} sessions

@@ -6,6 +6,7 @@ import {
   sendMovementReceiptEmail,
   sendMovementReceiptMonthlyRollupEmail,
   sendCreditEscalationEmail,
+  sendLoopSlaGrantEmail,
   sendBreakthroughGuideEmail,
   type PreSessionBriefEmailData,
   type SessionEmailDetails,
@@ -99,6 +100,16 @@ export async function handleEmailJob(payload: EmailJobPayload): Promise<void> {
         weakestNodeName:
           typeof data.weakestNodeName === "string" ? data.weakestNodeName : null,
         openSlotCount: data.openSlotCount == null ? null : Number(data.openSlotCount),
+      });
+      return;
+    }
+    case "loop_sla_grant": {
+      await sendLoopSlaGrantEmail(to, {
+        firstName: String(data.firstName ?? "Student"),
+        nodeName: String(data.nodeName ?? "your target node"),
+        subject: String(data.subject ?? ""),
+        verdict: String(data.verdict ?? ""),
+        nextAction: String(data.nextAction ?? ""),
       });
       return;
     }

@@ -306,3 +306,65 @@ export async function linkMomentumCreditRedemptionToSessionRequest(params: {
     .update({ session_request_id: params.sessionRequestId })
     .eq("idempotency_key", idempotencyKey);
 }
+
+export type GrantMomentumSlaMakeGoodCreditResult =
+  | { ok: true; creditId: string }
+  | { ok: false; reason: "not_subscriber" | "update_failed" };
+
+/** Restore one included session credit after a failed Loop SLA (idempotent at grant row level). */
+export async function grantMomentumSlaMakeGoodCredit(params: {
+  userId: string;
+}): Promise<GrantMomentumSlaMakeGoodCreditResult> {
+  const subscription = await getStudentSubscription(params.userId);
+  if (!isMomentumSubscriptionActive(subscription)) {
+    return { ok: false, reason: "not_subscriber" };
+  }
+
+  const admin = createAdminClient();
+  const periodMonth = utcPeriodMonthKey();
+  const now = new Date().toISOString();
+
+  const { data: existing } = await admin
+    .from("momentum_session_credits")
+    .select("id, credits_granted, credits_remaining")
+    .eq("user_id", params.userId)
+    .eq("period_month", periodMonth)
+    .maybeSingle();
+
+  if (existing) {
+    const { data: updated, error } = await admin
+      .from("momentum_session_credits")
+      .update({
+        credits_granted: (existing.credits_granted as number) + 1,
+        credits_remaining: (existing.credits_remaining as number) + 1,
+        updated_at: now,
+      })
+      .eq("id", existing.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error || !updated) {
+      return { ok: false, reason: "update_failed" };
+    }
+    return { ok: true, creditId: updated.id as string };
+  }
+
+  const { data: inserted, error: insertError } = await admin
+    .from("momentum_session_credits")
+    .insert({
+      user_id: params.userId,
+      period_month: periodMonth,
+      credits_granted: 1,
+      credits_remaining: 1,
+      grant_source: "sla_makegood",
+      updated_at: now,
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (insertError || !inserted) {
+    return { ok: false, reason: "update_failed" };
+  }
+
+  return { ok: true, creditId: inserted.id as string };
+}

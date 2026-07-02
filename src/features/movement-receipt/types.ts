@@ -33,6 +33,11 @@ export const movementReceiptPeerSchema = z.object({
   sampleSize: z.number().int().min(0),
 });
 
+export const movementReceiptSlaGrantSchema = z.object({
+  nodeName: z.string(),
+  grantedAt: z.string(),
+});
+
 export const movementReceiptDataSchema = z.object({
   firstName: z.string(),
   weekStart: z.string(),
@@ -42,6 +47,7 @@ export const movementReceiptDataSchema = z.object({
   retest: movementReceiptRetestSchema,
   credit: movementReceiptCreditSchema,
   peer: movementReceiptPeerSchema.nullable().optional(),
+  slaGrant: movementReceiptSlaGrantSchema.nullable().optional(),
 });
 
 export type MovementReceiptData = z.infer<typeof movementReceiptDataSchema>;

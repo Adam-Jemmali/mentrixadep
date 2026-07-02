@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Button } from "@/shared/ui/button";
 import { formatDateInZone, formatTimeRangeInZone } from "@/shared/core/time-format";
 import { getPreSessionContext } from "@/features/pre-session-brief/context";
 import { isPreSessionContextWindowOpen } from "@/features/pre-session-brief/context-pure";
+import { loadGuideMemoryForViewer } from "@/features/guide-memory/load-guide-memory";
+import { isGuideMemoryWindowOpen } from "@/features/guide-memory/guide-memory-pure";
+import { GuideMemoryPanel } from "@/features/guide-memory/ui/guide-memory-panel";
 import type { PreSessionContext } from "@/features/pre-session-brief/types";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
@@ -18,6 +21,7 @@ export function GuidePreSessionContextPanel({
   startTime,
   endTime,
   studentName,
+  studentId,
   displayTimeZone = "UTC",
 }: {
   sessionId: string;
@@ -26,14 +30,17 @@ export function GuidePreSessionContextPanel({
   startTime: string;
   endTime: string;
   studentName: string;
+  studentId?: string;
   displayTimeZone?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [ctx, setCtx] = useState<PreSessionContext | null>(null);
+  const [memory, setMemory] = useState<Awaited<ReturnType<typeof loadGuideMemoryForViewer>>>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const windowOpen = isPreSessionContextWindowOpen(startTime);
+  const memoryWindowOpen = isGuideMemoryWindowOpen(startTime);
   const masteryCopy = guideMasteryGridDrawerMessage(studentName, course);
 
   function toggle() {
@@ -45,12 +52,24 @@ export function GuidePreSessionContextPanel({
     startTransition(async () => {
       setError(null);
       try {
-        const data = await getPreSessionContext(sessionId, guideId);
+        const [data, memoryData] = await Promise.all([
+          getPreSessionContext(sessionId, guideId),
+          memoryWindowOpen
+            ? loadGuideMemoryForViewer({
+                sessionId,
+                guideId,
+                sessionStartTime: startTime,
+                studentId,
+                guideName: undefined,
+              })
+            : Promise.resolve(null),
+        ]);
         if (!data) {
           setError("Could not load student mastery grid.");
           return;
         }
         setCtx(data);
+        setMemory(memoryData);
         setOpen(true);
       } catch {
         setError("Could not load student mastery grid.");
@@ -58,8 +77,23 @@ export function GuidePreSessionContextPanel({
     });
   }
 
+  useEffect(() => {
+    if (!memoryWindowOpen || !studentId) return;
+    void loadGuideMemoryForViewer({
+      sessionId,
+      guideId,
+      sessionStartTime: startTime,
+      studentId,
+    }).then(setMemory);
+  }, [sessionId, guideId, startTime, studentId, memoryWindowOpen]);
+
   return (
     <div className="mt-2 rounded-lg border border-indigo-100 bg-indigo-50/30 p-3">
+      {memory ? (
+        <div className="mb-3">
+          <GuideMemoryPanel data={memory} compact />
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0 text-xs text-slate-700">
           <span className="font-semibold text-slate-900">{studentName}</span>

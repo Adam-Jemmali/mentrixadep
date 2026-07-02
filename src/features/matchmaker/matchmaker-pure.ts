@@ -6,6 +6,7 @@ export type MatchmakerGuideResult = {
   matchScore: number;
   matchedNodes: string[];
   nextAvailableSlot: string | null;
+  rematchBadgeLabel?: string | null;
 };
 
 export function computeGuideMatchScore(
@@ -15,6 +16,9 @@ export function computeGuideMatchScore(
   options?: {
     retestNodeIds?: Set<string>;
     goalUrgent?: boolean;
+    rematchRatePercent?: number;
+    rematchMatchesDueNode?: boolean;
+    momentumBoost?: boolean;
   },
 ): { matchScore: number; matchedNodeIds: string[] } {
   const matchedNodeIds = weakNodeIds.filter((id) => breakthroughNodeIds.has(id));
@@ -23,7 +27,13 @@ export function computeGuideMatchScore(
       ? weakNodeIds.filter((id) => options.retestNodeIds!.has(id)).length * 0.5
       : 0;
   const goalBoost = options?.goalUrgent ? 0.25 : 0;
-  const matchScore = matchedNodeIds.length + impactScore / 100 + retestBoost + goalBoost;
+  const rematchBase =
+    options?.rematchRatePercent != null ? options.rematchRatePercent / 100 : 0;
+  const rematchMultiplier = options?.momentumBoost ? 1.5 : 1;
+  const rematchMatchBoost = options?.rematchMatchesDueNode ? 0.35 : 0;
+  const rematchBoost = rematchBase * rematchMultiplier + rematchMatchBoost;
+  const matchScore =
+    matchedNodeIds.length + impactScore / 100 + retestBoost + goalBoost + rematchBoost;
   return { matchScore, matchedNodeIds };
 }
 
@@ -50,6 +60,7 @@ export function rankMatchmakerGuides(
     matchScore: number;
     matchedNodeNames: string[];
     nextAvailableSlot: string | null;
+    rematchBadgeLabel?: string | null;
   }>,
   limit = 3
 ): MatchmakerGuideResult[] {
@@ -64,5 +75,6 @@ export function rankMatchmakerGuides(
       matchScore: row.matchScore,
       matchedNodes: row.matchedNodeNames,
       nextAvailableSlot: row.nextAvailableSlot,
+      rematchBadgeLabel: row.rematchBadgeLabel ?? null,
     }));
 }

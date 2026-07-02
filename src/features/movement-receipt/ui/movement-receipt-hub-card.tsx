@@ -45,6 +45,9 @@ export function MovementReceiptHubCard({ data, momentumActive }: MovementReceipt
               <Link href="/student/receipts">Receipt archive</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
+              <Link href="/student/briefs">Brief archive</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
               <Link href="/student/mastery">Mastery timeline</Link>
             </Button>
           </>

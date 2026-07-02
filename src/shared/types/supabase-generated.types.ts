@@ -507,36 +507,36 @@ export type Database = {
           created_at: string
           division_key: string
           id: string
-          user_id: string
+          image_path: string | null
+          image_status: string
           parent_id: string | null
           thread_id: string | null
           title: string | null
-          image_path: string | null
-          image_status: string
+          user_id: string
         }
         Insert: {
           body: string
           created_at?: string
           division_key: string
           id?: string
-          user_id: string
+          image_path?: string | null
+          image_status?: string
           parent_id?: string | null
           thread_id?: string | null
           title?: string | null
-          image_path?: string | null
-          image_status?: string
+          user_id: string
         }
         Update: {
           body?: string
           created_at?: string
           division_key?: string
           id?: string
-          user_id?: string
+          image_path?: string | null
+          image_status?: string
           parent_id?: string | null
           thread_id?: string | null
           title?: string | null
-          image_path?: string | null
-          image_status?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -552,6 +552,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "mv_division_leaderboard"
             referencedColumns: ["division_key"]
+          },
+          {
+            foreignKeyName: "division_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "division_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "division_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "division_messages"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "division_messages_user_id_fkey"
@@ -1007,105 +1021,6 @@ export type Database = {
           },
         ]
       }
-      guide_node_impact_rolling: {
-        Row: {
-          guide_id: string
-          last_updated: string
-          post_session_accuracy_avg: number
-          pre_session_accuracy_avg: number
-          sessions_counted: number
-          skill_node_id: string
-        }
-        Insert: {
-          guide_id: string
-          last_updated?: string
-          post_session_accuracy_avg?: number
-          pre_session_accuracy_avg?: number
-          sessions_counted?: number
-          skill_node_id: string
-        }
-        Update: {
-          guide_id?: string
-          last_updated?: string
-          post_session_accuracy_avg?: number
-          pre_session_accuracy_avg?: number
-          sessions_counted?: number
-          skill_node_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "guide_node_impact_rolling_guide_id_fkey"
-            columns: ["guide_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "guide_node_impact_rolling_skill_node_id_fkey"
-            columns: ["skill_node_id"]
-            isOneToOne: false
-            referencedRelation: "skill_nodes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      intervention_retests: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          delta: number | null
-          id: string
-          post_accuracy: number | null
-          pre_accuracy: number | null
-          scheduled_for: string
-          skill_node_id: string
-          source_id: string
-          source_type: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          delta?: number | null
-          id?: string
-          post_accuracy?: number | null
-          pre_accuracy?: number | null
-          scheduled_for: string
-          skill_node_id: string
-          source_id: string
-          source_type: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          delta?: number | null
-          id?: string
-          post_accuracy?: number | null
-          pre_accuracy?: number | null
-          scheduled_for?: string
-          skill_node_id?: string
-          source_id?: string
-          source_type?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "intervention_retests_skill_node_id_fkey"
-            columns: ["skill_node_id"]
-            isOneToOne: false
-            referencedRelation: "skill_nodes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "intervention_retests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       guide_impact_percentile_snapshot: {
         Row: {
           accuracy_bucket: number
@@ -1128,35 +1043,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "guide_impact_percentile_snapshot_skill_node_id_fkey"
-            columns: ["skill_node_id"]
-            isOneToOne: false
-            referencedRelation: "skill_nodes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      node_percentile_snapshot: {
-        Row: {
-          accuracy_bucket: number
-          computed_at: string
-          skill_node_id: string
-          user_count: number
-        }
-        Insert: {
-          accuracy_bucket: number
-          computed_at?: string
-          skill_node_id: string
-          user_count?: number
-        }
-        Update: {
-          accuracy_bucket?: number
-          computed_at?: string
-          skill_node_id?: string
-          user_count?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "node_percentile_snapshot_skill_node_id_fkey"
             columns: ["skill_node_id"]
             isOneToOne: false
             referencedRelation: "skill_nodes"
@@ -1195,6 +1081,48 @@ export type Database = {
             columns: ["guide_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guide_node_impact_rolling: {
+        Row: {
+          guide_id: string
+          last_updated: string
+          post_session_accuracy_avg: number
+          pre_session_accuracy_avg: number
+          sessions_counted: number
+          skill_node_id: string
+        }
+        Insert: {
+          guide_id: string
+          last_updated?: string
+          post_session_accuracy_avg?: number
+          pre_session_accuracy_avg?: number
+          sessions_counted?: number
+          skill_node_id: string
+        }
+        Update: {
+          guide_id?: string
+          last_updated?: string
+          post_session_accuracy_avg?: number
+          pre_session_accuracy_avg?: number
+          sessions_counted?: number
+          skill_node_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_node_impact_rolling_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_node_impact_rolling_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
             referencedColumns: ["id"]
           },
         ]
@@ -1267,6 +1195,63 @@ export type Database = {
         }
         Relationships: []
       }
+      intervention_retests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          delta: number | null
+          id: string
+          post_accuracy: number | null
+          pre_accuracy: number | null
+          scheduled_for: string
+          skill_node_id: string
+          source_id: string
+          source_type: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          delta?: number | null
+          id?: string
+          post_accuracy?: number | null
+          pre_accuracy?: number | null
+          scheduled_for: string
+          skill_node_id: string
+          source_id: string
+          source_type: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          delta?: number | null
+          id?: string
+          post_accuracy?: number | null
+          pre_accuracy?: number | null
+          scheduled_for?: string
+          skill_node_id?: string
+          source_id?: string
+          source_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_retests_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_retests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_bank: {
         Row: {
           correct_answer: string
@@ -1326,6 +1311,231 @@ export type Database = {
           },
         ]
       }
+      mastery_grid_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          node_states: Json
+          rolling_accuracy: Json
+          snapshot_week: string
+          user_id: string
+          verified_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          node_states?: Json
+          rolling_accuracy?: Json
+          snapshot_week: string
+          user_id: string
+          verified_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          node_states?: Json
+          rolling_accuracy?: Json
+          snapshot_week?: string
+          user_id?: string
+          verified_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastery_grid_snapshots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      momentum_session_credit_redemptions: {
+        Row: {
+          availability_id: string
+          credit_id: string
+          id: string
+          idempotency_key: string
+          redeemed_at: string
+          session_request_id: string | null
+          user_id: string
+        }
+        Insert: {
+          availability_id: string
+          credit_id: string
+          id?: string
+          idempotency_key: string
+          redeemed_at?: string
+          session_request_id?: string | null
+          user_id: string
+        }
+        Update: {
+          availability_id?: string
+          credit_id?: string
+          id?: string
+          idempotency_key?: string
+          redeemed_at?: string
+          session_request_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_availability_id_fkey"
+            columns: ["availability_id"]
+            isOneToOne: true
+            referencedRelation: "availability"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "momentum_session_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_session_request_id_fkey"
+            columns: ["session_request_id"]
+            isOneToOne: false
+            referencedRelation: "session_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      momentum_session_credits: {
+        Row: {
+          created_at: string
+          credits_granted: number
+          credits_remaining: number
+          grant_source: string
+          id: string
+          period_month: string
+          stripe_invoice_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_granted?: number
+          credits_remaining?: number
+          grant_source?: string
+          id?: string
+          period_month: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_granted?: number
+          credits_remaining?: number
+          grant_source?: string
+          id?: string
+          period_month?: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentum_session_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      momentum_sla_grants: {
+        Row: {
+          credit_id: string | null
+          email_sent_at: string | null
+          grant_source: string
+          granted_at: string
+          id: string
+          idempotency_key: string
+          intervention_retest_id: string
+          movement_receipt_logged_at: string | null
+          post_accuracy: number | null
+          pre_accuracy: number | null
+          session_id: string | null
+          skill_node_id: string | null
+          user_id: string
+        }
+        Insert: {
+          credit_id?: string | null
+          email_sent_at?: string | null
+          grant_source?: string
+          granted_at?: string
+          id?: string
+          idempotency_key: string
+          intervention_retest_id: string
+          movement_receipt_logged_at?: string | null
+          post_accuracy?: number | null
+          pre_accuracy?: number | null
+          session_id?: string | null
+          skill_node_id?: string | null
+          user_id: string
+        }
+        Update: {
+          credit_id?: string | null
+          email_sent_at?: string | null
+          grant_source?: string
+          granted_at?: string
+          id?: string
+          idempotency_key?: string
+          intervention_retest_id?: string
+          movement_receipt_logged_at?: string | null
+          post_accuracy?: number | null
+          pre_accuracy?: number | null
+          session_id?: string | null
+          skill_node_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentum_sla_grants_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "momentum_session_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_sla_grants_intervention_retest_id_fkey"
+            columns: ["intervention_retest_id"]
+            isOneToOne: true
+            referencedRelation: "intervention_retests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_sla_grants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_sla_grants_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_sla_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movement_receipts: {
         Row: {
           clicked_at: string | null
@@ -1360,6 +1570,35 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      node_percentile_snapshot: {
+        Row: {
+          accuracy_bucket: number
+          computed_at: string
+          skill_node_id: string
+          user_count: number
+        }
+        Insert: {
+          accuracy_bucket: number
+          computed_at?: string
+          skill_node_id: string
+          user_count?: number
+        }
+        Update: {
+          accuracy_bucket?: number
+          computed_at?: string
+          skill_node_id?: string
+          user_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "node_percentile_snapshot_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
             referencedColumns: ["id"]
           },
         ]
@@ -2533,147 +2772,6 @@ export type Database = {
           },
         ]
       }
-      momentum_session_credit_redemptions: {
-        Row: {
-          availability_id: string
-          credit_id: string
-          id: string
-          idempotency_key: string
-          redeemed_at: string
-          session_request_id: string | null
-          user_id: string
-        }
-        Insert: {
-          availability_id: string
-          credit_id: string
-          id?: string
-          idempotency_key: string
-          redeemed_at?: string
-          session_request_id?: string | null
-          user_id: string
-        }
-        Update: {
-          availability_id?: string
-          credit_id?: string
-          id?: string
-          idempotency_key?: string
-          redeemed_at?: string
-          session_request_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "momentum_session_credit_redemptions_availability_id_fkey"
-            columns: ["availability_id"]
-            isOneToOne: true
-            referencedRelation: "availability"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "momentum_session_credit_redemptions_credit_id_fkey"
-            columns: ["credit_id"]
-            isOneToOne: false
-            referencedRelation: "momentum_session_credits"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "momentum_session_credit_redemptions_session_request_id_fkey"
-            columns: ["session_request_id"]
-            isOneToOne: false
-            referencedRelation: "session_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "momentum_session_credit_redemptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      momentum_session_credits: {
-        Row: {
-          created_at: string
-          credits_granted: number
-          credits_remaining: number
-          grant_source: string
-          id: string
-          period_month: string
-          stripe_invoice_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          credits_granted?: number
-          credits_remaining?: number
-          grant_source?: string
-          id?: string
-          period_month: string
-          stripe_invoice_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          credits_granted?: number
-          credits_remaining?: number
-          grant_source?: string
-          id?: string
-          period_month?: string
-          stripe_invoice_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "momentum_session_credits_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mastery_grid_snapshots: {
-        Row: {
-          created_at: string
-          id: string
-          node_states: Json
-          rolling_accuracy: Json
-          snapshot_week: string
-          user_id: string
-          verified_count: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          node_states?: Json
-          rolling_accuracy?: Json
-          snapshot_week: string
-          user_id: string
-          verified_count?: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          node_states?: Json
-          rolling_accuracy?: Json
-          snapshot_week?: string
-          user_id?: string
-          verified_count?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mastery_grid_snapshots_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       student_subscriptions: {
         Row: {
           billing_interval: string
@@ -2978,6 +3076,47 @@ export type Database = {
           },
         ]
       }
+      user_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          href: string | null
+          id: string
+          kind: string
+          read_at: string | null
+          source_id: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          href?: string | null
+          id?: string
+          kind: string
+          read_at?: string | null
+          source_id?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          href?: string | null
+          id?: string
+          kind?: string
+          read_at?: string | null
+          source_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_quest_progress: {
         Row: {
           id: string
@@ -3219,47 +3358,6 @@ export type Database = {
             foreignKeyName: "user_xp_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_notifications: {
-        Row: {
-          body: string
-          created_at: string
-          href: string | null
-          id: string
-          kind: string
-          read_at: string | null
-          source_id: string | null
-          user_id: string
-        }
-        Insert: {
-          body: string
-          created_at?: string
-          href?: string | null
-          id?: string
-          kind: string
-          read_at?: string | null
-          source_id?: string | null
-          user_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          href?: string | null
-          id?: string
-          kind?: string
-          read_at?: string | null
-          source_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -3665,6 +3763,10 @@ export type Database = {
       }
     }
     Functions: {
+      accuracy_to_percentile_bucket: {
+        Args: { p_accuracy: number }
+        Returns: number
+      }
       acquire_availability_checkout_lock: {
         Args: {
           p_availability_id: string
@@ -3695,6 +3797,14 @@ export type Database = {
       calculate_guide_rank: { Args: { p_guide_id: string }; Returns: string }
       can_student_cancel: { Args: { session_start: string }; Returns: boolean }
       cleanup_expired_rooms: { Args: never; Returns: undefined }
+      complete_due_intervention_retests: {
+        Args: {
+          p_post_accuracy: number
+          p_skill_node_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       count_ap_calc_ab_skill_nodes: { Args: never; Returns: number }
       create_user_verification: {
         Args: { p_role: string; p_user_id: string }
@@ -3726,14 +3836,6 @@ export type Database = {
       generate_referral_code_candidate: { Args: never; Returns: string }
       generate_room_token: { Args: never; Returns: string }
       generate_unique_referral_code: { Args: never; Returns: string }
-      get_guide_breakthroughs: {
-        Args: { p_guide_id: string; p_limit?: number }
-        Returns: {
-          concept: string
-          post_percent: number
-          pre_percent: number
-        }[]
-      }
       get_comparison_context: {
         Args: {
           p_actor_id: string
@@ -3741,6 +3843,14 @@ export type Database = {
           p_skill_node_id: string
         }
         Returns: string
+      }
+      get_guide_breakthroughs: {
+        Args: { p_guide_id: string; p_limit?: number }
+        Returns: {
+          concept: string
+          post_percent: number
+          pre_percent: number
+        }[]
       }
       get_user_rank: {
         Args: { p_division_key: string; p_user_id: string }
@@ -3798,10 +3908,10 @@ export type Database = {
       seed_admin_user: { Args: { admin_user_id: string }; Returns: undefined }
       student_hub_snapshot: { Args: { p_user_id: string }; Returns: Json }
       sync_all_guide_ranks: { Args: never; Returns: undefined }
-      sync_guide_impact_scores: { Args: never; Returns: undefined }
-      sync_peer_comparison_snapshots: { Args: never; Returns: Json }
-      sync_node_percentile_snapshot: { Args: never; Returns: number }
       sync_guide_impact_percentile_snapshot: { Args: never; Returns: number }
+      sync_guide_impact_scores: { Args: never; Returns: undefined }
+      sync_node_percentile_snapshot: { Args: never; Returns: number }
+      sync_peer_comparison_snapshots: { Args: never; Returns: Json }
       utc_week_monday: { Args: { p_ts?: string }; Returns: string }
       verify_ap_calc_ab_skill_nodes: {
         Args: never
@@ -3827,10 +3937,7 @@ export type Database = {
           passed: boolean
         }[]
       }
-      verify_intervention_retests: {
-        Args: never
-        Returns: Json
-      }
+      verify_intervention_retests: { Args: never; Returns: Json }
       verify_peer_comparison_snapshots: { Args: never; Returns: Json }
       verify_verified_first_attempt_mechanic: {
         Args: never

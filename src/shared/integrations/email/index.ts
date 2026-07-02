@@ -79,5 +79,7 @@ export {
   sendMovementReceiptMonthlyRollupEmail,
   type CreditEscalationEmailProps,
   sendCreditEscalationEmail,
+  type LoopSlaGrantEmailProps,
+  sendLoopSlaGrantEmail,
   sendBreakthroughGuideEmail,
 } from "./marketing";

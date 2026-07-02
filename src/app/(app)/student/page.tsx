@@ -74,6 +74,10 @@ import { loadActiveMovementReceiptForViewer } from "@/features/movement-receipt/
 import { MovementReceiptHubCard } from "@/features/movement-receipt/ui/movement-receipt-hub-card";
 import { loadTrajectoryIndexForViewer } from "@/features/trajectory-index/load-trajectory-index";
 import { TrajectoryIndexHubCard } from "@/features/trajectory-index/ui/trajectory-index-hub-card";
+import { getGuideRematchBadgesForStudent } from "@/features/matchmaker/load-guide-rematch-badges";
+import { loadGuideMemoryForSession } from "@/features/guide-memory/load-guide-memory";
+import { isGuideMemoryWindowOpen } from "@/features/guide-memory/guide-memory-pure";
+import { GuideMemoryPanel } from "@/features/guide-memory/ui/guide-memory-panel";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -126,10 +130,11 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     : impactReceipts;
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
-  const [guideImpactByTutorId, rawQuestHistorySubjects, guideRankByTutorId] = await Promise.all([
+  const [guideImpactByTutorId, rawQuestHistorySubjects, guideRankByTutorId, rematchBadgesByTutorId] = await Promise.all([
     getGuideImpactScoresMap(tutorIdsForImpact).catch(() => ({})),
     getStudentQuestCourseNames(user.id).catch(() => [] as string[]),
     getGuideRanksMap(tutorIdsForImpact).catch(() => ({})),
+    getGuideRematchBadgesForStudent(user.id, tutorIdsForImpact).catch(() => ({})),
   ]);
   const questHistorySubjects = rawQuestHistorySubjects.filter((s) => s === AP_CALC_AB_SUBJECT);
 
@@ -189,6 +194,24 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   }));
 
   const weekRange = getWeekRangeUTC(now);
+
+  const firstUpcomingWithGuide = upcomingSessions.find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (s: any) => s.tutor_id && isGuideMemoryWindowOpen(String(s.start_time), now.getTime()),
+  );
+  const guideMemoryHub =
+    momentumSubscriber && firstUpcomingWithGuide
+      ? await loadGuideMemoryForSession({
+          studentId: user.id,
+          guideId: String(firstUpcomingWithGuide.tutor_id),
+          sessionStartTime: String(firstUpcomingWithGuide.start_time),
+          guideName:
+            firstUpcomingWithGuide.tutor?.display_name?.trim() ||
+            (typeof firstUpcomingWithGuide.tutor?.email === "string"
+              ? firstUpcomingWithGuide.tutor.email.split("@")[0]
+              : "Guide"),
+        }).catch(() => null)
+      : null;
 
   return (
     <div className={mentrixStudent.pageBgHub}>
@@ -413,6 +436,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         )}
 
+        {guideMemoryHub ? (
+          <div className="mt-8">
+            <GuideMemoryPanel data={guideMemoryHub} />
+          </div>
+        ) : null}
+
         <div className="mt-10 space-y-10">
           <DeferredTopRivalCard rivalData={rivalData} />
 
@@ -429,6 +458,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             guideRankByTutorId={guideRankByTutorId}
             momentumSubscriber={momentumSubscriber}
             sessionCreditAvailable={sessionCreditAvailable}
+            rematchBadgesByTutorId={rematchBadgesByTutorId}
           />
 
           <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">

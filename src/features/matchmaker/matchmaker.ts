@@ -8,6 +8,8 @@ import {
   rankMatchmakerGuides,
   type MatchmakerGuideResult,
 } from "@/features/matchmaker/matchmaker-pure";
+import { getGuideRematchBadgesForStudent } from "@/features/matchmaker/load-guide-rematch-badges";
+import { getStudentEntitlements } from "@/features/entitlements/entitlements";
 import { loadActiveStudentGoalInternal } from "@/features/student-goals/load-student-goal";
 import { isInterventionRetestDue } from "@/features/intervention-retests/schedule-intervention-retests-pure";
 
@@ -162,8 +164,12 @@ export async function getMatchmakerGuides(userId: string): Promise<{
   }
 
   const guideIds = eligibleImpact.map((row) => row.guide_id as string);
-  const breakthroughByGuide = await loadGuideBreakthroughNodes(admin, guideIds, weakNodeIds);
-  const nextSlotByGuide = await loadNextSlotsByGuide(admin, guideIds);
+  const [breakthroughByGuide, nextSlotByGuide, rematchBadges, entitlements] = await Promise.all([
+    loadGuideBreakthroughNodes(admin, guideIds, weakNodeIds),
+    loadNextSlotsByGuide(admin, guideIds),
+    getGuideRematchBadgesForStudent(userId, guideIds),
+    getStudentEntitlements(userId),
+  ]);
 
   const { data: settings } = await admin
     .from("user_settings")
@@ -190,11 +196,20 @@ export async function getMatchmakerGuides(userId: string): Promise<{
     const guideId = row.guide_id as string;
     const impactScore = Number(row.impact_score);
     const breakthroughNodes = breakthroughByGuide.get(guideId) ?? new Set<string>();
+    const rematchBadge = rematchBadges[guideId] ?? null;
     const { matchScore, matchedNodeIds } = computeGuideMatchScore(
       weakNodeIds,
       breakthroughNodes,
       impactScore,
-      { retestNodeIds, goalUrgent },
+      {
+        retestNodeIds,
+        goalUrgent,
+        rematchRatePercent: rematchBadge?.ratePercent,
+        rematchMatchesDueNode: rematchBadge
+          ? weakNodeIds.some((id) => retestNodeIds.has(id))
+          : false,
+        momentumBoost: entitlements.momentumActive,
+      },
     );
     const profile = settingsByGuide.get(guideId);
     return {
@@ -205,6 +220,7 @@ export async function getMatchmakerGuides(userId: string): Promise<{
       matchScore,
       matchedNodeNames: matchedNodeIds.map((id) => nodeNameById.get(id) ?? "Skill node"),
       nextAvailableSlot: nextSlotByGuide.get(guideId) ?? null,
+      rematchBadgeLabel: rematchBadge?.label ?? null,
     };
   });
 

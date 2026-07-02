@@ -9,6 +9,7 @@ import { TutorSessionActions } from "./tutor-session-actions";
 import { TutorPastAiGenerateButton } from "./tutor-past-ai-generate";
 import { GuidePreSessionContextPanel } from "@/features/pre-session-brief/guide-context-panel";
 import { isPreSessionContextWindowOpen } from "@/features/pre-session-brief/context-pure";
+import { isGuideMemoryWindowOpen } from "@/features/guide-memory/guide-memory-pure";
 
 interface Session {
   id: string;
@@ -262,7 +263,7 @@ export function SessionsList({
                       />
                       <TutorSessionActions sessionId={session.id} />
                     </div>
-                    {guideId && isPreSessionContextWindowOpen(session.start_time) ? (
+                    {guideId && (isPreSessionContextWindowOpen(session.start_time) || isGuideMemoryWindowOpen(session.start_time)) ? (
                       <GuidePreSessionContextPanel
                         sessionId={session.id}
                         guideId={guideId}
@@ -270,6 +271,7 @@ export function SessionsList({
                         startTime={session.start_time}
                         endTime={session.end_time}
                         studentName={learnerName}
+                        studentId={session.student_id}
                         displayTimeZone={displayTimeZone}
                       />
                     ) : null}

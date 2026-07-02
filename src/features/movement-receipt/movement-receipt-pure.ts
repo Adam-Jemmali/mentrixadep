@@ -3,6 +3,7 @@ import {
   buildPeerVelocityLine,
   buildPeerVelocityUpsellLine,
 } from "@/features/comparison/peer-velocity-pure";
+import { buildLoopSlaReceiptLine } from "@/features/entitlements/loop-sla-pure";
 
 export type MovementReceiptMessages = {
   verdict: string;
@@ -65,6 +66,16 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
   const gridLine = formatGridMovementLine(data.grid);
   const loopLine = formatLoopLine(data.loops);
   const creditLine = formatCreditLine(data.credit);
+  const slaLine = data.slaGrant ? buildLoopSlaReceiptLine({ nodeName: data.slaGrant.nodeName }) : null;
+
+  if (slaLine) {
+    return {
+      verdict: appendPeerLine(`${slaLine} ${gridLine}`, data),
+      nextAction: "Book your restored included session on the node that still will not move.",
+      ctaHref: "/student/guides",
+      ctaLabel: "Book make-good session",
+    };
+  }
 
   if (data.retest.nodeName && data.retest.isDue) {
     return {
@@ -167,6 +178,9 @@ export function buildMovementReceiptDetailLines(data: MovementReceiptData): stri
   }
   if (data.peer && data.momentumActive) {
     lines.push(`Cohort: ${buildPeerVelocityLine(data.peer)}`);
+  }
+  if (data.slaGrant) {
+    lines.push(buildLoopSlaReceiptLine({ nodeName: data.slaGrant.nodeName }));
   }
   return lines;
 }

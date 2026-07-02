@@ -8,7 +8,8 @@ export function utcPeriodMonthKey(date: Date = new Date()): string {
 export type MomentumSessionCreditGrantSource =
   | "subscription_checkout"
   | "subscription_invoice"
-  | "monthly_grant";
+  | "monthly_grant"
+  | "sla_makegood";
 
 export function momentumCreditRedemptionKey(userId: string, availabilityId: string): string {
   return `redeem:${userId}:${availabilityId}`;

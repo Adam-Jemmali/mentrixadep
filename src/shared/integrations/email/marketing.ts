@@ -53,10 +53,10 @@ import {
   breakthroughGuideEmailTitle,
 } from "./templates/breakthrough-guide-email";
 import {
-  creditEscalationEmailBody,
-  creditEscalationEmailSubject,
-  creditEscalationEmailTitle,
-} from "./templates/credit-escalation-email";
+  loopSlaGrantEmailBody,
+  loopSlaGrantEmailSubject,
+  loopSlaGrantEmailTitle,
+} from "./templates/loop-sla-grant-email";
 import {
   movementReceiptMonthlyRollupEmailBody,
   movementReceiptMonthlyRollupEmailSubject,
@@ -527,6 +527,26 @@ export async function sendCreditEscalationEmail(
     email,
     creditEscalationEmailSubject(props),
     baseTemplate(creditEscalationEmailTitle(props), creditEscalationEmailBody(props)),
+  );
+}
+
+export type LoopSlaGrantEmailProps = {
+  firstName: string;
+  nodeName: string;
+  subject: string;
+  verdict: string;
+  nextAction: string;
+};
+
+/** loop_sla_grant — Momentum Loop SLA credit restoration */
+export async function sendLoopSlaGrantEmail(
+  email: string,
+  props: LoopSlaGrantEmailProps,
+): Promise<void> {
+  await sendEmail(
+    email,
+    loopSlaGrantEmailSubject(props),
+    baseTemplate(loopSlaGrantEmailTitle(props), loopSlaGrantEmailBody(props)),
   );
 }
 

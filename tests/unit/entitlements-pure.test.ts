@@ -37,6 +37,8 @@ describe("buildStudentEntitlements", () => {
     expect(entitlements.entitlementIds).toContain("momentum.priority_retest");
     expect(entitlements.entitlementIds).toContain("momentum.movement_receipt");
     expect(entitlements.entitlementIds).toContain("momentum.trajectory_index");
+    expect(entitlements.entitlementIds).toContain("momentum.guide_memory");
+    expect(entitlements.entitlementIds).toContain("momentum.brief_archive");
     expect(entitlements.entitlementIds).toContain("momentum.session_credit");
     expect(entitlements.sessionCreditsRemaining).toBe(1);
   });

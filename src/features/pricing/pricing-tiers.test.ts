@@ -43,6 +43,8 @@ describe("pricing tiers copy", () => {
       "Goal pace dashboard with exam countdown",
       "Full Guide impact receipt history",
       "Early pre-session brief 24h before your call",
+      "Guide memory and full brief archive across sessions",
+      "Loop SLA: included credit restored if verified movement does not improve in 7 days",
     ]);
     expect(momentum?.buttonLink).toBe("/student/subscribe");
     expect(momentum?.popular).toBe(true);

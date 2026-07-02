@@ -50,6 +50,7 @@ export function PreSessionContextSection({
               startTime={session.start_time}
               endTime={session.end_time}
               studentName={name}
+              studentId={session.student_id}
               displayTimeZone={displayTimeZone}
             />
           );
