@@ -3,6 +3,7 @@ import {
   sendSessionReminderStudentEmail,
   sendSessionReminderTutorEmail,
   sendProgressSnapshotEmail,
+  sendMovementReceiptEmail,
   sendBreakthroughGuideEmail,
   type PreSessionBriefEmailData,
   type SessionEmailDetails,
@@ -12,6 +13,7 @@ import type { EmailJobPayload } from "@/features/jobs/types";
 import { getSiteUrl } from "@/shared/core/site";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { progressSnapshotDataSchema } from "@/features/progress-snapshot/types";
+import { movementReceiptDataSchema } from "@/features/movement-receipt/types";
 import { z } from "zod";
 
 const verdictEmailSchema = z.object({
@@ -61,6 +63,20 @@ export async function handleEmailJob(payload: EmailJobPayload): Promise<void> {
           .from("progress_snapshots")
           .update({ email_sent_at: new Date().toISOString() })
           .eq("id", snapshotId);
+      }
+      return;
+    }
+    case "movement_receipt": {
+      const receiptId = String(data.receiptId ?? "");
+      const parsed = movementReceiptDataSchema.safeParse(data.receipt);
+      if (!parsed.success) throw new Error("movement_receipt: invalid receipt data");
+      await sendMovementReceiptEmail(to, { receipt: parsed.data });
+      if (receiptId) {
+        const admin = createAdminClient();
+        await admin
+          .from("movement_receipts")
+          .update({ email_sent_at: new Date().toISOString() })
+          .eq("id", receiptId);
       }
       return;
     }

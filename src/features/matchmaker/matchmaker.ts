@@ -8,6 +8,8 @@ import {
   rankMatchmakerGuides,
   type MatchmakerGuideResult,
 } from "@/features/matchmaker/matchmaker-pure";
+import { loadActiveStudentGoalInternal } from "@/features/student-goals/load-student-goal";
+import { isInterventionRetestDue } from "@/features/intervention-retests/schedule-intervention-retests-pure";
 
 const MATCHMAKER_CACHE_TTL_MS = 15 * 60 * 1000;
 const MIN_IMPACT_SCORE = 70;
@@ -111,6 +113,24 @@ export async function getMatchmakerGuides(userId: string): Promise<{
   const weakNodeIds = weakest.map((node) => node.id);
   const nodeNameById = new Map(weakest.map((node) => [node.id, node.nodeName]));
 
+  const [goal, { data: pendingRetests }] = await Promise.all([
+    loadActiveStudentGoalInternal(userId),
+    admin
+      .from("intervention_retests")
+      .select("skill_node_id, scheduled_for")
+      .eq("user_id", userId)
+      .is("completed_at", null),
+  ]);
+
+  const retestNodeIds = new Set(
+    (pendingRetests ?? [])
+      .filter((row) => isInterventionRetestDue(String(row.scheduled_for)))
+      .map((row) => String(row.skill_node_id)),
+  );
+  const goalUrgent =
+    goal?.targetDate != null &&
+    new Date(goal.targetDate).getTime() - Date.now() < 45 * 24 * 60 * 60 * 1000;
+
   const { data: impactRows } = await admin
     .from("guide_impact_scores")
     .select("guide_id, impact_score")
@@ -173,7 +193,8 @@ export async function getMatchmakerGuides(userId: string): Promise<{
     const { matchScore, matchedNodeIds } = computeGuideMatchScore(
       weakNodeIds,
       breakthroughNodes,
-      impactScore
+      impactScore,
+      { retestNodeIds, goalUrgent },
     );
     const profile = settingsByGuide.get(guideId);
     return {

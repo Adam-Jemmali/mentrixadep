@@ -1,7 +1,9 @@
 import {
   formatStudentBreakthroughPrice,
+  formatStudentMomentumPackPrice,
   formatStudentMomentumSubscriptionAnnualPrice,
   formatStudentMomentumSubscriptionMonthlyPrice,
+  MOMENTUM_PACK_SESSION_COUNT,
   MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS,
 } from "@/features/booking/booking-pricing";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
@@ -9,13 +11,13 @@ import type { StudentSubscriptionRow } from "@/features/payments/student-subscri
 import { isMomentumSubscriptionActive } from "@/features/payments/student-subscription";
 
 export const MOMENTUM_MEMBERSHIP_VERDICT =
-  "Momentum adds Guide session perks. Your arena rank and Mastery Grid stay free.";
+  "Momentum is trajectory custody: weekly Movement Receipts, monthly coaching beats, and full loop memory. Your rank and Mastery Grid stay free.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE =
-  "Upgrade to book sessions at the member rate and unlock retest priority.";
+  "Subscribe to unlock weekly proof by email, priority retests, and included session credits.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE =
-  "Book your next Guide session at the member rate from the hub.";
+  "Book your next Guide session. Use your included monthly credit or the member rate.";
 
 export function momentumSubscriberSessionPriceLabel(): string {
   return `${formatUsdFromCents(MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS)} CAD`;
@@ -52,4 +54,40 @@ export function momentumBillingPriceSummary(interval: "monthly" | "annual"): str
   return interval === "annual"
     ? formatStudentMomentumSubscriptionAnnualPrice()
     : formatStudentMomentumSubscriptionMonthlyPrice();
+}
+
+export type PackGoalVerdict = {
+  verdict: string;
+  nextAction: string;
+  recommendPack: boolean;
+};
+
+/** Exam-window pack recommendation from active student goal. */
+export function buildPackGoalVerdict(input: {
+  daysUntilExam: number | null;
+  sessionCreditsRemaining?: number;
+}): PackGoalVerdict | null {
+  const days = input.daysUntilExam;
+  if (days == null || days <= 0 || days > 120) return null;
+
+  const creditsBeforeExam = Math.max(1, Math.ceil(days / 30));
+  const sprintSessions = MOMENTUM_PACK_SESSION_COUNT;
+  const shortfall = sprintSessions - creditsBeforeExam;
+
+  if (shortfall <= 0) {
+    return {
+      verdict: `Your target date is in ${days} days. Your monthly credits cover the runway. Momentum Pack adds ${sprintSessions} sessions for ${formatStudentMomentumPackPrice()} if you want exam-window density.`,
+      nextAction: "Buy the Quarter Sprint Pack only if you need more than one session per month before the exam.",
+      recommendPack: false,
+    };
+  }
+
+  return {
+    verdict: `Your target date is in ${days} days. One credit per month leaves you ${shortfall} session${shortfall === 1 ? "" : "s"} short before the exam. Quarter Sprint Pack: ${sprintSessions} sessions for ${formatStudentMomentumPackPrice()}.`,
+    nextAction:
+      input.sessionCreditsRemaining && input.sessionCreditsRemaining > 0
+        ? "Use your included credit first, then buy the Pack to close the gap."
+        : "Buy the Quarter Sprint Pack to sprint the last miles before your target date.",
+    recommendPack: true,
+  };
 }

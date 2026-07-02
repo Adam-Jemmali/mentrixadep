@@ -43,6 +43,11 @@ import {
   progressSnapshotEmailTitle,
 } from "./templates/progress-snapshot-email";
 import {
+  movementReceiptEmailBody,
+  movementReceiptEmailSubjectLine,
+  movementReceiptEmailTitle,
+} from "./templates/movement-receipt-email";
+import {
   breakthroughGuideEmailBody,
   breakthroughGuideEmailSubject,
   breakthroughGuideEmailTitle,
@@ -461,6 +466,22 @@ export async function sendProgressSnapshotEmail(
     email,
     progressSnapshotEmailSubject(props),
     baseTemplate(progressSnapshotEmailTitle(props), progressSnapshotEmailBody(props)),
+  );
+}
+
+export interface MovementReceiptEmailProps {
+  receipt: import("@/features/movement-receipt/types").MovementReceiptData;
+}
+
+/** movement_receipt — Monday weekly verified movement email (Momentum) */
+export async function sendMovementReceiptEmail(
+  email: string,
+  props: MovementReceiptEmailProps,
+): Promise<void> {
+  await sendEmail(
+    email,
+    movementReceiptEmailSubjectLine(props),
+    baseTemplate(movementReceiptEmailTitle(props), movementReceiptEmailBody(props)),
   );
 }
 

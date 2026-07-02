@@ -108,7 +108,7 @@ export function FeedbackWidget() {
             </div>
 
             <DialogFooter>
-              <Button type="button" className="text-white hover:text-black" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+              <Button type="button" className="text-purple-500 hover:text-black" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
                 Cancel  
               </Button>
               <Button type="submit" disabled={busy || !message.trim()}>

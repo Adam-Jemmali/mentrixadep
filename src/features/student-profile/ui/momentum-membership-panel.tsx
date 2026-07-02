@@ -21,12 +21,15 @@ import {
   momentumVsBreakthroughValueLine,
 } from "@/features/payments/momentum-membership-pure";
 import { formatStudentBreakthroughPrice } from "@/features/booking/booking-pricing";
+import { buildMomentumRoiSummary } from "@/features/pricing/momentum-roi-pure";
 import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
 import { MomentumSubscriptionDisclosure } from "@/shared/ui/disclosure-patterns";
 import { MentrixaBillingIntervalRadioGroup } from "@/shared/ui/radio-group-patterns";
 
 type MomentumMembershipPanelProps = {
   subscription: StudentSubscriptionRow | null;
+  sessionCreditsRemaining?: number;
+  sessionCreditPeriodMonth?: string | null;
   variant?: "profile" | "subscribe";
   interval?: SubscriptionBillingInterval;
   onIntervalChange?: (interval: SubscriptionBillingInterval) => void;
@@ -38,6 +41,8 @@ type MomentumMembershipPanelProps = {
 
 export function MomentumMembershipPanel({
   subscription,
+  sessionCreditsRemaining = 0,
+  sessionCreditPeriodMonth = null,
   variant = "profile",
   interval = "annual",
   onIntervalChange,
@@ -50,6 +55,7 @@ export function MomentumMembershipPanel({
   const momentumTier = buildPricingTiers().find((tier) => tier.id === "momentum");
   const renewal = formatMomentumRenewalLabel(subscription);
   const isSubscribe = variant === "subscribe";
+  const roi = !active ? buildMomentumRoiSummary(interval) : null;
 
   return (
     <section
@@ -106,6 +112,39 @@ export function MomentumMembershipPanel({
         <p className="mt-3 text-xs leading-relaxed text-slate-600">{momentumVsBreakthroughValueLine()}</p>
       </div>
 
+      {roi && isSubscribe ? (
+        <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
+          <p className="text-[10px] font-black uppercase tracking-widest text-violet-700">
+            Twelve session value
+          </p>
+          <div className="mt-3 grid gap-2 text-sm text-slate-800 sm:grid-cols-3">
+            <div>
+              <p className="text-xs text-slate-500">12 Breakthrough sessions</p>
+              <p className="font-bold tabular-nums">{roi.breakthroughTwelveTotal}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Momentum ({interval})</p>
+              <p className="font-bold tabular-nums text-indigo-950">{roi.momentumTwelveTotal}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">You keep</p>
+              <p className="font-bold tabular-nums text-indigo-950">{roi.savings}</p>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-slate-600">
+            Effective included session cost: {roi.effectivePerSession} per year.
+          </p>
+          <p className="mt-3 text-sm font-semibold text-slate-900">{roi.verdict}</p>
+          <p className="mt-1 text-sm text-slate-600">{roi.nextAction}</p>
+        </div>
+      ) : null}
+
+      {isSubscribe && !active && onIntervalChange ? (
+        <div className="mt-5">
+          <MentrixaBillingIntervalRadioGroup value={interval} onChange={onIntervalChange} />
+        </div>
+      ) : null}
+
       {momentumTier ? (
         <ul className="mt-5 space-y-2.5">
           <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">What you get</p>
@@ -128,15 +167,17 @@ export function MomentumMembershipPanel({
         </p>
       ) : null}
 
+      {active ? (
+        <p className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-900">
+          {sessionCreditsRemaining > 0
+            ? `${sessionCreditsRemaining} included session credit${sessionCreditsRemaining === 1 ? "" : "s"} available${sessionCreditPeriodMonth ? ` for ${sessionCreditPeriodMonth.slice(0, 7)}` : ""}.`
+            : "Your included session credit for this month is used. Extra sessions book at the member rate."}
+        </p>
+      ) : null}
+
       <p className="mt-4 text-sm font-semibold text-indigo-900">
         {active ? MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE : MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE}
       </p>
-
-      {isSubscribe && !active && onIntervalChange ? (
-        <div className="mt-5">
-          <MentrixaBillingIntervalRadioGroup value={interval} onChange={onIntervalChange} />
-        </div>
-      ) : null}
 
       <div className="mt-6 flex flex-wrap gap-3">
         {active ? (

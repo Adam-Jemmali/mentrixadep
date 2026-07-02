@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 import { getStripeServer } from "@/shared/integrations/stripe/server";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { grantMomentumMonthlySessionCredit } from "@/features/entitlements/session-credits";
 import {
   flagSubscriptionStatusMismatch,
   subscriptionBillingIntervalSchema,
@@ -36,6 +37,52 @@ export async function handleMomentumSubscriptionCheckoutCompleted(
   );
 
   await upsertStudentSubscriptionFromStripe(userId, subscription, billingInterval);
+
+  if (subscription.status === "active" || subscription.status === "trialing") {
+    await grantMomentumMonthlySessionCredit({
+      userId,
+      grantSource: "subscription_checkout",
+    });
+  }
+}
+
+export async function handleStripeInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  const payload = invoice as Stripe.Invoice & {
+    subscription?: string | { id: string } | null;
+    billing_reason?: string | null;
+  };
+  const subscriptionRef = payload.subscription;
+  const subscriptionId =
+    typeof subscriptionRef === "string" ? subscriptionRef : subscriptionRef?.id;
+  if (!subscriptionId) return;
+
+  if (
+    payload.billing_reason !== "subscription_create" &&
+    payload.billing_reason !== "subscription_cycle"
+  ) {
+    return;
+  }
+
+  const admin = createAdminClient();
+  const { data: row } = await admin
+    .from("student_subscriptions")
+    .select("user_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle();
+
+  let userId = row?.user_id as string | undefined;
+  if (!userId) {
+    const stripe = getStripeServer();
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    userId = subscription.metadata?.user_id;
+  }
+  if (!userId) return;
+
+  await grantMomentumMonthlySessionCredit({
+    userId,
+    grantSource: "subscription_invoice",
+    stripeInvoiceId: invoice.id,
+  });
 }
 
 export async function handleStripeSubscriptionUpdated(

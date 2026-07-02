@@ -70,6 +70,8 @@ interface AvailabilityBrowserProps {
   questHistorySubjects?: string[];
   /** Active Momentum subscription — member session rate at checkout. */
   momentumSubscriber?: boolean;
+  /** Unused included session credit for the current UTC month. */
+  sessionCreditAvailable?: boolean;
 }
 
 export function AvailabilityBrowser({
@@ -83,6 +85,7 @@ export function AvailabilityBrowser({
   guideRankByTutorId = {},
   questHistorySubjects = [],
   momentumSubscriber = false,
+  sessionCreditAvailable = false,
 }: AvailabilityBrowserProps) {
   const [query, setQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>(
@@ -329,6 +332,7 @@ export function AvailabilityBrowser({
         tutorExpertise={tutorExpertise}
         displayTimeZone={displayTimeZone}
         momentumSubscriber={momentumSubscriber}
+        sessionCreditAvailable={sessionCreditAvailable}
       />
     </aside>
   );
@@ -340,22 +344,28 @@ function BookingDialog({
   tutorExpertise = {},
   displayTimeZone = "UTC",
   momentumSubscriber = false,
+  sessionCreditAvailable = false,
 }: {
   slot: Availability | null;
   onOpenChange: (open: boolean) => void;
   tutorExpertise?: Record<string, TutorExpertiseEntry[]>;
   displayTimeZone?: string;
   momentumSubscriber?: boolean;
+  sessionCreditAvailable?: boolean;
 }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [useSessionCredit, setUseSessionCredit] = useState(sessionCreditAvailable);
   useEffect(() => {
     setCheckoutBusy(false);
     setCheckoutError(null);
-  }, [slot?.id]);
+    setUseSessionCredit(sessionCreditAvailable);
+  }, [slot?.id, sessionCreditAvailable]);
   if (!slot) return null;
 
-  const priceCents = getStudentSessionCheckoutCents({ momentumSubscriber });
+  const memberPriceCents = getStudentSessionCheckoutCents({ momentumSubscriber });
+  const priceCents =
+    useSessionCredit && sessionCreditAvailable ? 0 : memberPriceCents;
   const durationMin = getSessionDurationMinutes(slot.start_time, slot.end_time);
   const scheduleLine = `${formatSlotRangeInZone(slot.start_time, slot.end_time, displayTimeZone)} · ${formatDurationLabel(durationMin)}`;
   const expertise = slot.tutor_id ? (tutorExpertise[slot.tutor_id] ?? []) : [];
@@ -373,7 +383,10 @@ function BookingDialog({
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ availabilityId: slot.id }),
+        body: JSON.stringify({
+          availabilityId: slot.id,
+          useSessionCredit: useSessionCredit && sessionCreditAvailable,
+        }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
@@ -412,6 +425,9 @@ function BookingDialog({
           qualifications={courseExpertise?.proof_description}
           priceCents={priceCents}
           momentumSubscriber={momentumSubscriber}
+          sessionCreditAvailable={sessionCreditAvailable}
+          useSessionCredit={useSessionCredit}
+          onUseSessionCreditChange={setUseSessionCredit}
           onConfirm={handleBook}
           onCancel={() => onOpenChange(false)}
           loading={checkoutBusy}

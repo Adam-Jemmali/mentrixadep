@@ -6,11 +6,15 @@ import { emitXpAward } from "@/features/xp/xp-events";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
+import { buildBreakthroughMomentumBridgeMessages } from "@/features/payments/breakthrough-momentum-bridge-pure";
+import { BreakthroughMomentumBridgeCard } from "@/features/payments/ui/breakthrough-momentum-bridge-card";
 
 interface RateSessionFormProps {
   sessionId: string;
   /** When false, the session is not eligible to rate (UI should hide the opener; this is a safety net). */
   canRate?: boolean;
+  momentumActive?: boolean;
+  courseName?: string;
   onSuccess?: () => void;
 }
 
@@ -31,6 +35,8 @@ function friendlyRatingError(message: string): string {
 export function RateSessionForm({
   sessionId,
   canRate = true,
+  momentumActive = false,
+  courseName,
   onSuccess,
 }: RateSessionFormProps) {
   const [rating, setRating] = useState(5);
@@ -79,9 +85,16 @@ export function RateSessionForm({
   const activeStar = "#D97706";
 
   if (optimisticDone && !error) {
+    const bridgeMessages = buildBreakthroughMomentumBridgeMessages({
+      momentumActive,
+      courseName,
+    });
     return (
-      <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-4 text-center">
-        <p className="text-sm font-medium text-slate-900">Thanks for your feedback.</p>
+      <div className="space-y-3">
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-center">
+          <p className="text-sm font-medium text-slate-900">Thanks for your feedback.</p>
+        </div>
+        {bridgeMessages ? <BreakthroughMomentumBridgeCard messages={bridgeMessages} /> : null}
       </div>
     );
   }

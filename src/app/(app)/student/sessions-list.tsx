@@ -87,6 +87,7 @@ interface SessionsListProps {
   /** From server searchParams for correct first paint / hydration when deep-linking. */
   initialOpenStudyPackageId?: string;
   initialSessionsTab?: "past" | "upcoming";
+  momentumActive?: boolean;
 }
 
 export function SessionsList({
@@ -101,6 +102,7 @@ export function SessionsList({
   children,
   initialOpenStudyPackageId = "",
   initialSessionsTab,
+  momentumActive = false,
 }: SessionsListProps) {
   const uiPerfTier = useUiPerfTier();
   const searchParams = useSearchParams();
@@ -546,6 +548,7 @@ export function SessionsList({
                           session={session}
                           displayTimeZone={displayTimeZone}
                           autoExpandStudyPackage={openStudyPackageId === session.id}
+                          momentumActive={momentumActive}
                         />
                       </div>
                     ))}
@@ -562,6 +565,7 @@ export function SessionsList({
 
       <RateSessionFloating
         session={floatingSession}
+        momentumActive={momentumActive}
         onDismiss={
           floatingSession ? () => dismissRateFloatForSession(floatingSession.id) : undefined
         }

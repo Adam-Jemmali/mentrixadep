@@ -7,6 +7,11 @@ import { RankBadge } from "@/features/xp/components/rank-badge";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { ProgressSnapshotRow } from "@/features/progress-snapshot/types";
+import {
+  formatStudentBreakthroughPrice,
+  getStudentSessionCheckoutCents,
+} from "@/features/booking/booking-pricing";
+import { formatUsdFromCents } from "@/features/duels/duel-reward";
 
 function dismissKey(snapshotId: string) {
   return `mentrixa:progress-snapshot:dismissed:${snapshotId}`;
@@ -18,7 +23,13 @@ function signed(n: number): string {
   return "0";
 }
 
-export function ProgressSnapshotCard({ snapshot }: { snapshot: ProgressSnapshotRow }) {
+export function ProgressSnapshotCard({
+  snapshot,
+  momentumSubscriber = false,
+}: {
+  snapshot: ProgressSnapshotRow;
+  momentumSubscriber?: boolean;
+}) {
   const [visible, setVisible] = useState(true);
   const data = snapshot.snapshot_data;
 
@@ -50,6 +61,10 @@ export function ProgressSnapshotCard({ snapshot }: { snapshot: ProgressSnapshotR
 
   const rankDirection = data.rankChange.direction;
   const divDelta = data.divisionRank.delta;
+
+  const sessionPriceLabel = formatUsdFromCents(
+    getStudentSessionCheckoutCents({ momentumSubscriber }),
+  );
 
   return (
     <div className={`${mentrixStudent.card} relative overflow-hidden p-5 sm:p-6`}>
@@ -111,7 +126,8 @@ export function ProgressSnapshotCard({ snapshot }: { snapshot: ProgressSnapshotR
       </div>
       <Button asChild className="mt-4 w-full sm:w-auto">
         <Link href={data.bookingCtaUrl} onClick={onCtaClick}>
-          Book {data.recommendedGuide.displayName} — $39
+          Book {data.recommendedGuide.displayName} — {sessionPriceLabel}
+          {momentumSubscriber ? " (member rate)" : ` (pay as you go is ${formatStudentBreakthroughPrice()})`}
         </Link>
       </Button>
     </div>

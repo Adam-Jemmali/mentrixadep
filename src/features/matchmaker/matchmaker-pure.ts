@@ -11,11 +11,28 @@ export type MatchmakerGuideResult = {
 export function computeGuideMatchScore(
   weakNodeIds: string[],
   breakthroughNodeIds: Set<string>,
-  impactScore: number
+  impactScore: number,
+  options?: {
+    retestNodeIds?: Set<string>;
+    goalUrgent?: boolean;
+  },
 ): { matchScore: number; matchedNodeIds: string[] } {
   const matchedNodeIds = weakNodeIds.filter((id) => breakthroughNodeIds.has(id));
-  const matchScore = matchedNodeIds.length + impactScore / 100;
+  const retestBoost =
+    options?.retestNodeIds != null
+      ? weakNodeIds.filter((id) => options.retestNodeIds!.has(id)).length * 0.5
+      : 0;
+  const goalBoost = options?.goalUrgent ? 0.25 : 0;
+  const matchScore = matchedNodeIds.length + impactScore / 100 + retestBoost + goalBoost;
   return { matchScore, matchedNodeIds };
+}
+
+export function formatMatchmakerVerdict(matchedCount: number, retestMatched: number): string | null {
+  if (matchedCount <= 0) return null;
+  if (retestMatched > 0) {
+    return `Highest impact on ${retestMatched} of your due retest nodes.`;
+  }
+  return formatMatchedSkillsLine(matchedCount);
 }
 
 export function formatMatchedSkillsLine(matchedCount: number): string | null {

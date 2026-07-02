@@ -34,9 +34,15 @@ describe("pricing tiers copy", () => {
   it("lists momentum subscription receipts and routes to subscribe", () => {
     const momentum = buildPricingTiers().find((tier) => tier.id === "momentum");
     expect(momentum?.receipts).toEqual([
-      "Priority retest scheduling",
-      "Full Mastery Grid history over time",
-      "One session per month at a reduced rate",
+      "One included Guide session per month at $0 checkout when credit applies",
+      "Member session rate $29 versus $39 pay as you go",
+      "Weekly Movement Receipt by email with grid, retest, and credit status",
+      "Priority retests 24h after session versus 48h free",
+      "Mastery Grid timeline and full progress archive",
+      "Full Loop Report with every closed coaching loop",
+      "Goal pace dashboard with exam countdown",
+      "Full Guide impact receipt history",
+      "Early pre-session brief 24h before your call",
     ]);
     expect(momentum?.buttonLink).toBe("/student/subscribe");
     expect(momentum?.popular).toBe(true);

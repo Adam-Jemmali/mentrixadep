@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildMovementReceiptDetailLines,
+  buildMovementReceiptVerdict,
+  movementReceiptEmailSubject,
+} from "@/features/movement-receipt/movement-receipt-pure";
+import type { MovementReceiptData } from "@/features/movement-receipt/types";
+
+const baseReceipt: MovementReceiptData = {
+  firstName: "Alex",
+  weekStart: "2026-06-30",
+  momentumActive: true,
+  grid: {
+    newlyVerifiedCount: 0,
+    flippedToWeakCount: 0,
+    verifiedTotalCount: 12,
+    priorWeekNewlyVerified: 1,
+  },
+  loops: {
+    completedThisWeek: 0,
+    latestClosedNodeName: null,
+    latestPreAccuracy: null,
+    latestPostAccuracy: null,
+  },
+  retest: {
+    nodeName: null,
+    isDue: false,
+    countdownLabel: null,
+    priorityRetest: false,
+  },
+  credit: {
+    momentumActive: true,
+    creditsRemaining: 0,
+    periodMonth: "2026-07-01",
+  },
+};
+
+describe("buildMovementReceiptVerdict", () => {
+  it("prioritizes due retest", () => {
+    const { verdict, nextAction } = buildMovementReceiptVerdict({
+      ...baseReceipt,
+      grid: { ...baseReceipt.grid, newlyVerifiedCount: 2 },
+      retest: {
+        nodeName: "Chain Rule",
+        isDue: true,
+        countdownLabel: "Due now",
+        priorityRetest: true,
+      },
+    });
+    expect(verdict).toContain("Retest due on Chain Rule");
+    expect(verdict).toContain("2 new verified");
+    expect(nextAction).toContain("retest");
+  });
+
+  it("surfaces unused session credit for Momentum", () => {
+    const { verdict, nextAction, ctaHref } = buildMovementReceiptVerdict({
+      ...baseReceipt,
+      credit: { momentumActive: true, creditsRemaining: 1, periodMonth: "2026-07-01" },
+    });
+    expect(verdict).toContain("included session credit is unused");
+    expect(nextAction).toContain("Book your included Guide session");
+    expect(ctaHref).toBe("/student/guides");
+  });
+
+  it("celebrates grid movement with pace", () => {
+    const { verdict } = buildMovementReceiptVerdict({
+      ...baseReceipt,
+      grid: {
+        newlyVerifiedCount: 3,
+        flippedToWeakCount: 0,
+        verifiedTotalCount: 15,
+        priorWeekNewlyVerified: 1,
+      },
+    });
+    expect(verdict).toContain("3 new verified nodes");
+    expect(verdict).toContain("Up from 1 last week");
+  });
+
+  it("upsells Momentum on stall for free users", () => {
+    const { nextAction } = buildMovementReceiptVerdict({
+      ...baseReceipt,
+      momentumActive: false,
+      credit: { momentumActive: false, creditsRemaining: 0, periodMonth: null },
+    });
+    expect(nextAction).toContain("Momentum members get weekly Movement Receipts by email");
+  });
+});
+
+describe("buildMovementReceiptDetailLines", () => {
+  it("includes grid, credit, and retest lines for Momentum", () => {
+    const lines = buildMovementReceiptDetailLines({
+      ...baseReceipt,
+      grid: { ...baseReceipt.grid, newlyVerifiedCount: 2 },
+      credit: { momentumActive: true, creditsRemaining: 1, periodMonth: "2026-07-01" },
+      retest: {
+        nodeName: "Limits",
+        isDue: false,
+        countdownLabel: "18h",
+        priorityRetest: true,
+      },
+      loops: { ...baseReceipt.loops, completedThisWeek: 1 },
+    });
+    expect(lines.some((l) => l.startsWith("Grid:"))).toBe(true);
+    expect(lines.some((l) => l.startsWith("Loops:"))).toBe(true);
+    expect(lines.some((l) => l.startsWith("Credit:"))).toBe(true);
+    expect(lines.some((l) => l.startsWith("Retest:"))).toBe(true);
+  });
+});
+
+describe("movementReceiptEmailSubject", () => {
+  it("uses verified count when movement happened", () => {
+    expect(
+      movementReceiptEmailSubject({
+        ...baseReceipt,
+        grid: { ...baseReceipt.grid, newlyVerifiedCount: 2 },
+      }),
+    ).toBe("Alex — 2 new verified nodes this week");
+  });
+});

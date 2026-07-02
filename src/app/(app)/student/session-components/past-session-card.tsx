@@ -48,11 +48,13 @@ export function PastSessionCard({
   session, 
   displayTimeZone = "UTC",
   autoExpandStudyPackage = false,
+  momentumActive = false,
 }: { 
   session: Session;
   displayTimeZone?: string;
   /** Open the study package section (e.g. deep link from “package ready” alert). */
   autoExpandStudyPackage?: boolean;
+  momentumActive?: boolean;
 }) {
   const router = useRouter();
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
@@ -211,6 +213,8 @@ export function PastSessionCard({
           <RateSessionForm
             sessionId={session.id}
             canRate={canRate}
+            momentumActive={momentumActive}
+            courseName={session.course}
             onSuccess={() => {
               setRatingDialogOpen(false);
               router.refresh();

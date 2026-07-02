@@ -22,6 +22,7 @@ import { checkInstitutionCredits, consumeInstitutionCredit } from "@/features/in
 import { recordSecurityEvent } from "@/shared/core/security/security-events";
 import {
   handleMomentumSubscriptionCheckoutCompleted,
+  handleStripeInvoicePaid,
   handleStripeSubscriptionDeleted,
   handleStripeSubscriptionUpdated,
 } from "@/features/payments/subscription-webhook-handlers";
@@ -137,6 +138,20 @@ async function fetchAvailabilityDetails(availabilityId: string) {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (session.metadata?.checkout_kind === "momentum_subscription") {
     await handleMomentumSubscriptionCheckoutCompleted(session);
+    return;
+  }
+
+  if (session.metadata?.checkout_kind === "momentum_pack") {
+    const userId = session.metadata?.user_id;
+    const credits = Number(session.metadata?.session_credits ?? 3);
+    if (userId && session.payment_status === "paid") {
+      const { grantMomentumPackCredits } = await import("@/features/entitlements/session-credits");
+      await grantMomentumPackCredits({
+        userId,
+        credits: Number.isFinite(credits) ? credits : 3,
+        stripeCheckoutSessionId: session.id,
+      });
+    }
     return;
   }
 
@@ -433,6 +448,11 @@ export async function POST(req: NextRequest) {
 
       case "customer.subscription.deleted": {
         await handleStripeSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        break;
+      }
+
+      case "invoice.paid": {
+        await handleStripeInvoicePaid(event.data.object as Stripe.Invoice);
         break;
       }
 

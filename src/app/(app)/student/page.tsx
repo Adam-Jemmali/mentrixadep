@@ -22,7 +22,6 @@ import {
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { RankBreakdownPopover } from "@/shared/ui/popover-patterns";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
@@ -58,10 +57,21 @@ import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
 import {
-  getStudentSubscription,
-  isMomentumSubscriptionActive,
-} from "@/features/payments/student-subscription";
+  getStudentEntitlements,
+  hasEntitlement,
+} from "@/features/entitlements/entitlements";
 import { MomentumMembershipHubCard } from "@/features/student-profile/ui/momentum-membership-hub-card";
+import { MomentumActiveHubCard } from "@/features/student-profile/ui/momentum-active-hub-card";
+import { getStudentSubscription } from "@/features/payments/student-subscription";
+import { loadNextPendingRetest, loadLoopReportRows } from "@/features/intervention-retests/retest-reads";
+import { RetestCountdownHubCard } from "@/features/intervention-retests/ui/retest-countdown-hub-card";
+import { LoopReportHubCard } from "@/features/loop-report/ui/loop-report-hub-card";
+import { loadGoalDashboardForViewer } from "@/features/goal-dashboard/load-goal-dashboard";
+import { GoalDashboardCard } from "@/features/goal-dashboard/ui/goal-dashboard-card";
+import { loadGuideImpactReceipts } from "@/features/guide-impact/impact-receipt-reads";
+import { GuideImpactReceiptCard } from "@/features/guide-impact/ui/guide-impact-receipt-card";
+import { loadActiveMovementReceiptForViewer } from "@/features/movement-receipt/load-movement-receipt";
+import { MovementReceiptHubCard } from "@/features/movement-receipt/ui/movement-receipt-hub-card";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -77,7 +87,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, subscription] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, pendingRetest, goalDashboard, impactReceipts, movementReceipt] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -89,10 +99,28 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       loadVerifiedFirstAttemptRankStats(user.id),
       loadMasteryGrid(user.id).catch(() => null),
       loadActiveStudentGoalForViewer(AP_CALC_AB_SUBJECT),
+      getStudentEntitlements(user.id),
       getStudentSubscription(user.id),
+      loadNextPendingRetest(user.id).catch(() => null),
+      loadGoalDashboardForViewer().catch(() => null),
+      loadGuideImpactReceipts(user.id, {
+        fullHistory: false,
+        limit: 1,
+      }).catch(() => []),
+      loadActiveMovementReceiptForViewer().catch(() => null),
     ]);
 
-  const momentumSubscriber = isMomentumSubscriptionActive(subscription);
+  const momentumSubscriber = entitlements.momentumActive;
+  const sessionCreditAvailable = entitlements.sessionCreditsRemaining > 0;
+
+  const loopRows = await loadLoopReportRows(user.id, {
+    fullHistory: hasEntitlement(entitlements, "momentum.loop_report_full"),
+    limit: hasEntitlement(entitlements, "momentum.loop_report_full") ? 50 : 1,
+  }).catch(() => []);
+
+  const impactReceiptsFull = momentumSubscriber
+    ? await loadGuideImpactReceipts(user.id, { fullHistory: true, limit: 20 }).catch(() => impactReceipts)
+    : impactReceipts;
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
   const [guideImpactByTutorId, rawQuestHistorySubjects, guideRankByTutorId] = await Promise.all([
@@ -193,9 +221,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                       </>
                     ) : null}
                   </p>
-                  <div className="mt-2">
-                    <RankBreakdownPopover stats={verifiedRankStats} tone="dark" />
-                  </div>
                 </div>
               </div>
 
@@ -269,11 +294,55 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           <div className="mt-8">
             <MomentumMembershipHubCard />
           </div>
+        ) : (
+          <div className="mt-8">
+            <MomentumActiveHubCard
+              sessionCreditsRemaining={entitlements.sessionCreditsRemaining}
+              sessionCreditPeriodMonth={entitlements.sessionCreditPeriodMonth}
+              subscription={subscription}
+            />
+          </div>
+        )}
+
+        {movementReceipt ? (
+          <div className="mt-8">
+            <MovementReceiptHubCard
+              data={movementReceipt.receipt_data}
+              momentumActive={momentumSubscriber}
+            />
+          </div>
+        ) : null}
+
+        {pendingRetest ? (
+          <div className="mt-8">
+            <RetestCountdownHubCard state={pendingRetest} />
+          </div>
+        ) : null}
+
+        {loopRows.length > 0 ? (
+          <div className="mt-8">
+            <LoopReportHubCard rows={loopRows} momentumActive={momentumSubscriber} />
+          </div>
+        ) : null}
+
+        {goalDashboard ? (
+          <div className="mt-8">
+            <GoalDashboardCard data={goalDashboard} />
+          </div>
+        ) : null}
+
+        {impactReceiptsFull.length > 0 ? (
+          <div className="mt-8">
+            <GuideImpactReceiptCard
+              receipts={impactReceiptsFull}
+              momentumActive={momentumSubscriber}
+            />
+          </div>
         ) : null}
 
         <div className="mt-8 space-y-6">
           {progressSnapshot ? (
-            <DeferredProgressSnapshotCard snapshot={progressSnapshot} />
+            <DeferredProgressSnapshotCard snapshot={progressSnapshot} momentumSubscriber={momentumSubscriber} />
           ) : null}
           <DeferredAccountRankLadder totalXp={totalXp} variant="dashboard" />
           <DeferredStudentStatStripMotion
@@ -350,6 +419,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             questHistorySubjects={questHistorySubjects}
             guideRankByTutorId={guideRankByTutorId}
             momentumSubscriber={momentumSubscriber}
+            sessionCreditAvailable={sessionCreditAvailable}
           />
 
           <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">
@@ -371,6 +441,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 displayTimeZone={timeZone}
                 weekRange={weekRange}
                 showHeroStats={false}
+                momentumActive={momentumSubscriber}
                 initialOpenStudyPackageId={
                   typeof query.openStudyPackage === "string" ? query.openStudyPackage : ""
                 }

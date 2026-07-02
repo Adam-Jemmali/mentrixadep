@@ -3,6 +3,8 @@ import {
   addInterventionRetestDelay,
   DUEL_LOSS_RETEST_DELAY_MS,
   isInterventionRetestDue,
+  MOMENTUM_DUEL_LOSS_RETEST_DELAY_MS,
+  MOMENTUM_STUDIO_INTERVENTION_RETEST_DELAY_MS,
   STUDIO_INTERVENTION_RETEST_DELAY_MS,
 } from "@/features/intervention-retests/schedule-intervention-retests-pure";
 import { resolveFirstMissedSkillNodeId } from "@/features/intervention-retests/duel-retest";
@@ -18,6 +20,18 @@ describe("schedule-intervention-retests-pure", () => {
     const base = new Date("2026-06-01T12:00:00.000Z");
     const scheduled = addInterventionRetestDelay(base, "duel_loss");
     expect(scheduled.getTime() - base.getTime()).toBe(DUEL_LOSS_RETEST_DELAY_MS);
+  });
+
+  it("schedules momentum studio interventions 24h out", () => {
+    const base = new Date("2026-06-01T12:00:00.000Z");
+    const scheduled = addInterventionRetestDelay(base, "session", { priorityRetest: true });
+    expect(scheduled.getTime() - base.getTime()).toBe(MOMENTUM_STUDIO_INTERVENTION_RETEST_DELAY_MS);
+  });
+
+  it("schedules momentum duel loss interventions 36h out", () => {
+    const base = new Date("2026-06-01T12:00:00.000Z");
+    const scheduled = addInterventionRetestDelay(base, "duel_loss", { priorityRetest: true });
+    expect(scheduled.getTime() - base.getTime()).toBe(MOMENTUM_DUEL_LOSS_RETEST_DELAY_MS);
   });
 
   it("treats future scheduled_for as not due", () => {

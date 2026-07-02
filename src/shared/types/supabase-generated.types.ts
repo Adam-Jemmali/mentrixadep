@@ -1326,6 +1326,44 @@ export type Database = {
           },
         ]
       }
+      movement_receipts: {
+        Row: {
+          clicked_at: string | null
+          email_sent_at: string | null
+          generated_at: string
+          id: string
+          receipt_data: Json
+          student_id: string
+          week_start: string
+        }
+        Insert: {
+          clicked_at?: string | null
+          email_sent_at?: string | null
+          generated_at?: string
+          id?: string
+          receipt_data: Json
+          student_id: string
+          week_start: string
+        }
+        Update: {
+          clicked_at?: string | null
+          email_sent_at?: string | null
+          generated_at?: string
+          id?: string
+          receipt_data?: Json
+          student_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movement_receipts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       progress_snapshots: {
         Row: {
           clicked_at: string | null
@@ -2488,6 +2526,147 @@ export type Database = {
           },
           {
             foreignKeyName: "student_node_rolling_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      momentum_session_credit_redemptions: {
+        Row: {
+          availability_id: string
+          credit_id: string
+          id: string
+          idempotency_key: string
+          redeemed_at: string
+          session_request_id: string | null
+          user_id: string
+        }
+        Insert: {
+          availability_id: string
+          credit_id: string
+          id?: string
+          idempotency_key: string
+          redeemed_at?: string
+          session_request_id?: string | null
+          user_id: string
+        }
+        Update: {
+          availability_id?: string
+          credit_id?: string
+          id?: string
+          idempotency_key?: string
+          redeemed_at?: string
+          session_request_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_availability_id_fkey"
+            columns: ["availability_id"]
+            isOneToOne: true
+            referencedRelation: "availability"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "momentum_session_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_session_request_id_fkey"
+            columns: ["session_request_id"]
+            isOneToOne: false
+            referencedRelation: "session_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      momentum_session_credits: {
+        Row: {
+          created_at: string
+          credits_granted: number
+          credits_remaining: number
+          grant_source: string
+          id: string
+          period_month: string
+          stripe_invoice_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_granted?: number
+          credits_remaining?: number
+          grant_source?: string
+          id?: string
+          period_month: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_granted?: number
+          credits_remaining?: number
+          grant_source?: string
+          id?: string
+          period_month?: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentum_session_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mastery_grid_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          node_states: Json
+          rolling_accuracy: Json
+          snapshot_week: string
+          user_id: string
+          verified_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          node_states?: Json
+          rolling_accuracy?: Json
+          snapshot_week: string
+          user_id: string
+          verified_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          node_states?: Json
+          rolling_accuracy?: Json
+          snapshot_week?: string
+          user_id?: string
+          verified_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastery_grid_snapshots_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

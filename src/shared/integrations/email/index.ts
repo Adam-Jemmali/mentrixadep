@@ -73,5 +73,7 @@ export {
   sendContactFeedbackInbound,
   type ProgressSnapshotEmailProps,
   sendProgressSnapshotEmail,
+  type MovementReceiptEmailProps,
+  sendMovementReceiptEmail,
   sendBreakthroughGuideEmail,
 } from "./marketing";

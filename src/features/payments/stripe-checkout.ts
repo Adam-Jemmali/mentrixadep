@@ -7,10 +7,13 @@ import { getStripeServer } from "@/shared/integrations/stripe/server";
 import { getSiteUrl } from "@/shared/core/site";
 import { mentrixaCheckoutBrandingWithAssets } from "@/shared/integrations/stripe/checkout-copy";
 import { getStudentSessionCheckoutCents, splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { bookSessionAsUser } from "@/features/booking/book-session";
+import { getStudentEntitlements } from "@/features/entitlements/entitlements";
 import {
-  getStudentSubscription,
-  isMomentumSubscriptionActive,
-} from "@/features/payments/student-subscription";
+  consumeMomentumSessionCredit,
+  linkMomentumCreditRedemptionToSessionRequest,
+  restoreMomentumSessionCredit,
+} from "@/features/entitlements/session-credits";
 import { captureUnexpectedError, withStripeApiSpan } from "@/shared/integrations/observability";
 import { trackEvent } from "@/shared/integrations/analytics";
 import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
@@ -77,7 +80,11 @@ type ClearPendingLockOptions = {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as { availabilityId?: string };
+    const body = (await req.json()) as {
+      availabilityId?: string;
+      /** When false, member pays the reduced session rate instead of using an included credit. */
+      useSessionCredit?: boolean;
+    };
     const availabilityId = body.availabilityId?.trim();
 
     if (!availabilityId) {
@@ -364,12 +371,76 @@ export async function POST(req: NextRequest) {
       // Non-critical fallback.
     }
 
-    const subscription = await getStudentSubscription(user.id);
-    const momentumSubscriber = isMomentumSubscriptionActive(subscription);
+    const subscription = await getStudentEntitlements(user.id);
+    const momentumSubscriber = subscription.momentumActive;
+    const useSessionCredit = body.useSessionCredit !== false;
+    const appOrigin = resolveAppOrigin(req);
+
+    if (useSessionCredit && subscription.sessionCreditsRemaining > 0) {
+      const consumed = await consumeMomentumSessionCredit({
+        userId: user.id,
+        availabilityId,
+      });
+
+      if (consumed.ok) {
+        try {
+          const result = await bookSessionAsUser(availabilityId, user.id);
+          await adminClient
+            .from("availability")
+            .update({
+              booking_status: "booked",
+              locked_until: null,
+              locked_by: null,
+              stripe_checkout_session_id: null,
+            })
+            .eq("id", availabilityId);
+
+          const requestId =
+            result.request && typeof result.request.id === "string"
+              ? result.request.id
+              : null;
+          if (requestId) {
+            await linkMomentumCreditRedemptionToSessionRequest({
+              userId: user.id,
+              availabilityId,
+              sessionRequestId: requestId,
+            });
+          }
+
+          void trackEvent("checkout_completed", {
+            userId: user.id,
+            properties: {
+              availability_id: availabilityId,
+              amount_cents: 0,
+              momentum_session_credit: true,
+            },
+          });
+
+          const successUrl = new URL("/student", appOrigin);
+          successUrl.searchParams.set("booking", "success");
+          successUrl.searchParams.set("reason", "approved");
+          successUrl.searchParams.set("credit", "1");
+          successUrl.searchParams.set("sessionsTab", "upcoming");
+          successUrl.hash = "sessions-history";
+
+          return NextResponse.json({ url: successUrl.toString() });
+        } catch (bookErr) {
+          if (!consumed.alreadyRedeemed) {
+            await restoreMomentumSessionCredit({
+              userId: user.id,
+              availabilityId,
+            });
+          }
+          await clearPendingLock({ lockedBy: user.id });
+          const msg = bookErr instanceof Error ? bookErr.message : "Booking failed";
+          return NextResponse.json({ error: msg }, { status: 409 });
+        }
+      }
+    }
+
     const sessionPriceCents = getStudentSessionCheckoutCents({ momentumSubscriber });
     const split = splitSessionPriceCents(sessionPriceCents);
 
-    const appOrigin = resolveAppOrigin(req);
     const branding = mentrixaCheckoutBrandingWithAssets(appOrigin);
     const successUrl = `${appOrigin}/api/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appOrigin}/api/stripe/checkout/cancel-return?session_id={CHECKOUT_SESSION_ID}`;

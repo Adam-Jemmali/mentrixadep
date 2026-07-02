@@ -202,6 +202,16 @@ export interface ProgressSnapshotDbRow {
   clicked_at: string | null;
 }
 
+export interface MovementReceiptDbRow {
+  id: string;
+  student_id: string;
+  week_start: string;
+  receipt_data: Record<string, unknown>;
+  generated_at: string;
+  email_sent_at: string | null;
+  clicked_at: string | null;
+}
+
 export interface GuideImpactScoreDbRow {
   id: string;
   guide_id: string;
@@ -741,6 +751,16 @@ export interface Database {
           clicked_at?: string | null;
         };
         Update: Partial<ProgressSnapshotDbRow>;
+      };
+      movement_receipts: {
+        Row: MovementReceiptDbRow;
+        Insert: Omit<MovementReceiptDbRow, "id" | "generated_at" | "email_sent_at" | "clicked_at"> & {
+          id?: string;
+          generated_at?: string;
+          email_sent_at?: string | null;
+          clicked_at?: string | null;
+        };
+        Update: Partial<MovementReceiptDbRow>;
       };
       guide_impact_scores: {
         Row: GuideImpactScoreDbRow;

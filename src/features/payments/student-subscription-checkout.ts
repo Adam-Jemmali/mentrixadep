@@ -27,7 +27,7 @@ function subscriptionLineItem(interval: z.infer<typeof subscriptionBillingInterv
       product_data: {
         name: isAnnual ? "Momentum annual" : "Momentum monthly",
         description: isAnnual
-          ? "Priority retest scheduling, Mastery Grid history, one reduced session per month"
+          ? "Priority retests, grid history, progress archive, one included Guide session per month"
           : "Momentum monthly subscription",
       },
       unit_amount: getMomentumSubscriptionCents(interval),

@@ -54,6 +54,7 @@ export function StudentCommandCenterClient({
   questHistorySubjects = [],
   guideRankByTutorId = {},
   momentumSubscriber = false,
+  sessionCreditAvailable = false,
 }: {
   userId: string;
   studentCourses: { id: string; course_name: string }[];
@@ -67,6 +68,7 @@ export function StudentCommandCenterClient({
   questHistorySubjects?: string[];
   guideRankByTutorId?: Record<string, string>;
   momentumSubscriber?: boolean;
+  sessionCreditAvailable?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -301,6 +303,7 @@ export function StudentCommandCenterClient({
           questHistorySubjects={questHistorySubjects}
           guideRankByTutorId={guideRankByTutorId}
           momentumSubscriber={momentumSubscriber}
+          sessionCreditAvailable={sessionCreditAvailable}
         />
       </section>
     </div>

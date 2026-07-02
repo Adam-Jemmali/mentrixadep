@@ -28,6 +28,9 @@ interface BookingConfirmationCardProps {
   /** Shown above footer actions when checkout start fails (e.g. slot locked by another learner). */
   errorMessage?: string | null;
   momentumSubscriber?: boolean;
+  sessionCreditAvailable?: boolean;
+  useSessionCredit?: boolean;
+  onUseSessionCreditChange?: (value: boolean) => void;
   className?: string;
   enableAnimations?: boolean;
 }
@@ -45,12 +48,16 @@ export function BookingConfirmationCard({
   loading = false,
   errorMessage = null,
   momentumSubscriber = false,
+  sessionCreditAvailable = false,
+  useSessionCredit = false,
+  onUseSessionCreditChange,
   className,
   enableAnimations = true,
 }: BookingConfirmationCardProps) {
   const shouldReduceMotion = useReducedMotion();
   const shouldAnimate = enableAnimations && !shouldReduceMotion;
   const priceSplit = splitSessionPriceCents(priceCents);
+  const payingWithCredit = sessionCreditAvailable && useSessionCredit;
 
   const containerVariants = {
     hidden: { opacity: 0, scale: 0.95 },
@@ -153,13 +160,34 @@ export function BookingConfirmationCard({
               <DollarSign className="w-4 h-4 text-blue-400" />
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pricing</p>
             </div>
-            <PriceBreakdownPopover sessionPriceCents={priceCents} />
+            {!payingWithCredit ? <PriceBreakdownPopover sessionPriceCents={priceCents} /> : null}
           </div>
           <p className="text-2xl font-bold tabular-nums text-white">{formatUsdFromCents(priceSplit.totalCents)}</p>
           <p className="mt-1 text-xs text-slate-400">
-            {momentumSubscriber ? "Momentum member rate at Stripe checkout" : "Total due at Stripe checkout"}
+            {payingWithCredit
+              ? "Included Momentum session credit applied"
+              : momentumSubscriber
+                ? "Momentum member rate at Stripe checkout"
+                : "Total due at Stripe checkout"}
           </p>
-          {momentumSubscriber ? (
+          {sessionCreditAvailable && onUseSessionCreditChange ? (
+            <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={useSessionCredit}
+                onChange={(event) => onUseSessionCreditChange(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-500"
+              />
+              <span className="text-xs leading-relaxed text-emerald-100">
+                Use your included session credit for this booking. Uncheck to pay the member rate instead.
+              </span>
+            </label>
+          ) : null}
+          {payingWithCredit ? (
+            <p className="mt-2 text-xs font-medium text-emerald-400/90">
+              No Stripe charge. Your monthly included session covers this booking.
+            </p>
+          ) : momentumSubscriber ? (
             <p className="mt-2 text-xs font-medium text-emerald-400/90">
               Momentum member session rate applied.
             </p>
@@ -172,9 +200,11 @@ export function BookingConfirmationCard({
               </Link>
             </p>
           )}
-          <div className="mt-4 hidden sm:block text-slate-100">
-            <BookingPriceBreakdown sessionPriceCents={priceCents} />
-          </div>
+          {!payingWithCredit ? (
+            <div className="mt-4 hidden sm:block text-slate-100">
+              <BookingPriceBreakdown sessionPriceCents={priceCents} />
+            </div>
+          ) : null}
           <div className="mt-4 pt-4 border-t border-slate-800 flex items-start gap-3">
             <ShieldCheck className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
             <p className="text-[10px] leading-relaxed text-slate-500 italic">
@@ -208,7 +238,7 @@ export function BookingConfirmationCard({
           className="flex-[2] py-6 text-white font-bold"
         >
           <span className={cn("flex items-center justify-center gap-2 transition-opacity", loading ? "opacity-0" : "opacity-100")}>
-            Pay & book
+            {payingWithCredit ? "Book with credit" : "Pay & book"}
             <ChevronLeft className="w-4 h-4 rotate-180" />
           </span>
           {loading && (

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { getStudentEntitlements } from "@/features/entitlements/entitlements";
 import {
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
@@ -56,6 +57,17 @@ async function insertInterventionRetests(
   return scheduled;
 }
 
+async function resolveScheduledFor(
+  userId: string,
+  baseIso: string,
+  sourceType: InterventionSourceType,
+): Promise<string> {
+  const entitlements = await getStudentEntitlements(userId);
+  return addInterventionRetestDelay(new Date(baseIso), sourceType, {
+    priorityRetest: entitlements.momentumActive,
+  }).toISOString();
+}
+
 export async function scheduleInterventionRetestsForNodes(params: {
   sourceType: InterventionSourceType;
   sourceId: string;
@@ -98,10 +110,11 @@ export async function scheduleSessionCompletionRetests(params: {
   const skillNodeIds = (targets ?? []).map((row) => String(row.skill_node_id));
   if (skillNodeIds.length === 0) return 0;
 
-  const scheduledFor = addInterventionRetestDelay(
-    new Date(params.completedAt),
+  const scheduledFor = await resolveScheduledFor(
+    params.studentId,
+    params.completedAt,
     "session",
-  ).toISOString();
+  );
 
   return scheduleInterventionRetestsForNodes({
     sourceType: "session",
@@ -118,10 +131,11 @@ export async function scheduleStudioPackageRetests(params: {
   skillNodeIds: string[];
   publishedAt: string;
 }): Promise<number> {
-  const scheduledFor = addInterventionRetestDelay(
-    new Date(params.publishedAt),
+  const scheduledFor = await resolveScheduledFor(
+    params.studentId,
+    params.publishedAt,
     "studio_package",
-  ).toISOString();
+  );
 
   return scheduleInterventionRetestsForNodes({
     sourceType: "studio_package",
@@ -146,10 +160,11 @@ export async function scheduleBreakthroughRetest(params: {
   if (!match) return 0;
 
   const detectedAt = params.detectedAt ?? new Date().toISOString();
-  const scheduledFor = addInterventionRetestDelay(
-    new Date(detectedAt),
+  const scheduledFor = await resolveScheduledFor(
+    params.studentId,
+    detectedAt,
     "breakthrough",
-  ).toISOString();
+  );
 
   return scheduleInterventionRetestsForNodes({
     sourceType: "breakthrough",
@@ -166,10 +181,11 @@ export async function scheduleDuelLossRetest(params: {
   skillNodeId: string;
   completedAt: string;
 }): Promise<number> {
-  const scheduledFor = addInterventionRetestDelay(
-    new Date(params.completedAt),
+  const scheduledFor = await resolveScheduledFor(
+    params.studentId,
+    params.completedAt,
     "duel_loss",
-  ).toISOString();
+  );
 
   return scheduleInterventionRetestsForNodes({
     sourceType: "duel_loss",

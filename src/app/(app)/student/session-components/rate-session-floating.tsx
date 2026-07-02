@@ -18,9 +18,11 @@ type Session = {
 
 export function RateSessionFloating({
   session,
+  momentumActive = false,
   onDismiss,
 }: {
   session: Session | null;
+  momentumActive?: boolean;
   onDismiss?: () => void;
 }) {
   const router = useRouter();
@@ -55,6 +57,8 @@ export function RateSessionFloating({
         <RateSessionForm
           sessionId={session.id}
           canRate={canRate}
+          momentumActive={momentumActive}
+          courseName={session.course}
           onSuccess={() => {
             onDismiss?.();
             router.refresh();

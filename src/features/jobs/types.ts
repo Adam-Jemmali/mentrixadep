@@ -33,6 +33,7 @@ export type EmailJobPayload = {
     | "session_reminder_student"
     | "pre_session_brief"
     | "progress_snapshot"
+    | "movement_receipt"
     | "breakthrough_guide"
     | "raw";
   to: string;

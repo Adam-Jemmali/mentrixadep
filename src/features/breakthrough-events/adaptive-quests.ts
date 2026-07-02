@@ -11,6 +11,7 @@ import type { PracticePackMetadata, PracticeQuestion } from "@/features/quest/pr
 import { createClient } from "@/shared/integrations/supabase/server";
 import { selectBreakthroughPack } from "@/features/breakthrough-events/breakthrough-item-bank";
 import { resolveApCalcAbSkillNodeForConcept } from "@/features/breakthrough-events/resolve-skill-node";
+import { getStudentEntitlements } from "@/features/entitlements/entitlements";
 import {
   addInterventionRetestDelay,
 } from "@/features/intervention-retests/schedule-intervention-retests-pure";
@@ -163,7 +164,10 @@ export async function createNextBreakthroughQuest(
     num_attempts: 0,
   });
 
-  const scheduledFor = addInterventionRetestDelay(new Date(), "breakthrough").toISOString();
+  const entitlements = await getStudentEntitlements(user.id);
+  const scheduledFor = addInterventionRetestDelay(new Date(), "breakthrough", {
+    priorityRetest: entitlements.momentumActive,
+  }).toISOString();
   void scheduleInterventionRetestsForNodes({
     sourceType: "breakthrough",
     sourceId: eventId,
