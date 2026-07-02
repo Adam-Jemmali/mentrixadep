@@ -125,6 +125,79 @@ export type MentrixaVocabIconLabelProps = MentrixaVocabIconProps & {
   labelClassName?: string;
 };
 
+/** Count above icon — minimal stat strip for grid and receipt surfaces. */
+export function VocabCountMetric({
+  value,
+  icon,
+  label,
+  gold,
+  surface = "dark",
+  iconSize = 28,
+  valueClassName,
+  className,
+}: {
+  value: number | string;
+  icon: VocabIconName;
+  label: string;
+  gold?: boolean;
+  surface?: "dark" | "light";
+  iconSize?: number;
+  valueClassName?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn("inline-flex min-w-[2.75rem] flex-col items-center gap-1", className)}
+      aria-label={`${value} ${label}`}
+      title={`${value} ${label}`}
+    >
+      <span
+        className={cn(
+          "text-lg font-black tabular-nums leading-none sm:text-xl",
+          valueClassName ??
+            (surface === "dark" ? "text-violet-50" : "text-zinc-900"),
+        )}
+      >
+        {value}
+      </span>
+      <MentrixaVocabIcon name={icon} size={iconSize} gold={gold} surface={surface} title={label} />
+    </span>
+  );
+}
+
+export function MasteryGridSummaryMetrics({
+  verifiedCount,
+  proficientCount,
+  totalNodes,
+  surface = "dark",
+  className,
+}: {
+  verifiedCount: number;
+  proficientCount: number;
+  totalNodes: number;
+  surface?: "dark" | "light";
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-wrap items-end gap-4 sm:gap-5", className)}>
+      <VocabCountMetric
+        value={verifiedCount}
+        icon="verified"
+        label="verified"
+        gold
+        surface={surface}
+      />
+      <VocabCountMetric
+        value={proficientCount}
+        icon="practice-pack"
+        label="proficient"
+        surface={surface}
+      />
+      <VocabCountMetric value={totalNodes} icon="skills" label="skills" surface={surface} />
+    </div>
+  );
+}
+
 export function MentrixaVocabIconLabel({
   showLabel = true,
   labelClassName,

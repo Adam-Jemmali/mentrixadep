@@ -10,7 +10,10 @@ import {
 } from "@/features/mastery-grid/mastery-grid-pure";
 import { SkillNodeStrengthMeter } from "@/shared/ui/meter-patterns";
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  MasteryGridSummaryMetrics,
+  MentrixaVocabIcon,
+} from "@/shared/icons/mentrixa-vocab-icons";
 
 export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
   const summary = summarizeMasteryGrid(data);
@@ -26,10 +29,13 @@ export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
             Grid
           </p>
           <p className="mt-1 text-sm font-medium italic text-violet-100/90">{data.subject}</p>
-          <p className={`mt-2 ${mentrixProfileType.statLabelOnDark}`}>
-            {summary.verifiedCount} verified · {summary.proficientCount} proficient ·{" "}
-            {summary.totalNodes} skills
-          </p>
+          <MasteryGridSummaryMetrics
+            className="mt-3"
+            verifiedCount={summary.verifiedCount}
+            proficientCount={summary.proficientCount}
+            totalNodes={summary.totalNodes}
+            surface="dark"
+          />
         </div>
         <Link
           href="/student/mastery"

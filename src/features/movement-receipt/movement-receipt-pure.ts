@@ -17,7 +17,7 @@ function plural(count: number, singular: string, pluralForm = `${singular}s`): s
   return count === 1 ? singular : pluralForm;
 }
 
-function formatGridMovementLine(grid: MovementReceiptData["grid"]): string {
+export function formatGridMovementLine(grid: MovementReceiptData["grid"]): string {
   if (grid.newlyVerifiedCount === 0 && grid.flippedToWeakCount === 0) {
     return "No new verified nodes on the grid this week.";
   }
@@ -34,6 +34,25 @@ function formatGridMovementLine(grid: MovementReceiptData["grid"]): string {
     );
   }
   return parts.join("; ") + ".";
+}
+
+/** Hub UI — drop the grid sentence when icons carry the same facts. */
+export function stripGridMovementFromVerdict(
+  verdict: string,
+  grid: MovementReceiptData["grid"],
+): string {
+  const gridLine = formatGridMovementLine(grid);
+  if (!gridLine) return verdict.trim();
+  return verdict
+    .replace(gridLine, "")
+    .replace(/\.\s*\./g, ".")
+    .replace(/^\.\s*/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+export function isGridDetailLine(line: string): boolean {
+  return line.startsWith("Grid:");
 }
 
 function formatLoopLine(loops: MovementReceiptData["loops"]): string | null {

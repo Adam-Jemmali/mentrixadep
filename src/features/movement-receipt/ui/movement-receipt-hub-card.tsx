@@ -8,7 +8,10 @@ import type { MovementReceiptData } from "@/features/movement-receipt/types";
 import {
   buildMovementReceiptDetailLines,
   buildMovementReceiptVerdict,
+  isGridDetailLine,
+  stripGridMovementFromVerdict,
 } from "@/features/movement-receipt/movement-receipt-pure";
+import { GridMovementVisual } from "@/features/movement-receipt/ui/grid-movement-visual";
 
 type MovementReceiptHubCardProps = {
   data: MovementReceiptData;
@@ -17,7 +20,10 @@ type MovementReceiptHubCardProps = {
 
 export function MovementReceiptHubCard({ data, momentumActive }: MovementReceiptHubCardProps) {
   const { verdict, nextAction, ctaHref, ctaLabel } = buildMovementReceiptVerdict(data);
-  const detailLines = momentumActive ? buildMovementReceiptDetailLines(data) : [];
+  const supplementalVerdict = stripGridMovementFromVerdict(verdict, data.grid);
+  const detailLines = momentumActive
+    ? buildMovementReceiptDetailLines(data).filter((line) => !isGridDetailLine(line))
+    : [];
 
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Movement receipt">
@@ -26,7 +32,12 @@ export function MovementReceiptHubCard({ data, momentumActive }: MovementReceipt
         Movement receipt
       </p>
       <p className="mt-1 text-xs text-zinc-500">Week of {data.weekStart}</p>
-      <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>
+      <div className="mt-3">
+        <GridMovementVisual grid={data.grid} surface="light" />
+      </div>
+      {supplementalVerdict ? (
+        <p className="mt-2 text-sm font-semibold text-zinc-900">{supplementalVerdict}</p>
+      ) : null}
       <p className="mt-1 text-sm text-zinc-600">{nextAction}</p>
 
       {detailLines.length > 0 ? (

@@ -6,7 +6,10 @@ import type { MovementReceiptRow } from "@/features/movement-receipt/types";
 import {
   buildMovementReceiptDetailLines,
   buildMovementReceiptVerdict,
+  isGridDetailLine,
+  stripGridMovementFromVerdict,
 } from "@/features/movement-receipt/movement-receipt-pure";
+import { GridMovementVisual } from "@/features/movement-receipt/ui/grid-movement-visual";
 
 export function ReceiptArchiveClient({
   receipts,
@@ -43,12 +46,20 @@ export function ReceiptArchiveClient({
           <ul className="space-y-4">
             {receipts.map((receipt) => {
               const { verdict, nextAction } = buildMovementReceiptVerdict(receipt.receipt_data);
-              const detailLines = buildMovementReceiptDetailLines(receipt.receipt_data);
+              const supplementalVerdict = stripGridMovementFromVerdict(verdict, receipt.receipt_data.grid);
+              const detailLines = buildMovementReceiptDetailLines(receipt.receipt_data).filter(
+                (line) => !isGridDetailLine(line),
+              );
               return (
                 <li key={receipt.id} className={`${mentrixStudent.card} p-5 sm:p-6`}>
                   <p className={mentrixStudent.sectionEyebrowOnLight}>Movement receipt</p>
                   <p className="mt-1 text-xs text-zinc-500">Week of {receipt.week_start}</p>
-                  <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>
+                  <div className="mt-3">
+                    <GridMovementVisual grid={receipt.receipt_data.grid} surface="light" />
+                  </div>
+                  {supplementalVerdict ? (
+                    <p className="mt-2 text-sm font-semibold text-zinc-900">{supplementalVerdict}</p>
+                  ) : null}
                   <p className="mt-1 text-sm text-zinc-600">{nextAction}</p>
                   {detailLines.length > 0 ? (
                     <ul className="mt-4 space-y-1.5 text-sm text-zinc-700">

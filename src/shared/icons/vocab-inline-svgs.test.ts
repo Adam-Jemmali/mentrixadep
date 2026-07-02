@@ -4,7 +4,16 @@ import { hasInlineVocabIcon, renderInlineVocabIcon } from "@/shared/icons/vocab-
 
 describe("vocab-inline-svgs", () => {
   it("inlines home, profile, booking, and momentum artwork", () => {
-    for (const name of ["home", "profile", "booking", "momentum", "momentum-membership"] as const) {
+    for (const name of [
+      "home",
+      "profile",
+      "booking",
+      "momentum",
+      "momentum-membership",
+      "unit",
+      "verified",
+      "skills",
+    ] as const) {
       expect(hasInlineVocabIcon(name)).toBe(true);
       const markup = renderToStaticMarkup(
         renderInlineVocabIcon(name, { size: 24, surface: "dark", gold: false }),
@@ -19,5 +28,12 @@ describe("vocab-inline-svgs", () => {
       renderInlineVocabIcon("profile", { size: 24, surface: "light", gold: false }),
     );
     expect(markup).toContain('stroke="#000000"');
+  });
+
+  it("uses gold strokes for verified truth on dark surfaces", () => {
+    const markup = renderToStaticMarkup(
+      renderInlineVocabIcon("verified", { size: 24, surface: "dark", gold: true }),
+    );
+    expect(markup).toContain('stroke="#D4A017"');
   });
 });

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildMovementReceiptDetailLines,
   buildMovementReceiptVerdict,
+  formatGridMovementLine,
+  isGridDetailLine,
   movementReceiptEmailSubject,
+  stripGridMovementFromVerdict,
 } from "@/features/movement-receipt/movement-receipt-pure";
 import type { MovementReceiptData } from "@/features/movement-receipt/types";
 
@@ -136,6 +139,25 @@ describe("buildMovementReceiptDetailLines", () => {
     expect(lines.some((l) => l.startsWith("Credit:"))).toBe(true);
     expect(lines.some((l) => l.startsWith("Retest:"))).toBe(true);
     expect(lines.some((l) => l.startsWith("Cohort:"))).toBe(true);
+  });
+});
+
+describe("formatGridMovementLine", () => {
+  it("strips grid movement from hub verdict copy", () => {
+    const grid = {
+      newlyVerifiedCount: 6,
+      flippedToWeakCount: 2,
+      verifiedTotalCount: 12,
+      priorWeekNewlyVerified: 1,
+    };
+    const gridLine = formatGridMovementLine(grid);
+    const verdict = `${gridLine} Up from 1 last week.`;
+    expect(stripGridMovementFromVerdict(verdict, grid)).toBe("Up from 1 last week.");
+  });
+
+  it("flags grid detail lines for icon replacement", () => {
+    expect(isGridDetailLine("Grid: 2 new verified · 12 total verified")).toBe(true);
+    expect(isGridDetailLine("Loops: 1 closed this week")).toBe(false);
   });
 });
 

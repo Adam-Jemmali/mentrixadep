@@ -14,7 +14,10 @@ import {
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 import { Input } from "@/shared/ui/input";
 import { skillTreeUnitTriggerLabel } from "@/shared/ui/accordion-messages-pure";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  MentrixaVocabIcon,
+  VocabCountMetric,
+} from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 function VocabMetric({
@@ -22,28 +25,24 @@ function VocabMetric({
   icon,
   label,
   gold,
-  iconClassName,
+  surface = "dark",
 }: {
   value: number | string;
   icon: VocabIconName;
   label: string;
   gold?: boolean;
-  iconClassName?: string;
+  surface?: "dark" | "light";
 }) {
   return (
-    <span
-      className="inline-flex min-w-[3.5rem] flex-col items-center gap-1.5"
-      aria-label={`${value} ${label}`}
-      title={`${value} ${label}`}
-    >
-      <span className="text-xl font-black tabular-nums leading-none text-violet-50 sm:text-2xl">{value}</span>
-      <MentrixaVocabIcon
-        name={icon}
-        size={32}
-        gold={gold}
-        className={iconClassName ?? "text-violet-200"}
-      />
-    </span>
+    <VocabCountMetric
+      value={value}
+      icon={icon}
+      label={label}
+      gold={gold}
+      surface={surface}
+      iconSize={32}
+      valueClassName="text-xl font-black tabular-nums leading-none text-violet-50 sm:text-2xl"
+    />
   );
 }
 
@@ -91,14 +90,14 @@ export function MasteryGridExplorer({
               aria-label="Back to home"
               title="Back to home"
             >
-              <MentrixaVocabIcon name="home" size={32} className="text-violet-100" />
+              <MentrixaVocabIcon name="home" size={32} surface="dark" title="Home" />
             </Link>
             <h1 className="mt-3 flex items-center" aria-label="Skill tree">
-              <MentrixaVocabIcon name="skills" size={36} className="text-violet-200" />
+              <MentrixaVocabIcon name="skills" size={36} surface="dark" title="Skills" />
               <span className="sr-only">Skill tree</span>
             </h1>
             <p className={`mt-1 ${mentrixProfileType.pageSubtitleOnDark}`}>
-              One subject, one unit at a time. Search scales to hundreds of skills without stacking the home page.
+              One subject, one unit at a time.
             </p>
           </div>
           <div className={`${mentrixProfileType.statLabelOnDark} flex flex-wrap items-end justify-start gap-5 sm:justify-end`}>
@@ -107,7 +106,11 @@ export function MasteryGridExplorer({
               icon="verified"
               label="verified"
               gold
-              iconClassName="text-amber-300"
+            />
+            <VocabMetric
+              value={summary.proficientCount}
+              icon="practice-pack"
+              label="proficient"
             />
             <VocabMetric value={summary.totalNodes} icon="skills" label="skills" />
             <VocabMetric value={data.units.length} icon="unit" label="units" />
@@ -168,7 +171,8 @@ export function MasteryGridExplorer({
                       <MentrixaVocabIcon
                         name="unit"
                         size={24}
-                        className={active ? "text-violet-50" : "text-violet-200"}
+                        surface="dark"
+                        title={`Unit ${unit.unitNumber}`}
                       />
                       <span
                         className={cn(
