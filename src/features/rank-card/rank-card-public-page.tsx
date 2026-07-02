@@ -11,6 +11,7 @@ import { RankBreakdownPopover } from "@/shared/ui/popover-patterns";
 import { passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const VERIFIED_GOLD = "#D4A017";
 
@@ -94,8 +95,11 @@ export function RankCardPublicPage({ data }: { data: RankCardData }) {
         <PassportVerdictHeadline verdict={data.passportVerdict} />
         {data.verifiedSkillCount > 0 ? (
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <p className="font-mono text-xs tabular-nums text-slate-500">
-              {rankProofsCountLabel(data.verifiedSkillCount)}
+            <p className="inline-flex flex-wrap items-center gap-2 font-mono text-xs tabular-nums text-slate-500">
+              <span className="inline-flex items-center gap-1">
+                <MentrixaVocabIcon name="rank-proof" size={14} gold className="text-amber-400" />
+                {rankProofsCountLabel(data.verifiedSkillCount)}
+              </span>
               {data.verifiedPercentile != null
                 ? ` · ${Math.round(data.verifiedPercentile)}th percentile cohort accuracy`
                 : ""}

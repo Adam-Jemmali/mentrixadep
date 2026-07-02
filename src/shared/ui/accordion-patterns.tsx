@@ -53,6 +53,7 @@ export function MentrixaAccordionItem({
   id,
   title,
   meta,
+  leadingIcon,
   children,
   verdict,
   nextAction,
@@ -62,6 +63,7 @@ export function MentrixaAccordionItem({
   id: string;
   title: string;
   meta?: string;
+  leadingIcon?: ReactNode;
   children: ReactNode;
   verdict?: string;
   nextAction?: string;
@@ -72,6 +74,7 @@ export function MentrixaAccordionItem({
     <Accordion.Item id={id} isDisabled={isDisabled} className={cn("mentrixa-accordion__item", className)}>
       <Accordion.Heading>
         <Accordion.Trigger className="mentrixa-accordion__trigger">
+          {leadingIcon ? <span className="mr-2 shrink-0 self-start pt-0.5">{leadingIcon}</span> : null}
           <span className="min-w-0 flex-1 text-left">
             <span className="block text-sm font-semibold leading-snug">{title}</span>
             {meta ? (

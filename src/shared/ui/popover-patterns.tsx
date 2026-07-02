@@ -12,6 +12,9 @@ import {
   MentrixaBrandMark,
   type MentrixaBrandKind,
 } from "@/shared/ui/mentrixa-ui-brand";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { RANK_PROOFS_LABEL } from "@/features/xp/rank-proofs-labels";
 import {
   masteryNodeDetailPopoverMessage,
   masteryNodeDetailStateLabel,
@@ -38,6 +41,8 @@ export function MentrixaPopover({
   nextAction,
   tone = "light",
   brandKind,
+  vocabIcon,
+  vocabIconGold = false,
   placement = "bottom",
   className,
   contentClassName,
@@ -49,6 +54,8 @@ export function MentrixaPopover({
   nextAction?: string;
   tone?: MentrixaPopoverTone;
   brandKind?: MentrixaBrandKind;
+  vocabIcon?: VocabIconName;
+  vocabIconGold?: boolean;
   placement?: "top" | "bottom" | "left" | "right";
   className?: string;
   contentClassName?: string;
@@ -60,7 +67,16 @@ export function MentrixaPopover({
         <Popover.Dialog className={cn("mentrixa-popover", TONE_CLASS[tone])}>
           <Popover.Arrow className="mentrixa-popover__arrow" />
           <Popover.Heading className="mentrixa-popover__heading flex items-center gap-2">
-            {brandKind ? <MentrixaBrandMark kind={brandKind} size="xs" className="opacity-85" /> : null}
+            {vocabIcon ? (
+              <MentrixaVocabIcon
+                name={vocabIcon}
+                size={16}
+                gold={vocabIconGold}
+                className={vocabIconGold ? "text-amber-300" : "text-current opacity-85"}
+              />
+            ) : brandKind ? (
+              <MentrixaBrandMark kind={brandKind} size="xs" className="opacity-85" />
+            ) : null}
             <span>{title}</span>
           </Popover.Heading>
           <div className="mentrixa-popover__body mt-2 text-sm leading-relaxed">{children}</div>
@@ -81,6 +97,8 @@ function MentrixaPopoverFromMessage({
   trigger,
   tone = "light",
   brandKind,
+  vocabIcon,
+  vocabIconGold = false,
   children,
   placement,
   className,
@@ -90,6 +108,8 @@ function MentrixaPopoverFromMessage({
   trigger: ReactNode;
   tone?: MentrixaPopoverTone;
   brandKind?: MentrixaBrandKind;
+  vocabIcon?: VocabIconName;
+  vocabIconGold?: boolean;
   children: ReactNode;
   placement?: "top" | "bottom" | "left" | "right";
   className?: string;
@@ -103,6 +123,8 @@ function MentrixaPopoverFromMessage({
       nextAction={message.nextAction}
       tone={tone}
       brandKind={brandKind}
+      vocabIcon={vocabIcon}
+      vocabIconGold={vocabIconGold}
       placement={placement}
       className={className}
       contentClassName={contentClassName}
@@ -149,7 +171,12 @@ export function RankBreakdownPopover({
       <dl className="space-y-2">
         {rows.map((row) => (
           <div key={row.label} className="flex items-center justify-between gap-3 text-xs">
-            <dt className="text-inherit opacity-80">{row.label}</dt>
+            <dt className="inline-flex items-center gap-1.5 text-inherit opacity-80">
+              {row.label === RANK_PROOFS_LABEL ? (
+                <MentrixaVocabIcon name="rank-proof" size={14} gold className="text-amber-300" />
+              ) : null}
+              {row.label}
+            </dt>
             <dd className="font-mono font-semibold tabular-nums">{row.value}</dd>
           </div>
         ))}
@@ -218,11 +245,14 @@ export function MasteryNodeDetailPopover({
 }) {
   const message = masteryNodeDetailPopoverMessage(nodeName, state, accuracyPercent);
 
+  const headerIcon: VocabIconName = state === "verified" ? "verified" : "mastery-grid";
+
   return (
     <MentrixaPopoverFromMessage
       message={message}
       tone={tone}
-      brandKind="mentrixer"
+      vocabIcon={headerIcon}
+      vocabIconGold={state === "verified"}
       placement={placement}
       className={className}
       trigger={<span className="block min-w-0 w-full cursor-pointer">{children}</span>}

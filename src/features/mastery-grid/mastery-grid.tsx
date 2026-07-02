@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData, MasteryGridNode, MasteryNodeState } from "@/features/mastery-grid/types";
@@ -19,6 +19,7 @@ import {
 } from "@/shared/ui/accordion-patterns";
 import { SkillNodeStrengthMeter } from "@/shared/ui/meter-patterns";
 import { MasteryNodeDetailPopover } from "@/shared/ui/popover-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const STATE_SQUARE_CLASS: Record<MasteryNodeState, string> = {
   none: "bg-slate-700/70 border-slate-600/40",
@@ -27,12 +28,35 @@ const STATE_SQUARE_CLASS: Record<MasteryNodeState, string> = {
   verified: "border-[#D4A017]/90",
 };
 
-const LEGEND_ITEMS = [
-  { label: "Not started", className: STATE_SQUARE_CLASS.none },
-  { label: "Under 70%", className: STATE_SQUARE_CLASS.weak },
-  { label: "70% or higher", className: STATE_SQUARE_CLASS.proficient },
-  { label: "Verified", className: STATE_SQUARE_CLASS.verified, gold: true },
-] as const;
+const LEGEND_ITEMS: { label: string; state: MasteryNodeState }[] = [
+  { label: "Not started", state: "none" },
+  { label: "Under 70%", state: "weak" },
+  { label: "70% or higher", state: "proficient" },
+  { label: "Verified", state: "verified" },
+];
+
+function MasteryLegendGlyph({ state }: { state: MasteryNodeState }) {
+  if (state === "verified") {
+    return (
+      <span
+        className={cn(
+          "inline-flex h-3 w-3 items-center justify-center rounded-[2px] border",
+          STATE_SQUARE_CLASS.verified,
+        )}
+        style={squareStyle("verified")}
+        aria-hidden
+      >
+        <MentrixaVocabIcon name="verified" size={9} gold className="text-[#0B1220]" />
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn("h-2.5 w-2.5 rounded-[2px] border", STATE_SQUARE_CLASS[state])}
+      aria-hidden
+    />
+  );
+}
 
 function squareStyle(state: MasteryNodeState): CSSProperties | undefined {
   return state === "verified" ? { backgroundColor: `${VERIFIED_GOLD}E6` } : undefined;
@@ -102,10 +126,11 @@ function MasterySquare({
       style={squareStyle(displayState)}
     >
       {showVerifiedGlyph ? (
-        <Check
-          className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 text-[#0B1220]"
-          strokeWidth={3}
-          aria-hidden
+        <MentrixaVocabIcon
+          name="verified"
+          size={10}
+          gold
+          className="absolute bottom-0 right-0 text-[#0B1220]"
         />
       ) : null}
       </div>
@@ -118,11 +143,7 @@ function MasteryGridLegend() {
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       {LEGEND_ITEMS.map((item) => (
         <span key={item.label} className="inline-flex items-center gap-1.5 text-[10px] text-slate-400">
-          <span
-            className={cn("h-2.5 w-2.5 rounded-[2px] border", item.className)}
-            style={"gold" in item && item.gold ? squareStyle("verified") : undefined}
-            aria-hidden
-          />
+          <MasteryLegendGlyph state={item.state} />
           {item.label}
         </span>
       ))}
@@ -227,6 +248,9 @@ function MasteryGridUnits({
             id={`unit-${unit.unitNumber}`}
             title={skillTreeUnitTriggerLabel(unit.unitNumber, unit.unitName)}
             meta={skillTreeUnitTriggerMeta(unit.nodes)}
+            leadingIcon={
+              <MentrixaVocabIcon name="unit" size={16} className="text-violet-300" />
+            }
             verdict={footer.verdict}
             nextAction={footer.nextAction}
             className="overflow-hidden"
@@ -298,7 +322,10 @@ export function MasteryGrid({
       aria-label="AP Calculus AB mastery grid"
       aria-readonly={readOnly || undefined}
     >
-      <p className={mentrixStudent.sectionEyebrow}>Mastery grid</p>
+      <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-1.5`}>
+        <MentrixaVocabIcon name="mastery-grid" size={14} className="text-violet-300" />
+        Mastery grid
+      </p>
       <p className="mt-1 text-sm text-violet-100/90">{data.subject}</p>
 
       {showLegend ? (

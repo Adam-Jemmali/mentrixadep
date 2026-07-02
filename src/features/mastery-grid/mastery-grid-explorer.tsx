@@ -14,6 +14,7 @@ import {
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 import { Input } from "@/shared/ui/input";
 import { skillTreeUnitTriggerLabel } from "@/shared/ui/accordion-messages-pure";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 type SubjectOption = {
   key: string;
@@ -56,13 +57,29 @@ export function MasteryGridExplorer({
             <Link href="/student" className={mentrixProfileType.linkOnDark}>
               Back to home
             </Link>
-            <h1 className={`mt-2 ${mentrixProfileType.pageTitleOnDark}`}>Skill tree</h1>
+            <h1 className={`mt-2 inline-flex items-center gap-2 ${mentrixProfileType.pageTitleOnDark}`}>
+              <MentrixaVocabIcon name="skills" size={22} className="text-violet-300" />
+              Skill tree
+            </h1>
             <p className={`mt-1 ${mentrixProfileType.pageSubtitleOnDark}`}>
               One subject, one unit at a time. Search scales to hundreds of skills without stacking the home page.
             </p>
           </div>
-          <p className={mentrixProfileType.statLabelOnDark}>
-            {summary.verifiedCount} verified · {summary.totalNodes} skills · {data.units.length} units
+          <p className={`${mentrixProfileType.statLabelOnDark} inline-flex flex-wrap items-center gap-2`}>
+            <span className="inline-flex items-center gap-1">
+              <MentrixaVocabIcon name="verified" size={12} gold className="text-amber-300" />
+              {summary.verifiedCount} verified
+            </span>
+            <span className="text-violet-400/50">·</span>
+            <span className="inline-flex items-center gap-1">
+              <MentrixaVocabIcon name="skills" size={12} className="text-violet-300" />
+              {summary.totalNodes} skills
+            </span>
+            <span className="text-violet-400/50">·</span>
+            <span className="inline-flex items-center gap-1">
+              <MentrixaVocabIcon name="unit" size={12} className="text-violet-300" />
+              {data.units.length} units
+            </span>
           </p>
         </div>
 
@@ -116,13 +133,20 @@ export function MasteryGridExplorer({
                         : "border-indigo-500/30 bg-indigo-950/50 text-violet-100 hover:border-violet-400/45 hover:bg-violet-950/60",
                     )}
                   >
-                    <span
-                      className={cn(
-                        "text-[11px] font-semibold uppercase tracking-wide",
-                        active ? "text-violet-100" : "text-violet-300/70",
-                      )}
-                    >
-                      Unit {unit.unitNumber}
+                    <span className="inline-flex w-full items-center gap-1.5">
+                      <MentrixaVocabIcon
+                        name="unit"
+                        size={12}
+                        className={active ? "text-violet-100" : "text-violet-300/80"}
+                      />
+                      <span
+                        className={cn(
+                          "text-[11px] font-semibold uppercase tracking-wide",
+                          active ? "text-violet-100" : "text-violet-300/70",
+                        )}
+                      >
+                        Unit {unit.unitNumber}
+                      </span>
                     </span>
                     <span className="line-clamp-2 text-xs font-semibold">{unit.unitName}</span>
                     <span

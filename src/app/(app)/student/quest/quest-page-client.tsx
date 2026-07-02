@@ -16,6 +16,7 @@ import {
 import { OnboardingStepsProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { VerifiedFirstAttemptAlert } from "@/shared/ui/alert-patterns";
 import { VerifiedFirstAttemptDisclosure } from "@/shared/ui/disclosure-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 export function QuestPageClient({
   subjectOptions,
@@ -68,7 +69,8 @@ export function QuestPageClient({
 
       {!diagnosticMode ? (
         <div className="mb-8">
-          <p className={mentrixStudent.sectionEyebrow}>
+          <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-1.5`}>
+            <MentrixaVocabIcon name="quest" size={14} className="text-violet-300" />
             {guestMode ? questGuestPageEyebrow() : questPageEyebrow()}
           </p>
           <h1 className={`mt-2 ${mentrixStudent.pageTitle}`}>{questPageTitle()}</h1>

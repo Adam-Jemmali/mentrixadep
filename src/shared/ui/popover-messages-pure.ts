@@ -71,8 +71,8 @@ export function masteryNodeDetailPopoverMessage(
   if (state === "verified") {
     return {
       title: nodeName,
-      verdict: "",
-      nextAction: "",
+      verdict: "Locked for rank — your first attempt is permanent.",
+      nextAction: "Practice here for fluency; it will not change your verified mark.",
     };
   }
   if (accuracyPercent != null) {

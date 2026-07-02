@@ -48,6 +48,7 @@ import {
   VerifiedFirstAttemptDisclosure,
 } from "@/shared/ui/disclosure-patterns";
 import { QuestPracticeToolsDrawer } from "@/features/quest/ui/quest-practice-tools-drawer";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "beginner", label: "Beginner" },
@@ -407,11 +408,22 @@ export function QuestPracticeWorkspace({
           </div>
         ) : null}
         <div className={`${mentrixStudent.card} p-6 sm:p-8`}>
-        <p className={mentrixStudent.sectionEyebrow}>
+        <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-1.5`}>
+          <MentrixaVocabIcon name="quest" size={14} className="text-violet-300" />
           {onboardingMode ? "First quest" : "Practice packs"}
         </p>
-        <h1 className={`mt-2 ${mentrixProfileType.cardTitleOnDark}`}>
-          {onboardingMode ? "Your first verified skills" : "Verified practice pack"}
+        <h1 className={`mt-2 inline-flex flex-wrap items-center gap-2 ${mentrixProfileType.cardTitleOnDark}`}>
+          {onboardingMode ? (
+            <>
+              <MentrixaVocabIcon name="verified" size={18} gold className="text-amber-300" />
+              Your first verified skills
+            </>
+          ) : (
+            <>
+              <MentrixaVocabIcon name="verified" size={18} gold className="text-amber-300" />
+              Verified practice pack
+            </>
+          )}
         </h1>
         <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
           {onboardingMode
