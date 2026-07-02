@@ -35,6 +35,8 @@ import {
   playMentrixaLoadingOnce,
   unlockMentrixaAudioFromUserGesture,
 } from "@/shared/integrations/mentrixa-sounds";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 const BubbleText = dynamic(
   () => import("@/shared/ui/bubble-text").then((m) => ({ default: m.BubbleText })),
@@ -53,13 +55,17 @@ function isArenaNavLink(link: string): boolean {
   return ARENA_NAV_LINKS.has(link);
 }
 
-const STUDENT_NAV_ITEMS = [
-  { name: "Home", link: "/student" },
-  { name: "Skills", link: "/student/mastery" },
-  { name: "Quest", link: "/student/quest" },
-  { name: "League", link: "/student/division" },
-  { name: "Duels", link: "/student/duel" },
+const STUDENT_NAV_ITEMS: { name: string; link: string; icon: VocabIconName }[] = [
+  { name: "Home", link: "/student", icon: "home" },
+  { name: "Skills", link: "/student/mastery", icon: "skills" },
+  { name: "Quest", link: "/student/quest", icon: "quest" },
+  { name: "League", link: "/student/division", icon: "league" },
+  { name: "Duels", link: "/student/duel", icon: "duels" },
 ];
+
+function navItemIcon(name: VocabIconName) {
+  return <MentrixaVocabIcon name={name} size={16} className="text-violet-200" />;
+}
 
 function getInitials(displayName: string | null | undefined, email?: string | null): string {
   const name = displayName?.trim();
@@ -207,7 +213,10 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
           </Link>
           
           <NavItems 
-            items={STUDENT_NAV_ITEMS}
+            items={STUDENT_NAV_ITEMS.map((item) => ({
+              ...item,
+              icon: navItemIcon(item.icon),
+            }))}
             onItemClick={handleNavItemClick}
             onItemPointerDown={handleArenaNavPointerDown}
             onItemHover={handleArenaNavHover}
@@ -241,15 +250,17 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 <Link
                   href={profileHref}
                   onClick={() => setProfileMenuOpen(false)}
-                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+                  className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
+                  <MentrixaVocabIcon name="profile" size={18} className="text-slate-600" />
                   View Profile
                 </Link>
                 <Link
                   href="/student/subscribe"
                   onClick={() => setProfileMenuOpen(false)}
-                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+                  className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
+                  <MentrixaVocabIcon name="momentum-membership" size={18} className="text-slate-600" />
                   Momentum membership
                 </Link>
                 <ArenaMusicMuteToggle variant="menu" />
@@ -307,8 +318,9 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                     setProfileMenuOpen(false);
                     setMobileNavOpen(false);
                   }}
-                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+                  className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
+                  <MentrixaVocabIcon name="profile" size={18} className="text-slate-600" />
                   View Profile
                 </Link>
                 <Link
@@ -317,8 +329,9 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                     setProfileMenuOpen(false);
                     setMobileNavOpen(false);
                   }}
-                  className="block px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
+                  className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
+                  <MentrixaVocabIcon name="momentum-membership" size={18} className="text-slate-600" />
                   Momentum membership
                 </Link>
                 <div className="border-t border-slate-100">
@@ -347,12 +360,13 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   onMouseEnter={() => handleArenaNavHover(item)}
                   onClick={() => handleNavItemClick(item)}
                   className={cn(
-                    "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex flex-col items-center gap-1 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors sm:flex-row sm:gap-2 sm:py-2",
                     isActive(item.link)
                       ? "border border-violet-400/50 bg-gradient-to-r from-[#7C3AED]/35 to-[#6366F1]/35 text-white"
                       : "text-white/95 hover:bg-violet-500/10 hover:text-white"
                   )}
                 >
+                  {navItemIcon(item.icon)}
                   <BubbleText text={item.name} className="text-current" />
                 </Link>
               ))}

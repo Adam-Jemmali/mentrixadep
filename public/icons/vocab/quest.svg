@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Quest">
+<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M14 8h20l4 6v26H10V14l4-6Z" stroke-width="1.9"/>
+  <line x1="18" y1="8" x2="18" y2="14"/>
+  <line x1="30" y1="8" x2="30" y2="14"/>
+  <circle cx="24" cy="26" r="7" stroke-width="2.1"/>
+  <path d="M24 22v4l2.5 2.5"/>
+  <polygon points="34,12 36,16 40,16 37,19 38,23 34,21 30,23 31,19 28,16 32,16" fill="currentColor" stroke="none" opacity="0.85"/>
+</g>
+</svg>

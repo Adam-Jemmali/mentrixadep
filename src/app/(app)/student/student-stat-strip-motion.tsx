@@ -1,7 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { BubbleText } from "@/shared/ui/bubble-text";
 
@@ -10,6 +10,8 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/xp/components/rank-badge";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 const container = {
   hidden: { opacity: 0 },
@@ -25,6 +27,27 @@ const item = {
 };
 
 const statCard = `${mentrixBrandUi.panel} flex rounded-2xl px-4 py-4 sm:px-5`;
+
+function StatValue({
+  icon,
+  children,
+  iconClassName,
+}: {
+  icon: VocabIconName;
+  children: ReactNode;
+  iconClassName?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <MentrixaVocabIcon
+        name={icon}
+        size={20}
+        className={iconClassName ?? "shrink-0 text-violet-300"}
+      />
+      {children}
+    </div>
+  );
+}
 
 export function StudentStatStripMotion({
   totalXp,
@@ -69,7 +92,8 @@ export function StudentStatStripMotion({
             <p className="truncate text-sm font-bold uppercase tracking-wide text-violet-50">
               {normalizeRankTitle(accountRank.title)}
             </p>
-            <span className="mt-0.5 block text-[11px] uppercase tracking-wide text-violet-300/75">
+            <span className="mt-0.5 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-violet-300/75">
+              <MentrixaVocabIcon name="xp" size={14} className="shrink-0 text-violet-300" />
               <BubbleText
                 text={`${totalXp.toLocaleString()} XP earned`}
                 activeColor="text-indigo-300"
@@ -82,12 +106,14 @@ export function StudentStatStripMotion({
 
       <motion.div variants={item}>
         <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold tabular-nums text-white">
-              {questAccuracy ? `${questAccuracy.accuracyPercent}%` : "—"}
-            </span>
-            {trendArrow && <span className={`text-lg font-bold ${trendColor}`}>{trendArrow}</span>}
-          </div>
+          <StatValue icon="quest">
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold tabular-nums text-white">
+                {questAccuracy ? `${questAccuracy.accuracyPercent}%` : "—"}
+              </span>
+              {trendArrow ? <span className={`text-lg font-bold ${trendColor}`}>{trendArrow}</span> : null}
+            </div>
+          </StatValue>
           <span className="mt-1 line-clamp-1 text-[11px] uppercase tracking-wide text-violet-300/75">
             <BubbleText
               text={`${questAccuracy?.subject || "Quest"} Accuracy`}
@@ -100,7 +126,9 @@ export function StudentStatStripMotion({
 
       <motion.div variants={item}>
         <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
-          <span className="text-2xl font-bold tabular-nums text-white">{sessionsCompleted}</span>
+          <StatValue icon="session">
+            <span className="text-2xl font-bold tabular-nums text-white">{sessionsCompleted}</span>
+          </StatValue>
           <span className="mt-1 text-[11px] uppercase tracking-wide text-violet-300/75">
             <BubbleText
               text="Sessions completed"
@@ -113,7 +141,9 @@ export function StudentStatStripMotion({
 
       <motion.div variants={item}>
         <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
-          <span className="text-2xl font-bold tabular-nums text-white">{ratingLabel}</span>
+          <StatValue icon="session">
+            <span className="text-2xl font-bold tabular-nums text-white">{ratingLabel}</span>
+          </StatValue>
           <span className="mt-1 text-[11px] uppercase tracking-wide text-violet-300/75">
             <BubbleText
               text="Avg. session rating"
@@ -130,17 +160,14 @@ export function StudentStatStripMotion({
           scale={1.04}
           className={`${statCard} flex-col ${streakAtRisk ? "ring-2 ring-amber-400/70" : ""}`}
         >
-          <span className="flex items-center gap-2">
-            <Image
-              src="/images/live.webp"
-              alt="Streak"
-              width={20}
-              height={20}
-              className={`shrink-0 ${streakAtRisk ? "opacity-100" : "opacity-70"}`}
-            />
+          <StatValue
+            icon="streak"
+            iconClassName={cnStreakIcon(streakAtRisk)}
+          >
             <span className="text-2xl font-bold tabular-nums text-white">{streak}</span>
-          </span>
-          <span className="mt-1 text-[11px] uppercase tracking-wide text-violet-300/75">
+          </StatValue>
+          <span className="mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-violet-300/75">
+            <MentrixaVocabIcon name="streak" size={12} className={cnStreakIcon(streakAtRisk)} />
             <BubbleText
               text={streakAtRisk ? "Streak · log today" : "Day streak"}
               activeColor="text-indigo-300"
@@ -151,4 +178,8 @@ export function StudentStatStripMotion({
       </motion.div>
     </motion.div>
   );
+}
+
+function cnStreakIcon(streakAtRisk: boolean) {
+  return streakAtRisk ? "shrink-0 text-amber-300" : "shrink-0 text-violet-300 opacity-80";
 }

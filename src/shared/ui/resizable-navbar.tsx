@@ -30,6 +30,7 @@ type NavItemsProps = {
   items: {
     name: string;
     link: string;
+    icon?: React.ReactNode;
   }[];
   className?: string;
   onItemClick?: (item: { name: string; link: string }) => void;
@@ -167,7 +168,8 @@ export const NavItems = ({
             className="absolute inset-0 h-full w-full rounded-full bg-violet-500/15"
           />
         ))}
-      <span className="relative z-20">
+      <span className="relative z-20 inline-flex items-center gap-1.5">
+        {item.icon ? <span className="shrink-0 opacity-90">{item.icon}</span> : null}
         <BubbleText text={item.name} className="text-current" />
       </span>
     </Link>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="210 25 260 260" role="img" aria-label="Practitioner Guide rank">
+<g transform="translate(340,155)" fill="none" stroke="#64748B">
+
+  <!-- Frame: entry ring pair -->
+  <circle r="96" stroke-width="2" stroke-opacity="0.35"/>
+  <circle r="72" stroke-width="1.5" stroke-opacity="0.2"/>
+
+  <!-- Cardinal ticks -->
+  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="96" y1="0" x2="82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="0" y1="96" x2="0" y2="82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+
+  <!-- Ordinal ticks -->
+  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
+  <line x1="68" y1="68" x2="61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
+  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
+  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
+
+  <!-- Torch handle -->
+  <line x1="0" y1="38" x2="0" y2="-8" stroke-width="3" stroke-linecap="round" stroke-opacity="0.85"/>
+  <ellipse cx="0" cy="40" rx="8" ry="4" stroke-width="2" stroke-opacity="0.5"/>
+
+  <!-- Flame: three layered petals -->
+  <path d="M0,-52 C-14,-36 -18,-18 -10,-8 C-6,-22 0,-28 0,-52Z" fill="#64748B" fill-opacity="0.55" stroke="none"/>
+  <path d="M0,-52 C14,-36 18,-18 10,-8 C6,-22 0,-28 0,-52Z" fill="#64748B" fill-opacity="0.4" stroke="none"/>
+  <path d="M0,-56 C-6,-40 0,-30 6,-40 C4,-48 0,-52 0,-56Z" fill="#64748B" fill-opacity="0.85" stroke="none"/>
+
+  <!-- Ember spark -->
+  <circle cx="0" cy="-6" r="3" fill="#64748B" fill-opacity="0.7" stroke="none"/>
+
+</g>
+</svg>

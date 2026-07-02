@@ -5,6 +5,7 @@ import { getGuideRankDefinition } from "@/features/guide-rank/constants";
 describe("guide rank ladder", () => {
   it("maps expert rank styling", () => {
     expect(getGuideRankDefinition("expert").label).toBe("EXPERT");
+    expect(getGuideRankDefinition("expert").iconSrc).toBe("/icons/guide-ranks/expert.svg");
   });
 
   it("computes progress toward expert from specialist", () => {

@@ -12,8 +12,12 @@ export type GuideRankDefinition = {
   minImpactScore: number | null;
   topPercentile: boolean;
   color: string;
+  iconSrc: string;
   badgeClass: string;
 };
+
+/** Square crop centered on emblem (matches all Guide rank SVG root viewBox). */
+export const GUIDE_RANK_SVG_VIEWBOX = "210 25 260 260";
 
 export const GUIDE_RANKS: GuideRankDefinition[] = [
   {
@@ -23,6 +27,7 @@ export const GUIDE_RANKS: GuideRankDefinition[] = [
     minImpactScore: null,
     topPercentile: false,
     color: "#64748B",
+    iconSrc: "/icons/guide-ranks/practitioner.svg",
     badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
   },
   {
@@ -32,6 +37,7 @@ export const GUIDE_RANKS: GuideRankDefinition[] = [
     minImpactScore: 70,
     topPercentile: false,
     color: "#2563EB",
+    iconSrc: "/icons/guide-ranks/specialist.svg",
     badgeClass: "border-blue-200 bg-blue-50 text-blue-800",
   },
   {
@@ -41,6 +47,7 @@ export const GUIDE_RANKS: GuideRankDefinition[] = [
     minImpactScore: 80,
     topPercentile: false,
     color: "#4F46E5",
+    iconSrc: "/icons/guide-ranks/expert.svg",
     badgeClass: "border-indigo-200 bg-indigo-50 text-indigo-900",
   },
   {
@@ -50,6 +57,7 @@ export const GUIDE_RANKS: GuideRankDefinition[] = [
     minImpactScore: 90,
     topPercentile: false,
     color: "#7C3AED",
+    iconSrc: "/icons/guide-ranks/master.svg",
     badgeClass: "border-violet-200 bg-violet-50 text-violet-900",
   },
   {
@@ -59,6 +67,7 @@ export const GUIDE_RANKS: GuideRankDefinition[] = [
     minImpactScore: null,
     topPercentile: true,
     color: "#D4A017",
+    iconSrc: "/icons/guide-ranks/elite.svg",
     badgeClass: "border-amber-300/80 bg-amber-50 text-amber-950 ring-1 ring-amber-200/60",
   },
 ];

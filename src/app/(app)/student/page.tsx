@@ -22,6 +22,7 @@ import {
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
@@ -46,7 +47,6 @@ import {
 } from "@/features/student-profile/student-dashboard-helpers";
 import { getUpcomingSessionBriefs } from "@/features/pre-session-brief/brief";
 import { Button } from "@/shared/ui/button";
-import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 import {
   getGuideImpactScoresMap,
@@ -253,7 +253,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     {streak > 0 ? (
                       <>
                         <span className="text-white/50"> · </span>
-                        {streak}d streak
+                        <span className="inline-flex items-center gap-1">
+                          <MentrixaVocabIcon name="streak" size={12} className="text-amber-200" />
+                          {streak}d streak
+                        </span>
                       </>
                     ) : null}
                   </p>
@@ -265,7 +268,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               </div>
 
               {streak > 0 && (
-                <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${streakAtRisk ? "text-amber-100" : "text-white/90"}`}>
+                <p className={`inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] ${streakAtRisk ? "text-amber-100" : "text-white/90"}`}>
+                  <MentrixaVocabIcon name="streak" size={14} className={streakAtRisk ? "text-amber-200" : "text-white/80"} />
                   {streakAtRisk
                     ? "Keep your streak alive !"
                     : `${streak}-day streak active`}
@@ -280,14 +284,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     href={`/student/${user.id}`}
                     className="inline-flex min-h-11 items-center gap-1.5 px-3"
                   >
-                    <img
-                      src="/icons/mentrixer.svg"
-                      alt=""
-                      width={14}
-                      height={14}
-                      className="size-3.5 shrink-0 opacity-80"
-                      aria-hidden
-                    />
+                    <MentrixaVocabIcon name="profile" size={16} className="text-white/85" />
                     Profile & Settings
                   </Link>
                 </Button>
@@ -296,7 +293,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     href="/student/quest"
                     className="inline-flex min-h-11 items-center gap-1.5 px-3"
                   >
-                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" aria-hidden />
+                    <MentrixaVocabIcon name="quest" size={16} className="text-white/90" />
                     Daily quest
                   </Link>
                 </Button>
@@ -305,7 +302,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     href="#browse-guides"
                     className="inline-flex min-h-11 items-center gap-1.5 px-3"
                   >
-                    <img src={MENTRIXA_LOGO_PNG} alt="" width={16} height={16} className="h-4 w-4 shrink-0" aria-hidden />
+                    <MentrixaVocabIcon name="booking" size={16} className="text-white/85" />
                     Book session
                   </Link>
                 </Button>
