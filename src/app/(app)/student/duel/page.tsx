@@ -9,6 +9,7 @@ import { YourDuelsList } from "@/features/student-profile/ui/your-duels-list";
 import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 export const metadata = { title: "Skill duels · Mentrixa" };
 
@@ -91,7 +92,10 @@ export default async function StudentDuelsPage() {
     <div className={mentrixStudent.pageBgArena}>
       <div className={mentrixStudent.mainWide}>
         <div className="mb-10">
-          <p className={mentrixStudent.sectionEyebrow}>PvP training</p>
+          <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-2`}>
+            <MentrixaVocabIcon name="duels" size={16} className="text-violet-300" />
+            PvP training
+          </p>
           <h1 className={`mt-2 ${mentrixProfileType.pageTitleDisplay}`}>
             AP Calculus AB duels
           </h1>
@@ -103,7 +107,8 @@ export default async function StudentDuelsPage() {
         {stats && stats.totalCompleted > 0 ? (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className={mentrixProfileType.statLabel}>
+              <p className={`${mentrixProfileType.statLabel} inline-flex items-center gap-1.5`}>
+                <MentrixaVocabIcon name="duels" size={14} className="text-violet-300" title="Record" />
                 Record
               </p>
               <div className="mt-1 h-12 w-full max-w-[200px]">
@@ -113,11 +118,13 @@ export default async function StudentDuelsPage() {
               </div>
             </TiltCard>
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className={mentrixProfileType.statLabel}>
+              <p className={`${mentrixProfileType.statLabel} inline-flex items-center gap-1.5`}>
+                <MentrixaVocabIcon name="xp" size={14} className="text-violet-200" title="Duels XP" />
                 Duels XP
               </p>
-              <p className={`mt-0.5 ${mentrixProfileType.statValue}`}>
-                {stats.xpFromDuels} XP
+              <p className={`mt-0.5 inline-flex items-center gap-1.5 ${mentrixProfileType.statValue}`}>
+                <MentrixaVocabIcon name="xp" size={18} className="text-violet-200" title="XP" />
+                {stats.xpFromDuels}
               </p>
             </TiltCard>
           </div>

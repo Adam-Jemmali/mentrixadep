@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { Swords } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { QuestKindMetaTag } from "@/shared/ui/meta-tag-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { cn } from "@/shared/core/utils";
@@ -223,7 +223,7 @@ export function SkillDuelResults({
           <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
             <ScoreTile label={youLabel} score={yourScore} total={total} highlight={youWon && !tie} motionEnabled={motionEnabled} />
             <div className="flex flex-col items-center justify-center px-2 py-1">
-              <Swords className="h-5 w-5 text-indigo-300/70" aria-hidden />
+              <MentrixaVocabIcon name="duels" size={22} className="text-indigo-300/80" title="Versus" />
               <span className="mt-1 font-mono text-xs font-bold uppercase tracking-widest text-slate-500">vs</span>
             </div>
             <ScoreTile
@@ -246,10 +246,18 @@ export function SkillDuelResults({
             </p>
           )}
 
-          <p className="font-mono text-xs tabular-nums text-slate-500">
-            {yourScore}/{total} vs {theirScore}/{total}
-            {` · ${stats.accuracy}% accuracy`}
-            {xpAmount > 0 ? ` · +${xpAmount} XP` : ""}
+          <p className="inline-flex flex-wrap items-center gap-1.5 font-mono text-xs tabular-nums text-slate-500">
+            <span>
+              {yourScore}/{total} vs {theirScore}/{total}
+              {` · ${stats.accuracy}% accuracy`}
+            </span>
+            {xpAmount > 0 ? (
+              <span className="inline-flex items-center gap-1">
+                ·
+                <MentrixaVocabIcon name="xp" size={14} className="text-violet-300" title="XP earned" />
+                +{xpAmount}
+              </span>
+            ) : null}
           </p>
         </div>
       </section>

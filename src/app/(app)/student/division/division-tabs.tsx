@@ -3,6 +3,8 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import type { LeaderboardEntry, DivisionStat } from "@/features/divisions/leaderboard";
+import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { cn } from "@/shared/core/utils";
 
 function LevelBadge({
   tier,
@@ -26,6 +28,23 @@ function LevelBadge({
   );
 }
 
+function HeaderIcon({
+  name,
+  label,
+  align = "start",
+}: {
+  name: "rank-proof" | "streak" | "xp";
+  label: string;
+  align?: "start" | "end";
+}) {
+  return (
+    <span className={cn("inline-flex items-center gap-1.5", align === "end" ? "justify-end" : "justify-start")}>
+      <MentrixaVocabIcon name={name} size={14} className="text-muted-foreground" title={label} />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
 export function DivisionTabs({
   leaderboard,
   divisionStats,
@@ -36,14 +55,23 @@ export function DivisionTabs({
   return (
     <Tabs defaultValue="leaderboard" className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-4">
-        <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-        <TabsTrigger value="my-divisions">My Divisions</TabsTrigger>
+        <TabsTrigger value="leaderboard" className="inline-flex items-center gap-2">
+          <MentrixaVocabIcon name="leaderboard" size={14} title="Leaderboard" />
+          Leaderboard
+        </TabsTrigger>
+        <TabsTrigger value="my-divisions" className="inline-flex items-center gap-2">
+          <MentrixaVocabIcon name="division" size={14} title="My divisions" />
+          My Divisions
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="leaderboard" className="mt-0">
         <Card className="border-2 border-border">
           <CardHeader>
-            <CardTitle className="text-lg">Top 20</CardTitle>
+            <CardTitle className="inline-flex items-center gap-2 text-lg">
+              <MentrixaVocabIcon name="leaderboard" size={18} title="Top 20" />
+              Top 20
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             {leaderboard.length === 0 ? (
@@ -52,10 +80,16 @@ export function DivisionTabs({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left p-3 font-medium text-muted-foreground w-14">Rank</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground w-14">
+                      <HeaderIcon name="rank-proof" label="Rank" align="start" />
+                    </th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Division XP</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Streak</th>
+                    <th className="text-right p-3 font-medium text-muted-foreground">
+                      <HeaderIcon name="xp" label="Division XP" align="end" />
+                    </th>
+                    <th className="text-right p-3 font-medium text-muted-foreground">
+                      <HeaderIcon name="streak" label="Streak" align="end" />
+                    </th>
                     <th className="text-right p-3 font-medium text-muted-foreground">Level</th>
                   </tr>
                 </thead>
@@ -80,8 +114,15 @@ export function DivisionTabs({
                           <span className="ml-2 text-xs text-primary font-normal">(you)</span>
                         )}
                       </td>
-                      <td className="p-3 text-right">{row.divisionXp}</td>
-                      <td className="p-3 text-right">🔥 {row.streakDays}</td>
+                      <td className="p-3 text-right">
+                        <span className="inline-flex items-center justify-end gap-1">
+                          <MentrixaVocabIcon name="xp" size={14} className="text-muted-foreground" title="XP" />
+                          {row.divisionXp}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <StreakCountDisplay days={row.streakDays} size={14} className="justify-end" />
+                      </td>
                       <td className="p-3 text-right">
                         <LevelBadge tier={row.level.tier} label={row.level.label} />
                       </td>
@@ -108,13 +149,22 @@ export function DivisionTabs({
               <Card key={stat.divisionKey} className="border-2 border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center justify-between">
-                    <span>{stat.divisionName}</span>
+                    <span className="inline-flex items-center gap-2">
+                      <MentrixaVocabIcon name="division" size={16} title="Division" />
+                      {stat.divisionName}
+                    </span>
                     <LevelBadge tier={stat.level.tier} label={stat.level.label} />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1 text-sm text-muted-foreground">
-                  <p>#{stat.rank} in this division</p>
-                  <p>{stat.xp} XP</p>
+                  <p className="inline-flex items-center gap-1.5">
+                    <MentrixaVocabIcon name="rank-proof" size={14} title="Rank" />
+                    #{stat.rank} in this division
+                  </p>
+                  <p className="inline-flex items-center gap-1.5">
+                    <MentrixaVocabIcon name="xp" size={14} title="XP" />
+                    {stat.xp}
+                  </p>
                 </CardContent>
               </Card>
             ))
@@ -124,4 +174,3 @@ export function DivisionTabs({
     </Tabs>
   );
 }
-

@@ -12,7 +12,7 @@ import {
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 
 type PwaRankContext = {
   totalXp?: number;
@@ -97,10 +97,7 @@ export function StudentNavRankStrip() {
           )}
         </span>
         {streak > 0 ? (
-          <span className="inline-flex items-center gap-1 text-[9px] font-mono tabular-nums text-amber-200/90">
-            <MentrixaVocabIcon name="streak" size={11} className="shrink-0 text-amber-300" />
-            {streak}d streak
-          </span>
+          <StreakCountDisplay days={streak} size={14} className="text-amber-200/90" />
         ) : null}
       </div>
       {modeLabel ? (

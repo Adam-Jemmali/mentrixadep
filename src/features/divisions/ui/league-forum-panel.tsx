@@ -7,11 +7,10 @@ import {
   ArrowLeft,
   ImagePlus,
   Loader2,
-  MessageSquare,
-  MessagesSquare,
   SendHorizontal,
   X,
 } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
@@ -184,7 +183,7 @@ function ThreadCard({
             <span>{thread.displayName}</span>
             <span>{formatWhen(thread.createdAt)}</span>
             <span className="inline-flex items-center gap-1 text-indigo-300">
-              <MessagesSquare className="h-3 w-3" />
+              <MentrixaVocabIcon name="league" size={12} title="Replies" />
               {thread.replyCount} {thread.replyCount === 1 ? "reply" : "replies"}
             </span>
           </div>
@@ -319,7 +318,7 @@ export function LeagueForumPanel({
       <div className="flex flex-wrap items-end justify-between gap-4 px-1">
         <div>
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-indigo-400" />
+            <MentrixaVocabIcon name="league" size={16} className="text-indigo-300" title="League forum" />
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-violet-50">League forum</h2>
           </div>
           <p className="mt-1 text-xs font-medium text-violet-200/80">
@@ -488,7 +487,7 @@ export function LeagueForumPanel({
         <div className="space-y-3">
           {threads.length === 0 ? (
             <div className={cn(mentrixStudent.card, "p-10 text-center")}>
-              <MessagesSquare className="mx-auto h-10 w-10 text-violet-500/30" />
+              <MentrixaVocabIcon name="league" size={40} className="mx-auto text-violet-500/30" title="League forum" />
               <p className="mt-3 text-sm font-medium text-violet-100/90">No threads yet.</p>
               <p className="mt-1 text-xs text-violet-300/70">Start the first league conversation.</p>
             </div>

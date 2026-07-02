@@ -1,11 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { TypewriterText } from "@/features/marketing/landing/v2/motion/typewriter-text";
 import { cn } from "@/shared/core/utils";
-import { IMAGE_QUALITY_ICON } from "@/shared/core/image-defaults";
 import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import {
   scaleIn,
@@ -16,29 +14,36 @@ import {
 } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { FlowStepsOrderGame } from "@/features/marketing/landing/v2/sections/flow-steps-order-game";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
-const FLOW_STEPS = [
+const FLOW_STEPS: {
+  number: string;
+  vocabIcon: VocabIconName;
+  title: string;
+  line: string;
+}[] = [
   {
     number: "01",
-    icon: "/images/book.webp",
+    vocabIcon: "flow-book",
     title: "Book",
     line: "Snapshot shows the weak spot. Quest picks the right Guide. Three clicks.",
   },
   {
     number: "02",
-    icon: "/images/live.webp",
+    vocabIcon: "flow-meet",
     title: "Meet",
     line: "Show up live. Your Guide already knows where you broke. Start there.",
   },
   {
     number: "03",
-    icon: "/images/package.webp",
+    vocabIcon: "flow-unpack",
     title: "Unpack",
     line: "Ten minutes later your Quest pack lands. Summary, flashcards, drills on what you fixed.",
   },
   {
     number: "04",
-    icon: "/images/xp.webp",
+    vocabIcon: "flow-climb",
     title: "Climb",
     line: "XP updates. Rank moves. Big jump? You get a Breakthrough Card to share.",
   },
@@ -155,16 +160,7 @@ export function FlowStepsSection() {
                   className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10"
                   animate={cinematic ? iconFloat : undefined}
                 >
-                  <Image
-                    src={step.icon}
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="object-contain brightness-0 invert"
-                    sizes="36px"
-                    quality={IMAGE_QUALITY_ICON}
-                    loading="lazy"
-                  />
+                  <MentrixaVocabIcon name={step.vocabIcon} size={20} className="text-white" title={step.title} />
                 </motion.span>
                 <h3 className="text-base font-bold text-white">{step.title}</h3>
               </div>

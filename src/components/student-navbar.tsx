@@ -58,7 +58,14 @@ const STUDENT_NAV_ITEMS: { name: string; link: string; icon: VocabIconName }[] =
 ];
 
 function navItemIcon(name: VocabIconName, label: string, size = 26) {
-  return <MentrixaVocabIcon name={name} size={size} className="text-violet-100" title={label} />;
+  return (
+    <MentrixaVocabIcon
+      name={name}
+      size={size}
+      className="text-violet-100"
+      title={label}
+    />
+  );
 }
 
 function getInitials(displayName: string | null | undefined, email?: string | null): string {

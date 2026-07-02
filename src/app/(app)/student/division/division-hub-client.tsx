@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
-import { Info, Users } from "lucide-react";
+import { Info } from "lucide-react";
 import type { DivisionHubCard } from "@/features/divisions/divisions";
 import { joinDivision } from "@/features/divisions/divisions";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
@@ -22,6 +22,7 @@ import {
   arenaDivisionCardClasses,
   arenaDivisionPanelClasses,
 } from "@/features/divisions/arena-division-focus";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubCard[] }) {
   const router = useRouter();
@@ -56,10 +57,12 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
       <div className={cn(mentrixStudent.cardArena, arenaDivisionPanelClasses())}>
         <p
           className={cn(
-            "text-[10px] font-bold uppercase tracking-[0.22em]",
+            "inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em]",
             arenaDivisionFocus.eyebrow,
           )}
         >
+          <MentrixaVocabIcon name="league" size={14} className="text-violet-300" title="League" />
+          <MentrixaVocabIcon name="arena" size={14} className="text-cyan-300" title="Arena" />
           {arenaLeaguePanelEyebrow()}
         </p>
         <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
@@ -98,7 +101,8 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
 
                   {isFocused ? (
                     <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
-                      <span className="rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
+                      <span className="inline-flex items-center gap-1 rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
+                        <MentrixaVocabIcon name="focus-ring" size={12} className="text-[#22D3EE]" title="Your focus" />
                         Your focus
                       </span>
                     </div>
@@ -120,12 +124,13 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                         </h2>
                         <div className="mt-1 flex items-center gap-2">
                           <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-violet-300/70">
-                            <Users className="h-3 w-3 opacity-50" />
+                            <MentrixaVocabIcon name="arena" size={12} className="opacity-80" title="Arena members" />
                             {c.memberCount.toLocaleString()}
                           </div>
                           {c.weeklyRank != null ? (
                             <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-violet-200/80">
-                              <span>| Rank #{c.weeklyRank}</span>
+                              <MentrixaVocabIcon name="rank-proof" size={12} className="text-violet-200/80" title="Rank" />
+                              <span>| #{c.weeklyRank}</span>
                             </div>
                           ) : null}
                         </div>

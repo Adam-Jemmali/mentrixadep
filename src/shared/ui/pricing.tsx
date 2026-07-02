@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { TimelineContent } from "@/shared/ui/timeline-animation";
 import { VerticalCutReveal } from "@/shared/ui/vertical-cut-reveal";
 import { cn } from "@/shared/core/utils";
-import { CheckCheck, Swords, X, Zap, Trophy } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useRef } from "react";
 import Link from "next/link";
@@ -17,14 +17,18 @@ import {
   PRICING_SECTION_SUBHEAD,
   PRICING_SECTION_VERDICT,
   type PricingTierDefinition,
+  type PricingTierId,
 } from "@/features/pricing/pricing-tiers-pure";
 import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
 import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { tierComparisonFeatureIcon } from "@/features/pricing/tier-comparison-feature-icon-pure";
 
-const TIER_ICONS: Record<string, React.ReactNode> = {
-  arena: <Swords className="h-6 w-6 text-indigo-600" aria-hidden />,
-  breakthrough: <Zap className="h-6 w-6 text-violet-600" aria-hidden />,
-  momentum: <Trophy className="h-6 w-6 text-indigo-600" aria-hidden />,
+const TIER_VOCAB_ICONS: Record<PricingTierId, VocabIconName> = {
+  arena: "tier-arena",
+  breakthrough: "tier-breakthrough",
+  momentum: "tier-momentum",
 };
 
 function FeatureList({ items }: { items: string[] }) {
@@ -32,9 +36,12 @@ function FeatureList({ items }: { items: string[] }) {
     <ul className="space-y-2.5">
       {items.map((feature) => (
         <li key={feature} className="flex gap-2.5">
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50">
-            <CheckCheck className="h-3 w-3 text-indigo-600" aria-hidden />
-          </div>
+          <MentrixaVocabIcon
+            name={tierComparisonFeatureIcon(feature)}
+            size={18}
+            className="mt-0.5 shrink-0 text-indigo-600"
+            title={feature}
+          />
           <span className="text-sm font-medium leading-snug text-slate-600">{feature}</span>
         </li>
       ))}
@@ -82,7 +89,12 @@ function TierCardView({
         <CardHeader className="pb-4 text-left">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 shadow-sm">
-              {TIER_ICONS[tier.id]}
+              <MentrixaVocabIcon
+                name={TIER_VOCAB_ICONS[tier.id]}
+                size={28}
+                className="text-indigo-600"
+                title={tier.name}
+              />
             </div>
             <SubscriptionTierChip tier={tier.id} label={tier.tagline} />
           </div>

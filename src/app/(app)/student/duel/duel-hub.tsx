@@ -9,7 +9,7 @@ import { createAiDuelFromQueue } from "@/features/duels/duel-gameplay";
 import { getDuelMatchupPreview } from "@/features/duels/duel-reads";
 import { DUEL_AI_QUEUE_WAIT_MS } from "@/features/duels/duel-constants";
 import { Button } from "@/shared/ui/button";
-import {  Info, Users } from "lucide-react";
+import { Info } from "lucide-react";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { DuelMatchAcceptScreen } from "@/features/duels/ui/duel-match-accept-screen";
@@ -32,6 +32,7 @@ import {
   arenaDivisionCardClasses,
   arenaDivisionPanelClasses,
 } from "@/features/divisions/arena-division-focus";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 interface Props {
   divisions: { key: string; name: string; description: string | null }[];
@@ -573,7 +574,8 @@ export function DuelHub({
                 transition={{ duration: 2, repeat: Infinity }}
                 className="flex min-w-[150px] flex-col items-center rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-5 text-center shadow-2xl backdrop-blur-xl sm:min-w-[220px] sm:px-8 sm:py-6"
               >
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">
+                  <MentrixaVocabIcon name="arena" size={12} className="text-white" title="Arena" />
                   Arena Match
                 </div>
                 <p className="mt-2 font-mono text-4xl font-black tabular-nums text-white drop-shadow-lg sm:text-6xl">
@@ -759,10 +761,11 @@ export function DuelHub({
       >
         <p
           className={cn(
-            "text-[10px] font-bold uppercase tracking-[0.22em]",
+            "inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em]",
             arenaDivisionFocus.eyebrow,
           )}
         >
+          <MentrixaVocabIcon name="duels" size={14} className="text-cyan-300" title="Duels" />
           {AP_CALC_AB_DIVISION_NAME} duel arena
         </p>
         <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
@@ -796,7 +799,8 @@ export function DuelHub({
 
                   {isProfileFocus ? (
                     <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
-                      <span className="rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
+                      <span className="inline-flex items-center gap-1 rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
+                        <MentrixaVocabIcon name="focus-ring" size={12} className="text-[#22D3EE]" title="Your focus" />
                         Your focus
                       </span>
                     </div>
@@ -818,7 +822,7 @@ export function DuelHub({
                         </h2>
                         <div className="mt-1 flex items-center gap-2">
                           <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            <Users className="h-3 w-3 opacity-50" />
+                            <MentrixaVocabIcon name="arena" size={12} className="opacity-80" title="Arena" />
                             Arena active
                           </div>
                         </div>

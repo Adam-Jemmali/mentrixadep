@@ -4,6 +4,8 @@ import {
   buildTierComparisonRows,
   type TierComparisonRow,
 } from "@/features/pricing/pricing-tiers-pure";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { tierComparisonFeatureIcon } from "@/features/pricing/tier-comparison-feature-icon-pure";
 
 function ComparisonCell({ value }: { value: TierComparisonRow["arena"] }) {
   if (value === "yes") {
@@ -29,9 +31,24 @@ export function TierComparisonTable({ className }: { className?: string }) {
         <thead>
           <tr className="border-b border-slate-100">
             <th className="px-4 py-3 font-bold text-slate-700">Feature</th>
-            <th className="px-4 py-3 text-center font-bold text-slate-700">Arena (Free)</th>
-            <th className="px-4 py-3 text-center font-bold text-slate-700">Breakthrough</th>
-            <th className="px-4 py-3 text-center font-bold text-indigo-700">Momentum</th>
+            <th className="px-4 py-3 text-center font-bold text-slate-700">
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <MentrixaVocabIcon name="tier-arena" size={16} className="text-indigo-600" title="Arena" />
+                Arena (Free)
+              </span>
+            </th>
+            <th className="px-4 py-3 text-center font-bold text-slate-700">
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <MentrixaVocabIcon name="tier-breakthrough" size={16} className="text-violet-600" title="Breakthrough" />
+                Breakthrough
+              </span>
+            </th>
+            <th className="px-4 py-3 text-center font-bold text-indigo-700">
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <MentrixaVocabIcon name="tier-momentum" size={16} className="text-indigo-700" title="Momentum" />
+                Momentum
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -41,12 +58,22 @@ export function TierComparisonTable({ className }: { className?: string }) {
               className={cn("border-b border-slate-50", row.momentumExclusive && "bg-indigo-50/40")}
             >
               <td className="px-4 py-3 text-slate-800">
-                {row.feature}
-                {row.momentumExclusive ? (
-                  <span className="ml-2 text-[10px] font-black uppercase tracking-wide text-indigo-600">
-                    Momentum only
+                <span className="inline-flex items-start gap-2">
+                  <MentrixaVocabIcon
+                    name={tierComparisonFeatureIcon(row.feature)}
+                    size={16}
+                    className="mt-0.5 shrink-0 text-slate-500"
+                    title={row.feature}
+                  />
+                  <span>
+                    {row.feature}
+                    {row.momentumExclusive ? (
+                      <span className="ml-2 text-[10px] font-black uppercase tracking-wide text-indigo-600">
+                        Momentum only
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
+                </span>
               </td>
               <td className="px-4 py-3 text-center">
                 <ComparisonCell value={row.arena} />

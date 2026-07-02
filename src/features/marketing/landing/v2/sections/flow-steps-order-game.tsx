@@ -1,22 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import Image from "next/image";
 import { motion, Reorder } from "framer-motion";
 import { cn } from "@/shared/core/utils";
-import { IMAGE_QUALITY_ICON } from "@/shared/core/image-defaults";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
-const STEPS = [
-  { id: "book", number: "01", icon: "/images/book.webp", title: "Book" },
-  { id: "meet", number: "02", icon: "/images/live.webp", title: "Meet" },
-  { id: "unpack", number: "03", icon: "/images/package.webp", title: "Unpack" },
-  { id: "climb", number: "04", icon: "/images/xp.webp", title: "Climb" },
-] as const;
+const STEPS: { id: StepId; number: string; vocabIcon: VocabIconName; title: string }[] = [
+  { id: "book", number: "01", vocabIcon: "flow-book", title: "Book" },
+  { id: "meet", number: "02", vocabIcon: "flow-meet", title: "Meet" },
+  { id: "unpack", number: "03", vocabIcon: "flow-unpack", title: "Unpack" },
+  { id: "climb", number: "04", vocabIcon: "flow-climb", title: "Climb" },
+];
 
-type StepId = (typeof STEPS)[number]["id"];
+type StepId = "book" | "meet" | "unpack" | "climb";
 
 function shuffleIds(ids: StepId[]): StepId[] {
   const next = [...ids];
@@ -173,16 +173,7 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
                 )}
               </span>
               <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 pointer-events-none">
-                <Image
-                  src={step.icon}
-                  alt=""
-                  width={22}
-                  height={22}
-                  draggable={false}
-                  className="pointer-events-none object-contain brightness-0 invert"
-                  sizes="40px"
-                  quality={IMAGE_QUALITY_ICON}
-                />
+                <MentrixaVocabIcon name={step.vocabIcon} size={22} className="text-white" title={step.title} />
               </span>
               <span className="text-sm font-bold text-white">{step.title}</span>
               {completed && isCorrectPos ? (

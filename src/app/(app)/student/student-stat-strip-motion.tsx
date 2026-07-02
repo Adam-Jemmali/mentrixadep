@@ -9,7 +9,7 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/xp/components/rank-badge";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 const container = {
@@ -165,25 +165,11 @@ export function StudentStatStripMotion({
         <TiltCard
           tiltLimit={12}
           scale={1.04}
-          className={`${statCard} flex-col ${streakAtRisk ? "ring-2 ring-amber-400/70" : ""}`}
+          className={`${statCard} flex-col items-center justify-center ${streakAtRisk ? "ring-2 ring-amber-400/70" : ""}`}
         >
-          <StatValue
-            icon="streak"
-            iconClassName={cnStreakIcon(streakAtRisk)}
-          >
-            <span className="text-2xl font-bold tabular-nums text-white">{streak}</span>
-          </StatValue>
-          <StatFootIcon
-            icon="streak"
-            label={streakAtRisk ? "Streak · log today" : "Day streak"}
-            iconClassName={cnStreakIcon(streakAtRisk)}
-          />
+          <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} />
         </TiltCard>
       </motion.div>
     </motion.div>
   );
-}
-
-function cnStreakIcon(streakAtRisk: boolean) {
-  return streakAtRisk ? "shrink-0 text-amber-300" : "shrink-0 text-violet-300 opacity-80";
 }

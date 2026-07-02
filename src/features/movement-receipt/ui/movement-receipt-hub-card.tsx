@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { MovementReceiptData } from "@/features/movement-receipt/types";
 import {
   buildMovementReceiptDetailLines,
@@ -20,7 +21,10 @@ export function MovementReceiptHubCard({ data, momentumActive }: MovementReceipt
 
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Movement receipt">
-      <p className={mentrixStudent.sectionEyebrowOnLight}>Movement receipt</p>
+      <p className={`${mentrixStudent.sectionEyebrowOnLight} inline-flex items-center gap-2`}>
+        <MentrixaVocabIcon name="movement-receipt" size={16} title="Movement receipt" />
+        Movement receipt
+      </p>
       <p className="mt-1 text-xs text-zinc-500">Week of {data.weekStart}</p>
       <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>
       <p className="mt-1 text-sm text-zinc-600">{nextAction}</p>
@@ -42,7 +46,10 @@ export function MovementReceiptHubCard({ data, momentumActive }: MovementReceipt
         {momentumActive ? (
           <>
             <Button asChild size="sm" variant="outline">
-              <Link href="/student/receipts">Receipt archive</Link>
+              <Link href="/student/receipts" className="inline-flex items-center gap-1.5">
+                <MentrixaVocabIcon name="receipt" size={14} title="Receipt archive" />
+                Receipt archive
+              </Link>
             </Button>
             <Button asChild size="sm" variant="outline">
               <Link href="/student/briefs">Brief archive</Link>

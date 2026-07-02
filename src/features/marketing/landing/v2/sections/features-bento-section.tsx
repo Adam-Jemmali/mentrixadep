@@ -10,11 +10,13 @@ import {
   staggerContainer,
   viewportOnce,
 } from "@/features/marketing/landing/v2/motion/landing-motion";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 type Feature = {
   title: string;
   image: string;
-  icon: string;
+  vocabIcon: VocabIconName;
   rotation: number;
   accent: string;
 };
@@ -25,14 +27,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Skill Duels",
       image: "/images/features/live-duels.webp",
-      icon: "/images/live.webp",
+      vocabIcon: "bento-skill-duels",
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
       title: "Division Leaderboard",
       image: "/images/features/duel-arena.webp",
-      icon: "/images/sword.webp",
+      vocabIcon: "bento-division-leaderboard",
       rotation: 2,
       accent: "from-indigo-500/50",
     },
@@ -41,14 +43,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Quest Practice",
       image: "/images/features/problem-solver.webp",
-      icon: "/images/quest.webp",
+      vocabIcon: "bento-quest-practice",
       rotation: 1,
       accent: "from-purple-500/50",
     },
     {
       title: "Rank Card",
       image: "/images/features/learning-path.webp",
-      icon: "/images/book.webp",
+      vocabIcon: "bento-rank-card",
       rotation: -1,
       accent: "from-blue-500/50",
     },
@@ -57,14 +59,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Impact Score",
       image: "/images/features/league.webp",
-      icon: "/images/xp.webp",
+      vocabIcon: "impact-score",
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
       title: "Division Wars",
       image: "/images/features/clan-wars.webp",
-      icon: "/images/clan.webp",
+      vocabIcon: "division-war",
       rotation: 2,
       accent: "from-indigo-500/50",
     },
@@ -73,14 +75,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Session Room",
       image: "/images/features/session-room.webp",
-      icon: "/images/user.webp",
+      vocabIcon: "bento-session-room",
       rotation: 1,
       accent: "from-purple-500/50",
     },
     {
       title: "Quest Pack",
       image: "/images/features/study-package.webp",
-      icon: "/images/package.webp",
+      vocabIcon: "study-package",
       rotation: -1,
       accent: "from-blue-500/50",
     },
@@ -89,36 +91,27 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Guide Studio",
       image: "/images/features/studio-output.webp",
-      icon: "/images/pending.webp",
+      vocabIcon: "bento-guide-studio",
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
       title: "Breakthrough Events",
       image: "/images/features/guide-knowledge.webp",
-      icon: "/images/money.webp",
+      vocabIcon: "bento-breakthrough-events",
       rotation: 2,
       accent: "from-indigo-500/50",
     },
   ],
 ];
 
-function FeatureIconBadge({ icon }: { icon: string }) {
+function FeatureIconBadge({ name }: { name: VocabIconName }) {
   return (
     <div
-      className="relative z-10 flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/35 bg-white/10 p-1.5 shadow-[0_0_20px_rgba(255,255,255,0.12)] backdrop-blur-sm sm:size-12"
+      className="relative z-10 flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/35 bg-white/10 p-2 shadow-[0_0_20px_rgba(255,255,255,0.12)] backdrop-blur-sm sm:size-12"
       aria-hidden
     >
-      <Image
-        src={icon}
-        alt=""
-        width={36}
-        height={36}
-        loading="lazy"
-        className="size-full object-contain brightness-0 invert"
-        sizes="36px"
-        quality={IMAGE_QUALITY}
-      />
+      <MentrixaVocabIcon name={name} size={28} className="text-white" title={name} />
     </div>
   );
 }
@@ -172,11 +165,11 @@ function PolaroidCard({ feature, align }: { feature: Feature; align: "left" | "r
         {align === "left" ? (
           <>
             <PolaroidPhoto feature={feature} />
-            <FeatureIconBadge icon={feature.icon} />
+            <FeatureIconBadge name={feature.vocabIcon} />
           </>
         ) : (
           <>
-            <FeatureIconBadge icon={feature.icon} />
+            <FeatureIconBadge name={feature.vocabIcon} />
             <PolaroidPhoto feature={feature} />
           </>
         )}

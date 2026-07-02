@@ -38,6 +38,7 @@ export type VocabIconName =
   | "percentile"
   | "xp"
   | "streak"
+  | "day"
   | "focus-ring"
   // Social & competition
   | "arena"
@@ -143,6 +144,7 @@ export const VOCAB_ICON_REGISTRY: Record<VocabIconName, VocabIconMeta> = {
   percentile: { name: "percentile", label: "Percentile", category: "core", allowsGold: true },
   xp: { name: "xp", label: "XP", category: "core" },
   streak: { name: "streak", label: "Streak", category: "core" },
+  day: { name: "day", label: "Day", category: "core" },
   "focus-ring": { name: "focus-ring", label: "Focus", category: "core" },
 
   arena: { name: "arena", label: "Arena", category: "social" },

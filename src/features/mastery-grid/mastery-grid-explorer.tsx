@@ -87,11 +87,11 @@ export function MasteryGridExplorer({
           <div>
             <Link
               href="/student"
-              className="inline-flex items-center"
+              className="inline-flex items-center text-violet-200"
               aria-label="Back to home"
               title="Back to home"
             >
-              <MentrixaVocabIcon name="home" size={28} className="text-violet-200" />
+              <MentrixaVocabIcon name="home" size={32} className="text-violet-100" />
             </Link>
             <h1 className="mt-3 flex items-center" aria-label="Skill tree">
               <MentrixaVocabIcon name="skills" size={36} className="text-violet-200" />

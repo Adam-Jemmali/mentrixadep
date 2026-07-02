@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Trophy } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { momentumPerkVocabIcon } from "@/features/pricing/momentum-perk-icon-pure";
 import { cn } from "@/shared/core/utils";
 import {
   buildPricingTiers,
@@ -100,7 +101,7 @@ export function MomentumMembershipPanel({
           <p className="mt-1 text-sm font-medium text-slate-600">{momentumTier?.tagline}</p>
         </div>
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-white shadow-sm">
-          <Trophy className="h-6 w-6 text-indigo-600" aria-hidden />
+          <MentrixaVocabIcon name="momentum" size={28} className="text-indigo-600" title="Momentum" />
         </div>
       </div>
 
@@ -111,17 +112,26 @@ export function MomentumMembershipPanel({
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Compare</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Arena</p>
+            <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <MentrixaVocabIcon name="arena" size={12} title="Arena" />
+              Arena
+            </p>
             <p className="mt-1 text-lg font-black text-slate-900">$0</p>
             <p className="mt-1 text-xs text-slate-500">Rank and grid free forever.</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Breakthrough</p>
+            <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <MentrixaVocabIcon name="breakthrough" size={12} title="Breakthrough" />
+              Breakthrough
+            </p>
             <p className="mt-1 text-lg font-black text-slate-900">{formatStudentBreakthroughPrice()}</p>
             <p className="mt-1 text-xs text-slate-500">One time per Guide session.</p>
           </div>
           <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Momentum</p>
+            <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600">
+              <MentrixaVocabIcon name="momentum" size={12} title="Momentum" />
+              Momentum
+            </p>
             <p className="mt-1 text-lg font-black text-indigo-950">
               {subscriptionPriceLabel(interval)}
             </p>
@@ -176,7 +186,12 @@ export function MomentumMembershipPanel({
           <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">What you get</p>
           {momentumTier.receipts.map((receipt) => (
             <li key={receipt} className="flex items-start gap-2.5 text-sm text-slate-800">
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden />
+              <MentrixaVocabIcon
+                name={momentumPerkVocabIcon(receipt)}
+                size={16}
+                className="mt-0.5 shrink-0 text-indigo-600"
+                title={receipt}
+              />
               <span>{receipt}</span>
             </li>
           ))}

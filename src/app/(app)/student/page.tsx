@@ -22,7 +22,7 @@ import {
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
@@ -256,10 +256,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     {streak > 0 ? (
                       <>
                         <span className="text-white/50"> · </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="font-mono tabular-nums">{streak}</span>
-                          <MentrixaVocabIcon name="streak" size={18} className="text-amber-200" title="Day streak" />
-                        </span>
+                        <StreakCountDisplay days={streak} size={18} atRisk={streakAtRisk} />
                       </>
                     ) : null}
                   </p>
@@ -271,17 +268,14 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               </div>
 
               {streak > 0 && (
-                <p
-                  className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] ${streakAtRisk ? "text-amber-100" : "text-white/90"}`}
-                  aria-label={streakAtRisk ? "Keep your streak alive" : `${streak} day streak active`}
-                >
-                  <MentrixaVocabIcon
-                    name="streak"
-                    size={22}
-                    className={streakAtRisk ? "text-amber-200" : "text-white/85"}
-                  />
-                  <span className="font-mono text-sm tabular-nums">{streak}</span>
-                </p>
+                <div className={streakAtRisk ? "text-amber-100" : "text-white/90"}>
+                  <StreakCountDisplay days={streak} size={24} atRisk={streakAtRisk} />
+                  {streakAtRisk ? (
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100/90">
+                      Log today to keep it
+                    </p>
+                  ) : null}
+                </div>
               )}
             </div>
 

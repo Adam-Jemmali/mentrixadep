@@ -2,6 +2,7 @@
 
 import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import { DualPathReactionGame, type DualPathSide } from "@/features/marketing/landing/v2/sections/dual-path-reaction-game";
+import { GuideRankLadderPreview } from "@/features/marketing/landing/v2/sections/guide-rank-ladder-preview";
 
 const SIDES: DualPathSide[] = [
   {
@@ -37,6 +38,7 @@ export function DualPathSection() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <DualPathReactionGame sides={SIDES} />
+        <GuideRankLadderPreview />
       </div>
     </section>
   );

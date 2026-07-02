@@ -9,6 +9,7 @@
 import { useState, useRef } from "react";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { ChevronDown, Brain, AlertTriangle, Zap, MessageSquare, Clock } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { StoredPreSessionBrief } from "@/features/pre-session-brief/brief";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -136,8 +137,8 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
         aria-expanded={expanded}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-slate-900 text-white">
-            <Brain size={14} strokeWidth={2} />
+          <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md bg-slate-900">
+            <MentrixaVocabIcon name="brief" size={18} className="text-white" title="Pre-session brief" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium text-slate-900 leading-snug truncate">

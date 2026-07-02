@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Check, Trophy } from "lucide-react";
 import { buildPricingTiers } from "@/features/pricing/pricing-tiers-pure";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { momentumPerkVocabIcon } from "@/features/pricing/momentum-perk-icon-pure";
 import {
   MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE,
   MOMENTUM_MEMBERSHIP_VERDICT,
@@ -21,7 +22,7 @@ export function MomentumMembershipHubCard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-violet-300" aria-hidden />
+            <MentrixaVocabIcon name="momentum" size={16} className="text-violet-300" title="Momentum" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">
               Momentum package
             </p>
@@ -39,7 +40,12 @@ export function MomentumMembershipHubCard() {
             <ul className="mt-3 space-y-1.5">
               {momentumTier.receipts.map((receipt) => (
                 <li key={receipt} className="flex items-start gap-2 text-xs text-violet-100/90">
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" aria-hidden />
+                  <MentrixaVocabIcon
+                    name={momentumPerkVocabIcon(receipt)}
+                    size={14}
+                    className="mt-0.5 shrink-0 text-violet-300"
+                    title={receipt}
+                  />
                   <span>{receipt}</span>
                 </li>
               ))}
