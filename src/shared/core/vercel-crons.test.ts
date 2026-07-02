@@ -30,6 +30,23 @@ function isHobbyCompatibleCronSchedule(schedule: string): boolean {
   return true;
 }
 
+function isDailyCronSchedule(schedule: string): boolean {
+  const parts = schedule.trim().split(/\s+/);
+  if (parts.length < 5) return false;
+  const dom = parts[2] ?? "";
+  const dow = parts[4] ?? "";
+  return dom === "*" && dow === "*";
+}
+
+function isWeeklyOrMonthlyCronSchedule(schedule: string): boolean {
+  const parts = schedule.trim().split(/\s+/);
+  if (parts.length < 5) return false;
+  const dom = parts[2] ?? "";
+  const dow = parts[4] ?? "";
+  if (dom !== "*" && dom !== "*/1") return true;
+  return dow !== "*";
+}
+
 /** Batch/materialized crons run weekly (Monday UTC) — not hourly or daily. */
 const WEEKLY_BATCH_CRON_PATHS = new Set([
   "/api/cron/refresh-division-leaderboard",
@@ -51,6 +68,28 @@ describe("vercel cron config", () => {
       expect(
         isHobbyCompatibleCronSchedule(cron.schedule),
         `Cron ${cron.path} schedule "${cron.schedule}" runs more than once per day (Vercel Hobby deploy will fail)`,
+      ).toBe(true);
+    }
+  });
+
+  it("does not schedule any cron daily", () => {
+    const cfg = readVercelConfig();
+    const crons = cfg.crons ?? [];
+    for (const cron of crons) {
+      expect(
+        isDailyCronSchedule(cron.schedule),
+        `Cron ${cron.path} schedule "${cron.schedule}" is daily; use weekly or monthly`,
+      ).toBe(false);
+    }
+  });
+
+  it("schedules every cron weekly or monthly", () => {
+    const cfg = readVercelConfig();
+    const crons = cfg.crons ?? [];
+    for (const cron of crons) {
+      expect(
+        isWeeklyOrMonthlyCronSchedule(cron.schedule),
+        `Cron ${cron.path} schedule "${cron.schedule}" must be weekly or monthly`,
       ).toBe(true);
     }
   });

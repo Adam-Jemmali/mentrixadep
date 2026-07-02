@@ -10,6 +10,12 @@ export function GoalDashboardCard({ data }: { data: GoalDashboardData }) {
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Goal dashboard">
       <p className={mentrixStudent.sectionEyebrowOnLight}>Goal dashboard</p>
       <p className="mt-2 text-sm font-semibold text-zinc-900">{data.verdict}</p>
+      {data.peerTrendLine ? (
+        <p className="mt-1 text-sm text-indigo-800">{data.peerTrendLine}</p>
+      ) : null}
+      {data.packSprintLine ? (
+        <p className="mt-1 text-sm font-medium text-violet-800">{data.packSprintLine}</p>
+      ) : null}
       <p className="mt-1 text-sm text-zinc-600">{data.nextAction}</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">

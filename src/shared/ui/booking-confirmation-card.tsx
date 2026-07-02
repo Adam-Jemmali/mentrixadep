@@ -29,6 +29,8 @@ interface BookingConfirmationCardProps {
   errorMessage?: string | null;
   momentumSubscriber?: boolean;
   sessionCreditAvailable?: boolean;
+  packSprintCreditsRemaining?: number;
+  monthlyCreditsRemaining?: number;
   useSessionCredit?: boolean;
   onUseSessionCreditChange?: (value: boolean) => void;
   className?: string;
@@ -49,6 +51,8 @@ export function BookingConfirmationCard({
   errorMessage = null,
   momentumSubscriber = false,
   sessionCreditAvailable = false,
+  packSprintCreditsRemaining = 0,
+  monthlyCreditsRemaining = 0,
   useSessionCredit = false,
   onUseSessionCreditChange,
   className,
@@ -62,6 +66,8 @@ export function BookingConfirmationCard({
     momentumSubscriber,
     sessionCreditAvailable,
     useSessionCredit,
+    packSprintCreditsRemaining,
+    monthlyCreditsRemaining,
   });
 
   const tierClass = (tier: typeof priceAnchor.activeTier) =>

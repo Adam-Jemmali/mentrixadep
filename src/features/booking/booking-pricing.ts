@@ -12,6 +12,10 @@ export const MOMENTUM_PACK_SESSION_COUNT = 3;
 export const MOMENTUM_SUBSCRIPTION_MONTHLY_CENTS = 2900;
 export const MOMENTUM_SUBSCRIPTION_ANNUAL_CENTS = 24900;
 
+/** Alumni Momentum — archive read + one included session per quarter (CAD cents). */
+export const MOMENTUM_ALUMNI_ANNUAL_CENTS = 9900;
+export const MOMENTUM_ALUMNI_CREDITS_PER_QUARTER = 1;
+
 /** Reduced session rate for active Momentum subscribers (CAD cents). */
 export const MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS = 2900;
 
@@ -32,6 +36,10 @@ export function formatStudentMomentumSubscriptionMonthlyPrice(): string {
 
 export function formatStudentMomentumSubscriptionAnnualPrice(): string {
   return "$249 CAD per year";
+}
+
+export function formatStudentMomentumAlumniAnnualPrice(): string {
+  return "$99 CAD per year";
 }
 
 export function getMomentumSubscriptionCents(interval: "monthly" | "annual"): number {

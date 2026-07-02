@@ -1,9 +1,14 @@
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
-import { isMomentumSubscriptionActive } from "@/features/payments/student-subscription";
+import {
+  isAlumniMomentumActive,
+  isMomentumSubscriptionActive,
+} from "@/features/payments/student-subscription";
+import type { PackSprintState } from "@/features/entitlements/pack-sprint-pure";
 
 export type StudentEntitlementId =
   | "arena.free"
   | "momentum.active"
+  | "momentum.alumni"
   | "momentum.session_credit"
   | "momentum.member_session_rate"
   | "momentum.priority_retest"
@@ -17,13 +22,19 @@ export type StudentEntitlementId =
   | "momentum.movement_receipt"
   | "momentum.trajectory_index"
   | "momentum.guide_memory"
-  | "momentum.brief_archive";
+  | "momentum.brief_archive"
+  | "momentum.unified_trajectory"
+  | "momentum.certificate_export";
 
 export type StudentEntitlements = {
   userId: string;
   momentumActive: boolean;
+  alumniActive: boolean;
   sessionCreditsRemaining: number;
   sessionCreditPeriodMonth: string | null;
+  packSprint: PackSprintState | null;
+  monthlyCreditsRemaining: number;
+  alumniCreditsRemaining: number;
   memberSessionRateActive: boolean;
   entitlementIds: StudentEntitlementId[];
 };
@@ -40,9 +51,14 @@ export function buildStudentEntitlements(input: {
   subscription: StudentSubscriptionRow | null;
   sessionCreditsRemaining: number;
   sessionCreditPeriodMonth: string | null;
+  packSprint?: PackSprintState | null;
+  monthlyCreditsRemaining?: number;
+  alumniCreditsRemaining?: number;
 }): StudentEntitlements {
   const momentumActive = isMomentumSubscriptionActive(input.subscription);
-  const sessionCreditsRemaining = momentumActive ? input.sessionCreditsRemaining : 0;
+  const alumniActive = isAlumniMomentumActive(input.subscription);
+  const billingActive = momentumActive || alumniActive;
+  const sessionCreditsRemaining = billingActive ? input.sessionCreditsRemaining : 0;
   const memberSessionRateActive = momentumActive;
 
   const entitlementIds: StudentEntitlementId[] = ["arena.free"];
@@ -62,6 +78,18 @@ export function buildStudentEntitlements(input: {
       "momentum.trajectory_index",
       "momentum.guide_memory",
       "momentum.brief_archive",
+      "momentum.unified_trajectory",
+      "momentum.certificate_export",
+    );
+  }
+  if (alumniActive) {
+    entitlementIds.push(
+      "momentum.alumni",
+      "momentum.grid_history",
+      "momentum.progress_archive",
+      "momentum.brief_archive",
+      "momentum.movement_receipt",
+      "momentum.certificate_export",
     );
   }
   if (sessionCreditsRemaining > 0) {
@@ -71,8 +99,12 @@ export function buildStudentEntitlements(input: {
   return {
     userId: input.userId,
     momentumActive,
+    alumniActive,
     sessionCreditsRemaining,
     sessionCreditPeriodMonth: sessionCreditsRemaining > 0 ? input.sessionCreditPeriodMonth : null,
+    packSprint: input.packSprint ?? null,
+    monthlyCreditsRemaining: input.monthlyCreditsRemaining ?? 0,
+    alumniCreditsRemaining: input.alumniCreditsRemaining ?? 0,
     memberSessionRateActive,
     entitlementIds,
   };

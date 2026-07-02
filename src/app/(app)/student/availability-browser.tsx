@@ -73,6 +73,8 @@ interface AvailabilityBrowserProps {
   momentumSubscriber?: boolean;
   /** Unused included session credit for the current UTC month. */
   sessionCreditAvailable?: boolean;
+  packSprintCreditsRemaining?: number;
+  monthlyCreditsRemaining?: number;
 }
 
 export function AvailabilityBrowser({
@@ -88,6 +90,8 @@ export function AvailabilityBrowser({
   questHistorySubjects = [],
   momentumSubscriber = false,
   sessionCreditAvailable = false,
+  packSprintCreditsRemaining = 0,
+  monthlyCreditsRemaining = 0,
 }: AvailabilityBrowserProps) {
   const [query, setQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>(
@@ -340,6 +344,8 @@ export function AvailabilityBrowser({
         displayTimeZone={displayTimeZone}
         momentumSubscriber={momentumSubscriber}
         sessionCreditAvailable={sessionCreditAvailable}
+        packSprintCreditsRemaining={packSprintCreditsRemaining}
+        monthlyCreditsRemaining={monthlyCreditsRemaining}
       />
     </aside>
   );
@@ -352,6 +358,8 @@ function BookingDialog({
   displayTimeZone = "UTC",
   momentumSubscriber = false,
   sessionCreditAvailable = false,
+  packSprintCreditsRemaining = 0,
+  monthlyCreditsRemaining = 0,
 }: {
   slot: Availability | null;
   onOpenChange: (open: boolean) => void;
@@ -359,6 +367,8 @@ function BookingDialog({
   displayTimeZone?: string;
   momentumSubscriber?: boolean;
   sessionCreditAvailable?: boolean;
+  packSprintCreditsRemaining?: number;
+  monthlyCreditsRemaining?: number;
 }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -433,6 +443,8 @@ function BookingDialog({
           priceCents={priceCents}
           momentumSubscriber={momentumSubscriber}
           sessionCreditAvailable={sessionCreditAvailable}
+          packSprintCreditsRemaining={packSprintCreditsRemaining}
+          monthlyCreditsRemaining={monthlyCreditsRemaining}
           useSessionCredit={useSessionCredit}
           onUseSessionCreditChange={setUseSessionCredit}
           onConfirm={handleBook}

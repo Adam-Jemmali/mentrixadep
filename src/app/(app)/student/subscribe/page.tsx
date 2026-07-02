@@ -25,6 +25,10 @@ export default async function StudentSubscribePage() {
         sessionCreditsRemaining={entitlements.sessionCreditsRemaining}
         sessionCreditPeriodMonth={entitlements.sessionCreditPeriodMonth}
         momentumActive={entitlements.momentumActive}
+        alumniActive={entitlements.alumniActive}
+        packSprint={entitlements.packSprint}
+        monthlyCreditsRemaining={entitlements.monthlyCreditsRemaining}
+        alumniCreditsRemaining={entitlements.alumniCreditsRemaining}
         daysUntilExam={daysUntilExam}
       />
     </Suspense>

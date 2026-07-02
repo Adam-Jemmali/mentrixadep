@@ -21,19 +21,26 @@ export function buildCheckoutPriceAnchor(input: {
   momentumSubscriber: boolean;
   sessionCreditAvailable: boolean;
   useSessionCredit: boolean;
+  packSprintCreditsRemaining?: number;
+  monthlyCreditsRemaining?: number;
 }): CheckoutPriceAnchor {
   const paygLabel = formatStudentBreakthroughPrice();
   const memberLabel = momentumSubscriberSessionPriceLabel();
   const creditLabel = "$0 CAD";
 
   if (input.sessionCreditAvailable && input.useSessionCredit) {
+    const subline =
+      (input.packSprintCreditsRemaining ?? 0) > 0 &&
+      (input.monthlyCreditsRemaining ?? 0) === 0
+        ? "Quarter Sprint Pack credit applied. No Stripe charge today."
+        : "No Stripe charge today. Your included Momentum credit covers this booking.";
     return {
       activeTier: "credit",
       paygLabel,
       memberLabel,
       creditLabel,
       headline: "Included session credit applied",
-      subline: "No Stripe charge today. Your monthly Momentum beat covers this booking.",
+      subline,
     };
   }
 
@@ -45,7 +52,9 @@ export function buildCheckoutPriceAnchor(input: {
       creditLabel,
       headline: `${formatUsdFromCents(MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS)} member rate at checkout`,
       subline: input.sessionCreditAvailable
-        ? "Check the box above to use your included credit instead."
+        ? (input.packSprintCreditsRemaining ?? 0) > 0
+          ? "Use sprint or monthly credit at checkout. Sprint credits expire first."
+          : "Check the box above to use your included credit instead."
         : "Your included credit for this month is used. Extra sessions book at the member rate.",
     };
   }

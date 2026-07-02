@@ -1349,30 +1349,77 @@ export type Database = {
           },
         ]
       }
+      momentum_pack_credits: {
+        Row: {
+          created_at: string
+          credits_granted: number
+          credits_remaining: number
+          expires_at: string
+          granted_at: string
+          id: string
+          stripe_checkout_session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_granted: number
+          credits_remaining: number
+          expires_at: string
+          granted_at?: string
+          id?: string
+          stripe_checkout_session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_granted?: number
+          credits_remaining?: number
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          stripe_checkout_session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "momentum_pack_credits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       momentum_session_credit_redemptions: {
         Row: {
           availability_id: string
-          credit_id: string
+          credit_id: string | null
           id: string
           idempotency_key: string
+          pack_credit_id: string | null
           redeemed_at: string
           session_request_id: string | null
           user_id: string
         }
         Insert: {
           availability_id: string
-          credit_id: string
+          credit_id?: string | null
           id?: string
           idempotency_key: string
+          pack_credit_id?: string | null
           redeemed_at?: string
           session_request_id?: string | null
           user_id: string
         }
         Update: {
           availability_id?: string
-          credit_id?: string
+          credit_id?: string | null
           id?: string
           idempotency_key?: string
+          pack_credit_id?: string | null
           redeemed_at?: string
           session_request_id?: string | null
           user_id?: string
@@ -1390,6 +1437,13 @@ export type Database = {
             columns: ["credit_id"]
             isOneToOne: false
             referencedRelation: "momentum_session_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "momentum_session_credit_redemptions_pack_credit_id_fkey"
+            columns: ["pack_credit_id"]
+            isOneToOne: false
+            referencedRelation: "momentum_pack_credits"
             referencedColumns: ["id"]
           },
           {
@@ -1599,6 +1653,89 @@ export type Database = {
             columns: ["skill_node_id"]
             isOneToOne: false
             referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_custodian_access: {
+        Row: {
+          custodian_email: string
+          granted_at: string
+          id: string
+          invite_id: string | null
+          revoked_at: string | null
+          student_id: string
+        }
+        Insert: {
+          custodian_email: string
+          granted_at?: string
+          id?: string
+          invite_id?: string | null
+          revoked_at?: string | null
+          student_id: string
+        }
+        Update: {
+          custodian_email?: string
+          granted_at?: string
+          id?: string
+          invite_id?: string | null
+          revoked_at?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_custodian_access_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "parent_custodian_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_custodian_access_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_custodian_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          custodian_email: string
+          expires_at: string
+          id: string
+          invite_token_hash: string
+          revoked_at: string | null
+          student_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          custodian_email: string
+          expires_at: string
+          id?: string
+          invite_token_hash: string
+          revoked_at?: string | null
+          student_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          custodian_email?: string
+          expires_at?: string
+          id?: string
+          invite_token_hash?: string
+          revoked_at?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_custodian_invites_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -2782,6 +2919,7 @@ export type Database = {
           local_status: string
           mismatch_detail: string | null
           mismatch_flagged_at: string | null
+          plan_tier: string
           stripe_customer_id: string | null
           stripe_status: string | null
           stripe_subscription_id: string | null
@@ -2797,6 +2935,7 @@ export type Database = {
           local_status: string
           mismatch_detail?: string | null
           mismatch_flagged_at?: string | null
+          plan_tier?: string
           stripe_customer_id?: string | null
           stripe_status?: string | null
           stripe_subscription_id?: string | null
@@ -2812,6 +2951,7 @@ export type Database = {
           local_status?: string
           mismatch_detail?: string | null
           mismatch_flagged_at?: string | null
+          plan_tier?: string
           stripe_customer_id?: string | null
           stripe_status?: string | null
           stripe_subscription_id?: string | null
@@ -2827,6 +2967,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subject_momentum_gates: {
+        Row: {
+          created_at: string
+          eligible_at: string | null
+          min_reviewed_items: number
+          min_verified_first_attempts: number
+          momentum_eligible: boolean
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eligible_at?: string | null
+          min_reviewed_items?: number
+          min_verified_first_attempts?: number
+          momentum_eligible?: boolean
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eligible_at?: string | null
+          min_reviewed_items?: number
+          min_verified_first_attempts?: number
+          momentum_eligible?: boolean
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       subscription_status_mismatches: {
         Row: {
@@ -2886,6 +3056,76 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      trajectory_certificate_exports: {
+        Row: {
+          export_kind: string
+          generated_at: string
+          id: string
+          user_id: string
+          verified_percentile: number | null
+        }
+        Insert: {
+          export_kind?: string
+          generated_at?: string
+          id?: string
+          user_id: string
+          verified_percentile?: number | null
+        }
+        Update: {
+          export_kind?: string
+          generated_at?: string
+          id?: string
+          user_id?: string
+          verified_percentile?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trajectory_certificate_exports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trajectory_index_snapshots: {
+        Row: {
+          components: Json
+          created_at: string
+          id: string
+          score: number
+          snapshot_date: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          components?: Json
+          created_at?: string
+          id?: string
+          score: number
+          snapshot_date: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          components?: Json
+          created_at?: string
+          id?: string
+          score?: number
+          snapshot_date?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trajectory_index_snapshots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tutor_courses: {
         Row: {
@@ -2989,6 +3229,41 @@ export type Database = {
           {
             foreignKeyName: "tutor_payout_ledger_tutor_id_fkey"
             columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unified_trajectory_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          score: number
+          snapshot_date: string
+          subject_scores: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          score: number
+          snapshot_date: string
+          subject_scores?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          score?: number
+          snapshot_date?: string
+          subject_scores?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unified_trajectory_snapshots_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

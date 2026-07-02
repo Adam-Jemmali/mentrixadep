@@ -10,6 +10,7 @@ import {
 import { loadMasteryGridHistory } from "@/features/mastery-grid/grid-snapshot-cron";
 import { firstNameFromDisplayName } from "@/features/student-profile/student-dashboard-helpers";
 import { getStudentEntitlements, hasEntitlement } from "@/features/entitlements/entitlements";
+import { getMomentumSessionCreditsSummary } from "@/features/entitlements/session-credits";
 import { loadPeerVelocityForWeek } from "@/features/comparison/load-peer-velocity";
 import { loadNextPendingRetest } from "@/features/intervention-retests/retest-reads";
 import { formatRetestCountdownMs } from "@/features/intervention-retests/schedule-intervention-retests-pure";
@@ -156,10 +157,11 @@ export async function buildMovementReceiptForStudent(
   const priorWeekStart = new Date(weekStart.getTime() - MS_7D);
 
   const admin = createAdminClient();
-  const [userResult, entitlements, pendingRetest, history, currentStates, loops, newlyVerifiedThisWeek, newlyVerifiedPriorWeek] =
+  const [userResult, entitlements, creditsSummary, pendingRetest, history, currentStates, loops, newlyVerifiedThisWeek, newlyVerifiedPriorWeek] =
     await Promise.all([
       admin.from("users").select("display_name, email").eq("id", studentId).maybeSingle(),
       getStudentEntitlements(studentId),
+      getMomentumSessionCreditsSummary(studentId),
       loadNextPendingRetest(studentId).catch(() => null),
       loadMasteryGridHistory(studentId, 3).catch(() => []),
       loadCurrentNodeStates(studentId),
@@ -239,9 +241,11 @@ export async function buildMovementReceiptForStudent(
     },
     credit: {
       momentumActive: entitlements.momentumActive,
-      creditsRemaining: entitlements.sessionCreditsRemaining,
-      periodMonth: entitlements.sessionCreditPeriodMonth,
+      creditsRemaining: creditsSummary.totalRemaining,
+      monthlyCreditsRemaining: creditsSummary.monthlyRemaining,
+      periodMonth: creditsSummary.monthlyCredit?.period_month ?? null,
     },
+    packSprint: creditsSummary.packSprint,
     peer,
     slaGrant,
   };

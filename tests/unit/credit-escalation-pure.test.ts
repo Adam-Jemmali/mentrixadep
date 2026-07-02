@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCreditEscalationCopy,
   resolveCreditEscalationVariant,
+  resolveCreditEscalationVariantForWeeklyRun,
   utcLastDayOfMonth,
 } from "@/features/entitlements/credit-escalation-pure";
 
@@ -23,6 +24,20 @@ describe("resolveCreditEscalationVariant", () => {
 
   it("returns null on ordinary days", () => {
     expect(resolveCreditEscalationVariant(new Date("2026-07-10T12:00:00.000Z"))).toBeNull();
+  });
+});
+
+describe("resolveCreditEscalationVariantForWeeklyRun", () => {
+  it("catches month-start window on day 5", () => {
+    expect(resolveCreditEscalationVariantForWeeklyRun(new Date("2026-07-05T12:00:00.000Z"))).toBe(
+      "credit_live",
+    );
+  });
+
+  it("catches mid-month window", () => {
+    expect(resolveCreditEscalationVariantForWeeklyRun(new Date("2026-07-22T12:00:00.000Z"))).toBe(
+      "credit_nudge",
+    );
   });
 });
 

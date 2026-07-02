@@ -4,6 +4,7 @@ import {
   buildPeerVelocityUpsellLine,
 } from "@/features/comparison/peer-velocity-pure";
 import { buildLoopSlaReceiptLine } from "@/features/entitlements/loop-sla-pure";
+import { buildPackSprintReceiptLine } from "@/features/entitlements/pack-sprint-pure";
 
 export type MovementReceiptMessages = {
   verdict: string;
@@ -49,10 +50,15 @@ function formatLoopLine(loops: MovementReceiptData["loops"]): string | null {
 
 function formatCreditLine(credit: MovementReceiptData["credit"]): string | null {
   if (!credit.momentumActive) return null;
-  if (credit.creditsRemaining > 0) {
-    return `Included session credit unused (${credit.creditsRemaining} remaining this month).`;
+  if (credit.monthlyCreditsRemaining > 0) {
+    return `Included session credit unused (${credit.monthlyCreditsRemaining} remaining this month).`;
   }
   return "Included session credit used this month.";
+}
+
+function formatPackSprintLine(packSprint: MovementReceiptData["packSprint"]): string | null {
+  if (!packSprint || packSprint.creditsRemaining <= 0) return null;
+  return buildPackSprintReceiptLine(packSprint);
 }
 
 function appendPeerLine(verdict: string, data: MovementReceiptData): string {
@@ -66,6 +72,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
   const gridLine = formatGridMovementLine(data.grid);
   const loopLine = formatLoopLine(data.loops);
   const creditLine = formatCreditLine(data.credit);
+  const packSprintLine = formatPackSprintLine(data.packSprint);
   const slaLine = data.slaGrant ? buildLoopSlaReceiptLine({ nodeName: data.slaGrant.nodeName }) : null;
 
   if (slaLine) {
@@ -86,7 +93,19 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
     };
   }
 
-  if (data.credit.momentumActive && data.credit.creditsRemaining > 0) {
+  if (data.packSprint && data.packSprint.creditsRemaining > 0) {
+    const retestHint = data.retest.nodeName
+      ? ` Priority retest on ${data.retest.nodeName}${data.retest.countdownLabel ? ` unlocks in ${data.retest.countdownLabel}` : " is scheduled"}.`
+      : "";
+    return {
+      verdict: appendPeerLine(`${packSprintLine}. ${gridLine}${retestHint}`, data),
+      nextAction: "Book a sprint session on the node that still will not move before the pack expires.",
+      ctaHref: "/student/guides",
+      ctaLabel: "Book sprint session",
+    };
+  }
+
+  if (data.credit.momentumActive && data.credit.monthlyCreditsRemaining > 0) {
     const retestHint = data.retest.nodeName
       ? ` Priority retest on ${data.retest.nodeName}${data.retest.countdownLabel ? ` unlocks in ${data.retest.countdownLabel}` : " is scheduled"}.`
       : "";
@@ -143,9 +162,9 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
     };
   }
 
-  const creditSuffix = creditLine ? ` ${creditLine}` : "";
+  const creditSuffix = [packSprintLine, creditLine].filter(Boolean).join(" ");
   return {
-    verdict: appendPeerLine(`${gridLine}${creditSuffix}`, data),
+    verdict: appendPeerLine(`${gridLine}${creditSuffix ? ` ${creditSuffix}` : ""}`, data),
     nextAction: data.credit.momentumActive
       ? "Take a Quest on an unverified node or book your included session when the wall is real."
       : `${buildPeerVelocityUpsellLine()} Upgrade for weekly email and priority retests.`,
@@ -163,11 +182,14 @@ export function buildMovementReceiptDetailLines(data: MovementReceiptData): stri
     lines.push(`Loops: ${data.loops.completedThisWeek} closed this week`);
   }
   if (data.credit.momentumActive) {
-    lines.push(
-      data.credit.creditsRemaining > 0
-        ? `Credit: ${data.credit.creditsRemaining} included session remaining`
-        : "Credit: included session used this month",
-    );
+    if (data.credit.monthlyCreditsRemaining > 0) {
+      lines.push(`Credit: ${data.credit.monthlyCreditsRemaining} included session remaining`);
+    } else {
+      lines.push("Credit: included session used this month");
+    }
+  }
+  if (data.packSprint && data.packSprint.creditsRemaining > 0) {
+    lines.push(buildPackSprintReceiptLine(data.packSprint));
   }
   if (data.retest.nodeName) {
     lines.push(
@@ -193,7 +215,10 @@ export function movementReceiptEmailSubject(data: MovementReceiptData): string {
   if (data.retest.isDue && data.retest.nodeName) {
     return `${hi} — retest due on ${data.retest.nodeName}`;
   }
-  if (data.credit.creditsRemaining > 0) {
+  if (data.packSprint && data.packSprint.creditsRemaining > 0) {
+    return `${hi} — sprint: ${data.packSprint.creditsRemaining} of ${data.packSprint.creditsGranted} sessions left`;
+  }
+  if (data.credit.monthlyCreditsRemaining > 0) {
     return `${hi} — your included session credit is unused`;
   }
   return `${hi} — your weekly Movement Receipt`;

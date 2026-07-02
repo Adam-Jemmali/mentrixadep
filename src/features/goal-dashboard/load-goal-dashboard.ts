@@ -10,7 +10,10 @@ import {
   buildGoalDashboardVerdict,
   daysUntilDate,
 } from "@/features/goal-dashboard/goal-dashboard-pure";
-import type { StudentGoal } from "@/features/student-goals/types";
+import { loadPeerVelocityForWeek } from "@/features/comparison/load-peer-velocity";
+import { buildPeerVelocityLine } from "@/features/comparison/peer-velocity-pure";
+import { mondayUtcWeekKey } from "@/features/mastery-grid/grid-history-pure";
+import { buildPackSprintReceiptLine } from "@/features/entitlements/pack-sprint-pure";
 
 export type GoalDashboardData = {
   goal: StudentGoal;
@@ -19,6 +22,8 @@ export type GoalDashboardData = {
   daysUntilExam: number | null;
   verdict: string;
   nextAction: string;
+  peerTrendLine: string | null;
+  packSprintLine: string | null;
 };
 
 export async function loadGoalDashboardForViewer(): Promise<GoalDashboardData | null> {
@@ -48,6 +53,25 @@ export async function loadGoalDashboardForViewer(): Promise<GoalDashboardData | 
     daysUntilExam: daysUntilDate(goal.targetDate),
   });
 
+  let peerTrendLine: string | null = null;
+  if (hasEntitlement(entitlements, "momentum.peer_trends")) {
+    const weekStart = new Date(`${mondayUtcWeekKey()}T00:00:00.000Z`);
+    const verifiedThisWeek = await admin
+      .from("verified_first_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("is_correct", true)
+      .gte("attempted_at", weekStart.toISOString());
+    const peer = await loadPeerVelocityForWeek({
+      userId: user.id,
+      userVerifiedThisWeek: verifiedThisWeek.count ?? 0,
+      weekStart,
+    }).catch(() => null);
+    if (peer) {
+      peerTrendLine = buildPeerVelocityLine(peer);
+    }
+  }
+
   return {
     goal,
     verifiedNodeCount: count ?? 0,
@@ -55,5 +79,10 @@ export async function loadGoalDashboardForViewer(): Promise<GoalDashboardData | 
     daysUntilExam: daysUntilDate(goal.targetDate),
     verdict,
     nextAction,
+    peerTrendLine,
+    packSprintLine:
+      entitlements.packSprint && entitlements.packSprint.creditsRemaining > 0
+        ? buildPackSprintReceiptLine(entitlements.packSprint)
+        : null,
   };
 }

@@ -55,6 +55,8 @@ export function StudentCommandCenterClient({
   guideRankByTutorId = {},
   momentumSubscriber = false,
   sessionCreditAvailable = false,
+  packSprintCreditsRemaining = 0,
+  monthlyCreditsRemaining = 0,
   rematchBadgesByTutorId = {},
 }: {
   userId: string;
@@ -70,6 +72,8 @@ export function StudentCommandCenterClient({
   guideRankByTutorId?: Record<string, string>;
   momentumSubscriber?: boolean;
   sessionCreditAvailable?: boolean;
+  packSprintCreditsRemaining?: number;
+  monthlyCreditsRemaining?: number;
   rematchBadgesByTutorId?: Record<string, { label: string }>;
 }) {
   const router = useRouter();
@@ -309,6 +313,8 @@ export function StudentCommandCenterClient({
           guideRankByTutorId={guideRankByTutorId}
           momentumSubscriber={momentumSubscriber}
           sessionCreditAvailable={sessionCreditAvailable}
+          packSprintCreditsRemaining={packSprintCreditsRemaining}
+          monthlyCreditsRemaining={monthlyCreditsRemaining}
           rematchBadgesByTutorId={rematchBadgesByTutorId}
         />
       </section>

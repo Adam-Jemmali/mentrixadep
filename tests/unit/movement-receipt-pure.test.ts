@@ -31,6 +31,7 @@ const baseReceipt: MovementReceiptData = {
   credit: {
     momentumActive: true,
     creditsRemaining: 0,
+    monthlyCreditsRemaining: 0,
     periodMonth: "2026-07-01",
   },
 };
@@ -55,10 +56,30 @@ describe("buildMovementReceiptVerdict", () => {
   it("surfaces unused session credit for Momentum", () => {
     const { verdict, nextAction, ctaHref } = buildMovementReceiptVerdict({
       ...baseReceipt,
-      credit: { momentumActive: true, creditsRemaining: 1, periodMonth: "2026-07-01" },
+      credit: { momentumActive: true, creditsRemaining: 1, monthlyCreditsRemaining: 1, periodMonth: "2026-07-01" },
     });
     expect(verdict).toContain("included session credit is unused");
     expect(nextAction).toContain("Book your included Guide session");
+    expect(ctaHref).toBe("/student/guides");
+  });
+
+  it("prioritizes sprint pack credits in verdict", () => {
+    const { verdict, nextAction, ctaHref } = buildMovementReceiptVerdict({
+      ...baseReceipt,
+      credit: {
+        momentumActive: true,
+        creditsRemaining: 3,
+        monthlyCreditsRemaining: 0,
+        periodMonth: "2026-07-01",
+      },
+      packSprint: {
+        creditsRemaining: 2,
+        creditsGranted: 3,
+        daysRemaining: 41,
+      },
+    });
+    expect(verdict).toContain("Sprint: 2 of 3 remaining, 41 days left");
+    expect(nextAction).toContain("sprint session");
     expect(ctaHref).toBe("/student/guides");
   });
 
@@ -80,7 +101,7 @@ describe("buildMovementReceiptVerdict", () => {
     const { nextAction } = buildMovementReceiptVerdict({
       ...baseReceipt,
       momentumActive: false,
-      credit: { momentumActive: false, creditsRemaining: 0, periodMonth: null },
+      credit: { momentumActive: false, creditsRemaining: 0, monthlyCreditsRemaining: 0, periodMonth: null },
     });
     expect(nextAction).toContain("Upgrade for weekly email");
   });
@@ -100,7 +121,7 @@ describe("buildMovementReceiptDetailLines", () => {
     const lines = buildMovementReceiptDetailLines({
       ...baseReceipt,
       grid: { ...baseReceipt.grid, newlyVerifiedCount: 2 },
-      credit: { momentumActive: true, creditsRemaining: 1, periodMonth: "2026-07-01" },
+      credit: { momentumActive: true, creditsRemaining: 1, monthlyCreditsRemaining: 1, periodMonth: "2026-07-01" },
       retest: {
         nodeName: "Limits",
         isDue: false,

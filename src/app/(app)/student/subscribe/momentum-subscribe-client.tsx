@@ -6,7 +6,9 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { formatStudentBreakthroughPrice, formatStudentMomentumPackPrice, MOMENTUM_PACK_SESSION_COUNT } from "@/features/booking/booking-pricing";
 import type { SubscriptionBillingInterval } from "@/features/pricing/pricing-tiers-pure";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
+import type { PackSprintState } from "@/features/entitlements/pack-sprint-pure";
 import { buildPackGoalVerdict } from "@/features/payments/momentum-membership-pure";
+import { buildAlumniMomentumVerdict } from "@/features/entitlements/alumni-momentum-pure";
 import { SubscriptionStateAlert } from "@/shared/ui/alert-patterns";
 import { StripeCheckoutPendingPanel } from "@/shared/ui/spinner-patterns";
 import { Button } from "@/shared/ui/button";
@@ -17,13 +19,21 @@ export function MomentumSubscribeClient({
   sessionCreditsRemaining = 0,
   sessionCreditPeriodMonth = null,
   momentumActive = false,
+  alumniActive = false,
   daysUntilExam = null,
+  packSprint = null,
+  monthlyCreditsRemaining = 0,
+  alumniCreditsRemaining = 0,
 }: {
   initialSubscription: StudentSubscriptionRow | null;
   sessionCreditsRemaining?: number;
   sessionCreditPeriodMonth?: string | null;
   momentumActive?: boolean;
+  alumniActive?: boolean;
   daysUntilExam?: number | null;
+  packSprint?: PackSprintState | null;
+  monthlyCreditsRemaining?: number;
+  alumniCreditsRemaining?: number;
 }) {
   const searchParams = useSearchParams();
   const [interval, setInterval] = useState<SubscriptionBillingInterval>("annual");
@@ -36,6 +46,25 @@ export function MomentumSubscribeClient({
     daysUntilExam,
     sessionCreditsRemaining,
   });
+  const alumniCopy = buildAlumniMomentumVerdict();
+
+  async function startAlumniCheckout() {
+    setPending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/stripe/alumni-subscription/checkout", { method: "POST" });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        setError(data.error ?? "Could not start alumni checkout");
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError("Could not start alumni checkout");
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function startCheckout() {
     setPending(true);
@@ -83,6 +112,9 @@ export function MomentumSubscribeClient({
         subscription={initialSubscription}
         sessionCreditsRemaining={sessionCreditsRemaining}
         sessionCreditPeriodMonth={sessionCreditPeriodMonth}
+        packSprint={packSprint}
+        monthlyCreditsRemaining={monthlyCreditsRemaining}
+        alumniCreditsRemaining={alumniCreditsRemaining}
         variant="subscribe"
         interval={interval}
         onIntervalChange={setInterval}
@@ -107,7 +139,18 @@ export function MomentumSubscribeClient({
             </p>
           )}
           <Button type="button" className="mt-4" onClick={() => void startPackCheckout()} disabled={pending}>
-            Buy Momentum Pack
+            Buy Quarter Sprint Pack
+          </Button>
+        </div>
+      ) : null}
+
+      {!momentumActive && !alumniActive ? (
+        <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="text-sm font-semibold text-slate-900">Alumni Momentum</p>
+          <p className="mt-2 text-sm font-medium text-slate-900">{alumniCopy.verdict}</p>
+          <p className="mt-1 text-sm text-slate-600">{alumniCopy.nextAction}</p>
+          <Button type="button" className="mt-4" variant="outline" onClick={() => void startAlumniCheckout()} disabled={pending}>
+            Subscribe Alumni Momentum
           </Button>
         </div>
       ) : null}

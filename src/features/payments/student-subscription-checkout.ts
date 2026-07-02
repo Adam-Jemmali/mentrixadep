@@ -75,11 +75,13 @@ export async function POST(req: NextRequest) {
         checkout_kind: "momentum_subscription",
         user_id: user.id,
         billing_interval: interval,
+        plan_tier: "momentum",
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
           billing_interval: interval,
+          plan_tier: "momentum",
         },
       },
       ...mentrixaCheckoutBrandingWithAssets(origin),

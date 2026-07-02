@@ -49,8 +49,8 @@ export async function POST(_req: NextRequest) {
             currency: "cad",
             unit_amount: MOMENTUM_PACK_PRICE_CENTS,
             product_data: {
-              name: "Momentum Pack",
-              description: `${MOMENTUM_PACK_SESSION_COUNT} Guide sessions at the member rate bundle`,
+              name: "Quarter Sprint Pack",
+              description: `${MOMENTUM_PACK_SESSION_COUNT} Guide sessions for your exam-window sprint. Credits expire in 90 days.`,
             },
           },
           quantity: 1,
@@ -61,6 +61,7 @@ export async function POST(_req: NextRequest) {
       cancel_url: `${origin}/student/subscribe?canceled=1`,
       metadata: {
         checkout_kind: "momentum_pack",
+        pack_label: "quarter_sprint",
         user_id: user.id,
         session_credits: String(MOMENTUM_PACK_SESSION_COUNT),
       },

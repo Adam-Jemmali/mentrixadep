@@ -24,7 +24,14 @@ export const movementReceiptRetestSchema = z.object({
 export const movementReceiptCreditSchema = z.object({
   momentumActive: z.boolean(),
   creditsRemaining: z.number().int().min(0),
+  monthlyCreditsRemaining: z.number().int().min(0),
   periodMonth: z.string().nullable(),
+});
+
+export const movementReceiptPackSprintSchema = z.object({
+  creditsRemaining: z.number().int().min(0),
+  creditsGranted: z.number().int().min(0),
+  daysRemaining: z.number().int().min(0),
 });
 
 export const movementReceiptPeerSchema = z.object({
@@ -46,6 +53,7 @@ export const movementReceiptDataSchema = z.object({
   loops: movementReceiptLoopSchema,
   retest: movementReceiptRetestSchema,
   credit: movementReceiptCreditSchema,
+  packSprint: movementReceiptPackSprintSchema.nullable().optional(),
   peer: movementReceiptPeerSchema.nullable().optional(),
   slaGrant: movementReceiptSlaGrantSchema.nullable().optional(),
 });

@@ -27,6 +27,7 @@ const baseReceipt = (overrides: Partial<MovementReceiptData> = {}): MovementRece
   credit: {
     momentumActive: true,
     creditsRemaining: 1,
+    monthlyCreditsRemaining: 1,
     periodMonth: "2026-06-01",
   },
   peer: null,

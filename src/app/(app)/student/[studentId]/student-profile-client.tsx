@@ -49,6 +49,7 @@ import {
 } from "@/shared/ui/switch-messages-pure";
 import { MomentumMembershipPanel } from "@/features/student-profile/ui/momentum-membership-panel";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
+import type { StudentEntitlements } from "@/features/entitlements/entitlements";
 
 // ─── Shared Battle UI Components ─────────────────────────────────────────────
 
@@ -427,10 +428,12 @@ export function StudentProfileClient({
   data,
   referral,
   subscription = null,
+  entitlements = null,
 }: {
   data: StudentProfileData;
   referral?: ReferralDashboardData | null;
   subscription?: StudentSubscriptionRow | null;
+  entitlements?: StudentEntitlements | null;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -748,7 +751,15 @@ export function StudentProfileClient({
                   id: "membership",
                   ...profileTabMessage("membership"),
                   panel: (
-                    <MomentumMembershipPanel subscription={subscription} variant="profile" />
+                    <MomentumMembershipPanel
+                      subscription={subscription}
+                      variant="profile"
+                      sessionCreditsRemaining={entitlements?.sessionCreditsRemaining ?? 0}
+                      sessionCreditPeriodMonth={entitlements?.sessionCreditPeriodMonth ?? null}
+                      packSprint={entitlements?.packSprint ?? null}
+                      monthlyCreditsRemaining={entitlements?.monthlyCreditsRemaining ?? 0}
+                      alumniCreditsRemaining={entitlements?.alumniCreditsRemaining ?? 0}
+                    />
                   ),
                 },
                 {

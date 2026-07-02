@@ -74,38 +74,6 @@
       "schedule": "0 1 * * 1"
     },
     {
-      "path": "/api/cron/unlock-expired-slots",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/complete-sessions",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/enforce-session-timing",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/process-recording-transcriptions",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/send-reminders",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/pre-session-brief",
-      "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/cron/process-payouts",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/verification-overdue",
-      "schedule": "0 7 * * *"
-    },
-    {
       "path": "/api/cron/division-weekly",
       "schedule": "15 0 * * 1"
     },
@@ -114,8 +82,24 @@
       "schedule": "30 0 * * 1"
     },
     {
-      "path": "/api/cron/division-war-resolve",
-      "schedule": "0 23 * * 0"
+      "path": "/api/cron/refresh-guide-impact",
+      "schedule": "30 1 * * 1"
+    },
+    {
+      "path": "/api/cron/process-background-jobs",
+      "schedule": "45 1 * * 1"
+    },
+    {
+      "path": "/api/cron/reconcile-subscriptions",
+      "schedule": "30 2 * * 1"
+    },
+    {
+      "path": "/api/cron/sync-peer-comparison",
+      "schedule": "15 3 * * 1"
+    },
+    {
+      "path": "/api/cron/capture-mastery-grid-snapshots",
+      "schedule": "30 3 * * 1"
     },
     {
       "path": "/api/cron/send-progress-snapshots",
@@ -126,40 +110,60 @@
       "schedule": "30 9 * * 1"
     },
     {
-      "path": "/api/cron/refresh-guide-impact",
-      "schedule": "30 1 * * 1"
+      "path": "/api/cron/grant-momentum-session-credits",
+      "schedule": "15 2 * * 2"
     },
     {
-      "path": "/api/cron/process-background-jobs",
-      "schedule": "45 1 * * *"
+      "path": "/api/cron/grant-alumni-quarter-credits",
+      "schedule": "45 2 * * 2"
     },
     {
-      "path": "/api/cron/capture-mastery-grid-snapshots",
-      "schedule": "30 3 * * 1"
+      "path": "/api/cron/unlock-expired-slots",
+      "schedule": "0 2 * * 2"
+    },
+    {
+      "path": "/api/cron/enforce-session-timing",
+      "schedule": "30 8 * * 2"
+    },
+    {
+      "path": "/api/cron/complete-sessions",
+      "schedule": "0 3 * * 3"
+    },
+    {
+      "path": "/api/cron/process-recording-transcriptions",
+      "schedule": "30 9 * * 3"
+    },
+    {
+      "path": "/api/cron/send-reminders",
+      "schedule": "0 4 * * 4"
+    },
+    {
+      "path": "/api/cron/loop-sla-monitor",
+      "schedule": "30 4 * * 4"
+    },
+    {
+      "path": "/api/cron/credit-escalation",
+      "schedule": "0 14 * * 5"
+    },
+    {
+      "path": "/api/cron/pre-session-brief",
+      "schedule": "0 5 * * 5"
+    },
+    {
+      "path": "/api/cron/process-payouts",
+      "schedule": "0 6 * * 6"
+    },
+    {
+      "path": "/api/cron/verification-overdue",
+      "schedule": "0 7 * * 0"
+    },
+    {
+      "path": "/api/cron/division-war-resolve",
+      "schedule": "0 23 * * 0"
     },
     {
       "path": "/api/cron/momentum-monthly-digest",
       "schedule": "0 9 1 * *"
-    },
-    {
-      "path": "/api/cron/grant-momentum-session-credits",
-      "schedule": "15 2 * * *"
-    },
-    {
-      "path": "/api/cron/credit-escalation",
-      "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/cron/loop-sla-monitor",
-      "schedule": "30 4 * * *"
-    },
-    {
-      "path": "/api/cron/reconcile-subscriptions",
-      "schedule": "30 2 * * 1"
-    },
-    {
-      "path": "/api/cron/sync-peer-comparison",
-      "schedule": "15 3 * * 1"
     }
   ]
 }

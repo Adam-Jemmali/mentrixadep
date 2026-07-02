@@ -5,11 +5,14 @@ import type { SubscriptionBillingInterval } from "@/features/pricing/pricing-tie
 
 export const subscriptionBillingIntervalSchema = z.enum(["monthly", "annual"]);
 
+export type SubscriptionPlanTier = "momentum" | "alumni";
+
 export type StudentSubscriptionRow = {
   user_id: string;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   billing_interval: SubscriptionBillingInterval;
+  plan_tier: SubscriptionPlanTier;
   local_status: string;
   stripe_status: string | null;
   current_period_end: string | null;
@@ -25,6 +28,7 @@ export function mapStripeSubscriptionRow(
   userId: string,
   subscription: any,
   billingInterval: SubscriptionBillingInterval,
+  planTier: SubscriptionPlanTier = "momentum",
 ): Omit<StudentSubscriptionRow, "mismatch_flagged_at"> & {
   mismatch_flagged_at?: string | null;
 } {
@@ -38,6 +42,7 @@ export function mapStripeSubscriptionRow(
     stripe_customer_id: customerId,
     stripe_subscription_id: subscription.id,
     billing_interval: billingInterval,
+    plan_tier: planTier,
     local_status: subscription.status,
     stripe_status: subscription.status,
     current_period_end: subscription.current_period_end
@@ -49,16 +54,28 @@ export function mapStripeSubscriptionRow(
 
 export function isMomentumSubscriptionActive(row: StudentSubscriptionRow | null): boolean {
   if (!row) return false;
-  return row.local_status === "active" || row.local_status === "trialing";
+  if (row.local_status !== "active" && row.local_status !== "trialing") return false;
+  return row.plan_tier === "momentum";
+}
+
+export function isAlumniMomentumActive(row: StudentSubscriptionRow | null): boolean {
+  if (!row) return false;
+  if (row.local_status !== "active" && row.local_status !== "trialing") return false;
+  return row.plan_tier === "alumni";
+}
+
+export function isAnyMomentumBillingActive(row: StudentSubscriptionRow | null): boolean {
+  return isMomentumSubscriptionActive(row) || isAlumniMomentumActive(row);
 }
 
 export async function upsertStudentSubscriptionFromStripe(
   userId: string,
   subscription: any,
   billingInterval: SubscriptionBillingInterval,
+  planTier: SubscriptionPlanTier = "momentum",
 ): Promise<void> {
   const admin = createAdminClient();
-  const payload = mapStripeSubscriptionRow(userId, subscription, billingInterval);
+  const payload = mapStripeSubscriptionRow(userId, subscription, billingInterval, planTier);
   const { error } = await admin.from("student_subscriptions").upsert(
     {
       ...payload,
@@ -78,7 +95,7 @@ export async function getStudentSubscription(
   const { data, error } = await admin
     .from("student_subscriptions")
     .select(
-      "user_id, stripe_customer_id, stripe_subscription_id, billing_interval, local_status, stripe_status, current_period_end, cancel_at_period_end, mismatch_flagged_at",
+      "user_id, stripe_customer_id, stripe_subscription_id, billing_interval, plan_tier, local_status, stripe_status, current_period_end, cancel_at_period_end, mismatch_flagged_at",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -87,7 +104,12 @@ export async function getStudentSubscription(
     console.warn("[subscription] read failed:", error.message);
     return null;
   }
-  return (data as StudentSubscriptionRow | null) ?? null;
+  return (data as StudentSubscriptionRow | null)
+    ? {
+        ...(data as StudentSubscriptionRow),
+        plan_tier: ((data as StudentSubscriptionRow).plan_tier ?? "momentum") as SubscriptionPlanTier,
+      }
+    : null;
 }
 
 export async function flagSubscriptionStatusMismatch(params: {

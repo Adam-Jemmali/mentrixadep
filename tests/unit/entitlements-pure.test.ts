@@ -7,6 +7,7 @@ const activeSubscription: StudentSubscriptionRow = {
   stripe_customer_id: "cus_1",
   stripe_subscription_id: "sub_1",
   billing_interval: "annual",
+  plan_tier: "momentum",
   local_status: "active",
   stripe_status: "active",
   current_period_end: "2026-12-31T00:00:00.000Z",
@@ -52,5 +53,21 @@ describe("buildStudentEntitlements", () => {
     });
     expect(entitlements.sessionCreditsRemaining).toBe(0);
     expect(entitlements.entitlementIds).not.toContain("momentum.session_credit");
+  });
+
+  it("grants alumni archive entitlements without full momentum perks", () => {
+    const entitlements = buildStudentEntitlements({
+      userId: "user-1",
+      subscription: { ...activeSubscription, plan_tier: "alumni" },
+      sessionCreditsRemaining: 1,
+      sessionCreditPeriodMonth: "2026-04-01",
+    });
+    expect(entitlements.alumniActive).toBe(true);
+    expect(entitlements.momentumActive).toBe(false);
+    expect(entitlements.entitlementIds).toContain("momentum.alumni");
+    expect(entitlements.entitlementIds).toContain("momentum.brief_archive");
+    expect(entitlements.entitlementIds).not.toContain("momentum.priority_retest");
+    expect(entitlements.entitlementIds).not.toContain("momentum.trajectory_index");
+    expect(entitlements.entitlementIds).toContain("momentum.session_credit");
   });
 });

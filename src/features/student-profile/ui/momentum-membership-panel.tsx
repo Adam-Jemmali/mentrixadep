@@ -23,6 +23,8 @@ import {
 import { formatStudentBreakthroughPrice } from "@/features/booking/booking-pricing";
 import { buildMomentumRoiSummary } from "@/features/pricing/momentum-roi-pure";
 import { trajectoryIndexSocialProofLine } from "@/features/trajectory-index/trajectory-index-pure";
+import type { PackSprintState } from "@/features/entitlements/pack-sprint-pure";
+import { buildSessionCreditsHubVerdict } from "@/features/entitlements/session-credits-display-pure";
 import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
 import { MomentumSubscriptionDisclosure, MomentumLoopSlaDisclosure } from "@/shared/ui/disclosure-patterns";
 import { MentrixaBillingIntervalRadioGroup } from "@/shared/ui/radio-group-patterns";
@@ -31,6 +33,9 @@ type MomentumMembershipPanelProps = {
   subscription: StudentSubscriptionRow | null;
   sessionCreditsRemaining?: number;
   sessionCreditPeriodMonth?: string | null;
+  packSprint?: PackSprintState | null;
+  monthlyCreditsRemaining?: number;
+  alumniCreditsRemaining?: number;
   variant?: "profile" | "subscribe";
   interval?: SubscriptionBillingInterval;
   onIntervalChange?: (interval: SubscriptionBillingInterval) => void;
@@ -44,6 +49,9 @@ export function MomentumMembershipPanel({
   subscription,
   sessionCreditsRemaining = 0,
   sessionCreditPeriodMonth = null,
+  packSprint = null,
+  monthlyCreditsRemaining = 0,
+  alumniCreditsRemaining = 0,
   variant = "profile",
   interval = "annual",
   onIntervalChange,
@@ -57,6 +65,16 @@ export function MomentumMembershipPanel({
   const renewal = formatMomentumRenewalLabel(subscription);
   const isSubscribe = variant === "subscribe";
   const roi = !active ? buildMomentumRoiSummary(interval) : null;
+  const creditsCopy =
+    active
+      ? buildSessionCreditsHubVerdict({
+          totalRemaining: sessionCreditsRemaining,
+          monthlyRemaining: monthlyCreditsRemaining,
+          alumniRemaining: alumniCreditsRemaining,
+          packSprint,
+          periodMonth: sessionCreditPeriodMonth,
+        })
+      : null;
 
   return (
     <section
@@ -174,12 +192,13 @@ export function MomentumMembershipPanel({
         </p>
       ) : null}
 
-      {active ? (
-        <p className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-900">
-          {sessionCreditsRemaining > 0
-            ? `${sessionCreditsRemaining} included session credit${sessionCreditsRemaining === 1 ? "" : "s"} available${sessionCreditPeriodMonth ? ` for ${sessionCreditPeriodMonth.slice(0, 7)}` : ""}.`
-            : "Your included session credit for this month is used. Extra sessions book at the member rate."}
-        </p>
+      {active && creditsCopy ? (
+        <div className="mt-4 space-y-2">
+          <p className="rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm font-medium text-indigo-950">
+            {creditsCopy.verdict}
+          </p>
+          <p className="text-sm text-indigo-900">{creditsCopy.nextAction}</p>
+        </div>
       ) : null}
 
       <p className="mt-4 text-sm font-semibold text-indigo-900">
@@ -192,6 +211,11 @@ export function MomentumMembershipPanel({
             <Button asChild variant="outline">
               <Link href="/student#browse-guides">Book a Guide session</Link>
             </Button>
+            {!isSubscribe ? (
+              <Button asChild variant="outline">
+                <Link href="/student/certificate">Trajectory certificate</Link>
+              </Button>
+            ) : null}
             {!isSubscribe ? (
               <Button asChild variant="ghost">
                 <Link href="/student/subscribe">Manage plan</Link>

@@ -60,9 +60,6 @@ import {
   getStudentEntitlements,
   hasEntitlement,
 } from "@/features/entitlements/entitlements";
-import { MomentumMembershipHubCard } from "@/features/student-profile/ui/momentum-membership-hub-card";
-import { MomentumActiveHubCard } from "@/features/student-profile/ui/momentum-active-hub-card";
-import { getStudentSubscription } from "@/features/payments/student-subscription";
 import { loadNextPendingRetest, loadLoopReportRows } from "@/features/intervention-retests/retest-reads";
 import { RetestCountdownHubCard } from "@/features/intervention-retests/ui/retest-countdown-hub-card";
 import { LoopReportHubCard } from "@/features/loop-report/ui/loop-report-hub-card";
@@ -74,10 +71,15 @@ import { loadActiveMovementReceiptForViewer } from "@/features/movement-receipt/
 import { MovementReceiptHubCard } from "@/features/movement-receipt/ui/movement-receipt-hub-card";
 import { loadTrajectoryIndexForViewer } from "@/features/trajectory-index/load-trajectory-index";
 import { TrajectoryIndexHubCard } from "@/features/trajectory-index/ui/trajectory-index-hub-card";
+import { loadUnifiedTrajectoryIndexForViewer } from "@/features/trajectory-index/load-unified-trajectory-index";
+import { UnifiedTrajectoryHubCard } from "@/features/trajectory-index/ui/unified-trajectory-hub-card";
 import { getGuideRematchBadgesForStudent } from "@/features/matchmaker/load-guide-rematch-badges";
 import { loadGuideMemoryForSession } from "@/features/guide-memory/load-guide-memory";
 import { isGuideMemoryWindowOpen } from "@/features/guide-memory/guide-memory-pure";
 import { GuideMemoryPanel } from "@/features/guide-memory/ui/guide-memory-panel";
+import { getActivePackSprintState } from "@/features/entitlements/session-credits";
+import { PackSprintSuccessPanel } from "@/features/entitlements/ui/pack-sprint-success-panel";
+import { daysUntilDate } from "@/features/goal-dashboard/goal-dashboard-pure";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -93,7 +95,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, pendingRetest, goalDashboard, impactReceipts, movementReceipt, trajectoryIndex] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, entitlements, pendingRetest, goalDashboard, impactReceipts, movementReceipt, trajectoryIndex, unifiedTrajectory] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -106,7 +108,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       loadMasteryGrid(user.id).catch(() => null),
       loadActiveStudentGoalForViewer(AP_CALC_AB_SUBJECT),
       getStudentEntitlements(user.id),
-      getStudentSubscription(user.id),
       loadNextPendingRetest(user.id).catch(() => null),
       loadGoalDashboardForViewer().catch(() => null),
       loadGuideImpactReceipts(user.id, {
@@ -115,9 +116,11 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       }).catch(() => []),
       loadActiveMovementReceiptForViewer().catch(() => null),
       loadTrajectoryIndexForViewer().catch(() => null),
+      loadUnifiedTrajectoryIndexForViewer().catch(() => null),
     ]);
 
   const momentumSubscriber = entitlements.momentumActive;
+  const archiveSubscriber = entitlements.momentumActive || entitlements.alumniActive;
   const sessionCreditAvailable = entitlements.sessionCreditsRemaining > 0;
 
   const loopRows = await loadLoopReportRows(user.id, {
@@ -212,6 +215,13 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               : "Guide"),
         }).catch(() => null)
       : null;
+
+  const packSprintSuccess =
+    query.booking === "pack_success"
+      ? await getActivePackSprintState(user.id).catch(() => null)
+      : null;
+  const daysUntilExam =
+    activeGoal?.targetDate != null ? daysUntilDate(activeGoal.targetDate) : null;
 
   return (
     <div className={mentrixStudent.pageBgHub}>
@@ -316,25 +326,11 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         ) : null}
 
-        {!momentumSubscriber ? (
-          <div className="mt-8">
-            <MomentumMembershipHubCard />
-          </div>
-        ) : (
-          <div className="mt-8">
-            <MomentumActiveHubCard
-              sessionCreditsRemaining={entitlements.sessionCreditsRemaining}
-              sessionCreditPeriodMonth={entitlements.sessionCreditPeriodMonth}
-              subscription={subscription}
-            />
-          </div>
-        )}
-
         {movementReceipt ? (
           <div className="mt-8">
             <MovementReceiptHubCard
               data={movementReceipt.receipt_data}
-              momentumActive={momentumSubscriber}
+              momentumActive={archiveSubscriber}
             />
           </div>
         ) : null}
@@ -342,6 +338,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         {trajectoryIndex ? (
           <div className="mt-8">
             <TrajectoryIndexHubCard data={trajectoryIndex} />
+          </div>
+        ) : null}
+
+        {unifiedTrajectory ? (
+          <div className="mt-8">
+            <UnifiedTrajectoryHubCard data={unifiedTrajectory} />
           </div>
         ) : null}
 
@@ -388,6 +390,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           />
         </div>
 
+        {query.booking === "pack_success" ? (
+          <PackSprintSuccessPanel packSprint={packSprintSuccess} daysUntilExam={daysUntilExam} />
+        ) : null}
         {query.booking === "success" && (
           <div className="mt-8 mb-2 rounded-2xl border border-emerald-400/35 bg-emerald-950/40 px-5 py-4 text-sm text-emerald-100 shadow-sm">
             <p className="font-medium text-emerald-50">Payment received</p>
@@ -458,6 +463,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             guideRankByTutorId={guideRankByTutorId}
             momentumSubscriber={momentumSubscriber}
             sessionCreditAvailable={sessionCreditAvailable}
+            packSprintCreditsRemaining={entitlements.packSprint?.creditsRemaining ?? 0}
+            monthlyCreditsRemaining={entitlements.monthlyCreditsRemaining}
             rematchBadgesByTutorId={rematchBadgesByTutorId}
           />
 
