@@ -12,7 +12,6 @@ import {
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import {
-  MentrixaVocabIcon,
   StreakCountDisplay,
   XpCountDisplay,
 } from "@/shared/icons/mentrixa-vocab-icons";

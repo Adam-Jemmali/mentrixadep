@@ -38,15 +38,15 @@ function StatValue({
   iconClassName?: string;
   iconSize?: number;
 }) {
+  const title = VOCAB_SHORT_LABEL[icon] ?? icon;
   return (
     <div className="flex items-center gap-3">
       <MentrixaVocabIcon
         name={icon}
         size={iconSize}
         surface="dark"
-        gold={gold}
         className={iconClassName}
-        title={label}
+        title={title}
       />
       {children}
     </div>
