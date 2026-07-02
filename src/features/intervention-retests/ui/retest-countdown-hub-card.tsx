@@ -21,7 +21,7 @@ export function RetestCountdownHubCard({ state }: RetestCountdownHubCardProps) {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {state.priorityRetest ? (
-              <MentrixaVocabIcon name="retest" size={16} className="text-emerald-400" title="Priority retest" />
+              <MentrixaVocabIcon name="retest" size={16} surface="light" title="Priority retest" />
             ) : (
               <Clock className="h-4 w-4 text-violet-300" aria-hidden />
             )}

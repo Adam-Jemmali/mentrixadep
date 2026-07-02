@@ -21,7 +21,7 @@ export function LoopReportHubCard({ rows, momentumActive }: LoopReportHubCardPro
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Loop report">
       <p className={`${mentrixStudent.sectionEyebrowOnLight} inline-flex items-center gap-2`}>
-        <MentrixaVocabIcon name="loop-report" size={16} title="Loop report" />
+        <MentrixaVocabIcon name="loop-report" size={16} surface="light" title="Loop report" />
         Loop report
       </p>
       <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Arena">
-<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<g fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M8 34c0-12 7.2-22 16-26 8.8 4 16 14 16 26" stroke-width="2.1"/>
   <path d="M12 34h24" stroke-width="2.25"/>
   <ellipse cx="24" cy="34" rx="18" ry="4" stroke-width="1.75" opacity="0.5"/>

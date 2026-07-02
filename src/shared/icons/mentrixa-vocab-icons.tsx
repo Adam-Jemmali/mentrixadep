@@ -14,11 +14,16 @@ import { weekdayLabel, weekdayVocabIcon } from "@/shared/icons/weekday-vocab-pur
 
 const GOLD_FILTER =
   "brightness(0) saturate(100%) invert(73%) sepia(48%) saturate(746%) hue-rotate(8deg) brightness(95%) contrast(92%)";
-const ON_DARK_FILTER = "brightness(0) saturate(100%) invert(1)";
-const ON_LIGHT_FILTER = "brightness(0) saturate(100%)";
 
 function isRasterVocabSrc(src: string): boolean {
-  return src.endsWith(".webp") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg");
+  return /\.(webp|png|jpe?g|gif|avif)$/i.test(src);
+}
+
+/** Black-stroke SVGs on dark shells: invert so the authored glyph reads white. */
+function svgFilter(surface: "dark" | "light", gold: boolean): string | undefined {
+  if (gold) return GOLD_FILTER;
+  if (surface === "dark") return "invert(1)";
+  return undefined;
 }
 
 export type MentrixaVocabIconProps = {
@@ -31,8 +36,8 @@ export type MentrixaVocabIconProps = {
 };
 
 /**
- * Vocabulary sticker from /public/icons/ or /images/xp.webp.
- * SVGs render via background-image (never broken-img placeholders). XP uses xp.webp raster.
+ * Renders vocabulary assets from /public/icons/ or /images/xp.webp.
+ * SVGs use a native <img> so the file displays as authored (no mask / background-image).
  */
 export function MentrixaVocabIcon({
   name,
@@ -68,29 +73,30 @@ export function MentrixaVocabIcon({
     );
   }
 
-  const filter = useGold
-    ? GOLD_FILTER
-    : surface === "dark"
-      ? ON_DARK_FILTER
-      : ON_LIGHT_FILTER;
+  const filter = svgFilter(surface, useGold);
 
   return (
     <span
-      role="img"
-      aria-label={ariaLabel}
-      title={ariaLabel}
       className={cn(
-        "inline-block shrink-0 bg-center bg-no-repeat bg-contain",
+        "inline-flex shrink-0 items-center justify-center",
         useGold && "rounded-md ring-1 ring-[#D4A017]/50 drop-shadow-[0_0_6px_rgba(212,160,23,0.35)]",
         className,
       )}
-      style={{
-        width: size,
-        height: size,
-        backgroundImage: `url("${src}")`,
-        filter,
-      }}
-    />
+      style={{ width: size, height: size }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={ariaLabel}
+        title={ariaLabel}
+        width={size}
+        height={size}
+        className="block h-full w-full object-contain"
+        style={filter ? { filter } : undefined}
+        draggable={false}
+        decoding="async"
+      />
+    </span>
   );
 }
 
@@ -194,7 +200,6 @@ export function StreakCountDisplay({
   );
 }
 
-/** XP count with xp.webp — single asset everywhere XP appears. */
 export function XpCountDisplay({
   xp,
   size = 28,
@@ -221,7 +226,6 @@ export function XpCountDisplay({
   );
 }
 
-/** Standalone XP sticker — always /images/xp.webp. */
 export function XpIcon({ size = 24, title = "XP", className }: { size?: number; title?: string; className?: string }) {
   return (
     <span

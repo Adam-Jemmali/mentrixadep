@@ -21,7 +21,7 @@ import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { readUiPerfTier } from "@/shared/core/ui-performance";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
 const statCellClass = `${mentrixBrandUi.panel} flex flex-col rounded-2xl px-4 py-3 sm:px-5 sm:py-4`;
@@ -331,7 +331,7 @@ export function SessionsList({
                   ref={totalXpRef}
                   className="xp-number text-2xl font-bold tabular-nums text-indigo-300"
                 />
-                <MentrixaVocabIcon name="xp" size={20} className="text-indigo-300" title="Total XP" />
+                <XpIcon size={20} title="Total XP" />
               </span>
               <span className="mt-1 text-[11px] font-bold uppercase tracking-wide text-violet-300/75">
                 Total XP
@@ -392,7 +392,7 @@ export function SessionsList({
               </div>
             </div>
             <div className="text-xs font-mono font-medium text-zinc-600 tabular-nums sm:text-right inline-flex items-center justify-end gap-1.5">
-              <MentrixaVocabIcon name="xp" size={14} className="text-zinc-500" title="XP" />
+              <XpIcon size={14} title="XP" />
               {totalXp}
             </div>
           </div>
@@ -430,28 +430,28 @@ export function SessionsList({
                   value="schedule"
                   className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
-                  <MentrixaVocabIcon name="day" size={14} className="text-white/90" title="Week" />
+                  <MentrixaVocabIcon name="day" size={14} surface="dark" title="Week" />
                   Week
                 </TabsTrigger>
                 <TabsTrigger
                   value="upcoming"
                   className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
-                  <MentrixaVocabIcon name="session" size={14} className="text-white/90" title="Upcoming" />
+                  <MentrixaVocabIcon name="session" size={14} surface="dark" title="Upcoming" />
                   Upcoming ({filteredUpcoming.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="requests"
                   className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
-                  <MentrixaVocabIcon name="booking" size={14} className="text-white/90" title="Requests" />
+                  <MentrixaVocabIcon name="booking" size={14} surface="dark" title="Requests" />
                   Requests ({filteredRequests.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="past"
                   className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
                 >
-                  <MentrixaVocabIcon name="loop-report" size={14} className="text-white/90" title="History" />
+                  <MentrixaVocabIcon name="loop-report" size={14} surface="dark" title="History" />
                   History
                 </TabsTrigger>
               </TabsList>

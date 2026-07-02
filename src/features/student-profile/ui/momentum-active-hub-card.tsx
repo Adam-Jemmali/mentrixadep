@@ -43,7 +43,7 @@ export function MomentumActiveHubCard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <MentrixaVocabIcon name="momentum" size={16} className="text-violet-300" title="Momentum" />
+            <MentrixaVocabIcon name="momentum" size={16} surface="dark" title="Momentum" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">
               Momentum active
             </p>

@@ -22,7 +22,7 @@ export function MomentumMembershipHubCard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <MentrixaVocabIcon name="momentum" size={16} className="text-violet-300" title="Momentum" />
+            <MentrixaVocabIcon name="momentum" size={16} surface="dark" title="Momentum" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">
               Momentum package
             </p>
@@ -43,7 +43,7 @@ export function MomentumMembershipHubCard() {
                   <MentrixaVocabIcon
                     name={momentumPerkVocabIcon(receipt)}
                     size={14}
-                    className="mt-0.5 shrink-0 text-violet-300"
+                    surface="dark"
                     title={receipt}
                   />
                   <span>{receipt}</span>

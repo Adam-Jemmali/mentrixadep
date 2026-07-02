@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Unit">
-<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<g fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <rect x="10" y="8" width="28" height="32" rx="3" stroke-width="2"/>
   <line x1="10" y1="16" x2="38" y2="16" stroke-width="1.75" opacity="0.5"/>
   <line x1="10" y1="24" x2="38" y2="24" stroke-width="1.75" opacity="0.5"/>
   <line x1="10" y1="32" x2="38" y2="32" stroke-width="1.75" opacity="0.5"/>
-  <rect x="14" y="11" width="8" height="3" rx="1" fill="currentColor" stroke="none" opacity="0.75"/>
-  <rect x="14" y="19" width="12" height="2" rx="1" fill="currentColor" stroke="none" opacity="0.45"/>
-  <rect x="14" y="27" width="10" height="2" rx="1" fill="currentColor" stroke="none" opacity="0.45"/>
+  <rect x="14" y="11" width="8" height="3" rx="1" fill="#000" stroke="none" opacity="0.75"/>
+  <rect x="14" y="19" width="12" height="2" rx="1" fill="#000" stroke="none" opacity="0.45"/>
+  <rect x="14" y="27" width="10" height="2" rx="1" fill="#000" stroke="none" opacity="0.45"/>
 </g>
 </svg>
