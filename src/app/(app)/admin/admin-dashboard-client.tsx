@@ -42,7 +42,7 @@ function MetricCard({
       <div className="flex items-start justify-between mb-4">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${accent ?? "bg-slate-100"}`}>
           {vocabIcon ? (
-            <MentrixaVocabIcon name={vocabIcon} size={16} className="text-slate-600" title={label} />
+            <MentrixaVocabIcon name={vocabIcon} size={16} surface="light" title={label} />
           ) : Icon ? (
             <Icon className="w-4 h-4 text-slate-600" strokeWidth={1.8} />
           ) : null}

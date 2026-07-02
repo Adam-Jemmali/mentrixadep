@@ -10,7 +10,7 @@ import {
 
 describe("mentrixa-vocab-map", () => {
   it("registers every checklist name with a unique key", () => {
-    expect(VOCAB_ICON_NAMES.length).toBe(82);
+    expect(VOCAB_ICON_NAMES.length).toBe(83);
     const unique = new Set(VOCAB_ICON_NAMES);
     expect(unique.size).toBe(VOCAB_ICON_NAMES.length);
   });

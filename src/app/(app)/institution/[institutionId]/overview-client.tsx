@@ -43,7 +43,7 @@ function StatCard({
             <MentrixaVocabIcon
               name={vocabIcon}
               size={16}
-              className={accent ? "text-slate-300" : "text-slate-500"}
+              surface="light"
               title={label}
             />
           ) : Icon ? (

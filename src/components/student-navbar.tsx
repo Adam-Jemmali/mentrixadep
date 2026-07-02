@@ -62,7 +62,7 @@ function navItemIcon(name: VocabIconName, label: string, size = 26) {
     <MentrixaVocabIcon
       name={name}
       size={size}
-      className="text-white"
+      surface="dark"
       title={label}
     />
   );
@@ -254,7 +254,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   onClick={() => setProfileMenuOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
-                  <MentrixaVocabIcon name="profile" size={18} className="text-slate-600" />
+                  <MentrixaVocabIcon name="profile" size={18} surface="light" />
                   View Profile
                 </Link>
                 <Link
@@ -262,7 +262,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   onClick={() => setProfileMenuOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
-                  <MentrixaVocabIcon name="momentum-membership" size={18} className="text-slate-600" />
+                  <MentrixaVocabIcon name="momentum-membership" size={18} surface="light" />
                   Momentum membership
                 </Link>
                 <ArenaMusicMuteToggle variant="menu" />
@@ -322,7 +322,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   }}
                   className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
-                  <MentrixaVocabIcon name="profile" size={18} className="text-slate-600" />
+                  <MentrixaVocabIcon name="profile" size={18} surface="light" />
                   View Profile
                 </Link>
                 <Link
@@ -333,7 +333,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   }}
                   className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
-                  <MentrixaVocabIcon name="momentum-membership" size={18} className="text-slate-600" />
+                  <MentrixaVocabIcon name="momentum-membership" size={18} surface="light" />
                   Momentum membership
                 </Link>
                 <div className="border-t border-slate-100">

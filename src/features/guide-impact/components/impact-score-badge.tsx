@@ -41,7 +41,7 @@ export function ImpactScoreBadge({
           name="impact-score"
           size={size === "sm" ? 12 : 14}
           gold
-          className="shrink-0 text-amber-600"
+          surface="light"
           title="Guide Impact Score"
         />
         {formatImpactScoreLabel(impactScore)}
@@ -75,7 +75,7 @@ export function ImpactScoreBreakdown({ entries }: { entries: GuideImpactEntry[] 
                 name="impact-score"
                 size={12}
                 gold
-                className="shrink-0 text-amber-600"
+                surface="light"
                 title="Guide Impact Score"
               />
               {Math.round(entry.impactScore)}/100

@@ -22,11 +22,11 @@ import {
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, StreakCountDisplay, VocabHubTile, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
-import { mentrixStudent, mentrixBrandUi } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   DeferredAccountRankLadder,
   DeferredHeroMentrixerBounce,
@@ -46,7 +46,6 @@ import {
   isStreakAtRisk18h,
 } from "@/features/student-profile/student-dashboard-helpers";
 import { getUpcomingSessionBriefs } from "@/features/pre-session-brief/brief";
-import { Button } from "@/shared/ui/button";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 import {
   getGuideImpactScoresMap,
@@ -231,13 +230,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           <MentrixHeroDecor />
           <DeferredHeroMentrixerBounce />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-xl space-y-4">
-              <div>
-                <StudentHeroGreeting greeting={greeting} firstName={firstName} />
-                <p className="mt-2 text-sm text-white/90">
-                  {rankVerdict}
-                </p>
-              </div>
+            <div className="max-w-xl space-y-5">
+              <StudentHeroGreeting greeting={greeting} firstName={firstName} />
 
               <div className="flex flex-wrap items-center gap-4">
                 <RankBadge rank={accountRank} size="lg" active showGlow={accountRank.key === "mentrixer"} priority />
@@ -248,69 +242,26 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                   >
                     {normalizeRankTitle(accountRank.title)}
                   </p>
-                  <p className="text-xs text-white/85">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="font-mono tabular-nums">{totalXp.toLocaleString()}</span>
-                      <MentrixaVocabIcon name="xp" size={18} className="text-violet-200" title="XP" />
-                    </span>
+                  <div className="mt-2 flex flex-wrap items-center gap-4">
+                    <XpCountDisplay xp={totalXp} size={32} showLabel surface="dark" />
                     {streak > 0 ? (
-                      <>
-                        <span className="text-white/50"> · </span>
-                        <StreakCountDisplay days={streak} size={18} atRisk={streakAtRisk} />
-                      </>
+                      <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} showLabel surface="dark" />
                     ) : null}
-                  </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="max-w-md rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white/90">
-                <p className="font-medium text-white">{rankNextAction}</p>
-              </div>
-
-              {streak > 0 && (
-                <div className={streakAtRisk ? "text-amber-100" : "text-white/90"}>
-                  <StreakCountDisplay days={streak} size={24} atRisk={streakAtRisk} />
-                  {streakAtRisk ? (
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100/90">
-                      Log today to keep it
-                    </p>
-                  ) : null}
-                </div>
-              )}
+              <p className="sr-only">{rankVerdict}</p>
+              <p className="sr-only">{rankNextAction}</p>
             </div>
 
             <div className="flex flex-col items-start gap-3 lg:items-end shrink-0">
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtnOutline}`} asChild>
-                  <Link
-                    href={`/student/${user.id}`}
-                    className="inline-flex h-11 w-11 items-center justify-center p-0"
-                    aria-label="Profile and settings"
-                    title="Profile and settings"
-                  >
-                    <MentrixaVocabIcon name="profile" size={28} className="text-white/90" />
-                  </Link>
-                </Button>
-                <Button variant="outline" size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtn}`} asChild>
-                  <Link
-                    href="/student/quest"
-                    className="inline-flex h-11 w-11 items-center justify-center p-0"
-                    aria-label="Daily quest"
-                    title="Daily quest"
-                  >
-                    <MentrixaVocabIcon name="quest" size={28} className="text-white/95" />
-                  </Link>
-                </Button>
-                <Button size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtnOutline}`} asChild>
-                  <Link
-                    href="#browse-guides"
-                    className="inline-flex h-11 w-11 items-center justify-center p-0"
-                    aria-label="Book session"
-                    title="Book session"
-                  >
-                    <MentrixaVocabIcon name="booking" size={28} className="text-white/90" />
-                  </Link>
-                </Button>
+                <VocabHubTile name="profile" href={`/student/${user.id}`} iconSize={36} />
+                <VocabHubTile name="settings" href="/settings" iconSize={36} />
+                <VocabHubTile name="quest" href="/student/quest" iconSize={36} />
+                <VocabHubTile name="booking" href="#browse-guides" iconSize={36} />
+                <VocabHubTile name="session" href="#sessions-history" iconSize={36} />
               </div>
             </div>
           </div>
@@ -471,12 +422,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           />
 
           <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">
-            <div className={`${mentrixStudent.card} mb-6 px-5 py-4`}>
-              <p className={mentrixStudent.sectionEyebrow}>Live coaching</p>
-              <h2 className={`mt-1 text-lg font-bold ${mentrixStudent.textOnDark}`}>Sessions</h2>
-              <p className={`mt-1 text-sm ${mentrixStudent.textMutedOnDark}`}>
-                Upcoming and past guide calls.
-              </p>
+            <div className={`${mentrixStudent.card} mb-6 flex items-center gap-3 px-5 py-4`}>
+              <MentrixaVocabIcon name="session" size={32} surface="dark" title="Sessions" />
+              <h2 className={`text-lg font-bold uppercase tracking-wide ${mentrixStudent.textOnDark}`}>Sessions</h2>
             </div>
             <DeferredStudentStudyPackageNotifier snapshots={studyPackageSnapshots} />
             <Suspense fallback={<div className={`min-h-[12rem] ${mentrixStudent.card}`} />}>

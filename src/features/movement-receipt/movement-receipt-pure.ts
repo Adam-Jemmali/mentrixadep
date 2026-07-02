@@ -129,8 +129,8 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
       verdict: appendPeerLine(`${gridLine}${pace}${loopLine ? ` ${loopLine}` : ""}${retestHint}`, data),
       nextAction:
         data.retest.nodeName && !data.retest.isDue
-          ? "Practice the node while you wait, then retest the moment it opens."
-          : "Take one retest or duel on a weak node to keep the streak alive.",
+          ? "Practice the node."
+          : "Take one retest or duel.",
       ctaHref: data.retest.nodeName ? "/student/quest" : "/student/mastery",
       ctaLabel: data.retest.nodeName ? "Open Quest" : "View Mastery Grid",
     };

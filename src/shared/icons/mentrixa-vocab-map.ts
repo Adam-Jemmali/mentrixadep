@@ -26,6 +26,7 @@ export type VocabIconName =
   | "league"
   | "duels"
   | "profile"
+  | "settings"
   | "momentum-membership"
   // Core mechanics
   | "mastery-grid"
@@ -141,6 +142,7 @@ export const VOCAB_ICON_REGISTRY: Record<VocabIconName, VocabIconMeta> = {
   league: { name: "league", label: "League", category: "nav" },
   duels: { name: "duels", label: "Duels", category: "nav" },
   profile: { name: "profile", label: "Profile", category: "nav" },
+  settings: { name: "settings", label: "Settings", category: "nav" },
   "momentum-membership": {
     name: "momentum-membership",
     label: "Momentum membership",
@@ -293,6 +295,37 @@ export const VOCAB_ICON_REGISTRY: Record<VocabIconName, VocabIconMeta> = {
   "flow-meet": { name: "flow-meet", label: "Meet", category: "landing" },
   "flow-unpack": { name: "flow-unpack", label: "Unpack", category: "landing" },
   "flow-climb": { name: "flow-climb", label: "Climb", category: "landing" },
+};
+
+/** One-word labels for hub tiles and minimal UI copy. */
+export const VOCAB_SHORT_LABEL: Partial<Record<VocabIconName, string>> = {
+  home: "Home",
+  skills: "Skills",
+  quest: "Quest",
+  league: "League",
+  duels: "Duels",
+  profile: "Profile",
+  settings: "Settings",
+  "momentum-membership": "Momentum",
+  "mastery-grid": "Grid",
+  xp: "XP",
+  streak: "Streak",
+  session: "Sessions",
+  booking: "Book",
+  "guide-session": "Guide",
+  breakthrough: "Breakthrough",
+  momentum: "Momentum",
+  brief: "Brief",
+  receipt: "Receipt",
+  "movement-receipt": "Receipt",
+  "loop-report": "Loop",
+  "impact-score": "Impact",
+  verified: "Verified",
+  "rank-proof": "Proof",
+  arena: "Arena",
+  division: "Division",
+  leaderboard: "Leaders",
+  passport: "Passport",
 };
 
 export const VOCAB_ICON_NAMES = Object.keys(VOCAB_ICON_REGISTRY) as VocabIconName[];

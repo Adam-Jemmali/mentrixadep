@@ -11,8 +11,11 @@ import {
 } from "@/shared/integrations/mentrixa-sounds";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
-import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  MentrixaVocabIcon,
+  StreakCountDisplay,
+  XpCountDisplay,
+} from "@/shared/icons/mentrixa-vocab-icons";
 
 type PwaRankContext = {
   totalXp?: number;
@@ -25,7 +28,7 @@ type PwaRankContext = {
   verifiedCount?: number;
 };
 
-/** Compact verified rank + streak in the navbar. */
+/** Compact rank + XP + streak in the navbar — icons and one word, no verdict paragraph. */
 export function StudentNavRankStrip() {
   const pathname = usePathname();
   const [ctx, setCtx] = useState<PwaRankContext>({});
@@ -74,9 +77,9 @@ export function StudentNavRankStrip() {
         playMentrixaLoadingOnce();
       }}
       className={cn(
-        "mx-hud-strip flex max-w-[14rem] items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 transition hover:border-white/20 hover:bg-white/10 sm:max-w-xs",
+        "mx-hud-strip flex max-w-[11rem] items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-2.5 transition hover:border-white/20 hover:bg-white/10 sm:max-w-none",
       )}
-      title={ctx.rankVerdict ?? "Your verified rank"}
+      title={ctx.rankVerdict ?? title}
     >
       <RankBadge rank={accountRank} size="sm" active showGlow={accountRank.key === "mentrixer"} />
       <div className="flex min-w-0 flex-col leading-tight">
@@ -86,19 +89,12 @@ export function StudentNavRankStrip() {
         >
           {title}
         </span>
-        <span className="line-clamp-2 text-[9px] leading-snug text-white/75">
-          {ctx.rankVerdict ? (
-            ctx.rankVerdict
-          ) : (
-            <span className="inline-flex items-center gap-1">
-              <MentrixaVocabIcon name="rank-proof" size={11} gold className="shrink-0 text-amber-300" />
-              {rankProofsCountLabel(ctx.verifiedCount ?? 0)}
-            </span>
-          )}
+        <span className="mt-0.5 flex flex-wrap items-center gap-2">
+          <XpCountDisplay xp={totalXp} size={14} surface="dark" />
+          {streak > 0 ? (
+            <StreakCountDisplay days={streak} size={14} surface="dark" className="text-amber-200/90" />
+          ) : null}
         </span>
-        {streak > 0 ? (
-          <StreakCountDisplay days={streak} size={14} className="text-amber-200/90" />
-        ) : null}
       </div>
       {modeLabel ? (
         <span className="hidden rounded-full border border-white/10 bg-black/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-200/90 lg:inline">

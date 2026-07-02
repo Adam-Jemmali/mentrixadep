@@ -1,3 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Home">
-<path fill="#000" fill-rule="evenodd" d="M24 4 42 20v22H30V28H18v14H6V20L24 4zm-4 24h8v12h-8V28z"/>
+<g fill="none" stroke="#000" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M8 22 24 10 40 22"/>
+  <path d="M12 22v16h10V30h4v8h10V22"/>
+</g>
 </svg>

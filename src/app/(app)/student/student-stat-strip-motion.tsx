@@ -9,8 +9,8 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/xp/components/rank-badge";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
-import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
-import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { MentrixaVocabIcon, StreakCountDisplay, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { VOCAB_SHORT_LABEL, type VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 const container = {
   hidden: { opacity: 0 },
@@ -43,7 +43,10 @@ function StatValue({
       <MentrixaVocabIcon
         name={icon}
         size={iconSize}
-        className={iconClassName ?? "shrink-0 text-violet-200"}
+        surface="dark"
+        gold={gold}
+        className={iconClassName}
+        title={label}
       />
       {children}
     </div>
@@ -61,16 +64,19 @@ function StatFootIcon({
   gold?: boolean;
   iconClassName?: string;
 }) {
+  const shortLabel = VOCAB_SHORT_LABEL[icon] ?? label.split(/\s+/)[0] ?? label;
+
   return (
-    <span className="mt-2 flex justify-center">
+    <span className="mt-2 flex flex-col items-center gap-1">
       <MentrixaVocabIcon
         name={icon}
         size={24}
+        surface="dark"
         gold={gold}
-        className={iconClassName ?? "text-violet-300"}
+        className={iconClassName}
         title={label}
       />
-      <span className="sr-only">{label}</span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-300/80">{shortLabel}</span>
     </span>
   );
 }
@@ -118,12 +124,8 @@ export function StudentStatStripMotion({
             <p className="truncate text-sm font-bold uppercase tracking-wide text-violet-50">
               {normalizeRankTitle(accountRank.title)}
             </p>
-            <span className="mt-0.5 flex items-center gap-2 text-[11px] uppercase tracking-wide text-violet-300/75">
-              <span className="font-mono text-sm font-bold tabular-nums text-violet-100">
-                {totalXp.toLocaleString()}
-              </span>
-              <MentrixaVocabIcon name="xp" size={22} className="shrink-0 text-violet-200" title="XP earned" />
-              <span className="sr-only">XP earned</span>
+            <span className="mt-0.5 flex items-center gap-2">
+              <XpCountDisplay xp={totalXp} size={22} surface="dark" />
             </span>
           </div>
         </TiltCard>
@@ -167,7 +169,7 @@ export function StudentStatStripMotion({
           scale={1.04}
           className={`${statCard} flex-col items-center justify-center ${streakAtRisk ? "ring-2 ring-amber-400/70" : ""}`}
         >
-          <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} />
+          <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} showLabel surface="dark" />
         </TiltCard>
       </motion.div>
     </motion.div>

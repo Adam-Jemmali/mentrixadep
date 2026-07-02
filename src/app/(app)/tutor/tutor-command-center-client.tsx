@@ -304,7 +304,7 @@ export function TutorCommandCenterClient({
         <section className="mb-8">
           <ScrollRevealCard className={mentrixStudent.card + " p-5"}>
             <h2 className={`mb-4 flex items-center gap-2 text-sm font-bold ${mentrixStudent.textOnLight}`}>
-              <MentrixaVocabIcon name="impact-score" size={16} gold className="text-amber-600" title="Guide Impact Score" />
+              <MentrixaVocabIcon name="impact-score" size={16} gold surface="light" title="Guide Impact Score" />
               Guide Impact Score
             </h2>
             {data.impactVerdict ? (
@@ -326,7 +326,7 @@ export function TutorCommandCenterClient({
                           name="impact-score"
                           size={12}
                           gold
-                          className="text-amber-600"
+                          surface="light"
                           title="Guide Impact Score"
                         />
                         {Math.round(s.impactScore)}/100
