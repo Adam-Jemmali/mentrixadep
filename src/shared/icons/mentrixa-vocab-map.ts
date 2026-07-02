@@ -39,7 +39,20 @@ export type VocabIconName =
   | "xp"
   | "streak"
   | "day"
+  | "day-sun"
+  | "day-mon"
+  | "day-tue"
+  | "day-wed"
+  | "day-thu"
+  | "day-fri"
+  | "day-sat"
   | "focus-ring"
+  | "status-scheduled"
+  | "status-completed"
+  | "status-cancelled"
+  | "status-ended"
+  | "status-pending"
+  | "status-rejected"
   // Social & competition
   | "arena"
   | "division"
@@ -145,7 +158,20 @@ export const VOCAB_ICON_REGISTRY: Record<VocabIconName, VocabIconMeta> = {
   xp: { name: "xp", label: "XP", category: "core" },
   streak: { name: "streak", label: "Streak", category: "core" },
   day: { name: "day", label: "Day", category: "core" },
+  "day-sun": { name: "day-sun", label: "Sunday", category: "core" },
+  "day-mon": { name: "day-mon", label: "Monday", category: "core" },
+  "day-tue": { name: "day-tue", label: "Tuesday", category: "core" },
+  "day-wed": { name: "day-wed", label: "Wednesday", category: "core" },
+  "day-thu": { name: "day-thu", label: "Thursday", category: "core" },
+  "day-fri": { name: "day-fri", label: "Friday", category: "core" },
+  "day-sat": { name: "day-sat", label: "Saturday", category: "core" },
   "focus-ring": { name: "focus-ring", label: "Focus", category: "core" },
+  "status-scheduled": { name: "status-scheduled", label: "Scheduled", category: "core" },
+  "status-completed": { name: "status-completed", label: "Completed", category: "core" },
+  "status-cancelled": { name: "status-cancelled", label: "Cancelled", category: "core" },
+  "status-ended": { name: "status-ended", label: "Ended", category: "core" },
+  "status-pending": { name: "status-pending", label: "Pending", category: "core" },
+  "status-rejected": { name: "status-rejected", label: "Rejected", category: "core" },
 
   arena: { name: "arena", label: "Arena", category: "social" },
   division: { name: "division", label: "Division", category: "social" },

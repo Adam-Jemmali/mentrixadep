@@ -8,7 +8,7 @@
 
 import { useState, useRef } from "react";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
-import { ChevronDown, Brain, AlertTriangle, Zap, MessageSquare, Clock } from "lucide-react";
+import { ChevronDown, Brain, AlertTriangle, MessageSquare, Clock } from "lucide-react";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { StoredPreSessionBrief } from "@/features/pre-session-brief/brief";
 
@@ -38,16 +38,22 @@ function formatCountdown(minutes: number): string {
 
 function SectionLabel({
   icon: Icon,
+  vocabIcon,
   label,
   color,
 }: {
-  icon: React.ElementType;
+  icon?: React.ElementType;
+  vocabIcon?: "practice-pack" | "quest" | "brief";
   label: string;
   color: string;
 }) {
   return (
     <div className="flex items-center gap-1.5 mb-2">
-      <Icon size={12} className={color} strokeWidth={2.5} />
+      {vocabIcon ? (
+        <MentrixaVocabIcon name={vocabIcon} size={12} className={color} title={label} />
+      ) : Icon ? (
+        <Icon size={12} className={color} strokeWidth={2.5} />
+      ) : null}
       <span className={`text-[10px] font-semibold uppercase tracking-widest ${color}`}>
         {label}
       </span>
@@ -198,7 +204,7 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
           {brief.warmUpExercise.prompt && (
             <section>
               <SectionLabel
-                icon={Zap}
+                vocabIcon="practice-pack"
                 label={`Warm-up · ${brief.warmUpExercise.title}`}
                 color="text-emerald-500"
               />

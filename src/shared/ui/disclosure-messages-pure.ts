@@ -1,3 +1,5 @@
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+
 export type MentrixaDisclosureKind =
   | "verified_first_attempt"
   | "guide_impact"
@@ -73,6 +75,23 @@ export function examStakesDisclosureMessage(examStakes: string): MentrixaDisclos
     verdict: "Misses cost exam points",
     nextAction: "Verify node rank first",
   };
+}
+
+export function disclosureVocabIcon(kind: MentrixaDisclosureKind): VocabIconName {
+  switch (kind) {
+    case "verified_first_attempt":
+      return "verified";
+    case "guide_impact":
+      return "impact-score";
+    case "guide_demand_signal":
+      return "guide-session";
+    case "momentum_subscription":
+      return "momentum";
+    case "momentum_loop_sla":
+      return "loop-report";
+    case "exam_stakes":
+      return "quest";
+  }
 }
 
 export function mentrixaDisclosureMessage(

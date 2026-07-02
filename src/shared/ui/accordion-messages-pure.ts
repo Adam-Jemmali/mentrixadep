@@ -1,4 +1,5 @@
 import type { MasteryGridNode, MasteryGridUnit } from "@/features/mastery-grid/types";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export type MentrixaAccordionFaqItem = {
   id: string;
@@ -19,6 +20,19 @@ export function landingFaqSectionHeading(): { title: string; subtitle: string } 
     title: "Questions before you compete",
     subtitle: "Verified rank, Guides, and what counts toward your percentile.",
   };
+}
+
+export function landingFaqCategoryVocabIcon(categoryId: string): VocabIconName {
+  switch (categoryId) {
+    case "rank":
+      return "rank-proof";
+    case "guides":
+      return "guide-session";
+    case "access":
+      return "momentum";
+    default:
+      return "quest";
+  }
 }
 
 export function landingFaqCategories(): MentrixaAccordionFaqCategory[] {

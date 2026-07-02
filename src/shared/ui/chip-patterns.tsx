@@ -11,9 +11,11 @@ import {
 import type { PricingTierId } from "@/features/pricing/pricing-tiers-pure";
 import {
   sessionStatusChipPresentation,
+  sessionStatusVocabIcon,
   subscriptionTierChipPresentation,
   type MentrixaChipVisual,
 } from "@/shared/ui/chip-messages-pure";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 export type MentrixaChipTone = "light" | "dark";
 
@@ -110,12 +112,14 @@ export function SessionStatusChip({
   className?: string;
 }) {
   const presentation = sessionStatusChipPresentation(status);
+  const iconName = sessionStatusVocabIcon(status);
   return (
     <MentrixaChip
       visual={presentation.visual}
       tone={tone}
       className={cn("mentrixa-chip--status", className)}
     >
+      <MentrixaVocabIcon name={iconName} size={14} className="shrink-0 opacity-90" title={presentation.label} />
       {presentation.label}
     </MentrixaChip>
   );

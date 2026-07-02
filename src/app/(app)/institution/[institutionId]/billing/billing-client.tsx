@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Zap } from "lucide-react";
+import { Check } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 import type { Institution } from "@/shared/types/database";
 
@@ -79,7 +80,7 @@ export function BillingClient({
       <div className="bg-white border border-[#E5E7EB] rounded-lg p-5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-slate-600" strokeWidth={1.8} />
+            <MentrixaVocabIcon name="session" size={16} className="text-slate-600" title="Session credits" />
           </div>
           <div>
             <p className="text-[13px] font-medium text-slate-800">Session credits</p>

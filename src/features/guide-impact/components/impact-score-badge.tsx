@@ -6,6 +6,7 @@ import {
   IMPACT_SCORE_TIER_CLASS,
   type GuideImpactEntry,
 } from "@/features/guide-impact/impact-score-pure";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 type ImpactScoreBadgeProps = {
   impactScore: number;
@@ -31,11 +32,18 @@ export function ImpactScoreBadge({
     <div className={cn("inline-flex flex-col gap-0.5", className)}>
       <span
         className={cn(
-          "inline-flex w-fit items-center rounded-full border font-semibold tabular-nums",
+          "inline-flex w-fit items-center gap-1.5 rounded-full border font-semibold tabular-nums",
           IMPACT_SCORE_TIER_CLASS[tier],
           sizeClass,
         )}
       >
+        <MentrixaVocabIcon
+          name="impact-score"
+          size={size === "sm" ? 12 : 14}
+          gold
+          className="shrink-0 text-amber-600"
+          title="Guide Impact Score"
+        />
         {formatImpactScoreLabel(impactScore)}
         {subject ? ` · ${subject}` : ""}
       </span>
@@ -59,10 +67,17 @@ export function ImpactScoreBreakdown({ entries }: { entries: GuideImpactEntry[] 
             <span className="font-medium text-slate-700">{entry.subject}</span>
             <span
               className={cn(
-                "rounded-full border px-2 py-0.5 font-semibold tabular-nums",
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold tabular-nums",
                 IMPACT_SCORE_TIER_CLASS[tier],
               )}
             >
+              <MentrixaVocabIcon
+                name="impact-score"
+                size={12}
+                gold
+                className="shrink-0 text-amber-600"
+                title="Guide Impact Score"
+              />
               {Math.round(entry.impactScore)}/100
             </span>
           </li>

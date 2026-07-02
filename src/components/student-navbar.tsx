@@ -62,7 +62,7 @@ function navItemIcon(name: VocabIconName, label: string, size = 26) {
     <MentrixaVocabIcon
       name={name}
       size={size}
-      className="text-violet-100"
+      className="text-white"
       title={label}
     />
   );

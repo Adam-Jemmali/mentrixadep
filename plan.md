@@ -162,87 +162,87 @@ Brand tokens:
 Use this as the master checklist. Mark done in Phase 8.
 
 ### Navigation & shell
-- [ ] Home
-- [ ] Skills (→ mastery)
-- [ ] Quest
-- [ ] League
-- [ ] Duels
-- [ ] Profile
-- [ ] Momentum membership
+- [x] Home
+- [x] Skills (→ mastery)
+- [x] Quest
+- [x] League
+- [x] Duels
+- [x] Profile
+- [x] Momentum membership
 
 ### Core mechanics
-- [ ] Mastery Grid
-- [ ] Skill tree
-- [ ] Skill node
-- [ ] Unit
-- [ ] Verified (first attempt)
-- [ ] Rank proof
-- [ ] Practice pack
-- [ ] Percentile
-- [ ] XP
-- [ ] Streak / day streak
-- [ ] Focus ring (cyan)
+- [x] Mastery Grid
+- [x] Skill tree
+- [x] Skill node
+- [x] Unit
+- [x] Verified (first attempt)
+- [x] Rank proof
+- [x] Practice pack
+- [x] Percentile
+- [x] XP
+- [x] Streak / day streak
+- [x] Focus ring (cyan)
 
 ### Social & competition
-- [ ] Arena
-- [ ] Division
-- [ ] Leaderboard
-- [ ] Rival
-- [ ] Division war
+- [x] Arena
+- [x] Division
+- [x] Leaderboard
+- [x] Rival
+- [x] Division war
 
 ### Coaching & commerce
-- [ ] Guide (role)
-- [ ] Session
-- [ ] Breakthrough (one-shot)
-- [ ] Momentum (subscription)
-- [ ] Momentum pack / Quarter Sprint
-- [ ] Session credit
-- [ ] Booking / pay
+- [x] Guide (role)
+- [x] Session
+- [x] Breakthrough (one-shot)
+- [x] Momentum (subscription)
+- [x] Momentum pack / Quarter Sprint
+- [x] Session credit
+- [x] Booking / pay
 
 ### Reports & archives (Momentum)
-- [ ] Receipt (generic)
-- [ ] Movement Receipt
-- [ ] Loop Report
-- [ ] Loop SLA
-- [ ] Guide Impact Score
-- [ ] Guide impact receipt
-- [ ] Pre-session brief
-- [ ] Study package
-- [ ] Progress snapshot
-- [ ] Progress archive
-- [ ] Grid timeline
-- [ ] Trajectory certificate
-- [ ] Retest / priority retest
+- [x] Receipt (generic)
+- [x] Movement Receipt
+- [x] Loop Report
+- [x] Loop SLA
+- [x] Guide Impact Score
+- [x] Guide impact receipt
+- [x] Pre-session brief
+- [x] Study package
+- [x] Progress snapshot
+- [x] Progress archive
+- [x] Grid timeline
+- [x] Trajectory certificate
+- [x] Retest / priority retest
 
 ### Profile & share
-- [ ] Identity
-- [ ] Membership
-- [ ] Standing
-- [ ] Share
-- [ ] Public rank passport
+- [x] Identity
+- [x] Membership
+- [x] Standing
+- [x] Share
+- [x] Public rank passport
 
 ### Guide ranks (new ladder)
-- [ ] Practitioner
-- [ ] Specialist
-- [ ] Expert
-- [ ] Master
-- [ ] Elite
+- [x] Practitioner
+- [x] Specialist
+- [x] Expert
+- [x] Master
+- [x] Elite
 
 ### Pricing tier marks (replace Lucide Swords/Zap/Trophy)
-- [ ] The Arena
-- [ ] The Breakthrough
-- [ ] Momentum tier
+- [x] The Arena
+- [x] The Breakthrough
+- [x] Momentum tier
 
 ### Landing bento (replace generic icons)
-- [ ] Skill Duels
-- [ ] Division Leaderboard
-- [ ] Quest Practice
-- [ ] Rank Card
-- [ ] Impact Score
-- [ ] Session Room
-- [ ] Guide Studio
-- [ ] Breakthrough Events
-- [ ] Flow steps: Book / Meet / Unpack / Climb
+- [x] Skill Duels
+- [x] Division Leaderboard
+- [x] Quest Practice
+- [x] Rank Card
+- [x] Impact Score
+- [x] Session Room
+- [x] Guide Studio
+- [x] Breakthrough Events
+- [x] Flow steps: Book / Meet / Unpack / Climb
 
 ---
 
@@ -498,13 +498,13 @@ Read plan.md Phase 8. Add vocab icons to session status chips, FAQ accordion sec
 No product noun uses Lucide anywhere in app or landing.
 
 ### Acceptance checklist
-- [ ] Grep: no `lucide-react` import of Swords, Zap, Trophy, Trophy, Flame for vocabulary (functional chevrons OK)
-- [ ] All checklist items in plan.md marked done
-- [ ] Student ranks 1–7 unchanged on disk
-- [ ] Guide ranks 1–5 render in app + landing
-- [ ] Gold only on verified truth elements
-- [ ] `/test/icons` shows complete grid
-- [ ] npm test + npm run build pass
+- [x] Grep: no `lucide-react` import of Swords, Zap, Trophy, Trophy, Flame for vocabulary (functional chevrons OK)
+- [x] All checklist items in plan.md marked done
+- [x] Student ranks 1–7 unchanged on disk
+- [x] Guide ranks 1–5 render in app + landing
+- [x] Gold only on verified truth elements
+- [x] `/test/icons` shows complete grid
+- [x] npm test + npm run build pass
 
 ### Prompt 9 (copy into Cursor)
 
@@ -529,6 +529,6 @@ Never mix ladders on the wrong profile. Students show account rank emblems. Guid
 
 When all phases complete, delete or gate `/test/icons` behind dev if desired. Document final icon map in `src/shared/icons/README.md` (optional, one page: name → file → usage).
 
-**Verdict:** This plan keeps your seven student rank stickers sacred, adds five new Guide rank stickers, and forces every other product word through custom SVG vocabulary before it ships in UI.
+**Verdict:** Icon rollout is complete — student ranks frozen, Guide rank ladder live, vocabulary SVGs wired across app and landing, Lucide reserved for functional UI only.
 
-**Next action:** Run **Prompt 0** in Agent mode to scaffold the registry, then **Prompt 1** for Guide ranks.
+**Next action:** Ship to production; use `/test/icons` locally to audit new vocabulary stickers before adding terms.

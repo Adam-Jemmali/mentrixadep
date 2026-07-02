@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { IconsGalleryClient } from "./icons-gallery-client";
 import {
   VOCAB_ICON_NAMES,
@@ -10,6 +11,8 @@ export const metadata = {
 };
 
 export default function VocabIconsTestPage() {
+  if (process.env.NODE_ENV === "production") notFound();
+
   const goldCount = VOCAB_ICON_NAMES.filter(
     (name) => VOCAB_ICON_REGISTRY[name].allowsGold,
   ).length;

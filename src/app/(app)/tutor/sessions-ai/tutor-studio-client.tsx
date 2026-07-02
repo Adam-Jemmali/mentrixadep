@@ -10,6 +10,7 @@ import { useAdminViewContext } from "@/components/admin-view-context";
 import type { SessionAiPackage } from "@/shared/types/database";
 import { formatDate } from "@/shared/core/time-format";
 import { CourseTagChip } from "@/shared/ui/chip-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { MentrixaTabsGroup } from "@/shared/ui/tabs-patterns";
 import { studioFilterTabMessage, studioFilterTabsAriaLabel } from "@/shared/ui/tabs-messages-pure";
 import { Button } from "@/shared/ui/button";
@@ -478,11 +479,26 @@ export function TutorStudioClient({
         <table className="min-w-full text-xs">
           <thead className="border-b border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.85)_0%,rgba(255,255,255,1)_100%)] text-slate-700">
             <tr>
-              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Course</th>
-              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Learner</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">
+                <span className="inline-flex items-center gap-1.5">
+                  <MentrixaVocabIcon name="skills" size={14} title="Course" />
+                  Course
+                </span>
+              </th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">
+                <span className="inline-flex items-center gap-1.5">
+                  <MentrixaVocabIcon name="profile" size={14} title="Learner" />
+                  Learner
+                </span>
+              </th>
               <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Date</th>
               <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Duration</th>
-              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Studio</th>
+              <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">
+                <span className="inline-flex items-center gap-1.5">
+                  <MentrixaVocabIcon name="guide-session" size={14} title="Studio" />
+                  Studio
+                </span>
+              </th>
               <th className="min-w-[260px] px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">Action</th>
             </tr>
           </thead>

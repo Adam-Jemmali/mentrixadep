@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, Zap } from "lucide-react";
+import { Clock } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { PendingRetestHubState } from "@/features/intervention-retests/retest-hub-pure";
@@ -20,7 +21,7 @@ export function RetestCountdownHubCard({ state }: RetestCountdownHubCardProps) {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {state.priorityRetest ? (
-              <Zap className="h-4 w-4 text-emerald-400" aria-hidden />
+              <MentrixaVocabIcon name="retest" size={16} className="text-emerald-400" title="Priority retest" />
             ) : (
               <Clock className="h-4 w-4 text-violet-300" aria-hidden />
             )}

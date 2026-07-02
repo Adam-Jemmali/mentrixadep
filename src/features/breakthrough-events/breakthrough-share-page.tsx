@@ -3,8 +3,8 @@
 import { useCallback, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Trophy } from "lucide-react";
 import { buildBreakthroughShareTweet } from "@/features/breakthrough-events/detect-pure";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { markBreakthroughShared } from "@/features/breakthrough-events/reads";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { getSiteUrl } from "@/shared/core/site";
@@ -63,7 +63,7 @@ export function BreakthroughSharePage({ data }: { data: BreakthroughShareData })
           className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border"
           style={{ borderColor: `${MENTRIXER_GOLD}66`, backgroundColor: `${MENTRIXER_GOLD}18` }}
         >
-          <Trophy className="h-7 w-7" style={{ color: MENTRIXER_GOLD }} aria-hidden />
+          <MentrixaVocabIcon name="breakthrough" size={28} gold className="text-amber-400" title="Breakthrough" />
         </div>
 
         <p

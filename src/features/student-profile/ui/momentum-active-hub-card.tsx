@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Trophy } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { Button } from "@/shared/ui/button";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 import { formatMomentumRenewalLabel } from "@/features/payments/momentum-membership-pure";
@@ -43,7 +43,7 @@ export function MomentumActiveHubCard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-violet-300" aria-hidden />
+            <MentrixaVocabIcon name="momentum" size={16} className="text-violet-300" title="Momentum" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">
               Momentum active
             </p>

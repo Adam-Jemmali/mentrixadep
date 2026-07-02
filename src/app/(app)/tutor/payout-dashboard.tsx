@@ -14,6 +14,8 @@ import {
 import type { PayoutDashboardData, PayoutLedgerRow } from "@/features/payments/payout-ledger";
 import { triggerManualPayout } from "@/features/payments/payout-ledger";
 import { useRouter } from "next/navigation";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 function cad(cents: number): string {
   return `$${(cents / 100).toLocaleString("en-CA", {
@@ -78,6 +80,16 @@ function MetricCard({
     </div>
   );
 }
+
+const PAYOUT_TABLE_HEADERS: { label: string; icon?: VocabIconName }[] = [
+  { label: "Session date", icon: "session" },
+  { label: "Learner", icon: "profile" },
+  { label: "Course", icon: "skills" },
+  { label: "Gross" },
+  { label: "Platform fee" },
+  { label: "Net" },
+  { label: "Status", icon: "status-pending" },
+];
 
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? {
@@ -255,12 +267,17 @@ function TransactionTable({ rows }: { rows: PayoutLedgerRow[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-100">
-            {["Session date", "Learner", "Course", "Gross", "Platform fee", "Net", "Status"].map((h) => (
+            {PAYOUT_TABLE_HEADERS.map((h) => (
               <th
-                key={h}
+                key={h.label}
                 className="pb-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400 first:pl-0 last:pr-0 px-3"
               >
-                {h}
+                <span className="inline-flex items-center gap-1.5">
+                  {h.icon ? (
+                    <MentrixaVocabIcon name={h.icon} size={12} className="text-slate-400" title={h.label} />
+                  ) : null}
+                  {h.label}
+                </span>
               </th>
             ))}
           </tr>

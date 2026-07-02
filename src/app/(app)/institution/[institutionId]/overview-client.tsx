@@ -3,7 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { Users, Zap, CreditCard, TrendingUp, ArrowRight, Building2 } from "lucide-react";
+import { Users, CreditCard, TrendingUp, ArrowRight, Building2 } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { cn } from "@/shared/core/utils";
 import type { Institution } from "@/shared/types/database";
 import type { InstitutionMemberRow } from "@/features/institutions/institution";
@@ -17,12 +19,14 @@ const PLAN_NEXT: Record<string, string> = {
 
 function StatCard({
   icon: Icon,
+  vocabIcon,
   label,
   value,
   sub,
   accent = false,
 }: {
-  icon: React.ElementType;
+  icon?: React.ElementType;
+  vocabIcon?: VocabIconName;
   label: string;
   value: string | number;
   sub?: string;
@@ -35,7 +39,16 @@ function StatCard({
           {label}
         </p>
         <div className={cn("w-8 h-8 rounded-md flex items-center justify-center", accent ? "bg-white/10" : "bg-slate-100")}>
-          <Icon className={cn("w-4 h-4", accent ? "text-slate-300" : "text-slate-500")} strokeWidth={1.8} />
+          {vocabIcon ? (
+            <MentrixaVocabIcon
+              name={vocabIcon}
+              size={16}
+              className={accent ? "text-slate-300" : "text-slate-500"}
+              title={label}
+            />
+          ) : Icon ? (
+            <Icon className={cn("w-4 h-4", accent ? "text-slate-300" : "text-slate-500")} strokeWidth={1.8} />
+          ) : null}
         </div>
       </div>
       <p className={cn("text-2xl font-semibold tabular-nums", accent ? "text-white" : "text-slate-900")}>
@@ -97,7 +110,7 @@ export function InstitutionOverviewClient({
           sub={limit === Infinity ? "Unlimited plan" : `${limit} seat limit`}
         />
         <StatCard
-          icon={Zap}
+          vocabIcon="session"
           label="Sessions this month"
           value={usage.sessionsThisMonth}
           sub="Completed sessions"

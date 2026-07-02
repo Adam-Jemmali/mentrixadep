@@ -36,6 +36,7 @@ import { GuideImpactDisclosure } from "@/shared/ui/disclosure-patterns";
 import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import { GuideNotificationsPanel } from "@/features/notifications/guide-notifications-panel";
 import { ChartSkeleton } from "@/shared/ui/skeleton-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const TutorImpactTrendChart = dynamic(
   () => import("./tutor-impact-trend-chart").then((m) => m.TutorImpactTrendChart),
@@ -302,7 +303,8 @@ export function TutorCommandCenterClient({
       {data.impactScores.filter((s) => s.sessionsCounted >= 3).length > 0 || data.impactVerdict ? (
         <section className="mb-8">
           <ScrollRevealCard className={mentrixStudent.card + " p-5"}>
-            <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>
+            <h2 className={`mb-4 flex items-center gap-2 text-sm font-bold ${mentrixStudent.textOnLight}`}>
+              <MentrixaVocabIcon name="impact-score" size={16} gold className="text-amber-600" title="Guide Impact Score" />
               Guide Impact Score
             </h2>
             {data.impactVerdict ? (
@@ -319,7 +321,14 @@ export function TutorCommandCenterClient({
                   .map((s) => (
                     <li key={s.subject} className="flex items-center justify-between py-3 text-sm">
                       <span className="font-medium text-slate-800">{s.subject}</span>
-                      <span className="font-mono text-xs font-semibold tabular-nums text-slate-500">
+                      <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold tabular-nums text-slate-500">
+                        <MentrixaVocabIcon
+                          name="impact-score"
+                          size={12}
+                          gold
+                          className="text-amber-600"
+                          title="Guide Impact Score"
+                        />
                         {Math.round(s.impactScore)}/100
                       </span>
                     </li>

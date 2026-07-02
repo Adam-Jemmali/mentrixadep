@@ -1,9 +1,7 @@
 "use client";
 
-import { Trophy } from "lucide-react";
 import type { SessionBreakthroughLine } from "@/features/breakthrough-events/post-session-retest";
-
-const MENTRIXER_GOLD = "#D4A017";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 export function SessionBreakthroughCard({ lines }: { lines: SessionBreakthroughLine[] }) {
   if (lines.length === 0) return null;
@@ -11,7 +9,7 @@ export function SessionBreakthroughCard({ lines }: { lines: SessionBreakthroughL
   return (
     <div className="mt-8 text-left overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(160deg,#0f172a_0%,#1e1b4b_45%,#111827_100%)] p-5 shadow-lg">
       <div className="flex items-center gap-2 mb-4">
-        <Trophy className="h-5 w-5" style={{ color: MENTRIXER_GOLD }} aria-hidden />
+        <MentrixaVocabIcon name="breakthrough" size={20} gold className="text-amber-400" title="Breakthrough" />
         <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/90">
           Session breakthrough
         </p>

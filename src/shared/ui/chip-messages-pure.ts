@@ -1,4 +1,5 @@
 import type { PricingTierId } from "@/features/pricing/pricing-tiers-pure";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export type MentrixaChipVisual =
   | "default"
@@ -29,6 +30,23 @@ export function normalizeSessionStatus(status?: string | null): SessionStatusKin
   if (value === "pending") return "pending";
   if (value === "rejected") return "rejected";
   return "scheduled";
+}
+
+export function sessionStatusVocabIcon(status?: string | null): VocabIconName {
+  switch (normalizeSessionStatus(status)) {
+    case "scheduled":
+      return "status-scheduled";
+    case "completed":
+      return "status-completed";
+    case "cancelled":
+      return "status-cancelled";
+    case "ended":
+      return "status-ended";
+    case "pending":
+      return "status-pending";
+    case "rejected":
+      return "status-rejected";
+  }
 }
 
 export function sessionStatusChipPresentation(status?: string | null): MentrixaChipPresentation {

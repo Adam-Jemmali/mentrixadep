@@ -9,6 +9,7 @@ import { approveSessionRequest, rejectSessionRequest } from "@/features/tutor/se
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { Button } from "@/shared/ui/button";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 interface SessionRequest {
   id: string;
@@ -174,10 +175,30 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
         <table className="min-w-full text-xs">
           <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
             <tr>
-              <th className="py-2 px-3 text-left font-normal">Learner</th>
-              <th className="py-2 px-3 text-left font-normal">Course</th>
-              <th className="py-2 px-3 text-left font-normal">Requested time</th>
-              <th className="py-2 px-3 text-left font-normal">Price</th>
+              <th className="py-2 px-3 text-left font-normal">
+                <span className="inline-flex items-center gap-1.5">
+                  <MentrixaVocabIcon name="profile" size={14} title="Learner" />
+                  Learner
+                </span>
+              </th>
+              <th className="py-2 px-3 text-left font-normal">
+                <span className="inline-flex items-center gap-1.5">
+                  <MentrixaVocabIcon name="skills" size={14} title="Course" />
+                  Course
+                </span>
+              </th>
+              <th className="py-2 px-3 text-left font-normal">
+                <span className="inline-flex items-center gap-1.5">
+                  <MentrixaVocabIcon name="booking" size={14} title="Requested time" />
+                  Requested time
+                </span>
+              </th>
+              <th className="py-2 px-3 text-left font-normal">
+                <span className="inline-flex items-center gap-1.5">
+                  <MentrixaVocabIcon name="breakthrough" size={14} title="Price" />
+                  Price
+                </span>
+              </th>
               <th className="py-2 px-3 text-left font-normal">Actions</th>
             </tr>
           </thead>

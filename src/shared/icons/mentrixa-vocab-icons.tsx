@@ -5,6 +5,7 @@ import {
   getVocabIconMeta,
   type VocabIconName,
 } from "@/shared/icons/mentrixa-vocab-map";
+import { weekdayLabel, weekdayVocabIcon } from "@/shared/icons/weekday-vocab-pure";
 
 const GOLD_VERIFIED = "#D4A017";
 
@@ -84,31 +85,37 @@ export function MentrixaVocabIconLabel({
   );
 }
 
-/** Streak flame + count + day sun — never spell day without both icons adjacent. */
+/** Streak flame + count + weekday badge — day icon is always the current weekday. */
 export function StreakCountDisplay({
   days,
   size = 20,
   atRisk = false,
   className,
+  referenceDate,
 }: {
   days: number;
   size?: number;
   atRisk?: boolean;
   className?: string;
+  /** Defaults to today in the learner timezone. */
+  referenceDate?: Date;
 }) {
   const daySize = Math.max(14, Math.round(size * 0.72));
   const flameClass = atRisk ? "text-amber-300" : "text-amber-200";
   const dayClass = atRisk ? "text-amber-200/90" : "text-violet-200/85";
+  const when = referenceDate ?? new Date();
+  const dayIcon = weekdayVocabIcon(when);
+  const dayName = weekdayLabel(when);
 
   return (
     <span
       className={cn("inline-flex items-center gap-1.5", className)}
-      aria-label={`${days} day streak`}
-      title={`${days} day streak`}
+      aria-label={`${days} day streak · ${dayName}`}
+      title={`${days} day streak · ${dayName}`}
     >
       <MentrixaVocabIcon name="streak" size={size} className={flameClass} title="Streak" />
       <span className="font-mono text-sm font-bold tabular-nums leading-none">{days}</span>
-      <MentrixaVocabIcon name="day" size={daySize} className={dayClass} title="Days" />
+      <MentrixaVocabIcon name={dayIcon} size={daySize} className={dayClass} title={dayName} />
     </span>
   );
 }

@@ -4,12 +4,12 @@ import type { PlatformMetrics } from "@/features/admin/admin-dashboard";
 
 import Link from "next/link";
 import { MentrixaSeparatorStack } from "@/shared/ui/separator-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import {
   Users,
   BookOpen,
   DollarSign,
-  Zap,
-  Swords,
   Shield,
   ArrowRight,
   TrendingUp,
@@ -25,13 +25,15 @@ function MetricCard({
   value,
   sub,
   icon: Icon,
+  vocabIcon,
   accent,
   href,
 }: {
   label: string;
   value: string | number;
   sub?: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
+  vocabIcon?: VocabIconName;
   accent?: string;
   href?: string;
 }) {
@@ -39,7 +41,11 @@ function MetricCard({
     <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 hover:border-slate-300 hover:shadow-sm transition-all duration-200 group metric-card">
       <div className="flex items-start justify-between mb-4">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${accent ?? "bg-slate-100"}`}>
-          <Icon className="w-4 h-4 text-slate-600" strokeWidth={1.8} />
+          {vocabIcon ? (
+            <MentrixaVocabIcon name={vocabIcon} size={16} className="text-slate-600" title={label} />
+          ) : Icon ? (
+            <Icon className="w-4 h-4 text-slate-600" strokeWidth={1.8} />
+          ) : null}
         </div>
         {href && (
           <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
@@ -97,7 +103,7 @@ export function AdminDashboardClient({ metrics }: Props) {
           label="Active quests"
           value={m?.activeQuests ?? "—"}
           sub="In progress right now"
-          icon={Zap}
+          vocabIcon="quest"
           accent="bg-violet-50"
         />
       </div>
@@ -107,7 +113,7 @@ export function AdminDashboardClient({ metrics }: Props) {
           label="Active duels"
           value={m?.activeDuels ?? "—"}
           sub="Live right now"
-          icon={Swords}
+          vocabIcon="duels"
           accent="bg-red-50"
         />
         <MetricCard

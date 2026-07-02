@@ -9,12 +9,14 @@ import {
 } from "@/features/marketing/landing/v2/motion/landing-motion";
 import {
   landingFaqCategories,
+  landingFaqCategoryVocabIcon,
   landingFaqSectionHeading,
 } from "@/shared/ui/accordion-messages-pure";
 import {
   MentrixaAccordion,
   MentrixaAccordionItem,
 } from "@/shared/ui/accordion-patterns";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 export function LandingFaqSection() {
   const heading = landingFaqSectionHeading();
@@ -64,7 +66,13 @@ export function LandingFaqSection() {
         >
           {categories.map((category, categoryIndex) => (
             <motion.div key={category.id} variants={fadeUp} custom={categoryIndex}>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-violet-200/90">
+              <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-violet-200/90">
+                <MentrixaVocabIcon
+                  name={landingFaqCategoryVocabIcon(category.id)}
+                  size={16}
+                  className="text-violet-200"
+                  title={category.title}
+                />
                 {category.title}
               </p>
               <MentrixaAccordion tone="marketing" variant="surface" allowsMultipleExpanded>

@@ -7,12 +7,11 @@ import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { 
   ChevronRight, 
-  Trophy, 
   Target, 
-  Flame,
   Info,
   Users
 } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { DivisionDetailPayload } from "@/features/divisions/divisions";
 import { joinDivision } from "@/features/divisions/divisions";
 import { LeagueForumPanel } from "@/features/divisions/ui/league-forum-panel";
@@ -394,7 +393,12 @@ function LeaderboardTableWeekly({
                 </td>
                 <td className="py-4 px-6">
                   <div className="flex items-center justify-center gap-1">
-                    <Flame className={cn("w-3.5 h-3.5", r.streakDays > 0 ? "text-orange-500" : "text-slate-200")} />
+                    <MentrixaVocabIcon
+                      name="streak"
+                      size={14}
+                      className={r.streakDays > 0 ? "text-orange-500" : "text-slate-200"}
+                      title="Streak"
+                    />
                     <span className="text-xs font-bold text-slate-500">{r.streakDays}d</span>
                   </div>
                 </td>
@@ -411,7 +415,7 @@ function LeaderboardTableWeekly({
       </table>
       {rows.length === 0 && (
         <div className="p-12 text-center">
-           <Trophy className="w-10 h-10 text-slate-100 mx-auto mb-3" />
+           <MentrixaVocabIcon name="leaderboard" size={40} className="mx-auto mb-3 text-slate-100" title="Leaderboard" />
            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-300 italic">Earn XP this week to claim your spot</p>
         </div>
       )}
@@ -463,7 +467,12 @@ function LeaderboardTableAllTime({
                 </td>
                 <td className="py-4 px-6">
                   <div className="flex items-center justify-center gap-1">
-                    <Flame className={cn("w-3.5 h-3.5", r.streakDays > 0 ? "text-orange-500" : "text-slate-200")} />
+                    <MentrixaVocabIcon
+                      name="streak"
+                      size={14}
+                      className={r.streakDays > 0 ? "text-orange-500" : "text-slate-200"}
+                      title="Streak"
+                    />
                     <span className="text-xs font-bold text-slate-500">{r.streakDays}d</span>
                   </div>
                 </td>

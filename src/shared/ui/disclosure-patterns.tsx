@@ -9,6 +9,7 @@ import {
   type MentrixaBrandKind,
 } from "@/shared/ui/mentrixa-ui-brand";
 import {
+  disclosureVocabIcon,
   examStakesDisclosureMessage,
   guideDemandSignalDisclosureMessage,
   guideImpactDisclosureMessage,
@@ -19,6 +20,8 @@ import {
   type MentrixaDisclosureKind,
   type MentrixaDisclosureMessage,
 } from "@/shared/ui/disclosure-messages-pure";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export type MentrixaDisclosureTone = "light" | "dark" | "marketing";
 
@@ -35,6 +38,7 @@ export function MentrixaDisclosure({
   nextAction,
   tone = "light",
   brandKind,
+  vocabIcon,
   isExpanded,
   onExpandedChange,
   className,
@@ -46,6 +50,7 @@ export function MentrixaDisclosure({
   nextAction?: string;
   tone?: MentrixaDisclosureTone;
   brandKind?: MentrixaBrandKind;
+  vocabIcon?: VocabIconName;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   className?: string;
@@ -59,7 +64,9 @@ export function MentrixaDisclosure({
     >
       <Disclosure.Heading>
         <Disclosure.Trigger className="mentrixa-disclosure__trigger">
-          {brandKind ? (
+          {vocabIcon ? (
+            <MentrixaVocabIcon name={vocabIcon} size={16} className="shrink-0 opacity-90" title={triggerLabel} />
+          ) : brandKind ? (
             <MentrixaBrandMark kind={brandKind} size="xs" className="shrink-0 opacity-85" />
           ) : null}
           <span className="min-w-0 flex-1 text-left text-sm font-medium leading-snug">{triggerLabel}</span>
@@ -87,11 +94,13 @@ function MentrixaDisclosureFromMessage({
   message,
   tone = "light",
   brandKind,
+  vocabIcon,
   className,
 }: {
   message: MentrixaDisclosureMessage;
   tone?: MentrixaDisclosureTone;
   brandKind?: MentrixaBrandKind;
+  vocabIcon?: VocabIconName;
   className?: string;
 }) {
   return (
@@ -101,6 +110,7 @@ function MentrixaDisclosureFromMessage({
       nextAction={message.nextAction}
       tone={tone}
       brandKind={brandKind}
+      vocabIcon={vocabIcon}
       className={className}
     >
       <p>{message.body}</p>
@@ -121,7 +131,7 @@ export function VerifiedFirstAttemptDisclosure({
     <MentrixaDisclosureFromMessage
       message={verifiedFirstAttemptDisclosureMessage(subjectLabel)}
       tone={tone}
-      brandKind="mentrixer"
+      vocabIcon="verified"
       className={className}
     />
   );
@@ -138,7 +148,7 @@ export function GuideImpactDisclosure({
     <MentrixaDisclosureFromMessage
       message={guideImpactDisclosureMessage()}
       tone={tone}
-      brandKind="guide"
+      vocabIcon="impact-score"
       className={className}
     />
   );
@@ -155,7 +165,7 @@ export function GuideDemandSignalDisclosure({
     <MentrixaDisclosureFromMessage
       message={guideDemandSignalDisclosureMessage()}
       tone={tone}
-      brandKind="guide"
+      vocabIcon="guide-session"
       className={className}
     />
   );
@@ -172,7 +182,7 @@ export function MomentumSubscriptionDisclosure({
     <MentrixaDisclosureFromMessage
       message={momentumSubscriptionDisclosureMessage()}
       tone={tone}
-      brandKind="mentrixa"
+      vocabIcon="momentum"
       className={className}
     />
   );
@@ -189,7 +199,7 @@ export function MomentumLoopSlaDisclosure({
     <MentrixaDisclosureFromMessage
       message={momentumLoopSlaDisclosureMessage()}
       tone={tone}
-      brandKind="mentrixa"
+      vocabIcon="loop-report"
       className={className}
     />
   );
@@ -208,7 +218,7 @@ export function ExamStakesDisclosure({
     <MentrixaDisclosureFromMessage
       message={examStakesDisclosureMessage(examStakes)}
       tone={tone}
-      brandKind="mentrixer"
+      vocabIcon="quest"
       className={className}
     />
   );
@@ -228,18 +238,12 @@ export function WhyThisMattersDisclosure({
   className?: string;
 }) {
   const message = mentrixaDisclosureMessage(kind, { subjectLabel, examStakes });
-  const brandKind: MentrixaBrandKind =
-    kind === "guide_impact" || kind === "guide_demand_signal"
-      ? "guide"
-      : kind === "momentum_subscription"
-        ? "mentrixa"
-        : "mentrixer";
 
   return (
     <MentrixaDisclosureFromMessage
       message={message}
       tone={tone}
-      brandKind={brandKind}
+      vocabIcon={disclosureVocabIcon(kind)}
       className={className}
     />
   );

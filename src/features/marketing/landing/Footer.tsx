@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Zap } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const PRODUCT_LINKS = [
   { label: "Features", href: "#how-it-works" },
@@ -34,7 +34,7 @@ export default function Footer() {
               <span className="font-display font-bold text-text-primary text-lg tracking-tight">
                 Mentrixa
               </span>
-              <Zap size={16} className="text-brand-500" />
+              <MentrixaVocabIcon name="xp" size={16} className="text-brand-500" title="Mentrixa" />
             </Link>
             <p className="text-sm text-text-muted max-w-[200px]">
               AI-powered tutoring. Book sessions, get study packages, level up.
