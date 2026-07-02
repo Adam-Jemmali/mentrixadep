@@ -18,6 +18,5 @@ export async function getStudentEntitlements(userId: string): Promise<StudentEnt
     sessionCreditPeriodMonth: credits.monthlyCredit?.period_month ?? null,
     packSprint: credits.packSprint,
     monthlyCreditsRemaining: credits.monthlyRemaining,
-    alumniCreditsRemaining: credits.alumniRemaining,
   });
 }

@@ -8,32 +8,28 @@ import type { SubscriptionBillingInterval } from "@/features/pricing/pricing-tie
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
 import type { PackSprintState } from "@/features/entitlements/pack-sprint-pure";
 import { buildPackGoalVerdict } from "@/features/payments/momentum-membership-pure";
-import { buildAlumniMomentumVerdict } from "@/features/entitlements/alumni-momentum-pure";
 import { SubscriptionStateAlert } from "@/shared/ui/alert-patterns";
 import { StripeCheckoutPendingPanel } from "@/shared/ui/spinner-patterns";
 import { Button } from "@/shared/ui/button";
 import { MomentumMembershipPanel } from "@/features/student-profile/ui/momentum-membership-panel";
+import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
 
 export function MomentumSubscribeClient({
   initialSubscription,
   sessionCreditsRemaining = 0,
   sessionCreditPeriodMonth = null,
   momentumActive = false,
-  alumniActive = false,
   daysUntilExam = null,
   packSprint = null,
   monthlyCreditsRemaining = 0,
-  alumniCreditsRemaining = 0,
 }: {
   initialSubscription: StudentSubscriptionRow | null;
   sessionCreditsRemaining?: number;
   sessionCreditPeriodMonth?: string | null;
   momentumActive?: boolean;
-  alumniActive?: boolean;
   daysUntilExam?: number | null;
   packSprint?: PackSprintState | null;
   monthlyCreditsRemaining?: number;
-  alumniCreditsRemaining?: number;
 }) {
   const searchParams = useSearchParams();
   const [interval, setInterval] = useState<SubscriptionBillingInterval>("annual");
@@ -46,25 +42,6 @@ export function MomentumSubscribeClient({
     daysUntilExam,
     sessionCreditsRemaining,
   });
-  const alumniCopy = buildAlumniMomentumVerdict();
-
-  async function startAlumniCheckout() {
-    setPending(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/stripe/alumni-subscription/checkout", { method: "POST" });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        setError(data.error ?? "Could not start alumni checkout");
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      setError("Could not start alumni checkout");
-    } finally {
-      setPending(false);
-    }
-  }
 
   async function startCheckout() {
     setPending(true);
@@ -114,7 +91,6 @@ export function MomentumSubscribeClient({
         sessionCreditPeriodMonth={sessionCreditPeriodMonth}
         packSprint={packSprint}
         monthlyCreditsRemaining={monthlyCreditsRemaining}
-        alumniCreditsRemaining={alumniCreditsRemaining}
         variant="subscribe"
         interval={interval}
         onIntervalChange={setInterval}
@@ -124,33 +100,30 @@ export function MomentumSubscribeClient({
         className="mx-auto max-w-2xl"
       />
 
+      <div className="mx-auto mt-8 max-w-4xl">
+        <TierComparisonTable />
+      </div>
+
       {momentumActive ? (
-        <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-indigo-100 bg-white p-5">
-          <p className="text-sm font-semibold text-slate-900">Quarter Sprint Pack</p>
+        <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-indigo-100 bg-white p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Momentum add-on</p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">Quarter Sprint Pack</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Not a subscription. Extra session credits for active Momentum members only.
+          </p>
           {packGoal ? (
             <>
               <p className="mt-2 text-sm font-medium text-slate-900">{packGoal.verdict}</p>
               <p className="mt-1 text-sm text-slate-600">{packGoal.nextAction}</p>
             </>
           ) : (
-            <p className="mt-1 text-sm text-slate-600">
-              Momentum Pack: {MOMENTUM_PACK_SESSION_COUNT} sessions for {formatStudentMomentumPackPrice()}.
-              Pay as you go is {formatStudentBreakthroughPrice()} per session.
+            <p className="mt-2 text-sm text-slate-600">
+              {MOMENTUM_PACK_SESSION_COUNT} sessions for {formatStudentMomentumPackPrice()}. Pay as you go is{" "}
+              {formatStudentBreakthroughPrice()} per session without Momentum.
             </p>
           )}
           <Button type="button" className="mt-4" onClick={() => void startPackCheckout()} disabled={pending}>
             Buy Quarter Sprint Pack
-          </Button>
-        </div>
-      ) : null}
-
-      {!momentumActive && !alumniActive ? (
-        <div className="mx-auto mt-5 max-w-2xl rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="text-sm font-semibold text-slate-900">Alumni Momentum</p>
-          <p className="mt-2 text-sm font-medium text-slate-900">{alumniCopy.verdict}</p>
-          <p className="mt-1 text-sm text-slate-600">{alumniCopy.nextAction}</p>
-          <Button type="button" className="mt-4" variant="outline" onClick={() => void startAlumniCheckout()} disabled={pending}>
-            Subscribe Alumni Momentum
           </Button>
         </div>
       ) : null}

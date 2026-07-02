@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { TimelineContent } from "@/shared/ui/timeline-animation";
 import { VerticalCutReveal } from "@/shared/ui/vertical-cut-reveal";
 import { cn } from "@/shared/core/utils";
-import { CheckCheck, Swords, Zap, Trophy } from "lucide-react";
+import { CheckCheck, Swords, X, Zap, Trophy } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useRef } from "react";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import {
   PRICING_SECTION_VERDICT,
   type PricingTierDefinition,
 } from "@/features/pricing/pricing-tiers-pure";
+import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
 import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
 
 const TIER_ICONS: Record<string, React.ReactNode> = {
@@ -35,6 +36,20 @@ function FeatureList({ items }: { items: string[] }) {
             <CheckCheck className="h-3 w-3 text-indigo-600" aria-hidden />
           </div>
           <span className="text-sm font-medium leading-snug text-slate-600">{feature}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ExclusionList({ items }: { items: string[] }) {
+  return (
+    <ul className="mt-4 space-y-2 border-t border-slate-100 pt-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Not included</p>
+      {items.map((item) => (
+        <li key={item} className="flex gap-2.5">
+          <X className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+          <span className="text-sm leading-snug text-slate-500">{item}</span>
         </li>
       ))}
     </ul>
@@ -88,6 +103,7 @@ function TierCardView({
             Included
           </p>
           <FeatureList items={tier.receipts} />
+          {tier.exclusions.length > 0 ? <ExclusionList items={tier.exclusions} /> : null}
           <div className="mt-auto border-t border-slate-100 pt-5">
             <Button
               asChild
@@ -202,6 +218,15 @@ export default function PricingSection() {
           </TimelineContent>
         ))}
       </div>
+
+      <TimelineContent
+        as="div"
+        animationNum={6}
+        timelineRef={pricingRef}
+        customVariants={revealVariants}
+      >
+        <TierComparisonTable className="mt-16" />
+      </TimelineContent>
     </section>
   );
 }

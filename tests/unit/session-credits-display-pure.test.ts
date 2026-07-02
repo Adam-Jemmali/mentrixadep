@@ -6,7 +6,6 @@ describe("buildSessionCreditsHubVerdict", () => {
     const copy = buildSessionCreditsHubVerdict({
       totalRemaining: 3,
       monthlyRemaining: 1,
-      alumniRemaining: 0,
       packSprint: {
         creditsRemaining: 2,
         creditsGranted: 3,

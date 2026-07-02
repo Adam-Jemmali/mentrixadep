@@ -5,7 +5,7 @@ import type { SubscriptionBillingInterval } from "@/features/pricing/pricing-tie
 
 export const subscriptionBillingIntervalSchema = z.enum(["monthly", "annual"]);
 
-export type SubscriptionPlanTier = "momentum" | "alumni";
+export type SubscriptionPlanTier = "momentum";
 
 export type StudentSubscriptionRow = {
   user_id: string;
@@ -58,16 +58,6 @@ export function isMomentumSubscriptionActive(row: StudentSubscriptionRow | null)
   return row.plan_tier === "momentum";
 }
 
-export function isAlumniMomentumActive(row: StudentSubscriptionRow | null): boolean {
-  if (!row) return false;
-  if (row.local_status !== "active" && row.local_status !== "trialing") return false;
-  return row.plan_tier === "alumni";
-}
-
-export function isAnyMomentumBillingActive(row: StudentSubscriptionRow | null): boolean {
-  return isMomentumSubscriptionActive(row) || isAlumniMomentumActive(row);
-}
-
 export async function upsertStudentSubscriptionFromStripe(
   userId: string,
   subscription: any,
@@ -107,7 +97,7 @@ export async function getStudentSubscription(
   return (data as StudentSubscriptionRow | null)
     ? {
         ...(data as StudentSubscriptionRow),
-        plan_tier: ((data as StudentSubscriptionRow).plan_tier ?? "momentum") as SubscriptionPlanTier,
+        plan_tier: "momentum",
       }
     : null;
 }

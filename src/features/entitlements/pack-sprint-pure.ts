@@ -1,5 +1,4 @@
 import { MOMENTUM_PACK_SESSION_COUNT } from "@/features/booking/booking-pricing";
-import { quarterlyCreditExpiryMs } from "@/features/entitlements/alumni-momentum-pure";
 
 export const PACK_SPRINT_EXPIRY_DAYS = 90;
 
@@ -11,7 +10,7 @@ export type PackSprintState = {
 };
 
 export type CreditConsumeCandidate = {
-  kind: "pack" | "monthly" | "alumni";
+  kind: "pack" | "monthly";
   id: string;
   expiresAtMs: number;
   creditsRemaining: number;
@@ -48,7 +47,6 @@ export function selectCreditConsumeCandidate(
   input: {
     pack: { id: string; creditsRemaining: number; expiresAt: string } | null;
     monthly: { id: string; creditsRemaining: number; periodMonth: string } | null;
-    alumni: { id: string; creditsRemaining: number; periodMonth: string } | null;
     nowMs?: number;
   },
 ): CreditConsumeCandidate | null {
@@ -73,15 +71,6 @@ export function selectCreditConsumeCandidate(
       id: input.monthly.id,
       expiresAtMs: monthlyCreditExpiryMs(input.monthly.periodMonth),
       creditsRemaining: input.monthly.creditsRemaining,
-    });
-  }
-
-  if (input.alumni && input.alumni.creditsRemaining > 0) {
-    candidates.push({
-      kind: "alumni",
-      id: input.alumni.id,
-      expiresAtMs: quarterlyCreditExpiryMs(input.alumni.periodMonth),
-      creditsRemaining: input.alumni.creditsRemaining,
     });
   }
 

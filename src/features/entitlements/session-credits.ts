@@ -12,13 +12,7 @@ import {
   type MomentumSessionCreditGrantSource,
 } from "@/features/entitlements/session-credits-pure";
 import {
-  utcQuarterKey,
-  utcQuarterPeriodMonth,
-} from "@/features/entitlements/alumni-momentum-pure";
-import { MOMENTUM_ALUMNI_CREDITS_PER_QUARTER } from "@/features/booking/booking-pricing";
-import {
   getStudentSubscription,
-  isAlumniMomentumActive,
   isMomentumSubscriptionActive,
 } from "@/features/payments/student-subscription";
 
@@ -42,29 +36,10 @@ export type MomentumPackCreditRow = {
 export type MomentumSessionCreditsSummary = {
   monthlyCredit: MomentumSessionCreditRow | null;
   monthlyRemaining: number;
-  alumniRemaining: number;
   packRemaining: number;
   totalRemaining: number;
   packSprint: PackSprintState | null;
 };
-
-async function getAlumniQuarterCreditRow(userId: string): Promise<MomentumSessionCreditRow | null> {
-  const admin = createAdminClient();
-  const periodMonth = utcQuarterPeriodMonth();
-  const { data, error } = await admin
-    .from("momentum_session_credits")
-    .select("id, user_id, period_month, credits_granted, credits_remaining")
-    .eq("user_id", userId)
-    .eq("period_month", periodMonth)
-    .eq("grant_source", "alumni_quarterly")
-    .maybeSingle();
-
-  if (error) {
-    console.warn("[session-credits] alumni read failed:", error.message);
-    return null;
-  }
-  return (data as MomentumSessionCreditRow | null) ?? null;
-}
 
 async function getMonthlyMomentumSessionCreditRow(
   userId: string,
@@ -76,7 +51,6 @@ async function getMonthlyMomentumSessionCreditRow(
     .select("id, user_id, period_month, credits_granted, credits_remaining")
     .eq("user_id", userId)
     .eq("period_month", periodMonth)
-    .neq("grant_source", "alumni_quarterly")
     .maybeSingle();
 
   if (error) {
@@ -119,19 +93,14 @@ export async function getActivePackSprintState(userId: string): Promise<PackSpri
 export async function getMomentumSessionCreditsSummary(
   userId: string,
 ): Promise<MomentumSessionCreditsSummary> {
-  const [monthlyCredit, alumniCredit, packCredit] = await Promise.all([
+  const [monthlyCredit, packCredit] = await Promise.all([
     getMonthlyMomentumSessionCreditRow(userId),
-    getAlumniQuarterCreditRow(userId),
     getEarliestActivePackCreditRow(userId),
   ]);
 
   const monthlyRemaining =
     monthlyCredit && (monthlyCredit.credits_remaining ?? 0) > 0
       ? monthlyCredit.credits_remaining
-      : 0;
-  const alumniRemaining =
-    alumniCredit && (alumniCredit.credits_remaining ?? 0) > 0
-      ? alumniCredit.credits_remaining
       : 0;
   const packRemaining =
     packCredit && (packCredit.credits_remaining ?? 0) > 0 ? packCredit.credits_remaining : 0;
@@ -147,9 +116,8 @@ export async function getMomentumSessionCreditsSummary(
   return {
     monthlyCredit: monthlyRemaining > 0 ? monthlyCredit : null,
     monthlyRemaining,
-    alumniRemaining,
     packRemaining,
-    totalRemaining: monthlyRemaining + alumniRemaining + packRemaining,
+    totalRemaining: monthlyRemaining + packRemaining,
     packSprint,
   };
 }
@@ -185,7 +153,6 @@ export async function grantMomentumMonthlySessionCredit(params: {
     .select("id")
     .eq("user_id", params.userId)
     .eq("period_month", periodMonth)
-    .neq("grant_source", "alumni_quarterly")
     .maybeSingle();
 
   if (existing) {
@@ -221,82 +188,6 @@ export async function grantMomentumMonthlySessionCredit(params: {
   }
 
   return "granted";
-}
-
-export async function grantAlumniQuarterlySessionCredit(params: {
-  userId: string;
-  grantSource?: MomentumSessionCreditGrantSource;
-  periodMonth?: string;
-}): Promise<"granted" | "skipped"> {
-  const subscription = await getStudentSubscription(params.userId);
-  if (!isAlumniMomentumActive(subscription)) {
-    return "skipped";
-  }
-
-  const admin = createAdminClient();
-  const periodMonth = params.periodMonth ?? utcQuarterPeriodMonth();
-  const now = new Date().toISOString();
-
-  const { data: existing } = await admin
-    .from("momentum_session_credits")
-    .select("id")
-    .eq("user_id", params.userId)
-    .eq("period_month", periodMonth)
-    .eq("grant_source", "alumni_quarterly")
-    .maybeSingle();
-
-  if (existing) {
-    return "skipped";
-  }
-
-  const { error } = await admin.from("momentum_session_credits").insert({
-    user_id: params.userId,
-    period_month: periodMonth,
-    credits_granted: MOMENTUM_ALUMNI_CREDITS_PER_QUARTER,
-    credits_remaining: MOMENTUM_ALUMNI_CREDITS_PER_QUARTER,
-    grant_source: params.grantSource ?? "alumni_quarterly",
-    updated_at: now,
-  });
-
-  if (error) {
-    if (error.code === "23505") {
-      return "skipped";
-    }
-    throw new Error(error.message);
-  }
-
-  return "granted";
-}
-
-export async function grantAlumniCreditsForActiveSubscribers(now: Date = new Date()): Promise<{
-  checked: number;
-  granted: number;
-  quarter: string;
-}> {
-  const admin = createAdminClient();
-  const { data: rows, error } = await admin
-    .from("student_subscriptions")
-    .select("user_id, local_status, plan_tier")
-    .eq("plan_tier", "alumni")
-    .in("local_status", ["active", "trialing"]);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const periodMonth = utcQuarterPeriodMonth(now);
-  let granted = 0;
-  for (const row of rows ?? []) {
-    const result = await grantAlumniQuarterlySessionCredit({
-      userId: row.user_id as string,
-      periodMonth,
-    });
-    if (result === "granted") {
-      granted += 1;
-    }
-  }
-
-  return { checked: rows?.length ?? 0, granted, quarter: utcQuarterKey(now) };
 }
 
 export async function grantMomentumPackCredits(params: {
@@ -405,9 +296,8 @@ export async function consumeMomentumSessionCredit(params: {
     };
   }
 
-  const [monthlyCredit, alumniCredit, packCredit] = await Promise.all([
+  const [monthlyCredit, packCredit] = await Promise.all([
     getMonthlyMomentumSessionCreditRow(params.userId),
-    getAlumniQuarterCreditRow(params.userId),
     getEarliestActivePackCreditRow(params.userId),
   ]);
 
@@ -425,14 +315,6 @@ export async function consumeMomentumSessionCredit(params: {
             id: monthlyCredit.id,
             creditsRemaining: monthlyCredit.credits_remaining,
             periodMonth: monthlyCredit.period_month,
-          }
-        : null,
-    alumni:
-      alumniCredit && alumniCredit.credits_remaining > 0
-        ? {
-            id: alumniCredit.id,
-            creditsRemaining: alumniCredit.credits_remaining,
-            periodMonth: alumniCredit.period_month,
           }
         : null,
   });

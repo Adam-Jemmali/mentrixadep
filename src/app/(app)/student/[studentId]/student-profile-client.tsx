@@ -758,7 +758,6 @@ export function StudentProfileClient({
                       sessionCreditPeriodMonth={entitlements?.sessionCreditPeriodMonth ?? null}
                       packSprint={entitlements?.packSprint ?? null}
                       monthlyCreditsRemaining={entitlements?.monthlyCreditsRemaining ?? 0}
-                      alumniCreditsRemaining={entitlements?.alumniCreditsRemaining ?? 0}
                     />
                   ),
                 },

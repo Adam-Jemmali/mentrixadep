@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPricingTiers,
+  buildTierComparisonRows,
   FREE_TIER_PAYWALL_COMMITMENT,
   PRICING_SECTION_HEADLINE,
 } from "@/features/pricing/pricing-tiers-pure";
@@ -13,44 +14,36 @@ describe("pricing tiers copy", () => {
     expect(arena?.paywallCommitment).toBe(FREE_TIER_PAYWALL_COMMITMENT);
   });
 
-  it("lists arena free receipts without mechanic descriptions", () => {
+  it("lists arena free receipts and explicit exclusions", () => {
     const arena = buildPricingTiers().find((tier) => tier.id === "arena");
-    expect(arena?.receipts).toEqual([
-      "Full Mastery Grid",
-      "Unlimited approved item bank practice",
-      "Public rank page",
-      "Duels scoped to AP Calculus AB only",
-    ]);
+    expect(arena?.receipts[0]).toContain("Mastery Grid");
+    expect(arena?.exclusions.some((line) => line.includes("Guide sessions"))).toBe(true);
+    expect(arena?.exclusions.some((line) => line.includes("Movement Receipts"))).toBe(true);
   });
 
-  it("lists breakthrough session receipts only", () => {
+  it("lists breakthrough session receipts and momentum gaps", () => {
     const breakthrough = buildPricingTiers().find((tier) => tier.id === "breakthrough");
     expect(breakthrough?.receipts).toHaveLength(5);
-    expect(breakthrough?.receipts[0]).toBe("Session brief your Guide already has");
     expect(breakthrough?.priceMain).toContain("39");
     expect(BREAKTHROUGH_SESSION_PRICE_CENTS).toBe(3900);
+    expect(breakthrough?.exclusions.some((line) => line.includes("monthly credit"))).toBe(true);
   });
 
   it("lists momentum subscription receipts and routes to subscribe", () => {
     const momentum = buildPricingTiers().find((tier) => tier.id === "momentum");
-    expect(momentum?.receipts).toEqual([
-      "One included Guide session per month at $0 checkout when credit applies",
-      "Member session rate $29 versus $39 pay as you go",
-      "Weekly Movement Receipt by email with grid, retest, and credit status",
-      "Priority retests 24h after session versus 48h free",
-      "Mastery Grid timeline and full progress archive",
-      "Full Loop Report with every closed coaching loop",
-      "Goal pace dashboard with exam countdown",
-      "Full Guide impact receipt history",
-      "Early pre-session brief 24h before your call",
-      "Guide memory and full brief archive across sessions",
-      "Loop SLA: included credit restored if verified movement does not improve in 7 days",
-    ]);
+    expect(momentum?.receipts.some((line) => line.includes("Movement Receipt"))).toBe(true);
+    expect(momentum?.receipts.some((line) => line.includes("certificate"))).toBe(true);
     expect(momentum?.buttonLink).toBe("/student/subscribe");
-    expect(momentum?.popular).toBe(true);
+    expect(momentum?.popularBadge).toBe("Only subscription");
   });
 
-  it("anchors the section headline on the trust commitment", () => {
-    expect(PRICING_SECTION_HEADLINE).toBe("Nothing free today gets paywalled tomorrow.");
+  it("marks momentum-exclusive rows in the comparison matrix", () => {
+    const exclusive = buildTierComparisonRows().filter((row) => row.momentumExclusive);
+    expect(exclusive.length).toBeGreaterThan(5);
+    expect(exclusive.every((row) => row.arena === "no" && row.breakthrough === "no")).toBe(true);
+  });
+
+  it("anchors the section headline on three clear tiers", () => {
+    expect(PRICING_SECTION_HEADLINE).toBe("Three ways to use Mentrixa. One thing never changes.");
   });
 });

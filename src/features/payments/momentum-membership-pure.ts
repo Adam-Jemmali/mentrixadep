@@ -11,10 +11,10 @@ import type { StudentSubscriptionRow } from "@/features/payments/student-subscri
 import { isMomentumSubscriptionActive } from "@/features/payments/student-subscription";
 
 export const MOMENTUM_MEMBERSHIP_VERDICT =
-  "Momentum is trajectory custody: weekly Movement Receipts, monthly coaching beats, and full loop memory. Your rank and Mastery Grid stay free.";
+  "Momentum is the only subscription. It unlocks weekly proof, coaching memory, and included session credits. Your rank and Mastery Grid stay free in the Arena.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE =
-  "Subscribe to unlock weekly proof by email, priority retests, and included session credits.";
+  "Subscribe to unlock Movement Receipts, archive access, priority retests, and one included Guide session per month.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE =
   "Book your next Guide session. Use your included monthly credit or the member rate.";

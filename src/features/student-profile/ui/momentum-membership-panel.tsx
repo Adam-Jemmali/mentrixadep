@@ -35,7 +35,6 @@ type MomentumMembershipPanelProps = {
   sessionCreditPeriodMonth?: string | null;
   packSprint?: PackSprintState | null;
   monthlyCreditsRemaining?: number;
-  alumniCreditsRemaining?: number;
   variant?: "profile" | "subscribe";
   interval?: SubscriptionBillingInterval;
   onIntervalChange?: (interval: SubscriptionBillingInterval) => void;
@@ -51,7 +50,6 @@ export function MomentumMembershipPanel({
   sessionCreditPeriodMonth = null,
   packSprint = null,
   monthlyCreditsRemaining = 0,
-  alumniCreditsRemaining = 0,
   variant = "profile",
   interval = "annual",
   onIntervalChange,
@@ -70,7 +68,6 @@ export function MomentumMembershipPanel({
       ? buildSessionCreditsHubVerdict({
           totalRemaining: sessionCreditsRemaining,
           monthlyRemaining: monthlyCreditsRemaining,
-          alumniRemaining: alumniCreditsRemaining,
           packSprint,
           periodMonth: sessionCreditPeriodMonth,
         })
@@ -87,7 +84,7 @@ export function MomentumMembershipPanel({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">
-            Package plan
+            Only subscription
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <SubscriptionTierChip tier="momentum" active={active} />
@@ -112,11 +109,16 @@ export function MomentumMembershipPanel({
 
       <div className="mt-4 rounded-2xl border border-indigo-100 bg-white/80 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Compare</p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Arena</p>
+            <p className="mt-1 text-lg font-black text-slate-900">$0</p>
+            <p className="mt-1 text-xs text-slate-500">Rank and grid free forever.</p>
+          </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Breakthrough</p>
             <p className="mt-1 text-lg font-black text-slate-900">{formatStudentBreakthroughPrice()}</p>
-            <p className="mt-1 text-xs text-slate-500">One time per Guide session at checkout.</p>
+            <p className="mt-1 text-xs text-slate-500">One time per Guide session.</p>
           </div>
           <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Momentum</p>
@@ -124,7 +126,7 @@ export function MomentumMembershipPanel({
               {subscriptionPriceLabel(interval)}
             </p>
             <p className="mt-1 text-xs text-indigo-800/80">
-              Plus {momentumSubscriberSessionPriceLabel()} member session rate.
+              Plus {momentumSubscriberSessionPriceLabel()} member rate.
             </p>
           </div>
         </div>

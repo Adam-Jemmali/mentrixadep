@@ -136,7 +136,7 @@ async function fetchAvailabilityDetails(availabilityId: string) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  if (session.metadata?.checkout_kind === "momentum_subscription" || session.metadata?.checkout_kind === "momentum_alumni_subscription") {
+  if (session.metadata?.checkout_kind === "momentum_subscription") {
     await handleMomentumSubscriptionCheckoutCompleted(session);
     return;
   }

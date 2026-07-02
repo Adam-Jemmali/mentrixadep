@@ -37,7 +37,6 @@ describe("pack-sprint-pure", () => {
         creditsRemaining: 1,
         periodMonth: "2026-03-01",
       },
-      alumni: null,
     });
     expect(selected?.kind).toBe("pack");
     expect(selected?.id).toBe("pack-1");
@@ -57,7 +56,6 @@ describe("pack-sprint-pure", () => {
         creditsRemaining: 1,
         periodMonth: "2026-03-01",
       },
-      alumni: null,
     });
     expect(selected?.kind).toBe("monthly");
   });

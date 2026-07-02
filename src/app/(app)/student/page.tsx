@@ -120,7 +120,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     ]);
 
   const momentumSubscriber = entitlements.momentumActive;
-  const archiveSubscriber = entitlements.momentumActive || entitlements.alumniActive;
+  const archiveSubscriber = entitlements.momentumActive;
   const sessionCreditAvailable = entitlements.sessionCreditsRemaining > 0;
 
   const loopRows = await loadLoopReportRows(user.id, {

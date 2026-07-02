@@ -114,10 +114,6 @@
       "schedule": "15 2 * * 2"
     },
     {
-      "path": "/api/cron/grant-alumni-quarter-credits",
-      "schedule": "45 2 * * 2"
-    },
-    {
       "path": "/api/cron/unlock-expired-slots",
       "schedule": "0 2 * * 2"
     },
