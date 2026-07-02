@@ -58,6 +58,11 @@ import {
   loopSlaGrantEmailTitle,
 } from "./templates/loop-sla-grant-email";
 import {
+  creditEscalationEmailBody,
+  creditEscalationEmailSubject,
+  creditEscalationEmailTitle,
+} from "./templates/credit-escalation-email";
+import {
   movementReceiptMonthlyRollupEmailBody,
   movementReceiptMonthlyRollupEmailSubject,
   movementReceiptMonthlyRollupEmailTitle,
