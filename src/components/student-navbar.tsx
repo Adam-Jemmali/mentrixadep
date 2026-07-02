@@ -262,7 +262,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   onClick={() => setProfileMenuOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
-                  <MentrixaVocabIcon name="momentum-membership" size={18} surface="light" />
+                  <MentrixaVocabIcon name="momentum" size={18} surface="light" title="Momentum membership" />
                   Momentum membership
                 </Link>
                 <ArenaMusicMuteToggle variant="menu" />
@@ -333,7 +333,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   }}
                   className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50"
                 >
-                  <MentrixaVocabIcon name="momentum-membership" size={18} surface="light" />
+                  <MentrixaVocabIcon name="momentum" size={18} surface="light" title="Momentum membership" />
                   Momentum membership
                 </Link>
                 <div className="border-t border-slate-100">

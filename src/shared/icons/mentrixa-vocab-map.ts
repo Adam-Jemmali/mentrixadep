@@ -134,6 +134,9 @@ export function vocabIconSrc(name: VocabIconName): string {
   if (name === "xp") {
     return XP_ICON_SRC;
   }
+  if (name === "momentum-membership") {
+    return "/icons/vocab/momentum.svg";
+  }
   if (GUIDE_RANK_NAMES.has(name)) {
     return `/icons/guide-ranks/${name}.svg`;
   }

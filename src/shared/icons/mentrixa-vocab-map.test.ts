@@ -18,6 +18,7 @@ describe("mentrixa-vocab-map", () => {
   it("resolves vocab and guide-rank asset paths", () => {
     expect(vocabIconSrc("quest")).toBe("/icons/vocab/quest.svg");
     expect(vocabIconSrc("xp")).toBe("/images/xp.webp");
+    expect(vocabIconSrc("momentum-membership")).toBe("/icons/vocab/momentum.svg");
     expect(vocabIconSrc("practitioner")).toBe("/icons/guide-ranks/practitioner.svg");
   });
 

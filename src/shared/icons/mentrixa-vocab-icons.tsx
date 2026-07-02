@@ -11,6 +11,7 @@ import {
   type VocabIconName,
 } from "@/shared/icons/mentrixa-vocab-map";
 import { weekdayLabel, weekdayVocabIcon } from "@/shared/icons/weekday-vocab-pure";
+import { renderInlineVocabIcon } from "@/shared/icons/vocab-inline-svgs";
 
 const GOLD_FILTER =
   "brightness(0) saturate(100%) invert(73%) sepia(48%) saturate(746%) hue-rotate(8deg) brightness(95%) contrast(92%)";
@@ -52,6 +53,25 @@ export function MentrixaVocabIcon({
   const ariaLabel = title ?? meta.label;
   const useGold = gold === true && meta.allowsGold === true;
   const raster = isRasterVocabSrc(src);
+  const inline = renderInlineVocabIcon(name, { size, surface, gold: useGold, className: "block h-full w-full" });
+
+  if (inline) {
+    return (
+      <span
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center",
+          useGold && "rounded-md ring-1 ring-[#D4A017]/50 drop-shadow-[0_0_6px_rgba(212,160,23,0.35)]",
+          className,
+        )}
+        style={{ width: size, height: size }}
+        title={ariaLabel}
+        aria-label={ariaLabel}
+        role="img"
+      >
+        {inline}
+      </span>
+    );
+  }
 
   if (raster) {
     return (
@@ -149,8 +169,11 @@ export function VocabHubTile({
         className,
       )}
       title={meta.label}
+      aria-label={meta.label}
     >
-      <MentrixaVocabIcon name={name} size={iconSize} surface={surface} title={meta.label} />
+      <span className="flex items-center justify-center rounded-lg bg-white/12 p-2 ring-1 ring-white/20">
+        <MentrixaVocabIcon name={name} size={iconSize} surface={surface} title={meta.label} />
+      </span>
       {value != null ? (
         <span className="font-mono text-base font-bold tabular-nums leading-none text-white">
           {typeof value === "number" ? value.toLocaleString() : value}
