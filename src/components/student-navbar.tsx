@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/shared/core/utils";
@@ -37,11 +36,6 @@ import {
 } from "@/shared/integrations/mentrixa-sounds";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
-
-const BubbleText = dynamic(
-  () => import("@/shared/ui/bubble-text").then((m) => ({ default: m.BubbleText })),
-  { ssr: false, loading: () => null },
-);
 
 /** Solid shell — light profile/workbench pages must not bleed through the bar. */
 const STUDENT_NAV_DESKTOP_SHELL =
