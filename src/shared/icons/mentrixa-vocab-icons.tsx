@@ -50,7 +50,7 @@ export function MentrixaVocabIcon({
   const meta = getVocabIconMeta(name);
   const src = vocabIconSrc(name);
   const ariaLabel = title ?? meta.label;
-  const useGold = gold && meta.allowsGold;
+  const useGold = gold === true && meta.allowsGold === true;
   const raster = isRasterVocabSrc(src);
 
   if (raster) {

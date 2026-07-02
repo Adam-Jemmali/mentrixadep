@@ -10,7 +10,7 @@ import {
 function sampleGrid(): MasteryGridData {
   return {
     subject: "AP Calculus AB",
-    verdict: null,
+    verdict: undefined,
     nextActionLine: "Start with limits.",
     units: [
       {
