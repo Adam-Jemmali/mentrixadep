@@ -72,6 +72,8 @@ import { loadGuideImpactReceipts } from "@/features/guide-impact/impact-receipt-
 import { GuideImpactReceiptCard } from "@/features/guide-impact/ui/guide-impact-receipt-card";
 import { loadActiveMovementReceiptForViewer } from "@/features/movement-receipt/load-movement-receipt";
 import { MovementReceiptHubCard } from "@/features/movement-receipt/ui/movement-receipt-hub-card";
+import { loadTrajectoryIndexForViewer } from "@/features/trajectory-index/load-trajectory-index";
+import { TrajectoryIndexHubCard } from "@/features/trajectory-index/ui/trajectory-index-hub-card";
 
 interface StudentPageProps {
   searchParams: Promise<{
@@ -87,7 +89,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, pendingRetest, goalDashboard, impactReceipts, movementReceipt] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, pendingRetest, goalDashboard, impactReceipts, movementReceipt, trajectoryIndex] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -108,6 +110,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         limit: 1,
       }).catch(() => []),
       loadActiveMovementReceiptForViewer().catch(() => null),
+      loadTrajectoryIndexForViewer().catch(() => null),
     ]);
 
   const momentumSubscriber = entitlements.momentumActive;
@@ -310,6 +313,12 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               data={movementReceipt.receipt_data}
               momentumActive={momentumSubscriber}
             />
+          </div>
+        ) : null}
+
+        {trajectoryIndex ? (
+          <div className="mt-8">
+            <TrajectoryIndexHubCard data={trajectoryIndex} />
           </div>
         ) : null}
 

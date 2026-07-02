@@ -78,7 +78,7 @@ export function landingFaqCategories(): MentrixaAccordionFaqCategory[] {
           id: "free-tier",
           title: "What is free?",
           body: "Arena, mastery grid, public rank page, and verified practice preview are not paywalled. Momentum subscription adds session perks, not rank access.",
-          verdict: "Rank proof stays free to earn and free to share.",
+          verdict: "",
           nextAction: "Start with a free account and run your first verified pack.",
         },
         {

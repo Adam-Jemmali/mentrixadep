@@ -66,6 +66,9 @@ export function MomentumActiveHubCard({
             <Link href="/student/loop" className="underline hover:text-white">
               Loop Report
             </Link>
+            <Link href="/student/receipts" className="underline hover:text-white">
+              Receipt archive
+            </Link>
             <Link href="/student/mastery" className="underline hover:text-white">
               Grid timeline
             </Link>

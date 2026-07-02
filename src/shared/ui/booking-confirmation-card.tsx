@@ -8,8 +8,8 @@ import { Button } from "@/shared/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { BookingPriceBreakdown } from "@/features/booking/booking-price-breakdown";
 import Link from "next/link";
-import { splitSessionPriceCents, formatStudentBreakthroughPrice } from "@/features/booking/booking-pricing";
-import { momentumSubscriberSessionPriceLabel } from "@/features/payments/momentum-membership-pure";
+import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
+import { buildCheckoutPriceAnchor } from "@/features/booking/checkout-price-anchor-pure";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 import { PriceBreakdownPopover } from "@/shared/ui/popover-patterns";
 import { TutorAvatar } from "@/app/(app)/student/session-components/tutor-avatar";
@@ -58,6 +58,19 @@ export function BookingConfirmationCard({
   const shouldAnimate = enableAnimations && !shouldReduceMotion;
   const priceSplit = splitSessionPriceCents(priceCents);
   const payingWithCredit = sessionCreditAvailable && useSessionCredit;
+  const priceAnchor = buildCheckoutPriceAnchor({
+    momentumSubscriber,
+    sessionCreditAvailable,
+    useSessionCredit,
+  });
+
+  const tierClass = (tier: typeof priceAnchor.activeTier) =>
+    cn(
+      "rounded-lg border px-3 py-2 text-center",
+      priceAnchor.activeTier === tier
+        ? "border-indigo-400/60 bg-indigo-500/15"
+        : "border-slate-700/80 bg-slate-800/40",
+    );
 
   const containerVariants = {
     hidden: { opacity: 0, scale: 0.95 },
@@ -162,14 +175,23 @@ export function BookingConfirmationCard({
             </div>
             {!payingWithCredit ? <PriceBreakdownPopover sessionPriceCents={priceCents} /> : null}
           </div>
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            <div className={tierClass("payg")}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pay as you go</p>
+              <p className="mt-1 text-sm font-bold text-white">{priceAnchor.paygLabel}</p>
+            </div>
+            <div className={tierClass("member")}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Member</p>
+              <p className="mt-1 text-sm font-bold text-white">{priceAnchor.memberLabel}</p>
+            </div>
+            <div className={tierClass("credit")}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Credit</p>
+              <p className="mt-1 text-sm font-bold text-white">{priceAnchor.creditLabel}</p>
+            </div>
+          </div>
           <p className="text-2xl font-bold tabular-nums text-white">{formatUsdFromCents(priceSplit.totalCents)}</p>
-          <p className="mt-1 text-xs text-slate-400">
-            {payingWithCredit
-              ? "Included Momentum session credit applied"
-              : momentumSubscriber
-                ? "Momentum member rate at Stripe checkout"
-                : "Total due at Stripe checkout"}
-          </p>
+          <p className="mt-1 text-xs text-slate-400">{priceAnchor.headline}</p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-400">{priceAnchor.subline}</p>
           {sessionCreditAvailable && onUseSessionCreditChange ? (
             <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5">
               <input
@@ -187,14 +209,8 @@ export function BookingConfirmationCard({
             <p className="mt-2 text-xs font-medium text-emerald-400/90">
               No Stripe charge. Your monthly included session covers this booking.
             </p>
-          ) : momentumSubscriber ? (
-            <p className="mt-2 text-xs font-medium text-emerald-400/90">
-              Momentum member session rate applied.
-            </p>
-          ) : (
+          ) : momentumSubscriber ? null : (
             <p className="mt-2 text-xs leading-relaxed text-slate-400">
-              Pay as you go is {formatStudentBreakthroughPrice()}. Momentum members book at{" "}
-              {momentumSubscriberSessionPriceLabel()} per session.{" "}
               <Link href="/student/subscribe" className="font-medium text-indigo-400 underline hover:text-indigo-300">
                 View Momentum plan
               </Link>

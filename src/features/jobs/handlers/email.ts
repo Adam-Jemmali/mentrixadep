@@ -4,6 +4,8 @@ import {
   sendSessionReminderTutorEmail,
   sendProgressSnapshotEmail,
   sendMovementReceiptEmail,
+  sendMovementReceiptMonthlyRollupEmail,
+  sendCreditEscalationEmail,
   sendBreakthroughGuideEmail,
   type PreSessionBriefEmailData,
   type SessionEmailDetails,
@@ -78,6 +80,26 @@ export async function handleEmailJob(payload: EmailJobPayload): Promise<void> {
           .update({ email_sent_at: new Date().toISOString() })
           .eq("id", receiptId);
       }
+      return;
+    }
+    case "movement_receipt_monthly_rollup": {
+      await sendMovementReceiptMonthlyRollupEmail(to, {
+        firstName: String(data.firstName ?? "Student"),
+        rollup: data.rollup as never,
+      });
+      return;
+    }
+    case "credit_escalation": {
+      await sendCreditEscalationEmail(to, {
+        variant: data.variant as never,
+        firstName: String(data.firstName ?? "Student"),
+        creditsRemaining: Number(data.creditsRemaining ?? 0),
+        periodMonth: String(data.periodMonth ?? ""),
+        creditExpiryLabel: String(data.creditExpiryLabel ?? ""),
+        weakestNodeName:
+          typeof data.weakestNodeName === "string" ? data.weakestNodeName : null,
+        openSlotCount: data.openSlotCount == null ? null : Number(data.openSlotCount),
+      });
       return;
     }
     case "breakthrough_guide": {

@@ -1,4 +1,8 @@
 import type { MovementReceiptData } from "@/features/movement-receipt/types";
+import {
+  buildPeerVelocityLine,
+  buildPeerVelocityUpsellLine,
+} from "@/features/comparison/peer-velocity-pure";
 
 export type MovementReceiptMessages = {
   verdict: string;
@@ -50,6 +54,13 @@ function formatCreditLine(credit: MovementReceiptData["credit"]): string | null 
   return "Included session credit used this month.";
 }
 
+function appendPeerLine(verdict: string, data: MovementReceiptData): string {
+  if (data.peer && data.momentumActive) {
+    return `${verdict} ${buildPeerVelocityLine(data.peer)}`;
+  }
+  return verdict;
+}
+
 export function buildMovementReceiptVerdict(data: MovementReceiptData): MovementReceiptMessages {
   const gridLine = formatGridMovementLine(data.grid);
   const loopLine = formatLoopLine(data.loops);
@@ -57,7 +68,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
 
   if (data.retest.nodeName && data.retest.isDue) {
     return {
-      verdict: `Retest due on ${data.retest.nodeName}. ${gridLine}`,
+      verdict: appendPeerLine(`Retest due on ${data.retest.nodeName}. ${gridLine}`, data),
       nextAction: "Open Quest and take the retest now to lock this week's verified movement.",
       ctaHref: "/student/quest",
       ctaLabel: "Take retest",
@@ -69,7 +80,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
       ? ` Priority retest on ${data.retest.nodeName}${data.retest.countdownLabel ? ` unlocks in ${data.retest.countdownLabel}` : " is scheduled"}.`
       : "";
     return {
-      verdict: `Your included session credit is unused. ${gridLine}${retestHint}`,
+      verdict: appendPeerLine(`Your included session credit is unused. ${gridLine}${retestHint}`, data),
       nextAction: "Book your included Guide session before the month turns or you lose this coaching beat.",
       ctaHref: "/student/guides",
       ctaLabel: "Book with credit",
@@ -85,7 +96,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
       ? ` Retest on ${data.retest.nodeName}${data.retest.isDue ? " is due now" : data.retest.countdownLabel ? ` unlocks in ${data.retest.countdownLabel}` : " is scheduled"}.`
       : "";
     return {
-      verdict: `${gridLine}${pace}${loopLine ? ` ${loopLine}` : ""}${retestHint}`,
+      verdict: appendPeerLine(`${gridLine}${pace}${loopLine ? ` ${loopLine}` : ""}${retestHint}`, data),
       nextAction:
         data.retest.nodeName && !data.retest.isDue
           ? "Practice the node while you wait, then retest the moment it opens."
@@ -97,7 +108,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
 
   if (loopLine) {
     return {
-      verdict: loopLine,
+      verdict: appendPeerLine(loopLine, data),
       nextAction: data.retest.nodeName
         ? `Complete the retest on ${data.retest.nodeName} to verify the loop closed.`
         : "Book your next Guide session on the node that still will not move.",
@@ -109,7 +120,10 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
   if (data.retest.nodeName) {
     const priority = data.retest.priorityRetest ? "Momentum priority " : "";
     return {
-      verdict: `${priority}Retest on ${data.retest.nodeName}${data.retest.isDue ? " is due now" : data.retest.countdownLabel ? ` unlocks in ${data.retest.countdownLabel}` : " is scheduled"}. ${gridLine}`,
+      verdict: appendPeerLine(
+        `${priority}Retest on ${data.retest.nodeName}${data.retest.isDue ? " is due now" : data.retest.countdownLabel ? ` unlocks in ${data.retest.countdownLabel}` : " is scheduled"}. ${gridLine}`,
+        data,
+      ),
       nextAction: data.retest.priorityRetest
         ? "Queue practice now, then retest the moment it opens."
         : "Upgrade to Momentum for half the retest wait, or practice related nodes now.",
@@ -120,10 +134,10 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
 
   const creditSuffix = creditLine ? ` ${creditLine}` : "";
   return {
-    verdict: `${gridLine}${creditSuffix}`,
+    verdict: appendPeerLine(`${gridLine}${creditSuffix}`, data),
     nextAction: data.credit.momentumActive
       ? "Take a Quest on an unverified node or book your included session when the wall is real."
-      : "Take a Quest on your weakest node. Momentum members get weekly Movement Receipts by email.",
+      : `${buildPeerVelocityUpsellLine()} Upgrade for weekly email and priority retests.`,
     ctaHref: data.credit.momentumActive ? "/student/guides" : "/student/subscribe",
     ctaLabel: data.credit.momentumActive ? "Browse Guides" : "Get Momentum",
   };
@@ -150,6 +164,9 @@ export function buildMovementReceiptDetailLines(data: MovementReceiptData): stri
         ? `Retest: due now on ${data.retest.nodeName}`
         : `Retest: ${data.retest.nodeName}${data.retest.countdownLabel ? ` in ${data.retest.countdownLabel}` : ""}`,
     );
+  }
+  if (data.peer && data.momentumActive) {
+    lines.push(`Cohort: ${buildPeerVelocityLine(data.peer)}`);
   }
   return lines;
 }

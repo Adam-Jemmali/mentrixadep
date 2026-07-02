@@ -34,6 +34,8 @@ export type EmailJobPayload = {
     | "pre_session_brief"
     | "progress_snapshot"
     | "movement_receipt"
+    | "movement_receipt_monthly_rollup"
+    | "credit_escalation"
     | "breakthrough_guide"
     | "raw";
   to: string;

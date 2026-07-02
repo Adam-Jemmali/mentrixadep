@@ -14,7 +14,8 @@ export type StudentEntitlementId =
   | "momentum.brief_early"
   | "momentum.impact_receipts"
   | "momentum.peer_trends"
-  | "momentum.movement_receipt";
+  | "momentum.movement_receipt"
+  | "momentum.trajectory_index";
 
 export type StudentEntitlements = {
   userId: string;
@@ -56,6 +57,7 @@ export function buildStudentEntitlements(input: {
       "momentum.impact_receipts",
       "momentum.peer_trends",
       "momentum.movement_receipt",
+      "momentum.trajectory_index",
     );
   }
   if (sessionCreditsRemaining > 0) {

@@ -22,6 +22,7 @@ import {
 } from "@/features/payments/momentum-membership-pure";
 import { formatStudentBreakthroughPrice } from "@/features/booking/booking-pricing";
 import { buildMomentumRoiSummary } from "@/features/pricing/momentum-roi-pure";
+import { trajectoryIndexSocialProofLine } from "@/features/trajectory-index/trajectory-index-pure";
 import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
 import { MomentumSubscriptionDisclosure } from "@/shared/ui/disclosure-patterns";
 import { MentrixaBillingIntervalRadioGroup } from "@/shared/ui/radio-group-patterns";
@@ -110,6 +111,11 @@ export function MomentumMembershipPanel({
           </div>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-slate-600">{momentumVsBreakthroughValueLine()}</p>
+        {!active ? (
+          <p className="mt-3 text-xs leading-relaxed text-indigo-800/90">
+            {trajectoryIndexSocialProofLine(50)}
+          </p>
+        ) : null}
       </div>
 
       {roi && isSubscribe ? (

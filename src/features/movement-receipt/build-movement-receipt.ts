@@ -9,7 +9,8 @@ import {
 } from "@/features/mastery-grid/grid-history-pure";
 import { loadMasteryGridHistory } from "@/features/mastery-grid/grid-snapshot-cron";
 import { firstNameFromDisplayName } from "@/features/student-profile/student-dashboard-helpers";
-import { getStudentEntitlements } from "@/features/entitlements/entitlements";
+import { getStudentEntitlements, hasEntitlement } from "@/features/entitlements/entitlements";
+import { loadPeerVelocityForWeek } from "@/features/comparison/load-peer-velocity";
 import { loadNextPendingRetest } from "@/features/intervention-retests/retest-reads";
 import { formatRetestCountdownMs } from "@/features/intervention-retests/schedule-intervention-retests-pure";
 import {
@@ -183,6 +184,15 @@ export async function buildMovementReceiptForStudent(
   const displayName = userResult.data?.display_name ?? userResult.data?.email ?? "Student";
   const firstName = firstNameFromDisplayName(displayName, userResult.data?.email ?? "Student");
 
+  let peer: MovementReceiptData["peer"] = null;
+  if (hasEntitlement(entitlements, "momentum.peer_trends")) {
+    peer = await loadPeerVelocityForWeek({
+      userId: studentId,
+      userVerifiedThisWeek: newlyVerifiedThisWeek,
+      weekStart,
+    }).catch(() => null);
+  }
+
   const payload: MovementReceiptData = {
     firstName,
     weekStart: weekStartKey,
@@ -204,6 +214,7 @@ export async function buildMovementReceiptForStudent(
       creditsRemaining: entitlements.sessionCreditsRemaining,
       periodMonth: entitlements.sessionCreditPeriodMonth,
     },
+    peer,
   };
 
   return movementReceiptDataSchema.parse(payload);

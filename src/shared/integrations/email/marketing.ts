@@ -52,6 +52,16 @@ import {
   breakthroughGuideEmailSubject,
   breakthroughGuideEmailTitle,
 } from "./templates/breakthrough-guide-email";
+import {
+  creditEscalationEmailBody,
+  creditEscalationEmailSubject,
+  creditEscalationEmailTitle,
+} from "./templates/credit-escalation-email";
+import {
+  movementReceiptMonthlyRollupEmailBody,
+  movementReceiptMonthlyRollupEmailSubject,
+  movementReceiptMonthlyRollupEmailTitle,
+} from "./templates/movement-receipt-monthly-rollup-email";
 
 // ─── Welcome emails ──────────────────────────────────────────────────────────
 
@@ -482,6 +492,41 @@ export async function sendMovementReceiptEmail(
     email,
     movementReceiptEmailSubjectLine(props),
     baseTemplate(movementReceiptEmailTitle(props), movementReceiptEmailBody(props)),
+  );
+}
+
+export type MovementReceiptMonthlyRollupEmailProps = {
+  firstName: string;
+  rollup: import("@/features/movement-receipt/movement-receipt-monthly-rollup-pure").MonthlyMovementRollup;
+};
+
+/** movement_receipt_monthly_rollup — first-of-month digest (Momentum) */
+export async function sendMovementReceiptMonthlyRollupEmail(
+  email: string,
+  props: MovementReceiptMonthlyRollupEmailProps,
+): Promise<void> {
+  await sendEmail(
+    email,
+    movementReceiptMonthlyRollupEmailSubject(props),
+    baseTemplate(
+      movementReceiptMonthlyRollupEmailTitle(props),
+      movementReceiptMonthlyRollupEmailBody(props),
+    ),
+  );
+}
+
+export type CreditEscalationEmailProps =
+  import("@/features/entitlements/credit-escalation-pure").CreditEscalationEmailData;
+
+/** credit_escalation — day 1 / day 20 / last day session credit nudges */
+export async function sendCreditEscalationEmail(
+  email: string,
+  props: CreditEscalationEmailProps,
+): Promise<void> {
+  await sendEmail(
+    email,
+    creditEscalationEmailSubject(props),
+    baseTemplate(creditEscalationEmailTitle(props), creditEscalationEmailBody(props)),
   );
 }
 

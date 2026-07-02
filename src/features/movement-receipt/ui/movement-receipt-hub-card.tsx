@@ -40,9 +40,14 @@ export function MovementReceiptHubCard({ data, momentumActive }: MovementReceipt
           <Link href={ctaHref}>{ctaLabel}</Link>
         </Button>
         {momentumActive ? (
-          <Button asChild size="sm" variant="outline">
-            <Link href="/student/mastery">Mastery timeline</Link>
-          </Button>
+          <>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/student/receipts">Receipt archive</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/student/mastery">Mastery timeline</Link>
+            </Button>
+          </>
         ) : (
           <Button asChild size="sm" variant="outline">
             <Link href="/student/subscribe">Get weekly receipt by email</Link>

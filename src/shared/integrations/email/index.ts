@@ -75,5 +75,9 @@ export {
   sendProgressSnapshotEmail,
   type MovementReceiptEmailProps,
   sendMovementReceiptEmail,
+  type MovementReceiptMonthlyRollupEmailProps,
+  sendMovementReceiptMonthlyRollupEmail,
+  type CreditEscalationEmailProps,
+  sendCreditEscalationEmail,
   sendBreakthroughGuideEmail,
 } from "./marketing";

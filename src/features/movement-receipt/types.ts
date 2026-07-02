@@ -27,6 +27,12 @@ export const movementReceiptCreditSchema = z.object({
   periodMonth: z.string().nullable(),
 });
 
+export const movementReceiptPeerSchema = z.object({
+  userVerifiedThisWeek: z.number().int().min(0),
+  cohortMedian: z.number().min(0),
+  sampleSize: z.number().int().min(0),
+});
+
 export const movementReceiptDataSchema = z.object({
   firstName: z.string(),
   weekStart: z.string(),
@@ -35,6 +41,7 @@ export const movementReceiptDataSchema = z.object({
   loops: movementReceiptLoopSchema,
   retest: movementReceiptRetestSchema,
   credit: movementReceiptCreditSchema,
+  peer: movementReceiptPeerSchema.nullable().optional(),
 });
 
 export type MovementReceiptData = z.infer<typeof movementReceiptDataSchema>;

@@ -82,7 +82,16 @@ describe("buildMovementReceiptVerdict", () => {
       momentumActive: false,
       credit: { momentumActive: false, creditsRemaining: 0, periodMonth: null },
     });
-    expect(nextAction).toContain("Momentum members get weekly Movement Receipts by email");
+    expect(nextAction).toContain("Upgrade for weekly email");
+  });
+
+  it("weaves peer velocity into verdict for Momentum", () => {
+    const { verdict } = buildMovementReceiptVerdict({
+      ...baseReceipt,
+      grid: { ...baseReceipt.grid, newlyVerifiedCount: 3 },
+      peer: { userVerifiedThisWeek: 3, cohortMedian: 1.2, sampleSize: 12 },
+    });
+    expect(verdict).toContain("active cohort averaged 1.2");
   });
 });
 
@@ -99,11 +108,13 @@ describe("buildMovementReceiptDetailLines", () => {
         priorityRetest: true,
       },
       loops: { ...baseReceipt.loops, completedThisWeek: 1 },
+      peer: { userVerifiedThisWeek: 2, cohortMedian: 1, sampleSize: 10 },
     });
     expect(lines.some((l) => l.startsWith("Grid:"))).toBe(true);
     expect(lines.some((l) => l.startsWith("Loops:"))).toBe(true);
     expect(lines.some((l) => l.startsWith("Credit:"))).toBe(true);
     expect(lines.some((l) => l.startsWith("Retest:"))).toBe(true);
+    expect(lines.some((l) => l.startsWith("Cohort:"))).toBe(true);
   });
 });
 
