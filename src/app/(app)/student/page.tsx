@@ -249,13 +249,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     {normalizeRankTitle(accountRank.title)}
                   </p>
                   <p className="text-xs text-white/85">
-                    Account rank · {totalXp.toLocaleString()} XP
+                    <span className="inline-flex items-center gap-2">
+                      <span className="font-mono tabular-nums">{totalXp.toLocaleString()}</span>
+                      <MentrixaVocabIcon name="xp" size={18} className="text-violet-200" title="XP" />
+                    </span>
                     {streak > 0 ? (
                       <>
                         <span className="text-white/50"> · </span>
-                        <span className="inline-flex items-center gap-1">
-                          <MentrixaVocabIcon name="streak" size={12} className="text-amber-200" />
-                          {streak}d streak
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="font-mono tabular-nums">{streak}</span>
+                          <MentrixaVocabIcon name="streak" size={18} className="text-amber-200" title="Day streak" />
                         </span>
                       </>
                     ) : null}
@@ -268,11 +271,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               </div>
 
               {streak > 0 && (
-                <p className={`inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] ${streakAtRisk ? "text-amber-100" : "text-white/90"}`}>
-                  <MentrixaVocabIcon name="streak" size={14} className={streakAtRisk ? "text-amber-200" : "text-white/80"} />
-                  {streakAtRisk
-                    ? "Keep your streak alive !"
-                    : `${streak}-day streak active`}
+                <p
+                  className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] ${streakAtRisk ? "text-amber-100" : "text-white/90"}`}
+                  aria-label={streakAtRisk ? "Keep your streak alive" : `${streak} day streak active`}
+                >
+                  <MentrixaVocabIcon
+                    name="streak"
+                    size={22}
+                    className={streakAtRisk ? "text-amber-200" : "text-white/85"}
+                  />
+                  <span className="font-mono text-sm tabular-nums">{streak}</span>
                 </p>
               )}
             </div>
@@ -282,28 +290,31 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 <Button variant="outline" size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtnOutline}`} asChild>
                   <Link
                     href={`/student/${user.id}`}
-                    className="inline-flex min-h-11 items-center gap-1.5 px-3"
+                    className="inline-flex h-11 w-11 items-center justify-center p-0"
+                    aria-label="Profile and settings"
+                    title="Profile and settings"
                   >
-                    <MentrixaVocabIcon name="profile" size={16} className="text-white/85" />
-                    Profile & Settings
+                    <MentrixaVocabIcon name="profile" size={28} className="text-white/90" />
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtn}`} asChild>
                   <Link
                     href="/student/quest"
-                    className="inline-flex min-h-11 items-center gap-1.5 px-3"
+                    className="inline-flex h-11 w-11 items-center justify-center p-0"
+                    aria-label="Daily quest"
+                    title="Daily quest"
                   >
-                    <MentrixaVocabIcon name="quest" size={16} className="text-white/90" />
-                    Daily quest
+                    <MentrixaVocabIcon name="quest" size={28} className="text-white/95" />
                   </Link>
                 </Button>
                 <Button size="sm" className={`min-h-11 text-xs ${mentrixBrandUi.heroBtnOutline}`} asChild>
                   <Link
                     href="#browse-guides"
-                    className="inline-flex min-h-11 items-center gap-1.5 px-3"
+                    className="inline-flex h-11 w-11 items-center justify-center p-0"
+                    aria-label="Book session"
+                    title="Book session"
                   >
-                    <MentrixaVocabIcon name="booking" size={16} className="text-white/85" />
-                    Book session
+                    <MentrixaVocabIcon name="booking" size={28} className="text-white/90" />
                   </Link>
                 </Button>
               </div>

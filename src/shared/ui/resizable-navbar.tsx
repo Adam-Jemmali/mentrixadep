@@ -31,6 +31,8 @@ type NavItemsProps = {
     name: string;
     link: string;
     icon?: React.ReactNode;
+    /** When true, show icon only (label becomes aria-label). */
+    iconOnly?: boolean;
   }[];
   className?: string;
   onItemClick?: (item: { name: string; link: string }) => void;
@@ -150,9 +152,12 @@ export const NavItems = ({
       onPointerDown={() => onItemPointerDown?.(item)}
       onClick={() => onItemClick?.(item)}
       className={cn(
-        "relative px-4 py-2 text-[13px] text-current transition-opacity duration-150 ease-out hover:opacity-100",
+        "relative text-[13px] text-current transition-opacity duration-150 ease-out hover:opacity-100",
+        item.iconOnly ? "flex items-center justify-center px-3 py-2.5" : "px-4 py-2",
         active && "font-black text-white",
       )}
+      aria-label={item.iconOnly ? item.name : undefined}
+      title={item.iconOnly ? item.name : undefined}
       aria-current={active ? "page" : undefined}
     >
       {active ? (
@@ -168,9 +173,13 @@ export const NavItems = ({
             className="absolute inset-0 h-full w-full rounded-full bg-violet-500/15"
           />
         ))}
-      <span className="relative z-20 inline-flex items-center gap-1.5">
-        {item.icon ? <span className="shrink-0 opacity-90">{item.icon}</span> : null}
-        <BubbleText text={item.name} className="text-current" />
+      <span className={cn("relative z-20 inline-flex items-center", item.iconOnly ? "justify-center" : "gap-1.5")}>
+        {item.icon ? <span className={cn("shrink-0", item.iconOnly ? "opacity-100" : "opacity-90")}>{item.icon}</span> : null}
+        {item.iconOnly ? (
+          <span className="sr-only">{item.name}</span>
+        ) : (
+          <BubbleText text={item.name} className="text-current" />
+        )}
       </span>
     </Link>
   );

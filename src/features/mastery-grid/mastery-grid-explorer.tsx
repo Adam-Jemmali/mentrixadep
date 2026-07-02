@@ -15,6 +15,37 @@ import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 import { Input } from "@/shared/ui/input";
 import { skillTreeUnitTriggerLabel } from "@/shared/ui/accordion-messages-pure";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+
+function VocabMetric({
+  value,
+  icon,
+  label,
+  gold,
+  iconClassName,
+}: {
+  value: number | string;
+  icon: VocabIconName;
+  label: string;
+  gold?: boolean;
+  iconClassName?: string;
+}) {
+  return (
+    <span
+      className="inline-flex min-w-[3.5rem] flex-col items-center gap-1.5"
+      aria-label={`${value} ${label}`}
+      title={`${value} ${label}`}
+    >
+      <span className="text-xl font-black tabular-nums leading-none text-violet-50 sm:text-2xl">{value}</span>
+      <MentrixaVocabIcon
+        name={icon}
+        size={32}
+        gold={gold}
+        className={iconClassName ?? "text-violet-200"}
+      />
+    </span>
+  );
+}
 
 type SubjectOption = {
   key: string;
@@ -54,33 +85,33 @@ export function MasteryGridExplorer({
       <section className={`${mentrixStudent.card} space-y-5 p-5 sm:p-6`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Link href="/student" className={mentrixProfileType.linkOnDark}>
-              Back to home
+            <Link
+              href="/student"
+              className="inline-flex items-center"
+              aria-label="Back to home"
+              title="Back to home"
+            >
+              <MentrixaVocabIcon name="home" size={28} className="text-violet-200" />
             </Link>
-            <h1 className={`mt-2 inline-flex items-center gap-2 ${mentrixProfileType.pageTitleOnDark}`}>
-              <MentrixaVocabIcon name="skills" size={22} className="text-violet-300" />
-              Skill tree
+            <h1 className="mt-3 flex items-center" aria-label="Skill tree">
+              <MentrixaVocabIcon name="skills" size={36} className="text-violet-200" />
+              <span className="sr-only">Skill tree</span>
             </h1>
             <p className={`mt-1 ${mentrixProfileType.pageSubtitleOnDark}`}>
               One subject, one unit at a time. Search scales to hundreds of skills without stacking the home page.
             </p>
           </div>
-          <p className={`${mentrixProfileType.statLabelOnDark} inline-flex flex-wrap items-center gap-2`}>
-            <span className="inline-flex items-center gap-1">
-              <MentrixaVocabIcon name="verified" size={12} gold className="text-amber-300" />
-              {summary.verifiedCount} verified
-            </span>
-            <span className="text-violet-400/50">·</span>
-            <span className="inline-flex items-center gap-1">
-              <MentrixaVocabIcon name="skills" size={12} className="text-violet-300" />
-              {summary.totalNodes} skills
-            </span>
-            <span className="text-violet-400/50">·</span>
-            <span className="inline-flex items-center gap-1">
-              <MentrixaVocabIcon name="unit" size={12} className="text-violet-300" />
-              {data.units.length} units
-            </span>
-          </p>
+          <div className={`${mentrixProfileType.statLabelOnDark} flex flex-wrap items-end justify-start gap-5 sm:justify-end`}>
+            <VocabMetric
+              value={summary.verifiedCount}
+              icon="verified"
+              label="verified"
+              gold
+              iconClassName="text-amber-300"
+            />
+            <VocabMetric value={summary.totalNodes} icon="skills" label="skills" />
+            <VocabMetric value={data.units.length} icon="unit" label="units" />
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -133,19 +164,20 @@ export function MasteryGridExplorer({
                         : "border-indigo-500/30 bg-indigo-950/50 text-violet-100 hover:border-violet-400/45 hover:bg-violet-950/60",
                     )}
                   >
-                    <span className="inline-flex w-full items-center gap-1.5">
+                    <span className="inline-flex w-full items-center gap-2">
                       <MentrixaVocabIcon
                         name="unit"
-                        size={12}
-                        className={active ? "text-violet-100" : "text-violet-300/80"}
+                        size={24}
+                        className={active ? "text-violet-50" : "text-violet-200"}
                       />
                       <span
                         className={cn(
-                          "text-[11px] font-semibold uppercase tracking-wide",
-                          active ? "text-violet-100" : "text-violet-300/70",
+                          "text-sm font-black tabular-nums",
+                          active ? "text-white" : "text-violet-100",
                         )}
+                        aria-label={`Unit ${unit.unitNumber}`}
                       >
-                        Unit {unit.unitNumber}
+                        {unit.unitNumber}
                       </span>
                     </span>
                     <span className="line-clamp-2 text-xs font-semibold">{unit.unitName}</span>

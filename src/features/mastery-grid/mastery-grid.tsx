@@ -249,7 +249,7 @@ function MasteryGridUnits({
             title={skillTreeUnitTriggerLabel(unit.unitNumber, unit.unitName)}
             meta={skillTreeUnitTriggerMeta(unit.nodes)}
             leadingIcon={
-              <MentrixaVocabIcon name="unit" size={16} className="text-violet-300" />
+              <MentrixaVocabIcon name="unit" size={22} className="text-violet-200" />
             }
             verdict={footer.verdict}
             nextAction={footer.nextAction}

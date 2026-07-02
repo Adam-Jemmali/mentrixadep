@@ -63,8 +63,8 @@ const STUDENT_NAV_ITEMS: { name: string; link: string; icon: VocabIconName }[] =
   { name: "Duels", link: "/student/duel", icon: "duels" },
 ];
 
-function navItemIcon(name: VocabIconName) {
-  return <MentrixaVocabIcon name={name} size={16} className="text-violet-200" />;
+function navItemIcon(name: VocabIconName, label: string, size = 26) {
+  return <MentrixaVocabIcon name={name} size={size} className="text-violet-100" title={label} />;
 }
 
 function getInitials(displayName: string | null | undefined, email?: string | null): string {
@@ -215,7 +215,8 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
           <NavItems 
             items={STUDENT_NAV_ITEMS.map((item) => ({
               ...item,
-              icon: navItemIcon(item.icon),
+              icon: navItemIcon(item.icon, item.name),
+              iconOnly: true,
             }))}
             onItemClick={handleNavItemClick}
             onItemPointerDown={handleArenaNavPointerDown}
@@ -356,18 +357,20 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                 <Link
                   key={item.link}
                   href={item.link}
+                  aria-label={item.name}
+                  title={item.name}
                   onPointerDown={() => handleArenaNavPointerDown(item)}
                   onMouseEnter={() => handleArenaNavHover(item)}
                   onClick={() => handleNavItemClick(item)}
                   className={cn(
-                    "flex flex-col items-center gap-1 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors sm:flex-row sm:gap-2 sm:py-2",
+                    "flex flex-col items-center justify-center rounded-lg px-4 py-3 transition-colors",
                     isActive(item.link)
                       ? "border border-violet-400/50 bg-gradient-to-r from-[#7C3AED]/35 to-[#6366F1]/35 text-white"
                       : "text-white/95 hover:bg-violet-500/10 hover:text-white"
                   )}
                 >
-                  {navItemIcon(item.icon)}
-                  <BubbleText text={item.name} className="text-current" />
+                  {navItemIcon(item.icon, item.name, 30)}
+                  <span className="sr-only">{item.name}</span>
                 </Link>
               ))}
             </MobileNavMenu>
