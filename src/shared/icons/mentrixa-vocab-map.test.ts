@@ -17,6 +17,7 @@ describe("mentrixa-vocab-map", () => {
 
   it("resolves vocab and guide-rank asset paths", () => {
     expect(vocabIconSrc("quest")).toBe("/icons/vocab/quest.svg");
+    expect(vocabIconSrc("xp")).toBe("/images/xp.webp");
     expect(vocabIconSrc("practitioner")).toBe("/icons/guide-ranks/practitioner.svg");
   });
 
@@ -36,6 +37,7 @@ describe("mentrixa-vocab-map", () => {
     const meta = getVocabIconMeta("momentum");
     expect(meta.label).toBe("Momentum");
     expect(meta.src).toBe("/icons/vocab/momentum.svg");
+    expect(getVocabIconMeta("xp").src).toBe("/images/xp.webp");
   });
 
   it("lists the Phase 2 core 18 vocabulary", () => {

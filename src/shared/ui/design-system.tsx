@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/shared/core/utils";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── GradientText ─────────────────────────────────────────────────────────────
@@ -249,7 +249,7 @@ export function XPStatCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
-            <MentrixaVocabIcon name="xp" size={18} className="text-brand-600" title="XP" />
+            <XpIcon size={18} title="XP" />
           </div>
           <div>
             <p className="text-xs text-text-muted font-medium uppercase tracking-wide">Total XP</p>

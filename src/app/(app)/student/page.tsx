@@ -243,7 +243,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                     {normalizeRankTitle(accountRank.title)}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-4">
-                    <XpCountDisplay xp={totalXp} size={32} showLabel surface="dark" />
+                    <XpCountDisplay xp={totalXp} size={32} showLabel />
                     {streak > 0 ? (
                       <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} showLabel surface="dark" />
                     ) : null}

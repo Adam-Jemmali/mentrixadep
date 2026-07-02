@@ -26,7 +26,7 @@ Single registry: `mentrixa-vocab-map.ts`. Render with `MentrixaVocabIcon` from `
 | `duels` | Duels | Nav, duel hub |
 | `streak` | Streak | Stat strip, leaderboard, `StreakCountDisplay` |
 | `day-mon` … `day-sun` | Weekday | Streak weekday badge (via `weekdayVocabIcon`) |
-| `xp` | XP | Stats, duel results |
+| `xp` | XP | Stat strip, duel results — asset is `/images/xp.webp` |
 | `verified` | Verified | Mastery grid legend (gold on verified cells) |
 | `rank-proof` | Rank proof | Profile, popovers (gold when verified) |
 | `impact-score` | Guide Impact Score | Tutor profile, command center (gold on score) |

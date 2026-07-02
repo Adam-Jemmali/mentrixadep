@@ -89,7 +89,7 @@ export function StudentNavRankStrip() {
           {title}
         </span>
         <span className="mt-0.5 flex flex-wrap items-center gap-2">
-          <XpCountDisplay xp={totalXp} size={14} surface="dark" />
+          <XpCountDisplay xp={totalXp} size={14} />
           {streak > 0 ? (
             <StreakCountDisplay days={streak} size={14} surface="dark" className="text-amber-200/90" />
           ) : null}

@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/shared/core/utils";
 import {
   getVocabIconMeta,
+  vocabIconSrc,
+  XP_ICON_SRC,
   VOCAB_SHORT_LABEL,
   type VocabIconName,
 } from "@/shared/icons/mentrixa-vocab-map";
@@ -14,21 +17,22 @@ const GOLD_FILTER =
 const ON_DARK_FILTER = "brightness(0) saturate(100%) invert(1)";
 const ON_LIGHT_FILTER = "brightness(0) saturate(100%)";
 
+function isRasterVocabSrc(src: string): boolean {
+  return src.endsWith(".webp") || src.endsWith(".png") || src.endsWith(".jpg") || src.endsWith(".jpeg");
+}
+
 export type MentrixaVocabIconProps = {
   name: VocabIconName;
   size?: number;
   className?: string;
-  /** Verified-truth styling — only use on allowsGold icons (verified, rank-proof, impact-score, etc.). */
   gold?: boolean;
-  /** Override accessible name; defaults to registry label. */
   title?: string;
-  /** Dark shells tint glyphs white; light shells keep black glyphs. */
   surface?: "dark" | "light";
 };
 
 /**
- * Renders a Mentrixa vocabulary sticker SVG from /public/icons/vocab/ or /public/icons/guide-ranks/.
- * Uses <img> + CSS filter so stroke SVGs render reliably (CSS mask + external SVG often shows blank).
+ * Vocabulary sticker from /public/icons/ or /images/xp.webp.
+ * SVGs render via background-image (never broken-img placeholders). XP uses xp.webp raster.
  */
 export function MentrixaVocabIcon({
   name,
@@ -39,8 +43,31 @@ export function MentrixaVocabIcon({
   surface = "dark",
 }: MentrixaVocabIconProps) {
   const meta = getVocabIconMeta(name);
+  const src = vocabIconSrc(name);
   const ariaLabel = title ?? meta.label;
   const useGold = gold && meta.allowsGold;
+  const raster = isRasterVocabSrc(src);
+
+  if (raster) {
+    return (
+      <span
+        className={cn("relative inline-flex shrink-0 items-center justify-center", className)}
+        style={{ width: size, height: size }}
+      >
+        <Image
+          src={src}
+          alt={ariaLabel}
+          title={ariaLabel}
+          width={size}
+          height={size}
+          className="h-full w-full object-contain"
+          unoptimized
+          draggable={false}
+        />
+      </span>
+    );
+  }
+
   const filter = useGold
     ? GOLD_FILTER
     : surface === "dark"
@@ -49,26 +76,21 @@ export function MentrixaVocabIcon({
 
   return (
     <span
+      role="img"
+      aria-label={ariaLabel}
+      title={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center",
+        "inline-block shrink-0 bg-center bg-no-repeat bg-contain",
         useGold && "rounded-md ring-1 ring-[#D4A017]/50 drop-shadow-[0_0_6px_rgba(212,160,23,0.35)]",
         className,
       )}
-      style={{ width: size, height: size }}
-    >
-      <img
-        src={meta.src}
-        alt=""
-        width={size}
-        height={size}
-        className="h-full w-full object-contain"
-        style={{ filter }}
-        role="img"
-        aria-label={ariaLabel}
-        title={ariaLabel}
-        draggable={false}
-      />
-    </span>
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: `url("${src}")`,
+        filter,
+      }}
+    />
   );
 }
 
@@ -77,7 +99,6 @@ export type MentrixaVocabIconLabelProps = MentrixaVocabIconProps & {
   labelClassName?: string;
 };
 
-/** Icon with optional text label — default pattern for nav and stat rows. */
 export function MentrixaVocabIconLabel({
   showLabel = true,
   labelClassName,
@@ -96,7 +117,6 @@ export function MentrixaVocabIconLabel({
   );
 }
 
-/** Big hub tile: large icon + optional value + one-word label. */
 export function VocabHubTile({
   name,
   href,
@@ -135,11 +155,9 @@ export function VocabHubTile({
   );
 }
 
-/** Streak flame + count + weekday badge — day icon is always the current weekday. */
 export function StreakCountDisplay({
   days,
   size = 20,
-  atRisk = false,
   className,
   referenceDate,
   showLabel = false,
@@ -154,8 +172,6 @@ export function StreakCountDisplay({
   surface?: "dark" | "light";
 }) {
   const daySize = Math.max(14, Math.round(size * 0.72));
-  const flameClass = atRisk ? "text-amber-300" : "text-amber-200";
-  const dayClass = atRisk ? "text-amber-200/90" : "text-violet-200/85";
   const when = referenceDate ?? new Date();
   const dayIcon = weekdayVocabIcon(when);
   const dayName = weekdayLabel(when);
@@ -167,9 +183,9 @@ export function StreakCountDisplay({
       title={`${days} day streak · ${dayName}`}
     >
       <span className="inline-flex items-center gap-1.5">
-        <MentrixaVocabIcon name="streak" size={size} surface={surface} className={flameClass} title="Streak" />
+        <MentrixaVocabIcon name="streak" size={size} surface={surface} title="Streak" />
         <span className="font-mono text-sm font-bold tabular-nums leading-none">{days}</span>
-        <MentrixaVocabIcon name={dayIcon} size={daySize} surface={surface} className={dayClass} title={dayName} />
+        <MentrixaVocabIcon name={dayIcon} size={daySize} surface={surface} title={dayName} />
       </span>
       {showLabel ? (
         <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/75">Streak</span>
@@ -178,24 +194,22 @@ export function StreakCountDisplay({
   );
 }
 
-/** XP count with vocab arrow icon — use everywhere XP appears on the hub. */
+/** XP count with xp.webp — single asset everywhere XP appears. */
 export function XpCountDisplay({
   xp,
   size = 28,
-  surface = "dark",
   showLabel = false,
   className,
 }: {
   xp: number;
   size?: number;
-  surface?: "dark" | "light";
   showLabel?: boolean;
   className?: string;
 }) {
   return (
     <span className={cn("inline-flex flex-col items-center gap-1", className)} title={`${xp.toLocaleString()} XP`}>
       <span className="inline-flex items-center gap-1.5">
-        <MentrixaVocabIcon name="xp" size={size} surface={surface} title="XP" />
+        <XpIcon size={size} title="XP" />
         <span className="font-mono text-sm font-bold tabular-nums leading-none text-white">
           {xp.toLocaleString()}
         </span>
@@ -203,6 +217,27 @@ export function XpCountDisplay({
       {showLabel ? (
         <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/75">XP</span>
       ) : null}
+    </span>
+  );
+}
+
+/** Standalone XP sticker — always /images/xp.webp. */
+export function XpIcon({ size = 24, title = "XP", className }: { size?: number; title?: string; className?: string }) {
+  return (
+    <span
+      className={cn("relative inline-flex shrink-0 items-center justify-center", className)}
+      style={{ width: size, height: size }}
+      title={title}
+    >
+      <Image
+        src={XP_ICON_SRC}
+        alt={title}
+        width={size}
+        height={size}
+        className="h-full w-full object-contain"
+        unoptimized
+        draggable={false}
+      />
     </span>
   );
 }

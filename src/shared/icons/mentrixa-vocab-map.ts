@@ -128,7 +128,12 @@ const GUIDE_RANK_NAMES = new Set<VocabIconName>([
   "elite",
 ]);
 
+export const XP_ICON_SRC = "/images/xp.webp";
+
 export function vocabIconSrc(name: VocabIconName): string {
+  if (name === "xp") {
+    return XP_ICON_SRC;
+  }
   if (GUIDE_RANK_NAMES.has(name)) {
     return `/icons/guide-ranks/${name}.svg`;
   }

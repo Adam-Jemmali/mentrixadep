@@ -125,7 +125,7 @@ export function StudentStatStripMotion({
               {normalizeRankTitle(accountRank.title)}
             </p>
             <span className="mt-0.5 flex items-center gap-2">
-              <XpCountDisplay xp={totalXp} size={22} surface="dark" />
+              <XpCountDisplay xp={totalXp} size={22} />
             </span>
           </div>
         </TiltCard>
