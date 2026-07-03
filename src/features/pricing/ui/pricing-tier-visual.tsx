@@ -36,46 +36,53 @@ export function PricingTierVisualCard({
   iconSize = 80,
   showCta = false,
   compact = false,
+  surface = "dark",
 }: {
   tier: PricingTierDefinition;
   highlight?: PricingTierId;
   iconSize?: number;
   showCta?: boolean;
   compact?: boolean;
+  surface?: "light" | "dark";
 }) {
   const isHighlight = highlight === tier.id;
+  const onLight = surface === "light";
 
   return (
     <div
       className={cn(
         "flex flex-col items-center text-center",
         isHighlight &&
-          "rounded-2xl bg-violet-500/10 px-4 py-5 ring-2 ring-violet-400/50",
+          (onLight
+            ? "rounded-2xl bg-[#EDE9FE]/70 px-4 py-5 ring-2 ring-[#6366F1]"
+            : "rounded-2xl bg-violet-500/10 px-4 py-5 ring-2 ring-violet-400/50"),
         !isHighlight && compact && "px-2 py-3",
       )}
     >
       <PricingTierIcon tier={tier.id} size={iconSize} />
       <h3
         className={cn(
-          "mt-4 font-black text-white",
+          "mt-4 font-black",
+          onLight ? "text-[#0B1220]" : "text-white",
           compact ? "text-sm leading-tight" : "text-lg",
         )}
       >
         {tier.name}
       </h3>
-      <p className={cn("text-violet-200/85", compact ? "text-[10px]" : "text-xs")}>
+      <p className={cn(onLight ? "text-[#475569]" : "text-violet-200/85", compact ? "text-[10px]" : "text-xs")}>
         {TIER_VISUAL_BLURB[tier.id]}
       </p>
       <p
         className={cn(
-          "mt-2 font-bold tabular-nums text-white",
+          "mt-2 font-bold tabular-nums",
+          onLight ? (isHighlight ? "text-[#4F46E5]" : "text-[#0B1220]") : "text-white",
           compact ? "text-base" : "text-2xl",
         )}
       >
         {tier.priceMain}
       </p>
       {!compact && tier.id === "momentum" ? (
-        <p className="mt-1 text-[10px] text-violet-300/70">{tier.priceSub}</p>
+        <p className={cn("mt-1 text-[10px]", onLight ? "text-[#64748B]" : "text-violet-300/70")}>{tier.priceSub}</p>
       ) : null}
       {showCta ? (
         <Button
@@ -85,7 +92,9 @@ export function PricingTierVisualCard({
             "mt-4 w-full rounded-xl font-bold",
             tier.popular && "bg-indigo-600 hover:bg-indigo-500",
             !tier.popular &&
-              "border-violet-400/40 bg-transparent text-violet-100 hover:bg-violet-500/15",
+              (onLight
+                ? "border-[#6366F1] bg-transparent text-[#4F46E5] hover:bg-[#EDE9FE]"
+                : "border-violet-400/40 bg-transparent text-violet-100 hover:bg-violet-500/15"),
           )}
         >
           <Link href={tier.buttonLink}>{tier.buttonText}</Link>
@@ -100,12 +109,14 @@ export function PricingTierVisualGrid({
   iconSize = 80,
   showCta = false,
   compact = false,
+  surface = "dark",
   className,
 }: {
   highlight?: PricingTierId;
   iconSize?: number;
   showCta?: boolean;
   compact?: boolean;
+  surface?: "light" | "dark";
   className?: string;
 }) {
   const tiers = buildPricingTiers();
@@ -120,6 +131,7 @@ export function PricingTierVisualGrid({
           iconSize={iconSize}
           showCta={showCta}
           compact={compact}
+          surface={surface}
         />
       ))}
     </div>

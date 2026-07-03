@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
+import { cn } from "@/shared/core/utils";
 import { formatStudentBreakthroughPrice, formatStudentMomentumPackPrice, MOMENTUM_PACK_SESSION_COUNT } from "@/features/booking/booking-pricing";
 import type { SubscriptionBillingInterval } from "@/features/pricing/pricing-tiers-pure";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
@@ -104,32 +105,37 @@ export function MomentumSubscribeClient({
         />
 
         <div className="mx-auto mt-8 max-w-4xl">
-          <TierComparisonTable variant="dark" />
+          <TierComparisonTable variant="light" className={mentrixHubSurfaces.tableShell} />
         </div>
 
         {momentumActive ? (
-          <div className={`${mentrixBrandUi.panel} mx-auto mt-8 max-w-2xl rounded-2xl p-5`}>
+          <section className={cn(mentrixStudent.hubSticky, "mx-auto mt-8 max-w-2xl p-5 sm:p-6")}>
             <div className="flex items-center gap-3">
               <PricingTierIcon tier="momentum" size={48} title="Momentum Pack" />
               <div>
-                <p className="text-sm font-semibold text-white">Quarter Sprint Pack</p>
-                <p className="text-xs text-violet-200/80">Extra credits</p>
+                <p className={cn("text-sm font-semibold", mentrixHubSurfaces.inkTitle)}>Quarter Sprint Pack</p>
+                <p className={cn("text-xs", mentrixHubSurfaces.inkMuted)}>Extra credits</p>
               </div>
             </div>
             {packGoal ? (
-              <p className="mt-3 text-sm font-medium text-violet-100">{packGoal.verdict}</p>
+              <p className={cn("mt-3 text-sm font-medium", mentrixHubSurfaces.inkBody)}>{packGoal.verdict}</p>
             ) : (
-              <p className="mt-3 text-sm text-violet-200/90">
+              <p className={cn("mt-3 text-sm", mentrixHubSurfaces.inkBody)}>
                 {MOMENTUM_PACK_SESSION_COUNT} sessions · {formatStudentMomentumPackPrice()}
               </p>
             )}
-            <Button type="button" className="mt-4" onClick={() => void startPackCheckout()} disabled={pending}>
+            <Button
+              type="button"
+              className={cn("mt-4", mentrixStudent.hubBtnSolid)}
+              onClick={() => void startPackCheckout()}
+              disabled={pending}
+            >
               Buy Quarter Sprint Pack
             </Button>
-            <p className="mt-2 text-[10px] text-violet-300/60">
+            <p className={cn("mt-2 text-[10px]", mentrixHubSurfaces.inkMuted)}>
               Pay as you go is {formatStudentBreakthroughPrice()} without Momentum.
             </p>
-          </div>
+          </section>
         ) : null}
 
         {success ? (

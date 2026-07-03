@@ -13,7 +13,7 @@ import {
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { Button } from "@/shared/ui/button";
 import { renderDiscussionBodyHtml } from "@/features/divisions/discussion-content-pure";
 import type {
@@ -63,7 +63,10 @@ function ForumBody({ body }: { body: string }) {
   if (body === "(screenshot)") return null;
   return (
     <div
-      className="text-sm leading-relaxed text-violet-100/90 whitespace-pre-wrap break-words [&_a]:text-indigo-300 [&_a]:underline [&_a]:underline-offset-2"
+      className={cn(
+        mentrixHubSurfaces.inkBody,
+        "text-sm leading-relaxed whitespace-pre-wrap break-words [&_a]:text-[#4F46E5] [&_a]:underline [&_a]:underline-offset-2",
+      )}
       dangerouslySetInnerHTML={{ __html: renderDiscussionBodyHtml(body) }}
     />
   );
@@ -71,7 +74,7 @@ function ForumBody({ body }: { body: string }) {
 
 function ForumScreenshot({ url, alt }: { url: string; alt: string }) {
   return (
-    <div className="relative mt-3 overflow-hidden rounded-xl border border-violet-500/30 bg-indigo-950/40">
+    <div className="relative mt-3 overflow-hidden rounded-xl border border-[#C4B5FD] bg-[#F8FAFC]">
       <Image
         src={url}
         alt={alt}
@@ -165,25 +168,27 @@ function ThreadCard({
     <button
       type="button"
       onClick={() => onOpen(thread.id)}
-      className="w-full rounded-2xl border border-violet-500/30 bg-indigo-950/40 p-4 text-left transition hover:border-violet-400/50 hover:bg-violet-950/50"
+      className="w-full rounded-2xl border border-[#C4B5FD] bg-white/85 p-4 text-left transition hover:border-[#6366F1] hover:bg-[#EDE9FE]/55"
     >
       <div className="flex gap-3">
         <ForumAvatar displayName={thread.displayName} avatarUrl={thread.avatarUrl} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-violet-50">{thread.title}</p>
+            <p className="text-sm font-bold text-[#0B1220]">{thread.title}</p>
             {thread.imageUrl ? (
-              <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-200">
+              <span className="rounded-full bg-[#EDE9FE] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#4F46E5]">
                 Image
               </span>
             ) : null}
           </div>
-          <p className="mt-1 line-clamp-2 text-xs text-violet-200/80">{thread.body === "(screenshot)" ? "Screenshot attached" : thread.body}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-violet-300/70">
+          <p className="mt-1 line-clamp-2 text-xs text-[#475569]">
+            {thread.body === "(screenshot)" ? "Screenshot attached" : thread.body}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-[#64748B]">
             <span>{thread.displayName}</span>
             <span>{formatWhen(thread.createdAt)}</span>
-            <span className="inline-flex items-center gap-1 text-indigo-300">
-              <MentrixaVocabIcon name="league" size={12} title="Replies" />
+            <span className="inline-flex items-center gap-1 text-[#4F46E5]">
+              <MentrixaVocabIcon name="league" size={12} surface="light" title="Replies" />
               {thread.replyCount} {thread.replyCount === 1 ? "reply" : "replies"}
             </span>
           </div>
@@ -318,10 +323,10 @@ export function LeagueForumPanel({
       <div className="flex flex-wrap items-end justify-between gap-4 px-1">
         <div>
           <div className="flex items-center gap-2">
-            <MentrixaVocabIcon name="league" size={16} className="text-indigo-300" title="League forum" />
-            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-violet-50">League forum</h2>
+            <MentrixaVocabIcon name="league" size={16} surface="light" title="League forum" />
+            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[#0B1220]">League forum</h2>
           </div>
-          <p className="mt-1 text-xs font-medium text-violet-200/80">
+          <p className={cn("mt-1 text-xs font-medium", mentrixHubSurfaces.inkMuted)}>
             Start threads, reply to teammates, and share study screenshots. Links must use https and pass safety review.
           </p>
         </div>
@@ -333,7 +338,7 @@ export function LeagueForumPanel({
       </div>
 
       {banner ? (
-        <div className="rounded-xl border border-amber-400/35 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {banner}
         </div>
       ) : null}
@@ -341,25 +346,25 @@ export function LeagueForumPanel({
       {showNewThread && isMember ? (
         <form onSubmit={submitThread} className={cn(mentrixStudent.card, "space-y-4 p-5")}>
           <div>
-            <label className={mentrixBrandUi.fieldLabel}>Thread title</label>
+            <label className={mentrixHubSurfaces.inkLabel}>Thread title</label>
             <input
               value={threadTitle}
               onChange={(e) => setThreadTitle(e.target.value)}
               maxLength={120}
               required
               placeholder="What do you want to discuss?"
-              className={cn("mt-2", mentrixBrandUi.fieldInput)}
+              className={cn("mt-2", mentrixHubSurfaces.fieldInput)}
             />
           </div>
           <div>
-            <label className={mentrixBrandUi.fieldLabel}>Message</label>
+            <label className={mentrixHubSurfaces.inkLabel}>Message</label>
             <textarea
               value={threadBody}
               onChange={(e) => setThreadBody(e.target.value)}
               rows={4}
               maxLength={4000}
               placeholder="Share strategy, ask for help, or post a verified practice note. Up to 3 https links."
-              className={cn("mt-2", mentrixBrandUi.fieldTextarea)}
+              className={cn("mt-2", mentrixHubSurfaces.fieldInput, "min-h-[6rem] resize-y")}
             />
           </div>
           <ScreenshotPicker
@@ -381,12 +386,12 @@ export function LeagueForumPanel({
 
       {activeThread ? (
         <div className={cn(mentrixStudent.card, "overflow-hidden")}>
-          <div className="border-b border-violet-500/20 px-4 py-3">
+          <div className="border-b border-[#C4B5FD] px-4 py-3">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="gap-1.5 hover:bg-purple-500"
+              className={cn("gap-1.5 text-[#4F46E5] hover:bg-[#EDE9FE]", mentrixStudent.hubGhostLink)}
               onClick={() => {
                 setActiveThread(null);
                 setReplyBody("");
@@ -400,18 +405,18 @@ export function LeagueForumPanel({
           </div>
 
           {loadingThread ? (
-            <div className="flex items-center justify-center gap-2 p-12 text-sm text-violet-200/70">
+            <div className={cn("flex items-center justify-center gap-2 p-12 text-sm", mentrixHubSurfaces.inkMuted)}>
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading thread…
             </div>
           ) : (
             <>
-              <article className="border-b border-violet-500/20 p-5 sm:p-6">
+              <article className="border-b border-[#C4B5FD] p-5 sm:p-6">
                 <div className="flex gap-3">
                   <ForumAvatar displayName={activeThread.displayName} avatarUrl={activeThread.avatarUrl} />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-lg font-black italic tracking-tight text-white">{activeThread.title}</h3>
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-violet-300/70">
+                    <h3 className="text-lg font-black tracking-tight text-[#0B1220]">{activeThread.title}</h3>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[#64748B]">
                       {activeThread.displayName} · {formatWhen(activeThread.createdAt)}
                     </p>
                     <div className="mt-4">
@@ -424,16 +429,16 @@ export function LeagueForumPanel({
                 </div>
               </article>
 
-              <div className="divide-y divide-violet-500/15">
+              <div className="divide-y divide-[#E0E7FF]">
                 {activeThread.replies.length === 0 ? (
-                  <p className="p-6 text-center text-sm text-violet-300/60">No replies yet. Be the first.</p>
+                  <p className={cn("p-6 text-center text-sm", mentrixHubSurfaces.inkMuted)}>No replies yet. Be the first.</p>
                 ) : (
                   activeThread.replies.map((reply) => (
                     <article key={reply.id} className="p-5 sm:px-6">
                       <div className="flex gap-3">
                         <ForumAvatar displayName={reply.displayName} avatarUrl={reply.avatarUrl} size="sm" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-violet-300/70">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#64748B]">
                             {reply.displayName} · {formatWhen(reply.createdAt)}
                           </p>
                           <div className="mt-2">
@@ -450,15 +455,15 @@ export function LeagueForumPanel({
               </div>
 
               {isMember ? (
-                <form onSubmit={submitReply} className="border-t border-violet-500/20 bg-indigo-950/35 p-4 sm:p-5 space-y-3">
-                  <label className={mentrixBrandUi.fieldLabel}>Reply</label>
+                <form onSubmit={submitReply} className="space-y-3 border-t border-[#C4B5FD] bg-[#EDE9FE]/35 p-4 sm:p-5">
+                  <label className={mentrixHubSurfaces.inkLabel}>Reply</label>
                   <textarea
                     value={replyBody}
                     onChange={(e) => setReplyBody(e.target.value)}
                     rows={3}
                     maxLength={2000}
                     placeholder="Reply with text, https links, or a screenshot."
-                    className={mentrixBrandUi.fieldTextarea}
+                    className={cn(mentrixHubSurfaces.fieldInput, "min-h-[5rem] resize-y")}
                   />
                   <ScreenshotPicker
                     disabled={isPending}
@@ -476,7 +481,7 @@ export function LeagueForumPanel({
                   </Button>
                 </form>
               ) : (
-                <p className="border-t border-violet-500/20 p-4 text-center text-xs font-bold uppercase tracking-widest text-violet-300/60">
+                <p className="border-t border-[#C4B5FD] p-4 text-center text-xs font-bold uppercase tracking-widest text-[#64748B]">
                   Join the league to reply
                 </p>
               )}
@@ -487,9 +492,9 @@ export function LeagueForumPanel({
         <div className="space-y-3">
           {threads.length === 0 ? (
             <div className={cn(mentrixStudent.card, "p-10 text-center")}>
-              <MentrixaVocabIcon name="league" size={40} className="mx-auto text-violet-500/30" title="League forum" />
-              <p className="mt-3 text-sm font-medium text-violet-100/90">No threads yet.</p>
-              <p className="mt-1 text-xs text-violet-300/70">Start the first league conversation.</p>
+              <MentrixaVocabIcon name="league" size={40} surface="light" className="mx-auto opacity-40" title="League forum" />
+              <p className={cn("mt-3 text-sm font-medium", mentrixHubSurfaces.inkBody)}>No threads yet.</p>
+              <p className={cn("mt-1 text-xs", mentrixHubSurfaces.inkMuted)}>Start the first league conversation.</p>
             </div>
           ) : (
             threads.map((thread) => (
