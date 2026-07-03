@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import Image from "next/image";
-import { Button } from "@/shared/ui/button";
+import { RankBadge } from "@/features/xp/components/rank-badge";
+import { normalizeRankTitle } from "@/features/xp/rank-icons";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
 type Props = {
@@ -10,6 +13,7 @@ type Props = {
   siteUrl: string;
   passportVerdict: string;
   rankTitle: string;
+  rankLevel: number;
   className?: string;
 };
 
@@ -18,12 +22,14 @@ export function RankCardShareButton({
   siteUrl,
   passportVerdict,
   rankTitle,
+  rankLevel,
   className,
 }: Props) {
   const [copied, setCopied] = useState(false);
   const cardUrl = `${siteUrl.replace(/\/$/, "")}/rank/${username}`;
+  const displayRankTitle = normalizeRankTitle(rankTitle);
 
-  const tweetText = `Verified AP Calculus AB rank: ${passportVerdict} · ${rankTitle} · ${cardUrl}`;
+  const tweetText = `Verified AP Calculus AB rank: ${passportVerdict} · ${displayRankTitle} · ${cardUrl}`;
 
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
   const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(cardUrl)}`;
@@ -40,78 +46,73 @@ export function RankCardShareButton({
 
   return (
     <section
-      className={cn(
-        "overflow-hidden rounded-[2.5rem] border border-indigo-100 bg-white p-6 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.08)] sm:p-8",
-        className,
-      )}
+      className={cn(mentrixStudent.hubSticky, "rotate-0 p-5 sm:p-8", className)}
+      aria-label="Share verified passport"
     >
       <div className="mb-6 space-y-3">
-        <h2 className="text-sm font-black uppercase tracking-[0.25em] text-indigo-950">
-          Share your verified passport
+        <h2 className="inline-flex items-center gap-2.5">
+          <MentrixaVocabIcon name="passport" size={22} surface="light" title="Verified passport" />
+          <span className={cn(mentrixHubSurfaces.inkTitle, "text-lg sm:text-xl")}>
+            Share your verified passport
+          </span>
         </h2>
-        <p className="max-w-md text-sm leading-relaxed text-slate-600">
+        <p className={cn(mentrixHubSurfaces.inkBody, "max-w-md text-sm leading-relaxed")}>
           Public proof from first attempts only. Live at{" "}
-          <span className="font-mono font-semibold text-indigo-700">
+          <span className="font-mono font-semibold text-[#4F46E5]">
             mentrixa.one/rank/{username}
           </span>
         </p>
       </div>
 
-      <div className="mb-6 rounded-3xl border border-indigo-100 bg-indigo-50/50 p-5">
-        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">
+      <div className="mb-6 rounded-lg border border-[#C4B5FD] bg-white/75 p-4 sm:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6366F1]">
           Share preview
         </p>
-        <p className="mt-2 text-sm font-medium leading-relaxed text-indigo-950">
+        <p className={cn(mentrixHubSurfaces.inkBody, "mt-2 text-sm font-medium leading-relaxed")}>
           {passportVerdict}
         </p>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-indigo-700">
-          {rankTitle}
-        </p>
+        <div className="mt-3 flex items-center gap-3">
+          <RankBadge
+            rank={{ level: rankLevel, title: rankTitle }}
+            size="sm"
+            showLabel={false}
+            labelTone="light"
+          />
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#4F46E5]">
+            {displayRankTitle}
+          </p>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Button
+      <div className="flex flex-wrap gap-2.5">
+        <button
           type="button"
-          size="sm"
           onClick={() => void copyLink()}
-          className="rounded-xl bg-indigo-600 text-white hover:bg-indigo-500"
+          className={mentrixHubSurfaces.btnSolid}
         >
           {copied ? "Link copied" : "Copy link"}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          asChild
-          className="rounded-xl border-indigo-200 text-indigo-900 hover:bg-indigo-50"
+        </button>
+        <a
+          href={twitterUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={mentrixHubSurfaces.ghostLink}
         >
-          <a href={twitterUrl} target="_blank" rel="noopener noreferrer">
-            Share on X
-          </a>
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          asChild
-          className="rounded-xl border-indigo-200 text-indigo-900 hover:bg-indigo-50"
+          Share on X
+        </a>
+        <a
+          href={linkedInUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={mentrixHubSurfaces.ghostLink}
         >
-          <a href={linkedInUrl} target="_blank" rel="noopener noreferrer">
-            LinkedIn
-          </a>
-        </Button>
+          LinkedIn
+        </a>
       </div>
 
-      <div className="mt-6 flex items-center gap-3 border-t border-indigo-50 pt-5">
-        <Image
-          src="/icons/mentrixer.svg"
-          alt=""
-          width={32}
-          height={32}
-          unoptimized
-          className="h-8 w-8 opacity-60"
-        />
-        <p className="text-[11px] leading-relaxed text-slate-500">
+      <div className="mt-6 flex items-start gap-3 border-t border-[#C4B5FD]/70 pt-5">
+        <MentrixaVocabIcon name="passport" size={28} surface="light" className="shrink-0 opacity-80" />
+        <p className={cn(mentrixHubSurfaces.inkMuted, "text-xs leading-relaxed")}>
           Anyone with the link sees your verified mastery map and percentile.
         </p>
       </div>

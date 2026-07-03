@@ -11,6 +11,7 @@ describe("vocab-inline-svgs", () => {
       "unit",
       "verified",
       "skills",
+      "passport",
     ] as const) {
       expect(hasInlineVocabIcon(name)).toBe(true);
       const markup = renderToStaticMarkup(

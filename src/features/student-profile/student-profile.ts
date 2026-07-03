@@ -211,25 +211,27 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
   let rankCardTopAccuracy = 0;
   let rankCardPassportVerdict: string | null = null;
   let rankCardCalibratedTitle: string | null = null;
+  let rankCardCalibratedLevel: number | null = null;
   const verifiedStats = await getApCalcVerifiedRankStats(parsed.id).catch(() => ({
     verifiedCount: 0,
     accuracyPercent: 0,
     percentile: null,
   }));
+  const calibrated = await getCalibratedRank(parsed.id, AP_CALC_AB_SUBJECT);
+  rankCardCalibratedTitle = calibrated.title;
+  rankCardCalibratedLevel = calibrated.level;
+  rankCardPassportVerdict = passportVerdictPlainText(
+    buildPassportVerdict({
+      verifiedCount: verifiedStats.verifiedCount,
+      percentile: verifiedStats.percentile,
+    }),
+  );
   if (access === "owner") {
     const subjects = await buildRankCardSubjects(parsed.id, totalXp);
     if (subjects[0]) {
       rankCardTopSubject = subjects[0].subject;
       rankCardTopAccuracy = subjects[0].currentAccuracy;
     }
-    const calibrated = await getCalibratedRank(parsed.id, AP_CALC_AB_SUBJECT);
-    rankCardPassportVerdict = passportVerdictPlainText(
-      buildPassportVerdict({
-        verifiedCount: verifiedStats.verifiedCount,
-        percentile: verifiedStats.percentile,
-      }),
-    );
-    rankCardCalibratedTitle = calibrated.title;
   }
 
   const out: StudentProfileData = {
@@ -261,6 +263,7 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     rankCardTopAccuracy,
     rankCardPassportVerdict,
     rankCardCalibratedTitle,
+    rankCardCalibratedLevel,
     verifiedSkillCount: verifiedStats.verifiedCount,
   };
   return out;

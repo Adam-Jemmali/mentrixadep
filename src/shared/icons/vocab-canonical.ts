@@ -66,8 +66,7 @@ const VOCAB_ICON_ALIAS: Partial<Record<VocabIconName, VocabIconName>> = {
   "momentum-pack": CANONICAL_MOMENTUM_ICON,
   membership: CANONICAL_MOMENTUM_ICON,
 
-  "bento-rank-card": CANONICAL_RANK_PROOF_ICON,
-  passport: CANONICAL_RANK_PROOF_ICON,
+  "bento-rank-card": "passport",
   standing: CANONICAL_RANK_PROOF_ICON,
   percentile: CANONICAL_RANK_PROOF_ICON,
   "trajectory-certificate": CANONICAL_RANK_PROOF_ICON,

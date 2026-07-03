@@ -413,9 +413,10 @@ function ProfileShareSections({
           siteUrl={getSiteUrl()}
           passportVerdict={
             data.rankCardPassportVerdict ??
-            "Verified AP Calculus AB rank passport on Mentrixa."
+            "No verified first attempts on AP Calculus AB yet."
           }
-          rankTitle={normalizeRankTitle(data.rankCardCalibratedTitle ?? accountRank.title)}
+          rankTitle={data.rankCardCalibratedTitle ?? accountRank.title}
+          rankLevel={data.rankCardCalibratedLevel ?? accountRank.level}
         />
       ) : null}
       {referral ? <ReferralProgramSection initial={referral} /> : null}

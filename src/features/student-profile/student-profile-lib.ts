@@ -51,6 +51,8 @@ export type StudentProfileData = {
   rankCardTopAccuracy: number;
   rankCardPassportVerdict: string | null;
   rankCardCalibratedTitle: string | null;
+  /** Calibrated AP Calculus AB rank level (matches public /rank page). */
+  rankCardCalibratedLevel: number | null;
   /** AP Calculus AB verified first-attempt skill count. */
   verifiedSkillCount: number;
 };

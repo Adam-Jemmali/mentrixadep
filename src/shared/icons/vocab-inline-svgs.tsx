@@ -164,6 +164,24 @@ function PracticePackInline({ size, surface, gold, className }: InlineVocabProps
   );
 }
 
+/** Geometry copied from public/icons/vocab/passport.svg */
+function PassportInline({ size, surface, gold, className }: InlineVocabProps) {
+  const { stroke } = vocabInlineStroke(surface, gold);
+  return (
+    <InlineSvgShell size={size} className={className}>
+      <g fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="11" y="7" width="26" height="34" rx="3" strokeWidth="2" />
+        <path d="M11 14h26" strokeWidth="1.75" opacity="0.45" />
+        <circle cx="24" cy="21" r="5.5" strokeWidth="1.9" />
+        <path d="M21.5 21l1.75 1.75 3.5-3.75" strokeWidth="1.85" />
+        <line x1="17" y1="31" x2="31" y2="31" strokeWidth="1.6" opacity="0.55" />
+        <line x1="17" y1="35" x2="27" y2="35" strokeWidth="1.6" opacity="0.45" />
+        <path d="M8 12h3M8 18h3" strokeWidth="1.75" opacity="0.35" />
+      </g>
+    </InlineSvgShell>
+  );
+}
+
 /** Geometry copied from public/icons/vocab/rival.svg — versus / top rival */
 function RivalInline({ size, surface, gold, className }: InlineVocabProps) {
   const { stroke, fill } = vocabInlineStroke(surface, gold);
@@ -208,6 +226,7 @@ const INLINE_VOCAB_RENDERERS: Partial<
   "practice-pack": PracticePackInline,
   "focus-ring": FocusRingInline,
   rival: RivalInline,
+  passport: PassportInline,
 };
 
 export function hasInlineVocabIcon(name: VocabIconName): boolean {
