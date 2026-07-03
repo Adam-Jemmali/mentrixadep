@@ -24,6 +24,8 @@ import {
 } from "@/shared/ui/dialog";
 import type { StudentSessionTutorProfile } from "@/features/booking/session-lists";
 import type { SessionAiPackage } from "@/shared/types/database";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { CANONICAL_BRIEF_ICON } from "@/shared/icons/vocab-canonical";
 
 type RatingRow = { id: string; rating: number; comment: string | null };
 
@@ -162,7 +164,7 @@ export function PastSessionCard({
               <Collapsible open={packageOpen} onOpenChange={setPackageOpen}>
                 <CollapsibleTrigger asChild>
                   <Button type="button" size="sm" variant="outline" className="gap-1 text-black">
-                    <Image src="/images/package.webp" alt="Package" width={16} height={16} />
+                    <MentrixaVocabIcon name={CANONICAL_BRIEF_ICON} size={16} surface="light" title="Study package" />
                     View Study Package
                     <Image
                       src="/images/pending.webp"

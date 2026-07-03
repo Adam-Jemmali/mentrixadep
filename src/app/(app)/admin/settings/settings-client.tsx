@@ -17,6 +17,12 @@ import {
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Image from "next/image";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import {
+  CANONICAL_DUELS_ICON,
+  CANONICAL_QUEST_ICON,
+} from "@/shared/icons/vocab-canonical";
 
 
 import { createClient } from "@/shared/integrations/supabase/client";
@@ -62,12 +68,14 @@ function SettingRow({
   label,
   description,
   img,
+  vocabIcon,
   children,
   danger,
 }: {
   label: string;
   description: string;
-  img: string;
+  img?: string;
+  vocabIcon?: VocabIconName;
   children: React.ReactNode;
   danger?: boolean;
 }) {
@@ -75,7 +83,11 @@ function SettingRow({
     <div className={`flex items-center justify-between py-4 px-5 ${danger ? "bg-red-50/50" : ""}`}>
       <div className="flex items-start gap-3 flex-1 min-w-0 pr-8">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 overflow-hidden ${danger ? "bg-red-100" : "bg-slate-100"}`}>
-          <Image src={img} alt="" width={24} height={24} className="object-contain" />
+          {vocabIcon ? (
+            <MentrixaVocabIcon name={vocabIcon} size={20} surface="light" title={label} />
+          ) : img ? (
+            <Image src={img} alt="" width={24} height={24} className="object-contain" />
+          ) : null}
         </div>
         <div>
           <p className={`text-[13px] font-medium ${danger ? "text-red-900" : "text-slate-900"}`}>{label}</p>
@@ -263,14 +275,14 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
       {/* Quests section */}
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/quest.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <MentrixaVocabIcon name={CANONICAL_QUEST_ICON} size={14} surface="light" title="Quests" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Quests</p>
         </div>
         <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
           <SettingRow
             label="Max quests per day"
             description="Limit how many AI-generated quests a learner can start per calendar day."
-            img="/images/quest.webp"
+            vocabIcon={CANONICAL_QUEST_ICON}
           >
             <div className="flex items-center gap-3">
               {savedKey === "max_quests_per_day" && (
@@ -422,7 +434,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
 
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-1">
-          <Image src="/images/sword.webp" alt="" width={14} height={14} className="object-contain opacity-60" />
+          <MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={14} surface="light" title="Feature flags" />
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Feature Flags</p>
         </div>
         <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
@@ -430,7 +442,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <SettingRow
             label="Skill duels"
             description="Allow learners to challenge each other to real-time quiz duels."
-            img="/images/sword.webp"
+            vocabIcon={CANONICAL_DUELS_ICON}
           >
             <div className="flex items-center gap-3">
               {savedKey === "feature_duels_enabled" && (
@@ -446,7 +458,7 @@ export function AdminSettingsClient({ settings: initialSettings }: Props) {
           <SettingRow
             label="Mentrixa quests"
             description="Allow learners to generate AI-powered practice quests."
-            img="/images/quest.webp"
+            vocabIcon={CANONICAL_QUEST_ICON}
           >
             <div className="flex items-center gap-3">
               {savedKey === "feature_ai_quests_enabled" && (

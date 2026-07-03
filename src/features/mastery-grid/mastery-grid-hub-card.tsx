@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import {
   buildMasteryGridNextAction,
@@ -10,68 +10,86 @@ import {
 } from "@/features/mastery-grid/mastery-grid-pure";
 import { SkillNodeStrengthMeter } from "@/shared/ui/meter-patterns";
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
+import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
 import {
   MasteryGridSummaryMetrics,
   MentrixaVocabIcon,
+  VocabSectionHeading,
 } from "@/shared/icons/mentrixa-vocab-icons";
 
-export function MasteryGridHubCard({ data }: { data: MasteryGridData }) {
+export function MasteryGridHubCard({ data, compact = false }: { data: MasteryGridData; compact?: boolean }) {
   const summary = summarizeMasteryGrid(data);
-  const weakest = pickWeakestMasteryNodes(data, 3);
+  const weakest = pickWeakestMasteryNodes(data, compact ? 1 : 3);
   const nextAction = buildMasteryGridNextAction(data.units);
 
   return (
-    <section className={`${mentrixStudent.cardArena} p-5 sm:p-6`} aria-label="Skill tree summary">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className={`${mentrixProfileType.statLabelOnDark} inline-flex items-center gap-2`}>
-            <MentrixaVocabIcon name="mastery-grid" size={20} surface="dark" title="Mastery Grid" />
-            Grid
-          </p>
-          <p className="mt-1 text-sm font-medium italic text-violet-100/90">{data.subject}</p>
+    <section
+      className={`${mentrixStudent.hubNotebook} ${compact ? "" : "p-5 sm:p-6"}`}
+      aria-label="Skill tree summary"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <VocabSectionHeading
+            name="mastery-grid"
+            label="Grid"
+            surface="light"
+            iconSize={compact ? 36 : undefined}
+            labelClassName="text-[#0891B2]"
+          />
+          <div className="mt-1">
+            <AbCalculusSubjectTitle hubPaper className={compact ? "text-sm sm:text-base" : undefined} />
+          </div>
           <MasteryGridSummaryMetrics
-            className="mt-3"
+            className="mt-2"
             verifiedCount={summary.verifiedCount}
             proficientCount={summary.proficientCount}
             totalNodes={summary.totalNodes}
-            surface="dark"
+            surface="light"
           />
         </div>
-        <Link
-          href="/student/mastery"
-          className={mentrixProfileType.ctaPrimary}
-        >
-          Open skill tree
+        <Link href="/student/mastery" className={mentrixStudent.hubBtn} title="Open skill tree">
+          <MentrixaVocabIcon name="skills" size={compact ? 24 : 28} surface="dark" title="Skills" />
+          <span className="text-[9px] font-black uppercase tracking-[0.12em]">Tree</span>
         </Link>
       </div>
 
-      <div className="mt-4">
-        <XpTierProgressBar
-          value={summary.progressPercent}
-          tone="dark"
-          fillStyle={{
-            background: "linear-gradient(90deg, #6366F199, #7C3AED)",
-          }}
-        />
-      
-      </div>
-
-      {weakest.length > 0 ? (
-        <div className="mt-4 space-y-2">
-          <p className={mentrixProfileType.labelOnDark}>Weakest right now</p>
-          {weakest.map((node) => (
-            <SkillNodeStrengthMeter
-              key={node.id}
-              nodeName={node.nodeName}
-              state={node.state}
-              accuracyPercent={node.accuracyPercent}
-              tone="dark"
-            />
-          ))}
+      {!compact ? (
+        <div className="mt-4">
+          <XpTierProgressBar
+            value={summary.progressPercent}
+            tone="light"
+            fillStyle={{ background: "#6366F1" }}
+          />
         </div>
       ) : null}
 
-      <p className={`mt-4 ${mentrixProfileType.bodyOnDark}`}>{nextAction}</p>
+      {weakest.length > 0 ? (
+        <div className={compact ? "mt-3 space-y-2" : "mt-4 space-y-2"}>
+          <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#4F46E5]">
+            <MentrixaVocabIcon name="focus-ring" size={compact ? 16 : 20} surface="light" title="Weakest" />
+            Weakest
+          </p>
+          {weakest.map((node) => {
+            const unitNumber = data.units.find((unit) =>
+              unit.nodes.some((entry) => entry.id === node.id),
+            )?.unitNumber;
+
+            return (
+              <SkillNodeStrengthMeter
+                key={node.id}
+                nodeName={node.nodeName}
+                nodeSlug={node.nodeSlug}
+                unitNumber={unitNumber}
+                state={node.state}
+                accuracyPercent={node.accuracyPercent}
+                tone="light"
+              />
+            );
+          })}
+        </div>
+      ) : null}
+
+      <p className={`${compact ? "mt-2 text-xs" : "mt-4"} text-sm font-medium text-[#475569]`}>{nextAction}</p>
     </section>
   );
 }

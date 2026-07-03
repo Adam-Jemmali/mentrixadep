@@ -5,16 +5,43 @@ import Image from "next/image";
 import { cn } from "@/shared/core/utils";
 import {
   getVocabIconMeta,
+  isPricingTierIcon,
   vocabIconSrc,
   XP_ICON_SRC,
   VOCAB_SHORT_LABEL,
   type VocabIconName,
 } from "@/shared/icons/mentrixa-vocab-map";
+import { resolveCanonicalVocabIcon } from "@/shared/icons/vocab-canonical";
 import { weekdayLabel, weekdayVocabIcon } from "@/shared/icons/weekday-vocab-pure";
 import { renderInlineVocabIcon } from "@/shared/icons/vocab-inline-svgs";
+import { PricingTierInlineIcon } from "@/features/pricing/ui/pricing-tier-icons-inline";
+import type { PricingTierId } from "@/features/pricing/pricing-tiers-pure";
+import {
+  hubAccentBackdropClass,
+  hubAccentLabelClass,
+  hubAccentValueClass,
+  type HubAccent,
+} from "@/features/student-profile/student-hub-accent";
+
+const TIER_VOCAB_TO_ID: Partial<Record<VocabIconName, PricingTierId>> = {
+  "tier-arena": "arena",
+  "tier-breakthrough": "breakthrough",
+  "tier-momentum": "momentum",
+};
 
 const GOLD_FILTER =
   "brightness(0) saturate(100%) invert(73%) sepia(48%) saturate(746%) hue-rotate(8deg) brightness(95%) contrast(92%)";
+
+/** Flame yellow for streak fire on paper and dark surfaces. */
+const STREAK_FLAME_FILTER =
+  "brightness(0) saturate(100%) invert(79%) sepia(86%) saturate(640%) hue-rotate(360deg) brightness(104%) contrast(101%)";
+
+const XP_LIGHT_CHIP =
+  "rounded-md bg-[#6366F1] p-0.5 ring-1 ring-[#7C3AED] shadow-sm";
+
+function xpIconChipClass(surface: "dark" | "light", isRasterXp: boolean): string | undefined {
+  return surface === "light" && isRasterXp ? XP_LIGHT_CHIP : undefined;
+}
 
 function isRasterVocabSrc(src: string): boolean {
   return /\.(webp|png|jpe?g|gif|avif)$/i.test(src);
@@ -36,8 +63,68 @@ export type MentrixaVocabIconProps = {
   surface?: "dark" | "light";
 };
 
+/** Caps visible icon captions at two words. */
+export function vocabTwoWordLabel(text: string): string {
+  return text.trim().split(/\s+/).filter(Boolean).slice(0, 2).join(" ");
+}
+
+export function VocabStatColumn({
+  icon,
+  label,
+  value,
+  gold,
+  accent,
+  surface = "dark",
+  iconSize = 32,
+  className,
+  valueClassName,
+}: {
+  icon: VocabIconName;
+  label: string;
+  value?: string | number;
+  gold?: boolean;
+  accent?: HubAccent;
+  surface?: "dark" | "light";
+  iconSize?: number;
+  className?: string;
+  valueClassName?: string;
+}) {
+  const caption = vocabTwoWordLabel(label);
+
+  return (
+    <div
+      className={cn("flex min-w-[4.25rem] flex-col items-center gap-1 text-center", className)}
+      aria-label={value != null ? `${value} ${caption}` : caption}
+      title={value != null ? `${value} ${caption}` : caption}
+    >
+      <span className={hubAccentBackdropClass(accent, surface)}>
+        <MentrixaVocabIcon name={icon} size={iconSize} gold={gold} surface={surface} title={caption} />
+      </span>
+      {value != null ? (
+        <span
+          className={cn(
+            "font-mono text-base font-black tabular-nums leading-none sm:text-lg",
+            valueClassName ?? hubAccentValueClass(accent, surface),
+            gold && "text-[#D4A017]",
+          )}
+        >
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </span>
+      ) : null}
+      <span
+        className={cn(
+          "max-w-[5.5rem] text-[9px] font-bold uppercase leading-tight tracking-[0.1em]",
+          hubAccentLabelClass(accent, surface),
+        )}
+      >
+        {caption}
+      </span>
+    </div>
+  );
+}
+
 /**
- * Renders vocabulary assets from /public/icons/ or /images/xp.webp.
+ * Renders vocabulary assets from /public/icons/.
  * SVGs use a native <img> so the file displays as authored (no mask / background-image).
  */
 export function MentrixaVocabIcon({
@@ -48,12 +135,36 @@ export function MentrixaVocabIcon({
   title,
   surface = "dark",
 }: MentrixaVocabIconProps) {
-  const meta = getVocabIconMeta(name);
-  const src = vocabIconSrc(name);
+  const canonicalName = resolveCanonicalVocabIcon(name);
+  const meta = getVocabIconMeta(canonicalName);
+  const src = vocabIconSrc(canonicalName);
   const ariaLabel = title ?? meta.label;
   const useGold = gold === true && meta.allowsGold === true;
   const raster = isRasterVocabSrc(src);
-  const inline = renderInlineVocabIcon(name, { size, surface, gold: useGold, className: "block h-full w-full" });
+  const tierSticker = isPricingTierIcon(canonicalName);
+  const tierId = TIER_VOCAB_TO_ID[canonicalName];
+  const inline = tierSticker
+    ? null
+    : renderInlineVocabIcon(canonicalName, {
+        size,
+        surface,
+        gold: useGold,
+        className: "block h-full w-full",
+      });
+
+  if (tierId) {
+    return (
+      <span
+        className={cn("inline-flex shrink-0 items-center justify-center", className)}
+        style={{ width: size, height: size }}
+        title={ariaLabel}
+        aria-label={ariaLabel}
+        role="img"
+      >
+        <PricingTierInlineIcon tier={tierId} size={size} title={ariaLabel} />
+      </span>
+    );
+  }
 
   if (inline) {
     return (
@@ -74,9 +185,14 @@ export function MentrixaVocabIcon({
   }
 
   if (raster) {
+    const isXpRaster = canonicalName === "xp";
     return (
       <span
-        className={cn("relative inline-flex shrink-0 items-center justify-center", className)}
+        className={cn(
+          "relative inline-flex shrink-0 items-center justify-center",
+          xpIconChipClass(surface, isXpRaster),
+          className,
+        )}
         style={{ width: size, height: size }}
       >
         <Image
@@ -93,7 +209,7 @@ export function MentrixaVocabIcon({
     );
   }
 
-  const filter = svgFilter(surface, useGold);
+  const filter = isPricingTierIcon(canonicalName) ? undefined : svgFilter(surface, useGold);
 
   return (
     <span
@@ -125,14 +241,70 @@ export type MentrixaVocabIconLabelProps = MentrixaVocabIconProps & {
   labelClassName?: string;
 };
 
+/** Default big icon size for section headings and vocab labels in product UI. */
+export const VOCAB_HEADING_ICON_SIZE = 50;
+
+function vocabIconBackdropClass(surface: "dark" | "light"): string {
+  return surface === "dark"
+    ? "bg-white/12 ring-1 ring-white/20"
+    : "bg-indigo-950/6 ring-1 ring-indigo-200/45";
+}
+
+function vocabHeadingLabelClass(surface: "dark" | "light", labelClassName?: string): string {
+  return cn(
+    "text-[10px] font-black uppercase tracking-[0.2em] leading-none",
+    surface === "dark" ? "text-violet-100" : "text-zinc-900",
+    labelClassName,
+  );
+}
+
+/** Big contrasting icon + uppercase vocab label for section eyebrows and card titles. */
+export function VocabSectionHeading({
+  name,
+  label,
+  surface = "dark",
+  gold,
+  iconSize = VOCAB_HEADING_ICON_SIZE,
+  className,
+  labelClassName,
+  as: Tag = "p",
+}: {
+  name: VocabIconName;
+  label?: string;
+  surface?: "dark" | "light";
+  gold?: boolean;
+  iconSize?: number;
+  className?: string;
+  labelClassName?: string;
+  as?: "p" | "h1" | "h2" | "h3" | "span" | "div";
+}) {
+  const meta = getVocabIconMeta(name);
+  const text = label ?? VOCAB_SHORT_LABEL[name] ?? meta.label;
+
+  return (
+    <Tag className={cn("inline-flex items-center gap-3", className)}>
+      <span
+        className={cn(
+          "flex shrink-0 items-center justify-center rounded-xl p-2",
+          vocabIconBackdropClass(surface),
+        )}
+      >
+        <MentrixaVocabIcon name={name} size={iconSize} surface={surface} gold={gold} title={text} />
+      </span>
+      <span className={vocabHeadingLabelClass(surface, labelClassName)}>{text}</span>
+    </Tag>
+  );
+}
+
 /** Count above icon — minimal stat strip for grid and receipt surfaces. */
 export function VocabCountMetric({
   value,
   icon,
   label,
   gold,
+  accent,
   surface = "dark",
-  iconSize = 28,
+  iconSize = VOCAB_HEADING_ICON_SIZE,
   valueClassName,
   className,
 }: {
@@ -140,27 +312,40 @@ export function VocabCountMetric({
   icon: VocabIconName;
   label: string;
   gold?: boolean;
+  accent?: HubAccent;
   surface?: "dark" | "light";
   iconSize?: number;
   valueClassName?: string;
   className?: string;
 }) {
+  const caption = vocabTwoWordLabel(label);
+
   return (
     <span
       className={cn("inline-flex min-w-[2.75rem] flex-col items-center gap-1", className)}
-      aria-label={`${value} ${label}`}
-      title={`${value} ${label}`}
+      aria-label={`${value} ${caption}`}
+      title={`${value} ${caption}`}
     >
+      <span className={hubAccentBackdropClass(accent, surface)}>
+        <MentrixaVocabIcon name={icon} size={iconSize} gold={gold} surface={surface} title={caption} />
+      </span>
       <span
         className={cn(
           "text-lg font-black tabular-nums leading-none sm:text-xl",
-          valueClassName ??
-            (surface === "dark" ? "text-violet-50" : "text-zinc-900"),
+          valueClassName ?? hubAccentValueClass(accent, surface),
+          gold && "text-[#D4A017]",
         )}
       >
         {value}
       </span>
-      <MentrixaVocabIcon name={icon} size={iconSize} gold={gold} surface={surface} title={label} />
+      <span
+        className={cn(
+          "max-w-[5.5rem] text-center text-[9px] font-bold uppercase leading-tight tracking-[0.1em]",
+          hubAccentLabelClass(accent, surface),
+        )}
+      >
+        {caption}
+      </span>
     </span>
   );
 }
@@ -183,17 +368,24 @@ export function MasteryGridSummaryMetrics({
       <VocabCountMetric
         value={verifiedCount}
         icon="verified"
-        label="verified"
-        gold
+        label="Nodes Verified"
+        accent="cyan"
         surface={surface}
       />
       <VocabCountMetric
         value={proficientCount}
         icon="practice-pack"
-        label="proficient"
+        label="Nodes Proficient"
+        accent="indigo"
         surface={surface}
       />
-      <VocabCountMetric value={totalNodes} icon="skills" label="skills" surface={surface} />
+      <VocabCountMetric
+        value={totalNodes}
+        icon="skills"
+        label="Total Skills"
+        accent="violet"
+        surface={surface}
+      />
     </div>
   );
 }
@@ -201,16 +393,20 @@ export function MasteryGridSummaryMetrics({
 export function MentrixaVocabIconLabel({
   showLabel = true,
   labelClassName,
+  size = VOCAB_HEADING_ICON_SIZE,
+  surface = "dark",
   ...iconProps
 }: MentrixaVocabIconLabelProps) {
   const meta = getVocabIconMeta(iconProps.name);
   const shortLabel = VOCAB_SHORT_LABEL[iconProps.name] ?? meta.label;
 
   return (
-    <span className="inline-flex items-center gap-2">
-      <MentrixaVocabIcon {...iconProps} />
+    <span className="inline-flex items-center gap-3">
+      <span className={cn("flex shrink-0 items-center justify-center rounded-xl p-2", vocabIconBackdropClass(surface))}>
+        <MentrixaVocabIcon {...iconProps} size={size} surface={surface} />
+      </span>
       {showLabel ? (
-        <span className={cn("text-sm font-medium leading-none", labelClassName)}>{shortLabel}</span>
+        <span className={vocabHeadingLabelClass(surface, labelClassName)}>{shortLabel}</span>
       ) : null}
     </span>
   );
@@ -222,7 +418,7 @@ export function VocabHubTile({
   value,
   surface = "dark",
   className,
-  iconSize = 40,
+  iconSize = VOCAB_HEADING_ICON_SIZE,
 }: {
   name: VocabIconName;
   href: string;
@@ -238,13 +434,13 @@ export function VocabHubTile({
     <Link
       href={href}
       className={cn(
-        "flex min-w-[4.5rem] flex-col items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-3 transition hover:border-white/30 hover:bg-white/10",
+        "flex min-w-[5rem] flex-col items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-3 transition hover:border-white/30 hover:bg-white/10",
         className,
       )}
       title={meta.label}
       aria-label={meta.label}
     >
-      <span className="flex items-center justify-center rounded-lg bg-white/12 p-2 ring-1 ring-white/20">
+      <span className={cn("flex items-center justify-center rounded-xl p-2", vocabIconBackdropClass(surface))}>
         <MentrixaVocabIcon name={name} size={iconSize} surface={surface} title={meta.label} />
       </span>
       {value != null ? (
@@ -263,6 +459,7 @@ export function StreakCountDisplay({
   className,
   referenceDate,
   showLabel = false,
+  accent = "violet",
   surface = "dark",
 }: {
   days: number;
@@ -271,6 +468,7 @@ export function StreakCountDisplay({
   className?: string;
   referenceDate?: Date;
   showLabel?: boolean;
+  accent?: HubAccent;
   surface?: "dark" | "light";
 }) {
   const daySize = Math.max(14, Math.round(size * 0.72));
@@ -285,12 +483,21 @@ export function StreakCountDisplay({
       title={`${days} day streak · ${dayName}`}
     >
       <span className="inline-flex items-center gap-1.5">
-        <MentrixaVocabIcon name="streak" size={size} surface={surface} title="Streak" />
-        <span className="font-mono text-sm font-bold tabular-nums leading-none">{days}</span>
+        <span
+          className="inline-flex shrink-0 items-center justify-center"
+          style={{ width: size, height: size, filter: STREAK_FLAME_FILTER }}
+        >
+          <MentrixaVocabIcon name="streak" size={size} surface="light" title="Streak" />
+        </span>
+        <span className={cn("font-mono text-sm font-bold tabular-nums leading-none", hubAccentValueClass(accent, surface))}>
+          {days}
+        </span>
         <MentrixaVocabIcon name={dayIcon} size={daySize} surface={surface} title={dayName} />
       </span>
       {showLabel ? (
-        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/75">Streak</span>
+        <span className={cn("text-[10px] font-bold uppercase tracking-[0.12em]", hubAccentLabelClass(accent, surface))}>
+          Streak
+        </span>
       ) : null}
     </span>
   );
@@ -299,45 +506,99 @@ export function StreakCountDisplay({
 export function XpCountDisplay({
   xp,
   size = 28,
-  showLabel = false,
+  label = "Your XP",
+  showLabel = true,
+  accent,
   className,
+  surface = "dark",
 }: {
   xp: number;
   size?: number;
+  label?: string;
   showLabel?: boolean;
+  accent?: HubAccent;
   className?: string;
+  surface?: "dark" | "light";
 }) {
+  const caption = vocabTwoWordLabel(label);
+
   return (
-    <span className={cn("inline-flex flex-col items-center gap-1", className)} title={`${xp.toLocaleString()} XP`}>
-      <span className="inline-flex items-center gap-1.5">
-        <XpIcon size={size} title="XP" />
-        <span className="font-mono text-sm font-bold tabular-nums leading-none text-white">
-          {xp.toLocaleString()}
-        </span>
+    <span
+      className={cn("inline-flex min-w-[4.25rem] flex-col items-center gap-1 text-center", className)}
+      title={`${xp.toLocaleString()} ${caption}`}
+    >
+      <XpIcon size={size} title={caption} surface={surface} />
+      <span
+        className={cn(
+          "font-mono text-base font-black tabular-nums leading-none sm:text-lg",
+          hubAccentValueClass(accent, surface),
+        )}
+      >
+        {xp.toLocaleString()}
       </span>
       {showLabel ? (
-        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/75">XP</span>
+        <span
+          className={cn(
+            "text-[9px] font-bold uppercase tracking-[0.1em]",
+            hubAccentLabelClass(accent, surface),
+          )}
+        >
+          {caption}
+        </span>
       ) : null}
     </span>
   );
 }
 
-export function XpIcon({ size = 24, title = "XP", className }: { size?: number; title?: string; className?: string }) {
+export function XpIcon({
+  size = 24,
+  title = "XP",
+  className,
+  surface = "dark",
+}: {
+  size?: number;
+  title?: string;
+  className?: string;
+  surface?: "dark" | "light";
+}) {
+  const raster = isRasterVocabSrc(XP_ICON_SRC);
+  const filter = raster ? undefined : svgFilter(surface, false);
+
   return (
     <span
-      className={cn("relative inline-flex shrink-0 items-center justify-center", className)}
+      className={cn(
+        "relative inline-flex shrink-0 items-center justify-center",
+        xpIconChipClass(surface, raster),
+        className,
+      )}
       style={{ width: size, height: size }}
       title={title}
+      aria-label={title}
+      role="img"
     >
-      <Image
-        src={XP_ICON_SRC}
-        alt={title}
-        width={size}
-        height={size}
-        className="h-full w-full object-contain"
-        unoptimized
-        draggable={false}
-      />
+      {raster ? (
+        <Image
+          src={XP_ICON_SRC}
+          alt={title}
+          title={title}
+          width={size}
+          height={size}
+          className="h-full w-full object-contain"
+          unoptimized
+          draggable={false}
+        />
+      ) : (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={XP_ICON_SRC}
+          alt={title}
+          width={size}
+          height={size}
+          className="block h-full w-full object-contain"
+          style={filter ? { filter } : undefined}
+          draggable={false}
+        />
+      )}
     </span>
   );
 }

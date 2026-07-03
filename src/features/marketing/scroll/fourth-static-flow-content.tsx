@@ -1,36 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { cn } from "@/shared/core/utils";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { useSectionScrollProgress } from "@/features/marketing/landing-perf";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import {
+  CANONICAL_BOOKING_ICON,
+  CANONICAL_BRIEF_ICON,
+  CANONICAL_LEAGUE_ICON,
+  CANONICAL_SESSION_ICON,
+} from "@/shared/icons/vocab-canonical";
 
-const FLOW_STEPS = [
+const FLOW_STEPS: Array<{
+  number: string;
+  vocabIcon: VocabIconName;
+  title: string;
+  line: string;
+  hoverColor: string;
+}> = [
   {
     number: "01",
-    icon: "/images/book.webp",
+    vocabIcon: CANONICAL_BOOKING_ICON,
     title: "Book",
     line: " Search your course. Pick a verified Guide. Choose a slot. Pay.",
     hoverColor: "hover:bg-indigo-500/20",
   },
   {
     number: "02",
-    icon: "/images/live.webp",
+    vocabIcon: CANONICAL_SESSION_ICON,
     title: "Meet",
     line: " Show up live. Screen share your problem. Your Guide works through it with you in real time. Not a lecture. A solution.",
     hoverColor: "hover:bg-violet-500/20",
   },
   {
     number: "03",
-    icon: "/images/package.webp",
+    vocabIcon: CANONICAL_BRIEF_ICON,
     title: "Unpack",
     line: " 1 second after you hang up, Quest drops your custom study pack.",
     hoverColor: "hover:bg-purple-500/20",
   },
   {
     number: "04",
-    icon: "/images/xp.webp",
+    vocabIcon: CANONICAL_LEAGUE_ICON,
     title: "Climb",
     line: " You drill with Quest, compete in duels, climb your division. Progress compounds. You are not the same student you were before the first session.",
     hoverColor: "hover:bg-indigo-500/20",
@@ -89,15 +102,11 @@ export function FourthStaticFlowContent() {
                   "max-lg:border-slate-200 max-lg:bg-white max-lg:shadow-md max-lg:ring-1 max-lg:ring-black/10",
                 )}
               >
-                <Image
-                  src={step.icon}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className={cn(
-                    "object-contain brightness-0 invert",
-                    "max-lg:brightness-100 max-lg:invert-0 max-lg:drop-shadow-sm",
-                  )}
+                <MentrixaVocabIcon
+                  name={step.vocabIcon}
+                  size={20}
+                  surface="dark"
+                  title={step.title}
                 />
               </div>
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-300">{step.number}</p>

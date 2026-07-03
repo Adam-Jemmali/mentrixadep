@@ -11,6 +11,18 @@ function readLatexCommand(text: string, start: number): string | null {
     if (!group) break;
     end = group.end;
   }
+  while (end < text.length && (text[end] === "_" || text[end] === "^")) {
+    end += 1;
+    if (text[end] === "{") {
+      const group = readBracedGroup(text, end);
+      if (!group) break;
+      end = group.end;
+    } else if (text[end] != null) {
+      end += 1;
+    } else {
+      break;
+    }
+  }
   return text.slice(start, end);
 }
 
@@ -38,6 +50,22 @@ function findMathDelimiterEnd(text: string, start: number, display: boolean): nu
   return start + 1;
 }
 
+/** Wrap full \\begin{...}...\\end{...} blocks for KaTeX display math. */
+function wrapLatexEnvironmentBlocks(text: string): string {
+  return text.replace(
+    /\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\1\}/g,
+    (full) => (full.startsWith("$$") ? full : `$$${full}$$`),
+  );
+}
+
+/** Wrap definite-integral expressions that omit $ delimiters. */
+function wrapIntegralSpans(text: string): string {
+  return text.replace(
+    /\\int(?:_\{[^}]+\})?(?:\^\{[^}]+\})?[\s\S]*?\\,?\s*dx/g,
+    (full) => (full.startsWith("$") ? full : `$${full.trim()}$`),
+  );
+}
+
 /**
  * Normalize mixed plain + LaTeX strings for KaTeX:
  * - unescape \$ → $
@@ -47,7 +75,8 @@ function findMathDelimiterEnd(text: string, start: number, display: boolean): nu
 export function normalizeMathText(input: string): string {
   let text = input.replace(/\\\$/g, "$");
   text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, inner: string) => `$${inner.trim()}$`);
-
+  text = wrapLatexEnvironmentBlocks(text);
+  text = wrapIntegralSpans(text);
   let out = "";
   let i = 0;
   while (i < text.length) {

@@ -19,7 +19,7 @@ import {
 import { emitXpAward } from "@/features/xp/xp-events";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
-import { mentrixStudent, mentrixProfileType, mentrixBrandUi } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
 import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
@@ -48,7 +48,7 @@ import {
   VerifiedFirstAttemptDisclosure,
 } from "@/shared/ui/disclosure-patterns";
 import { QuestPracticeToolsDrawer } from "@/features/quest/ui/quest-practice-tools-drawer";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, VocabSectionHeading, VOCAB_HEADING_ICON_SIZE } from "@/shared/icons/mentrixa-vocab-icons";
 
 const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
   { value: "beginner", label: "Beginner" },
@@ -395,7 +395,7 @@ export function QuestPracticeWorkspace({
       <div className="relative mx-auto max-w-xl px-4 py-10">
         {busy ? (
           <div
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-[#0B1220]/92 px-8 backdrop-blur-sm"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-[#FAFAF8]/92 px-8 backdrop-blur-sm"
             aria-busy="true"
             aria-live="polite"
           >
@@ -407,23 +407,27 @@ export function QuestPracticeWorkspace({
             <BackButton />
           </div>
         ) : null}
-        <div className={`${mentrixStudent.card} p-6 sm:p-8`}>
-        <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-1.5`}>
-          <MentrixaVocabIcon name="quest" size={14} className="text-violet-300" />
-          {onboardingMode ? "First quest" : "Practice packs"}
-        </p>
-        <h1 className={`mt-2 inline-flex flex-wrap items-center gap-2 ${mentrixProfileType.cardTitleOnDark}`}>
-          {onboardingMode ? (
-            <>
-              <MentrixaVocabIcon name="verified" size={18} gold className="text-amber-300" />
-              Your first verified skills
-            </>
-          ) : (
-            <>
-              <MentrixaVocabIcon name="verified" size={18} gold className="text-amber-300" />
-              Verified practice pack
-            </>
-          )}
+        <div className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}>
+        {!onboardingMode ? (
+          <VocabSectionHeading
+            name="quest"
+            label="Practice packs"
+            surface="light"
+            labelClassName="mx-hub-type-ui text-[#6366F1]"
+            className="block w-full"
+          />
+        ) : (
+          <VocabSectionHeading
+            name="quest"
+            label="First quest"
+            surface="light"
+            labelClassName="mx-hub-type-ui text-[#6366F1]"
+            className="block w-full"
+          />
+        )}
+        <h1 className={`flex items-center gap-4 ${mentrixStudent.cardTitle}`}>
+          <MentrixaVocabIcon name="verified" size={VOCAB_HEADING_ICON_SIZE} gold surface="light" title="Verified" />
+          <span>{onboardingMode ? "Your first verified skills" : "Verified practice pack"}</span>
         </h1>
         <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
           {onboardingMode
@@ -433,7 +437,7 @@ export function QuestPracticeWorkspace({
 
         {!onboardingMode ? (
           <div className="mt-4">
-            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} tone="dark" />
+            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} tone="light" />
           </div>
         ) : null}
 
@@ -446,7 +450,7 @@ export function QuestPracticeWorkspace({
         <div className="mt-8 space-y-6">
           <div>
             <label className={`text-xs font-medium ${mentrixStudent.textMutedOnDark}`}>Subject</label>
-            <p className={`mt-2 rounded-xl border border-violet-500/35 bg-indigo-950/55 px-4 py-3 text-sm font-semibold text-violet-50`}>
+            <p className={`mt-2 rounded-xl border border-[#A5B4FC] bg-white px-4 py-3 text-sm font-semibold text-[#0B1220]`}>
               {AP_CALC_AB_SUBJECT}
             </p>
           </div>
@@ -461,7 +465,7 @@ export function QuestPracticeWorkspace({
                     type="button"
                     onClick={() => setDifficulty(d.value)}
                     className={
-                      difficulty === d.value ? mentrixBrandUi.chipActive : mentrixBrandUi.chipIdle
+                      difficulty === d.value ? mentrixStudent.chipActive : mentrixStudent.chipIdle
                     }
                   >
                     {d.label}
@@ -475,7 +479,7 @@ export function QuestPracticeWorkspace({
             isPracticeLockedAttemptError(err) ? (
               <PracticeLockedAttemptAlert />
             ) : (
-              <p className="text-sm font-medium text-red-300">{err}</p>
+              <p className="text-sm font-medium text-red-600">{err}</p>
             )
           ) : null}
 
@@ -620,9 +624,9 @@ export function QuestPracticeWorkspace({
             )}
 
             {question.kind === "mcq" ? (
-              <PromptWithMath text={question.prompt} variant="dark" />
+              <PromptWithMath text={question.prompt} variant="light" />
             ) : question.kind === "problem_solving" ? (
-              <PromptWithMath text={question.prompt} variant="dark" />
+              <PromptWithMath text={question.prompt} variant="light" />
             ) : (
               <p className={`${mentrixStudent.textOnLight} whitespace-pre-wrap text-sm leading-relaxed`}>
                 {question.prompt}
@@ -634,17 +638,17 @@ export function QuestPracticeWorkspace({
                 {question.options.map((opt, i) => {
                   const base =
                     "rounded-xl border p-4 text-left text-sm transition-all";
-                  let cls = `${base} border-violet-500/35 bg-indigo-950/50 text-violet-50 hover:border-violet-400/50`;
+                  let cls = `${base} border-[#A5B4FC] bg-white text-[#0B1220] hover:border-[#6366F1] hover:bg-[#EDE9FE]`;
                   if (mcqResult) {
                     if (i === mcqResult.correctIndex) {
-                      cls = `${base} border-emerald-400/70 bg-emerald-950/55 text-emerald-100 ring-1 ring-emerald-400/35`;
+                      cls = `${base} border-emerald-400 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-400/35`;
                     } else if (i === mcqPicked && !mcqResult.correct) {
-                      cls = `${base} border-red-400/70 bg-red-950/55 text-red-100 ring-1 ring-red-400/35`;
+                      cls = `${base} border-red-400 bg-red-50 text-red-900 ring-1 ring-red-400/35`;
                     } else {
-                      cls = `${base} border-indigo-500/25 bg-indigo-950/35 text-violet-200/70 opacity-80`;
+                      cls = `${base} border-[#C4B5FD] bg-[#F8FAFC] text-[#64748B] opacity-80`;
                     }
                   } else if (mcqPicked === i) {
-                    cls = `${base} border-violet-400/70 bg-violet-950/65 text-white ring-2 ring-violet-400/60`;
+                    cls = `${base} border-[#6366F1] bg-[#EDE9FE] text-[#0B1220] ring-2 ring-[#6366F1]/40`;
                   }
                   return (
                     <motion.button
@@ -655,7 +659,7 @@ export function QuestPracticeWorkspace({
                       whileTap={{ scale: 0.98 }}
                       className={`${cls} [&_.katex]:text-inherit`}
                     >
-                      <PromptWithMath text={opt} variant="dark" />
+                      <PromptWithMath text={opt} variant="light" />
                     </motion.button>
                   );
                 })}
@@ -665,7 +669,7 @@ export function QuestPracticeWorkspace({
             {question.kind !== "mcq" && (
               <div className="space-y-3">
                 <textarea
-                  className={`w-full min-h-[120px] rounded-lg border border-violet-500/35 bg-[#0B1220]/70 p-3 text-sm text-violet-50 placeholder:text-violet-300/45`}
+                  className={`${mentrixStudent.hubFieldInput} min-h-[120px]`}
                   placeholder="Your answer…"
                   value={written}
                   onChange={(e) => setWritten(e.target.value)}
@@ -696,7 +700,7 @@ export function QuestPracticeWorkspace({
                 explanation={mcqResult.explanation}
                 onContinue={mcqResult.canContinue && !busy ? () => void mcqNext() : undefined}
                 busy={busy}
-                className="mx-panel-brand"
+                className="mx-hub-notebook mx-hub-ruled-lines mx-hub-paper mx-surface-light"
               />
             )}
           </motion.div>

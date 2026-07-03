@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 import { momentumPerkVocabIcon } from "@/features/pricing/momentum-perk-icon-pure";
 import { cn } from "@/shared/core/utils";
 import {
   buildPricingTiers,
-  PRICING_SECTION_VERDICT,
   subscriptionPriceLabel,
   type SubscriptionBillingInterval,
 } from "@/features/pricing/pricing-tiers-pure";
@@ -17,18 +17,14 @@ import {
   formatMomentumRenewalLabel,
   MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE,
   MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE,
-  MOMENTUM_MEMBERSHIP_VERDICT,
-  momentumSubscriberSessionPriceLabel,
-  momentumVsBreakthroughValueLine,
 } from "@/features/payments/momentum-membership-pure";
-import { formatStudentBreakthroughPrice } from "@/features/booking/booking-pricing";
 import { buildMomentumRoiSummary } from "@/features/pricing/momentum-roi-pure";
-import { trajectoryIndexSocialProofLine } from "@/features/trajectory-index/trajectory-index-pure";
 import type { PackSprintState } from "@/features/entitlements/pack-sprint-pure";
 import { buildSessionCreditsHubVerdict } from "@/features/entitlements/session-credits-display-pure";
 import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
 import { MomentumSubscriptionDisclosure, MomentumLoopSlaDisclosure } from "@/shared/ui/disclosure-patterns";
 import { MentrixaBillingIntervalRadioGroup } from "@/shared/ui/radio-group-patterns";
+import { PricingTierIcon, PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
 
 type MomentumMembershipPanelProps = {
   subscription: StudentSubscriptionRow | null;
@@ -74,104 +70,67 @@ export function MomentumMembershipPanel({
         })
       : null;
 
+  const shellClass = isSubscribe
+    ? `${mentrixBrandUi.panel} rounded-[2rem] p-6 sm:p-8`
+    : "rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/40 p-6 shadow-[0_24px_48px_-24px_rgba(79,70,229,0.25)] sm:p-8";
+
   return (
-    <section
-      className={cn(
-        "rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/40 p-6 shadow-[0_24px_48px_-24px_rgba(79,70,229,0.25)] sm:p-8",
-        className,
+    <section className={cn(shellClass, className)} aria-label="Momentum membership">
+      {isSubscribe ? (
+        <>
+          <PricingTierVisualGrid highlight="momentum" iconSize={88} compact className="mb-8" />
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-indigo-500/25 pb-6">
+            <div className="min-w-0">
+              <SubscriptionTierChip tier="momentum" active={active} />
+              <h2 className="mt-3 text-2xl font-black italic tracking-tight text-white">
+                {momentumTier?.name ?? "Momentum"}
+              </h2>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-violet-50">
+                {subscriptionPriceLabel(interval)}
+              </p>
+            </div>
+            <PricingTierIcon tier="momentum" size={64} />
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">
+              Only subscription
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <SubscriptionTierChip tier="momentum" active={active} />
+              {momentumTier?.popularBadge ? (
+                <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
+                  {momentumTier.popularBadge}
+                </span>
+              ) : null}
+            </div>
+            <h2 className="mt-3 text-2xl font-black italic tracking-tight text-indigo-950">
+              {momentumTier?.name ?? "Momentum"}
+            </h2>
+            <p className="mt-1 text-sm font-medium text-slate-600">{momentumTier?.tagline}</p>
+          </div>
+          <PricingTierIcon tier="momentum" size={32} />
+        </div>
       )}
-      aria-label="Momentum membership"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">
-            Only subscription
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <SubscriptionTierChip tier="momentum" active={active} />
-            {momentumTier?.popularBadge ? (
-              <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
-                {momentumTier.popularBadge}
-              </span>
-            ) : null}
-          </div>
-          <h2 className="mt-3 text-2xl font-black italic tracking-tight text-indigo-950">
-            {momentumTier?.name ?? "Momentum"}
-          </h2>
-          <p className="mt-1 text-sm font-medium text-slate-600">{momentumTier?.tagline}</p>
-        </div>
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-white shadow-sm">
-          <MentrixaVocabIcon name="momentum" size={28} className="text-indigo-600" title="Momentum" />
-        </div>
-      </div>
-
-      <p className="mt-4 text-sm font-medium leading-relaxed text-slate-700">{MOMENTUM_MEMBERSHIP_VERDICT}</p>
-      <p className="mt-2 text-sm italic text-slate-500">{PRICING_SECTION_VERDICT}</p>
-
-      <div className="mt-4 rounded-2xl border border-indigo-100 bg-white/80 p-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Compare</p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-            <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
-              <MentrixaVocabIcon name="arena" size={12} title="Arena" />
-              Arena
-            </p>
-            <p className="mt-1 text-lg font-black text-slate-900">$0</p>
-            <p className="mt-1 text-xs text-slate-500">Rank and grid free forever.</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-            <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
-              <MentrixaVocabIcon name="breakthrough" size={12} title="Breakthrough" />
-              Breakthrough
-            </p>
-            <p className="mt-1 text-lg font-black text-slate-900">{formatStudentBreakthroughPrice()}</p>
-            <p className="mt-1 text-xs text-slate-500">One time per Guide session.</p>
-          </div>
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
-            <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600">
-              <MentrixaVocabIcon name="momentum" size={12} title="Momentum" />
-              Momentum
-            </p>
-            <p className="mt-1 text-lg font-black text-indigo-950">
-              {subscriptionPriceLabel(interval)}
-            </p>
-            <p className="mt-1 text-xs text-indigo-800/80">
-              Plus {momentumSubscriberSessionPriceLabel()} member rate.
-            </p>
-          </div>
-        </div>
-        <p className="mt-3 text-xs leading-relaxed text-slate-600">{momentumVsBreakthroughValueLine()}</p>
-        {!active ? (
-          <p className="mt-3 text-xs leading-relaxed text-indigo-800/90">
-            {trajectoryIndexSocialProofLine(50)}
-          </p>
-        ) : null}
-      </div>
 
       {roi && isSubscribe ? (
-        <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-violet-700">
-            Twelve session value
-          </p>
-          <div className="mt-3 grid gap-2 text-sm text-slate-800 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-slate-500">12 Breakthrough sessions</p>
-              <p className="font-bold tabular-nums">{roi.breakthroughTwelveTotal}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Momentum ({interval})</p>
-              <p className="font-bold tabular-nums text-indigo-950">{roi.momentumTwelveTotal}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">You keep</p>
-              <p className="font-bold tabular-nums text-indigo-950">{roi.savings}</p>
-            </div>
+        <div className="mt-5 grid gap-2 rounded-2xl border border-violet-500/30 bg-violet-950/40 p-4 sm:grid-cols-3">
+          <div className="flex flex-col items-center text-center">
+            <PricingTierIcon tier="breakthrough" size={40} />
+            <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-violet-300/80">Breakthrough</p>
+            <p className="mt-1 font-bold tabular-nums text-white">{roi.breakthroughTwelveTotal}</p>
           </div>
-          <p className="mt-2 text-xs text-slate-600">
-            Effective included session cost: {roi.effectivePerSession} per year.
-          </p>
-          <p className="mt-3 text-sm font-semibold text-slate-900">{roi.verdict}</p>
-          <p className="mt-1 text-sm text-slate-600">{roi.nextAction}</p>
+          <div className="flex flex-col items-center text-center">
+            <PricingTierIcon tier="momentum" size={40} />
+            <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-violet-300/80">Momentum</p>
+            <p className="mt-1 font-bold tabular-nums text-violet-50">{roi.momentumTwelveTotal}</p>
+          </div>
+          <div className="flex flex-col items-center text-center">
+            <p className="text-[10px] font-black uppercase tracking-widest text-violet-300/80">You keep</p>
+            <p className="mt-1 font-bold tabular-nums text-violet-50">{roi.savings}</p>
+          </div>
         </div>
       ) : null}
 
@@ -181,7 +140,21 @@ export function MomentumMembershipPanel({
         </div>
       ) : null}
 
-      {momentumTier ? (
+      {momentumTier && isSubscribe ? (
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+          {momentumTier.receipts.slice(0, 8).map((receipt) => (
+            <li key={receipt} className="flex items-center gap-2.5 text-xs text-violet-100/90">
+              <MentrixaVocabIcon
+                name={momentumPerkVocabIcon(receipt)}
+                size={20}
+                surface="dark"
+                title={receipt}
+              />
+              <span className="line-clamp-2">{receipt}</span>
+            </li>
+          ))}
+        </ul>
+      ) : momentumTier ? (
         <ul className="mt-5 space-y-2.5">
           <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">What you get</p>
           {momentumTier.receipts.map((receipt) => (
@@ -204,21 +177,21 @@ export function MomentumMembershipPanel({
       </div>
 
       {active && renewal ? (
-        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <p className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-100">
           {renewal}
         </p>
       ) : null}
 
       {active && creditsCopy ? (
         <div className="mt-4 space-y-2">
-          <p className="rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm font-medium text-indigo-950">
+          <p className="rounded-xl border border-indigo-500/30 bg-indigo-950/50 px-4 py-3 text-sm font-medium text-violet-50">
             {creditsCopy.verdict}
           </p>
-          <p className="text-sm text-indigo-900">{creditsCopy.nextAction}</p>
+          <p className="text-sm text-violet-200/90">{creditsCopy.nextAction}</p>
         </div>
       ) : null}
 
-      <p className="mt-4 text-sm font-semibold text-indigo-900">
+      <p className={cn("mt-4 text-sm font-semibold", isSubscribe ? "text-violet-100" : "text-indigo-900")}>
         {active ? MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE : MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE}
       </p>
 

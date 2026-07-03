@@ -11,6 +11,14 @@ import {
   viewportOnce,
 } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  CANONICAL_BREAKTHROUGH_ICON,
+  CANONICAL_DUELS_ICON,
+  CANONICAL_LEAGUE_ICON,
+  CANONICAL_QUEST_ICON,
+  CANONICAL_RANK_PROOF_ICON,
+  CANONICAL_SESSION_ICON,
+} from "@/shared/icons/vocab-canonical";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 type Feature = {
@@ -27,14 +35,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Skill Duels",
       image: "/images/features/live-duels.webp",
-      vocabIcon: "bento-skill-duels",
+      vocabIcon: CANONICAL_DUELS_ICON,
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
       title: "Division Leaderboard",
       image: "/images/features/duel-arena.webp",
-      vocabIcon: "bento-division-leaderboard",
+      vocabIcon: CANONICAL_LEAGUE_ICON,
       rotation: 2,
       accent: "from-indigo-500/50",
     },
@@ -43,14 +51,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Quest Practice",
       image: "/images/features/problem-solver.webp",
-      vocabIcon: "bento-quest-practice",
+      vocabIcon: CANONICAL_QUEST_ICON,
       rotation: 1,
       accent: "from-purple-500/50",
     },
     {
       title: "Rank Card",
       image: "/images/features/learning-path.webp",
-      vocabIcon: "bento-rank-card",
+      vocabIcon: CANONICAL_RANK_PROOF_ICON,
       rotation: -1,
       accent: "from-blue-500/50",
     },
@@ -66,7 +74,7 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Division Wars",
       image: "/images/features/clan-wars.webp",
-      vocabIcon: "division-war",
+      vocabIcon: CANONICAL_DUELS_ICON,
       rotation: 2,
       accent: "from-indigo-500/50",
     },
@@ -75,14 +83,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Session Room",
       image: "/images/features/session-room.webp",
-      vocabIcon: "bento-session-room",
+      vocabIcon: CANONICAL_SESSION_ICON,
       rotation: 1,
       accent: "from-purple-500/50",
     },
     {
       title: "Quest Pack",
       image: "/images/features/study-package.webp",
-      vocabIcon: "study-package",
+      vocabIcon: CANONICAL_QUEST_ICON,
       rotation: -1,
       accent: "from-blue-500/50",
     },
@@ -91,14 +99,14 @@ const FEATURE_ROWS: Feature[][] = [
     {
       title: "Guide Studio",
       image: "/images/features/studio-output.webp",
-      vocabIcon: "bento-guide-studio",
+      vocabIcon: CANONICAL_SESSION_ICON,
       rotation: -2,
       accent: "from-violet-500/50",
     },
     {
       title: "Breakthrough Events",
       image: "/images/features/guide-knowledge.webp",
-      vocabIcon: "bento-breakthrough-events",
+      vocabIcon: CANONICAL_BREAKTHROUGH_ICON,
       rotation: 2,
       accent: "from-indigo-500/50",
     },

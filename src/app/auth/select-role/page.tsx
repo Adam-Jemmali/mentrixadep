@@ -8,19 +8,27 @@ import { motion } from "framer-motion";
 import { BackButton } from "@/shared/ui/back-button";
 import { getRoleHomePath } from "@/shared/core/role-home";
 import type { UserRole } from "@/shared/types/database";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import {
+  CANONICAL_BRIEF_ICON,
+  CANONICAL_BOOKING_ICON,
+  CANONICAL_LEAGUE_ICON,
+  CANONICAL_SESSION_ICON,
+} from "@/shared/icons/vocab-canonical";
 
 type Role = "student" | "tutor";
 
-const learnerBenefits = [
-  { icon: "/images/live.webp", text: "Match with expert Guides in your Division" },
-  { icon: "/images/xp.webp", text: "Earn XP, quests, and climb the leaderboard" },
-  { icon: "/images/book.webp", text: "Session Studio output after each call" },
+const learnerBenefits: Array<{ icon: VocabIconName; text: string }> = [
+  { icon: CANONICAL_LEAGUE_ICON, text: "Match with expert Guides in your Division" },
+  { icon: "xp", text: "Earn XP, quests, and climb the leaderboard" },
+  { icon: CANONICAL_BRIEF_ICON, text: "Session Studio output after each call" },
 ];
 
-const guideBenefits = [
-  { icon: "/images/xp.webp", text: "Set your own rates and availability" },
-  { icon: "/icons/guide.svg", text: "Build your reputation with verified courses" },
-  { icon: "/images/live.webp", text: "Get paid for sessions you approve" },
+const guideBenefits: Array<{ icon: VocabIconName; text: string }> = [
+  { icon: CANONICAL_BOOKING_ICON, text: "Set your own rates and availability" },
+  { icon: CANONICAL_SESSION_ICON, text: "Build your reputation with verified courses" },
+  { icon: CANONICAL_SESSION_ICON, text: "Get paid for sessions you approve" },
 ];
 
 export default function SelectRolePage() {
@@ -105,10 +113,10 @@ export default function SelectRolePage() {
             output—without the homework grind alone.
           </p>
           <ul className="relative space-y-4 mb-10 flex-1">
-            {learnerBenefits.map(({ icon: iconPath, text }) => (
+            {learnerBenefits.map(({ icon, text }) => (
               <li key={text} className="flex items-start gap-3 text-sm text-slate-700">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-blue-100 shadow-sm overflow-hidden">
-                  <Image src={iconPath} alt="" width={16} height={16} />
+                  <MentrixaVocabIcon name={icon} size={16} surface="light" title={text} />
                 </span>
                 <span>{text}</span>
               </li>
@@ -133,7 +141,7 @@ export default function SelectRolePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-violet-600/0 group-hover:from-violet-500/[0.07] group-hover:to-transparent transition-all pointer-events-none" />
           <div className="relative flex items-center gap-3 mb-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-600/25 overflow-hidden">
-              <Image src="/icons/guide.svg" alt="Guide" width={32} height={32} />
+              <MentrixaVocabIcon name={CANONICAL_SESSION_ICON} size={32} surface="dark" title="Guide" />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700/80">
@@ -149,10 +157,10 @@ export default function SelectRolePage() {
             handles scheduling and payouts flow alongside your expertise.
           </p>
           <ul className="relative space-y-4 mb-10 flex-1">
-            {guideBenefits.map(({ icon: iconPath, text }) => (
+            {guideBenefits.map(({ icon, text }) => (
               <li key={text} className="flex items-start gap-3 text-sm text-slate-700">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-violet-100 shadow-sm overflow-hidden">
-                  <Image src={iconPath} alt="" width={16} height={16} />
+                  <MentrixaVocabIcon name={icon} size={16} surface="light" title={text} />
                 </span>
                 <span>{text}</span>
               </li>

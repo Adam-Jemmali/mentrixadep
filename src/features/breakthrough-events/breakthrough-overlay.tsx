@@ -65,7 +65,7 @@ export function BreakthroughCelebrationOverlay({
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border"
             style={{ borderColor: `${MENTRIXER_GOLD}66`, backgroundColor: `${MENTRIXER_GOLD}18` }}
           >
-            <MentrixaVocabIcon name="breakthrough" size={28} gold className="text-amber-400" title="Breakthrough" />
+            <MentrixaVocabIcon name="breakthrough" size={28} surface="light" title="Breakthrough" />
           </div>
 
           {phase === "celebrate" ? (

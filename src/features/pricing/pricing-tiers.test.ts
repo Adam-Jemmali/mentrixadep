@@ -44,6 +44,6 @@ describe("pricing tiers copy", () => {
   });
 
   it("anchors the section headline on three clear tiers", () => {
-    expect(PRICING_SECTION_HEADLINE).toBe("Three ways to use Mentrixa. One thing never changes.");
+    expect(PRICING_SECTION_HEADLINE).toBe("Three tiers. One proof.");
   });
 });

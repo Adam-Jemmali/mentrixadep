@@ -10,6 +10,7 @@ import {
   stripGridMovementFromVerdict,
 } from "@/features/movement-receipt/movement-receipt-pure";
 import { GridMovementVisual } from "@/features/movement-receipt/ui/grid-movement-visual";
+import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 
 export function ReceiptArchiveClient({
   receipts,
@@ -25,7 +26,14 @@ export function ReceiptArchiveClient({
           <Link href="/student" className="text-sm text-violet-300 hover:text-violet-100">
             Back to hub
           </Link>
-          <h1 className="mt-2 text-2xl font-black text-white">Movement Receipt archive</h1>
+          <VocabSectionHeading
+            name="movement-receipt"
+            label="Movement Receipt archive"
+            surface="dark"
+            as="h1"
+            className="mt-2"
+            labelClassName="text-xl font-black normal-case tracking-tight text-white sm:text-2xl"
+          />
           <p className="mt-1 text-sm text-violet-200/85">
             Weekly verified movement: grid flips, retest loops, session credit, and cohort pace.
           </p>
@@ -52,7 +60,7 @@ export function ReceiptArchiveClient({
               );
               return (
                 <li key={receipt.id} className={`${mentrixStudent.card} p-5 sm:p-6`}>
-                  <p className={mentrixStudent.sectionEyebrowOnLight}>Movement receipt</p>
+                  <VocabSectionHeading name="movement-receipt" label="Movement receipt" surface="light" />
                   <p className="mt-1 text-xs text-zinc-500">Week of {receipt.week_start}</p>
                   <div className="mt-3">
                     <GridMovementVisual grid={receipt.receipt_data.grid} surface="light" />

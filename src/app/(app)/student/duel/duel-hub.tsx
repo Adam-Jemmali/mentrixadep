@@ -33,6 +33,7 @@ import {
   arenaDivisionPanelClasses,
 } from "@/features/divisions/arena-division-focus";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { CANONICAL_DUELS_ICON } from "@/shared/icons/vocab-canonical";
 
 interface Props {
   divisions: { key: string; name: string; description: string | null }[];
@@ -515,26 +516,29 @@ export function DuelHub({
       divisionKey;
 
     return (
-      <div className="fixed inset-0 z-[110] flex h-[100dvh] flex-col overflow-hidden bg-[#09162c]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_42%),radial-gradient(circle_at_50%_15%,rgba(148,163,184,0.08),transparent_28%),linear-gradient(180deg,#0c1a33_0%,#09162c_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:118px_118px] bg-repeat opacity-[0.045]" />
+      <div
+        className={cn(
+          "fixed inset-0 z-[110] flex h-[100dvh] flex-col overflow-hidden",
+          mentrixStudent.pageBgArena,
+        )}
+      >
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pt-4 pb-3 sm:pt-6">
+          <div className={cn(mentrixStudent.hubNotebook, "mx-auto w-fit px-5 py-3")}>
+            <ArenaQueueMatchHeadline divisionLabel={queueDivisionLabel} />
+          </div>
 
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pt-4 pb-3 text-white sm:pt-6">
-          <ArenaQueueMatchHeadline divisionLabel={queueDivisionLabel} />
-
-          {/* SEARCHING CONTAINER */}
-          <div className="mx-auto mt-4 flex w-full max-w-6xl flex-1 items-center justify-center gap-3 sm:mt-6 sm:gap-8 lg:gap-12">
-            
-            {/* YOU SIDE */}
+          <div className="mx-auto mt-4 flex w-full max-w-6xl flex-1 items-center justify-center gap-4 sm:mt-6 sm:gap-8 lg:gap-12">
             <motion.div
               initial={{ opacity: 0, x: -50, scale: 0.8 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               transition={{ type: "spring", damping: 15 }}
-              className="flex max-w-[9.5rem] flex-col items-center gap-3 sm:max-w-none sm:gap-4"
+              className={cn(
+                mentrixStudent.hubNotebook,
+                "flex w-full max-w-[11rem] flex-col items-center gap-3 px-4 py-5 sm:max-w-[12.5rem] sm:gap-4 sm:px-5",
+              )}
             >
-              <div className="relative group">
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-500 opacity-20 blur group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-pulse" />
-                <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-slate-900 shadow-[0_0_50px_rgba(99,102,241,0.15)] sm:h-32 sm:w-32 lg:h-36 lg:w-36">
+              <div className="relative">
+                <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-[#6366F1] bg-white shadow-[3px_4px_0_#0B1220] sm:h-32 sm:w-32 lg:h-36 lg:w-36">
                   <motion.div
                     className="relative h-full w-full"
                     animate={{ rotate: 360 }}
@@ -552,48 +556,54 @@ export function DuelHub({
                 <div className="flex justify-center">
                   <RankBadge rank={myAccountRank} size="sm" active showGlow={myAccountRank.key === "mentrixer"} className="sm:!h-14 sm:!w-14" />
                 </div>
-                <p
-                  className="text-[10px] font-bold uppercase tracking-[0.2em]"
-                  style={{ color: myAccountRank.labelOnDark }}
-                >
+                <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]">
                   {normalizeRankTitle(myAccountRank.title)}
                 </p>
-                <p className="text-base font-black uppercase italic tracking-tight text-white drop-shadow-md sm:text-lg">
+                <p className="mx-hub-ink-title text-base uppercase italic sm:text-lg">
                   {currentUser.name}
                 </p>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                <span className="mx-hub-ink-muted text-[10px] font-bold uppercase tracking-widest">
                   Mentrixer
                 </span>
               </div>
             </motion.div>
 
-            {/* COUNTDOWN CENTER */}
             <div className="relative flex flex-col items-center justify-center">
-              <motion.div 
-                animate={{ scale: [1, 1.05, 1] }}
+              <motion.div
+                animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="flex min-w-[150px] flex-col items-center rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-5 text-center shadow-2xl backdrop-blur-xl sm:min-w-[220px] sm:px-8 sm:py-6"
+                className={cn(
+                  mentrixStudent.hubSticky,
+                  "relative flex min-w-[11rem] flex-col items-center px-5 py-6 text-center sm:min-w-[15rem] sm:px-8 sm:py-7",
+                )}
               >
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">
-                  <MentrixaVocabIcon name="arena" size={12} className="text-white" title="Arena" />
-                  Arena Match
+                <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border-2 border-[#6366F1] bg-[#7C3AED] px-3 py-1 shadow-[2px_2px_0_#0B1220]">
+                  <MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={12} surface="dark" title="Duels" />
+                  <span className="mx-hub-type-on-dark text-[9px] font-black uppercase tracking-widest">
+                    Duel match
+                  </span>
                 </div>
-                <p className="mt-2 font-mono text-4xl font-black tabular-nums text-white drop-shadow-lg sm:text-6xl">
+                <p className="mx-hub-timer mt-3 text-4xl tabular-nums sm:text-6xl">
                   {formatCountdown(queueCountdownSec)}
                 </p>
-                <p className="mt-2 text-[10px] font-bold text-slate-400/80 uppercase tracking-[0.2em]">Live Matchmaking</p>
+                <p className="mt-2 mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]">
+                  Live matchmaking
+                </p>
                 <div className="mt-5 flex w-full flex-col items-center gap-2 px-1">
                   <Button
                     type="button"
                     disabled={queueLoading || instantSparringLoading}
                     onClick={() => void playSparringQuestNow()}
-                    className="h-10 w-full max-w-[220px] rounded-xl bg-violet-600 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-violet-900/40 hover:bg-violet-500 disabled:opacity-50"
+                    className={cn(
+                      mentrixStudent.pillPrimary,
+                      "h-10 w-full max-w-[240px] text-[10px] font-black uppercase tracking-[0.14em]",
+                    )}
                   >
                     <Image src="/mentrixalogo/logo.webp" alt="" width={16} height={16} className="mr-2 shrink-0 rounded-sm" />
                     {instantSparringLoading ? "Starting…" : "Play against Mentrixa Quest"}
                   </Button>
                   {queueError ? (
-                    <p className="max-w-[280px] text-center text-[11px] font-medium leading-snug text-amber-200/95">
+                    <p className="max-w-[280px] text-center text-[11px] font-medium leading-snug text-[#B45309]">
                       {queueError}
                     </p>
                   ) : null}
@@ -601,51 +611,56 @@ export function DuelHub({
               </motion.div>
             </div>
 
-            {/* SEARCHING SIDE */}
             <motion.div
               initial={{ opacity: 0, x: 50, scale: 0.8 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               transition={{ type: "spring", damping: 15 }}
-              className="flex max-w-[9.5rem] flex-col items-center gap-3 sm:max-w-none sm:gap-4"
+              className={cn(
+                mentrixStudent.hubSticky,
+                "flex w-full max-w-[11rem] flex-col items-center gap-3 px-4 py-5 sm:max-w-[12.5rem] sm:gap-4 sm:px-5",
+              )}
             >
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-white/5 bg-slate-900/50 shadow-[0_0_30px_rgba(255,255,255,0.03)] backdrop-blur-sm sm:h-32 sm:w-32 lg:h-36 lg:w-36">
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#A5B4FC] bg-[#EDE9FE]/80 shadow-[2px_2px_0_rgba(11,18,32,0.08)] sm:h-32 sm:w-32 lg:h-36 lg:w-36">
                 <motion.div
-                  animate={{ 
+                  animate={{
                     rotate: 360,
-                    scale: [1, 1.1, 1],
+                    scale: [1, 1.08, 1],
                   }}
-                  transition={{ 
+                  transition={{
                     rotate: { duration: 10, ease: "linear", repeat: Infinity },
-                    scale: { duration: 3, ease: "easeInOut", repeat: Infinity }
+                    scale: { duration: 3, ease: "easeInOut", repeat: Infinity },
                   }}
-                  className="relative h-16 w-16 sm:h-24 sm:w-24 opacity-20"
+                  className="relative h-16 w-16 opacity-40 sm:h-24 sm:w-24"
                 >
                   <Image
                     src="/icons/mentrixer.svg"
                     alt="Searching"
                     fill
-                    className="object-contain grayscale invert"
+                    className="object-contain"
                     sizes="96px"
                   />
                 </motion.div>
-                <div className="absolute inset-0 rounded-full border border-white/5 animate-ping" style={{ animationDuration: '3s' }} />
               </div>
               <div className="text-center">
-                 <p className="text-sm font-black uppercase italic tracking-[0.25em] text-slate-500/80 animate-pulse">Searching...</p>
-                 <p className="text-[9px] font-bold text-slate-600 mt-2">GLOBAL ARENA</p>
+                <p className="mx-hub-ink-title text-sm uppercase italic tracking-[0.2em] animate-pulse">
+                  Searching…
+                </p>
+                <p className="mx-hub-ink-muted mt-2 text-[9px] font-bold uppercase tracking-widest">Global arena</p>
               </div>
             </motion.div>
-
           </div>
         </div>
 
-        <div className="relative z-20 shrink-0 border-t border-white/10 bg-[#09162c]/95 px-4 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="relative z-20 shrink-0 border-t border-[#C4B5FD] bg-[#FAFAF8]/95 px-4 py-3 backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             disabled={queueLoading || instantSparringLoading}
-            className="mx-auto flex h-10 w-full max-w-xs items-center justify-center rounded-xl border border-indigo-400/25 bg-indigo-500/10 text-xs font-black uppercase tracking-[0.16em] text-indigo-200 transition-all hover:border-indigo-300/40 hover:bg-indigo-500/20 hover:text-white"
+            className={cn(
+              mentrixStudent.hubGhostLink,
+              "mx-auto flex h-10 w-full max-w-xs items-center justify-center text-xs font-black uppercase tracking-[0.16em]",
+            )}
             onClick={() => void cancelQueue()}
           >
             Cancel search
@@ -683,19 +698,18 @@ export function DuelHub({
 
   if (matchIntro && matchPhase === "merge") {
     return (
-      <div className="fixed inset-0 z-[130] overflow-hidden bg-[#071327]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(59,130,246,0.14),transparent_40%),linear-gradient(180deg,#09172c_0%,#071327_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:118px_118px] bg-repeat opacity-[0.04]" />
-
+      <div className={cn("fixed inset-0 z-[130] overflow-hidden", mentrixStudent.pageBgArena)}>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.25 }}
-          className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-8 text-white"
+          className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-8"
         >
-          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300/80">
-            Locking duel
-          </p>
+          <div className={cn(mentrixStudent.hubNotebook, "px-5 py-3")}>
+            <p className="mx-hub-type-ui text-center text-[11px] font-semibold uppercase tracking-[0.24em]">
+              Locking duel
+            </p>
+          </div>
 
           <div className="relative mt-10 flex h-[320px] w-full max-w-4xl items-center justify-center sm:h-[360px]">
             <motion.div
@@ -703,9 +717,9 @@ export function DuelHub({
               transition={{ duration: 0.7, ease: "easeInOut" }}
               className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
             >
-              <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-slate-700 bg-slate-900 shadow-[0_0_35px_rgba(15,23,42,0.35)] sm:h-32 sm:w-32">
+              <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-2 border-[#6366F1] bg-white shadow-[3px_4px_0_#0B1220] sm:h-32 sm:w-32">
                 {getProfileImage(matchIntro.me) ?? (
-                  <span className="text-sm font-semibold tracking-[0.18em] text-slate-200/80">Mentrixer</span>
+                  <span className="text-sm font-semibold tracking-[0.18em] text-[#64748B]">Mentrixer</span>
                 )}
               </div>
             </motion.div>
@@ -715,9 +729,9 @@ export function DuelHub({
               transition={{ duration: 0.7, ease: "easeInOut" }}
               className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
             >
-              <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-slate-700 bg-slate-900 shadow-[0_0_35px_rgba(15,23,42,0.35)] sm:h-32 sm:w-32">
+              <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-2 border-[#6366F1] bg-white shadow-[3px_4px_0_#0B1220] sm:h-32 sm:w-32">
                 {getProfileImage({ ...matchIntro.opponent, isAi: matchIntro.opponent.isAi }) ?? (
-                  <span className="text-sm font-semibold tracking-[0.18em] text-slate-200/80">Mentrixer</span>
+                  <span className="text-sm font-semibold tracking-[0.18em] text-[#64748B]">Mentrixer</span>
                 )}
               </div>
             </motion.div>
@@ -728,13 +742,20 @@ export function DuelHub({
               transition={{ duration: 0.35, ease: "easeOut", delay: 0.45 }}
               className="absolute flex items-center justify-center"
             >
-              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border border-white/15 bg-white/6 shadow-[0_0_45px_rgba(99,102,241,0.2)] backdrop-blur-md sm:h-40 sm:w-40">
-                <MentrixaLogoLoader size="md" />
+              <div
+                className={cn(
+                  mentrixStudent.hubSticky,
+                  "relative flex min-h-[10.5rem] min-w-[10.5rem] items-center justify-center overflow-visible p-3 sm:min-h-[11.5rem] sm:min-w-[11.5rem]",
+                )}
+              >
+                <MentrixaLogoLoader size="md" className="overflow-visible" />
               </div>
             </motion.div>
           </div>
 
-          <div className="mt-3 text-center text-xs text-slate-300/70">Preparing duel arena…</div>
+          <div className={cn(mentrixStudent.hubSticky, "mt-3 px-4 py-2 text-center")}>
+            <p className="mx-hub-ink-muted text-sm font-semibold">Preparing duel arena…</p>
+          </div>
         </motion.div>
       </div>
     );
@@ -746,7 +767,7 @@ export function DuelHub({
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="p-4 rounded-2xl border border-violet-500/30 bg-indigo-950/45 flex items-center gap-3 text-violet-100 text-xs font-bold uppercase tracking-widest"
+          className="p-4 rounded-2xl border border-[#A5B4FC] bg-[#EDE9FE] flex items-center gap-3 text-[#4F46E5] text-xs font-bold uppercase tracking-widest"
         >
           <Info className="w-4 h-4" />
           {queueError}
@@ -765,15 +786,13 @@ export function DuelHub({
             arenaDivisionFocus.eyebrow,
           )}
         >
-          <MentrixaVocabIcon name="duels" size={14} className="text-cyan-300" title="Duels" />
-          {AP_CALC_AB_DIVISION_NAME} duel arena
+          <MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={50} className="text-[#6366F1]" title="Duels" />
+          {AP_CALC_AB_DIVISION_NAME}
         </p>
-        <p className={cn("mt-1 text-xs", arenaDivisionFocus.hint)}>
-          Verified first-attempt duels run on the only skill tree we ship today.
-        </p>
+      
 
         {!soleDivision ? (
-          <p className="mt-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+          <p className={`mt-5 ${mentrixStudent.hubEmpty} text-sm`}>
             Duel arena is syncing. Refresh in a moment if this persists.
           </p>
         ) : (
@@ -793,44 +812,33 @@ export function DuelHub({
                   )}
                 >
                   <div
-                    className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-cyan-400"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-[#6366F1]"
                     aria-hidden
                   />
 
-                  {isProfileFocus ? (
-                    <div className="absolute right-4 top-4 flex flex-col items-end gap-1">
-                      <span className="inline-flex items-center gap-1 rounded-full border-2 border-amber-200 bg-amber-400 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-slate-950 shadow-md shadow-amber-900/30">
-                        <MentrixaVocabIcon name="focus-ring" size={12} className="text-[#22D3EE]" title="Your focus" />
-                        Your focus
-                      </span>
-                    </div>
-                  ) : null}
+                
 
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-4">
                       <div
-                        className={cn(
-                          "relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-xl font-bold text-white shadow-lg",
-                          t.gradient,
-                        )}
+                        className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 border-[#6366F1] bg-[#7C3AED] text-xl font-bold text-white shadow-[2px_2px_0_#0B1220]"
                       >
                         {t.emoji}
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-lg font-black uppercase italic leading-none tracking-tighter text-slate-900">
+                        <h2 className="truncate text-lg font-black uppercase italic leading-none tracking-tighter text-[#0B1220]">
                           {d.name.replace(/\s+Division$/i, "")}
                         </h2>
                         <div className="mt-1 flex items-center gap-2">
                           <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            <MentrixaVocabIcon name="arena" size={12} className="opacity-80" title="Arena" />
-                            Arena active
+                           
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <p className="mt-4 line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-slate-500">
+                  <p className="mt-4 line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-[#475569]">
                     {d.description || "Timed AP Calculus AB battles against real Mentrixers."}
                   </p>
 
@@ -843,7 +851,7 @@ export function DuelHub({
                       onClick={() => {
                         void findMatch(d.key);
                       }}
-                      className="h-11 w-full rounded-xl bg-cyan-600 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-cyan-900/35 ring-2 ring-cyan-300/80 hover:bg-cyan-500"
+                      className={`h-11 w-full ${mentrixStudent.pillPrimary} text-[10px] font-black uppercase tracking-widest`}
                     >
                       {queueLoading ? "Searching..." : "Start duel"}
                     </Button>
@@ -889,13 +897,13 @@ function ArenaQueueMatchHeadline({ divisionLabel }: { divisionLabel: string }) {
   return (
     <div className="flex flex-col items-center px-4 text-center">
       <p
-        className="max-w-[min(100%,36rem)] font-mono text-[11px] font-black uppercase tracking-[0.28em] text-white sm:text-[13px] sm:tracking-[0.32em]"
+        className="max-w-[min(100%,36rem)] mx-hub-type-ui text-[11px] font-black uppercase tracking-[0.28em] sm:text-[13px] sm:tracking-[0.32em]"
         aria-label={fullText}
       >
         {visible}
         {typing ? (
           <span
-            className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[0.15em] bg-white/75 align-middle animate-pulse"
+            className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[0.15em] bg-[#4338CA]/80 align-middle animate-pulse"
             aria-hidden
           />
         ) : null}

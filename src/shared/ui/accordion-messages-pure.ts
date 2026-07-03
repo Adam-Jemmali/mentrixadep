@@ -107,13 +107,15 @@ export function landingFaqCategories(): MentrixaAccordionFaqCategory[] {
   ];
 }
 
-export function skillTreeUnitTriggerLabel(unitNumber: number, unitName: string): string {
-  return `Unit ${unitNumber}: ${unitName}`;
+import { unitDisplayName } from "@/features/quest/ap-calc-unit-labels-pure";
+
+export function skillTreeUnitTriggerLabel(unitNumber: number, unitName?: string): string {
+  return unitDisplayName(unitNumber, unitName);
 }
 
 export function skillTreeUnitTriggerMeta(nodes: MasteryGridNode[]): string {
   const verified = nodes.filter((n) => n.state === "verified").length;
-  return `${verified}/${nodes.length} verified`;
+  return `${verified}/${nodes.length}`;
 }
 
 export function skillTreeUnitAccordionFooter(unit: MasteryGridUnit): {

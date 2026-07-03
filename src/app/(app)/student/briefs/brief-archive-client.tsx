@@ -4,6 +4,8 @@ import Link from "next/link";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { BriefArchiveRow } from "@/features/pre-session-brief/load-brief-archive";
 
+import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
+
 export function BriefArchiveClient({
   briefs,
   momentumActive,
@@ -18,7 +20,14 @@ export function BriefArchiveClient({
           <Link href="/student" className="text-sm text-violet-300 hover:text-violet-100">
             Back to hub
           </Link>
-          <h1 className="mt-2 text-2xl font-black text-white">Pre-session brief archive</h1>
+          <VocabSectionHeading
+            name="brief"
+            label="Pre-session brief archive"
+            surface="dark"
+            as="h1"
+            className="mt-2"
+            labelClassName="text-xl font-black normal-case tracking-tight text-white sm:text-2xl"
+          />
           <p className="mt-1 text-sm text-violet-200/85">
             Every brief from past Guide sessions: date, Guide, and target nodes.
           </p>
@@ -39,7 +48,7 @@ export function BriefArchiveClient({
           <ul className="space-y-4">
             {briefs.map((brief) => (
               <li key={brief.id} className={`${mentrixStudent.card} p-5 sm:p-6`}>
-                <p className={mentrixStudent.sectionEyebrowOnLight}>Session brief</p>
+                <VocabSectionHeading name="brief" label="Session brief" surface="light" />
                 <p className="mt-1 text-xs text-zinc-500">
                   {new Date(brief.sessionStartTime).toLocaleDateString(undefined, {
                     month: "short",

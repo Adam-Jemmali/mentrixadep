@@ -44,7 +44,7 @@ export function QuestMasteryDonePanel({
     <div className="mx-auto w-full max-w-3xl px-4 py-8 pb-12 sm:px-6 sm:py-10">
       <header className="mb-6">
         <p className={mentrixStudent.sectionEyebrow}>Pack complete</p>
-        <h2 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">
+        <h2 className={`mt-2 ${mentrixStudent.cardTitle} sm:text-2xl`}>
           Your mastery map updated
         </h2>
         <p className={`mt-2 max-w-xl text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
@@ -59,9 +59,9 @@ export function QuestMasteryDonePanel({
         highlightTransition={highlightTransition}
       />
 
-      <div className="mt-5 space-y-4 rounded-2xl border border-white/10 bg-[#0F172A]/90 p-5 sm:p-6">
-        <VerdictPanel verdict={verdict} tone="dark" />
-        <p className="font-mono text-xs tabular-nums text-slate-500">
+      <div className={`mt-5 space-y-4 ${mentrixStudent.card} p-5 sm:p-6`}>
+        <VerdictPanel verdict={verdict} tone="light" />
+        <p className="font-mono text-xs tabular-nums text-[#64748B]">
           {secondaryParts.join(" · ")}
         </p>
       </div>

@@ -16,7 +16,7 @@ import {
 import { OnboardingStepsProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { VerifiedFirstAttemptAlert } from "@/shared/ui/alert-patterns";
 import { VerifiedFirstAttemptDisclosure } from "@/shared/ui/disclosure-patterns";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 
 export function QuestPageClient({
   subjectOptions,
@@ -68,16 +68,12 @@ export function QuestPageClient({
       ) : null}
 
       {!diagnosticMode ? (
-        <div className="mb-8">
-          <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-1.5`}>
-            <MentrixaVocabIcon name="quest" size={14} className="text-violet-300" />
-            {guestMode ? questGuestPageEyebrow() : questPageEyebrow()}
-          </p>
-          <h1 className={`mt-2 ${mentrixStudent.pageTitle}`}>{questPageTitle()}</h1>
-          <p className={`mt-2 max-w-xl ${mentrixStudent.pageSubtitle}`}>
-            {guestMode ? questGuestPageSubtitle() : questPageSubtitle()}
-          </p>
-        </div>
+        <ProductPageHeader
+          icon="quest"
+          eyebrow={guestMode ? questGuestPageEyebrow() : questPageEyebrow()}
+          title={questPageTitle()}
+          subtitle={guestMode ? questGuestPageSubtitle() : questPageSubtitle()}
+        />
       ) : null}
 
       {guestMode ? (

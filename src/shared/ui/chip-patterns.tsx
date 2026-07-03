@@ -9,6 +9,7 @@ import {
   type MentrixaBrandKind,
 } from "@/shared/ui/mentrixa-ui-brand";
 import type { PricingTierId } from "@/features/pricing/pricing-tiers-pure";
+import { PricingTierIcon } from "@/features/pricing/ui/pricing-tier-visual";
 import {
   sessionStatusChipPresentation,
   sessionStatusVocabIcon,
@@ -139,16 +140,14 @@ export function SubscriptionTierChip({
   className?: string;
 }) {
   const presentation = subscriptionTierChipPresentation(tier, { active });
-  const brandKind: MentrixaBrandKind | undefined =
-    tier === "breakthrough" ? "guide" : tier === "momentum" ? "mentrixa" : undefined;
 
   return (
     <MentrixaChip
       visual={presentation.visual}
       tone={tone}
-      brandKind={brandKind}
       className={cn("mentrixa-chip--tier", className)}
     >
+      <PricingTierIcon tier={tier} size={14} title={presentation.label} className="shrink-0" />
       {label ?? presentation.label}
     </MentrixaChip>
   );

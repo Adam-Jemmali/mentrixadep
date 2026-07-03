@@ -4,41 +4,57 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/shared/core/utils";
 import { useSectionScrollProgress } from "@/features/marketing/landing-perf";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import {
+  CANONICAL_BOOKING_ICON,
+  CANONICAL_BRIEF_ICON,
+  CANONICAL_DUELS_ICON,
+  CANONICAL_QUEST_ICON,
+  CANONICAL_SESSION_ICON,
+} from "@/shared/icons/vocab-canonical";
 
-const FEATURE_ITEMS = [
+const FEATURE_ITEMS: Array<{
+  title: string;
+  vocabIcon: VocabIconName;
+  hoverColor: string;
+  body: string;
+  priority?: boolean;
+}> = [
   {
     title: "Live sessions",
-    icon: "/images/live.webp",
+    vocabIcon: CANONICAL_SESSION_ICON,
     hoverColor: "hover:bg-indigo-500/20",
     body: "A real expert on your exact course, live on screen, while the problem is still fresh. Not a chatbot. Not a YouTube video.",
+    priority: true,
   },
   {
     title: "Practice quests",
-    icon: "/images/quest.webp",
+    vocabIcon: CANONICAL_QUEST_ICON,
     hoverColor: "hover:bg-violet-500/20",
     body: "Quest generates practice problems from your actual session. Not generic. Not a textbook chapter.",
   },
   {
     title: "Skill duels",
-    icon: "/images/sword.webp",
+    vocabIcon: CANONICAL_DUELS_ICON,
     hoverColor: "hover:bg-purple-500/20",
     body: "Head-to-head quizzes against other students in your subject. If you can beat them under pressure, you can beat the exam question on paper.",
   },
   {
     title: "Divisions & XP",
-    icon: "/images/xp.webp",
+    vocabIcon: "xp",
     hoverColor: "hover:bg-indigo-500/20",
     body: "Every session, quest, and duel earns XP. You rank in your subject's division. When you can see you're improving, you don't stop.",
   },
   {
     title: "Instant booking",
-    icon: "/images/book.webp",
+    vocabIcon: CANONICAL_BOOKING_ICON,
     hoverColor: "hover:bg-violet-500/20",
     body: "You land a time without the scheduling thread - the real cost was always the messages before the calendar opened.",
   },
   {
     title: "Session packages",
-    icon: "/images/package.webp",
+    vocabIcon: CANONICAL_BRIEF_ICON,
     hoverColor: "hover:bg-purple-500/20",
     body: "You walk away with something you can reopen - the call fades; your summaries, cards, and follow-ups do not.",
   },
@@ -103,16 +119,11 @@ export function ThirdStaticFeaturesContent() {
                         "max-lg:border-slate-200 max-lg:bg-white max-lg:shadow-md max-lg:ring-1 max-lg:ring-black/10",
                       )}
                     >
-                      <Image
-                        src={item.icon}
-                        alt=""
-                        width={20}
-                        height={20}
-                        priority={item.icon === "/images/live.webp"}
-                        className={cn(
-                          "size-5 object-contain brightness-0 invert",
-                          "max-lg:brightness-100 max-lg:invert-0 max-lg:drop-shadow-sm",
-                        )}
+                      <MentrixaVocabIcon
+                        name={item.vocabIcon}
+                        size={20}
+                        surface="dark"
+                        title={item.title}
                       />
                     </div>
                     <h3 className="text-[15px] font-semibold text-white">{item.title}</h3>
@@ -141,16 +152,11 @@ export function ThirdStaticFeaturesContent() {
                         "max-lg:border-slate-200 max-lg:bg-white max-lg:shadow-md max-lg:ring-1 max-lg:ring-black/10",
                       )}
                     >
-                      <Image
-                        src={item.icon}
-                        alt=""
-                        width={20}
-                        height={20}
-                        priority={item.icon === "/images/live.webp"}
-                        className={cn(
-                          "size-5 object-contain brightness-0 invert",
-                          "max-lg:brightness-100 max-lg:invert-0 max-lg:drop-shadow-sm",
-                        )}
+                      <MentrixaVocabIcon
+                        name={item.vocabIcon}
+                        size={20}
+                        surface="dark"
+                        title={item.title}
                       />
                     </div>
                     <h3 className="text-[15px] font-semibold text-white">{item.title}</h3>

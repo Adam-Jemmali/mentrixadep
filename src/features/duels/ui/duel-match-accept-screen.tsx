@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/shared/ui/button";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { MENTRIXA_SOUND_SRC } from "@/shared/integrations/mentrixa-sounds";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   getAccountRankByLevel,
   getAccountRankFromTotalXp,
+  normalizeRankTitle,
   type AccountRankVisual,
 } from "@/features/xp/rank-icons";
 import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
@@ -51,10 +51,6 @@ function resolveParticipantRank(
   );
 }
 
-/** Hides baked-in emblem + “rank up” copy in mentrixa-rank-up.mp4; keeps the gold burst at the edges. */
-const RANK_UP_VIDEO_MASK =
-  "radial-gradient(ellipse 72% 62% at 50% 36%, transparent 0%, transparent 58%, black 88%)";
-
 function AcceptRankHero({
   rank,
   name,
@@ -73,51 +69,56 @@ function AcceptRankHero({
       initial={{ opacity: 0, x: side === "left" ? -48 : 48, scale: 0.85 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       transition={{ type: "spring", damping: 16, stiffness: 200, delay: 0.12 }}
-      className="flex flex-col items-center gap-3"
+      className={cn(
+        mentrixStudent.hubNotebook,
+        "flex w-full max-w-[11rem] flex-col items-center gap-3 px-4 py-5 sm:max-w-[12.5rem] sm:gap-4 sm:px-5",
+      )}
     >
       <div className="relative">
         {ready ? (
           <motion.div
-            className="pointer-events-none absolute -inset-3 rounded-3xl"
-            style={{ boxShadow: `0 0 40px ${rank.colorMuted}` }}
-            animate={{ opacity: [0.5, 1, 0.5] }}
+            className="pointer-events-none absolute -inset-2 rounded-2xl ring-2 ring-[#6366F1]/70"
+            animate={{ opacity: [0.45, 1, 0.45] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             aria-hidden
           />
         ) : null}
-        <RankBadge
-          rank={rank}
-          size="xl"
-          active
-          priority
-          showGlow={rank.key === "mentrixer" || ready}
-          className={cn(
-            "!h-[7.5rem] !w-[7.5rem] sm:!h-[8.5rem] sm:!w-[8.5rem]",
-            "!rounded-2xl !bg-slate-950/95",
-            ready && "ring-2 ring-amber-300/80",
-          )}
-        />
-        {avatarUrl ? (
-          <div className="absolute -bottom-1 -right-1 h-11 w-11 overflow-hidden rounded-full border-2 border-amber-200/70 bg-slate-950 shadow-lg sm:h-12 sm:w-12">
-            <Image
-              src={avatarUrl}
-              alt=""
-              fill
-              unoptimized
-              className="object-cover"
-              sizes="48px"
-            />
-          </div>
-        ) : null}
+        <div className="relative flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28">
+          <RankBadge
+            rank={rank}
+            size="xl"
+            active
+            priority
+            showGlow={rank.key === "mentrixer" || ready}
+            className={cn(
+              "!h-[5.5rem] !w-[5.5rem] sm:!h-[6.5rem] sm:!w-[6.5rem]",
+              "!rounded-2xl !bg-white",
+              ready && "ring-2 ring-[#6366F1]",
+            )}
+          />
+          {avatarUrl ? (
+            <div className="absolute -bottom-1 -right-1 h-10 w-10 overflow-hidden rounded-full border-2 border-[#6366F1] bg-white shadow-[2px_2px_0_#0B1220] sm:h-11 sm:w-11">
+              <Image
+                src={avatarUrl}
+                alt=""
+                fill
+                unoptimized
+                className="object-cover"
+                sizes="44px"
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
-      <div className="max-w-[11rem] text-center">
-        <p className="text-sm font-black uppercase italic tracking-tight text-amber-50">
-          {name}
+      <div className="max-w-[11rem] space-y-1 text-center">
+        <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]">
+          {normalizeRankTitle(rank.title)}
         </p>
+        <p className="mx-hub-ink-title text-sm uppercase italic sm:text-base">{name}</p>
         <p
           className={cn(
-            "mt-1 text-[10px] font-black uppercase tracking-[0.2em]",
-            ready ? "text-amber-300" : "text-amber-100/45",
+            "text-[10px] font-bold uppercase tracking-[0.2em]",
+            ready ? "mx-hub-type-ui" : "mx-hub-ink-muted",
           )}
         >
           {ready ? "Ready" : "Awaiting"}
@@ -139,77 +140,34 @@ export function DuelMatchAcceptScreen({
   onDecline,
   statusLine,
 }: DuelMatchAcceptScreenProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const meRank = resolveParticipantRank(me, false);
   const opponentRank = resolveParticipantRank(opponent, opponent.isAi);
 
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    el.muted = true;
-    el.loop = true;
-    el.playsInline = true;
-    const play = () => {
-      void el.play().catch(() => {
-        /* gesture may unlock later */
-      });
-    };
-    play();
-    return () => {
-      el.pause();
-      el.currentTime = 0;
-    };
-  }, []);
-
   return (
-    <div className="fixed inset-0 z-[120] overflow-hidden bg-[#050810]">
-      <video
-        ref={videoRef}
-        src={MENTRIXA_SOUND_SRC.rankUp}
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.9] saturate-[1.1] contrast-[1.04]"
-        style={{
-          WebkitMaskImage: RANK_UP_VIDEO_MASK,
-          maskImage: RANK_UP_VIDEO_MASK,
-        }}
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden
-      />
-
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_38%,rgba(251,191,36,0.22),transparent_62%),linear-gradient(180deg,rgba(5,8,16,0.2)_0%,rgba(5,8,16,0.88)_70%,rgba(5,8,16,0.96)_100%)]"
-        aria-hidden
-      />
-
-      {/* Covers any remaining celebration / rank-up lettering from the MP4 */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-[30%] z-[5] h-44 w-[min(100%,22rem)] -translate-x-1/2 -translate-y-1/2 rounded-[3rem] bg-[#050810]/92 blur-[2px] sm:h-52 sm:w-[26rem]"
-        aria-hidden
-      />
-
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-10">
+    <div
+      className={cn(
+        "fixed inset-0 z-[120] flex h-[100dvh] flex-col overflow-hidden",
+        mentrixStudent.pageBgArena,
+      )}
+    >
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-6 sm:py-8">
         <motion.div
-          initial={{ opacity: 0, y: -16, scale: 0.85 }}
+          initial={{ opacity: 0, y: -16, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: "spring", damping: 14, stiffness: 200 }}
-          className="mb-4 text-center"
+          className={cn(mentrixStudent.hubNotebook, "mx-auto w-full max-w-lg px-5 py-5 text-center sm:px-6 sm:py-6")}
         >
-          <p className="text-[10px] font-black uppercase tracking-[0.32em] text-amber-200/80">
+          <p className="mx-hub-type-ui text-[10px] font-black uppercase tracking-[0.28em]">
             {divisionLabel}
           </p>
-          <h1 className="mt-3 bg-gradient-to-b from-amber-100 via-yellow-200 to-amber-500 bg-clip-text text-4xl font-black uppercase italic tracking-tight text-transparent drop-shadow-[0_4px_24px_rgba(251,191,36,0.45)] sm:text-5xl">
-            Match Found
-          </h1>
+          <h1 className="mx-hub-ink-title mt-3 text-3xl uppercase italic sm:text-4xl">Match found</h1>
+          <p className="mx-hub-ink-muted mt-3 text-sm font-medium leading-relaxed">
+            Both sides must accept before the duel begins
+            {opponent.isAi ? "" : "."}
+          </p>
         </motion.div>
 
-        <p className="mb-6 max-w-md text-center text-sm font-medium leading-relaxed text-amber-50/85">
-          Both sides must accept before the duel begins
-          {opponent.isAi ? "" : "."}
-        </p>
-
-        {/* Replaces the video’s center logo: each player’s account rank SVG */}
-        <div className="relative flex w-full max-w-3xl items-center justify-center gap-3 sm:gap-6">
+        <div className="mx-auto mt-6 flex w-full max-w-4xl flex-1 flex-wrap items-center justify-center gap-4 sm:mt-8 sm:gap-6 lg:gap-8">
           <AcceptRankHero
             rank={meRank}
             name={me.name}
@@ -218,14 +176,17 @@ export function DuelMatchAcceptScreen({
             avatarUrl={me.avatarUrl}
           />
 
-          <motion.span
+          <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.28 }}
-            className="relative z-10 shrink-0 bg-gradient-to-b from-amber-50 to-amber-400 bg-clip-text px-1 text-3xl font-black italic tracking-tighter text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.45)] sm:text-4xl"
+            className={cn(
+              mentrixStudent.hubSticky,
+              "relative flex h-20 w-20 shrink-0 items-center justify-center sm:h-24 sm:w-24",
+            )}
           >
-            VS
-          </motion.span>
+            <span className="mx-hub-ink-title text-2xl uppercase italic sm:text-3xl">VS</span>
+          </motion.div>
 
           <AcceptRankHero
             rank={opponentRank}
@@ -237,19 +198,25 @@ export function DuelMatchAcceptScreen({
         </div>
 
         {acceptError ? (
-          <p className="mt-6 max-w-md text-center text-sm font-semibold text-rose-300">{acceptError}</p>
+          <p className="mx-auto mt-5 max-w-md text-center text-sm font-semibold text-[#B45309]">
+            {acceptError}
+          </p>
         ) : null}
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div
+          className={cn(
+            mentrixStudent.hubSticky,
+            "mx-auto mt-6 flex w-full max-w-md flex-col items-stretch gap-3 px-5 py-5 sm:mt-8",
+          )}
+        >
           <Button
             type="button"
             size="lg"
             disabled={acceptBusy || meAccepted}
             onClick={onAccept}
             className={cn(
-              "min-w-[11rem] rounded-xl border-2 border-amber-200/80 font-black uppercase tracking-[0.18em]",
-              "bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 text-slate-950",
-              "shadow-[0_8px_28px_-6px_rgba(251,191,36,0.75)] hover:from-amber-200 hover:via-amber-300 hover:to-amber-500",
+              mentrixStudent.pillPrimary,
+              "h-11 w-full text-[11px] font-black uppercase tracking-[0.16em]",
               "disabled:opacity-60",
             )}
           >
@@ -258,22 +225,27 @@ export function DuelMatchAcceptScreen({
           <Button
             type="button"
             size="lg"
-            variant="outline"
+            variant="ghost"
             disabled={acceptBusy}
             onClick={onDecline}
-            className="min-w-[11rem] rounded-xl border-amber-200/25 bg-black/40 font-bold uppercase tracking-widest text-amber-100/90 backdrop-blur-sm hover:border-amber-200/45 hover:bg-black/55 hover:text-amber-50"
+            className={cn(
+              mentrixStudent.hubGhostLink,
+              "h-11 w-full text-[11px] font-black uppercase tracking-[0.16em]",
+            )}
           >
             Decline
           </Button>
         </div>
 
-        <motion.p
-          className="mt-6 text-center text-[11px] font-bold uppercase tracking-[0.24em] text-amber-200/70"
-          animate={{ opacity: [0.55, 1, 0.55] }}
+        <motion.div
+          className={cn(mentrixStudent.hubNotebook, "mx-auto mt-5 w-fit px-5 py-3")}
+          animate={{ opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
         >
-          {statusLine}
-        </motion.p>
+          <p className="mx-hub-type-ui text-center text-[10px] font-bold uppercase tracking-[0.22em]">
+            {statusLine}
+          </p>
+        </motion.div>
       </div>
     </div>
   );

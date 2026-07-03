@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import type { LoopReportRow } from "@/features/intervention-retests/retest-reads";
 import {
   buildLoopReportHubVerdict,
@@ -20,10 +20,7 @@ export function LoopReportHubCard({ rows, momentumActive }: LoopReportHubCardPro
 
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Loop report">
-      <p className={`${mentrixStudent.sectionEyebrowOnLight} inline-flex items-center gap-2`}>
-        <MentrixaVocabIcon name="loop-report" size={16} surface="light" title="Loop report" />
-        Loop report
-      </p>
+      <VocabSectionHeading name="loop-report" label="Loop report" surface="light" />
       <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>
       <p className="mt-1 text-sm text-zinc-600">{nextAction}</p>
 

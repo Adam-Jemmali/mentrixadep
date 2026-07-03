@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { mentrixHubAccent } from "@/features/student-profile/student-hub-accent";
 
 const Typewriter = dynamic(
   () => import("@/shared/ui/typewriter").then((m) => ({ default: m.Typewriter })),
@@ -25,18 +26,18 @@ export function StudentHeroGreeting({ greeting, firstName }: { greeting: string;
   ];
 
   return (
-    <div className="flex h-[60px] w-full items-center justify-start text-2xl font-black text-white md:h-[80px] md:text-3xl">
+    <div className="flex h-[60px] w-full items-center justify-start md:h-[80px]">
       {motionReady ? (
         <Typewriter
           text={texts}
           speed={60}
           deleteSpeed={30}
           waitTime={3000}
-          className="text-white drop-shadow-sm"
-          cursorClassName="text-white/70"
+          className={mentrixHubAccent.heroTitle}
+          cursorClassName="text-[#6366F1]/70"
         />
       ) : (
-        <span className="text-white drop-shadow-sm">{greeting}</span>
+        <span className={mentrixHubAccent.heroTitle}>{greeting}</span>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/shared/core/utils";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+import { RankDeltaVerdictVisual } from "@/features/guidance/ui/rank-delta-verdict-visual";
 
 export function VerdictPanel({
   verdict,
@@ -11,6 +12,33 @@ export function VerdictPanel({
   tone?: "dark" | "light";
   className?: string;
 }) {
+  if (verdict.rankDelta) {
+    const srText = [verdict.changed, verdict.reason, verdict.nextAction.label]
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      <div className={cn(className)}>
+        <p className="sr-only">{srText}</p>
+        <RankDeltaVerdictVisual
+          meta={verdict.rankDelta}
+          nextAction={verdict.nextAction}
+          tone={tone}
+        />
+        {verdict.comparison ? (
+          <p
+            className={cn(
+              "mt-3 text-xs leading-relaxed",
+              tone === "dark" ? "text-slate-400" : "text-[#64748B]",
+            )}
+          >
+            {verdict.comparison}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   const changedClass =
     tone === "dark"
       ? "text-base font-semibold leading-relaxed text-white sm:text-lg"
@@ -27,7 +55,7 @@ export function VerdictPanel({
   return (
     <div className={cn("space-y-3", className)}>
       <p className={changedClass}>{verdict.changed}</p>
-      <p className={reasonClass}>{verdict.reason}</p>
+      {verdict.reason ? <p className={reasonClass}>{verdict.reason}</p> : null}
       <Link href={verdict.nextAction.href} className={actionClass}>
         {verdict.nextAction.label}
       </Link>

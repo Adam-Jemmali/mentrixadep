@@ -1,144 +1,19 @@
 "use client";
 
-import { Card, CardContent, CardHeader } from "@/shared/ui/card";
+import { useRef } from "react";
 import { TimelineContent } from "@/shared/ui/timeline-animation";
 import { VerticalCutReveal } from "@/shared/ui/vertical-cut-reveal";
-import { cn } from "@/shared/core/utils";
-import { X } from "lucide-react";
-import { Button } from "@/shared/ui/button";
-import { useRef } from "react";
-import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
-import { cardHoverLift } from "@/features/marketing/landing/v2/motion/landing-motion";
+import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import {
-  buildPricingTiers,
   PRICING_SECTION_HEADLINE,
-  PRICING_SECTION_NEXT_ACTION,
   PRICING_SECTION_SUBHEAD,
   PRICING_SECTION_VERDICT,
-  type PricingTierDefinition,
-  type PricingTierId,
 } from "@/features/pricing/pricing-tiers-pure";
 import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
-import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
-import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
-import { tierComparisonFeatureIcon } from "@/features/pricing/tier-comparison-feature-icon-pure";
-
-const TIER_VOCAB_ICONS: Record<PricingTierId, VocabIconName> = {
-  arena: "tier-arena",
-  breakthrough: "tier-breakthrough",
-  momentum: "tier-momentum",
-};
-
-function FeatureList({ items }: { items: string[] }) {
-  return (
-    <ul className="space-y-2.5">
-      {items.map((feature) => (
-        <li key={feature} className="flex gap-2.5">
-          <MentrixaVocabIcon
-            name={tierComparisonFeatureIcon(feature)}
-            size={18}
-            className="mt-0.5 shrink-0 text-indigo-600"
-            title={feature}
-          />
-          <span className="text-sm font-medium leading-snug text-slate-600">{feature}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ExclusionList({ items }: { items: string[] }) {
-  return (
-    <ul className="mt-4 space-y-2 border-t border-slate-100 pt-4">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Not included</p>
-      {items.map((item) => (
-        <li key={item} className="flex gap-2.5">
-          <X className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-          <span className="text-sm leading-snug text-slate-500">{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function TierCardView({
-  tier,
-  motionEnabled,
-}: {
-  tier: PricingTierDefinition;
-  motionEnabled: boolean;
-}) {
-  return (
-    <motion.div className="h-full" whileHover={motionEnabled ? cardHoverLift : undefined}>
-      <Card
-        className={cn(
-          "relative flex h-full flex-col border transition-all duration-300",
-          tier.popular
-            ? "overflow-hidden border-indigo-300/60 bg-white shadow-2xl shadow-indigo-500/10 ring-2 ring-indigo-500"
-            : "border-slate-200 bg-white hover:border-indigo-200 hover:shadow-xl",
-        )}
-      >
-        {tier.popularBadge ? (
-          <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-            {tier.popularBadge}
-          </span>
-        ) : null}
-
-        <CardHeader className="pb-4 text-left">
-          <div className="mb-3 flex items-start justify-between gap-2">
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 shadow-sm">
-              <MentrixaVocabIcon
-                name={TIER_VOCAB_ICONS[tier.id]}
-                size={28}
-                className="text-indigo-600"
-                title={tier.name}
-              />
-            </div>
-            <SubscriptionTierChip tier={tier.id} label={tier.tagline} />
-          </div>
-          <h3 className="text-xl font-black italic text-indigo-950">{tier.name}</h3>
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <p className="text-3xl font-bold tracking-tight text-slate-900">{tier.priceMain}</p>
-            <p className="mt-1 text-xs font-medium leading-snug text-slate-500">{tier.priceSub}</p>
-          </div>
-        </CardHeader>
-
-        <CardContent className="flex flex-1 flex-col pt-0">
-          {tier.paywallCommitment ? (
-            <p className="mb-4 text-sm font-bold leading-snug text-slate-900">
-              {tier.paywallCommitment}
-            </p>
-          ) : null}
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Included
-          </p>
-          <FeatureList items={tier.receipts} />
-          {tier.exclusions.length > 0 ? <ExclusionList items={tier.exclusions} /> : null}
-          <div className="mt-auto border-t border-slate-100 pt-5">
-            <Button
-              asChild
-              variant={tier.popular ? "default" : "secondary"}
-              className={cn(
-                "w-full rounded-xl font-bold",
-                tier.popular && "bg-indigo-600 hover:bg-indigo-500",
-              )}
-            >
-              <Link href={tier.buttonLink}>{tier.buttonText}</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
+import { PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
 
 export default function PricingSection() {
   const pricingRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
-  const motionEnabled = reduceMotion !== true;
-  const tiers = buildPricingTiers();
 
   const revealVariants = {
     visible: (i: number) => ({
@@ -155,26 +30,20 @@ export default function PricingSection() {
       id="pricing"
       ref={pricingRef}
     >
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
-        <motion.div
-          className="absolute top-1/4 left-1/4 w-[440px] h-[440px] rounded-full bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.12),transparent_72%)]"
-          animate={motionEnabled ? { x: [0, 24, 0], y: [0, -16, 0], scale: [1, 1.06, 1] } : undefined}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
+      <ArenaMeshBackground variant="section" />
 
-      <article className="mx-auto mb-14 max-w-3xl space-y-4 text-center">
+      <article className="relative mx-auto mb-14 max-w-3xl space-y-3 text-center">
         <TimelineContent
           as="p"
           animationNum={0}
           timelineRef={pricingRef}
           customVariants={revealVariants}
-          className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600"
+          className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-300"
         >
           Pricing
         </TimelineContent>
 
-        <h2 className="text-4xl font-bold leading-tight tracking-tight text-indigo-950 md:text-5xl">
+        <h2 className="text-4xl font-bold leading-tight tracking-tight text-white md:text-5xl">
           <VerticalCutReveal
             splitBy="words"
             staggerDuration={0.1}
@@ -192,7 +61,7 @@ export default function PricingSection() {
           animationNum={1}
           timelineRef={pricingRef}
           customVariants={revealVariants}
-          className="text-base text-slate-600 md:text-lg"
+          className="text-base text-violet-200/90 md:text-lg"
         >
           {PRICING_SECTION_SUBHEAD}
         </TimelineContent>
@@ -202,34 +71,24 @@ export default function PricingSection() {
           animationNum={2}
           timelineRef={pricingRef}
           customVariants={revealVariants}
-          className="text-sm font-medium text-indigo-700"
+          className="text-sm font-medium text-indigo-200/90"
         >
           {PRICING_SECTION_VERDICT}
         </TimelineContent>
-        <TimelineContent
-          as="p"
-          animationNum={3}
-          timelineRef={pricingRef}
-          customVariants={revealVariants}
-          className="text-sm text-slate-600"
-        >
-          {PRICING_SECTION_NEXT_ACTION}
-        </TimelineContent>
       </article>
 
-      <div className="grid gap-8 py-4 lg:grid-cols-3">
-        {tiers.map((tier, index) => (
-          <TimelineContent
-            key={tier.id}
-            as="div"
-            animationNum={3 + index}
-            timelineRef={pricingRef}
-            customVariants={revealVariants}
-          >
-            <TierCardView tier={tier} motionEnabled={motionEnabled} />
-          </TimelineContent>
-        ))}
-      </div>
+      <TimelineContent
+        as="div"
+        animationNum={3}
+        timelineRef={pricingRef}
+        customVariants={revealVariants}
+      >
+        <PricingTierVisualGrid iconSize={88} showCta className="relative py-4" />
+      </TimelineContent>
+
+      <p className="relative mt-10 text-center text-[10px] font-medium tracking-wide text-violet-300/50">
+        Built from the Mentrixa M mark
+      </p>
 
       <TimelineContent
         as="div"
@@ -237,7 +96,7 @@ export default function PricingSection() {
         timelineRef={pricingRef}
         customVariants={revealVariants}
       >
-        <TierComparisonTable className="mt-16" />
+        <TierComparisonTable variant="dark" className="relative mt-16" />
       </TimelineContent>
     </section>
   );

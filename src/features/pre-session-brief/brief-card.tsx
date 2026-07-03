@@ -204,7 +204,7 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
           {brief.warmUpExercise.prompt && (
             <section>
               <SectionLabel
-                vocabIcon="practice-pack"
+                vocabIcon="quest"
                 label={`Warm-up · ${brief.warmUpExercise.title}`}
                 color="text-emerald-500"
               />

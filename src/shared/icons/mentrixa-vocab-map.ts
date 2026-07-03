@@ -5,7 +5,12 @@
  * Do NOT map these keys to Lucide or other generic icon libraries.
  *
  * Student account ranks (Wanderer → Mentrixer) live in rank-icons.ts — not here.
+ *
+ * Rendering: MentrixaVocabIcon resolves aliases via resolveCanonicalVocabIcon()
+ * so one noun always maps to one glyph (quest, league, session, etc.).
  */
+
+import { resolveCanonicalVocabIcon } from "@/shared/icons/vocab-canonical";
 
 export type VocabIconCategory =
   | "nav"
@@ -128,19 +133,31 @@ const GUIDE_RANK_NAMES = new Set<VocabIconName>([
   "elite",
 ]);
 
-export const XP_ICON_SRC = "/images/xp.webp";
+export const XP_ICON_SRC = "/images/xp-white.webp";
+
+export const PRICING_TIER_ICON_NAMES = [
+  "tier-arena",
+  "tier-breakthrough",
+  "tier-momentum",
+] as const satisfies readonly VocabIconName[];
+
+export function isPricingTierIcon(name: VocabIconName): boolean {
+  const canonical = resolveCanonicalVocabIcon(name);
+  return (PRICING_TIER_ICON_NAMES as readonly string[]).includes(canonical);
+}
 
 export function vocabIconSrc(name: VocabIconName): string {
-  if (name === "xp") {
+  const canonical = resolveCanonicalVocabIcon(name);
+  if (canonical === "xp") {
     return XP_ICON_SRC;
   }
-  if (name === "momentum-membership") {
-    return "/icons/vocab/momentum.svg";
+  if (isPricingTierIcon(canonical)) {
+    return `/icons/vocab/${canonical}.svg`;
   }
-  if (GUIDE_RANK_NAMES.has(name)) {
-    return `/icons/guide-ranks/${name}.svg`;
+  if (GUIDE_RANK_NAMES.has(canonical)) {
+    return `/icons/guide-ranks/${canonical}.svg`;
   }
-  return `/icons/vocab/${name}.svg`;
+  return `/icons/vocab/${canonical}.svg`;
 }
 
 export const VOCAB_ICON_REGISTRY: Record<VocabIconName, VocabIconMeta> = {

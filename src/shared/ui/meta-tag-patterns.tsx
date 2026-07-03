@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 
@@ -21,7 +22,13 @@ export function MentrixaMetaTag({
   animate?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
-  const shouldAnimate = animate && !reduceMotion;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const shouldAnimate = animate && mounted && reduceMotion !== true;
 
   const body = (
     <>

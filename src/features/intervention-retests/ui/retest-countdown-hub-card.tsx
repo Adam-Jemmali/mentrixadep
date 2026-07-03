@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock } from "lucide-react";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { PendingRetestHubState } from "@/features/intervention-retests/retest-hub-pure";
@@ -19,16 +18,11 @@ export function RetestCountdownHubCard({ state }: RetestCountdownHubCardProps) {
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Retest countdown">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            {state.priorityRetest ? (
-              <MentrixaVocabIcon name="retest" size={16} surface="light" title="Priority retest" />
-            ) : (
-              <Clock className="h-4 w-4 text-violet-300" aria-hidden />
-            )}
-            <p className={mentrixStudent.sectionEyebrowOnLight}>
-              {state.isDue ? "Retest due" : state.priorityRetest ? "Priority retest" : "Retest scheduled"}
-            </p>
-          </div>
+          <VocabSectionHeading
+            name="retest"
+            label={state.isDue ? "Retest due" : state.priorityRetest ? "Priority retest" : "Retest scheduled"}
+            surface="light"
+          />
           <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>
           <p className="mt-2 text-sm text-zinc-600">{nextAction}</p>
         </div>

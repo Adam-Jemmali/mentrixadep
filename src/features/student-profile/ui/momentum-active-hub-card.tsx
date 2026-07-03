@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import { Button } from "@/shared/ui/button";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 import { formatMomentumRenewalLabel } from "@/features/payments/momentum-membership-pure";
@@ -42,12 +42,7 @@ export function MomentumActiveHubCard({
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <MentrixaVocabIcon name="momentum" size={16} surface="dark" title="Momentum" />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">
-              Momentum active
-            </p>
-          </div>
+          <VocabSectionHeading name="momentum" label="Momentum active" surface="dark" />
           <p className="mt-2 text-sm text-violet-100/90">
             {sessionCreditsRemaining > 0
               ? `You have ${sessionCreditsRemaining} included session credit${sessionCreditsRemaining === 1 ? "" : "s"} this month${creditExpiry ? ` — book before ${creditExpiry}` : ""}.`

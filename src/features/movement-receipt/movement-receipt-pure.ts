@@ -149,7 +149,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
       nextAction:
         data.retest.nodeName && !data.retest.isDue
           ? "Practice the node."
-          : "Take one retest or duel.",
+          : "Take 1 retest",
       ctaHref: data.retest.nodeName ? "/student/quest" : "/student/mastery",
       ctaLabel: data.retest.nodeName ? "Open Quest" : "View Mastery Grid",
     };

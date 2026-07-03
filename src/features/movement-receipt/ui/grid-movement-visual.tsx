@@ -15,7 +15,7 @@ export function GridMovementVisual({
   if (stalled) {
     return (
       <div className="flex items-end gap-3" aria-label="No new verified nodes on the grid this week">
-        <VocabCountMetric value={0} icon="verified" label="new verified" gold surface={surface} />
+        <VocabCountMetric value={0} icon="verified" label="No Movement" accent="navy" surface={surface} />
       </div>
     );
   }
@@ -38,8 +38,8 @@ export function GridMovementVisual({
         <VocabCountMetric
           value={grid.newlyVerifiedCount}
           icon="verified"
-          label="new verified"
-          gold
+          label="New Verified"
+          accent="cyan"
           surface={surface}
         />
       ) : null}
@@ -47,7 +47,8 @@ export function GridMovementVisual({
         <VocabCountMetric
           value={grid.flippedToWeakCount}
           icon="focus-ring"
-          label="slipped to weak"
+          label="Turned Weak"
+          accent="indigo"
           surface={surface}
         />
       ) : null}
@@ -57,8 +58,8 @@ export function GridMovementVisual({
         <VocabCountMetric
           value={`+${grid.newlyVerifiedCount - grid.priorWeekNewlyVerified}`}
           icon="verified"
-          label="pace vs last week"
-          gold
+          label="Weekly Pace"
+          accent="violet"
           surface={surface}
           iconSize={22}
         />

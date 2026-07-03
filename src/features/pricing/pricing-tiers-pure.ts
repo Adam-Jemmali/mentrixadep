@@ -36,14 +36,18 @@ export type TierComparisonRow = {
   momentumExclusive?: boolean;
 };
 
-export const PRICING_SECTION_HEADLINE =
-  "Three ways to use Mentrixa. One thing never changes.";
-export const PRICING_SECTION_SUBHEAD =
-  "The Arena is free forever. Pay per Guide session when you need one call. Momentum is the only subscription.";
+export const PRICING_SECTION_HEADLINE = "Three tiers. One proof.";
+export const PRICING_SECTION_SUBHEAD = "Rank stays free.";
 export const PRICING_SECTION_VERDICT =
-  "Your rank and Mastery Grid never move behind a paywall. Archive, receipts, and coaching memory require Momentum.";
-export const PRICING_SECTION_NEXT_ACTION =
-  "Start free in the Arena. Book Breakthrough when the wall is real. Subscribe to Momentum when you want proof every week.";
+  "Arena stays free. Breakthrough is one session. Momentum is the only subscription.";
+export const PRICING_SECTION_NEXT_ACTION = "Pick your path.";
+
+/** Max two words per tier on visual pricing surfaces. */
+export const TIER_VISUAL_BLURB: Record<PricingTierId, string> = {
+  arena: "Free forever",
+  breakthrough: "One session",
+  momentum: "Only subscription",
+};
 
 const memberRate = momentumSubscriberSessionPriceLabel();
 

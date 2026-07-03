@@ -9,6 +9,8 @@ import {
   buildLoopReportRowVerdict,
 } from "@/features/loop-report/loop-report-pure";
 
+import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
+
 export function LoopReportPageClient({
   rows,
   momentumActive,
@@ -23,7 +25,14 @@ export function LoopReportPageClient({
           <Link href="/student" className="text-sm text-violet-300 hover:text-violet-100">
             Back to hub
           </Link>
-          <h1 className="mt-2 text-2xl font-black text-white">Loop Report</h1>
+          <VocabSectionHeading
+            name="loop-report"
+            label="Loop Report"
+            surface="dark"
+            as="h1"
+            className="mt-2"
+            labelClassName="text-xl font-black normal-case tracking-tight text-white sm:text-2xl"
+          />
           <p className="mt-1 text-sm text-violet-200/85">
             Every retest scheduled from sessions, breakthroughs, and duels.
           </p>

@@ -17,7 +17,7 @@ export function billingIntervalRadioMessage(
 ): MentrixaRadioMessage {
   if (interval === "annual") {
     return {
-      verdict: "Annual billing locks the lowest Momentum rate for the year.",
+      verdict: "",
       nextAction: "Choose annual if you expect at least one Guide session per month.",
     };
   }

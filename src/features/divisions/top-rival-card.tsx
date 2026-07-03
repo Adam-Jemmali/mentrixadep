@@ -4,102 +4,160 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
-import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import type { TopRivalData } from "@/features/divisions/top-rival";
-import { AP_CALC_AB_DIVISION_NAME } from "@/features/divisions/ap-calc-ab-division";
-import { mentrixProfileType, mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { TiltCard } from "@/shared/ui/tilt-card";
+import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MentrixaVocabIcon, VocabStatColumn, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { VersusMark } from "@/features/divisions/versus-mark";
+import {
+  CANONICAL_DUELS_ICON,
+  CANONICAL_QUEST_ICON,
+} from "@/shared/icons/vocab-canonical";
 
 interface Props {
   rivalData: TopRivalData;
   className?: string;
 }
 
+function LeaguePlayerAvatar({
+  displayName,
+  avatarUrl,
+  size = 56,
+}: {
+  displayName: string;
+  avatarUrl: string | null | undefined;
+  size?: number;
+}) {
+  const initial = displayName.trim().charAt(0).toUpperCase() || "M";
+  const badgeSize = Math.max(20, Math.round(size * 0.38));
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <div
+        className="overflow-hidden rounded-full border-2 border-[#6366F1] bg-[#EEF2FF] shadow-sm"
+        style={{ width: size, height: size }}
+      >
+        {avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt=""
+            width={size}
+            height={size}
+            unoptimized
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-[#EEF2FF] text-lg font-black text-[#6366F1]">
+            {initial}
+          </div>
+        )}
+      </div>
+      <span
+        className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full border border-[#7C3AED] bg-[#F8F7FF] p-0.5 shadow-sm"
+        style={{ width: badgeSize + 4, height: badgeSize + 4 }}
+        title="Mentrixer"
+      >
+        <Image
+          src="/icons/mentrixer.svg"
+          alt=""
+          width={badgeSize}
+          height={badgeSize}
+          className="h-full w-full object-contain"
+        />
+      </span>
+    </div>
+  );
+}
+
 export function TopRivalCard({ rivalData, className }: Props) {
   if (rivalData.status === "no_division") return null;
 
   const isRank1 = rivalData.status === "rank_1";
+  const ctaLane = rivalData.ctaLane ?? (isRank1 ? "duel" : "quest");
+  const myName = rivalData.myDisplayName ?? "You";
+  const rivalName = rivalData.rivalName ?? "Rival";
+  const ctaHref = ctaLane === "duel" ? "/student/duel" : "/student/quest";
+  const ctaIcon = ctaLane === "duel" ? CANONICAL_DUELS_ICON : CANONICAL_QUEST_ICON;
+  const ctaLabel = ctaLane === "duel" ? "Defend Duels" : "Close Quest";
 
   return (
-    <div className={cn("relative group", className)}>
-      <TiltCard
-        tiltLimit={3}
-        className={`overflow-hidden ${mentrixStudent.card} shadow-[0_8px_30px_-12px_rgba(79,70,229,0.45)] transition-all duration-500 hover:shadow-[0_20px_50px_-20px_rgba(124,58,237,0.55)]`}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center">
+    <div className={cn("relative", className)}>
+      <div className={`${mentrixStudent.hubBook}`}>
+        <div className="flex flex-col sm:flex-row sm:items-stretch">
           <div
             className={cn(
-              "flex flex-col justify-center border-b border-violet-500/25 p-6 sm:w-64 sm:shrink-0 sm:border-b-0 sm:border-r",
-              isRank1
-                ? "bg-gradient-to-br from-violet-600/40 to-indigo-900/60"
-                : "bg-gradient-to-br from-indigo-950/80 to-[#0B1220]/90",
+              "mx-hub-book-spine flex flex-col items-center gap-3 border-b border-[#C4B5FD] p-5 sm:w-64 sm:shrink-0 sm:border-b-0 sm:border-r",
             )}
           >
-            <p className={mentrixProfileType.labelOnDark}>{AP_CALC_AB_DIVISION_NAME} league</p>
-            <h3 className="mt-1 font-mono text-lg font-black italic tracking-tight text-white">
-              {isRank1 ? "Rank #1" : `Rank #${rivalData.myRank}`}
-            </h3>
-            <p className={`mt-1 font-mono text-xs font-black tabular-nums text-violet-200`}>
-              {rivalData.myXp?.toLocaleString()} XP
-            </p>
+            <AbCalculusSubjectTitle hubPaper className="text-base sm:text-lg" />
+            <VocabStatColumn
+              icon="rank-proof"
+              label="League Rank"
+              value={`#${isRank1 ? 1 : rivalData.myRank}`}
+              accent={isRank1 ? "cyan" : "indigo"}
+              surface="light"
+              iconSize={32}
+            />
+            {rivalData.myXp != null ? (
+              <XpCountDisplay xp={rivalData.myXp} size={26} label="League XP" accent="violet" surface="light" />
+            ) : null}
           </div>
 
-          <div className="relative flex-1 p-6">
-            <div className="flex items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-violet-400/50 bg-indigo-950/80 shadow-sm sm:h-16 sm:w-16">
-                  <Image
-                    src="/icons/mentrixer.svg"
-                    alt="Rival"
-                    fill
-                    className="absolute inset-0 h-full w-full object-contain p-2 opacity-90"
-                  />
+          <div className={cn("relative flex flex-1 flex-col justify-center p-5 sm:p-6", mentrixStudent.hubBookPage)}>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col items-center gap-1.5">
+                  <LeaguePlayerAvatar displayName={myName} avatarUrl={rivalData.myAvatarUrl} size={56} />
+                  <span className="max-w-[5.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#6366F1]">
+                    {myName.split(" ")[0]}
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#0891B2]">
+                    {isRank1 ? "You Lead" : `Rank #${rivalData.myRank}`}
+                  </span>
                 </div>
-                <div>
-                  <p className={mentrixProfileType.labelOnDark}>
-                    {isRank1 ? "CONGRATULATIONS" : "YOUR RIVAL"}
-                  </p>
-                  <p className="text-base font-black uppercase italic tracking-tight text-white sm:text-lg">
-                    {isRank1 ? "You are at the top!" : rivalData.rivalName}
-                  </p>
-                  {!isRank1 && (
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="text-xs font-medium text-violet-200/80">
-                        {rivalData.rivalXp?.toLocaleString()} XP
+
+                {!isRank1 ? (
+                  <>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <VersusMark size="sm" />
+                      <span className="text-base font-semibold text-[#4F46E5]">Versus</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <LeaguePlayerAvatar displayName={rivalName} avatarUrl={rivalData.rivalAvatarUrl} size={52} />
+                      <span className="max-w-[5.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#7C3AED]">
+                        {rivalName.split(" ")[0]}
                       </span>
-                      <span className="h-1 w-1 rounded-full bg-violet-400/60" />
-                      <span className="text-xs font-bold text-indigo-300">
-                        {rivalData.xpGap?.toLocaleString()} XP gap
+                      <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#4F46E5]">
+                        Top Rival
                       </span>
                     </div>
-                  )}
-                </div>
+
+                    {rivalData.xpGap != null ? (
+                      <VocabStatColumn
+                        icon="xp"
+                        label="XP Behind"
+                        value={rivalData.xpGap}
+                        accent="violet"
+                        surface="light"
+                        iconSize={26}
+                      />
+                    ) : null}
+                  </>
+                ) : null}
               </div>
 
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  href={isRank1 ? "/student/duel" : "/student/quest"}
-                  className={cn(
-                    "inline-flex h-10 items-center rounded-xl px-5 transition-all",
-                    mentrixProfileType.cta,
-                    "bg-gradient-to-r from-[#7C3AED] to-[#6366F1] text-white shadow-lg shadow-violet-600/30 hover:brightness-110",
-                  )}
-                >
-                  {isRank1 ? "Defend Title" : "Close the gap"}
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
+                <Link href={ctaHref} className={mentrixStudent.hubBtn} title={ctaLabel}>
+                  <MentrixaVocabIcon name={ctaIcon} size={28} surface="dark" title={ctaLabel} />
+                  <span className="max-w-[5.5rem] text-center text-[9px] font-black uppercase leading-tight tracking-[0.1em]">
+                    {ctaLabel}
+                  </span>
                 </Link>
               </motion.div>
             </div>
-
-            <div className="pointer-events-none absolute bottom-0 right-0 p-4 opacity-[0.06]">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={60} height={60} />
-            </div>
           </div>
         </div>
-      </TiltCard>
-
-      {!isRank1 && (
-        <div className="absolute -inset-px -z-10 rounded-2xl bg-gradient-to-r from-violet-500/0 via-violet-500/15 to-indigo-500/0 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-      )}
+      </div>
     </div>
   );
 }

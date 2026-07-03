@@ -10,7 +10,6 @@ import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import {
   skillTreeUnitAccordionFooter,
   skillTreeUnitTriggerLabel,
-  skillTreeUnitTriggerMeta,
 } from "@/shared/ui/accordion-messages-pure";
 import { masteryNodeDetailStateLabel } from "@/shared/ui/popover-messages-pure";
 import {
@@ -19,21 +18,36 @@ import {
 } from "@/shared/ui/accordion-patterns";
 import { SkillNodeStrengthMeter } from "@/shared/ui/meter-patterns";
 import { MasteryNodeDetailPopover } from "@/shared/ui/popover-patterns";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
+import { unitDisplayName } from "@/features/quest/ap-calc-unit-labels-pure";
+import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
+import { UnitConceptIcon } from "@/features/quest/ui/skill-concept-icon";
 
 const STATE_SQUARE_CLASS: Record<MasteryNodeState, string> = {
-  none: "bg-slate-700/70 border-slate-600/40",
-  weak: "bg-amber-400/85 border-amber-300/50",
-  proficient: "bg-emerald-500/85 border-emerald-400/50",
+  none: "bg-slate-200/90 border-slate-300/80",
+  weak: "bg-amber-300/90 border-amber-400/70",
+  proficient: "bg-emerald-400/90 border-emerald-500/70",
   verified: "border-[#D4A017]/90",
 };
 
-const LEGEND_ITEMS: { label: string; state: MasteryNodeState }[] = [
-  { label: "Not started", state: "none" },
-  { label: "Under 70%", state: "weak" },
-  { label: "70% or higher", state: "proficient" },
-  { label: "Verified", state: "verified" },
+const LEGEND_ITEMS: { word: string; state: MasteryNodeState; icon: "focus-ring" | "practice-pack" | "verified" }[] = [
+  { word: "Open", state: "none", icon: "focus-ring" },
+  { word: "Weak", state: "weak", icon: "practice-pack" },
+  { word: "Proficient", state: "proficient", icon: "practice-pack" },
+  { word: "Verified", state: "verified", icon: "verified" },
 ];
+
+function SkillTreeUnitMeta({ nodes }: { nodes: MasteryGridNode[] }) {
+  const verified = nodes.filter((node) => node.state === "verified").length;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <MentrixaVocabIcon name="verified" size={14} gold surface="light" title="Verified" />
+      <span className="font-mono text-[11px] font-bold tabular-nums">
+        {verified}/{nodes.length}
+      </span>
+    </span>
+  );
+}
 
 function MasteryLegendGlyph({ state }: { state: MasteryNodeState }) {
   if (state === "verified") {
@@ -64,6 +78,8 @@ function squareStyle(state: MasteryNodeState): CSSProperties | undefined {
 
 function MasterySquare({
   nodeName,
+  nodeSlug,
+  unitNumber,
   state,
   accuracyPercent,
   animateFrom,
@@ -71,6 +87,8 @@ function MasterySquare({
   isPinned,
 }: {
   nodeName: string;
+  nodeSlug: string;
+  unitNumber?: number;
   state: MasteryNodeState;
   accuracyPercent: number | null;
   animateFrom?: MasteryNodeState;
@@ -109,9 +127,11 @@ function MasterySquare({
   return (
     <MasteryNodeDetailPopover
       nodeName={nodeName}
+      nodeSlug={nodeSlug}
+      unitNumber={unitNumber}
       state={displayState}
       accuracyPercent={accuracyPercent}
-      tone="dark"
+      tone="light"
       placement="top"
     >
       <div
@@ -120,8 +140,8 @@ function MasterySquare({
           "relative aspect-square min-w-0 w-full rounded-[4px] border",
         STATE_SQUARE_CLASS[displayState],
         shouldAnimate && "transition-colors duration-[400ms] ease-out",
-        isHighlight && shouldAnimate && "z-10 ring-2 ring-indigo-400/80 ring-offset-1 ring-offset-[#0B1220]",
-        isPinned && "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#0B1220]"
+        isHighlight && shouldAnimate && "z-10 ring-2 ring-indigo-400/80 ring-offset-1 ring-offset-[#FAFAF8]",
+        isPinned && "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#FAFAF8]"
       )}
       style={squareStyle(displayState)}
     >
@@ -142,9 +162,10 @@ function MasteryGridLegend() {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       {LEGEND_ITEMS.map((item) => (
-        <span key={item.label} className="inline-flex items-center gap-1.5 text-[10px] text-slate-400">
+        <span key={item.word} className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#64748B]">
           <MasteryLegendGlyph state={item.state} />
-          {item.label}
+          <MentrixaVocabIcon name={item.icon} size={16} gold={item.state === "verified"} surface="light" title={item.word} />
+          <span>{item.word}</span>
         </span>
       ))}
     </div>
@@ -153,11 +174,13 @@ function MasteryGridLegend() {
 
 function MasteryUnitGrid({
   nodes,
+  unitNumber,
   compact,
   highlightTransition,
   pinnedNodeIds,
 }: {
   nodes: MasteryGridNode[];
+  unitNumber?: number;
   compact: boolean;
   highlightTransition?: {
     nodeId: string;
@@ -179,6 +202,8 @@ function MasteryUnitGrid({
         <MasterySquare
           key={node.id}
           nodeName={node.nodeName}
+          nodeSlug={node.nodeSlug}
+          unitNumber={unitNumber}
           state={node.state}
           accuracyPercent={node.accuracyPercent}
           animateFrom={
@@ -214,11 +239,15 @@ function MasteryGridUnits({
       <>
         {units.map((unit) => (
           <div key={unit.unitNumber}>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-200/90">
-              {skillTreeUnitTriggerLabel(unit.unitNumber, unit.unitName)}
+            <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366F1]">
+              <UnitConceptIcon unitNumber={unit.unitNumber} size={28} surface="onLight" />
+              <span className="line-clamp-2 min-w-0 text-left text-[10px] font-semibold leading-snug">
+                {unitDisplayName(unit.unitNumber, unit.unitName)}
+              </span>
             </p>
             <MasteryUnitGrid
               nodes={unit.nodes}
+              unitNumber={unit.unitNumber}
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={pinnedNodeIds}
@@ -233,7 +262,7 @@ function MasteryGridUnits({
 
   return (
     <MentrixaAccordion
-      tone="dark"
+      tone="light"
       variant="surface"
       allowsMultipleExpanded
       defaultExpandedKeys={defaultExpandedKeys}
@@ -247,9 +276,9 @@ function MasteryGridUnits({
             key={unit.unitNumber}
             id={`unit-${unit.unitNumber}`}
             title={skillTreeUnitTriggerLabel(unit.unitNumber, unit.unitName)}
-            meta={skillTreeUnitTriggerMeta(unit.nodes)}
+            meta={<SkillTreeUnitMeta nodes={unit.nodes} />}
             leadingIcon={
-              <MentrixaVocabIcon name="unit" size={22} surface="dark" title="Unit" />
+              <UnitConceptIcon unitNumber={unit.unitNumber} size={28} surface="onLight" />
             }
             verdict={footer.verdict}
             nextAction={footer.nextAction}
@@ -257,6 +286,7 @@ function MasteryGridUnits({
           >
             <MasteryUnitGrid
               nodes={unit.nodes}
+              unitNumber={unit.unitNumber}
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={pinnedNodeIds}
@@ -322,11 +352,10 @@ export function MasteryGrid({
       aria-label="AP Calculus AB mastery grid"
       aria-readonly={readOnly || undefined}
     >
-      <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-1.5`}>
-        <MentrixaVocabIcon name="mastery-grid" size={14} className="text-violet-300" />
-        Mastery grid
-      </p>
-      <p className="mt-1 text-sm text-violet-100/90">{data.subject}</p>
+      <VocabSectionHeading name="mastery-grid" label="Grid" surface="light" />
+      <div className="mt-1">
+        <AbCalculusSubjectTitle />
+      </div>
 
       {showLegend ? (
         <div className="mt-4">
@@ -337,8 +366,9 @@ export function MasteryGrid({
       <div className={cn("mt-5 space-y-5", compact && "mt-4 space-y-4", showLegend && "mt-4")}>
         {showPinnedSection ? (
           <div>
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-200/90">
-              Session focus
+            <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366F1]">
+              <MentrixaVocabIcon name="focus-ring" size={18} surface="light" title="Focus" />
+              <span>Focus</span>
             </p>
             <MasteryUnitGrid
               nodes={pinSplit!.pinnedNodes}
@@ -347,15 +377,23 @@ export function MasteryGrid({
               pinnedNodeIds={new Set(pinnedNodeIds)}
             />
             <div className="mt-3 space-y-2">
-              {pinSplit!.pinnedNodes.map((node) => (
-                <SkillNodeStrengthMeter
-                  key={node.id}
-                  nodeName={node.nodeName}
-                  state={node.state}
-                  accuracyPercent={node.accuracyPercent}
-                  tone="dark"
-                />
-              ))}
+              {pinSplit!.pinnedNodes.map((node) => {
+                const unitNumber = data.units.find((unit) =>
+                  unit.nodes.some((entry) => entry.id === node.id),
+                )?.unitNumber;
+
+                return (
+                  <SkillNodeStrengthMeter
+                    key={node.id}
+                    nodeName={node.nodeName}
+                    nodeSlug={node.nodeSlug}
+                    unitNumber={unitNumber}
+                    state={node.state}
+                    accuracyPercent={node.accuracyPercent}
+                    tone="light"
+                  />
+                );
+              })}
             </div>
           </div>
         ) : null}
@@ -373,7 +411,7 @@ export function MasteryGrid({
           <button
             type="button"
             onClick={() => setRemainderExpanded(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 transition-colors hover:text-indigo-100"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6366F1] transition-colors hover:text-[#4F46E5]"
           >
             <ChevronDown className="h-3.5 w-3.5" aria-hidden />
             Show full mastery grid
@@ -383,9 +421,9 @@ export function MasteryGrid({
 
       {!hideNextAction ? (
         data.verdict ? (
-          <VerdictPanel verdict={data.verdict} tone="dark" className="mt-5" />
+          <VerdictPanel verdict={data.verdict} tone="light" className="mt-5" />
         ) : (
-          <p className="mt-5 text-sm font-medium text-slate-100">{data.nextActionLine}</p>
+          <p className="mt-5 text-sm font-medium text-[#475569]">{data.nextActionLine}</p>
         )
       ) : null}
     </section>

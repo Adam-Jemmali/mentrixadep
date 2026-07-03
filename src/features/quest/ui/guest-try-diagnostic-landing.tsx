@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/shared/ui/button";
 import { VerifiedFirstAttemptDisclosure } from "@/shared/ui/disclosure-patterns";
@@ -9,26 +8,38 @@ import { Typewriter } from "@/shared/ui/typewriter";
 import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { cn } from "@/shared/core/utils";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  CANONICAL_QUEST_ICON,
+  CANONICAL_RANK_PROOF_ICON,
+} from "@/shared/icons/vocab-canonical";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 const VERIFIED_GOLD = "#D4A017";
 
-const HIGHLIGHTS = [
+const HIGHLIGHTS: Array<{
+  icon: VocabIconName;
+  gold?: boolean;
+  label: string;
+  detail: string;
+}> = [
   {
-    src: "/images/quest.webp",
+    icon: CANONICAL_QUEST_ICON,
     label: "One traced problem",
     detail: "Step by step reasoning from the reviewed bank",
   },
   {
-    src: "/images/checks.webp",
+    icon: "focus-ring",
     label: "Trap tagged",
     detail: "See where your reasoning diverged from a strong student",
   },
   {
-    src: "/icons/mentrixer-rank.svg",
+    icon: CANONICAL_RANK_PROOF_ICON,
+    gold: true,
     label: "Rank passport",
     detail: "Preview what signing up locks on your public card",
   },
-] as const;
+];
 
 export function GuestTryDiagnosticLanding({
   busy,
@@ -85,13 +96,13 @@ export function GuestTryDiagnosticLanding({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          {HIGHLIGHTS.map(({ src, label, detail }) => (
+          {HIGHLIGHTS.map(({ icon, gold, label, detail }) => (
             <div
               key={label}
               className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"
             >
               <span className="inline-flex size-10 items-center justify-center rounded-xl bg-violet-500/15 p-1.5">
-                <Image src={src} alt="" width={28} height={28} className="size-7 object-contain" />
+                <MentrixaVocabIcon name={icon} size={28} gold={gold} surface="dark" title={label} />
               </span>
               <p className="mt-3 text-sm font-semibold text-white">{label}</p>
               <p className="mt-1 text-xs leading-relaxed text-slate-500">{detail}</p>

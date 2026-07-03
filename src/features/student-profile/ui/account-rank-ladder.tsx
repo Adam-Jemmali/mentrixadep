@@ -9,6 +9,7 @@ import {
 import { RankBadge, RankTitle } from "@/features/student-profile/ui/rank-badge";
 import { AccountRankXpDisplay } from "@/features/student-profile/ui/account-rank-xp-display";
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
 /**
  * Valorant-inspired account rank rail: locked past = earned glow,
@@ -42,31 +43,21 @@ export function AccountRankLadder({
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-2xl border",
-        isArena
-          ? "border-violet-500/25 bg-slate-950/60 shadow-[0_20px_50px_-24px_rgba(79,70,229,0.45)]"
-          : "mx-panel-brand border-violet-500/30",
+        "relative overflow-hidden",
+        isArena ? mentrixStudent.card : "mx-panel-brand border-violet-500/30 rounded-2xl border",
         className,
       )}
     >
-      {isArena ? (
-        <div
-          className="pointer-events-none absolute inset-0 opacity-80"
-          style={{
-            background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${current.colorMuted}, transparent 65%)`,
-          }}
-        />
-      ) : null}
 
       <div className="relative px-4 py-5 sm:px-6 sm:py-6">
-        <AccountRankXpDisplay totalXp={totalXp} tone="arena" />
+        <AccountRankXpDisplay totalXp={totalXp} tone={isArena ? "light" : "arena"} />
 
         {/* Progress to next */}
         {xpToNext != null ? (
           <div className="mt-5">
             <XpTierProgressBar
               value={progressPct}
-              tone="dark"
+              tone={isArena ? "light" : "dark"}
               fillStyle={{
                 background: `linear-gradient(90deg, ${current.color}99, ${current.color})`,
                 boxShadow: `0 0 12px ${current.colorMuted}`,
@@ -96,13 +87,13 @@ export function AccountRankLadder({
                     size={isCurrent ? "lg" : earned ? "sm" : "xs"}
                     active={isCurrent}
                     locked={locked}
-                    surface={isArena ? "onDark" : "onDark"}
+                    surface={isArena ? "default" : "onDark"}
                     showGlow={isCurrent}
                   />
                   <RankTitle
                     rank={rank}
                     active={earned}
-                    tone={isArena ? "dark" : "dark"}
+                    tone={isArena ? "light" : "dark"}
                     className={cn(
                       "mt-2 max-w-[4.5rem] truncate text-center",
                       isCurrent && "text-[11px] font-black",
@@ -112,8 +103,8 @@ export function AccountRankLadder({
                   <span
                     className={cn(
                       "mt-0.5 font-mono text-[9px] tabular-nums",
-                      isArena ? "text-zinc-500" : "text-violet-300/70",
-                      isCurrent && (isArena ? "text-zinc-300" : "text-violet-100"),
+                      isArena ? "text-[#64748B]" : "text-violet-300/70",
+                      isCurrent && (isArena ? "text-[#0B1220]" : "text-violet-100"),
                     )}
                   >
                     {rank.level}
@@ -125,8 +116,8 @@ export function AccountRankLadder({
         </div>
 
         {isArena && current.level < 7 ? (
-          <p className="mt-4 text-center text-[11px] leading-relaxed text-violet-200/70">
-            <span className="font-semibold" style={{ color: "#F5D76E" }}>
+          <p className={`mt-4 text-center text-[11px] leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
+            <span className="font-semibold text-[#6366F1]">
               Become a Mentrixer
             </span>{" "}
             

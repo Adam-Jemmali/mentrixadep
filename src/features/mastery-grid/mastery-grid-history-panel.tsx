@@ -21,14 +21,7 @@ export function MasteryGridHistoryPanel({
   nodeNameById,
 }: MasteryGridHistoryPanelProps) {
   if (history.length === 0) {
-    return (
-      <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
-        <p className={mentrixStudent.sectionEyebrowOnLight}>Grid history</p>
-        <p className="mt-2 text-sm text-zinc-700">
-          Weekly snapshots start after your first verified attempts. Check back next Monday.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   if (!momentumActive) {

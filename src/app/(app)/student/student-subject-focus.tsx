@@ -7,6 +7,11 @@ import {
   isSingleShippedSubject,
 } from "@/features/quest/shipped-subjects";
 import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  CANONICAL_QUEST_ICON,
+  CANONICAL_SKILLS_ICON,
+} from "@/shared/icons/vocab-canonical";
 
 export function StudentSubjectFocus({
   courses,
@@ -40,10 +45,12 @@ export function StudentSubjectFocus({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/student/quest" className={mentrixProfileType.ctaPrimary}>
+          <Link href="/student/quest" className={`inline-flex items-center gap-2 ${mentrixProfileType.ctaPrimary}`}>
+            <MentrixaVocabIcon name={CANONICAL_QUEST_ICON} size={16} surface="dark" title="Quest" />
             Daily quest
           </Link>
-          <Link href="/student/mastery" className={mentrixProfileType.ctaSecondaryOnDark}>
+          <Link href="/student/mastery" className={`inline-flex items-center gap-2 ${mentrixProfileType.ctaSecondaryOnDark}`}>
+            <MentrixaVocabIcon name={CANONICAL_SKILLS_ICON} size={16} surface="dark" title="Skills" />
             Skill tree
           </Link>
         </div>

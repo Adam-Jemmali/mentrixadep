@@ -14,6 +14,8 @@ import {
 } from "@/shared/ui/mentrixa-ui-brand";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { SkillConceptIcon } from "@/features/quest/ui/skill-concept-icon";
+import { VisualPercentBar } from "@/shared/ui/visual-metric-patterns";
 import { RANK_PROOFS_LABEL } from "@/features/xp/rank-proofs-labels";
 import {
   masteryNodeDetailPopoverMessage,
@@ -228,6 +230,8 @@ export function PriceBreakdownPopover({
 
 export function MasteryNodeDetailPopover({
   nodeName,
+  nodeSlug,
+  unitNumber,
   state,
   accuracyPercent,
   children,
@@ -236,6 +240,8 @@ export function MasteryNodeDetailPopover({
   className,
 }: {
   nodeName: string;
+  nodeSlug?: string;
+  unitNumber?: number;
   state: MasteryNodeState;
   accuracyPercent: number | null;
   children: ReactNode;
@@ -245,7 +251,8 @@ export function MasteryNodeDetailPopover({
 }) {
   const message = masteryNodeDetailPopoverMessage(nodeName, state, accuracyPercent);
 
-  const headerIcon: VocabIconName = state === "verified" ? "verified" : "mastery-grid";
+  const headerIcon: VocabIconName = state === "verified" ? "verified" : "practice-pack";
+  const surface = tone === "dark" ? "dark" : "light";
 
   return (
     <MentrixaPopoverFromMessage
@@ -257,13 +264,42 @@ export function MasteryNodeDetailPopover({
       className={className}
       trigger={<span className="block min-w-0 w-full cursor-pointer">{children}</span>}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] opacity-80">
-        {masteryNodeDetailStateLabel(state)}
-      </p>
+      <div className="flex items-center gap-3">
+        <SkillConceptIcon
+          nodeName={nodeName}
+          nodeSlug={nodeSlug}
+          unitNumber={unitNumber}
+          size={36}
+          surface={tone === "dark" ? "onDark" : "onLight"}
+          title={nodeName}
+        />
+        <div className="inline-flex items-center gap-2">
+          <MentrixaVocabIcon
+            name={headerIcon}
+            size={22}
+            gold={state === "verified"}
+            surface={surface}
+            title={masteryNodeDetailStateLabel(state)}
+          />
+          <span className="text-[10px] font-black uppercase tracking-[0.12em]">
+            {masteryNodeDetailStateLabel(state).split(" ")[0]}
+          </span>
+        </div>
+      </div>
       {accuracyPercent != null ? (
-        <p className="mt-2 font-mono text-sm tabular-nums">{accuracyPercent}% practice accuracy</p>
+        <VisualPercentBar
+          className="mt-3"
+          value={accuracyPercent}
+          icon={state === "verified" ? "verified" : "practice-pack"}
+          label="Accuracy"
+          gold={state === "verified"}
+          surface={surface}
+        />
       ) : (
-        <p className="mt-2 text-xs opacity-80">No practice attempts recorded yet.</p>
+        <div className="mt-3 inline-flex items-center gap-2 opacity-80">
+          <MentrixaVocabIcon name="focus-ring" size={20} surface={surface} title="Open" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em]">Open</span>
+        </div>
       )}
     </MentrixaPopoverFromMessage>
   );

@@ -73,8 +73,8 @@ describe("applyGoalToVerdict", () => {
       totalSubjectNodes: 20,
       highestImpactNode: { skillNodeId: "n2", nodeName: "Limits" },
     });
-    expect(next.nextAction.label).toContain("need");
-    expect(next.nextAction.label).toContain("above 70 percent");
+    expect(next.nextAction.label).toContain("Need");
+    expect(next.nextAction.label).toContain("70%");
   });
 });
 

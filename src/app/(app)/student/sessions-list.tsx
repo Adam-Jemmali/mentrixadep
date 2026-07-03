@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
-import { Button } from "@/shared/ui/button";
 import { SessionStatusChip } from "@/shared/ui/chip-patterns";
 import { UpcomingSessionCard } from "./session-components/upcoming-session-card";
 import { PastSessionCard } from "./session-components/past-session-card";
@@ -19,12 +18,12 @@ import type { SessionAiPackage } from "@/shared/types/database";
 import { useLevelInfo } from "@/features/xp/mentrixa-ranks";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { readUiPerfTier } from "@/shared/core/ui-performance";
-import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
-import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
+import { mentrixBrandUi, mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
-const statCellClass = `${mentrixBrandUi.panel} flex flex-col rounded-2xl px-4 py-3 sm:px-5 sm:py-4`;
+const statCellClass = `${mentrixStudent.hubNotebook} flex flex-col rounded-2xl px-4 py-3 sm:px-5 sm:py-4`;
 
 function loadRateFloatDismissedIds(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -104,7 +103,6 @@ export function SessionsList({
   initialSessionsTab,
   momentumActive = false,
 }: SessionsListProps) {
-  const uiPerfTier = useUiPerfTier();
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialPkg = (initialOpenStudyPackageId ?? "").trim();
@@ -401,66 +399,44 @@ export function SessionsList({
 
       <div className={`lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}`}>
         <div className="lg:col-span-2">
-          <section className="relative overflow-hidden rounded-2xl border border-white/20 bg-[linear-gradient(160deg,#182846_0%,#12223e_46%,#0d1c35_100%)] p-4 text-white shadow-[0_14px_38px_-24px_rgba(15,23,42,0.65)] sm:p-6">
-            {uiPerfTier === "full" ? (
-              <>
-                <div className="pointer-events-none absolute inset-0 bg-[url('/mentrixalogo/logo.webp')] bg-[length:106px_106px] bg-repeat opacity-[0.055]" />
-                <Image
-                  src="/icons/mentrixer.svg"
-                  alt=""
-                  width={18}
-                  height={18}
-                  unoptimized
-                  className="pointer-events-none absolute right-5 top-4 h-[18px] w-[18px] opacity-60 animate-[mentrixaLogoDrift_10s_linear_infinite]"
-                />
-                <Image
-                  src="/icons/mentrixer.svg"
-                  alt=""
-                  width={16}
-                  height={16}
-                  unoptimized
-                  className="pointer-events-none absolute right-20 bottom-5 h-4 w-4 opacity-45 animate-[mentrixaLogoDrift_12s_linear_infinite_reverse]"
-                />
-              </>
-            ) : null}
+          <section className={mentrixStudent.hubSessionsPanel}>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-              <TabsList className="mb-5 flex h-auto w-full gap-2 rounded-xl border border-white/20 bg-white/10 p-1.5 overflow-x-auto">
+              <TabsList className="mx-hub-tabs-list mb-5 flex h-auto w-full gap-2 rounded-xl p-1.5 overflow-x-auto">
                 <TabsTrigger
                   value="schedule"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
+                  className="mx-hub-tab-trigger flex-1 gap-2 px-3 py-2 transition-all"
                 >
-                  <MentrixaVocabIcon name="day" size={14} surface="dark" title="Week" />
+                  <MentrixaVocabIcon name="day" size={16} surface="light" title="Week" />
                   Week
                 </TabsTrigger>
                 <TabsTrigger
                   value="upcoming"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
+                  className="mx-hub-tab-trigger flex-1 gap-2 px-3 py-2 transition-all"
                 >
-                  <MentrixaVocabIcon name="session" size={14} surface="dark" title="Upcoming" />
+                  <MentrixaVocabIcon name="session" size={16} surface="light" title="Upcoming" />
                   Upcoming ({filteredUpcoming.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="requests"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
+                  className="mx-hub-tab-trigger flex-1 gap-2 px-3 py-2 transition-all"
                 >
-                  <MentrixaVocabIcon name="booking" size={14} surface="dark" title="Requests" />
+                  <MentrixaVocabIcon name="booking" size={16} surface="light" title="Requests" />
                   Requests ({filteredRequests.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="past"
-                  className="flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/80 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#7C3AED] data-[state=active]:to-[#6366F1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all gap-2"
+                  className="mx-hub-tab-trigger flex-1 gap-2 px-3 py-2 transition-all"
                 >
-                  <MentrixaVocabIcon name="loop-report" size={14} surface="dark" title="History" />
+                  <MentrixaVocabIcon name="loop-report" size={16} surface="light" title="History" />
                   History
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="schedule" className="mt-0">
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-white/70">Weekly Schedule</h3>
-                  
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className={mentrixHubSurfaces.inkLabel}>Weekly Schedule</h3>
                   </div>
                   <StudentWeekCalendar 
                     calendar={{ 
@@ -475,15 +451,11 @@ export function SessionsList({
 
               <TabsContent value="upcoming" className="mt-0" data-student-sessions-tab="upcoming">
                 {filteredUpcoming.length === 0 ? (
-                  <div className="rounded-xl border border-white/25 bg-white/10 px-6 py-12 text-center">
-                    <p className="text-sm font-medium text-white/85">No upcoming sessions.</p>
-                    <Button
-                      size="sm"
-                      className="mt-5 rounded-md bg-gradient-to-r from-[#7C3AED] to-[#6366F1] px-6 font-semibold text-white hover:brightness-110"
-                      asChild
-                    >
-                      <Link href="#browse-guides">Browse guides</Link>
-                    </Button>
+                  <div className={mentrixStudent.hubEmpty}>
+                    <p className={mentrixHubSurfaces.inkBody}>No upcoming sessions.</p>
+                    <Link href="#browse-guides" className={`mt-5 ${mentrixStudent.hubBtnSolid}`}>
+                      Browse guides
+                    </Link>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -496,24 +468,24 @@ export function SessionsList({
 
               <TabsContent value="requests" className="mt-0" data-student-sessions-tab="requests">
                 {filteredRequests.length === 0 ? (
-                  <div className="rounded-xl border border-white/25 bg-white/10 px-6 py-12 text-center">
-                    <p className="text-sm font-medium text-white/85">No active requests.</p>
+                  <div className={mentrixStudent.hubEmpty}>
+                    <p className={mentrixHubSurfaces.inkBody}>No active requests.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {filteredRequests.map((request) => (
-                      <div key={request.id} className="session-card rounded-xl border border-white/20 bg-white/5 p-4 flex items-center justify-between">
+                      <div key={request.id} className="session-card mx-hub-inner-card rounded-xl p-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden">
+                          <div className="w-10 h-10 rounded-full bg-[#EEF2FF] flex items-center justify-center border border-[#6366F1] overflow-hidden">
                              {request.tutor.avatar_url ? (
                               <Image src={request.tutor.avatar_url} alt="" width={40} height={40} className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-xs font-bold">{request.tutor.display_name?.[0]?.toUpperCase() ?? "G"}</span>
+                              <span className="text-sm font-bold text-[#6366F1]">{request.tutor.display_name?.[0]?.toUpperCase() ?? "G"}</span>
                             )}
                           </div>
                           <div>
-                            <h4 className="font-bold text-white text-sm">{request.availability?.course.toUpperCase()}</h4>
-                            <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
+                            <h4 className="font-bold text-[#0B1220] text-base">{request.availability?.course.toUpperCase()}</h4>
+                            <div className="flex items-center gap-2 text-base text-[#64748B] mb-1">
                               <TutorAvatar 
                                 displayName={request.tutor.display_name} 
                                 emailPrefix={request.tutor.display_name || "G"} 
@@ -523,15 +495,15 @@ export function SessionsList({
                               <span>with {request.tutor.display_name}</span>
                             </div>
                             {request.availability && (
-                              <p className="text-[10px] text-white/65 mt-1 font-mono">
+                              <p className="text-base text-[#64748B] mt-1 font-mono">
                                 {formatSlotRangeInZone(request.availability.start_time, request.availability.end_time, displayTimeZone)}
                               </p>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <SessionStatusChip status={request.status} tone="dark" />
-                          <p className="text-[10px] text-white/65 mt-1">Sent recently</p>
+                          <SessionStatusChip status={request.status} tone="light" />
+                          <p className="text-base text-[#64748B] mt-1">Sent recently</p>
                         </div>
                       </div>
                     ))}
@@ -541,8 +513,8 @@ export function SessionsList({
 
               <TabsContent value="past" className="mt-0" data-student-sessions-tab="past">
                 {pastSessions.length === 0 ? (
-                  <div className="rounded-xl border border-white/25 bg-white/10 px-6 py-12 text-center">
-                    <p className="text-sm font-medium text-white/85">No past sessions.</p>
+                  <div className={mentrixStudent.hubEmpty}>
+                    <p className={mentrixHubSurfaces.inkBody}>No past sessions.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">

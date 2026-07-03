@@ -3,7 +3,6 @@ import { practiceNodeHref } from "@/features/guidance/verdict-engine-pure";
 import {
   EXAM_URGENCY_DAYS,
   type StudentGoal,
-  VERIFIED_NODE_SUCCESS_THRESHOLD,
 } from "@/features/student-goals/types";
 
 export type GoalVerdictContext = {
@@ -43,10 +42,10 @@ export function estimateNodesNeededForPercentileTarget(
 
 export function buildPercentileGapNextActionLabel(nodesNeeded: number): string {
   if (nodesNeeded <= 0) {
-    return "You are on pace for your percentile target. Verify your next unseen node.";
+    return "On pace · verify next node";
   }
   const noun = nodesNeeded === 1 ? "node" : "nodes";
-  return `You need ${nodesNeeded} more verified ${noun} above ${VERIFIED_NODE_SUCCESS_THRESHOLD} percent to reach your target.`;
+  return `Need ${nodesNeeded} more verified ${noun} above 70%`;
 }
 
 export function buildExamUrgentNextAction(nodeName: string, daysLeft: number): VerdictNextAction {

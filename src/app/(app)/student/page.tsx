@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { StudentHeroGreeting } from "@/features/student-profile/ui/student-hero-greeting";
+import { StudentHeroQuickActions } from "@/features/student-profile/ui/student-hero-quick-actions";
+import { VerifiedRankHeroStrip } from "@/features/student-profile/ui/verified-rank-hero-strip";
 
 import { requireRole } from "@/shared/core/auth";
 import {
@@ -16,26 +18,22 @@ import { getActiveProgressSnapshot } from "@/features/progress-snapshot/reads";
 import type { StudentCourse, UserXp } from "@/shared/types/database";
 import {
   formatVerifiedRankNextAction,
-  formatVerifiedRankVerdict,
   loadVerifiedFirstAttemptRankStats,
 } from "@/features/xp/calibrated-rank";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { MentrixaVocabIcon, StreakCountDisplay, VocabHubTile, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { StreakCountDisplay, XpCountDisplay, MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { CANONICAL_QUEST_ICON } from "@/shared/icons/vocab-canonical";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
-import { MentrixHeroDecor } from "@/features/student-profile/ui/mentrix-hero-decor";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
-  DeferredAccountRankLadder,
-  DeferredHeroMentrixerBounce,
   DeferredPreSessionBriefCard,
   DeferredProgressSnapshotCard,
   DeferredSessionsList,
-  DeferredStudentCommandCenterClient,
   DeferredStudentGoalCaptureCard,
-  DeferredStudentStatStripMotion,
+  DeferredStudentCommandCenterClient,
   DeferredStudentStudyPackageNotifier,
   DeferredTopRivalCard,
 } from "./student-dashboard-deferred";
@@ -158,21 +156,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const streakAtRisk = isStreakAtRisk18h(streak, lastActivityAt);
 
   const accountRank = getAccountRankFromTotalXp(totalXp);
-  const rankVerdict = formatVerifiedRankVerdict(verifiedRankStats);
   const rankNextAction = formatVerifiedRankNextAction(verifiedRankStats);
-
-  const sessionsCompleted = pastSessions.filter(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (s: any) => s.completed || s.status === "completed",
-  ).length;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allRatings = pastSessions.flatMap((s: any) => s.ratings ?? []);
-  const avgRating =
-    allRatings.length > 0
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? allRatings.reduce((acc: number, r: any) => acc + r.rating, 0) / allRatings.length
-      : 0;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const studyPackageSnapshots = [...pastSessions, ...upcomingSessions].map((s: any) => ({
@@ -226,122 +210,94 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     <div className={mentrixStudent.pageBgHub}>
       <StudentHubRealtimeRefresh userId={user.id} />
       <main className={mentrixStudent.main}>
-        <div className={`${mentrixStudent.heroGradientLite} mb-8 p-6 sm:p-8 relative overflow-hidden`}>
-          <MentrixHeroDecor />
-          <DeferredHeroMentrixerBounce />
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-xl space-y-5">
+        <div className={`${mentrixStudent.hubHero} mb-4`}>
+          <div className="relative flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <StudentHeroGreeting greeting={greeting} firstName={firstName} />
-
-              <div className="flex flex-wrap items-center gap-4">
-                <RankBadge rank={accountRank} size="lg" active showGlow={accountRank.key === "mentrixer"} priority />
-                <div className="min-w-0">
-                  <p
-                    className="text-lg font-bold uppercase tracking-wide sm:text-xl"
-                    style={{ color: accountRank.labelOnDark }}
-                  >
-                    {normalizeRankTitle(accountRank.title)}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-4">
-                    <XpCountDisplay xp={totalXp} size={32} showLabel />
-                    {streak > 0 ? (
-                      <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} showLabel surface="dark" />
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-
-              <p className="sr-only">{rankVerdict}</p>
-              <p className="sr-only">{rankNextAction}</p>
+              <StudentHeroQuickActions className="sm:pt-1" />
             </div>
 
-            <div className="flex flex-col items-start gap-3 lg:items-end shrink-0">
-              <div className="flex flex-wrap gap-2">
-                <VocabHubTile name="profile" href={`/student/${user.id}`} iconSize={36} />
-                <VocabHubTile name="settings" href="/settings" iconSize={36} />
-                <VocabHubTile name="quest" href="/student/quest" iconSize={36} />
-                <VocabHubTile name="booking" href="#browse-guides" iconSize={36} />
-                <VocabHubTile name="session" href="#sessions-history" iconSize={36} />
-              </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <RankBadge rank={accountRank} size="md" active showGlow={accountRank.key === "mentrixer"} priority />
+              <p
+                className="text-sm font-bold uppercase tracking-wide sm:text-base"
+                style={{ color: accountRank.labelOnLight }}
+              >
+                {normalizeRankTitle(accountRank.title)}
+              </p>
+              <XpCountDisplay xp={totalXp} size={22} showLabel accent="indigo" surface="light" />
+              {streak > 0 ? (
+                <StreakCountDisplay days={streak} size={22} atRisk={streakAtRisk} showLabel accent="violet" surface="light" />
+              ) : null}
+              {questAccuracy ? (
+                <span className="inline-flex items-center gap-2">
+                  <MentrixaVocabIcon name={CANONICAL_QUEST_ICON} size={20} surface="light" title="Quest" />
+                  <span className="font-mono text-sm font-bold tabular-nums text-[#0891B2]">
+                    {questAccuracy.accuracyPercent}%
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#6366F1]">
+                    Quest
+                  </span>
+                </span>
+              ) : null}
             </div>
+
+            {verifiedRankStats.verifiedCount > 0 ? (
+              <VerifiedRankHeroStrip
+                stats={verifiedRankStats}
+                nextActionLabel={rankNextAction ?? undefined}
+              />
+            ) : null}
           </div>
         </div>
 
         {!activeGoal ? (
-          <div className="mt-6">
+          <div className="mt-4">
             <DeferredStudentGoalCaptureCard subject={AP_CALC_AB_SUBJECT} />
           </div>
         ) : null}
 
-        {masteryGrid ? (
-          <div className="mt-8">
-            <MasteryGridHubCard data={masteryGrid} />
-          </div>
-        ) : null}
-
-        {movementReceipt ? (
-          <div className="mt-8">
-            <MovementReceiptHubCard
-              data={movementReceipt.receipt_data}
-              momentumActive={archiveSubscriber}
-            />
-          </div>
-        ) : null}
-
-        {trajectoryIndex ? (
-          <div className="mt-8">
-            <TrajectoryIndexHubCard data={trajectoryIndex} />
-          </div>
-        ) : null}
-
-        {unifiedTrajectory ? (
-          <div className="mt-8">
-            <UnifiedTrajectoryHubCard data={unifiedTrajectory} />
-          </div>
-        ) : null}
-
-        {pendingRetest ? (
-          <div className="mt-8">
-            <RetestCountdownHubCard state={pendingRetest} />
-          </div>
-        ) : null}
-
-        {loopRows.length > 0 ? (
-          <div className="mt-8">
-            <LoopReportHubCard rows={loopRows} momentumActive={momentumSubscriber} />
-          </div>
-        ) : null}
-
-        {goalDashboard ? (
-          <div className="mt-8">
-            <GoalDashboardCard data={goalDashboard} />
-          </div>
-        ) : null}
-
-        {impactReceiptsFull.length > 0 ? (
-          <div className="mt-8">
-            <GuideImpactReceiptCard
-              receipts={impactReceiptsFull}
-              momentumActive={momentumSubscriber}
-            />
-          </div>
-        ) : null}
-
-        <div className="mt-8 space-y-6">
-          {progressSnapshot ? (
-            <DeferredProgressSnapshotCard snapshot={progressSnapshot} momentumSubscriber={momentumSubscriber} />
+        <div className="mt-4 grid gap-4 lg:grid-cols-12">
+          {masteryGrid ? (
+            <div className="lg:col-span-7">
+              <MasteryGridHubCard data={masteryGrid} compact />
+            </div>
           ) : null}
-          <DeferredAccountRankLadder totalXp={totalXp} variant="dashboard" />
-          <DeferredStudentStatStripMotion
-            totalXp={totalXp}
-            streak={streak}
-            sessionsCompleted={sessionsCompleted}
-            avgRating={avgRating}
-            streakAtRisk={streakAtRisk}
-            questAccuracy={questAccuracy}
-            accountRank={accountRank}
-          />
+          <div className={masteryGrid ? "flex flex-col gap-4 lg:col-span-5" : "flex flex-col gap-4 lg:col-span-12"}>
+            {movementReceipt ? (
+              <MovementReceiptHubCard
+                data={movementReceipt.receipt_data}
+                momentumActive={archiveSubscriber}
+                compact
+              />
+            ) : null}
+            <DeferredTopRivalCard rivalData={rivalData} />
+          </div>
         </div>
+
+        {(trajectoryIndex || unifiedTrajectory || pendingRetest || loopRows.length > 0 || goalDashboard || impactReceiptsFull.length > 0) ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {trajectoryIndex ? <TrajectoryIndexHubCard data={trajectoryIndex} /> : null}
+            {unifiedTrajectory ? <UnifiedTrajectoryHubCard data={unifiedTrajectory} /> : null}
+            {pendingRetest ? <RetestCountdownHubCard state={pendingRetest} /> : null}
+            {loopRows.length > 0 ? (
+              <LoopReportHubCard rows={loopRows} momentumActive={momentumSubscriber} />
+            ) : null}
+            {goalDashboard ? <GoalDashboardCard data={goalDashboard} /> : null}
+            {impactReceiptsFull.length > 0 ? (
+              <GuideImpactReceiptCard
+                receipts={impactReceiptsFull}
+                momentumActive={momentumSubscriber}
+              />
+            ) : null}
+          </div>
+        ) : null}
+
+        {progressSnapshot ? (
+          <div className="mt-4">
+            <DeferredProgressSnapshotCard snapshot={progressSnapshot} momentumSubscriber={momentumSubscriber} />
+          </div>
+        ) : null}
 
         {query.booking === "pack_success" ? (
           <PackSprintSuccessPanel packSprint={packSprintSuccess} daysUntilExam={daysUntilExam} />
@@ -400,9 +356,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         ) : null}
 
-        <div className="mt-10 space-y-10">
-          <DeferredTopRivalCard rivalData={rivalData} />
-
+        <div className="mt-6 space-y-6">
           <DeferredStudentCommandCenterClient
             userId={user.id}
             studentCourses={studentCourses}
@@ -421,13 +375,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             rematchBadgesByTutorId={rematchBadgesByTutorId}
           />
 
-          <div id="sessions-history" className="scroll-mt-24 border-t border-violet-500/25 pt-10">
-            <div className={`${mentrixStudent.card} mb-6 flex items-center gap-3 px-5 py-4`}>
-              <MentrixaVocabIcon name="session" size={32} surface="dark" title="Sessions" />
-              <h2 className={`text-lg font-bold uppercase tracking-wide ${mentrixStudent.textOnDark}`}>Sessions</h2>
-            </div>
+          <div id="sessions-history" className="scroll-mt-24 border-t border-[#6366F1]/30 pt-6">
             <DeferredStudentStudyPackageNotifier snapshots={studyPackageSnapshots} />
-            <Suspense fallback={<div className={`min-h-[12rem] ${mentrixStudent.card}`} />}>
+            <Suspense fallback={<div className={`min-h-[12rem] ${mentrixStudent.hubNotebook}`} />}>
               <DeferredSessionsList
                 upcomingSessions={upcomingSessions}
                 pastSessions={pastSessions}

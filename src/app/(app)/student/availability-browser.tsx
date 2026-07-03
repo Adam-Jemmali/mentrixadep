@@ -24,8 +24,8 @@ import {
   impactForCourseFilter,
   type GuideImpactEntry,
 } from "@/features/guide-impact/impact-score-pure";
-import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
-import { mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 
 function slotsInNextDays<T extends { start_time: string }>(slots: T[], days: number): T[] {
   const now = Date.now();
@@ -201,12 +201,12 @@ export function AvailabilityBrowser({
 
   return (
     <aside>
-      <h2 className={`mb-1 text-sm font-medium text-violet-50 h-[20px] ${mentrixProfileType.cardTitleOnDark}`}>
+      <h2 className={`mb-1 h-[20px] ${mentrixHubSurfaces.inkTitle}`}>
         <Typewriter text="Guides" speed={70} waitTime={8000} />
       </h2>
-      <p className="mb-3 text-xs text-violet-200/80">
+      <p className={`mb-3 ${mentrixHubSurfaces.inkMuted}`}>
         Bookable slots in the next 14 days. Times in{" "}
-        <span className="font-medium text-violet-100">{displayTimeZone}</span> update in Profile if needed.
+        <span className="font-semibold text-[#4F46E5]">{displayTimeZone}</span> update in Profile if needed.
       </p>
 
       <Input
@@ -214,7 +214,7 @@ export function AvailabilityBrowser({
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search by name or course"
         aria-label="Search guides by name or course"
-        className={`mb-3 min-h-11 text-xs ${mentrixBrandUi.input}`}
+        className={`mb-3 ${mentrixStudent.hubFieldInput}`}
       />
 
       <MentrixaFilterSelect
@@ -239,19 +239,19 @@ export function AvailabilityBrowser({
             { id: "name", label: "Name (A–Z)" },
           ]}
         />
-        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-violet-200/85">
+        <label className="inline-flex cursor-pointer items-center gap-2 text-base text-[#475569]">
           <input
             type="checkbox"
             checked={minImpact80}
             onChange={(e) => setMinImpact80(e.target.checked)}
-            className="rounded border-violet-500/40 bg-indigo-950/60"
+            className="rounded border-[#A5B4FC] bg-white"
           />
           Impact Score &gt; 80
         </label>
       </div>
 
       {guides.length > 0 ? (
-        <div className={`divide-y divide-indigo-500/25 border-y border-indigo-500/25 ${mentrixBrandUi.panelMuted} rounded-lg`}>
+        <div className={`divide-y divide-[#E0E7FF] border-y border-[#C4B5FD] rounded-lg bg-white/70`}>
           {guides.map((guide, idx) => {
             const tutorId = guide.tutorId || (guide.slots[0]?.tutor_id ?? "");
             const expertise = tutorId ? (tutorExpertise[tutorId] ?? []) : [];
@@ -260,11 +260,11 @@ export function AvailabilityBrowser({
             return (
               <div
                 key={idx}
-                className="cursor-pointer space-y-1.5 px-3 py-4 transition-colors duration-200 hover:bg-violet-600/10"
+                className="mx-hub-guide-row cursor-pointer space-y-1.5 px-3 py-4 transition-colors duration-200"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-violet-500/35 bg-indigo-950/60">
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[#6366F1] bg-[#EEF2FF]">
                       {guide.avatarUrl ? (
                         <Image
                           src={guide.avatarUrl}
@@ -275,14 +275,14 @@ export function AvailabilityBrowser({
                           sizes="32px"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-violet-200">
+                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-[#6366F1]">
                           {guide.name.slice(0, 1).toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-violet-50">{guide.name}</span>
-                      <span className="block truncate text-xs text-violet-200/75">{guide.email}</span>
+                      <span className="block truncate text-base font-semibold text-[#0B1220]">{guide.name}</span>
+                      <span className="block truncate text-base text-[#64748B]">{guide.email}</span>
                     </div>
                     {hasVerifiedCourse ? <CourseTagChip course="Verified" className="normal-case" /> : null}
                     {guideRankByTutorId[tutorId] ? (
@@ -293,9 +293,9 @@ export function AvailabilityBrowser({
                       />
                     ) : null}
                   </div>
-                  <div className="shrink-0 text-right text-sm font-medium tabular-nums text-violet-50">
+                  <div className="shrink-0 text-right text-base font-semibold tabular-nums text-[#0B1220]">
                     {formatUsdFromCents(splitSessionPriceCents(guide.priceCents).totalCents)}
-                    <span className="block text-[10px] font-normal text-violet-300/70">incl. fee</span>
+                    <span className="block text-sm font-normal text-[#64748B]">incl. fee</span>
                   </div>
                 </div>
                 {guide.impactSessions >= 3 ? (
@@ -307,11 +307,11 @@ export function AvailabilityBrowser({
                   />
                 ) : null}
                 {rematchBadgesByTutorId[guide.tutorId]?.label ? (
-                  <p className="mt-1 text-[11px] font-medium text-emerald-200/90">
+                  <p className="mt-1 text-base font-medium text-[#0891B2]">
                     {rematchBadgesByTutorId[guide.tutorId]!.label}
                   </p>
                 ) : null}
-                <div className="mt-0.5 text-xs text-violet-200/80">
+                <div className="mt-0.5 text-base text-[#64748B]">
                   {guide.rating.toFixed(1)} rating · {guide.sessions} sessions
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">

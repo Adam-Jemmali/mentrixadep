@@ -1,9 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  MentrixaVocabIcon,
+  VocabSectionHeading,
+  VocabStatColumn,
+  vocabTwoWordLabel,
+} from "@/shared/icons/mentrixa-vocab-icons";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import {
+  CANONICAL_DUELS_ICON,
+  CANONICAL_QUEST_ICON,
+  CANONICAL_RECEIPT_ICON,
+  CANONICAL_MOMENTUM_ICON,
+  CANONICAL_BOOKING_ICON,
+} from "@/shared/icons/vocab-canonical";
 import type { MovementReceiptData } from "@/features/movement-receipt/types";
 import {
   buildMovementReceiptDetailLines,
@@ -16,63 +28,98 @@ import { GridMovementVisual } from "@/features/movement-receipt/ui/grid-movement
 type MovementReceiptHubCardProps = {
   data: MovementReceiptData;
   momentumActive: boolean;
+  compact?: boolean;
 };
 
-export function MovementReceiptHubCard({ data, momentumActive }: MovementReceiptHubCardProps) {
+function IconLink({
+  href,
+  icon,
+  label,
+}: {
+  href: string;
+  icon: VocabIconName;
+  label: string;
+}) {
+  const caption = vocabTwoWordLabel(label);
+
+  return (
+    <Link href={href} className={mentrixStudent.hubBtnChip} title={caption}>
+      <MentrixaVocabIcon name={icon} size={32} surface="light" title={caption} />
+      <span className="max-w-[5.5rem] text-center text-[9px] font-black uppercase leading-tight tracking-[0.1em] text-[#4F46E5]">
+        {caption}
+      </span>
+    </Link>
+  );
+}
+
+export function MovementReceiptHubCard({ data, momentumActive, compact = false }: MovementReceiptHubCardProps) {
   const { verdict, nextAction, ctaHref, ctaLabel } = buildMovementReceiptVerdict(data);
   const supplementalVerdict = stripGridMovementFromVerdict(verdict, data.grid);
   const detailLines = momentumActive
     ? buildMovementReceiptDetailLines(data).filter((line) => !isGridDetailLine(line))
     : [];
 
+  const ctaIcon: VocabIconName = ctaHref.includes("quest")
+    ? CANONICAL_QUEST_ICON
+    : ctaHref.includes("duel")
+      ? CANONICAL_DUELS_ICON
+      : ctaHref.includes("subscribe")
+        ? CANONICAL_MOMENTUM_ICON
+        : CANONICAL_BOOKING_ICON;
+  const ctaCaption = vocabTwoWordLabel(ctaLabel);
+
   return (
-    <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Movement receipt">
-      <p className={`${mentrixStudent.sectionEyebrowOnLight} inline-flex items-center gap-2`}>
-        <MentrixaVocabIcon name="movement-receipt" size={16} surface="light" title="Movement receipt" />
-        Movement receipt
-      </p>
-      <p className="mt-1 text-xs text-zinc-500">Week of {data.weekStart}</p>
+    <section className={mentrixStudent.hubSticky} aria-label="Movement receipt">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <VocabSectionHeading
+          name={CANONICAL_RECEIPT_ICON}
+          label="Weekly Receipt"
+          surface="light"
+          iconSize={compact ? 36 : undefined}
+          labelClassName="text-[#6366F1]"
+        />
+        <VocabStatColumn
+          icon="receipt"
+          label="This Week"
+          value={data.weekStart}
+          accent="indigo"
+          surface="light"
+          iconSize={compact ? 24 : 28}
+          valueClassName="text-[10px] font-bold tabular-nums sm:text-xs"
+        />
+      </div>
       <div className="mt-3">
         <GridMovementVisual grid={data.grid} surface="light" />
       </div>
-      {supplementalVerdict ? (
-        <p className="mt-2 text-sm font-semibold text-zinc-900">{supplementalVerdict}</p>
-      ) : null}
-      <p className="mt-1 text-sm text-zinc-600">{nextAction}</p>
+
+      <p className="sr-only">
+        {supplementalVerdict} {nextAction}
+      </p>
 
       {detailLines.length > 0 ? (
-        <ul className="mt-4 space-y-1.5 text-sm text-zinc-700">
+        <ul className="sr-only">
           {detailLines.map((line) => (
-            <li key={line} className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
-              {line}
-            </li>
+            <li key={line}>{line}</li>
           ))}
         </ul>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Button asChild size="sm">
-          <Link href={ctaHref}>{ctaLabel}</Link>
-        </Button>
+      <div className="mt-3 flex flex-wrap items-end gap-2">
+        <Link href={ctaHref} className={mentrixStudent.hubBtn} title={ctaCaption}>
+          <MentrixaVocabIcon name={ctaIcon} size={32} surface="dark" title={ctaCaption} />
+          <span className="max-w-[5.5rem] text-center text-[9px] font-black uppercase leading-tight tracking-[0.1em]">
+            {ctaCaption}
+          </span>
+        </Link>
+
         {momentumActive ? (
           <>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/student/receipts" className="inline-flex items-center gap-1.5">
-                <MentrixaVocabIcon name="receipt" size={14} surface="light" title="Receipt archive" />
-                Receipt archive
-              </Link>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/student/briefs">Brief archive</Link>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/student/mastery">Mastery timeline</Link>
-            </Button>
+            <IconLink href="/student/receipts" icon="receipt" label="All Receipts" />
+            <IconLink href="/student/briefs" icon="brief" label="All Briefs" />
+            <IconLink href="/student/mastery" icon="mastery-grid" label="Skill Grid" />
           </>
         ) : (
-          <Button asChild size="sm" variant="outline">
-            <Link href="/student/subscribe">Get weekly receipt by email</Link>
-          </Button>
+          <IconLink href="/student/subscribe" icon={CANONICAL_MOMENTUM_ICON} label="Get Momentum" />
         )}
       </div>
     </section>

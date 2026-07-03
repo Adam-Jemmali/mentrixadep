@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Rival">
+<g fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="10,12 22,22 16,26 38,38" stroke-width="2.35"/>
+  <polyline points="38,12 26,22 32,26 10,38" stroke-width="2.35"/>
+  <polygon points="24,21 27,24 24,27 21,24" fill="#000" stroke="none" opacity="0.75"/>
+</g>
+</svg>

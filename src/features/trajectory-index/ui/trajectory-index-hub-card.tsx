@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import type { TrajectoryIndexResult } from "@/features/trajectory-index/trajectory-index-pure";
 
 type TrajectoryIndexHubCardProps = {
@@ -12,7 +13,7 @@ type TrajectoryIndexHubCardProps = {
 export function TrajectoryIndexHubCard({ data }: TrajectoryIndexHubCardProps) {
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Trajectory index">
-      <p className={mentrixStudent.sectionEyebrowOnLight}>Trajectory index</p>
+      <VocabSectionHeading name="trajectory-certificate" label="Trajectory index" surface="light" gold />
       <p className="mt-2 text-3xl font-bold tabular-nums text-violet-700">{data.score}</p>
       <p className="mt-2 text-sm font-semibold text-zinc-900">{data.verdict}</p>
       <p className="mt-1 text-sm text-zinc-600">{data.nextAction}</p>

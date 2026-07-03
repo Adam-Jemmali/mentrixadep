@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Playfair+Display:wght@700&display=swap");
 
 /* Mobile-optimized navbar - disable expensive effects on small screens */
 @media (max-width: 768px) {
@@ -311,13 +311,320 @@ html:has(.mentrix-student-type-scope) body {
 
 /* One paint-friendly stack (multiple gradients on a single element beat several full-screen overlay divs + animations). */
 .bg-mentrixa-app {
-  background:
-    radial-gradient(1200px 520px at 8% -12%, rgba(139, 92, 246, 0.1), transparent 55%),
-    radial-gradient(1000px 420px at 92% -8%, rgba(79, 70, 229, 0.12), transparent 52%),
-    radial-gradient(900px 360px at 50% 108%, rgba(99, 102, 241, 0.08), transparent 56%),
-    radial-gradient(circle at center, transparent 35%, rgba(2, 6, 23, 0.62) 100%),
-    linear-gradient(180deg, #050811 0%, #080f21 48%, #070e1d 100%);
+  background-color: #0b1220;
+  background-image: radial-gradient(circle, rgba(99, 102, 241, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
+
+/* Student hub — paper canvas surfaces (solid fills, ruled lines, handwriting). */
+.mx-hub-ruled-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    rgba(99, 102, 241, 0.2) 31px,
+    rgba(99, 102, 241, 0.2) 32px
+  );
+  background-size: 100% 32px;
+}
+
+.mx-hub-paper {
+  font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
+  font-size: 1.2rem;
+  line-height: 1.35;
+  color: #0b1220;
+}
+
+.mx-hub-paper :where(h1, h2, h3, h4) {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.mx-hub-paper :where([class*="font-mono"]) {
+  font-family: "Caveat", cursive;
+  font-weight: 700;
+}
+
+.mx-hub-paper :where([class*="text-[9px]"], [class*="text-[10px]"], [class*="text-[11px]"]) {
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.mx-hub-paper :where([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"]) {
+  font-size: 1.85rem;
+  line-height: 1.1;
+}
+
+.mx-hub-paper :where([class*="text-sm"]) {
+  font-size: 1.15rem;
+}
+
+.mx-hub-paper :where([class*="text-xs"]) {
+  font-size: 1.05rem;
+}
+
+/* UI labels on paper — Geist for legibility (handwriting reserved for titles/body). */
+.mx-hub-type-ui {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.625rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+}
+
+.mx-hub-type-on-dark {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.5625rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+  color: #ffffff !important;
+}
+
+.mx-surface-light .mx-hub-type-ui {
+  color: #4338ca !important;
+}
+
+.mx-hub-ink-muted {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  color: #334155 !important;
+}
+
+.mx-hub-ink-title {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 900 !important;
+  color: #0b1220 !important;
+  letter-spacing: 0.02em;
+  line-height: 1.15 !important;
+}
+
+.mx-hub-timer {
+  font-family: var(--font-geist-mono), ui-monospace, monospace !important;
+  font-weight: 800 !important;
+  color: #0b1220 !important;
+  letter-spacing: 0.02em;
+  line-height: 1 !important;
+}
+
+.mx-hub-math-prose {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.65 !important;
+  color: #0b1220 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+.mx-hub-paper .mx-hub-math-prose :where(p, span, div, li) {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  letter-spacing: inherit !important;
+  text-transform: none !important;
+  font-weight: inherit !important;
+}
+
+.mx-hub-math-prose :where(.katex) {
+  font-size: 1.05em;
+}
+
+.mx-hub-math-prose :where(.katex-display) {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.mx-hub-certificate {
+  position: relative;
+  isolation: isolate;
+  border-radius: 3px;
+  border: 2px solid #6366f1;
+  outline: 1px solid #7c3aed;
+  outline-offset: 4px;
+  background-color: #f7f5f0;
+  color: #0b1220;
+  box-shadow: 0 14px 28px -18px rgba(2, 6, 23, 0.65);
+}
+
+.mx-hub-certificate.mx-hub-ruled-lines {
+  background-color: #f7f5f0;
+}
+
+.mx-hub-notebook {
+  position: relative;
+  isolation: isolate;
+  border-radius: 2px 8px 8px 2px;
+  border: 1px solid #c4b5fd;
+  border-left: 5px solid #7c3aed;
+  background-color: #fafaf8;
+  color: #0f172a;
+  box-shadow: 0 10px 24px -16px rgba(2, 6, 23, 0.55);
+}
+
+.mx-hub-notebook::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  bottom: 0;
+  width: 1px;
+  background: rgba(124, 58, 237, 0.22);
+  pointer-events: none;
+}
+
+.mx-hub-sticky {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid #a5b4fc;
+  border-radius: 2px;
+  background-color: #ede9fe;
+  color: #1e1b4b;
+  box-shadow:
+    2px 4px 0 rgba(11, 18, 32, 0.14),
+    4px 8px 18px -6px rgba(11, 18, 32, 0.35);
+  transform: rotate(-0.9deg);
+  padding-bottom: 1.35rem;
+  padding-right: 1.35rem;
+}
+
+.mx-hub-sticky > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Curled bottom-right corner — sticky note fold. */
+.mx-hub-sticky::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 34px 34px;
+  border-color: transparent transparent #ddd6fe transparent;
+  filter: drop-shadow(-2px 2px 2px rgba(11, 18, 32, 0.18));
+}
+
+.mx-hub-sticky::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(225deg, #c4b5fd 0%, #c4b5fd 46%, transparent 47%);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.mx-hub-book {
+  position: relative;
+  isolation: isolate;
+  border-radius: 4px;
+  border: 1px solid #6366f1;
+  background: #f8f7ff;
+  color: #0b1220;
+  box-shadow:
+    inset 14px 0 22px -18px rgba(49, 46, 129, 0.28),
+    0 12px 26px -18px rgba(2, 6, 23, 0.55);
+}
+
+.mx-hub-book-spine {
+  border-color: #c4b5fd;
+  background: #eef2ff;
+}
+
+.mx-hub-book-page {
+  background-color: #fafbff;
+}
+
+.mx-hub-book-page.mx-hub-ruled-lines {
+  background-color: #fafbff;
+}
+
+/* Bold italic VS knockout mark */
+.mx-hub-vs-mark {
+  font-family: "Arial Black", "Helvetica Neue", Impact, sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+  user-select: none;
+}
+
+.mx-hub-vs-v {
+  color: #0b1220;
+  letter-spacing: -0.06em;
+}
+
+.mx-hub-vs-s {
+  color: #0b1220;
+  margin-left: -0.4em;
+  letter-spacing: -0.04em;
+  -webkit-text-stroke: 0.12em #fafbff;
+  paint-order: stroke fill;
+}
+
+.mx-hub-empty {
+  color: #475569;
+}
+
+.mx-hub-paper-table th,
+.mx-hub-paper-table td {
+  font-family: "Caveat", "Segoe Print", cursive;
+  font-size: 1.1rem;
+}
+
+.mx-hub-tabs-list {
+  border: 1px solid #c4b5fd;
+  background: #eef2ff;
+}
+
+.mx-hub-tab-trigger {
+  font-family: "Caveat", cursive;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4f46e5;
+  border-radius: 0.5rem;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.mx-hub-tab-trigger[data-state="active"] {
+  border: 1px solid #6366f1;
+  background: #7c3aed;
+  color: #fff;
+  box-shadow: 2px 3px 0 #0b1220;
+}
+
+.mx-hub-inner-card {
+  border: 1px solid #c4b5fd;
+  background: rgba(255, 255, 255, 0.72);
+  color: #334155;
+}
+
+.mx-hub-guide-row {
+  border-color: #e0e7ff;
+}
+
+.mx-hub-guide-row:hover {
+  background: rgba(237, 233, 254, 0.65);
+}
+
+.mx-hub-btn-hand {
+  font-family: "Caveat", cursive;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
 
 /* Used by arbitrary `animate-[mentrixaLogoDrift_…]` utilities (e.g. sessions header accents). */
 @keyframes mentrixaLogoDrift {
@@ -1118,6 +1425,54 @@ main:has(.lp-root) > div {
   }
 }
 
+.mx-loader-orbit-dash {
+  transform-origin: center center;
+  will-change: stroke-dashoffset;
+  animation: mxOrbitDashTravel var(--orbit-duration, 2s) linear infinite;
+}
+
+.mx-loader-orbit-dash--reverse {
+  animation-direction: reverse;
+}
+
+@keyframes mxOrbitDashTravel {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: calc(-1 * var(--orbit-circ, 360));
+  }
+}
+
+/* Legacy wrapper spin — kept for stale markup. */
+.mx-loader-orbit-ring {
+  transform-origin: center center;
+  animation: mxRingOrbit var(--orbit-duration, 2s) linear infinite;
+}
+.mx-loader-orbit-ring--reverse {
+  animation-direction: reverse;
+}
+@keyframes mxRingOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mx-loader-orbit-stroke--outer {
+  stroke: rgba(79, 70, 229, 0.95);
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.4));
+}
+.mx-loader-orbit-stroke--middle {
+  stroke: rgba(124, 58, 237, 0.92);
+}
+.mx-loader-orbit-stroke--inner {
+  stroke: rgba(14, 165, 233, 0.88);
+}
+
+/* Legacy border rings — kept for any stale markup references */
 .mx-loader-ring-spin {
   box-sizing: border-box;
 }
@@ -1142,6 +1497,15 @@ main:has(.lp-root) > div {
 @keyframes mxRingSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-loader-orbit-dash,
+  .mx-loader-orbit-ring,
+  .mx-logo-tumble {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
@@ -2603,21 +2967,29 @@ html.lp-landing-logo-cursor-active * {
     @apply font-medium text-violet-50;
   }
 
-  /* Remap legacy white cards inside product routes to logo palette */
-  .mentrix-student-type-scope .mx-surface-light {
+  /* Remap legacy white cards inside product routes to logo palette — skip paper hub surfaces. */
+  .mentrix-student-type-scope
+    .mx-surface-light:not(.mx-hub-certificate):not(.mx-hub-notebook):not(.mx-hub-sticky):not(.mx-hub-book) {
     border-radius: 1rem;
     border: 1px solid rgba(124, 58, 237, 0.38);
-    background: linear-gradient(
-      155deg,
-      rgba(76, 29, 149, 0.55) 0%,
-      rgba(49, 46, 129, 0.92) 32%,
-      rgba(30, 27, 75, 0.96) 58%,
-      rgba(11, 18, 32, 0.98) 100%
-    );
+    background: #1e1b4b;
     box-shadow:
       0 1px 0 rgba(165, 180, 252, 0.12) inset,
       0 22px 42px -26px rgba(79, 70, 229, 0.55);
     color: #f5f3ff;
+  }
+
+  .mentrix-student-type-scope :where(.mx-hub-certificate, .mx-hub-notebook, .mx-hub-sticky, .mx-hub-book) :where(h1, h2, h3, h4) {
+    font-family: "Caveat", cursive;
+    font-weight: 700;
+    font-size: 1.75rem;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: #0b1220;
+  }
+
+  .mentrix-student-type-scope :where(.mx-hub-paper) :where(p, li, span, button, a, label) {
+    font-family: inherit;
   }
 
   .mentrix-student-type-scope .mentrixa-select--filter [data-slot="select-trigger"] {

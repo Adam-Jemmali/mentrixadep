@@ -7,12 +7,14 @@ import { Button } from "@/shared/ui/button";
 import { QuestKindMetaTag } from "@/shared/ui/meta-tag-patterns";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
+import { PromptWithMath, PromptWithMathInline } from "@/features/quest/ui/prompt-with-math";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { cn } from "@/shared/core/utils";
 import { emitXpAward } from "@/features/xp/xp-events";
 import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import { fetchDuelResultVerdict } from "@/features/guidance/fetch-verdict-actions";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
 type QuestionPublic = {
   prompt: string;
@@ -194,37 +196,27 @@ export function SkillDuelResults({
       className="space-y-6"
     >
       <DuelXpCelebration amount={xpAmount} youWon={youWon} tie={tie} />
-      <section className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-b from-[#0b1830] via-[#0f2244] to-[#09162c] p-6 text-white shadow-[0_24px_80px_-24px_rgba(15,23,42,0.85)] sm:p-8">
-        <div
-          className={cn(
-            "pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-gradient-to-br opacity-40 blur-3xl",
-            theme.gradient,
-          )}
-          aria-hidden
-        />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(99,102,241,0.22),transparent_70%)]" aria-hidden />
-
+      <section className={cn(mentrixStudent.hubNotebook, "relative overflow-hidden p-5 sm:p-8")}>
         <div className="relative space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-200/90">
+              <div className="mx-hub-type-ui inline-flex items-center gap-2 rounded-full border border-[#A5B4FC] bg-[#EDE9FE] px-3 py-1 text-[10px]">
                 <span aria-hidden>{theme.emoji}</span>
                 {divisionKey.replace(/-/g, " ")}
               </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-indigo-300/80">
+              <p className="mx-hub-type-ui text-[11px] font-semibold uppercase tracking-[0.24em]">
                 Match debrief
               </p>
-              <h2 className="text-3xl font-black italic tracking-tight sm:text-4xl">{outcomeTitle}</h2>
-              <p className="max-w-md text-sm leading-relaxed text-slate-300/95">{outcomeSubtitle}</p>
+              <h2 className="mx-hub-ink-title text-3xl uppercase italic sm:text-4xl">{outcomeTitle}</h2>
+              <p className="mx-hub-ink-muted max-w-md text-sm leading-relaxed">{outcomeSubtitle}</p>
             </div>
-
           </div>
 
           <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
             <ScoreTile label={youLabel} score={yourScore} total={total} highlight={youWon && !tie} motionEnabled={motionEnabled} />
             <div className="flex flex-col items-center justify-center px-2 py-1">
-              <MentrixaVocabIcon name="duels" size={22} className="text-indigo-300/80" title="Versus" />
-              <span className="mt-1 font-mono text-xs font-bold uppercase tracking-widest text-slate-500">vs</span>
+              <MentrixaVocabIcon name="duels" size={22} surface="light" title="Versus" />
+              <span className="mx-hub-type-ui mt-1 text-[10px]">vs</span>
             </div>
             <ScoreTile
               label={themLabel}
@@ -237,16 +229,16 @@ export function SkillDuelResults({
           </div>
 
           {verdict ? (
-            <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-4">
-              <VerdictPanel verdict={verdict} tone="dark" />
+            <div className={cn(mentrixStudent.hubSticky, "px-4 py-4")}>
+              <VerdictPanel verdict={verdict} tone="light" />
             </div>
           ) : (
-            <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-400">
+            <p className={cn(mentrixStudent.hubSticky, "mx-hub-ink-muted px-4 py-3 text-sm")}>
               Building your match verdict…
             </p>
           )}
 
-          <p className="inline-flex flex-wrap items-center gap-1.5 font-mono text-xs tabular-nums text-slate-500">
+          <p className="mx-hub-ink-muted inline-flex flex-wrap items-center gap-1.5 text-xs tabular-nums">
             <span>
               {yourScore}/{total} vs {theirScore}/{total}
               {` · ${stats.accuracy}% accuracy`}
@@ -254,7 +246,7 @@ export function SkillDuelResults({
             {xpAmount > 0 ? (
               <span className="inline-flex items-center gap-1">
                 ·
-                <MentrixaVocabIcon name="xp" size={14} className="text-violet-300" title="XP earned" />
+                <MentrixaVocabIcon name="xp" size={14} surface="light" title="XP earned" />
                 +{xpAmount}
               </span>
             ) : null}
@@ -265,8 +257,8 @@ export function SkillDuelResults({
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold tracking-tight text-slate-900">Round-by-round replay</h3>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <h3 className="mx-hub-ink-title text-lg">Round-by-round replay</h3>
+            <p className="mx-hub-ink-muted mt-0.5 text-sm">
               Your picks, the correct line, and how {themLabel.toLowerCase()} answered.
             </p>
           </div>
@@ -289,8 +281,8 @@ export function SkillDuelResults({
                   className={cn(
                     "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors",
                     filter === key
-                      ? "border-indigo-300 bg-indigo-50 text-indigo-800"
-                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700",
+                      ? "border-[#6366F1] bg-[#EDE9FE] text-[#4338CA]"
+                      : "border-[#A5B4FC] bg-white text-[#64748B] hover:border-[#6366F1] hover:text-[#4338CA]",
                   )}
                 >
                   {FILTER_LABELS[key]} ({count})
@@ -308,14 +300,15 @@ export function SkillDuelResults({
               animate={motionEnabled ? { opacity: 1, y: 0 } : false}
               transition={{ delay: Math.min(listIndex * 0.04, 0.35), duration: 0.3 }}
               className={cn(
-                "overflow-hidden rounded-2xl border bg-white shadow-sm",
+                mentrixStudent.hubNotebook,
+                "overflow-hidden",
                 round.outcome === "correct"
-                  ? "border-emerald-200/80"
+                  ? "ring-1 ring-emerald-300/80"
                   : round.outcome === "wrong"
-                    ? "border-rose-200/70"
+                    ? "ring-1 ring-rose-300/70"
                     : round.outcome === "skipped"
-                      ? "border-amber-200/70"
-                      : "border-slate-200",
+                      ? "ring-1 ring-amber-300/70"
+                      : "",
               )}
             >
               <div
@@ -340,24 +333,27 @@ export function SkillDuelResults({
                 <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                   <span>
                     {youLabel}:{" "}
-                    <span className="text-slate-800">
-                      {formatPick(round.myPick, round.question.choices)}
+                    <span className="mx-hub-math-prose inline text-[#0B1220]">
+                      <PromptWithMathInline text={formatPick(round.myPick, round.question.choices)} />
                     </span>
                   </span>
-                  <span className="text-slate-300">·</span>
+                  <span className="text-[#C4B5FD]">·</span>
                   <span>
                     {themLabel}:{" "}
-                    <span className="text-slate-800">
-                      {formatPick(round.theirPick, round.question.choices)}
+                    <span className="mx-hub-math-prose inline text-[#0B1220]">
+                      <PromptWithMathInline text={formatPick(round.theirPick, round.question.choices)} />
                     </span>
                   </span>
                 </div>
               </div>
 
               <div className="space-y-4 p-4 sm:p-5">
-                <p className="text-sm font-medium leading-relaxed text-slate-900 sm:text-[15px]">
-                  {stripGuestTryPromptDecorators(round.question.prompt)}
-                </p>
+                <div className="mx-hub-math-prose">
+                  <PromptWithMath
+                    text={stripGuestTryPromptDecorators(round.question.prompt)}
+                    variant="light"
+                  />
+                </div>
 
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {round.question.choices.map((choice, ci) => {
@@ -392,7 +388,9 @@ export function SkillDuelResults({
                           >
                             {isCorrect ? "✓" : isMine ? "✕" : ci + 1}
                           </span>
-                          <span className="leading-snug">{displayChoice(choice, choiceCount)}</span>
+                          <span className="min-w-0 flex-1 leading-snug">
+                            <PromptWithMathInline text={displayChoice(choice, choiceCount)} />
+                          </span>
                         </div>
                         {(isMine || isTheirs) && (
                           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -423,14 +421,17 @@ export function SkillDuelResults({
         </ol>
 
         {filteredRounds.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+          <p className={cn(mentrixStudent.hubEmpty, "text-sm")}>
             No rounds in this filter.
           </p>
         ) : null}
       </section>
 
       <div className="flex flex-col items-stretch gap-2 pt-2 sm:flex-row sm:justify-center">
-        <Button asChild className="font-semibold">
+        <Button
+          asChild
+          className={cn(mentrixStudent.pillPrimary, "font-semibold")}
+        >
           <Link
             href="/student/duel"
             onMouseEnter={onPrefetchHub}
@@ -441,8 +442,9 @@ export function SkillDuelResults({
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           disabled={listActionLoading}
+          className={cn(mentrixStudent.hubGhostLink, "font-semibold")}
           onMouseEnter={onPrefetchHub}
           onTouchStart={onPrefetchHub}
           onClick={onRemoveFromList}
@@ -450,7 +452,7 @@ export function SkillDuelResults({
           {listActionLoading ? "Removing…" : "Remove from my list"}
         </Button>
       </div>
-      {error ? <p className="text-center text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-center text-sm font-semibold text-[#B45309]">{error}</p> : null}
     </motion.div>
   );
 }
@@ -514,19 +516,23 @@ function ScoreTile({
       animate={motionEnabled ? { opacity: 1, y: 0 } : false}
       transition={{ duration: 0.35 }}
       className={cn(
-        "rounded-2xl border px-4 py-3 backdrop-blur-sm",
-        highlight ? "border-white/25 bg-white/10" : "border-white/10 bg-black/20",
+        mentrixStudent.hubSticky,
+        "px-4 py-3",
+        highlight && "ring-2 ring-[#6366F1]/40",
         align === "end" ? "text-right" : "text-left",
       )}
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
-      <p className="mt-1 font-mono text-3xl font-black tabular-nums text-white sm:text-4xl">
+      <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]">{label}</p>
+      <p className="mx-hub-timer mt-1 text-3xl tabular-nums sm:text-4xl">
         {score}
-        <span className="text-base font-semibold text-slate-500">/{total}</span>
+        <span className="mx-hub-ink-muted text-base font-semibold">/{total}</span>
       </p>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E0E7FF]">
         <motion.div
-          className={cn("h-full rounded-full bg-gradient-to-r", highlight ? "from-emerald-400 to-teal-300" : "from-indigo-400 to-violet-400")}
+          className={cn(
+            "h-full rounded-full",
+            highlight ? "bg-[#6366F1]" : "bg-[#A5B4FC]",
+          )}
           initial={motionEnabled ? { width: 0 } : false}
           animate={motionEnabled ? { width: `${pct}%` } : false}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}

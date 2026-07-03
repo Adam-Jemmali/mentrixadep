@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import {
@@ -11,26 +10,7 @@ import {
   type AccountRankVisual,
 } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-
-function XpIcon({ className, size = 22 }: { className?: string; size?: number }) {
-  return (
-    <motion.div
-      className={cn("relative shrink-0", className)}
-      animate={{ y: [0, -3, 0], rotate: [0, 4, 0, -4, 0] }}
-      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      aria-hidden
-    >
-      <Image
-        src="/images/xp.webp"
-        alt=""
-        width={size}
-        height={size}
-        unoptimized
-        className="drop-shadow-[0_2px_8px_rgba(250,204,21,0.45)]"
-      />
-    </motion.div>
-  );
-}
+import { XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 function XpAmount({
   value,
@@ -179,7 +159,7 @@ export function AccountRankXpDisplay({
 
       <div className="flex flex-wrap items-stretch gap-2 sm:gap-3">
         <XpMetricCard tone={tone}>
-          <XpIcon size={24} />
+          <XpIcon size={24} surface={isArena ? "dark" : "light"} />
           <div className="min-w-0">
             <p
               className={cn(
@@ -208,7 +188,7 @@ export function AccountRankXpDisplay({
 
         {xpToNext != null && nextRank ? (
           <XpMetricCard tone={tone}>
-            <XpIcon size={24} />
+            <XpIcon size={24} surface={isArena ? "dark" : "light"} />
             <div className="min-w-0 flex-1">
               <p
                 className={cn(

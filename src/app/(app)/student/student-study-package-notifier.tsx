@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/shared/integrations/supabase/client";
 import { Button } from "@/shared/ui/button";
-import { Package } from "lucide-react";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { CANONICAL_BRIEF_ICON } from "@/shared/icons/vocab-canonical";
 
 const STORAGE_ACK = "mentrixa-studio-pkg-ack-v1";
 
@@ -147,7 +147,7 @@ export function StudentStudyPackageNotifier({ snapshots }: { snapshots: Snapshot
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex gap-3 min-w-0">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 border border-violet-200/80">
-            <Package className="h-5 w-5 text-violet-700" aria-hidden />
+            <MentrixaVocabIcon name={CANONICAL_BRIEF_ICON} size={20} surface="light" title="Study package" />
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-slate-900">Your study package is ready</p>
@@ -165,7 +165,7 @@ export function StudentStudyPackageNotifier({ snapshots }: { snapshots: Snapshot
               className="inline-flex items-center gap-2"
               onClick={() => dismiss(banner.sessionId, banner.publishedAt)}
             >
-              <Image src="/images/package.webp" alt="" width={16} height={16} aria-hidden />
+              <MentrixaVocabIcon name={CANONICAL_BRIEF_ICON} size={16} surface="light" title="Study package" />
               View in history
             </Link>
           </Button>

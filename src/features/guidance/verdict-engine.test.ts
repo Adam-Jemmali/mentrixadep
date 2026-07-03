@@ -114,10 +114,11 @@ describe("buildRankDeltaVerdict", () => {
       ],
     );
 
-    expect(verdict.changed).toContain("68%");
-    expect(verdict.changed).toContain("72%");
+    expect(verdict.changed).toContain("68");
+    expect(verdict.changed).toContain("72");
     expect(verdict.reason).toContain("Chain Rule");
     expect(verdict.nextAction.label).toContain("L'Hôpital");
+    expect(verdict.rankDelta?.accuracy.delta).toBe(4);
   });
 });
 

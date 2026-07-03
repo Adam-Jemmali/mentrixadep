@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { cn } from "@/shared/core/utils";
-import { mentrixStudent, mentrixProfileType, mentrixBrandUi } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import {
   filterMasteryNodesByQuery,
@@ -14,9 +14,13 @@ import {
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 import { Input } from "@/shared/ui/input";
 import { skillTreeUnitTriggerLabel } from "@/shared/ui/accordion-messages-pure";
+import { unitDisplayName } from "@/features/quest/ap-calc-unit-labels-pure";
+import { SkillConceptIcon, UnitConceptIcon } from "@/features/quest/ui/skill-concept-icon";
 import {
   MentrixaVocabIcon,
   VocabCountMetric,
+  VocabSectionHeading,
+  VOCAB_HEADING_ICON_SIZE,
 } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
@@ -25,7 +29,7 @@ function VocabMetric({
   icon,
   label,
   gold,
-  surface = "dark",
+  surface = "light",
 }: {
   value: number | string;
   icon: VocabIconName;
@@ -40,8 +44,8 @@ function VocabMetric({
       label={label}
       gold={gold}
       surface={surface}
-      iconSize={32}
-      valueClassName="text-xl font-black tabular-nums leading-none text-violet-50 sm:text-2xl"
+      iconSize={VOCAB_HEADING_ICON_SIZE}
+      valueClassName="text-xl font-black tabular-nums leading-none text-[#0B1220] sm:text-2xl"
     />
   );
 }
@@ -86,21 +90,20 @@ export function MasteryGridExplorer({
           <div>
             <Link
               href="/student"
-              className="inline-flex items-center text-violet-200"
+              className="inline-flex items-center text-[#6366F1] hover:text-[#4F46E5]"
               aria-label="Back to home"
               title="Back to home"
             >
-              <MentrixaVocabIcon name="home" size={32} surface="dark" title="Home" />
+              <MentrixaVocabIcon name="home" size={32} surface="light" title="Home" />
             </Link>
-            <h1 className="mt-3 flex items-center" aria-label="Skill tree">
-              <MentrixaVocabIcon name="skills" size={36} surface="dark" title="Skills" />
-              <span className="sr-only">Skill tree</span>
+            <h1 className="mt-3 flex items-center gap-3" aria-label="Skill tree">
+              <VocabSectionHeading name="skills" label="Skill tree" surface="light" as="span" />
             </h1>
-            <p className={`mt-1 ${mentrixProfileType.pageSubtitleOnDark}`}>
-              One subject, one unit at a time.
+            <p className={`mt-1 ${mentrixStudent.pageSubtitle}`}>
+              <span className="sr-only">One subject, one unit at a time.</span>
             </p>
           </div>
-          <div className={`${mentrixProfileType.statLabelOnDark} flex flex-wrap items-end justify-start gap-5 sm:justify-end`}>
+          <div className={`${mentrixStudent.sectionEyebrow} flex flex-wrap items-end justify-start gap-5 sm:justify-end`}>
             <VocabMetric
               value={summary.verifiedCount}
               icon="verified"
@@ -123,13 +126,13 @@ export function MasteryGridExplorer({
               key={subject.key}
               className={cn(
                 "inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-semibold",
-                subject.active ? mentrixBrandUi.chipActive : mentrixBrandUi.chipIdle,
+                subject.active ? mentrixStudent.chipActive : mentrixStudent.chipIdle,
                 !subject.active && "opacity-70",
               )}
             >
               {subject.name}
               {!subject.active ? (
-                <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-violet-300/60">
+                <span className="ml-2 text-[10px] font-medium uppercase tracking-wide text-[#94A3B8]">
                   Soon
                 </span>
               ) : null}
@@ -138,12 +141,12 @@ export function MasteryGridExplorer({
         </div>
 
         <div className="relative max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search skills across all units"
-            className={mentrixBrandUi.input}
+            placeholder="Search"
+            className={mentrixStudent.hubFieldInput}
           />
         </div>
 
@@ -152,46 +155,26 @@ export function MasteryGridExplorer({
             <div className="flex min-w-max gap-2">
               {data.units.map((unit) => {
                 const active = unit.unitNumber === selectedUnit;
-                const weakCount = unit.nodes.filter(
-                  (node) => node.state === "weak" || node.state === "none",
-                ).length;
                 return (
                   <button
                     key={unit.unitNumber}
                     type="button"
                     onClick={() => setSelectedUnit(unit.unitNumber)}
                     className={cn(
-                      "inline-flex min-h-10 max-w-[14rem] flex-col items-start rounded-xl border px-3 py-2 text-left transition",
+                      "mx-hub-btn-hand inline-flex min-h-10 w-[12rem] max-w-[14rem] flex-col items-center rounded-xl border px-2.5 py-2 text-center transition",
                       active
-                        ? "border-violet-400/70 bg-gradient-to-br from-[#7C3AED] to-[#6366F1] text-white shadow-md shadow-violet-600/25"
-                        : "border-indigo-500/30 bg-indigo-950/50 text-violet-100 hover:border-violet-400/45 hover:bg-violet-950/60",
+                        ? "border-[#6366F1] bg-[#7C3AED] text-white shadow-[2px_2px_0_#0B1220]"
+                        : "border-[#A5B4FC] bg-white text-[#4F46E5] hover:border-[#7C3AED] hover:bg-[#EDE9FE]",
                     )}
+                    title={`Unit ${unit.unitNumber}: ${unit.unitName}`}
                   >
-                    <span className="inline-flex w-full items-center gap-2">
-                      <MentrixaVocabIcon
-                        name="unit"
-                        size={24}
-                        surface="dark"
-                        title={`Unit ${unit.unitNumber}`}
-                      />
-                      <span
-                        className={cn(
-                          "text-sm font-black tabular-nums",
-                          active ? "text-white" : "text-violet-100",
-                        )}
-                        aria-label={`Unit ${unit.unitNumber}`}
-                      >
-                        {unit.unitNumber}
-                      </span>
+                    <UnitConceptIcon unitNumber={unit.unitNumber} size={36} surface="onLight" />
+                    <span className="mt-1 line-clamp-3 min-h-[2.25rem] text-[9px] font-semibold leading-tight">
+                      {unitDisplayName(unit.unitNumber, unit.unitName)}
                     </span>
-                    <span className="line-clamp-2 text-xs font-semibold">{unit.unitName}</span>
-                    <span
-                      className={cn(
-                        "mt-1 text-[10px]",
-                        active ? "text-violet-100/90" : "text-violet-300/65",
-                      )}
-                    >
-                      {unit.nodes.length} skills · {weakCount} open
+                    <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold tabular-nums opacity-80">
+                      <MentrixaVocabIcon name="skills" size={12} surface={active ? "dark" : "light"} title="Skills" />
+                      {unit.nodes.length}
                     </span>
                   </button>
                 );
@@ -203,7 +186,10 @@ export function MasteryGridExplorer({
 
       {searching ? (
         <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
-          <p className={mentrixStudent.sectionEyebrow}>Search results</p>
+          <p className={mentrixStudent.sectionEyebrow}>
+            <MentrixaVocabIcon name="skills" size={20} surface="light" title="Results" />
+            <span className="sr-only">Search results</span>
+          </p>
           {searchResults.length === 0 ? (
             <p className={`mt-3 text-sm ${mentrixStudent.textMutedOnDark}`}>No skills match that query.</p>
           ) : (
@@ -216,11 +202,26 @@ export function MasteryGridExplorer({
                       setSearchQuery("");
                       setSelectedUnit(node.unitNumber);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-indigo-500/30 bg-indigo-950/45 px-3 py-2 text-left transition hover:border-violet-400/45 hover:bg-violet-950/55"
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-[#A5B4FC] bg-white px-3 py-2 text-left transition hover:border-[#6366F1] hover:bg-[#EDE9FE]"
                   >
-                    <span className="text-sm font-medium text-violet-50">{node.nodeName}</span>
-                    <span className="shrink-0 text-[11px] text-violet-300/70">
-                      {skillTreeUnitTriggerLabel(node.unitNumber, node.unitName)}
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <SkillConceptIcon
+                        nodeName={node.nodeName}
+                        nodeSlug={node.nodeSlug}
+                        unitNumber={node.unitNumber}
+                        size={32}
+                        surface="onLight"
+                        title={node.nodeName}
+                      />
+                      <span className="line-clamp-2 min-w-0 text-left text-xs font-semibold leading-snug text-[#0B1220]">
+                        {node.nodeName}
+                      </span>
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-1.5">
+                      <UnitConceptIcon unitNumber={node.unitNumber} size={24} surface="onLight" />
+                      <span className="line-clamp-2 max-w-[8rem] text-right text-[9px] font-semibold leading-tight text-[#64748B]">
+                        {skillTreeUnitTriggerLabel(node.unitNumber, node.unitName)}
+                      </span>
                     </span>
                   </button>
                 </li>

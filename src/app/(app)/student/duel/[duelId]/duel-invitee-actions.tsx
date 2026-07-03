@@ -5,6 +5,8 @@ import { useState } from "react";
 import { acceptSkillDuel, declineSkillDuel } from "@/features/duels/duel-gameplay";
 import { Button } from "@/shared/ui/button";
 import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { cn } from "@/shared/core/utils";
 
 /** Shown to the challenged learner while the duel is pending. */
 export function DuelInviteeActions({ duelId }: { duelId: string }) {
@@ -37,28 +39,32 @@ export function DuelInviteeActions({ duelId }: { duelId: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-indigo-500/30 bg-indigo-950/50 px-4 py-3 space-y-3 text-violet-100">
-      <p className="text-sm text-slate-900 font-medium">You were challenged to a skill duel</p>
-      <p className="text-xs text-slate-600">
-        If you accept, the quiz is generated and you both answer the same questions. Highest score
-        wins.
-      </p>
-      <div className="flex flex-wrap gap-2 items-center">
-        {error && <span className="text-sm text-red-600 w-full">{error}</span>}
+    <div className={cn(mentrixStudent.hubNotebook, "space-y-4 px-5 py-5 sm:px-6 sm:py-6")}>
+      <div>
+        <p className="mx-hub-ink-title text-base">You were challenged to a skill duel</p>
+        <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
+          If you accept, the quiz is generated and you both answer the same questions. Highest score
+          wins.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {error ? <span className="w-full text-sm font-semibold text-[#B45309]">{error}</span> : null}
         <Button
           type="button"
           size="sm"
           disabled={loading !== null}
           onClick={() => void accept()}
+          className={cn(mentrixStudent.pillPrimary, "text-[11px] font-black uppercase tracking-[0.14em]")}
         >
-          {loading === "acc" ? "Accepting…" : "Accept & start quiz"}
+          {loading === "acc" ? "Accepting…" : "Accept and start quiz"}
         </Button>
         <Button
           type="button"
           size="sm"
-          variant="outline"
+          variant="ghost"
           disabled={loading !== null}
           onClick={() => void decline()}
+          className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
         >
           {loading === "dec" ? "Declining…" : "Decline"}
         </Button>

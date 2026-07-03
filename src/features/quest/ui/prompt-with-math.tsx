@@ -99,8 +99,8 @@ export function PromptWithMathInline({
 
   if (!katex || !parts) {
     return (
-      <span className={cn("animate-pulse", className)}>
-        {formatted.replace(/\$/g, "")}
+      <span className={cn("whitespace-pre-wrap", className)}>
+        {formatted}
       </span>
     );
   }
@@ -145,9 +145,7 @@ function PromptTextBlock({
 
   if (!katex || !parts) {
     return (
-      <p className={cn(proseClass, "whitespace-pre-wrap animate-pulse")}>
-        {formatted.replace(/\$/g, "")}
-      </p>
+      <p className={cn(proseClass, "whitespace-pre-wrap")}>{formatted}</p>
     );
   }
 

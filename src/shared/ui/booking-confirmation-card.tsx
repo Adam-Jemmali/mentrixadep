@@ -185,14 +185,14 @@ export function BookingConfirmationCard({
           <div className="mb-4 grid grid-cols-3 gap-2">
             <div className={tierClass("payg")}>
               <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                <MentrixaVocabIcon name="breakthrough" size={12} title="Pay as you go" />
+                <MentrixaVocabIcon name="breakthrough" size={12} surface="light" title="Pay as you go" />
                 Pay as you go
               </p>
               <p className="mt-1 text-sm font-bold text-white">{priceAnchor.paygLabel}</p>
             </div>
             <div className={tierClass("member")}>
               <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                <MentrixaVocabIcon name="momentum" size={12} title="Member" />
+                <MentrixaVocabIcon name="momentum" size={12} surface="light" title="Member" />
                 Member
               </p>
               <p className="mt-1 text-sm font-bold text-white">{priceAnchor.memberLabel}</p>

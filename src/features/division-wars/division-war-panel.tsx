@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Clock, AlertTriangle } from "lucide-react";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import { createClient } from "@/shared/integrations/supabase/client";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -109,8 +109,7 @@ export function DivisionWarPanel({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <MentrixaVocabIcon name="division-war" size={16} surface="light" title="Division war" />
-              <p className={mentrixStudent.sectionEyebrowOnLight}>Division War</p>
+              <VocabSectionHeading name="division-war" label="Division War" surface="light" />
             </div>
             <h2 className="text-xl font-black italic uppercase tracking-tight text-indigo-950">
               {war.sideA.divisionName}{" "}
@@ -164,7 +163,7 @@ export function DivisionWarPanel({
 
         {!isActive && winnerName ? (
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900">
-            <MentrixaVocabIcon name="league" size={16} surface="light" title="League" />
+            <MentrixaVocabIcon name="league" size={32} surface="light" title="League" />
             <span className="text-sm font-bold">{winnerName} won this war</span>
           </div>
         ) : null}

@@ -62,7 +62,7 @@ export function MentrixaAccordionItem({
 }: {
   id: string;
   title: string;
-  meta?: string;
+  meta?: ReactNode;
   leadingIcon?: ReactNode;
   children: ReactNode;
   verdict?: string;

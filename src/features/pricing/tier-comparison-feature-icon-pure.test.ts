@@ -7,6 +7,6 @@ describe("tierComparisonFeatureIcon", () => {
   });
 
   it("maps movement receipt copy before generic fallbacks", () => {
-    expect(tierComparisonFeatureIcon("Weekly Movement Receipt by email")).toBe("movement-receipt");
+    expect(tierComparisonFeatureIcon("Weekly Movement Receipt by email")).toBe("receipt");
   });
 });

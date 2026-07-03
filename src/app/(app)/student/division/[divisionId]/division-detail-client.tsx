@@ -11,7 +11,11 @@ import {
   Info,
   Users
 } from "lucide-react";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import {
+  CANONICAL_DUELS_ICON,
+  CANONICAL_QUEST_ICON,
+} from "@/shared/icons/vocab-canonical";
 import type { DivisionDetailPayload } from "@/features/divisions/divisions";
 import { joinDivision } from "@/features/divisions/divisions";
 import { LeagueForumPanel } from "@/features/divisions/ui/league-forum-panel";
@@ -123,23 +127,22 @@ export function DivisionDetailClient({
             {/* ICON & TITLE */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left flex-1">
               <div className="relative group">
-                <div className={cn("absolute -inset-4 rounded-3xl opacity-20 blur-2xl group-hover:opacity-40 transition bg-gradient-to-br", theme.gradient)} />
-                <div className={cn("relative flex h-24 w-24 items-center justify-center rounded-3xl border-2 border-white/20 bg-white/5 backdrop-blur-md shadow-2xl text-4xl font-black italic", theme.ring)}>
-                  <span className="drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">{theme.emoji}</span>
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl border-2 border-[#6366F1] bg-[#7C3AED] text-4xl font-black italic shadow-[3px_4px_0_#0B1220]">
+                  <span>{theme.emoji}</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <h1 className="text-4xl sm:text-5xl font-black italic tracking-tighter uppercase leading-none">
+                  <h1 className={`${mentrixStudent.pageTitle} text-4xl sm:text-5xl italic uppercase leading-none`}>
                     {initial.division.name}
                   </h1>
                   {initial.isFocused && (
-                    <span className="px-3 py-1 rounded-full bg-indigo-600 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-500/20 border border-indigo-400/50">
+                    <span className="px-3 py-1 rounded-full border-2 border-[#6366F1] bg-[#EDE9FE] text-[10px] font-black uppercase tracking-widest text-[#4F46E5] shadow-[2px_2px_0_#0B1220]">
                       Focused
                     </span>
                   )}
                 </div>
-                <p className="max-w-xl text-sm font-medium leading-relaxed text-slate-300/90">
+                <p className={`max-w-xl text-sm font-medium leading-relaxed ${mentrixStudent.pageSubtitle}`}>
                   {initial.division.description || `Master ${initial.division.name} and compete for the top spot.`}
                 </p>
                 
@@ -150,15 +153,15 @@ export function DivisionDetailClient({
                         type="button"
                         onClick={onJoin}
                         disabled={isPending}
-                        className="h-12 px-8 rounded-xl bg-white text-slate-900 font-black italic uppercase tracking-widest text-xs hover:bg-slate-100 shadow-xl shadow-white/10 active:scale-95 transition-all"
+                        className={`h-12 px-8 ${mentrixStudent.pillPrimary} font-black italic uppercase tracking-widest text-xs active:scale-95`}
                       >
                         Join Division
                       </Button>
                    ) : (
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 backdrop-blur-sm">
-                            <Users className="w-3.5 h-3.5 opacity-80 text-indigo-400" />
-                           <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Member</span>
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#A5B4FC] bg-[#EDE9FE]">
+                            <Users className="w-3.5 h-3.5 text-[#6366F1]" />
+                           <span className="text-[10px] font-black uppercase tracking-widest text-[#6366F1]">Member</span>
                         </div>
                         {!initial.isFocused && (
                            <Button
@@ -166,7 +169,7 @@ export function DivisionDetailClient({
                              onClick={onFocus}
                              disabled={isPending}
                              variant="outline"
-                             className="h-10 px-4 rounded-xl border-white/20 text-white font-black italic uppercase tracking-widest text-[10px] hover:bg-white/5 active:scale-95 transition-all"
+                             className={`h-10 px-4 ${mentrixStudent.hubGhostLink} font-black italic uppercase tracking-widest text-[10px] active:scale-95`}
                            >
                              Main Focus Division
                            </Button>
@@ -179,9 +182,9 @@ export function DivisionDetailClient({
 
             {/* QUICK STATS - Card Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-4 w-full lg:w-64">
-              <StatCard icon={<Users className="w-4 h-4 text-white/70" />} label="Members" value={initial.memberCount} />
-              <StatCard icon={<Image src="/images/xp.webp" alt="" width={16} height={16} unoptimized />} label="Weekly XP pool" value={initial.weeklyPoolXp} />
-              <StatCard icon={<Image src="/images/pending.webp" alt="" width={16} height={16} unoptimized className="opacity-50 grayscale invert" />} label="Week start (UTC)" value={initial.weekStart} />
+              <StatCard icon={<Users className="w-4 h-4 text-[#6366F1]" />} label="Members" value={initial.memberCount} />
+              <StatCard icon={<XpIcon size={16} surface="light" title="XP" />} label="Weekly XP pool" value={initial.weeklyPoolXp} />
+              <StatCard icon={<Image src="/images/pending.webp" alt="" width={16} height={16} unoptimized className="opacity-70" />} label="Week start (UTC)" value={initial.weekStart} />
             </div>
           </div>
         </motion.header>
@@ -210,17 +213,15 @@ export function DivisionDetailClient({
             <div className="grid sm:grid-cols-2 gap-4">
                <ActionTile 
                  href="/student/duel"
-                 icon={<Image src="/images/sword.webp" alt="Sword" width={32} height={32} unoptimized />}
+                 icon={<MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={32} surface="light" title="Duels" />}
                  title="Skill duels"
                  description="Challenge others in real-time battles in your FOCUSED division "
-                 color="bg-indigo-600"
                />
                <ActionTile 
                  href="/student/quest"
-                 icon={<Image src="/images/quest.webp" alt="Quest" width={32} height={32} unoptimized />}
+                 icon={<MentrixaVocabIcon name={CANONICAL_QUEST_ICON} size={32} surface="light" title="Quest" />}
                  title="Quest lab"
                  description="Experiment and master your skills"
-                 color="bg-indigo-600"
                />
             </div>
 
@@ -270,7 +271,7 @@ export function DivisionDetailClient({
                         className="p-4 flex gap-3 hover:bg-purple-500 transition-colors"
                       >
                          <div className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                            <Image src="/images/xp.webp" alt="" width={12} height={12} unoptimized />
+                            <XpIcon size={12} surface="light" title="XP" />
                          </div>
                          <div className="min-w-0">
                             <p className="text-[11px] leading-tight text-slate-700">
@@ -299,19 +300,19 @@ export function DivisionDetailClient({
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
-    <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-4 transition-all hover:bg-white/10 group">
+    <div className={`${mentrixStudent.hubSticky} p-4 transition-all hover:shadow-[3px_4px_0_rgba(11,18,32,0.14)] group`}>
       <div className="flex items-center gap-2 mb-1">
         {icon}
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">{label}</span>
+        <span className={`text-[10px] font-black uppercase tracking-widest ${mentrixStudent.textMutedOnDark} group-hover:text-[#0B1220] transition-colors`}>{label}</span>
       </div>
-      <p className="text-2xl font-black italic tracking-tighter text-white tabular-nums">
+      <p className={`text-2xl font-black italic tracking-tighter tabular-nums ${mentrixStudent.textOnDark}`}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
     </div>
   );
 }
 
-function ActionTile({ href, icon, title, description, color }: { href: string; icon: React.ReactNode; title: string; description: string; color: string }) {
+function ActionTile({ href, icon, title, description }: { href: string; icon: React.ReactNode; title: string; description: string }) {
   return (
     <Link href={href}>
       <motion.div 
@@ -319,7 +320,7 @@ function ActionTile({ href, icon, title, description, color }: { href: string; i
         whileTap={{ scale: 0.98 }}
         className={cn(mentrixStudent.card, "p-6 flex items-center gap-5 group relative overflow-hidden transition-all hover:border-slate-300")}
       >
-        <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:rotate-6", color)}>
+        <div className="h-14 w-14 rounded-2xl flex items-center justify-center border-2 border-[#6366F1] bg-[#7C3AED] text-white shadow-[2px_2px_0_#0B1220] transition-transform group-hover:rotate-6">
           {icon}
         </div>
         <div>

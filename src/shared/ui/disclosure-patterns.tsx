@@ -182,7 +182,7 @@ export function MomentumSubscriptionDisclosure({
     <MentrixaDisclosureFromMessage
       message={momentumSubscriptionDisclosureMessage()}
       tone={tone}
-      vocabIcon="momentum"
+      vocabIcon="tier-momentum"
       className={className}
     />
   );

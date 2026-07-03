@@ -13,11 +13,11 @@ export function arenaLeaguePageSubtitle(): string {
 }
 
 export function arenaLeaguePanelEyebrow(): string {
-  return arenaLeaguePageTitle();
+  return "Weekly board";
 }
 
 export function arenaLeaguePanelHint(): string {
-  return "Cyan outline marks focus";
+  return "Indigo outline marks focus";
 }
 
 export function arenaLeagueCardDescriptionFallback(): string {

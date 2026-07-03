@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { RateSessionForm } from "../rate-session-form";
 import { Button } from "@/shared/ui/button";
@@ -52,7 +52,7 @@ export function RateSessionFloating({
             </p>
             <p className="mt-0.5 text-sm font-medium text-slate-900">{session.course}</p>
           </div>
-          <Image src="/images/xp.webp" alt="Rating" width={16} height={16} className="shrink-0 opacity-70" />
+          <XpIcon size={16} surface="light" title="Rating" className="shrink-0 opacity-70" />
         </div>
         <RateSessionForm
           sessionId={session.id}

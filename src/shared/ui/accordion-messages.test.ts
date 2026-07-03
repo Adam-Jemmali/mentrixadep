@@ -26,7 +26,7 @@ describe("accordion messages", () => {
       { id: "a", nodeName: "Limits", nodeSlug: "limits", displayOrder: 1, state: "verified", accuracyPercent: 100 },
       { id: "b", nodeName: "Derivatives", nodeSlug: "derivatives", displayOrder: 2, state: "none", accuracyPercent: null },
     ]);
-    expect(meta).toBe("1/2 verified");
+    expect(meta).toBe("1/2");
   });
 
   it("nudges unverified nodes in skill tree unit footer", () => {

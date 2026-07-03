@@ -17,8 +17,8 @@ describe("mentrixa-vocab-map", () => {
 
   it("resolves vocab and guide-rank asset paths", () => {
     expect(vocabIconSrc("quest")).toBe("/icons/vocab/quest.svg");
-    expect(vocabIconSrc("xp")).toBe("/images/xp.webp");
-    expect(vocabIconSrc("momentum-membership")).toBe("/icons/vocab/momentum.svg");
+    expect(vocabIconSrc("xp")).toBe("/images/xp-white.webp");
+    expect(vocabIconSrc("momentum-membership")).toBe("/icons/vocab/tier-momentum.svg");
     expect(vocabIconSrc("practitioner")).toBe("/icons/guide-ranks/practitioner.svg");
   });
 
@@ -37,13 +37,14 @@ describe("mentrixa-vocab-map", () => {
   it("exposes src on getVocabIconMeta", () => {
     const meta = getVocabIconMeta("momentum");
     expect(meta.label).toBe("Momentum");
-    expect(meta.src).toBe("/icons/vocab/momentum.svg");
-    expect(getVocabIconMeta("xp").src).toBe("/images/xp.webp");
+    expect(meta.src).toBe("/icons/vocab/tier-momentum.svg");
+    expect(getVocabIconMeta("xp").src).toBe("/images/xp-white.webp");
   });
 
   it("lists the Phase 2 core 18 vocabulary", () => {
     expect(CORE_VOCAB_ICON_NAMES).toHaveLength(18);
     expect(CORE_VOCAB_ICON_NAMES).toContain("guide-session");
-    expect(vocabIconSrc("guide-session")).toBe("/icons/vocab/guide-session.svg");
+    expect(vocabIconSrc("guide-session")).toBe("/icons/vocab/session.svg");
+    expect(vocabIconSrc("movement-receipt")).toBe("/icons/vocab/receipt.svg");
   });
 });

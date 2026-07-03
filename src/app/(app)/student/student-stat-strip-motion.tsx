@@ -9,7 +9,7 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/xp/components/rank-badge";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
-import { MentrixaVocabIcon, StreakCountDisplay, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, StreakCountDisplay, VOCAB_HEADING_ICON_SIZE, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import { VOCAB_SHORT_LABEL, type VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 const container = {
@@ -31,7 +31,7 @@ function StatValue({
   icon,
   children,
   iconClassName,
-  iconSize = 28,
+  iconSize = VOCAB_HEADING_ICON_SIZE,
 }: {
   icon: VocabIconName;
   children: ReactNode;

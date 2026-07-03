@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { submitSkillDuelAnswers, submitSkillDuelQuestionAnswer, withdrawPendingSkillDuel, hideSkillDuelFromList } from "@/features/duels/duel-gameplay";
 import { acceptQueueMatch, declineQueueMatch, getQueueMatchAcceptance } from "@/features/duels/duel-queue";
 import { type DuelPublicRow } from "@/features/duels/duel-reads";
@@ -18,9 +18,11 @@ import { useRealtimeRouterRefresh } from "@/shared/core/hooks/use-realtime-route
 import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
 import { SkillDuelChoiceBoard } from "@/features/duels/ui/skill-duel-choice-board";
 import { SkillDuelResults } from "@/features/duels/ui/skill-duel-results";
-import { TiltCard } from "@/shared/ui/tilt-card";
-import { QuestKindMetaTag } from "@/shared/ui/meta-tag-patterns";
 import { stripGuestTryPromptDecorators } from "@/features/quest/guest-try-types";
+import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import { warmKatex } from "@/features/quest/ui/normalize-math-text";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { cn } from "@/shared/core/utils";
 
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
@@ -62,6 +64,7 @@ export function DuelPlayClient({ duel, side }: Props) {
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(DUEL_SECONDS_PER_QUESTION);
+  const [optimisticAnswerCount, setOptimisticAnswerCount] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const skipTimeoutRef = useRef<number | null>(null);
 
@@ -76,10 +79,17 @@ export function DuelPlayClient({ duel, side }: Props) {
 
   useEffect(() => {
     router.prefetch("/student/duel");
+    void warmKatex();
   }, [router]);
 
   const myLen = myAnswers?.length ?? 0;
   const theirLen = theirAnswers?.length ?? 0;
+
+  useEffect(() => {
+    if (optimisticAnswerCount != null && myLen >= optimisticAnswerCount) {
+      setOptimisticAnswerCount(null);
+    }
+  }, [myLen, optimisticAnswerCount]);
 
   useRealtimeRouterRefresh(
     `skill-duel-${duel.id}`,
@@ -93,7 +103,7 @@ export function DuelPlayClient({ duel, side }: Props) {
     500,
   );
 
-  const currentIndex = myLen;
+  const currentIndex = optimisticAnswerCount ?? myLen;
   const total = duel.questions.length || DUEL_QUESTION_COUNT;
 
   const youScore =
@@ -284,11 +294,15 @@ export function DuelPlayClient({ duel, side }: Props) {
     setError(null);
     if (timerRef.current) clearInterval(timerRef.current);
     const res = await submitSkillDuelQuestionAnswer(duel.id, currentIndex, ci);
-    setLoading(false);
     if (!res.success) {
+      setLoading(false);
       setError(res.error);
       return;
     }
+    const nextIndex = currentIndex + 1;
+    setOptimisticAnswerCount(nextIndex);
+    setTimeLeft(DUEL_SECONDS_PER_QUESTION);
+    setLoading(false);
     safeRouterRefresh(router);
   }
 
@@ -311,16 +325,16 @@ export function DuelPlayClient({ duel, side }: Props) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="rounded-lg border border-violet-500/35 bg-indigo-950/55 px-4 py-6 text-center space-y-4 text-violet-50"
+          className={cn(mentrixStudent.hubNotebook, "space-y-4 px-5 py-6 text-center sm:px-6")}
         >
           <div>
-            <p className="text-sm font-medium text-slate-800">Match found</p>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mx-hub-ink-title text-base">Match found</p>
+            <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
               Both sides must accept before questions begin
               {duel.is_ai_opponent ? " (you and the sparring bot)." : "."}
             </p>
           </div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.18em]">
             {meAccepted && opponentAccepted
               ? "Starting duel…"
               : meAccepted
@@ -334,20 +348,22 @@ export function DuelPlayClient({ duel, side }: Props) {
               type="button"
               disabled={acceptBusy || meAccepted}
               onClick={() => void handleQueueAccept()}
+              className={cn(mentrixStudent.pillPrimary, "text-[11px] font-black uppercase tracking-[0.14em]")}
             >
               {acceptBusy ? "…" : meAccepted ? "You accepted" : "Accept match"}
             </Button>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               disabled={acceptBusy}
               onClick={() => void handleQueueDecline()}
+              className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
             >
               Decline
             </Button>
           </div>
           {acceptError ? (
-            <p className="text-sm text-red-600">{acceptError}</p>
+            <p className="text-sm font-semibold text-[#B45309]">{acceptError}</p>
           ) : null}
         </motion.div>
       );
@@ -363,21 +379,20 @@ export function DuelPlayClient({ duel, side }: Props) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="rounded-lg border border-indigo-500/30 bg-indigo-950/55 px-4 py-6 text-center space-y-4 text-violet-50"
+          className={cn(mentrixStudent.hubSticky, "space-y-4 px-5 py-6 text-center sm:px-6")}
         >
           <div>
-            <p className="text-sm font-medium text-slate-800">
-              Waiting for your classmate
-            </p>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mx-hub-ink-title text-base">Waiting for your classmate</p>
+            <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
               They need to accept so both of you get the same timed questions.
             </p>
           </div>
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled={listActionLoading}
+            className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
             onClick={() => {
               setListActionLoading(true);
               setError(null);
@@ -395,29 +410,30 @@ export function DuelPlayClient({ duel, side }: Props) {
             {listActionLoading ? "Cancelling…" : "Cancel challenge"}
           </Button>
           {error ? (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm font-semibold text-[#B45309]">{error}</p>
           ) : null}
         </motion.div>
       );
     }
     return (
-      <p className="text-sm text-slate-500">This duel is pending.</p>
+      <p className="mx-hub-ink-muted text-sm">This duel is pending.</p>
     );
   }
 
   if (duel.status === "cancelled") {
     return (
-      <div className="space-y-4">
-        <p className="text-sm text-slate-600">
+      <div className={cn(mentrixStudent.hubNotebook, "space-y-4 px-5 py-5 sm:px-6")}>
+        <p className="mx-hub-ink-muted text-sm leading-relaxed">
           {youAreChallenger
             ? "You cancelled this challenge before it started."
             : "The challenger cancelled this request before it started."}
         </p>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={listActionLoading}
+          className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
           onMouseEnter={prefetchDuelHub}
           onTouchStart={prefetchDuelHub}
           onClick={() => {
@@ -436,20 +452,21 @@ export function DuelPlayClient({ duel, side }: Props) {
         >
           {listActionLoading ? "Removing…" : "Remove from my list"}
         </Button>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm font-semibold text-[#B45309]">{error}</p> : null}
       </div>
     );
   }
 
   if (duel.status === "declined") {
     return (
-      <div className="space-y-4">
-        <p className="text-sm text-slate-500">This duel was declined.</p>
+      <div className={cn(mentrixStudent.hubNotebook, "space-y-4 px-5 py-5 sm:px-6")}>
+        <p className="mx-hub-ink-muted text-sm">This duel was declined.</p>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={listActionLoading}
+          className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
           onMouseEnter={prefetchDuelHub}
           onTouchStart={prefetchDuelHub}
           onClick={() => {
@@ -468,7 +485,7 @@ export function DuelPlayClient({ duel, side }: Props) {
         >
           {listActionLoading ? "Removing…" : "Remove from my list"}
         </Button>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm font-semibold text-[#B45309]">{error}</p> : null}
       </div>
     );
   }
@@ -532,126 +549,137 @@ export function DuelPlayClient({ duel, side }: Props) {
 
   if (waitingOther) {
     return (
-      <div className="rounded-lg border border-indigo-500/30 bg-indigo-950/55 px-4 py-8 text-center text-violet-100">
-        <p className="text-sm font-medium text-slate-800">
+      <div className={cn(mentrixStudent.hubSticky, "px-5 py-8 text-center sm:px-6")}>
+        <p className="mx-hub-ink-title text-base">
           You finished waiting for {themLabel.toLowerCase()}
         </p>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
           Scores lock in when both finish. This page updates automatically.
         </p>
       </div>
     );
   }
 
-  if (duel.status === "active" && myLen < total) {
+  if (duel.status === "active" && myLen >= total) {
+    return (
+      <p className="mx-hub-ink-muted text-sm">
+        Saving your run…{" "}
+        <span className="text-[#64748B]">If this hangs, refresh the page.</span>
+      </p>
+    );
+  }
+
+  if (duel.status === "active" && currentIndex >= total) {
+    return (
+      <p className="mx-hub-ink-muted text-sm">Saving your answer…</p>
+    );
+  }
+
+  if (duel.status === "active" && currentIndex < total) {
     const q = duel.questions[currentIndex];
     if (!q) {
-      return <p className="text-sm text-slate-500">Loading questions…</p>;
+      return <p className="mx-hub-ink-muted text-sm">Loading questions…</p>;
     }
 
     const progress = ((currentIndex + 1) / total) * 100;
     const timerNorm = timeLeft / DUEL_SECONDS_PER_QUESTION;
+    const timerUrgent = timeLeft <= 5;
 
     return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="space-y-5">
+        <div
+          className={cn(
+            mentrixStudent.hubSticky,
+            "flex flex-wrap items-end justify-between gap-4 px-4 py-4 sm:px-5",
+          )}
+        >
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-              Live
-            </p>
-            <p className="mt-0.5 text-sm font-medium text-zinc-950">
-              <span className="font-semibold tabular-nums">{youLabel}</span>:{" "}
-              <span className="tabular-nums">{youScore}</span>
-              <span className="mx-2 text-zinc-300">|</span>
-              <span className="font-semibold tabular-nums">{themLabel}</span>:{" "}
-              <span className="tabular-nums">{theyScore}</span>
+            <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]">Live</p>
+            <p className="mx-hub-ink-title mt-1 text-sm tabular-nums">
+              {youLabel}: {youScore}
+              <span className="mx-2 mx-hub-ink-muted font-normal">|</span>
+              {themLabel}: {theyScore}
             </p>
             {!duel.is_ai_opponent && theirLen < myLen ? (
-              <p className="mt-1.5 text-xs text-zinc-600">
-                You are a question ahead totals still compare on accuracy.
+              <p className="mx-hub-ink-muted mt-1.5 text-xs leading-snug">
+                You are a question ahead — totals still compare on accuracy.
               </p>
             ) : null}
           </div>
           <div className="flex items-center gap-3">
             <div
-              className="relative h-11 w-11 shrink-0 rounded-full border border-violet-500/35 bg-indigo-950/60"
+              className="relative h-11 w-11 shrink-0 rounded-full border-2 border-[#6366F1] bg-white"
               style={{
-                background: `conic-gradient(rgb(15 23 42) ${
+                background: `conic-gradient(#6366F1 ${
                   timerNorm * 360
-                }deg, rgb(241 245 249) 0deg)`,
+                }deg, #E0E7FF 0deg)`,
               }}
               aria-hidden
             />
             <div className="text-right">
-              <p className="text-[10px] font-semibold uppercase text-zinc-500">
-                Time
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-zinc-950">
+              <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.16em]">Time</p>
+              <p
+                className={cn(
+                  "mx-hub-timer text-xl tabular-nums sm:text-2xl",
+                  timerUrgent && "!text-[#B45309]",
+                )}
+              >
                 {timeLeft}s
               </p>
             </div>
           </div>
         </div>
 
-        <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-100">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#E0E7FF]">
           <motion.div
-            className="h-full bg-zinc-900"
+            className="h-full bg-[#6366F1]"
             initial={false}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.25 }}
           />
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -8 }}
-            transition={{ duration: 0.18 }}
-          >
-            <TiltCard
-              tiltLimit={2}
-              className="block rounded-2xl border border-violet-500/35 mx-panel-brand p-5 shadow-[0_6px_18px_-12px_rgba(79,70,229,0.45)] sm:p-6"
-            >
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <QuestKindMetaTag label={kindLabel(q.type)} tone="light" />
-                  <p className="text-[11px] text-slate-500 max-w-lg leading-snug">
-                    {kindHint(q.type)}
-                  </p>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">
-                  Q {currentIndex + 1} / {total}
+        <motion.div
+          key={currentIndex}
+          initial={false}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.12, ease: "easeOut" }}
+        >
+          <div className={cn(mentrixStudent.hubNotebook, "p-5 sm:p-6")}>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1">
+                <span className="mx-hub-type-ui inline-flex rounded-full border border-[#A5B4FC] bg-[#EDE9FE] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em]">
+                  {kindLabel(q.type)}
                 </span>
+                <p className="mx-hub-ink-muted max-w-lg text-[11px] leading-snug">
+                  {kindHint(q.type)}
+                </p>
               </div>
+              <span className="mx-hub-type-ui whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.2em]">
+                Q {currentIndex + 1} / {total}
+              </span>
+            </div>
 
-              <p className="text-base font-medium leading-relaxed text-slate-900 sm:text-[17px]">
-                {stripGuestTryPromptDecorators(q.prompt)}
-              </p>
+            <div className="mx-hub-math-prose">
+              <PromptWithMath
+                text={stripGuestTryPromptDecorators(q.prompt)}
+                variant="light"
+              />
+            </div>
 
-              <div className="mt-6">
-                <SkillDuelChoiceBoard
-                  choices={q.choices}
-                  disabled={loading}
-                  onSelect={(ci) => void pickAnswer(ci)}
-                />
-              </div>
-            </TiltCard>
-          </motion.div>
-        </AnimatePresence>
+            <div className="mt-6">
+              <SkillDuelChoiceBoard
+                key={`choices-${currentIndex}`}
+                choices={q.choices}
+                disabled={loading}
+                onSelect={(ci) => void pickAnswer(ci)}
+              />
+            </div>
+          </div>
+        </motion.div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error ? <p className="text-sm font-semibold text-[#B45309]">{error}</p> : null}
       </div>
-    );
-  }
-
-  if (duel.status === "active" && myLen >= total) {
-    return (
-      <p className="text-sm text-slate-600">
-        Saving your run…{" "}
-        <span className="text-slate-400">If this hangs, refresh the page.</span>
-      </p>
     );
   }
 
@@ -663,7 +691,7 @@ export function DuelPlayClient({ duel, side }: Props) {
 
   if (submitted) {
     return (
-      <p className="text-sm text-slate-500">
+      <p className="mx-hub-ink-muted text-sm">
         You already submitted answers for this duel.
       </p>
     );
@@ -692,16 +720,16 @@ function LegacyDuelForm({
   return (
     <div className="space-y-6">
       {duel.questions.map((q, qi) => (
-        <div
-          key={qi}
-          className="rounded-2xl border border-violet-500/35 mx-panel-brand p-5 shadow-sm"
-        >
-          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+        <div key={qi} className={cn(mentrixStudent.hubNotebook, "p-5 sm:p-6")}>
+          <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.18em]">
             {kindLabel(q.type)} · Question {qi + 1}
           </p>
-          <p className="mt-2 text-sm font-medium text-slate-900">
-            {stripGuestTryPromptDecorators(q.prompt)}
-          </p>
+          <div className="mx-hub-math-prose mt-2">
+            <PromptWithMath
+              text={stripGuestTryPromptDecorators(q.prompt)}
+              variant="light"
+            />
+          </div>
           <div className="mt-4">
             <SkillDuelChoiceBoard
               choices={q.choices}
@@ -718,11 +746,12 @@ function LegacyDuelForm({
           </div>
         </div>
       ))}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error ? <p className="text-sm font-semibold text-[#B45309]">{error}</p> : null}
       <Button
         type="button"
         disabled={loading}
         onClick={() => onSubmit(answers)}
+        className={cn(mentrixStudent.pillPrimary, "text-[11px] font-black uppercase tracking-[0.14em]")}
       >
         {loading ? "Submitting…" : "Submit answers"}
       </Button>

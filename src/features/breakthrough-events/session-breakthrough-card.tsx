@@ -9,7 +9,7 @@ export function SessionBreakthroughCard({ lines }: { lines: SessionBreakthroughL
   return (
     <div className="mt-8 text-left overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(160deg,#0f172a_0%,#1e1b4b_45%,#111827_100%)] p-5 shadow-lg">
       <div className="flex items-center gap-2 mb-4">
-        <MentrixaVocabIcon name="breakthrough" size={20} gold className="text-amber-400" title="Breakthrough" />
+        <MentrixaVocabIcon name="breakthrough" size={20} surface="light" title="Breakthrough" />
         <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/90">
           Session breakthrough
         </p>

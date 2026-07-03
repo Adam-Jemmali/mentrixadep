@@ -32,7 +32,7 @@ export function FocusDivisionPicker({
       </p>
       <p className={cn("mt-1 max-w-2xl text-xs leading-relaxed", arenaDivisionFocus.hint)}>
         Leaderboard XP and duels run on the only skill tree we ship today.{" "}
-        <span className="font-semibold text-cyan-300">Cyan outline</span> = active focus.
+        <span className="font-semibold text-[#6366F1]">Indigo outline</span> = active focus.
       </p>
       <div className="mt-4">
         <DivisionPickerCards

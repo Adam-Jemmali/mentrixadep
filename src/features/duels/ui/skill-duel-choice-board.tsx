@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { motion, type PanInfo } from "framer-motion";
 import { cn } from "@/shared/core/utils";
+import { PromptWithMathInline } from "@/features/quest/ui/prompt-with-math";
 
 type SkillDuelChoiceBoardProps = {
   choices: string[];
@@ -81,7 +82,7 @@ export function SkillDuelChoiceBoard({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs font-medium text-slate-500">
+      <p className="mx-hub-ink-muted text-xs font-medium">
         Drag an answer into the slot below, or tap a card to lock it in.
       </p>
 
@@ -90,17 +91,19 @@ export function SkillDuelChoiceBoard({
         className={cn(
           "min-h-[4.5rem] rounded-xl border-2 border-dashed px-4 py-3 transition-colors",
           hoverDrop && !locked
-            ? "border-blue-400 bg-blue-50/70"
+            ? "border-[#6366F1] bg-[#EDE9FE]"
             : droppedLabel
-              ? "border-blue-300 bg-blue-50/50"
-              : "border-slate-200 bg-slate-50/80",
+              ? "border-[#6366F1] bg-[#EDE9FE]/80"
+              : "border-[#A5B4FC] bg-white/90",
         )}
         aria-label="Answer drop zone"
       >
         {droppedLabel ? (
-          <p className="text-sm font-semibold leading-snug text-slate-900">{droppedLabel}</p>
+          <p className="mx-hub-math-prose text-sm font-semibold leading-snug text-[#0B1220]">
+            <PromptWithMathInline text={droppedLabel} />
+          </p>
         ) : (
-          <p className="text-sm font-medium text-slate-400">Drop your answer here</p>
+          <p className="mx-hub-ink-muted text-sm font-medium">Drop your answer here</p>
         )}
       </div>
 
@@ -136,21 +139,23 @@ export function SkillDuelChoiceBoard({
               tabIndex={locked ? -1 : 0}
               aria-disabled={locked}
               className={cn(
-                "flex cursor-grab items-start gap-3 rounded-xl border-2 bg-white px-4 py-3 text-left text-sm font-medium text-slate-900 transition-colors active:cursor-grabbing",
+                "mx-hub-math-prose flex cursor-grab items-start gap-3 rounded-xl border-2 bg-white px-4 py-3 text-left text-sm font-medium text-[#0B1220] transition-colors active:cursor-grabbing [&_.katex]:text-inherit",
                 isSelected
-                  ? "border-blue-400 bg-blue-50/60"
-                  : "border-slate-200 hover:border-blue-300 hover:bg-blue-50/40",
+                  ? "border-[#6366F1] bg-[#EDE9FE] ring-2 ring-[#6366F1]/30"
+                  : "border-[#A5B4FC] hover:border-[#6366F1] hover:bg-[#EDE9FE]/60",
                 locked && "pointer-events-none opacity-60",
-                isDragging && "border-blue-400",
+                isDragging && "border-[#6366F1]",
               )}
             >
               <span
-                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-bold text-slate-500"
+                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E0E7FF] text-[11px] font-bold text-[#4338CA]"
                 aria-hidden
               >
                 ⋮⋮
               </span>
-              <span className="leading-snug">{displayChoice(choice, index, choices.length)}</span>
+              <span className="min-w-0 flex-1 leading-snug">
+                <PromptWithMathInline text={displayChoice(choice, index, choices.length)} />
+              </span>
             </motion.div>
           );
         })}

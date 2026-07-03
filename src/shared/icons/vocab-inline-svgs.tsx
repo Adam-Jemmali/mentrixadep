@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { resolveCanonicalVocabIcon } from "@/shared/icons/vocab-canonical";
 
 const VERIFIED_GOLD = "#D4A017";
 
@@ -90,22 +91,6 @@ function BookingInline({ size, surface, gold, className }: InlineVocabProps) {
   );
 }
 
-/** Geometry copied from public/icons/vocab/momentum.svg */
-function MomentumInline({ size, surface, gold, className }: InlineVocabProps) {
-  const { stroke } = vocabInlineStroke(surface, gold);
-  return (
-    <InlineSvgShell size={size} className={className}>
-      <g fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 32c6-4 10-4 16 0s10 4 16 0" strokeWidth="2" />
-        <path d="M8 24c6-4 10-4 16 0s10 4 16 0" strokeWidth="2" />
-        <path d="M8 16c6-4 10-4 16 0s10 4 16 0" strokeWidth="2" />
-        <line x1="30" y1="10" x2="38" y2="10" strokeWidth="2.5" />
-        <polyline points="34,6 38,10 34,14" strokeWidth="2.25" />
-      </g>
-    </InlineSvgShell>
-  );
-}
-
 /** Geometry copied from public/icons/vocab/unit.svg */
 function UnitInline({ size, surface, gold, className }: InlineVocabProps) {
   const { stroke, fill } = vocabInlineStroke(surface, gold);
@@ -179,6 +164,20 @@ function PracticePackInline({ size, surface, gold, className }: InlineVocabProps
   );
 }
 
+/** Geometry copied from public/icons/vocab/rival.svg — versus / top rival */
+function RivalInline({ size, surface, gold, className }: InlineVocabProps) {
+  const { stroke, fill } = vocabInlineStroke(surface, gold);
+  return (
+    <InlineSvgShell size={size} className={className}>
+      <g fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="10,12 22,22 16,26 38,38" strokeWidth="2.35" />
+        <polyline points="38,12 26,22 32,26 10,38" strokeWidth="2.35" />
+        <polygon points="24,21 27,24 24,27 21,24" fill={fill} stroke="none" opacity="0.75" />
+      </g>
+    </InlineSvgShell>
+  );
+}
+
 /** Geometry copied from public/icons/vocab/focus-ring.svg — weak / slipped nodes */
 function FocusRingInline({ size, surface, gold, className }: InlineVocabProps) {
   const { stroke, fill } = vocabInlineStroke(surface, gold);
@@ -203,23 +202,23 @@ const INLINE_VOCAB_RENDERERS: Partial<
   home: HomeInline,
   profile: ProfileInline,
   booking: BookingInline,
-  momentum: MomentumInline,
-  "momentum-membership": MomentumInline,
   unit: UnitInline,
   verified: VerifiedInline,
   skills: SkillsInline,
   "practice-pack": PracticePackInline,
   "focus-ring": FocusRingInline,
+  rival: RivalInline,
 };
 
 export function hasInlineVocabIcon(name: VocabIconName): boolean {
-  return name in INLINE_VOCAB_RENDERERS;
+  return resolveCanonicalVocabIcon(name) in INLINE_VOCAB_RENDERERS;
 }
 
 export function renderInlineVocabIcon(
   name: VocabIconName,
   props: InlineVocabProps,
 ): ReactElement | null {
-  const render = INLINE_VOCAB_RENDERERS[name];
+  const canonical = resolveCanonicalVocabIcon(name);
+  const render = INLINE_VOCAB_RENDERERS[canonical];
   return render ? render(props) : null;
 }

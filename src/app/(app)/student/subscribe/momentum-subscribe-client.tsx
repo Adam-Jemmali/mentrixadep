@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 import { formatStudentBreakthroughPrice, formatStudentMomentumPackPrice, MOMENTUM_PACK_SESSION_COUNT } from "@/features/booking/booking-pricing";
 import type { SubscriptionBillingInterval } from "@/features/pricing/pricing-tiers-pure";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
@@ -13,6 +14,7 @@ import { StripeCheckoutPendingPanel } from "@/shared/ui/spinner-patterns";
 import { Button } from "@/shared/ui/button";
 import { MomentumMembershipPanel } from "@/features/student-profile/ui/momentum-membership-panel";
 import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
+import { PricingTierIcon } from "@/features/pricing/ui/pricing-tier-visual";
 
 export function MomentumSubscribeClient({
   initialSubscription,
@@ -84,70 +86,73 @@ export function MomentumSubscribeClient({
   }
 
   return (
-    <main className={mentrixStudent.main}>
-      <MomentumMembershipPanel
-        subscription={initialSubscription}
-        sessionCreditsRemaining={sessionCreditsRemaining}
-        sessionCreditPeriodMonth={sessionCreditPeriodMonth}
-        packSprint={packSprint}
-        monthlyCreditsRemaining={monthlyCreditsRemaining}
-        variant="subscribe"
-        interval={interval}
-        onIntervalChange={setInterval}
-        onStartCheckout={() => void startCheckout()}
-        checkoutPending={pending}
-        checkoutSuccess={success}
-        className="mx-auto max-w-2xl"
-      />
+    <div className={mentrixStudent.pageBgHub}>
+      <main className={`${mentrixStudent.main} relative z-10`}>
+        <MomentumMembershipPanel
+          subscription={initialSubscription}
+          sessionCreditsRemaining={sessionCreditsRemaining}
+          sessionCreditPeriodMonth={sessionCreditPeriodMonth}
+          packSprint={packSprint}
+          monthlyCreditsRemaining={monthlyCreditsRemaining}
+          variant="subscribe"
+          interval={interval}
+          onIntervalChange={setInterval}
+          onStartCheckout={() => void startCheckout()}
+          checkoutPending={pending}
+          checkoutSuccess={success}
+          className="mx-auto max-w-4xl"
+        />
 
-      <div className="mx-auto mt-8 max-w-4xl">
-        <TierComparisonTable />
-      </div>
+        <div className="mx-auto mt-8 max-w-4xl">
+          <TierComparisonTable variant="dark" />
+        </div>
 
-      {momentumActive ? (
-        <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-indigo-100 bg-white p-5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Momentum add-on</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">Quarter Sprint Pack</p>
-          <p className="mt-1 text-xs text-slate-500">
-            Not a subscription. Extra session credits for active Momentum members only.
-          </p>
-          {packGoal ? (
-            <>
-              <p className="mt-2 text-sm font-medium text-slate-900">{packGoal.verdict}</p>
-              <p className="mt-1 text-sm text-slate-600">{packGoal.nextAction}</p>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-slate-600">
-              {MOMENTUM_PACK_SESSION_COUNT} sessions for {formatStudentMomentumPackPrice()}. Pay as you go is{" "}
-              {formatStudentBreakthroughPrice()} per session without Momentum.
+        {momentumActive ? (
+          <div className={`${mentrixBrandUi.panel} mx-auto mt-8 max-w-2xl rounded-2xl p-5`}>
+            <div className="flex items-center gap-3">
+              <PricingTierIcon tier="momentum" size={48} title="Momentum Pack" />
+              <div>
+                <p className="text-sm font-semibold text-white">Quarter Sprint Pack</p>
+                <p className="text-xs text-violet-200/80">Extra credits</p>
+              </div>
+            </div>
+            {packGoal ? (
+              <p className="mt-3 text-sm font-medium text-violet-100">{packGoal.verdict}</p>
+            ) : (
+              <p className="mt-3 text-sm text-violet-200/90">
+                {MOMENTUM_PACK_SESSION_COUNT} sessions · {formatStudentMomentumPackPrice()}
+              </p>
+            )}
+            <Button type="button" className="mt-4" onClick={() => void startPackCheckout()} disabled={pending}>
+              Buy Quarter Sprint Pack
+            </Button>
+            <p className="mt-2 text-[10px] text-violet-300/60">
+              Pay as you go is {formatStudentBreakthroughPrice()} without Momentum.
             </p>
-          )}
-          <Button type="button" className="mt-4" onClick={() => void startPackCheckout()} disabled={pending}>
-            Buy Quarter Sprint Pack
-          </Button>
-        </div>
-      ) : null}
+          </div>
+        ) : null}
 
-      {success ? (
-        <div className="mx-auto mt-5 max-w-2xl">
-          <SubscriptionStateAlert kind="success" />
-        </div>
-      ) : null}
-      {canceled ? (
-        <div className="mx-auto mt-5 max-w-2xl">
-          <SubscriptionStateAlert kind="canceled" />
-        </div>
-      ) : null}
-      {error ? (
-        <div className="mx-auto mt-5 max-w-2xl">
-          <SubscriptionStateAlert kind="checkout_error" error={error} />
-        </div>
-      ) : null}
-      {pending ? (
-        <div className="mx-auto mt-5 max-w-2xl">
-          <StripeCheckoutPendingPanel />
-        </div>
-      ) : null}
-    </main>
+        {success ? (
+          <div className="mx-auto mt-5 max-w-2xl">
+            <SubscriptionStateAlert kind="success" />
+          </div>
+        ) : null}
+        {canceled ? (
+          <div className="mx-auto mt-5 max-w-2xl">
+            <SubscriptionStateAlert kind="canceled" />
+          </div>
+        ) : null}
+        {error ? (
+          <div className="mx-auto mt-5 max-w-2xl">
+            <SubscriptionStateAlert kind="checkout_error" error={error} />
+          </div>
+        ) : null}
+        {pending ? (
+          <div className="mx-auto mt-5 max-w-2xl">
+            <StripeCheckoutPendingPanel />
+          </div>
+        ) : null}
+      </main>
+    </div>
   );
 }

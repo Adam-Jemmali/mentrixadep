@@ -68,16 +68,16 @@ export function formatVerifiedFirstAttemptSummary(
   return `${stats.accuracyPercent} percent first attempt accuracy across ${stats.verifiedCount} verified AP Calculus AB skills, ${formatOrdinalPercentile(stats.percentile)}`;
 }
 
-/** Receipt-style verdict for in-app surfaces (rank card, hub, quest complete). */
+/** Receipt-style verdict for email and screen readers. */
 export function formatVerifiedRankVerdict(stats: VerifiedFirstAttemptRankStats): null | string {
   if (
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
     stats.percentile != null
   ) {
-    return `${stats.accuracyPercent}% first-attempt accuracy across ${stats.verifiedCount} verified AP Calculus AB skills  ${formatOrdinalPercentile(stats.percentile)} of everyone tested.`;
+    return `${stats.accuracyPercent}% accuracy · ${Math.round(stats.percentile)}th percentile · ${stats.verifiedCount} verified.`;
   }
   if (stats.verifiedCount > 0) {
-    return `${stats.verifiedCount} skill${stats.verifiedCount === 1 ? "" : "s"} verified at ${stats.accuracyPercent}% first-attempt accuracy. Percentile unlocks after ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} skills.`;
+    return `${stats.verifiedCount} verified · ${stats.accuracyPercent}% accuracy. Percentile unlocks at ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE}.`;
   }
   return null;
 }
@@ -88,12 +88,12 @@ export function formatVerifiedRankNextAction(stats: VerifiedFirstAttemptRankStat
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
     stats.percentile != null
   ) {
-    return "Next: attempt a skill you have not seen yet to move your percentile.";
+    return "Verify next node";
   }
   if (remaining > 0 && stats.verifiedCount > 0) {
-    return `Next: verify ${remaining} more skill${remaining === 1 ? "" : "s"} to unlock your comparative percentile.`;
+    return `Verify ${remaining} more to unlock percentile`;
   }
-  return "Next: Answer skills you have not encountered.";
+  return "Verify first node";
 }
 
 export async function loadVerifiedFirstAttemptRankStats(

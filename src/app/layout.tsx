@@ -145,6 +145,26 @@ export default function RootLayout({
                   event.preventDefault();
                 }
               });
+              function isChunkLoadNoise(value) {
+                var text = String(value || "");
+                return text.includes("ChunkLoadError") || text.includes("Loading chunk") && text.includes("failed");
+              }
+              function reloadOnceOnStaleChunk() {
+                try {
+                  var key = "mentrixa-chunk-reload";
+                  var last = sessionStorage.getItem(key);
+                  var now = Date.now();
+                  if (last && now - Number(last) < 10000) return;
+                  sessionStorage.setItem(key, String(now));
+                  window.location.reload();
+                } catch (e) {}
+              }
+              window.addEventListener("unhandledrejection", function(event) {
+                if (isChunkLoadNoise(event.reason) || isChunkLoadNoise(event.reason && event.reason.message)) {
+                  event.preventDefault();
+                  reloadOnceOnStaleChunk();
+                }
+              });
             `
           }}
         />

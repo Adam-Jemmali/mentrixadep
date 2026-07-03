@@ -1,5 +1,8 @@
 export const AP_CALC_AB_SUBJECT = "AP Calculus AB";
 
+/** Display title for mastery grid and hub surfaces — no icon, display font only. */
+export const AP_CALC_AB_SUBJECT_DISPLAY = "AB Calculus";
+
 export const AP_CALC_AB_UNAVAILABLE_MESSAGE =
   "AP Calculus AB practice is being prepared for this topic. Check back shortly.";
 

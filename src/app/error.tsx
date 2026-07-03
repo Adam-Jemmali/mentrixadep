@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorIllustration } from "@/components/illustrations";
+import { isChunkLoadError, reloadOnceOnChunkError } from "@/shared/core/chunk-load-recovery";
 
 export default function Error({
   error,
@@ -11,6 +12,10 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
+    if (isChunkLoadError(error)) {
+      reloadOnceOnChunkError();
+      return;
+    }
     console.error(error);
   }, [error]);
 

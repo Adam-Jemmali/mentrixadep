@@ -6,10 +6,12 @@ import { getCachedUserMetaBatch } from "@/shared/core/user-meta-cache";
 import { DuelHub } from "./duel-hub";
 import { AccountRankLadder } from "@/features/student-profile/ui/account-rank-ladder";
 import { YourDuelsList } from "@/features/student-profile/ui/your-duels-list";
-import { mentrixStudent, mentrixProfileType } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { CANONICAL_DUELS_ICON } from "@/shared/icons/vocab-canonical";
 
 export const metadata = { title: "Skill duels · Mentrixa" };
 
@@ -91,24 +93,18 @@ export default async function StudentDuelsPage() {
   return (
     <div className={mentrixStudent.pageBgArena}>
       <div className={mentrixStudent.mainWide}>
-        <div className="mb-10">
-          <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-2`}>
-            <MentrixaVocabIcon name="duels" size={16} className="text-violet-300" />
-            PvP training
-          </p>
-          <h1 className={`mt-2 ${mentrixProfileType.pageTitleDisplay}`}>
-            AP Calculus AB duels
-          </h1>
-          <p className={`mt-2 ${mentrixProfileType.pageSubtitleOnDark}`}>
-            Timed battles on the only skill tree we ship. Match real Mentrixers or spar while you wait.
-          </p>
-        </div>
+        <ProductPageHeader
+          icon="duels"
+          eyebrow="Duels"
+          title="AP Calculus AB duels"
+          subtitle="Timed battles on the only skill tree we ship. Match real Mentrixers or spar while you wait."
+        />
 
         {stats && stats.totalCompleted > 0 ? (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className={`${mentrixProfileType.statLabel} inline-flex items-center gap-1.5`}>
-                <MentrixaVocabIcon name="duels" size={14} className="text-violet-300" title="Record" />
+              <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-2`}>
+                <MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={32} surface="light" title="Record" />
                 Record
               </p>
               <div className="mt-1 h-12 w-full max-w-[200px]">
@@ -118,12 +114,12 @@ export default async function StudentDuelsPage() {
               </div>
             </TiltCard>
             <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
-              <p className={`${mentrixProfileType.statLabel} inline-flex items-center gap-1.5`}>
-                <MentrixaVocabIcon name="xp" size={14} className="text-violet-200" title="Duels XP" />
+              <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-2`}>
+                <XpIcon size={32} title="Duels XP" />
                 Duels XP
               </p>
-              <p className={`mt-0.5 inline-flex items-center gap-1.5 ${mentrixProfileType.statValue}`}>
-                <MentrixaVocabIcon name="xp" size={18} className="text-violet-200" title="XP" />
+              <p className={`mt-0.5 inline-flex items-center gap-2 text-xl font-black tabular-nums text-[#0B1220]`}>
+                <XpIcon size={32} title="XP" />
                 {stats.xpFromDuels}
               </p>
             </TiltCard>
@@ -142,7 +138,7 @@ export default async function StudentDuelsPage() {
 
 
         <TiltCard tiltLimit={3} className={`${mentrixStudent.card} mt-8 overflow-hidden p-0 block`}>
-          <div className={`border-b border-zinc-100 px-4 py-3 ${mentrixProfileType.label}`}>
+          <div className={`border-b border-[#C4B5FD] px-4 py-3 ${mentrixStudent.sectionEyebrow}`}>
             Your duels
           </div>
           <YourDuelsList initialRows={rows} myId={myId} nameById={nameById} />

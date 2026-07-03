@@ -1,5 +1,12 @@
-import { RootLayoutClient } from "@/components/root-layout-client";
+import nextDynamic from "next/dynamic";
 import { getCurrentUser } from "@/shared/core/auth";
+
+const RootLayoutClient = nextDynamic(
+  () =>
+    import("@/components/root-layout-client").then((mod) => ({
+      default: mod.RootLayoutClient,
+    })),
+);
 
 /**
  * Authenticated app shell (nav, Supabase client, PWA hooks). Lives in its own route group so

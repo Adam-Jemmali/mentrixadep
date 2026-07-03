@@ -3,13 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { hasInlineVocabIcon, renderInlineVocabIcon } from "@/shared/icons/vocab-inline-svgs";
 
 describe("vocab-inline-svgs", () => {
-  it("inlines home, profile, booking, and momentum artwork", () => {
+  it("inlines home, profile, booking, and skills artwork", () => {
     for (const name of [
       "home",
       "profile",
       "booking",
-      "momentum",
-      "momentum-membership",
       "unit",
       "verified",
       "skills",
@@ -28,6 +26,12 @@ describe("vocab-inline-svgs", () => {
       renderInlineVocabIcon("profile", { size: 24, surface: "light", gold: false }),
     );
     expect(markup).toContain('stroke="#000000"');
+  });
+
+  it("uses file stickers for pricing tier icons", () => {
+    expect(hasInlineVocabIcon("tier-momentum")).toBe(false);
+    expect(hasInlineVocabIcon("tier-arena")).toBe(false);
+    expect(hasInlineVocabIcon("tier-breakthrough")).toBe(false);
   });
 
   it("uses gold strokes for verified truth on dark surfaces", () => {

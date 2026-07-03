@@ -59,12 +59,15 @@ export function XpTierProgressBar({
   value,
   tone = "light",
   label = "Rank progress",
+  showHeader = true,
   fillStyle,
   className,
 }: {
   value: number;
   tone?: ProgressTone;
   label?: string;
+  /** When false, render only the track (parent supplies the metric label). */
+  showHeader?: boolean;
   fillStyle?: CSSProperties;
   className?: string;
 }) {
@@ -73,25 +76,27 @@ export function XpTierProgressBar({
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="mb-1.5 flex items-center justify-between gap-3">
-        <span
-          className={cn(
-            "min-w-0 text-[10px] font-semibold uppercase tracking-wide",
-            isDark ? "text-zinc-400" : "text-zinc-500",
-          )}
-        >
-          <MentrixaBrandLabel kind="mentrixer" label={label} />
-        </span>
-        <span
-          className={cn(
-            "shrink-0 text-xs font-bold tabular-nums leading-none",
-            isDark ? "text-violet-100" : "text-zinc-700",
-          )}
-          aria-hidden
-        >
-          {clamped}%
-        </span>
-      </div>
+      {showHeader ? (
+        <div className="mb-1.5 flex items-center justify-between gap-3">
+          <span
+            className={cn(
+              "min-w-0 text-[10px] font-semibold uppercase tracking-wide",
+              isDark ? "text-zinc-400" : "text-zinc-500",
+            )}
+          >
+            <MentrixaBrandLabel kind="mentrixer" label={label} />
+          </span>
+          <span
+            className={cn(
+              "shrink-0 text-xs font-bold tabular-nums leading-none",
+              isDark ? "text-violet-100" : "text-zinc-700",
+            )}
+            aria-hidden
+          >
+            {clamped}%
+          </span>
+        </div>
+      ) : null}
       <ProgressBar
         aria-label={`${label}: ${clamped}%`}
         value={clamped}

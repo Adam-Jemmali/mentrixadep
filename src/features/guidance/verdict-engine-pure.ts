@@ -20,6 +20,17 @@ export type Verdict = {
   nextAction: VerdictNextAction;
   /** Peer comparison line; omitted when snapshot sample size is below 10. */
   comparison?: string;
+  /** Structured rank movement for icon-first UI. */
+  rankDelta?: RankDeltaMeta;
+};
+
+export type RankDeltaMeta = {
+  accuracy: { current: number; previous: number; delta: number };
+  percentile: { current: number; previous: number; delta: number } | null;
+  verifiedCount: number;
+  drivers: RankDrivingNode[];
+  /** No movement on accuracy or percentile since last visit. */
+  flat: boolean;
 };
 
 export type NodeSessionStat = {
@@ -283,40 +294,63 @@ export function buildRankDeltaVerdict(
       ? Math.round(current.percentile - prevPct)
       : null;
 
-  const changed =
-    pctDelta != null
-      ? `Verified rank accuracy moved from ${prevAcc}% to ${current.accuracyPercent}% (${signedDelta(accDelta)} points) and percentile from ${Math.round(prevPct!)}th to ${Math.round(current.percentile!)}th (${signedDelta(pctDelta)} points).`
-      : `Verified rank accuracy moved from ${prevAcc}% to ${current.accuracyPercent}% (${signedDelta(accDelta)} points) across ${current.verifiedCount} skill${current.verifiedCount === 1 ? "" : "s"}.`;
+  const flat = accDelta === 0 && (pctDelta == null || pctDelta === 0);
 
-  const namedDrivers = drivingNodes
-    .slice(0, 3)
-    .map((node) => `${node.nodeName} (${node.isCorrect ? "verified correct" : "missed"})`);
+  const changed =
+    flat && current.percentile != null
+      ? `${current.accuracyPercent}% accuracy · ${Math.round(current.percentile)}th percentile.`
+      : flat
+        ? `${current.accuracyPercent}% accuracy · ${current.verifiedCount} verified.`
+        : pctDelta != null
+          ? `Accuracy ${prevAcc}→${current.accuracyPercent}% · Percentile ${Math.round(prevPct!)}→${Math.round(current.percentile!)}.`
+          : `Accuracy ${prevAcc}→${current.accuracyPercent}% (${signedDelta(accDelta)}).`;
 
   const reason =
-    namedDrivers.length > 0
-      ? `This period's verified first attempts on ${namedDrivers.join(", ")} drove the shift.`
-      : accDelta === 0
-        ? ""
-        : "";
+    !flat && drivingNodes.length > 0
+      ? drivingNodes
+          .slice(0, 3)
+          .map((node) => node.nodeName)
+          .join(" · ")
+      : "";
 
   const nextUnverified = drivingNodes.find((node) => !node.isCorrect);
-  if (nextUnverified?.nodeName) {
-    return {
-      changed,
-      reason,
-      nextAction: {
-        label: `Practice ${nextUnverified.nodeName}`,
+  const nextAction = nextUnverified?.nodeName
+    ? {
+        label: `Verify ${nextUnverified.nodeName}`,
         href: practiceNodeHref(nextUnverified.nodeName),
-      },
-    };
-  }
+      }
+    : {
+        label: "Verify next node",
+        href: "/student/quest",
+      };
 
   return {
     changed,
     reason,
-    nextAction: {
-      label: "Attempt a skill you have not verified yet",
-      href: "/student/quest",
+    nextAction,
+    rankDelta: {
+      accuracy: {
+        current: current.accuracyPercent,
+        previous: prevAcc,
+        delta: accDelta,
+      },
+      percentile:
+        current.percentile != null && prevPct != null
+          ? {
+              current: Math.round(current.percentile),
+              previous: Math.round(prevPct),
+              delta: pctDelta ?? 0,
+            }
+          : current.percentile != null
+            ? {
+                current: Math.round(current.percentile),
+                previous: Math.round(current.percentile),
+                delta: 0,
+              }
+            : null,
+      verifiedCount: current.verifiedCount,
+      drivers: drivingNodes.slice(0, 3),
+      flat,
     },
   };
 }

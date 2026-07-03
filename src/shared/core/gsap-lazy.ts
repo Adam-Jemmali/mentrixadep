@@ -17,10 +17,14 @@ export function useGsapEffect(
     let active = true;
     let cleanup: void | (() => void);
 
-    void import("gsap").then(({ gsap }) => {
-      if (!active) return;
-      cleanup = effect(gsap);
-    });
+    void import("gsap")
+      .then(({ gsap }) => {
+        if (!active) return;
+        cleanup = effect(gsap);
+      })
+      .catch(() => {
+        /* Chunk unavailable during dev compile — skip animation */
+      });
 
     return () => {
       active = false;
@@ -44,7 +48,11 @@ export async function loadGsapWithScrollTrigger(): Promise<{
 
 /** Fire and forget GSAP in event handlers (tab clicks, row collapse, etc.). */
 export function runGsapAction(fn: (gsap: Gsap) => void): void {
-  void import("gsap").then(({ gsap }) => fn(gsap));
+  void import("gsap")
+    .then(({ gsap }) => fn(gsap))
+    .catch(() => {
+      /* Chunk unavailable during dev compile — skip animation */
+    });
 }
 
 export function useGsapScrollTriggerEffect(
@@ -58,10 +66,14 @@ export function useGsapScrollTriggerEffect(
     let active = true;
     let cleanup: void | (() => void);
 
-    void loadGsapWithScrollTrigger().then(({ gsap, ScrollTrigger }) => {
-      if (!active) return;
-      cleanup = effect(gsap, ScrollTrigger);
-    });
+    void loadGsapWithScrollTrigger()
+      .then(({ gsap, ScrollTrigger }) => {
+        if (!active) return;
+        cleanup = effect(gsap, ScrollTrigger);
+      })
+      .catch(() => {
+        /* Chunk unavailable during dev compile — skip animation */
+      });
 
     return () => {
       active = false;

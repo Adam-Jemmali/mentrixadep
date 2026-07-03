@@ -1,53 +1,73 @@
 import { mentrixProfileType } from "@/features/student-profile/mentrix-profile-typography";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 
 /**
  * Shared layout tokens for student-facing pages.
  * Logo palette only on product routes — no white containers.
  */
 export const mentrixStudent = {
-  pageBgHub:
-    "bg-mentrixa-app relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-white",
+  pageBgHub: mentrixHubSurfaces.pageDesk,
 
-  pageBg:
-    "mx-shell-workbench relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-white before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.06] before:content-['']",
+  pageBg: mentrixHubSurfaces.pageDesk,
 
-  pageBgArena:
-    "mx-shell-arena relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-white before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:112px_112px] before:bg-repeat before:opacity-[0.05] before:content-['']",
+  pageBgArena: mentrixHubSurfaces.pageDesk,
 
   main: "max-w-7xl mx-auto px-4 sm:px-6 py-8",
   mainWide: "max-w-6xl mx-auto px-4 sm:px-6 py-8",
   mainSlim: "max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10",
 
-  /** Logo-gradient panel — default card on product surfaces. */
-  card: `${mentrixBrandUi.panel} rounded-2xl text-violet-50`,
-  cardWorkbench: "mx-panel-workbench rounded-2xl text-white",
-  cardArena: "mx-panel-arena rounded-2xl text-white",
-  cardMuted: `${mentrixBrandUi.panelMuted} rounded-2xl text-violet-100`,
+  pageHeader: `${mentrixHubSurfaces.notebook} p-5 sm:p-6`,
+
+  /** Default product card — ruled notebook page. */
+  card: mentrixHubSurfaces.notebook,
+  cardWorkbench: mentrixHubSurfaces.notebook,
+  cardArena: mentrixHubSurfaces.stickyNote,
+  cardMuted: `${mentrixHubSurfaces.stickyNote} rotate-0`,
 
   heroGradient:
-    "relative overflow-hidden rounded-3xl bg-[linear-gradient(160deg,#312e81_0%,#1e1b4b_42%,#0B1220_100%)] text-white shadow-[0_20px_44px_-26px_rgba(124,58,237,0.45)] before:pointer-events-none before:absolute before:inset-0 before:bg-[url('/mentrixalogo/logo.webp')] before:bg-[length:118px_118px] before:bg-repeat before:opacity-[0.06] before:content-['']",
+    mentrixHubSurfaces.heroCertificate,
 
-  heroGradientLite:
-    "relative overflow-hidden rounded-3xl bg-[linear-gradient(160deg,#312e81_0%,#1e1b4b_42%,#0B1220_100%)] text-white shadow-[0_20px_44px_-26px_rgba(124,58,237,0.45)]",
+  hubHero: mentrixHubSurfaces.heroCertificate,
+  hubNotebook: mentrixHubSurfaces.notebook,
+  hubSticky: mentrixHubSurfaces.stickyNote,
+  hubBook: mentrixHubSurfaces.bookSpread,
+  hubBookPage: mentrixHubSurfaces.bookPage,
+  hubBtn: mentrixHubSurfaces.btnPrimary,
+  hubBtnSolid: mentrixHubSurfaces.btnSolid,
+  hubBtnChip: mentrixHubSurfaces.btnChip,
+  hubGhostLink: mentrixHubSurfaces.ghostLink,
+  hubEmpty: mentrixHubSurfaces.emptyState,
+  hubTableShell: mentrixHubSurfaces.tableShell,
+  hubTableHead: mentrixHubSurfaces.tableHead,
+  hubTableRow: mentrixHubSurfaces.tableRow,
+  hubFieldInput: mentrixHubSurfaces.fieldInput,
+  hubSessionsPanel: mentrixHubSurfaces.sessionsPanel,
+  hubGuideSticky: mentrixHubSurfaces.guideSticky,
 
-  sectionEyebrow: mentrixProfileType.labelOnDark,
-  sectionEyebrowOnLight: mentrixProfileType.labelOnDark,
+  heroGradientLite: mentrixHubSurfaces.heroCertificate,
 
-  pageTitle: mentrixProfileType.pageTitleOnDark,
-  pageSubtitle: mentrixProfileType.pageSubtitleOnDark,
+  sectionEyebrow: mentrixHubSurfaces.inkLabel,
+  sectionEyebrowOnLight: mentrixHubSurfaces.inkLabel,
 
-  textOnLight: mentrixProfileType.cardTitleOnDark,
-  textMutedOnLight: mentrixProfileType.bodyItalicOnDark,
-  textOnDark: "font-black text-white",
-  textMutedOnDark: mentrixProfileType.bodyItalicOnDark,
+  pageTitle: mentrixHubSurfaces.inkTitle,
+  pageSubtitle: mentrixHubSurfaces.inkBody,
 
-  cardTitle: mentrixProfileType.cardTitleOnDark,
-  cardTitleOnDark: mentrixProfileType.cardTitleOnDark,
+  textOnLight: "font-black text-[#0B1220]",
+  textMutedOnLight: mentrixHubSurfaces.inkMuted,
+  textOnDark: "font-black text-[#0B1220]",
+  textMutedOnDark: mentrixHubSurfaces.inkMuted,
 
-  pillPrimary:
-    "mx-cta-primary inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#6366F1] px-4 py-2 text-xs font-black uppercase italic tracking-[0.14em] text-white shadow-md shadow-violet-600/25",
-  pillGhost: mentrixBrandUi.heroBtnOutline,
+  cardTitle: mentrixHubSurfaces.inkTitle,
+  cardTitleOnDark: mentrixHubSurfaces.inkTitle,
+
+  pillPrimary: mentrixHubSurfaces.btnSolid,
+  pillGhost: mentrixHubSurfaces.ghostLink,
+
+  chipActive:
+    "inline-flex min-h-9 items-center rounded-lg border border-[#6366F1] bg-[#7C3AED] px-3 text-base font-semibold text-white shadow-[2px_2px_0_#0B1220]",
+  chipIdle:
+    "inline-flex min-h-9 items-center rounded-lg border border-[#A5B4FC] bg-white px-3 text-base font-semibold text-[#4F46E5] hover:bg-[#EDE9FE]",
 } as const;
 
 export { mentrixProfileType, mentrixBrandUi };
