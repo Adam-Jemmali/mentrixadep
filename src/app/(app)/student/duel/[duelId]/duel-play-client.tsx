@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { submitSkillDuelAnswers, submitSkillDuelQuestionAnswer, withdrawPendingSkillDuel, hideSkillDuelFromList, forfeitSkillDuel } from "@/features/duels/duel-gameplay";
 import { duelForfeitResultCopy } from "@/features/duels/duel-forfeit-pure";
@@ -58,7 +58,8 @@ function isQueueStyleMatchSource(ms: string | null | undefined): boolean {
 
 export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [legacyLoading, setLegacyLoading] = useState(false);
+  const [answerBusy, setAnswerBusy] = useState(false);
   const [listActionLoading, setListActionLoading] = useState(false);
   const [forfeitBusy, setForfeitBusy] = useState(false);
   const [acceptBusy, setAcceptBusy] = useState(false);
@@ -67,9 +68,11 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(DUEL_SECONDS_PER_QUESTION);
+  const [timerEpoch, setTimerEpoch] = useState(0);
   const [optimisticAnswerCount, setOptimisticAnswerCount] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const skipTimeoutRef = useRef<number | null>(null);
+  const answerInFlightRef = useRef(false);
 
   const { youLabel, themLabel, youAreChallenger } = labelsForSide(duel, side);
 
@@ -224,24 +227,36 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
   /** Fallback polling if realtime misses updates (slower interval to reduce UI churn). */
   useEffect(() => {
     if (duel.status !== "active") return;
+    if (answerBusy || forfeitBusy) return;
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
       safeRouterRefresh(router);
     };
     const id = setInterval(tick, 8000);
     return () => clearInterval(id);
-  }, [duel.status, router]);
+  }, [duel.status, router, answerBusy, forfeitBusy]);
+
+  const stopQuestionTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  const restartQuestionTimer = useCallback(() => {
+    stopQuestionTimer();
+    setTimerEpoch((epoch) => epoch + 1);
+  }, [stopQuestionTimer]);
 
   useEffect(() => {
     if (duel.status !== "active") return;
     if (currentIndex >= total) return;
+    if (answerBusy || forfeitBusy) return;
 
     setTimeLeft(DUEL_SECONDS_PER_QUESTION);
-    if (timerRef.current) clearInterval(timerRef.current);
+    stopQuestionTimer();
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
+          stopQuestionTimer();
           return 0;
         }
         return t - 1;
@@ -249,35 +264,84 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
     }, 1000);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      stopQuestionTimer();
     };
-  }, [duel.status, currentIndex, total]);
+  }, [
+    duel.status,
+    currentIndex,
+    total,
+    timerEpoch,
+    answerBusy,
+    forfeitBusy,
+    stopQuestionTimer,
+  ]);
+
+  const submitCurrentAnswer = useCallback(
+    async (questionIndex: number, answerIndex: number) => {
+      if (answerInFlightRef.current) return;
+      if (duel.status !== "active") return;
+      if (questionIndex >= total) return;
+
+      answerInFlightRef.current = true;
+      skipTimeoutRef.current = questionIndex;
+      setAnswerBusy(true);
+      setError(null);
+      stopQuestionTimer();
+
+      try {
+        const res = await submitSkillDuelQuestionAnswer(duel.id, questionIndex, answerIndex);
+
+        if (!res.success) {
+          const msg = res.error.toLowerCase();
+          if (
+            msg.includes("not active") ||
+            msg.includes("in order") ||
+            msg.includes("already")
+          ) {
+            skipTimeoutRef.current = null;
+            safeRouterRefresh(router);
+            return;
+          }
+          skipTimeoutRef.current = null;
+          setTimeLeft(DUEL_SECONDS_PER_QUESTION);
+          restartQuestionTimer();
+          setError(res.error);
+          return;
+        }
+
+        setTimeLeft(DUEL_SECONDS_PER_QUESTION);
+        skipTimeoutRef.current = null;
+        setOptimisticAnswerCount(questionIndex + 1);
+        safeRouterRefresh(router);
+      } catch {
+        skipTimeoutRef.current = null;
+        setTimeLeft(DUEL_SECONDS_PER_QUESTION);
+        restartQuestionTimer();
+        setError("Could not save your answer. Try again.");
+      } finally {
+        answerInFlightRef.current = false;
+        setAnswerBusy(false);
+      }
+    },
+    [duel.id, duel.status, total, router, stopQuestionTimer, restartQuestionTimer],
+  );
 
   useEffect(() => {
     if (duel.status !== "active") return;
     if (timeLeft !== 0) return;
     if (currentIndex >= total) return;
     if (skipTimeoutRef.current === currentIndex) return;
-    skipTimeoutRef.current = currentIndex;
+    if (answerInFlightRef.current || forfeitBusy) return;
 
-    let cancelled = false;
-    void (async () => {
-      setLoading(true);
-      const res = await submitSkillDuelQuestionAnswer(
-        duel.id,
-        currentIndex,
-        -1
-      );
-      if (!cancelled) {
-        setLoading(false);
-        if (!res.success) setError(res.error);
-        else safeRouterRefresh(router);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [timeLeft, duel.status, duel.id, currentIndex, total, router]);
+    void submitCurrentAnswer(currentIndex, -1);
+  }, [
+    timeLeft,
+    duel.status,
+    currentIndex,
+    total,
+    forfeitBusy,
+    submitCurrentAnswer,
+  ]);
 
   const waitingOther =
     duel.status === "active" &&
@@ -299,6 +363,7 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
 
     setForfeitBusy(true);
     setError(null);
+    stopQuestionTimer();
     try {
       const r = await forfeitSkillDuel(duel.id);
       if (!r.success) {
@@ -319,7 +384,7 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
         type="button"
         variant="ghost"
         size="sm"
-        disabled={forfeitBusy || loading}
+        disabled={forfeitBusy}
         onClick={() => void handleLeaveMatch()}
         className={cn(
           mentrixStudent.hubGhostLink,
@@ -332,31 +397,16 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
     );
   }
 
-  async function pickAnswer(ci: number) {
-    if (duel.status !== "active") return;
-    if (currentIndex >= total) return;
-    skipTimeoutRef.current = currentIndex;
-    setLoading(true);
-    setError(null);
-    if (timerRef.current) clearInterval(timerRef.current);
-    const res = await submitSkillDuelQuestionAnswer(duel.id, currentIndex, ci);
-    if (!res.success) {
-      setLoading(false);
-      setError(res.error);
-      return;
-    }
-    const nextIndex = currentIndex + 1;
-    setOptimisticAnswerCount(nextIndex);
-    setTimeLeft(DUEL_SECONDS_PER_QUESTION);
-    setLoading(false);
-    safeRouterRefresh(router);
+  function pickAnswer(ci: number) {
+    if (answerBusy || forfeitBusy) return;
+    void submitCurrentAnswer(currentIndex, ci);
   }
 
   async function handleLegacySubmit(answers: number[]) {
-    setLoading(true);
+    setLegacyLoading(true);
     setError(null);
     const res = await submitSkillDuelAnswers(duel.id, answers);
-    setLoading(false);
+    setLegacyLoading(false);
     if (!res.success) {
       setError(res.error);
       return;
@@ -735,7 +785,7 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
               <SkillDuelChoiceBoard
                 key={`choices-${currentIndex}`}
                 choices={q.choices}
-                disabled={loading}
+                disabled={answerBusy || forfeitBusy}
                 onSelect={(ci) => void pickAnswer(ci)}
               />
             </div>
@@ -762,7 +812,7 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
   }
 
   return (
-    <LegacyDuelForm duel={duel} onSubmit={handleLegacySubmit} loading={loading} error={error} />
+    <LegacyDuelForm duel={duel} onSubmit={handleLegacySubmit} loading={legacyLoading} error={error} />
   );
 }
 

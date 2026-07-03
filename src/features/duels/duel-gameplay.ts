@@ -826,6 +826,9 @@ export async function submitSkillDuelQuestionAnswer(
 
     const key = isChallenger ? "student_answers" : "opponent_answers";
     const prev = (duel[key] as number[] | null) ?? [];
+    if (prev.length > questionIndex) {
+      return { success: true };
+    }
     if (prev.length !== questionIndex) {
       return { success: false, error: "Answer questions in order." };
     }
@@ -836,13 +839,39 @@ export async function submitSkillDuelQuestionAnswer(
       [key]: next,
     };
 
-    const { error: upErr } = await supabase
+    const { data: updated, error: upErr } = await supabase
       .from("skill_duels")
       .update(patch)
-      .eq("id", id.id);
+      .eq("id", id.id)
+      .eq("status", "active")
+      .select("id")
+      .maybeSingle();
 
     if (upErr) {
       return { success: false, error: upErr.message };
+    }
+
+    if (!updated) {
+      const admin = createAdminClient();
+      const { data: latest } = await admin
+        .from("skill_duels")
+        .select(`status, ${key}`)
+        .eq("id", id.id)
+        .maybeSingle();
+
+      if (latest?.status === "completed") {
+        return { success: true };
+      }
+
+      const latestAnswers = latest?.[key as keyof typeof latest] as number[] | null;
+      if (Array.isArray(latestAnswers) && latestAnswers.length > questionIndex) {
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: "Could not save answer. The match may have ended.",
+      };
     }
 
     await maybeCompleteDuel(createAdminClient(), id.id, questions);
