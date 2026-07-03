@@ -65,11 +65,13 @@ export function RankBadge({
     <div className={cn("inline-flex flex-col items-center gap-1.5", className)}>
       <motion.div
         className={cn(
-          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl",
-          onDark
-            ? "border-2 bg-gradient-to-b from-slate-800/98 to-slate-950/98 ring-1 ring-white/10"
-            : "bg-[#0A0A0A]/90",
-          isMentrixer && (onDark ? "ring-amber-300/35" : "ring-1 ring-[#D4A017]/40"),
+          "relative flex shrink-0 items-center justify-center",
+          onDark &&
+            "overflow-hidden rounded-2xl border-2 bg-gradient-to-b from-slate-800/98 to-slate-950/98 ring-1 ring-white/10",
+          isMentrixer &&
+            (onDark
+              ? "overflow-hidden rounded-2xl ring-amber-300/35"
+              : "rounded-2xl ring-1 ring-[#D4A017]/45"),
         )}
         style={{
           width: px,
@@ -78,8 +80,8 @@ export function RankBadge({
           boxShadow: onDark
             ? `0 0 ${Math.round(px * 0.45)}px ${visual.colorMuted}, 0 8px 24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14)`
             : isMentrixer
-              ? `0 0 ${Math.round(px * 0.35)}px ${visual.colorMuted}, 0 0 0 1px ${visual.color}55`
-              : `0 8px 24px -10px ${visual.colorMuted}`,
+              ? `0 0 ${Math.round(px * 0.35)}px ${visual.colorMuted}`
+              : undefined,
         }}
         animate={
           animate
@@ -116,8 +118,8 @@ export function RankBadge({
           alt=""
           aria-hidden
           className={cn(
-            "relative z-[1] h-[72%] w-[72%] object-contain",
-            onDark && "drop-shadow-[0_0_10px_rgba(255,255,255,0.22)]",
+            "relative z-[1] object-contain",
+            onDark ? "h-[72%] w-[72%] drop-shadow-[0_0_10px_rgba(255,255,255,0.22)]" : "h-full w-full",
           )}
           style={iconFilter ? { filter: iconFilter } : undefined}
         />
