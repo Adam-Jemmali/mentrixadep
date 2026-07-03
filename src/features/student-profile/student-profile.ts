@@ -22,6 +22,7 @@ import {
 import { getApCalcVerifiedRankStats, getCalibratedRank } from "@/features/xp/calibrated-rank";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { filterArenaDivisions } from "@/features/divisions/ap-calc-ab-division";
+import { loadProfileBattleLog } from "@/features/student-profile/load-profile-battle-log";
 
 export type {
   StudentProfileAchievement,
@@ -125,7 +126,7 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
 
   const timezone = (settingsRow?.timezone as string | undefined)?.trim() || "UTC";
 
-  const [{ data: xpRow }, { data: courseRows }, { count: completedCount }, { data: divRows }, questData] =
+  const [{ data: xpRow }, { data: courseRows }, { count: completedCount }, { data: divRows }, recentAchievements] =
     await Promise.all([
       admin.from("user_xp").select("total_xp, streak_days, division_xp").eq("user_id", parsed.id).maybeSingle(),
       admin.from("student_courses").select("course_name").eq("student_id", parsed.id),
@@ -135,13 +136,7 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
         .eq("student_id", parsed.id)
         .or("status.eq.completed,completed.eq.true"),
       admin.from("divisions").select("key, name").eq("active", true),
-      admin
-        .from("user_quest_progress")
-        .select("id, last_attempt_at, quest_id")
-        .eq("user_id", parsed.id)
-        .eq("status", "completed")
-        .order("last_attempt_at", { ascending: false })
-        .limit(5),
+      loadProfileBattleLog(parsed.id),
     ]);
 
   const totalXp = xpRow?.total_xp ?? 0;
@@ -164,26 +159,6 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
       };
     })
     .sort((a, b) => b.xp - a.xp);
-
-  const questIds = (questData.data ?? [])
-    .map((r) => r.quest_id)
-    .filter((id): id is string => typeof id === "string");
-
-  let recentAchievements: StudentProfileAchievement[] = [];
-  if (questIds.length > 0) {
-    const { data: quests } = await admin.from("quests").select("id, prompt").in("id", questIds);
-    const promptById = new Map((quests ?? []).map((q) => [q.id, q.prompt]));
-    recentAchievements = (questData.data ?? []).map((row) => {
-      const prompt = promptById.get(row.quest_id) ?? "Quest completed";
-      const short =
-        prompt.length > 72 ? `${prompt.slice(0, 69).trim()}…` : prompt;
-      return {
-        id: row.id,
-        completedAt: row.last_attempt_at ?? new Date().toISOString(),
-        summary: short,
-      };
-    });
-  }
 
   const courses = (courseRows ?? [])
     .map((c) => c.course_name)

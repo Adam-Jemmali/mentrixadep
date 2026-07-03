@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { submitSkillDuelAnswers, submitSkillDuelQuestionAnswer, withdrawPendingSkillDuel, hideSkillDuelFromList } from "@/features/duels/duel-gameplay";
+import { submitSkillDuelAnswers, submitSkillDuelQuestionAnswer, withdrawPendingSkillDuel, hideSkillDuelFromList, forfeitSkillDuel } from "@/features/duels/duel-gameplay";
+import { duelForfeitResultCopy } from "@/features/duels/duel-forfeit-pure";
 import { acceptQueueMatch, declineQueueMatch, getQueueMatchAcceptance } from "@/features/duels/duel-queue";
 import { type DuelPublicRow } from "@/features/duels/duel-reads";
 import { Button } from "@/shared/ui/button";
@@ -29,6 +30,7 @@ type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "C
 interface Props {
   duel: DuelPublicRow;
   side: "challenger" | "opponent";
+  viewerUserId: string;
 }
 
 function kindLabel(type?: string) {
@@ -54,10 +56,11 @@ function isQueueStyleMatchSource(ms: string | null | undefined): boolean {
   return ms === "queue" || ms === "ai_queue";
 }
 
-export function DuelPlayClient({ duel, side }: Props) {
+export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [listActionLoading, setListActionLoading] = useState(false);
+  const [forfeitBusy, setForfeitBusy] = useState(false);
   const [acceptBusy, setAcceptBusy] = useState(false);
   const [meAccepted, setMeAccepted] = useState(false);
   const [opponentAccepted, setOpponentAccepted] = useState(false);
@@ -286,6 +289,49 @@ export function DuelPlayClient({ duel, side }: Props) {
     router.prefetch("/student/duel");
   };
 
+  async function handleLeaveMatch() {
+    const confirmed = window.confirm(
+      duel.is_ai_opponent
+        ? "Leave this spar? It counts as a loss."
+        : "Leave this match? Your opponent wins by walkover.",
+    );
+    if (!confirmed) return;
+
+    setForfeitBusy(true);
+    setError(null);
+    try {
+      const r = await forfeitSkillDuel(duel.id);
+      if (!r.success) {
+        setError(r.error);
+        return;
+      }
+      safeRouterRefresh(router);
+    } catch {
+      setError("Could not leave the match.");
+    } finally {
+      setForfeitBusy(false);
+    }
+  }
+
+  function leaveMatchButton(className?: string) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        disabled={forfeitBusy || loading}
+        onClick={() => void handleLeaveMatch()}
+        className={cn(
+          mentrixStudent.hubGhostLink,
+          "text-[11px] font-black uppercase tracking-[0.14em] text-[#B45309] hover:bg-[#FEF3C7]",
+          className,
+        )}
+      >
+        {forfeitBusy ? "Leaving…" : "Leave match"}
+      </Button>
+    );
+  }
+
   async function pickAnswer(ci: number) {
     if (duel.status !== "active") return;
     if (currentIndex >= total) return;
@@ -510,6 +556,17 @@ export function DuelPlayClient({ duel, side }: Props) {
         : `+${XP.DUEL_LOSS} XP — every round builds rank. Study the replay below.`;
 
     const xpAmount = tie ? XP.DUEL_TIE : youWon ? XP.DUEL_WIN : XP.DUEL_LOSS;
+    const youLeft = duel.forfeited_by === viewerUserId;
+    const opponentLeft = Boolean(duel.forfeited_by) && duel.forfeited_by !== viewerUserId;
+    const forfeitCopy =
+      duel.forfeited_by != null
+        ? duelForfeitResultCopy({
+            youLeft,
+            opponentLeft,
+            themLabel,
+            youWon,
+          })
+        : null;
 
     return (
       <SkillDuelResults
@@ -527,6 +584,8 @@ export function DuelPlayClient({ duel, side }: Props) {
         tie={tie}
         xpAmount={xpAmount}
         xpLine={xpLine}
+        forfeitHeadline={forfeitCopy?.headline}
+        forfeitDetail={forfeitCopy?.detail}
         listActionLoading={listActionLoading}
         error={error}
         onPrefetchHub={prefetchDuelHub}
@@ -549,13 +608,15 @@ export function DuelPlayClient({ duel, side }: Props) {
 
   if (waitingOther) {
     return (
-      <div className={cn(mentrixStudent.hubSticky, "px-5 py-8 text-center sm:px-6")}>
+      <div className={cn(mentrixStudent.hubSticky, "space-y-4 px-5 py-8 text-center sm:px-6")}>
         <p className="mx-hub-ink-title text-base">
           You finished waiting for {themLabel.toLowerCase()}
         </p>
         <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
-          Scores lock in when both finish. This page updates automatically.
+          Scores lock in when both finish, or if someone leaves the match.
         </p>
+        <div className="flex justify-center">{leaveMatchButton()}</div>
+        {error ? <p className="text-sm font-semibold text-[#B45309]">{error}</p> : null}
       </div>
     );
   }
@@ -606,27 +667,30 @@ export function DuelPlayClient({ duel, side }: Props) {
               </p>
             ) : null}
           </div>
-          <div className="flex items-center gap-3">
-            <div
-              className="relative h-11 w-11 shrink-0 rounded-full border-2 border-[#6366F1] bg-white"
-              style={{
-                background: `conic-gradient(#6366F1 ${
-                  timerNorm * 360
-                }deg, #E0E7FF 0deg)`,
-              }}
-              aria-hidden
-            />
-            <div className="text-right">
-              <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.16em]">Time</p>
-              <p
-                className={cn(
-                  "mx-hub-timer text-xl tabular-nums sm:text-2xl",
-                  timerUrgent && "!text-[#B45309]",
-                )}
-              >
-                {timeLeft}s
-              </p>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-3">
+              <div
+                className="relative h-11 w-11 shrink-0 rounded-full border-2 border-[#6366F1] bg-white"
+                style={{
+                  background: `conic-gradient(#6366F1 ${
+                    timerNorm * 360
+                  }deg, #E0E7FF 0deg)`,
+                }}
+                aria-hidden
+              />
+              <div className="text-right">
+                <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.16em]">Time</p>
+                <p
+                  className={cn(
+                    "mx-hub-timer text-xl tabular-nums sm:text-2xl",
+                    timerUrgent && "!text-[#B45309]",
+                  )}
+                >
+                  {timeLeft}s
+                </p>
+              </div>
             </div>
+            {leaveMatchButton()}
           </div>
         </div>
 

@@ -28,6 +28,7 @@ export type DuelPublicRow = {
   student_score: number | null;
   opponent_score: number | null;
   winner: string | null;
+  forfeited_by: string | null;
   reward_amount_cents: number;
   created_at: string;
   completed_at: string | null;
@@ -262,6 +263,7 @@ export async function getDuelForUser(
       student_score: duel.student_score,
       opponent_score: duel.opponent_score,
       winner: duel.winner,
+      forfeited_by: (duel as { forfeited_by?: string | null }).forfeited_by ?? null,
       reward_amount_cents: duel.reward_amount_cents ?? 0,
       created_at: duel.created_at,
       completed_at: duel.completed_at,

@@ -68,7 +68,7 @@ export default async function DuelDetailPage({ params }: Props) {
 
         <div className="space-y-6">
           {showInviteeActions && <DuelInviteeActions duelId={duel.id} />}
-          <DuelPlayClient duel={duel} side={side} />
+          <DuelPlayClient duel={duel} side={side} viewerUserId={user.id} />
         </div>
       </main>
     </div>

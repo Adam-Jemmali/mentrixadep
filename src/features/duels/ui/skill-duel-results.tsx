@@ -39,6 +39,8 @@ type Props = {
   tie: boolean;
   xpAmount: number;
   xpLine: string;
+  forfeitHeadline?: string;
+  forfeitDetail?: string;
   listActionLoading: boolean;
   error: string | null;
   onRemoveFromList: () => void;
@@ -114,6 +116,8 @@ export function SkillDuelResults({
   tie,
   xpAmount,
   xpLine: _xpLine,
+  forfeitHeadline,
+  forfeitDetail,
   listActionLoading,
   error,
   onRemoveFromList,
@@ -179,12 +183,14 @@ export function SkillDuelResults({
     return rounds.filter((r) => r.outcome === "skipped");
   }, [rounds, filter]);
 
-  const outcomeTitle = tie ? "Dead heat" : youWon ? "Victory" : "Next run";
-  const outcomeSubtitle = tie
-    ? "Evenly matched — queue again and break the tie."
-    : youWon
-      ? "You outpaced the field. Keep the streak alive."
-      : "Every miss is data. Review below and run it back.";
+  const outcomeTitle = forfeitHeadline ?? (tie ? "Dead heat" : youWon ? "Victory" : "Next run");
+  const outcomeSubtitle =
+    forfeitDetail ??
+    (tie
+      ? "Evenly matched — queue again and break the tie."
+      : youWon
+        ? "You outpaced the field. Keep the streak alive."
+        : "Every miss is data. Review below and run it back.");
 
   const motionEnabled = reducedMotion !== true;
 

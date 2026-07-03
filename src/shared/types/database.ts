@@ -414,6 +414,8 @@ export interface SkillDuel {
   student_ready_at: string | null;
   /** Set when opponent accepts, or when the sparring bot is ready. */
   opponent_ready_at: string | null;
+  /** User who left an active duel; opponent wins by walkover. */
+  forfeited_by: string | null;
 }
 
 export interface DuelQueueRow {

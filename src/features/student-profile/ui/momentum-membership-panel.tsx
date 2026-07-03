@@ -94,9 +94,7 @@ export function MomentumMembershipPanel({
       ) : (
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">
-              Only subscription
-            </p>
+            
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <SubscriptionTierChip tier="momentum" active={active} />
               {momentumTier?.popularBadge ? (
@@ -216,7 +214,7 @@ export function MomentumMembershipPanel({
           </>
         ) : isSubscribe && onStartCheckout ? (
           <Button type="button" className={mentrixStudent.hubBtnSolid} onClick={onStartCheckout} disabled={checkoutPending}>
-            {checkoutPending ? "Opening Stripe…" : "Subscribe with Stripe"}
+            {checkoutPending ? "Opening Stripe…" : "Subscribe"}
           </Button>
         ) : (
           <Button asChild className={mentrixStudent.hubBtnSolid}>

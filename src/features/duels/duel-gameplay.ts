@@ -27,6 +27,10 @@ import {
   scoreAnswers,
   type DuelReadyRow,
 } from "@/features/duels/duel-internal";
+import {
+  forfeitWinnerSide,
+  padDuelAnswersForScoring,
+} from "@/features/duels/duel-forfeit-pure";
 import { DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE } from "@/features/duels/duel-item-bank-pure";
 
 export async function activateSkillDuelSession(
@@ -391,6 +395,13 @@ export async function hideSkillDuelFromList(
     }
 
     const status = duel.status ?? "";
+    if (status === "active") {
+      return {
+        success: false,
+        error: "Leave the live match first. Open the duel and tap Leave match.",
+      };
+    }
+
     if (status === "pending" && asOpponent && !isAi) {
       return {
         success: false,
@@ -407,7 +418,7 @@ export async function hideSkillDuelFromList(
     };
 
     const shouldCancel =
-      (isAi && asChallenger && (status === "pending" || status === "active")) ||
+      (isAi && asChallenger && status === "pending") ||
       (asChallenger && status === "pending");
 
     if (shouldCancel) {
@@ -451,6 +462,94 @@ export async function hideSkillDuelFromList(
   }
 }
 
+async function applyDuelCompletionRewards(
+  admin: ReturnType<typeof createAdminClient>,
+  duelId: string,
+  row: {
+    student_id: string;
+    opponent_student_id: string | null;
+    division_key: string;
+    is_ai_opponent?: boolean;
+  },
+  winner: "student" | "opponent" | "tie",
+  questions: SkillDuelQuestion[],
+  sa: number[],
+  oa: number[],
+  completedAt: string,
+): Promise<void> {
+  const isAi = row.is_ai_opponent === true;
+  const div = row.division_key;
+  const questionsWithNodes = questions as Array<SkillDuelQuestion & { skillNodeId?: string }>;
+
+  if (winner === "tie") {
+    await applyXpAward(row.student_id, XP.DUEL_TIE, `duel_tie:${duelId}:s`, div);
+    if (!isAi && row.opponent_student_id) {
+      await applyXpAward(
+        row.opponent_student_id,
+        XP.DUEL_TIE,
+        `duel_tie:${duelId}:o`,
+        div,
+      );
+    }
+  } else if (winner === "student") {
+    await applyXpAward(row.student_id, XP.DUEL_WIN, `duel_win:${duelId}`, div);
+    await applyDuelMetaRewards(admin, row.student_id, duelId, div, true);
+    if (!isAi && row.opponent_student_id) {
+      await applyXpAward(
+        row.opponent_student_id,
+        XP.DUEL_LOSS,
+        `duel_loss:${duelId}`,
+        div,
+      );
+    }
+  } else {
+    if (isAi) {
+      await applyXpAward(row.student_id, XP.DUEL_LOSS, `duel_loss:${duelId}`, div);
+    } else if (row.opponent_student_id) {
+      await applyXpAward(
+        row.opponent_student_id,
+        XP.DUEL_WIN,
+        `duel_win:${duelId}`,
+        div,
+      );
+      await applyDuelMetaRewards(
+        admin,
+        row.opponent_student_id,
+        duelId,
+        div,
+        true,
+      );
+      await applyXpAward(row.student_id, XP.DUEL_LOSS, `duel_loss:${duelId}`, div);
+    }
+  }
+
+  const scheduleLossRetest = (loserId: string, loserAnswers: number[] | null) => {
+    const skillNodeId = resolveFirstMissedSkillNodeId(questionsWithNodes, loserAnswers);
+    if (!skillNodeId) return;
+    void scheduleDuelLossRetest({
+      duelId,
+      studentId: loserId,
+      skillNodeId,
+      completedAt,
+    });
+  };
+
+  if (winner === "opponent") {
+    scheduleLossRetest(row.student_id, sa);
+  } else if (winner === "student" && !isAi && row.opponent_student_id) {
+    scheduleLossRetest(row.opponent_student_id, oa);
+  }
+}
+
+function revalidateDuelPaths(duelId: string): void {
+  revalidatePath("/student/duel");
+  revalidatePath(`/student/duel/${duelId}`);
+  revalidatePath("/student/duel/history");
+  revalidatePath("/student/division");
+  revalidatePath("/student");
+  revalidatePath("/student/quest");
+}
+
 async function maybeCompleteDuel(
   admin: ReturnType<typeof createAdminClient>,
   duelId: string,
@@ -466,13 +565,11 @@ async function maybeCompleteDuel(
 
   if (!row || row.status !== "active") return;
 
-  const isAi = (row as { is_ai_opponent?: boolean }).is_ai_opponent === true;
   const sa = row.student_answers as number[] | null;
   const oa = row.opponent_answers as number[] | null;
 
   if (!sa || sa.length !== questions.length) return;
-  if (!isAi && (!oa || oa.length !== questions.length)) return;
-  if (isAi && (!oa || oa.length !== questions.length)) return;
+  if (!oa || oa.length !== questions.length) return;
 
   const studentScore = scoreAnswers(questions, sa);
   const opponentScore = scoreAnswers(questions, oa);
@@ -501,74 +598,158 @@ async function maybeCompleteDuel(
 
   if (!finalized) return;
 
-  const div = row.division_key;
-  const questionsWithNodes = questions as Array<SkillDuelQuestion & { skillNodeId?: string }>;
+  await applyDuelCompletionRewards(
+    admin,
+    duelId,
+    row as {
+      student_id: string;
+      opponent_student_id: string | null;
+      division_key: string;
+      is_ai_opponent?: boolean;
+    },
+    winner,
+    questions,
+    sa,
+    oa,
+    now,
+  );
 
-  if (winner === "tie") {
-    await applyXpAward(row.student_id, XP.DUEL_TIE, `duel_tie:${duelId}:s`, div);
-    if (!isAi && row.opponent_student_id) {
-      await applyXpAward(
-        row.opponent_student_id,
-        XP.DUEL_TIE,
-        `duel_tie:${duelId}:o`,
-        div
-      );
-    }
-  } else if (winner === "student") {
-    await applyXpAward(row.student_id, XP.DUEL_WIN, `duel_win:${duelId}`, div);
-    await applyDuelMetaRewards(admin, row.student_id, duelId, div, true);
-    if (!isAi && row.opponent_student_id) {
-      await applyXpAward(
-        row.opponent_student_id,
-        XP.DUEL_LOSS,
-        `duel_loss:${duelId}`,
-        div
-      );
-    }
-  } else {
-    if (isAi) {
-      await applyXpAward(row.student_id, XP.DUEL_LOSS, `duel_loss:${duelId}`, div);
-    } else if (row.opponent_student_id) {
-      await applyXpAward(
-        row.opponent_student_id,
-        XP.DUEL_WIN,
-        `duel_win:${duelId}`,
-        div
-      );
-      await applyDuelMetaRewards(
-        admin,
-        row.opponent_student_id,
-        duelId,
-        div,
-        true
-      );
-      await applyXpAward(row.student_id, XP.DUEL_LOSS, `duel_loss:${duelId}`, div);
-    }
-  }
+  revalidateDuelPaths(duelId);
+}
 
-  const scheduleLossRetest = (loserId: string, loserAnswers: number[] | null) => {
-    const skillNodeId = resolveFirstMissedSkillNodeId(questionsWithNodes, loserAnswers);
-    if (!skillNodeId) return;
-    void scheduleDuelLossRetest({
-      duelId,
-      studentId: loserId,
-      skillNodeId,
-      completedAt: now,
+/**
+ * Leave an active duel. Supercell-style walkover: leaver loses, opponent wins.
+ * Idempotent when the duel is already completed.
+ */
+export async function forfeitSkillDuel(
+  duelId: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can leave a duel." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    enforceRateLimit(
+      getRateLimitId(user.id),
+      RATE_LIMITS.duelSubmit,
+      "duel forfeit",
+    );
+
+    const admin = createAdminClient();
+    const { data: duel, error: fetchErr } = await admin
+      .from("skill_duels")
+      .select(
+        "id, student_id, opponent_student_id, status, division_key, is_ai_opponent, questions, student_answers, opponent_answers",
+      )
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (fetchErr || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+
+    if (duel.status === "completed") {
+      return { success: true };
+    }
+
+    if (duel.status !== "active") {
+      return { success: false, error: "Only live duels can be left." };
+    }
+
+    const isAi = duel.is_ai_opponent === true;
+    const isChallenger = user.id === duel.student_id;
+    const isOpponent =
+      !isAi &&
+      duel.opponent_student_id != null &&
+      user.id === duel.opponent_student_id;
+
+    if (!isChallenger && !isOpponent) {
+      return { success: false, error: "Not a participant." };
+    }
+
+    const questions = duel.questions as unknown as SkillDuelQuestion[];
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return { success: false, error: "Questions not ready yet." };
+    }
+
+    const studentAnswers = padDuelAnswersForScoring(
+      duel.student_answers as number[] | null,
+      questions.length,
+    );
+    const opponentAnswers = padDuelAnswersForScoring(
+      duel.opponent_answers as number[] | null,
+      questions.length,
+    );
+
+    const winner = forfeitWinnerSide({
+      isAiOpponent: isAi,
+      forfeiterUserId: user.id,
+      studentId: duel.student_id,
+      opponentStudentId: duel.opponent_student_id,
     });
-  };
 
-  if (winner === "opponent") {
-    scheduleLossRetest(row.student_id, sa);
-  } else if (winner === "student" && !isAi && row.opponent_student_id) {
-    scheduleLossRetest(row.opponent_student_id, oa);
+    const studentScore = scoreAnswers(questions, studentAnswers);
+    const opponentScore = scoreAnswers(questions, opponentAnswers);
+    const now = new Date().toISOString();
+
+    const { data: finalized } = await admin
+      .from("skill_duels")
+      .update({
+        status: "completed",
+        student_answers: studentAnswers,
+        opponent_answers: opponentAnswers,
+        student_score: studentScore,
+        opponent_score: opponentScore,
+        winner,
+        forfeited_by: user.id,
+        completed_at: now,
+        updated_at: now,
+      })
+      .eq("id", id.id)
+      .eq("status", "active")
+      .select("id")
+      .maybeSingle();
+
+    if (!finalized) {
+      const { data: latest } = await admin
+        .from("skill_duels")
+        .select("status")
+        .eq("id", id.id)
+        .maybeSingle();
+      if (latest?.status === "completed") {
+        return { success: true };
+      }
+      return { success: false, error: "Could not leave the match. Try again." };
+    }
+
+    await applyDuelCompletionRewards(
+      admin,
+      id.id,
+      duel as {
+        student_id: string;
+        opponent_student_id: string | null;
+        division_key: string;
+        is_ai_opponent?: boolean;
+      },
+      winner,
+      questions,
+      studentAnswers,
+      opponentAnswers,
+      now,
+    );
+
+    revalidateDuelPaths(id.id);
+    return { success: true };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to leave duel.",
+    };
   }
-
-  revalidatePath("/student/duel");
-  revalidatePath(`/student/duel/${duelId}`);
-  revalidatePath("/student/duel/history");
-  revalidatePath("/student/division");
-  revalidatePath("/student");
-  revalidatePath("/student/quest");
 }
 
 /** One question at a time (real-time duels). Use -1 for timeout / no answer. */
