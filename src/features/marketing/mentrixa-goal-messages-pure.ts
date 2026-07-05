@@ -24,9 +24,9 @@ export const MENTRIXA_GOAL_COMPACT: Pick<MentrixaGoalBlock, "who" | "whyNow" | "
 };
 
 export const MENTRIXA_GOAL_LANDING: MentrixaGoalBlock = {
-  who: "Calculus AB students who need a public badge.",
-  why: "First tries are permanent proof against real Mentrixers.",
-  whyNow: "One quest locks today's record before the exam.",
-  verdict: "Badge moves on first tries only.",
-  nextAction: "Run one quest free.",
+  who: "AP Calculus AB Mentrixers on a live public feed.",
+  why: "First tries against real people on the same node. No retries move rank.",
+  whyNow: "Chain Rule shifts the second someone locks a first try.",
+  verdict: "Open feed. Verified first attempts only.",
+  nextAction: "Lock one node on the feed.",
 };

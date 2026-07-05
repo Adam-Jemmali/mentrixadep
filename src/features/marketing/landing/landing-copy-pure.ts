@@ -1,145 +1,157 @@
 /**
- * Landing copy — one word + one sentence per beat. No repeated nouns.
+ * Mentrixa landing copy — one spine, one job per beat.
+ *
+ * Vision: live public verified-first-attempt standings on AP Calculus AB.
+ * Anyone on the internet can watch names and accuracy move on each skill node.
+ * First encounter locks forever. Retakes never move rank.
+ *
+ * Identity beat: what is true about you today vs a real Mentrixer, that was not true yesterday.
  */
 
 export const LANDING_HERO = {
-  line1: "You grind.",
-  line2Prefix: "Can't ",
-  line2Highlight: "prove it",
-  ariaLabel: "You grind. Can't prove it.",
-  cta: "Find gap",
-  footnote: "Free. Card on mentor only.",
+  line1: "Golf has live boards.",
+  line2Prefix: "Calculus ",
+  line2Highlight: "never did",
+  ariaLabel: "Golf has live boards. Calculus never did.",
+  cta: "Watch live",
+  footnote: "Verified first tries. Open to the world.",
 } as const;
 
 export const LANDING_SOCIAL = {
-  word: "Scale",
-  sentence: "Same questions. One scoreboard.",
+  word: "Watch",
+  sentence: "Names. First-try accuracy. Shifts as the world plays.",
 } as const;
 
 export const LANDING_STORY_BRIDGES = [
   {
     chapter: "Who",
-    title: "Students",
-    subtitle: "Calculus AB. First try sticks.",
+    title: "Mentrixers",
+    subtitle: "AP Calculus AB. First encounter locks forever.",
   },
   {
-    chapter: "Now",
-    title: "Stakes",
-    subtitle: "Wrong standing costs months. One quest.",
+    chapter: "Open",
+    title: "Public",
+    subtitle: "Not a profile percentile. A live feed anyone can open.",
   },
   {
     chapter: "Loop",
-    title: "Rhythm",
-    subtitle: "Four moves. Gap closes.",
+    title: "Loop",
+    subtitle: "Quest. Guide. Climb again.",
   },
 ] as const;
 
 export const LANDING_OUTCOMES = {
-  eyebrow: "Stack",
-  title: "Four receipts.",
+  eyebrow: "Proof",
+  title: "Four outcomes.",
   items: [
-    { word: "Pack", sentence: "Drills in ten minutes." },
-    { word: "Drill", sentence: "Weak node. Right set." },
-    { word: "Tree", sentence: "One tree. One board." },
-    { word: "Pay", sentence: "Stripe at hangup." },
+    { word: "Feed", sentence: "Live standings on every skill node." },
+    { word: "Passport", sentence: "Public URL. Server verified." },
+    { word: "Pack", sentence: "Guide session drills in ten minutes." },
+    { word: "Guide", sentence: "Live breakthrough on your gap." },
   ],
 } as const;
 
 export const LANDING_FEATURES = {
-  eyebrow: "Arena",
+  eyebrow: "Surfaces",
   title: "Ten rooms.",
-  subtitle: "One lever each.",
+  subtitle: "Each records verified first tries.",
   polaroidTitles: [
     "Duels",
     "League",
     "Quest",
-    "Rank",
+    "Passport",
     "Impact",
     "Wars",
-    "Room",
+    "Session",
     "Pack",
     "Studio",
     "Breakthrough",
   ] as const,
 } as const;
 
+/** Account XP tiers — not the live node feed. */
 export const LANDING_RANK_LADDER = {
-  eyebrow: "Status",
-  title: "Seven ranks. One mirror.",
-  bubbleLabel: "Truth",
-  initialCoach: "Tap. See truth.",
+  eyebrow: "Climb",
+  title: "Seven XP tiers.",
+  bubbleLabel: "XP ladder",
+  initialCoach: "Account tier. Separate from the live feed.",
   motivation: {
-    wanderer: "You showed.",
+    wanderer: "You entered.",
     seeker: "You returned.",
-    scholar: "You're in.",
-    contender: "On the board.",
-    rival: "Top sees you.",
-    apex: "One left.",
-    mentrixer: "Proven. Public.",
+    scholar: "You compete.",
+    contender: "Name visible.",
+    rival: "Top half sees you.",
+    apex: "One tier left.",
+    mentrixer: "Proven in public.",
   },
 } as const;
 
 export const LANDING_WHY = {
-  title: "The mistake.",
-  withoutEyebrow: "Without",
-  withEyebrow: "With",
+  title: "The old way.",
+  withoutEyebrow: "Before",
+  withEyebrow: "Mentrixa",
   without: [
-    "Hours stack. Nothing moves.",
-    "Exam audits you blind.",
-    "Apps answer. Never measure.",
+    "Hours alone. No witness.",
+    "Private score. Not a live feed.",
+    "Retakes feel like growth.",
   ],
   with: [
-    "First try sticks.",
-    "Mentor sees grid first.",
-    "Badge rises with you.",
+    "First try locks on server.",
+    "Same node. Same first question.",
+    "World watches. Retakes stay silent.",
   ],
 } as const;
 
 export const LANDING_FLOW_STEPS = [
-  { title: "Book", line: "Weak spot matched to mentor." },
-  { title: "Meet", line: "Start where you broke." },
-  { title: "Unpack", line: "Pack lands in ten." },
-  { title: "Climb", line: "XP moves. Badge updates." },
+  { title: "Book", line: "Guide matched to your verified gap." },
+  { title: "Meet", line: "Live. They read your record first." },
+  { title: "Unpack", line: "Quest pack lands in ten minutes." },
+  { title: "Climb", line: "Feed moves. XP tier may rise." },
 ] as const;
 
 export const LANDING_FLOW_GAME = {
   label: "Order",
   start: "Sort Book → Meet → Unpack → Climb.",
-  success: "Locked. Same four weekly.",
+  success: "Locked. Same loop every week.",
   retry: "Book leads.",
+  dragHint: "Drag rows or use arrow keys.",
+  lockedChip: "Locked",
+  dragChip: "Drag",
+  shuffleAgain: "Shuffle again",
 } as const;
 
 export const LANDING_DUAL_PATH = {
-  pathHeading: "Pick a side.",
-  pathSub: "Climb today. Earn tomorrow.",
-  gameCoach: "Slice your side.",
-  mentrixerWin: "Arena path.",
-  guideWin: "Classroom path.",
-  fallHint: "Tap falling badges.",
+  pathHeading: "Two paths.",
+  pathSub: "Compete on the feed. Teach for impact.",
+  gameCoach: "Slice Mentrixer or Guide.",
+  gameLabel: "Pick",
+  mentrixerWin: "Mentrixer path.",
+  guideWin: "Guide path.",
+  fallHint: "Tap icons as they fall.",
   playAgain: "Again",
-  signupHint: "Demo only. Sign up to climb.",
+  signupHint: "Demo only. Live feed at signup.",
   sides: [
     {
       role: "Mentrixer" as const,
-      title: "Climb",
+      title: "Compete",
       points: [
-        "Calculus AB. First tries only.",
-        "Quest. Duel. Public badge. Free.",
-        "Stuck? Book a mentor who sees the hole.",
+        "Live feed. Verified first tries only.",
+        "Quest. Duel. Public passport. Free.",
+        "Stuck? Guide sees your record before join.",
       ],
-      cta: "Compete free",
+      cta: "Start free",
       href: "/auth/signup",
       tone: "blue" as const,
     },
     {
       role: "Guide" as const,
-      title: "Earn",
+      title: "Teach",
       points: [
-        "$39 flat per session.",
-        "Set hours. We book. Paid at hangup.",
-        "AI drafts pack. You approve.",
+        "$39 flat per breakthrough session.",
+        "Set hours. Stripe pays at hangup.",
+        "Studio drafts pack. You approve and send.",
       ],
-      cta: "Apply as mentor",
+      cta: "Apply as Guide",
       href: "/auth/signup?role=tutor",
       tone: "violet" as const,
     },
@@ -148,19 +160,19 @@ export const LANDING_DUAL_PATH = {
 
 export const LANDING_GUIDE_LADDER = {
   eyebrow: "Guides",
-  sentence: "Impact beats star ratings.",
+  sentence: "Impact Score tracks first-try lift. Not stars.",
 } as const;
 
 export const LANDING_PRICING = {
   eyebrow: "Offer",
   headline: "Three tiers.",
-  subhead: "Climbing free.",
-  verdict: "Session or subscription.",
+  subhead: "Live feed stays free.",
+  verdict: "Breakthrough session or Momentum.",
 } as const;
 
 export const LANDING_FAQ = {
-  title: "Deciding?",
-  subtitle: "Mechanism, mentors, access.",
+  title: "Questions?",
+  subtitle: "Verified tries, Guides, access.",
   categories: [
     {
       id: "rank",
@@ -168,44 +180,44 @@ export const LANDING_FAQ = {
       items: [
         {
           id: "what-counts",
-          title: "What moves badge?",
-          body: "Calculus AB first tries.",
-          verdict: "Retakes don't count.",
-          nextAction: "Quest an untouched node.",
+          title: "What moves rank?",
+          body: "Verified first tries on AP Calculus AB nodes.",
+          verdict: "Practice after first encounter never rewrites it.",
+          nextAction: "Run a quest on an untouched node.",
         },
         {
           id: "percentile",
-          title: "When percentile?",
-          body: "After five locked first tries.",
-          verdict: "Five proofs for public number.",
-          nextAction: "Clear five nodes.",
+          title: "When am I on the feed?",
+          body: "After five nodes have a locked first try.",
+          verdict: "Five proofs before a public percentile.",
+          nextAction: "Clear five nodes this week.",
         },
         {
           id: "practice-again",
-          title: "Redo a skill?",
-          body: "Yes. Learn more. Score frozen.",
-          verdict: "Replay ≠ reroll.",
-          nextAction: "Book mentor on missed node.",
+          title: "Can I redo a node?",
+          body: "Yes. You learn. Your first try stays frozen.",
+          verdict: "Replay builds mastery, not rank.",
+          nextAction: "Book a Guide on a node you already missed.",
         },
       ],
     },
     {
       id: "guides",
-      title: "Mentors",
+      title: "Guides",
       items: [
         {
           id: "guide-impact",
-          title: "Impact Score?",
-          body: "First-try lift from sessions.",
-          verdict: "Not stars. Proof.",
-          nextAction: "Book on movable node.",
+          title: "What is Impact Score?",
+          body: "First-try lift from your live sessions.",
+          verdict: "Same proof category as Mentrixer rank.",
+          nextAction: "Book on a node you can still move.",
         },
         {
           id: "session-prep",
-          title: "What mentor sees?",
-          body: "Full grid two hours before.",
-          verdict: "Starts at real gap.",
-          nextAction: "Verify nodes first.",
+          title: "What does my Guide see?",
+          body: "Your verified record before the session starts.",
+          verdict: "Call opens on the real gap.",
+          nextAction: "Lock first tries before you book.",
         },
       ],
     },
@@ -215,17 +227,17 @@ export const LANDING_FAQ = {
       items: [
         {
           id: "free-tier",
-          title: "What's free?",
-          body: "Arena, grid, page, preview.",
-          verdict: "Climbing never paywalls.",
-          nextAction: "Sign up. Run first pack.",
+          title: "What is free?",
+          body: "Arena, live feed, passport, practice preview.",
+          verdict: "Verified standing never paywalls.",
+          nextAction: "Sign up. Lock your first try.",
         },
         {
           id: "subjects",
-          title: "Why Calculus AB?",
-          body: "One tree. One bank. Real percentiles.",
-          verdict: "Depth before breadth.",
-          nextAction: "Win here first.",
+          title: "Why AP Calculus AB only?",
+          body: "Reviewed bank. Enough first tries for real percentiles.",
+          verdict: "One subject done right first.",
+          nextAction: "Win here before anything else.",
         },
       ],
     },
@@ -233,31 +245,30 @@ export const LANDING_FAQ = {
 } as const;
 
 export const LANDING_FOOTER = {
-  ctaEyebrow: "Close",
-  ctaTitle: "First try waiting.",
-  mentrixerCta: "Compete free",
-  guideCta: "Earn as mentor",
+  ctaEyebrow: "Start",
+  ctaTitle: "Lock what is true today.",
+  mentrixerCta: "Start free",
+  guideCta: "Apply as Guide",
   contactEyebrow: "Contact",
-  contactTitle: "Broken?",
-  contactBody: "We fix it.",
-  contactButton: "Send",
-  tagline: "Calculus AB arena.",
+  contactTitle: "Something broken?",
+  contactBody: "We read every message.",
+  contactButton: "Send message",
+  tagline: "Live verified first tries on AP Calculus AB.",
 } as const;
 
 export const LANDING_NAV = {
   items: [
-    { name: "Loop", link: "#flow" },
-    { name: "Ladder", link: "#ranks" },
+    { name: "Live", link: "#features" },
+    { name: "Climb", link: "#ranks" },
     { name: "Offer", link: "#pricing" },
-    { name: "Mentors", link: "#path" },
+    { name: "Guides", link: "#path" },
     { name: "Contact", link: "#contact" },
     { name: "Sign in", link: "/auth/signin?signin=1" },
   ],
-  mentrixerCta: "Compete free",
-  guideCta: "Earn as mentor",
+  mentrixerCta: "Start free",
+  guideCta: "Apply as Guide",
 } as const;
 
-/** Game coach strings — typed as plain strings so state can swap messages. */
 export type LandingHeroGameCopy = {
   coachStart: string;
   timeUp: string;
@@ -267,22 +278,31 @@ export type LandingHeroGameCopy = {
   lockedIn: (seconds: number) => string;
   spinningHint: string;
   doneHint: string;
+  playAgain: string;
+  timeLabel: string;
+  xpLabel: string;
+  placed: (count: number, total: number) => string;
 };
 
 export const LANDING_HERO_GAME: LandingHeroGameCopy = {
-  coachStart: "40s. Tap tier, then slot. Lowest top.",
+  coachStart: "40s. Tap tier, then slot. Lowest at top.",
   timeUp: "Time. Again.",
   pickFirst: "Chip first. Slot second.",
   wrongSlot: "Wrong slot.",
-  locked: "Locked. Nice.",
+  locked: "Locked.",
   lockedIn: (seconds: number) => `Locked in ${seconds}s.`,
   spinningHint: "Tap tier, then slot.",
-  doneHint: "Demo only. Real XP inside.",
+  doneHint: "Demo only. Live feed inside.",
+  playAgain: "Again",
+  timeLabel: "Time",
+  xpLabel: "XP",
+  placed: (count, total) => `${count}/${total} placed`,
 };
 
 export const LANDING_METADATA = {
-  titleSuffix: "Prove it public",
-  description: "Calculus AB arena. First tries set badge. Quest, duel, mentor. Free.",
+  titleSuffix: "Live verified standings",
+  description:
+    "Live public feed of AP Calculus AB first tries. Names, accuracy, no retries. Quest, duel, Guide. Free.",
 } as const;
 
 export type LandingFaqCategoryCopy = (typeof LANDING_FAQ.categories)[number];

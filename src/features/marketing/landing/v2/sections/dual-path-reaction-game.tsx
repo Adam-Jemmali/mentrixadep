@@ -137,7 +137,7 @@ export function DualPathReactionGame({ sides }: Props) {
           <LandingSpeechBubble
             message={coach.message}
             tone={coach.tone}
-            label="Pick"
+            label={LANDING_DUAL_PATH.gameLabel}
             className="mb-2 text-[13px]"
           />
 

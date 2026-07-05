@@ -185,10 +185,10 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
                   transition={springSoft}
                   className="ml-auto text-[10px] font-bold uppercase tracking-wide text-emerald-700"
                 >
-                  Locked
+                  {LANDING_FLOW_GAME.lockedChip}
                 </motion.span>
               ) : (
-                <span className={`ml-auto text-[10px] font-medium ${landingHub.hint}`}>Drag</span>
+                <span className={`ml-auto text-[10px] font-medium ${landingHub.hint}`}>{LANDING_FLOW_GAME.dragChip}</span>
               )}
             </Reorder.Item>
           );
@@ -204,10 +204,10 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
             animate={{ opacity: 1, y: 0 }}
             className={cn("cursor-pointer rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide", landingHub.btnSecondary)}
           >
-            Shuffle and play again
+            {LANDING_FLOW_GAME.shuffleAgain}
           </motion.button>
         ) : (
-          <p className={`text-center ${landingHub.hint}`}>Drag a row into place, or focus it and use ↑ ↓.</p>
+          <p className={`text-center ${landingHub.hint}`}>{LANDING_FLOW_GAME.dragHint}</p>
         )}
       </div>
     </div>

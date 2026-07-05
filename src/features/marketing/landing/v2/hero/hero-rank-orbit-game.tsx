@@ -217,7 +217,7 @@ export function HeroRankOrbitGame() {
 
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className={`text-[9px] font-bold uppercase tracking-[0.16em] ${landingHub.eyebrow}`}>
-          {placedCount}/{ACCOUNT_RANK_VISUALS.length} placed
+          {LANDING_HERO_GAME.placed(placedCount, ACCOUNT_RANK_VISUALS.length)}
         </p>
 
         {!gameLocked ? (
@@ -234,7 +234,7 @@ export function HeroRankOrbitGame() {
             aria-live="polite"
             aria-label={`${secondsLeft} seconds remaining`}
           >
-            <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">Time</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{LANDING_HERO_GAME.timeLabel}</span>
             <span className="text-sm font-black">{secondsLeft}s</span>
           </motion.div>
         ) : null}
@@ -247,7 +247,7 @@ export function HeroRankOrbitGame() {
             animate={{ opacity: 1, scale: 1 }}
             className={cn("cursor-pointer rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-wide", landingHub.btnSecondary)}
           >
-            Play again
+            {LANDING_HERO_GAME.playAgain}
           </motion.button>
         ) : null}
       </div>
@@ -329,7 +329,7 @@ export function HeroRankOrbitGame() {
                 sizes="28px"
               />
             </span>
-            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-indigo-300">XP</span>
+            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-indigo-300">{LANDING_HERO_GAME.xpLabel}</span>
             <span className="text-base font-black tabular-nums text-white">
               {cinematic ? (
                 <NumberFlow value={xp} transformTiming={{ duration: 700, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }} />
