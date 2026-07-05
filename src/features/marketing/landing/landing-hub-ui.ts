@@ -29,8 +29,10 @@ export const landingHub = {
   btnSecondary:
     "inline-flex items-center justify-center gap-2 rounded-lg border border-[#6366F1] bg-[#EDE9FE] px-5 py-2.5 text-sm font-semibold text-[#4F46E5] shadow-[2px_3px_0_rgba(11,18,32,0.1)] transition hover:bg-[#DDD6FE]",
 
+  /** Sticky note shell sized for embedded mini-games — clips dark panel, no crop outside.note */
+  stickyGameNote: `${mentrixHubSurfaces.stickyNote} lp-sticky-game-note mx-surface-light mx-hub-paper mx-auto w-full max-w-[min(100%,28rem)] overflow-hidden p-3 shadow-[2px_4px_0_rgba(11,18,32,0.14),4px_10px_22px_-8px_rgba(11,18,32,0.28)] sm:p-4`,
   /** Dark inset panel for landing mini-games on paper desk. */
-  gamePanel: "lp-game-panel overflow-hidden",
+  gamePanel: "lp-game-panel overflow-hidden rounded-xl",
   hint: "text-[11px] font-medium text-[#475569]",
   linkBack: "text-sm font-semibold text-[#4F46E5] hover:text-[#0B1220]",
 } as const;

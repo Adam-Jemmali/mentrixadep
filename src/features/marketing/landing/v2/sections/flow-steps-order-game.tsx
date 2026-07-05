@@ -119,8 +119,8 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
   }, []);
 
   return (
-    <div className={cn(landingHub.notebookCard, "relative mt-10 rotate-0 p-4 sm:p-6")}>
-      <LandingSpeechBubble message={coach.message} tone={coach.tone} label={LANDING_FLOW_GAME.label} className="mx-auto mb-5" />
+    <div className={cn(landingHub.stickyGameNote, "relative mt-10 rotate-[0.2deg]")}>
+      <LandingSpeechBubble message={coach.message} tone={coach.tone} label={LANDING_FLOW_GAME.label} className="mx-auto mb-4 text-[13px]" />
 
       <Reorder.Group
         axis="y"

@@ -19,7 +19,7 @@ const HeroRankStage = dynamic(
     loading: () => (
       <Skeleton
         tone="light"
-        className="h-[min(360px,72vw)] w-full max-w-[520px] rounded-lg border border-[#C4B5FD]"
+        className="mx-auto h-[min(380px,72vw)] w-full max-w-[28rem] rounded-lg border border-[#C4B5FD]"
         aria-hidden
       />
     ),
@@ -73,7 +73,7 @@ export function HeroClimbSection() {
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
             className="flex w-full items-center justify-center lg:justify-end"
           >
-            <div className={`${landingHub.stickyCard} w-full max-w-[540px] rotate-[0.35deg] p-4 sm:p-5`}>
+            <div className={`${landingHub.stickyGameNote} rotate-[0.35deg]`}>
               <HeroRankStage />
             </div>
           </motion.div>

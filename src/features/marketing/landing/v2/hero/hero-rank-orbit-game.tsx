@@ -25,8 +25,8 @@ import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_HERO_GAME } from "@/features/marketing/landing/landing-copy-pure";
 
 const ICON_VERSION = "20260410";
-/** Orbit ring radius — sized so enlarged slot badges clear the center hub. */
-const RADIUS = 172;
+/** Orbit ring radius — fits compact sticky-note stage without clipping slots. */
+const RADIUS = 96;
 const GAME_SECONDS = 40;
 const COACH_START = LANDING_HERO_GAME.coachStart;
 const ORBIT_SPIN_SECONDS = 18;
@@ -207,17 +207,17 @@ export function HeroRankOrbitGame() {
   const orbitCounterRotate = orbitSpins ? { rotate: -360 } : undefined;
 
   return (
-    <div className="relative mx-auto w-full max-w-[min(520px,94vw)]">
+    <div className="relative mx-auto w-full">
       <LandingSpeechBubble
         message={coach.message}
         tone={coach.tone}
         label=""
-        className="mb-4"
+        className="mb-2 text-[13px]"
       />
 
-      <div className="mb-3 flex items-center justify-between gap-2 px-1">
-        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${landingHub.eyebrow}`}>
-          {placedCount}/{ACCOUNT_RANK_VISUALS.length} ranks. Your rank starts here.
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className={`text-[9px] font-bold uppercase tracking-[0.16em] ${landingHub.eyebrow}`}>
+          {placedCount}/{ACCOUNT_RANK_VISUALS.length} placed
         </p>
 
         {!gameLocked ? (
@@ -252,16 +252,16 @@ export function HeroRankOrbitGame() {
         ) : null}
       </div>
 
-      <div className={cn("relative rounded-2xl p-3", landingHub.gamePanel)}>
+      <div className={cn("relative rounded-xl p-2 sm:p-2.5", landingHub.gamePanel)}>
         <div className="lp-hero-stage-glow pointer-events-none absolute inset-0" aria-hidden />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.88, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-          className="relative flex h-[min(540px,88vw)] items-center justify-center sm:h-[min(560px,520px)]"
+          className="relative flex h-[min(220px,48vw)] min-h-[200px] items-center justify-center sm:h-[240px]"
         >
-          <div className="lp-hero-pedestal absolute bottom-[8%] left-1/2 h-16 w-[72%] -translate-x-1/2" aria-hidden />
+          <div className="lp-hero-pedestal absolute bottom-[6%] left-1/2 h-10 w-[68%] -translate-x-1/2" aria-hidden />
 
           <motion.div
             className="absolute inset-[4%] rounded-full border border-white/[0.08]"
@@ -299,7 +299,7 @@ export function HeroRankOrbitGame() {
           ) : null}
 
           <motion.div
-            className="relative z-10 flex h-32 w-32 flex-col items-center justify-center rounded-full border border-indigo-300/40 bg-slate-950/90 shadow-[0_0_80px_rgba(99,102,241,0.45)]"
+            className="relative z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border border-indigo-300/40 bg-slate-950/90 shadow-[0_0_50px_rgba(99,102,241,0.4)]"
             animate={
               loop
                 ? {
@@ -320,7 +320,7 @@ export function HeroRankOrbitGame() {
             }
             transition={{ duration: completed ? 2 : 3.2, repeat: Infinity, ease: "easeInOut" }}
           >
-            <span className="relative mb-0.5 block size-7">
+            <span className="relative mb-0.5 block size-5">
               <Image
                 src={`/icons/mentrixer.svg?v=${ICON_VERSION}`}
                 alt=""
@@ -329,8 +329,8 @@ export function HeroRankOrbitGame() {
                 sizes="28px"
               />
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-indigo-300">Your XP</span>
-            <span className="text-xl font-black tabular-nums text-white">
+            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-indigo-300">XP</span>
+            <span className="text-base font-black tabular-nums text-white">
               {cinematic ? (
                 <NumberFlow value={xp} transformTiming={{ duration: 700, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }} />
               ) : (
@@ -368,7 +368,7 @@ export function HeroRankOrbitGame() {
                       animate={isShake ? { x: [0, -8, 8, -6, 6, 0] } : { scale: filledRank ? 1 : selectedKey && !filledRank ? 1.04 : 1 }}
                       transition={isShake ? { duration: 0.45 } : { duration: 0.2 }}
                       className={cn(
-                        "relative flex min-h-[3.75rem] min-w-[3.75rem] cursor-pointer flex-col items-center justify-center rounded-2xl p-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 sm:min-h-[4.25rem] sm:min-w-[4.25rem]",
+                        "relative flex min-h-[2.5rem] min-w-[2.5rem] cursor-pointer flex-col items-center justify-center rounded-xl p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 sm:min-h-[2.75rem] sm:min-w-[2.75rem]",
                         !filledRank && "lp-orbit-slot",
                         selectedKey && !filledRank && "ring-2 ring-cyan-400/70",
                       )}
@@ -381,19 +381,19 @@ export function HeroRankOrbitGame() {
                       {filledRank ? (
                         <RankBadge
                           rank={filledRank}
-                          size="lg"
+                          size="sm"
                           active
                           surface="onDark"
                           showGlow={filledRank.key === "mentrixer" || filledRank.key === "apex"}
                           priority
                         />
                       ) : (
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-dashed border-white/40 bg-slate-900/90 text-sm font-bold text-slate-200 sm:h-16 sm:w-16 sm:text-base">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-slate-900/90 text-xs font-bold text-slate-200 sm:h-10 sm:w-10">
                           {i + 1}
                         </div>
                       )}
                     </motion.button>
-                    <span className="max-w-[4.5rem] truncate text-[9px] font-bold uppercase tracking-wide text-slate-200 sm:text-[10px]">
+                    <span className="max-w-[3.25rem] truncate text-[8px] font-bold uppercase tracking-wide text-slate-200">
                       {filledRank ? normalizeRankTitle(filledRank.title) : rank.title.slice(0, 3)}
                     </span>
                   </motion.div>
@@ -411,7 +411,7 @@ export function HeroRankOrbitGame() {
                 className="pointer-events-none absolute inset-0 flex items-center justify-center"
               >
                 <motion.div
-                  className="h-48 w-48 rounded-full border-2 border-amber-400/40"
+                  className="h-32 w-32 rounded-full border-2 border-amber-400/40"
                   animate={{ scale: [1, 1.35, 1.5], opacity: [0.6, 0.25, 0] }}
                   transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
                 />
@@ -420,7 +420,7 @@ export function HeroRankOrbitGame() {
           </AnimatePresence>
         </motion.div>
 
-        <div className="lp-rank-tray relative z-20 -mt-2 flex flex-wrap justify-center gap-2.5 px-2 pb-1 sm:gap-3">
+        <div className="lp-rank-tray relative z-20 -mt-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tray.map((key) => {
             const rank = rankByKey(key);
             const isSelected = selectedKey === key;
@@ -430,19 +430,19 @@ export function HeroRankOrbitGame() {
                 key={key}
                 type="button"
                 disabled={gameLocked}
-                whileHover={gameLocked ? undefined : { scale: 1.06, y: -4 }}
+                whileHover={gameLocked ? undefined : { scale: 1.06, y: -2 }}
                 whileTap={gameLocked ? undefined : { scale: 0.96 }}
                 onClick={() => handleTrayClick(key)}
                 className={cn(
-                  "cursor-pointer select-none rounded-2xl p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-60 sm:p-2",
-                  isSelected && "ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-950",
+                  "shrink-0 cursor-pointer select-none rounded-xl p-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-60",
+                  isSelected && "ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-950",
                 )}
                 aria-pressed={isSelected}
                 aria-label={`Select ${normalizeRankTitle(rank.title)}`}
               >
                 <RankBadge
                   rank={rank}
-                  size="lg"
+                  size="sm"
                   active
                   surface="onDark"
                   showGlow={rank.key === "mentrixer" || rank.key === "apex"}
@@ -453,7 +453,7 @@ export function HeroRankOrbitGame() {
         </div>
       </div>
 
-      <p className={`mt-2 text-center ${landingHub.hint}`}>
+      <p className={`mt-1.5 text-center ${landingHub.hint}`}>
         {gameLocked
           ? completed
             ? LANDING_HERO_GAME.doneHint

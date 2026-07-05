@@ -12,6 +12,7 @@ import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motio
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 
 const ICON_VERSION = "20260410";
+const PATH_ARENA_HEIGHT = 240;
 
 export type DualPathSide = {
   role: "Mentrixer" | "Guide";
@@ -130,20 +131,28 @@ export function DualPathReactionGame({ sides }: Props) {
   const winningSide = sides.find((s) => s.role === winner) ?? sides[0]!;
 
   return (
-    <div className="relative">
+    <div className="relative mx-auto max-w-[28rem]">
       {phase === "game" ? (
-        <>
+        <div className={cn(landingHub.stickyGameNote, "rotate-[0.25deg]")}>
+          <LandingSpeechBubble
+            message={coach.message}
+            tone={coach.tone}
+            label="Pick"
+            className="mb-2 text-[13px]"
+          />
+
           {mounted ? (
             <FallingRoleSliceArena
               key={arenaKey}
-              className={cn("lp-path-arena mx-auto h-[min(480px,78vw)] min-h-[360px] w-full max-w-4xl", landingHub.gamePanel)}
-              minHeight={360}
-              hudInset={96}
+              className={cn("lp-path-arena w-full touch-manipulation", landingHub.gamePanel)}
+              height={PATH_ARENA_HEIGHT}
+              minHeight={PATH_ARENA_HEIGHT}
+              hudInset={52}
               gameSeconds={14}
-              iconSize={52}
-              fallSpeed={220}
-              spawnMs={380}
-              maxVisible={16}
+              iconSize={40}
+              fallSpeed={200}
+              spawnMs={400}
+              maxVisible={12}
               autoStart={false}
               autoStartDelay={300}
               viewportAutoStart
@@ -154,13 +163,14 @@ export function DualPathReactionGame({ sides }: Props) {
             />
           ) : (
             <div
-              className={cn("lp-path-arena mx-auto h-[min(480px,78vw)] min-h-[360px] w-full max-w-4xl", landingHub.gamePanel)}
+              className={cn("lp-path-arena w-full", landingHub.gamePanel)}
+              style={{ height: PATH_ARENA_HEIGHT }}
               aria-hidden
             />
           )}
 
-          <p className={`mt-3 text-center ${landingHub.hint}`}>{LANDING_DUAL_PATH.fallHint}</p>
-        </>
+          <p className={`mt-2 text-center ${landingHub.hint}`}>{LANDING_DUAL_PATH.fallHint}</p>
+        </div>
       ) : null}
 
       {phase === "result" && winner ? (
@@ -168,16 +178,16 @@ export function DualPathReactionGame({ sides }: Props) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={springSoft}
-          className="mx-auto max-w-lg"
+          className="mx-auto"
         >
-          <div className="mb-6 text-center">
+          <div className="mb-4 text-center">
             <h2 id="path-heading" className={landingHub.title}>
               {LANDING_DUAL_PATH.pathHeading}
             </h2>
             <p className={`mt-2 ${landingHub.body}`}>{LANDING_DUAL_PATH.pathSub}</p>
           </div>
 
-          <LandingSpeechBubble message={coach.message} tone={coach.tone} label="" className="mx-auto mb-5 max-w-lg" />
+          <LandingSpeechBubble message={coach.message} tone={coach.tone} label="" className="mx-auto mb-4 text-[13px]" />
 
           <SideCard side={winningSide} highlight />
           <div className="mt-4 flex justify-center">

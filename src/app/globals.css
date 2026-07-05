@@ -2181,9 +2181,14 @@ html.lp-landing-logo-cursor-active * {
   pointer-events: none;
 }
 
-.lp-path-arena {
-  touch-action: manipulation;
-}
+  .lp-path-arena {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .lp-sticky-game-note {
+    contain: layout paint;
+  }
 
 @media (max-width: 900px) {
   .lp-hero-glass {
