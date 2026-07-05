@@ -23,6 +23,11 @@ describe("rankLevelFromAccuracy", () => {
     expect(rankLevelFromAccuracy(100)).toBe(7);
     expect(rankLevelFromAccuracy(50)).toBe(rankLevelFromPercentile(50));
   });
+
+  it("maps accuracy to tier independently of cohort percentile", () => {
+    expect(rankLevelFromPercentile(99)).toBeGreaterThan(rankLevelFromAccuracy(15));
+    expect(rankLevelFromAccuracy(15)).toBe(4);
+  });
 });
 
 describe("formatOrdinalPercentile", () => {

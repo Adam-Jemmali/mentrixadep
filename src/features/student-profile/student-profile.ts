@@ -19,7 +19,8 @@ import {
   buildPassportVerdict,
   passportVerdictPlainText,
 } from "@/features/rank-card/rank-passport-pure";
-import { getApCalcVerifiedRankStats, getCalibratedRank } from "@/features/xp/calibrated-rank";
+import { getApCalcVerifiedRankStats } from "@/features/xp/calibrated-rank";
+import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { filterArenaDivisions } from "@/features/divisions/ap-calc-ab-division";
 import { loadProfileBattleLog } from "@/features/student-profile/load-profile-battle-log";
@@ -217,9 +218,9 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
     accuracyPercent: 0,
     percentile: null,
   }));
-  const calibrated = await getCalibratedRank(parsed.id, AP_CALC_AB_SUBJECT);
-  rankCardCalibratedTitle = calibrated.title;
-  rankCardCalibratedLevel = calibrated.level;
+  const passportRank = rankFromTotalXp(totalXp);
+  rankCardCalibratedTitle = passportRank.title;
+  rankCardCalibratedLevel = passportRank.level;
   rankCardPassportVerdict = passportVerdictPlainText(
     buildPassportVerdict({
       verifiedCount: verifiedStats.verifiedCount,

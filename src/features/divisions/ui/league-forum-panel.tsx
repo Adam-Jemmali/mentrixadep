@@ -327,7 +327,7 @@ export function LeagueForumPanel({
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-purple-600">League forum</h2>
           </div>
           <p className={cn("mt-1 text-xs font-medium", mentrixHubSurfaces.inkMuted)}>
-            Start threads, reply to teammates, and share study screenshots. Links must use https and pass safety review.
+            Start threads, reply to teammates and share study screenshots.
           </p>
         </div>
         {isMember && !activeThread ? (

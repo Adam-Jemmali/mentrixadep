@@ -2,10 +2,6 @@ import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
 import { buildPassportVerdict, passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
 import { supabaseRestSelect } from "@/shared/integrations/supabase/rest-fetch";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
-import {
-  getAccountLevelFromTotalXp,
-  MENTRIXER_MIN_XP,
-} from "@/features/xp/levels";
 
 export type OgRankCardData =
   | { status: "not_found" }
@@ -40,12 +36,6 @@ type RankCacheRow = {
   verified_count: number | null;
   percentile: number | string | null;
 };
-
-function rankLevelFromPercentile(percentile: number): number {
-  const clamped = Math.max(0, Math.min(100, percentile));
-  const virtualXp = Math.round((clamped / 100) * MENTRIXER_MIN_XP);
-  return getAccountLevelFromTotalXp(virtualXp).level;
-}
 
 /** Edge-safe loader for OG images — avoids @supabase/supabase-js and full rank-card build. */
 export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCardData> {
@@ -99,10 +89,7 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
     percentile,
   });
 
-  const rankLevel =
-    passportVerdict.kind === "ranked" && percentile != null
-      ? rankLevelFromPercentile(percentile)
-      : rankFromTotalXp(totalXp).level;
+  const rankLevel = rankFromTotalXp(totalXp).level;
   const rankVisual = getAccountRankByLevel(rankLevel);
 
   const displayName =

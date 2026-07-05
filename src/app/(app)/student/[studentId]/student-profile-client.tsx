@@ -415,8 +415,8 @@ function ProfileShareSections({
             data.rankCardPassportVerdict ??
             "No verified first attempts on AP Calculus AB yet."
           }
-          rankTitle={data.rankCardCalibratedTitle ?? accountRank.title}
-          rankLevel={data.rankCardCalibratedLevel ?? accountRank.level}
+          rankTitle={accountRank.title}
+          rankLevel={accountRank.level}
         />
       ) : null}
       {referral ? <ReferralProgramSection initial={referral} /> : null}
