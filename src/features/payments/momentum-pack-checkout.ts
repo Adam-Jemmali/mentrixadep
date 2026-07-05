@@ -43,6 +43,7 @@ export async function POST(_req: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
@@ -57,6 +58,12 @@ export async function POST(_req: NextRequest) {
         },
       ],
       branding_settings: branding,
+      custom_text: {
+        submit: {
+          message:
+            "Secure payment via Stripe. Sprint pack credits appear on your hub after payment.",
+        },
+      },
       success_url: `${origin}/student?booking=pack_success`,
       cancel_url: `${origin}/student/subscribe?canceled=1`,
       metadata: {

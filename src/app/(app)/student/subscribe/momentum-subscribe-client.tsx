@@ -58,12 +58,12 @@ export function MomentumSubscribeClient({
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
         setError(data.error ?? "Could not start checkout");
+        setPending(false);
         return;
       }
       window.location.href = data.url;
     } catch {
       setError("Could not start checkout");
-    } finally {
       setPending(false);
     }
   }
@@ -76,12 +76,12 @@ export function MomentumSubscribeClient({
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
         setError(data.error ?? "Could not start pack checkout");
+        setPending(false);
         return;
       }
       window.location.href = data.url;
     } catch {
       setError("Could not start pack checkout");
-    } finally {
       setPending(false);
     }
   }
