@@ -21,7 +21,6 @@ import {
 } from "@/features/rank-card/rank-passport-pure";
 import { getApCalcVerifiedRankStats } from "@/features/xp/calibrated-rank";
 import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
-import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { filterArenaDivisions } from "@/features/divisions/ap-calc-ab-division";
 import { loadProfileBattleLog } from "@/features/student-profile/load-profile-battle-log";
 

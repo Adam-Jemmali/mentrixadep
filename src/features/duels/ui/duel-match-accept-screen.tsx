@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/shared/ui/button";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_HERO_SIZE } from "@/features/xp/rank-display-tokens";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   getAccountRankByLevel,
@@ -86,15 +87,10 @@ function AcceptRankHero({
         <div className="relative flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28">
           <RankBadge
             rank={rank}
-            size="xl"
+            size={RANK_HERO_SIZE}
             active
-            priority
-            showGlow={rank.key === "mentrixer" || ready}
-            className={cn(
-              "!h-[5.5rem] !w-[5.5rem] sm:!h-[6.5rem] sm:!w-[6.5rem]",
-              "!rounded-2xl !bg-white",
-              ready && "ring-2 ring-[#6366F1]",
-            )}
+            surface="light"
+            animate={rank.key === "mentrixer" || rank.key === "apex" || ready}
           />
           {avatarUrl ? (
             <div className="absolute -bottom-1 -right-1 h-10 w-10 overflow-hidden rounded-full border-2 border-[#6366F1] bg-white shadow-[2px_2px_0_#0B1220] sm:h-11 sm:w-11">
@@ -111,7 +107,10 @@ function AcceptRankHero({
         </div>
       </div>
       <div className="max-w-[11rem] space-y-1 text-center">
-        <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]">
+        <p
+          className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]"
+          style={{ color: rank.labelOnLight }}
+        >
           {normalizeRankTitle(rank.title)}
         </p>
         <p className="mx-hub-ink-title text-sm uppercase italic sm:text-base">{name}</p>

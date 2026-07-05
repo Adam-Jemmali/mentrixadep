@@ -7,7 +7,8 @@ import { TiltCard } from "@/shared/ui/tilt-card";
 import type { QuestAccuracyTrend } from "@/features/quest/quest-reads";
 import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
-import { RankBadge } from "@/features/xp/components/rank-badge";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 import { MentrixaVocabIcon, StreakCountDisplay, VOCAB_HEADING_ICON_SIZE, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import { VOCAB_SHORT_LABEL, type VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
@@ -119,9 +120,18 @@ export function StudentStatStripMotion({
     >
       <motion.div variants={item}>
         <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-row items-center gap-3`}>
-          <RankBadge rank={accountLevel} size="lg" animate={accountRank.key === "mentrixer"} />
+          <RankBadge
+            rank={accountLevel}
+            size={RANK_LADDER_CHIP_SIZE}
+            active
+            surface="onDark"
+            animate={accountRank.key === "mentrixer" || accountRank.key === "apex"}
+          />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold uppercase tracking-wide text-violet-50">
+            <p
+              className="truncate text-sm font-bold uppercase tracking-wide"
+              style={{ color: accountRank.labelOnDark }}
+            >
               {normalizeRankTitle(accountRank.title)}
             </p>
             <span className="mt-0.5 flex items-center gap-2">

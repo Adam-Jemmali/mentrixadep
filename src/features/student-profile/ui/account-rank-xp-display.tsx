@@ -9,6 +9,7 @@ import {
   normalizeRankTitle,
   type AccountRankVisual,
 } from "@/features/xp/rank-icons";
+import { RANK_HERO_SIZE } from "@/features/xp/rank-display-tokens";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
@@ -83,10 +84,10 @@ export function AccountRankXpDisplay({
         <div className="flex items-start gap-3 sm:gap-4">
           <RankBadge
             rank={current}
-            size="xl"
+            size={RANK_HERO_SIZE}
             active
-            showGlow={current.key === "mentrixer"}
-            priority
+            surface={isArena ? "onDark" : "light"}
+            animate={current.key === "mentrixer" || current.key === "apex"}
           />
           <div className="min-w-0">
             <p
@@ -141,8 +142,8 @@ export function AccountRankXpDisplay({
               rank={nextRank}
               size="lg"
               active
-              showGlow={nextRank.key === "mentrixer"}
-              className="!h-[4.5rem] !w-[4.5rem] sm:!h-20 sm:!w-20"
+              surface={isArena ? "onDark" : "light"}
+              animate={nextRank.key === "mentrixer" || nextRank.key === "apex"}
             />
           </div>
         ) : (

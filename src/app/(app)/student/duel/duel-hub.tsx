@@ -18,6 +18,7 @@ import {
   AP_CALC_AB_DIVISION_NAME,
 } from "@/features/divisions/ap-calc-ab-division";
 import { cn } from "@/shared/core/utils";
+import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import {
@@ -556,9 +557,18 @@ export function DuelHub({
               </div>
               <div className="space-y-1.5 text-center sm:space-y-2">
                 <div className="flex justify-center">
-                  <RankBadge rank={myAccountRank} size="sm" active showGlow={myAccountRank.key === "mentrixer"} className="sm:!h-14 sm:!w-14" />
+                  <RankBadge
+                    rank={myAccountRank}
+                    size={RANK_LADDER_CHIP_SIZE}
+                    active
+                    surface="light"
+                    animate={myAccountRank.key === "mentrixer" || myAccountRank.key === "apex"}
+                  />
                 </div>
-                <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]">
+                <p
+                  className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.2em]"
+                  style={{ color: myAccountRank.labelOnLight }}
+                >
                   {normalizeRankTitle(myAccountRank.title)}
                 </p>
                 <p className="mx-hub-ink-title text-base uppercase italic sm:text-lg">

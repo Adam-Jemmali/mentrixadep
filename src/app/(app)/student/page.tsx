@@ -22,6 +22,7 @@ import {
 } from "@/features/xp/calibrated-rank";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { StreakCountDisplay, XpCountDisplay, MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { CANONICAL_QUEST_ICON } from "@/shared/icons/vocab-canonical";
@@ -220,7 +221,13 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             <div
               className={`flex flex-wrap items-center gap-x-5 gap-y-3${streakAtRisk && streak > 0 ? " pb-12" : ""}`}
             >
-              <RankBadge rank={accountRank} size="md" active showGlow={accountRank.key === "mentrixer"} priority />
+              <RankBadge
+                rank={accountRank}
+                size={RANK_LADDER_CHIP_SIZE}
+                active
+                surface="light"
+                animate={accountRank.key === "mentrixer" || accountRank.key === "apex"}
+              />
               <p
                 className="text-sm font-bold uppercase tracking-wide sm:text-base"
                 style={{ color: accountRank.labelOnLight }}

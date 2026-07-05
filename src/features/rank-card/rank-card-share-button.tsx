@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { RankBadge } from "@/features/xp/components/rank-badge";
-import { normalizeRankTitle } from "@/features/xp/rank-icons";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
+import { normalizeRankTitle, getAccountRankByLevel } from "@/features/xp/rank-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
@@ -74,11 +75,15 @@ export function RankCardShareButton({
         <div className="mt-3 flex items-center gap-3">
           <RankBadge
             rank={{ level: rankLevel, title: rankTitle }}
-            size="sm"
-            showLabel={false}
+            size={RANK_LADDER_CHIP_SIZE}
+            active
+            surface="light"
             labelTone="light"
           />
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#4F46E5]">
+          <p
+            className="text-xs font-bold uppercase tracking-[0.14em]"
+            style={{ color: getAccountRankByLevel(rankLevel).labelOnLight }}
+          >
             {displayRankTitle}
           </p>
         </div>

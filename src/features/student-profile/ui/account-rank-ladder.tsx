@@ -10,6 +10,10 @@ import { RankBadge, RankTitle } from "@/features/student-profile/ui/rank-badge";
 import { AccountRankXpDisplay } from "@/features/student-profile/ui/account-rank-xp-display";
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import {
+  RANK_LADDER_CHIP_SIZE,
+  RANK_TITLE_RAIL_CLASS,
+} from "@/features/xp/rank-display-tokens";
 
 /**
  * Valorant-inspired account rank rail: locked past = earned glow,
@@ -84,17 +88,18 @@ export function AccountRankLadder({
                 >
                   <RankBadge
                     rank={rank}
-                    size={isCurrent ? "lg" : earned ? "sm" : "xs"}
+                    size={isCurrent ? "lg" : RANK_LADDER_CHIP_SIZE}
                     active={isCurrent}
                     locked={locked}
-                    surface={isArena ? "default" : "onDark"}
-                    showGlow={isCurrent}
+                    surface={isArena ? "light" : "onDark"}
+                    animate={isCurrent && (rank.key === "mentrixer" || rank.key === "apex")}
                   />
                   <RankTitle
                     rank={rank}
                     active={earned}
                     tone={isArena ? "light" : "dark"}
                     className={cn(
+                      RANK_TITLE_RAIL_CLASS,
                       "mt-2 max-w-[4.5rem] truncate text-center",
                       isCurrent && "text-[11px] font-black",
                       !earned && "opacity-50",

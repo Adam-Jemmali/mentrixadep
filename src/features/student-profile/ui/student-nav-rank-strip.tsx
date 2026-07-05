@@ -11,6 +11,7 @@ import {
 } from "@/shared/integrations/mentrixa-sounds";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import {
   StreakCountDisplay,
   XpCountDisplay,
@@ -80,7 +81,13 @@ export function StudentNavRankStrip() {
       )}
       title={ctx.rankVerdict ?? title}
     >
-      <RankBadge rank={accountRank} size="sm" active showGlow={accountRank.key === "mentrixer"} />
+      <RankBadge
+        rank={accountRank}
+        size={RANK_LADDER_CHIP_SIZE}
+        active
+        surface="onDark"
+        animate={accountRank.key === "mentrixer" || accountRank.key === "apex"}
+      />
       <div className="flex min-w-0 flex-col leading-tight">
         <span
           className="truncate text-[10px] font-bold uppercase tracking-wide"

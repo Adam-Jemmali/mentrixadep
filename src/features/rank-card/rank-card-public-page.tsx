@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { RankBadge } from "@/features/xp/components/rank-badge";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_HERO_SIZE } from "@/features/xp/rank-display-tokens";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { getSiteUrl } from "@/shared/core/site";
@@ -125,9 +126,12 @@ export function RankCardPublicPage({ data }: { data: RankCardData }) {
             <div className="mx-auto flex max-w-[148px] flex-col items-center rounded-lg border border-[#C4B5FD] bg-white/70 p-4 text-center">
               <RankBadge
                 rank={{ level: data.rankLevel, title: data.rankTitle }}
-                size="lg"
+                size={RANK_HERO_SIZE}
+                active
+                surface="light"
                 showLabel
                 labelTone="light"
+                animate={rankVisual.key === "mentrixer" || rankVisual.key === "apex"}
               />
               <p
                 className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em]"

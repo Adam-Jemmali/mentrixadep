@@ -1,17 +1,15 @@
 "use client";
 
-import { cn } from "@/shared/core/utils";
 import {
-  normalizeRankTitle,
-  type AccountRankVisual,
-} from "@/features/xp/rank-icons";
-import {
-  RankBadge as XpRankBadge,
+  RankBadge as CanonicalRankBadge,
+  RankTitle as CanonicalRankTitle,
+  getRankKeyFromLevel,
+  type RankBadgeProps,
   type RankBadgeSize,
   type RankBadgeSurface,
 } from "@/features/xp/components/rank-badge";
 
-type LegacySizeKey = "xs" | "sm" | "md" | "lg" | "xl";
+type LegacySizeKey = "xs" | RankBadgeSize;
 
 const LEGACY_SIZE: Record<LegacySizeKey, RankBadgeSize> = {
   xs: "sm",
@@ -21,68 +19,35 @@ const LEGACY_SIZE: Record<LegacySizeKey, RankBadgeSize> = {
   xl: "xl",
 };
 
-/**
- * Legacy wrapper — maps AccountRankVisual props to the canonical XP rank badge.
- * Prefer `@/features/xp/components/rank-badge` for new code.
- */
+export {
+  getRankKeyFromLevel,
+  type RankBadgeProps,
+  type RankBadgeSize,
+  type RankBadgeSurface,
+};
+
+/** @deprecated Use `animate` — kept for landing + legacy call sites. */
 export function RankBadge({
-  rank,
-  size = "md",
-  active = false,
-  locked = false,
   showGlow = false,
   priority: _priority = false,
-  surface = "default",
-  className,
-}: {
-  rank: AccountRankVisual;
-  size?: LegacySizeKey;
-  active?: boolean;
-  locked?: boolean;
+  size = "md",
+  active = false,
+  ...props
+}: RankBadgeProps & {
   showGlow?: boolean;
   priority?: boolean;
-  surface?: RankBadgeSurface;
-  className?: string;
+  size?: LegacySizeKey;
 }) {
   return (
-    <XpRankBadge
-      rank={{ level: rank.level, title: rank.title }}
+    <CanonicalRankBadge
+      {...props}
       size={LEGACY_SIZE[size]}
-      surface={surface}
-      animate={showGlow && active}
-      className={cn(
-        active && "opacity-100",
-        !active && !locked && "opacity-95",
-        locked && (surface === "onDark" ? "opacity-70 saturate-[0.65]" : "opacity-40 grayscale"),
-        className,
-      )}
+      active={active}
+      animate={showGlow || props.animate}
     />
   );
 }
 
-export function RankTitle({
-  rank,
-  active = true,
-  tone = "dark",
-  className,
-}: {
-  rank: AccountRankVisual;
-  active?: boolean;
-  tone?: "light" | "dark";
-  className?: string;
-}) {
-  const activeColor = tone === "light" ? rank.labelOnLight : rank.labelOnDark;
-
-  return (
-    <span
-      className={cn(
-        "text-[10px] font-bold uppercase tracking-[0.14em]",
-        !active && (tone === "light" ? "text-zinc-600" : "text-zinc-500"),
-        className,
-      )}
-      style={active ? { color: activeColor } : undefined}
-    >
-      {normalizeRankTitle(rank.title)}
-    </span>
-  );
+export function RankTitle(props: React.ComponentProps<typeof CanonicalRankTitle>) {
+  return <CanonicalRankTitle {...props} />;
 }

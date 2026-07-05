@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { RankBadge } from "@/features/xp/components/rank-badge";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { ProgressSnapshotRow } from "@/features/progress-snapshot/types";
@@ -44,9 +45,9 @@ export function ProgressArchiveClient({
                     Week of {new Date(snapshot.generated_at).toLocaleDateString()}
                   </p>
                   <div className="mt-3 flex items-center gap-3">
-                    <RankBadge rank={data.rankChange.previous} size="sm" />
+                    <RankBadge rank={data.rankChange.previous} size={RANK_LADDER_CHIP_SIZE} surface="light" active />
                     <span className="text-zinc-400">→</span>
-                    <RankBadge rank={data.rankChange.current} size="sm" />
+                    <RankBadge rank={data.rankChange.current} size={RANK_LADDER_CHIP_SIZE} surface="light" active />
                   </div>
                   <p className="mt-2 text-sm text-zinc-700">
                     {normalizeRankTitle(data.rankChange.previous.title)} →{" "}

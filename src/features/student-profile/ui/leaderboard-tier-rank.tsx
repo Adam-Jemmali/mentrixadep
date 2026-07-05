@@ -5,7 +5,8 @@ import {
   getAccountRankForLeaderboardRow,
   normalizeRankTitle,
 } from "@/features/xp/rank-icons";
-import { RankBadge } from "@/features/xp/components/rank-badge";
+import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { cn } from "@/shared/core/utils";
 
 export function divisionTierDisplayName(tier: LevelTier): string {
@@ -37,8 +38,10 @@ export function LeaderboardTierRank({
     <div className={cn("inline-flex items-center justify-end gap-2", className)}>
       <RankBadge
         rank={{ level: rank.level, title: rank.title }}
-        size="sm"
-        animate={rank.key === "mentrixer"}
+        size={RANK_LADDER_CHIP_SIZE}
+        active
+        surface="light"
+        animate={rank.key === "mentrixer" || rank.key === "apex"}
       />
       <span
         className="text-[10px] font-black uppercase tracking-widest"

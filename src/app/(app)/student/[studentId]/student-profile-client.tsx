@@ -31,6 +31,7 @@ import { Typewriter } from "@/shared/ui/typewriter";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
+import { RANK_HERO_SIZE, RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { RankCardShareButton } from "@/features/rank-card/rank-card-share-button";
 import { getSiteUrl } from "@/shared/core/site";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -586,10 +587,10 @@ export function StudentProfileClient({
                   >
                     <RankBadge
                       rank={accountRank}
-                      size="md"
+                      size={RANK_LADDER_CHIP_SIZE}
                       active
-                      showGlow={accountRank.key === "mentrixer"}
-                      priority
+                      surface="light"
+                      animate={accountRank.key === "mentrixer" || accountRank.key === "apex"}
                     />
                   </div>
                 </div>
@@ -651,9 +652,10 @@ export function StudentProfileClient({
                     </div>
                     <RankBadge
                       rank={accountRank}
-                      size="lg"
+                      size={RANK_HERO_SIZE}
                       active
-                      showGlow={accountRank.key === "mentrixer"}
+                      surface="light"
+                      animate={accountRank.key === "mentrixer" || accountRank.key === "apex"}
                     />
                     <div className="min-w-0">
                       <p
