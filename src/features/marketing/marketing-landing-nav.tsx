@@ -14,6 +14,7 @@ import {
   NavbarLogo,
 } from "@/shared/ui/resizable-navbar";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { cn } from "@/shared/core/utils";
 
 const ICON_VERSION = "20260410";
 
@@ -55,9 +56,13 @@ export function MarketingLandingNav() {
   return (
     <Navbar className="lp-nav fixed top-3 left-0 right-0 z-50 px-3 sm:px-5">
       <div className="relative w-full">
-        <NavBody className={landingHub.navShell}>
+        <NavBody className={cn(landingHub.navShell, "lp-nav-shell !text-[#334155]")}>
           <NavbarLogo />
-          <NavItems items={LANDING_NAV_ITEMS} />
+          <NavItems
+            items={LANDING_NAV_ITEMS}
+            className="!text-[#475569]"
+            labelClassName="text-[#475569]"
+          />
           <div className="flex shrink-0 items-center gap-2">
             <NavbarButton
               href="/auth/signup?role=tutor"
@@ -77,12 +82,16 @@ export function MarketingLandingNav() {
 
         <MobileNav>
           <div className="relative w-full">
-            <MobileNavHeader>
+            <MobileNavHeader className={cn(landingHub.navShell, "lp-nav-mobile-shell !text-[#334155]")}>
               <NavbarLogo />
               <MobileNavToggle isOpen={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)} />
             </MobileNavHeader>
 
-            <MobileNavMenu isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)}>
+            <MobileNavMenu
+              isOpen={mobileNavOpen}
+              onClose={() => setMobileNavOpen(false)}
+              className={cn(landingHub.navShell, "lp-nav-mobile-shell !text-[#334155]")}
+            >
               {LANDING_NAV_ITEMS.map((item) => (
                 <a
                   key={item.link}

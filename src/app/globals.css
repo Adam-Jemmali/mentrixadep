@@ -1201,34 +1201,24 @@ main:has(.lp-root) > div {
   -webkit-backdrop-filter: none;
 }
 
-.lp-nav .lg\\:flex.rounded-full {
+.lp-nav-shell,
+.lp-nav-mobile-shell {
   border-color: #a5b4fc !important;
   background: rgba(237, 233, 254, 0.96) !important;
   color: #334155 !important;
   box-shadow: 2px 4px 0 rgba(11, 18, 32, 0.12) !important;
 }
 
-.lp-nav .lg\\:flex.rounded-full .text-white\\/70 {
-  color: #475569 !important;
+.lp-nav-shell a,
+.lp-nav-mobile-shell a {
+  color: #475569;
 }
 
-.lp-nav .lg\\:flex.rounded-full a:hover,
-.lp-nav .lg\\:flex.rounded-full .font-black.text-white {
+.lp-nav-shell a:hover,
+.lp-nav-mobile-shell a:hover,
+.lp-nav-shell a[aria-current="page"],
+.lp-nav-mobile-shell a[aria-current="page"] {
   color: #0b1220 !important;
-}
-
-.lp-nav .MentrixaWordmark,
-.lp-nav a.text-white .MentrixaWordmark,
-.lp-nav .text-white {
-  color: #0b1220 !important;
-}
-
-.lp-nav .rounded-2xl.border-white\\/22,
-.lp-nav .MobileNavMenu,
-.lp-nav [class*="MobileNavHeader"] > div {
-  border-color: #a5b4fc !important;
-  background: rgba(237, 233, 254, 0.98) !important;
-  color: #334155 !important;
 }
 
 .lp-hero-bg {
