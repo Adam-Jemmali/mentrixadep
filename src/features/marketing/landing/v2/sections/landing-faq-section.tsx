@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import {
   fadeUp,
   staggerContainer,
@@ -17,65 +16,44 @@ import {
   MentrixaAccordionItem,
 } from "@/shared/ui/accordion-patterns";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { LandingSectionHeader, LandingSectionShell, LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 export function LandingFaqSection() {
   const heading = landingFaqSectionHeading();
   const categories = landingFaqCategories();
 
   return (
-    <section id="faq" className="relative overflow-hidden bg-[#0B1220] py-20 md:py-28">
-      <ArenaMeshBackground variant="section" />
+    <LandingSectionShell id="faq" innerClassName="max-w-3xl">
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        variants={staggerContainer}
+      >
+        <LandingSectionHeader title={heading.title} subtitle={heading.subtitle} eyebrow="FAQ" />
+      </motion.div>
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 sm:px-6">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewportOnce}
-          variants={staggerContainer}
-          className="text-center"
-        >
-          <motion.p
-            variants={fadeUp}
-            custom={0}
-            className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300/80"
-          >
-            FAQ
-          </motion.p>
-          <motion.h2
-            variants={fadeUp}
-            custom={1}
-            className="mt-3 font-bold text-white text-[clamp(22px,3.2vw,32px)] tracking-[-0.03em]"
-          >
-            {heading.title}
-          </motion.h2>
-          <motion.p
-            variants={fadeUp}
-            custom={2}
-            className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300"
-          >
-            {heading.subtitle}
-          </motion.p>
-        </motion.div>
-
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewportOnce}
-          variants={staggerContainer}
-          className="mt-10 space-y-8"
-        >
-          {categories.map((category, categoryIndex) => (
-            <motion.div key={category.id} variants={fadeUp} custom={categoryIndex}>
-              <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-violet-200/90">
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        variants={staggerContainer}
+        className="mt-10 space-y-8"
+      >
+        {categories.map((category, categoryIndex) => (
+          <motion.div key={category.id} variants={fadeUp} custom={categoryIndex}>
+            <LandingStickyCard rotate={categoryIndex % 2 === 0} className={categoryIndex % 2 === 1 ? "rotate-[0.4deg]" : undefined}>
+              <p className={`mb-3 inline-flex items-center gap-2 ${landingHub.eyebrow}`}>
                 <MentrixaVocabIcon
                   name={landingFaqCategoryVocabIcon(category.id)}
                   size={16}
-                  className="text-violet-200"
+                  surface="light"
                   title={category.title}
                 />
                 {category.title}
               </p>
-              <MentrixaAccordion tone="marketing" variant="surface" allowsMultipleExpanded>
+              <MentrixaAccordion tone="light" variant="surface" allowsMultipleExpanded>
                 {category.items.map((item) => (
                   <MentrixaAccordionItem
                     key={item.id}
@@ -88,10 +66,10 @@ export function LandingFaqSection() {
                   </MentrixaAccordionItem>
                 ))}
               </MentrixaAccordion>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
+            </LandingStickyCard>
+          </motion.div>
+        ))}
+      </motion.div>
+    </LandingSectionShell>
   );
 }

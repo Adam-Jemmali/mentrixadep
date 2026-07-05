@@ -8,6 +8,7 @@ import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-lan
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 const STEPS: { id: StepId; number: string; vocabIcon: VocabIconName; title: string }[] = [
   { id: "book", number: "01", vocabIcon: "flow-book", title: "Book" },
@@ -32,7 +33,6 @@ function shuffleIds(ids: StepId[]): StepId[] {
 
 const CORRECT_ORDER = STEPS.map((s) => s.id);
 
-/** Deterministic scramble for SSR — reshuffled after mount. */
 const STABLE_STEP_ORDER: StepId[] = ["climb", "meet", "book", "unpack"];
 
 type CoachTone = "coach" | "success" | "error";
@@ -111,11 +111,14 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
   const reset = useCallback(() => {
     setOrder(shuffleIds(CORRECT_ORDER));
     setCompleted(false);
-    setCoach({ message: "Get the sequence right. Every person who moves their rank runs these four in this exact order. Drag them into place.", tone: "coach" });
+    setCoach({
+      message: "Get the sequence right. Every person who moves their rank runs these four in this exact order. Drag them into place.",
+      tone: "coach",
+    });
   }, []);
 
   return (
-    <div className="relative mt-10 rounded-3xl border border-white/10 bg-slate-950/50 p-4 sm:p-6">
+    <div className={cn(landingHub.notebookCard, "relative mt-10 rotate-0 p-4 sm:p-6")}>
       <LandingSpeechBubble message={coach.message} tone={coach.tone} label="Get the order right" className="mx-auto mb-5" />
 
       <Reorder.Group
@@ -139,26 +142,24 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
               onKeyDown={(event: KeyboardEvent<HTMLLIElement>) => handleRowKeyDown(index, event)}
               whileDrag={
                 cinematic && !completed
-                  ? { scale: 1.03, boxShadow: "0 20px 50px rgba(0,0,0,0.45)" }
+                  ? { scale: 1.03, boxShadow: "0 12px 28px rgba(11,18,32,0.18)" }
                   : undefined
               }
               className={cn(
-                "lp-flow-chip flex select-none items-center gap-3 rounded-2xl border px-3 py-3",
-                completed
-                  ? "cursor-default"
-                  : "cursor-grab touch-none active:cursor-grabbing",
+                "lp-flow-chip flex select-none items-center gap-3 rounded-xl border px-3 py-3",
+                completed ? "cursor-default" : "cursor-grab touch-none active:cursor-grabbing",
                 completed && isCorrectPos
-                  ? "border-emerald-400/40 bg-emerald-950/40"
-                  : "border-white/10 bg-black/40 hover:border-white/20",
+                  ? "border-emerald-500 bg-emerald-50"
+                  : "border-[#A5B4FC] bg-white hover:border-[#6366F1]",
               )}
             >
               <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[11px] font-black leading-none text-indigo-200/80"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#C4B5FD] bg-[#EDE9FE] text-[11px] font-black leading-none text-[#4F46E5]"
                 aria-hidden
               >
                 ⋮⋮
               </span>
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xs font-black text-indigo-200">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#C4B5FD] bg-[#EDE9FE] text-xs font-black text-[#4F46E5]">
                 {completed ? (
                   <motion.span
                     key={`${id}-num`}
@@ -169,24 +170,24 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
                     {step.number}
                   </motion.span>
                 ) : (
-                  <span className="text-[10px] font-bold text-slate-500">?</span>
+                  <span className={`text-[10px] font-bold ${landingHub.hint}`}>?</span>
                 )}
               </span>
-              <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 pointer-events-none">
-                <MentrixaVocabIcon name={step.vocabIcon} size={22} className="text-white" title={step.title} />
+              <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#A5B4FC] bg-[#EDE9FE] pointer-events-none">
+                <MentrixaVocabIcon name={step.vocabIcon} size={22} surface="light" title={step.title} />
               </span>
-              <span className="text-sm font-bold text-white">{step.title}</span>
+              <span className="text-sm font-bold text-[#0B1220]">{step.title}</span>
               {completed && isCorrectPos ? (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={springSoft}
-                  className="ml-auto text-[10px] font-bold uppercase tracking-wide text-emerald-300"
+                  className="ml-auto text-[10px] font-bold uppercase tracking-wide text-emerald-700"
                 >
                   Locked
                 </motion.span>
               ) : (
-                <span className="ml-auto text-[10px] font-medium text-slate-500">Drag</span>
+                <span className={`ml-auto text-[10px] font-medium ${landingHub.hint}`}>Drag</span>
               )}
             </Reorder.Item>
           );
@@ -200,14 +201,12 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
             onClick={reset}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="cursor-pointer rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-white/15"
+            className={cn("cursor-pointer rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide", landingHub.btnSecondary)}
           >
             Shuffle and play again
           </motion.button>
         ) : (
-          <p className="text-center text-[10px] text-slate-500">
-            Drag a row into place, or focus it and use ↑ ↓.
-          </p>
+          <p className={`text-center ${landingHub.hint}`}>Drag a row into place, or focus it and use ↑ ↓.</p>
         )}
       </div>
     </div>

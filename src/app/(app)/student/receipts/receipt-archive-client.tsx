@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 import type { MovementReceiptRow } from "@/features/movement-receipt/types";
 import {
   buildMovementReceiptDetailLines,
@@ -22,30 +23,24 @@ export function ReceiptArchiveClient({
   return (
     <div className={mentrixStudent.pageBgHub}>
       <main className={`${mentrixStudent.main} space-y-6`}>
-        <div>
-          <Link href="/student" className="text-sm text-violet-300 hover:text-violet-100">
-            Back to hub
-          </Link>
-          <VocabSectionHeading
-            name="movement-receipt"
-            label="Movement Receipt archive"
-            surface="dark"
-            as="h1"
-            className="mt-2"
-            labelClassName="text-xl font-black normal-case tracking-tight text-white sm:text-2xl"
-          />
-          <p className="mt-1 text-sm text-violet-200/85">
-            Weekly verified movement: grid flips, retest loops, session credit, and cohort pace.
-          </p>
-        </div>
+        <Link href="/student" className={mentrixStudent.hubGhostLink}>
+          ← Back to hub
+        </Link>
+
+        <ProductPageHeader
+          icon="movement-receipt"
+          eyebrow="Archive"
+          title="Movement Receipt archive"
+          subtitle="Weekly verified movement: grid flips, retest loops, session credit, and cohort pace."
+        />
 
         {!momentumActive ? (
-          <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>
+          <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
             Your current week receipt stays free on the hub. The full archive and weekly email are included with
             Momentum.
           </div>
         ) : receipts.length === 0 ? (
-          <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>
+          <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
             Archives appear after your first Monday Movement Receipt is generated.
           </div>
         ) : (
@@ -59,20 +54,20 @@ export function ReceiptArchiveClient({
               return (
                 <li key={receipt.id} className={`${mentrixStudent.card} p-5 sm:p-6`}>
                   <VocabSectionHeading name="movement-receipt" label="Movement receipt" surface="light" />
-                  <p className="mt-1 text-xs text-zinc-500">Week of {receipt.week_start}</p>
+                  <p className={`mt-1 text-xs ${mentrixStudent.textMutedOnLight}`}>Week of {receipt.week_start}</p>
                   <div className="mt-3">
                     <GridMovementVisual grid={receipt.receipt_data.grid} surface="light" />
                   </div>
                   {supplementalVerdict ? (
-                    <p className="mt-2 text-sm font-semibold text-zinc-900">{supplementalVerdict}</p>
+                    <p className="mt-2 text-sm font-semibold text-[#0B1220]">{supplementalVerdict}</p>
                   ) : null}
-                  <p className="mt-1 text-sm text-zinc-600">{nextAction}</p>
+                  <p className={`mt-1 text-sm ${mentrixStudent.pageSubtitle}`}>{nextAction}</p>
                   {detailLines.length > 0 ? (
-                    <ul className="mt-4 space-y-1.5 text-sm text-zinc-700">
+                    <ul className={`mt-4 space-y-1.5 text-sm ${mentrixStudent.pageSubtitle}`}>
                       {detailLines.map((line) => (
                         <li
                           key={line}
-                          className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+                          className="rounded-lg border border-[#C4B5FD] bg-[#EDE9FE]/50 px-3 py-2"
                         >
                           {line}
                         </li>

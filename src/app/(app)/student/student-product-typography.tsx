@@ -3,16 +3,22 @@
 import { usePathname } from "next/navigation";
 import { cn } from "@/shared/core/utils";
 import { mentrixProfileType } from "@/features/student-profile/mentrix-profile-typography";
+import { StudentHubGoalBanner } from "@/features/student-profile/ui/student-hub-goal-banner";
 
-/** Routes that share profile-parity typography and the hub desk canvas. */
-const PRODUCT_ROUTE =
-  /^\/student(?:\/(?:mastery|quest|division|duel|subscribe|receipts|loop|briefs|progress|certificate|booking|learning-path|clan|resolve)(?:\/|$)|\/?$)/;
+/** All authenticated student product routes share hub desk + handwriting scope. */
+function isStudentProductRoute(pathname: string): boolean {
+  if (!pathname.startsWith("/student")) return false;
+  if (pathname.startsWith("/student/duel/") && pathname !== "/student/duel" && pathname !== "/student/duel/history") {
+    return false;
+  }
+  return true;
+}
 
 export function StudentProductTypography({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname() ?? "";
-  const isProduct = PRODUCT_ROUTE.test(pathname);
+  const isProduct = isStudentProductRoute(pathname);
 
   if (!isProduct) {
     return children;
@@ -20,6 +26,7 @@ export function StudentProductTypography({
 
   return (
     <div className={cn(mentrixProfileType.scope, "mx-hub-desk min-h-[calc(100dvh-4.75rem)]")}>
+      <StudentHubGoalBanner />
       {children}
     </div>
   );

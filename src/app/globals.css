@@ -1158,28 +1158,34 @@ html[data-mentrixa-perf="lite"] .page-fade {
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* When .lp-root is present, neutralise the layout's light-bg container */
+/* When .lp-root is present, neutralise the layout's light-bg container — paper desk landing */
 .lp-root {
   position: relative;
   overflow-x: hidden;
-  background: #0b1120;
+  background-color: #f3f0ff;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    rgba(99, 102, 241, 0.14) 31px,
+    rgba(99, 102, 241, 0.14) 32px
+  );
+  background-size: 100% 32px;
+  color: #0b1220;
 }
 
 /* Climb up and reset layout wrappers so landing goes edge-to-edge */
 main:has(.lp-root) {
   padding-top: 0 !important;
-  /* Scroll-length gradient — avoids one flat black behind all sections */
-  background: linear-gradient(
-    180deg,
-    #080c16 0%,
-    #0f162a 12%,
-    #131a30 28%,
-    #0d1425 48%,
-    #161932 62%,
-    #121f33 78%,
-    #0a101e 100%
+  background-color: #f3f0ff !important;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    rgba(99, 102, 241, 0.14) 31px,
+    rgba(99, 102, 241, 0.14) 32px
   ) !important;
-  background-image: none !important;
+  background-size: 100% 32px !important;
 }
 main:has(.lp-root) > div {
   max-width: none !important;
@@ -1187,12 +1193,42 @@ main:has(.lp-root) > div {
   padding-right: 0 !important;
 }
 
-/* Logo-inspired palette: navy, indigo, violet, cyan, steel — each band reads distinct */
+/* Logo-inspired palette — landing nav on paper desk */
 .lp-nav {
   background: transparent;
   border-bottom: 0;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+.lp-nav .lg\\:flex.rounded-full {
+  border-color: #a5b4fc !important;
+  background: rgba(237, 233, 254, 0.96) !important;
+  color: #334155 !important;
+  box-shadow: 2px 4px 0 rgba(11, 18, 32, 0.12) !important;
+}
+
+.lp-nav .lg\\:flex.rounded-full .text-white\\/70 {
+  color: #475569 !important;
+}
+
+.lp-nav .lg\\:flex.rounded-full a:hover,
+.lp-nav .lg\\:flex.rounded-full .font-black.text-white {
+  color: #0b1220 !important;
+}
+
+.lp-nav .MentrixaWordmark,
+.lp-nav a.text-white .MentrixaWordmark,
+.lp-nav .text-white {
+  color: #0b1220 !important;
+}
+
+.lp-nav .rounded-2xl.border-white\\/22,
+.lp-nav .MobileNavMenu,
+.lp-nav [class*="MobileNavHeader"] > div {
+  border-color: #a5b4fc !important;
+  background: rgba(237, 233, 254, 0.98) !important;
+  color: #334155 !important;
 }
 
 .lp-hero-bg {
@@ -2965,19 +3001,43 @@ html.lp-landing-logo-cursor-active * {
     font-weight: 900;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(h2, h3, h4) {
+  .mentrix-student-type-scope
+    :where(
+      .mx-surface-light:not(.mx-hub-certificate):not(.mx-hub-notebook):not(.mx-hub-sticky):not(.mx-hub-book):not(.mx-hub-paper),
+      .mx-panel-brand,
+      .mx-panel-brand-muted
+    )
+    :where(h2, h3, h4) {
     @apply font-black uppercase tracking-[0.08em] text-violet-50;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(h1) {
+  .mentrix-student-type-scope
+    :where(
+      .mx-surface-light:not(.mx-hub-certificate):not(.mx-hub-notebook):not(.mx-hub-sticky):not(.mx-hub-book):not(.mx-hub-paper),
+      .mx-panel-brand,
+      .mx-panel-brand-muted
+    )
+    :where(h1) {
     @apply font-black italic tracking-tight text-white normal-case;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(thead th) {
+  .mentrix-student-type-scope
+    :where(
+      .mx-surface-light:not(.mx-hub-certificate):not(.mx-hub-notebook):not(.mx-hub-sticky):not(.mx-hub-book):not(.mx-hub-paper),
+      .mx-panel-brand,
+      .mx-panel-brand-muted
+    )
+    :where(thead th) {
     @apply font-black uppercase tracking-widest text-indigo-300;
   }
 
-  .mentrix-student-type-scope :where(.mx-surface-light, .mx-panel-brand, .mx-panel-brand-muted) :where(tbody td) {
+  .mentrix-student-type-scope
+    :where(
+      .mx-surface-light:not(.mx-hub-certificate):not(.mx-hub-notebook):not(.mx-hub-sticky):not(.mx-hub-book):not(.mx-hub-paper),
+      .mx-panel-brand,
+      .mx-panel-brand-muted
+    )
+    :where(tbody td) {
     @apply font-medium text-violet-50;
   }
 
@@ -2999,7 +3059,29 @@ html.lp-landing-logo-cursor-active * {
     font-size: 1.75rem;
     letter-spacing: 0.01em;
     text-transform: none;
+    color: #0b1220 !important;
+  }
+
+  /* Hub paper — default body ink on sticky, notebook, certificate (landing + student). */
+  .mentrix-student-type-scope :where(.mx-hub-sticky, .mx-hub-notebook, .mx-hub-certificate, .mx-hub-book, .mx-hub-paper) {
     color: #0b1220;
+  }
+
+  .lp-root :where(.mx-hub-sticky, .mx-hub-notebook, .mx-hub-certificate) :where(p, li, span, label, td, th, h1, h2, h3, h4, h5, h6) {
+    color: inherit;
+  }
+
+  .lp-root .mx-hub-type-ui {
+    color: #6366f1 !important;
+  }
+
+  /* Mini-game panels sit on paper — keep dark shell so light HUD text stays readable. */
+  .lp-game-panel {
+    border-radius: 1rem;
+    border: 1px solid rgba(30, 27, 75, 0.35);
+    background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+    color: #e2e8f0;
+    box-shadow: inset 0 1px 0 rgba(165, 180, 252, 0.08);
   }
 
   .mentrix-student-type-scope :where(.mx-hub-paper) :where(p, li, span, button, a, label) {

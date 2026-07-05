@@ -28,6 +28,7 @@ import { StreakCountDisplay, XpCountDisplay, MentrixaVocabIcon } from "@/shared/
 import { CANONICAL_QUEST_ICON } from "@/shared/icons/vocab-canonical";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
+import { MentrixaGoalStickyNote } from "@/features/marketing/ui/mentrixa-goal-sticky-note";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   DeferredPreSessionBriefCard,
@@ -267,6 +268,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               />
             ) : null}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <MentrixaGoalStickyNote variant="student" density="full" />
         </div>
 
         {!activeGoal ? (

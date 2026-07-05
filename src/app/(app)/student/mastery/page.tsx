@@ -19,7 +19,7 @@ export default async function StudentMasteryPage() {
     return (
       <div className={mentrixStudent.pageBgHub}>
         <main className={mentrixStudent.main}>
-          <p className={`text-sm ${mentrixStudent.textMutedOnDark}`}>Skill tree is unavailable right now. Try again in a moment.</p>
+          <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>Skill tree is unavailable right now. Try again in a moment.</p>
         </main>
       </div>
     );

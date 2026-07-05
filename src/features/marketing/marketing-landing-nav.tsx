@@ -13,6 +13,7 @@ import {
   NavbarButton,
   NavbarLogo,
 } from "@/shared/ui/resizable-navbar";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 const ICON_VERSION = "20260410";
 
@@ -54,7 +55,7 @@ export function MarketingLandingNav() {
   return (
     <Navbar className="lp-nav fixed top-3 left-0 right-0 z-50 px-3 sm:px-5">
       <div className="relative w-full">
-        <NavBody className="rounded-2xl border border-white/10 bg-slate-950/55 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <NavBody className={landingHub.navShell}>
           <NavbarLogo />
           <NavItems items={LANDING_NAV_ITEMS} />
           <div className="flex shrink-0 items-center gap-2">
@@ -87,7 +88,7 @@ export function MarketingLandingNav() {
                   key={item.link}
                   href={item.link}
                   onClick={() => setMobileNavOpen(false)}
-                  className="rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/8 hover:text-white"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-[#334155] transition-colors hover:bg-[#EDE9FE] hover:text-[#0B1220]"
                 >
                   {item.name}
                 </a>

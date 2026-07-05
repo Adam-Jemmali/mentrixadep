@@ -522,7 +522,7 @@ export function DuelHub({
       <div
         className={cn(
           "fixed inset-0 z-[110] flex h-[100dvh] flex-col overflow-hidden",
-          mentrixStudent.pageBgArena,
+          mentrixStudent.pageBgHub,
         )}
       >
         <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pt-4 pb-3 sm:pt-6">

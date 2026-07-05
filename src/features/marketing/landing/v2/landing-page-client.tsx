@@ -18,6 +18,7 @@ import {
   DeferredWhyMentrixSection,
 } from "@/features/marketing/landing/v2/landing-page-deferred";
 import { markLandingSection } from "@/features/marketing/landing-perf";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { useTrack } from "@/shared/integrations/use-track";
 
 export function LandingPageClient() {
@@ -75,24 +76,24 @@ export function LandingPageClient() {
   }, []);
 
   return (
-    <div className="lp-root bg-arena-bg">
+    <div className={landingHub.pageRoot}>
       <LandingScrollProgress />
       <HeroClimbSection />
 
       <DeferredSocialProofStrip />
 
       <LandingStoryBridge
-        chapter="01"
-        title="One rank per skill."
-        subtitle="Courses end. Certificates lie. Rank updates every time you compete."
+        chapter="Who"
+        title="AP Calculus AB students who need proof, not practice."
+        subtitle="If you cannot show rank against real Mentrixers, you do not know if you are ready. Mentrixa records your first attempt on each skill permanently."
       />
 
       <DeferredOutcomesSection />
 
       <LandingStoryBridge
-        chapter="02"
-        title="Rank only cares about results."
-        subtitle="You studied three hours and still failed. Mentrixa shows which concept broke. One number. Public. Live."
+        chapter="Why now"
+        title="Every day without a verified attempt is a wrong rank."
+        subtitle="The exam does not wait. Retakes feel good but never move rank. One quest run starts the record that stays public."
       />
 
       <DeferredFeaturesBentoSection />
@@ -102,9 +103,9 @@ export function LandingPageClient() {
       <DeferredWhyMentrixSection />
 
       <LandingStoryBridge
-        chapter="03"
-        title="Four moves. Same loop."
-        subtitle="Compete. Book when stuck. Meet live. Climb tomorrow."
+        chapter="The loop"
+        title="Four moves. Same verified loop."
+        subtitle="Compete on first attempts. Book a Guide when stuck. Meet live. Climb tomorrow with proof that moved."
       />
 
       <DeferredFlowStepsSection />

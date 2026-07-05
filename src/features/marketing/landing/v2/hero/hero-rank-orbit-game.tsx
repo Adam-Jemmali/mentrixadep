@@ -21,6 +21,7 @@ import {
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 const ICON_VERSION = "20260410";
 /** Orbit ring radius — sized so enlarged slot badges clear the center hub. */
@@ -216,7 +217,7 @@ export function HeroRankOrbitGame() {
       />
 
       <div className="mb-3 flex items-center justify-between gap-2 px-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300/90">
+        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${landingHub.eyebrow}`}>
           {placedCount}/{ACCOUNT_RANK_VISUALS.length} ranks. Your rank starts here.
         </p>
 
@@ -245,14 +246,14 @@ export function HeroRankOrbitGame() {
             onClick={resetGame}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="cursor-pointer rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white hover:bg-white/15"
+            className={cn("cursor-pointer rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-wide", landingHub.btnSecondary)}
           >
             Play again
           </motion.button>
         ) : null}
       </div>
 
-      <div className="relative">
+      <div className={cn("relative rounded-2xl p-3", landingHub.gamePanel)}>
         <div className="lp-hero-stage-glow pointer-events-none absolute inset-0" aria-hidden />
 
         <motion.div
@@ -453,7 +454,7 @@ export function HeroRankOrbitGame() {
         </div>
       </div>
 
-      <p className="mt-2 text-center text-[10px] text-slate-500">
+      <p className={`mt-2 text-center ${landingHub.hint}`}>
         {gameLocked
           ? completed
             ? "Mini game only. Real XP lives inside Mentrixa."

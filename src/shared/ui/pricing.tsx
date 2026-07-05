@@ -3,7 +3,6 @@
 import { useRef } from "react";
 import { TimelineContent } from "@/shared/ui/timeline-animation";
 import { VerticalCutReveal } from "@/shared/ui/vertical-cut-reveal";
-import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import {
   PRICING_SECTION_HEADLINE,
   PRICING_SECTION_SUBHEAD,
@@ -11,6 +10,8 @@ import {
 } from "@/features/pricing/pricing-tiers-pure";
 import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
 import { PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
 
 export default function PricingSection() {
   const pricingRef = useRef<HTMLDivElement>(null);
@@ -26,24 +27,22 @@ export default function PricingSection() {
 
   return (
     <section
-      className="relative mx-auto min-h-screen max-w-7xl overflow-hidden px-4 py-24"
+      className={`${landingHub.section} mx-auto min-h-screen max-w-7xl overflow-hidden px-4`}
       id="pricing"
       ref={pricingRef}
     >
-      <ArenaMeshBackground variant="section" />
-
-      <article className="relative mx-auto mb-14 max-w-3xl space-y-3 text-center">
+      <LandingStickyCard rotate={false} className="mx-auto mb-14 max-w-3xl rotate-[0.2deg] space-y-3 text-center">
         <TimelineContent
           as="p"
           animationNum={0}
           timelineRef={pricingRef}
           customVariants={revealVariants}
-          className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-300"
+          className={landingHub.eyebrow}
         >
           Pricing
         </TimelineContent>
 
-        <h2 className="text-4xl font-bold leading-tight tracking-tight text-white md:text-5xl">
+        <h2 className={landingHub.title}>
           <VerticalCutReveal
             splitBy="words"
             staggerDuration={0.1}
@@ -61,7 +60,7 @@ export default function PricingSection() {
           animationNum={1}
           timelineRef={pricingRef}
           customVariants={revealVariants}
-          className="text-base text-violet-200/90 md:text-lg"
+          className={landingHub.body}
         >
           {PRICING_SECTION_SUBHEAD}
         </TimelineContent>
@@ -71,11 +70,11 @@ export default function PricingSection() {
           animationNum={2}
           timelineRef={pricingRef}
           customVariants={revealVariants}
-          className="text-sm font-medium text-indigo-200/90"
+          className={`text-sm font-semibold ${landingHub.inkMuted}`}
         >
           {PRICING_SECTION_VERDICT}
         </TimelineContent>
-      </article>
+      </LandingStickyCard>
 
       <TimelineContent
         as="div"
@@ -83,12 +82,10 @@ export default function PricingSection() {
         timelineRef={pricingRef}
         customVariants={revealVariants}
       >
-        <PricingTierVisualGrid iconSize={88} showCta className="relative py-4" />
+        <LandingStickyCard rotate className="mx-auto max-w-5xl rotate-[-0.25deg] py-6">
+          <PricingTierVisualGrid iconSize={88} showCta surface="light" className="relative py-4" />
+        </LandingStickyCard>
       </TimelineContent>
-
-      <p className="relative mt-10 text-center text-[10px] font-medium tracking-wide text-violet-300/50">
-        Built from the Mentrixa M mark
-      </p>
 
       <TimelineContent
         as="div"
@@ -96,7 +93,9 @@ export default function PricingSection() {
         timelineRef={pricingRef}
         customVariants={revealVariants}
       >
-        <TierComparisonTable variant="dark" className="relative mt-16" />
+        <LandingStickyCard rotate={false} className="mx-auto mt-16 max-w-5xl rotate-[0.15deg] p-4 sm:p-6">
+          <TierComparisonTable variant="light" className="relative" />
+        </LandingStickyCard>
       </TimelineContent>
     </section>
   );

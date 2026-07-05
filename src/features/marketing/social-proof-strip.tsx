@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 const WireframeDottedGlobe = dynamic(
   () => import("@/shared/ui/wireframe-dotted-globe").then((m) => m.WireframeDottedGlobe),
@@ -12,8 +14,8 @@ const WireframeDottedGlobe = dynamic(
     ssr: false,
     loading: () => (
       <Skeleton
-        tone="dark"
-        className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-2xl"
+        tone="light"
+        className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-lg border border-[#C4B5FD]"
         aria-hidden
       />
     ),
@@ -62,28 +64,19 @@ export function SocialProofStrip() {
     <section
       ref={sectionRef}
       aria-label="Mentrixa vision"
-      className="relative overflow-hidden border-y border-white/15 bg-slate-950/90 px-4 py-10 backdrop-blur-md sm:px-6 sm:py-14"
+      className={`${landingHub.sectionTight} px-4 sm:px-6`}
     >
-      {motionEnabled ? (
-        <motion.div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_50%_50%,rgba(99,102,241,0.12),transparent_72%)]"
-          aria-hidden
-          animate={{ opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        />
-      ) : null}
-
       <div className="relative mx-auto max-w-4xl">
         {inView ? (
           <WireframeDottedGlobe
             width={680}
             height={400}
-            className="mx-auto w-full max-w-[680px]"
+            className="mx-auto w-full max-w-[680px] opacity-90"
             hideHint
           />
         ) : (
           <div
-            className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-2xl bg-indigo-950/30"
+            className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-lg border border-dashed border-[#C4B5FD] bg-[#EDE9FE]/40"
             aria-hidden
           />
         )}
@@ -94,22 +87,12 @@ export function SocialProofStrip() {
           animate={motionEnabled ? { opacity: 1, y: 0 } : false}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         >
-          <div className="max-w-xl text-center">
-            <div
-              className="rounded-2xl px-4 py-5 sm:px-6 sm:py-6"
-              style={{
-                background:
-                  "radial-gradient(ellipse 90% 80% at 50% 50%, rgba(15, 10, 30, 0.82) 0%, rgba(15, 10, 30, 0.45) 55%, transparent 100%)",
-              }}
-            >
-              <p className="text-balance text-lg font-bold leading-snug tracking-tight text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.85)] sm:text-xl md:text-[1.35rem]">
-                {MOTTO}
-              </p>
-              <p className="mx-auto mt-3 max-w-lg text-pretty text-sm leading-relaxed text-slate-200/95 drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] sm:text-[15px]">
-                {VISION}
-              </p>
-            </div>
-          </div>
+          <LandingStickyCard rotate={false} className="pointer-events-auto max-w-xl rotate-[0.25deg] px-5 py-6 text-center sm:px-7">
+            <p className={`text-balance text-lg font-bold leading-snug sm:text-xl md:text-[1.35rem] ${landingHub.title}`}>
+              {MOTTO}
+            </p>
+            <p className={`mx-auto mt-3 max-w-lg text-pretty sm:text-[15px] ${landingHub.body}`}>{VISION}</p>
+          </LandingStickyCard>
         </motion.div>
       </div>
     </section>

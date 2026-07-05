@@ -9,7 +9,7 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import { normalizeRankTitle, type AccountRankVisual } from "@/features/xp/rank-icons";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
-import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { MentrixaVocabIcon, StreakCountDisplay, VOCAB_HEADING_ICON_SIZE, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import { VOCAB_SHORT_LABEL, type VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
@@ -26,7 +26,7 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.25, 0.1, 0.25, 1] } },
 };
 
-const statCard = `${mentrixBrandUi.panel} flex rounded-2xl px-4 py-4 sm:px-5`;
+const statCard = `${mentrixStudent.hubSticky} flex rotate-0 rounded-lg px-4 py-4 sm:px-5`;
 
 function StatValue({
   icon,
@@ -45,7 +45,7 @@ function StatValue({
       <MentrixaVocabIcon
         name={icon}
         size={iconSize}
-        surface="dark"
+        surface="light"
         className={iconClassName}
         title={title}
       />
@@ -72,12 +72,12 @@ function StatFootIcon({
       <MentrixaVocabIcon
         name={icon}
         size={24}
-        surface="dark"
+        surface="light"
         gold={gold}
         className={iconClassName}
         title={label}
       />
-      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-300/80">{shortLabel}</span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#6366F1]">{shortLabel}</span>
     </span>
   );
 }
@@ -108,7 +108,7 @@ export function StudentStatStripMotion({
       ? "text-emerald-400"
       : questAccuracy?.direction === "down"
         ? "text-rose-400"
-        : "text-violet-300/70";
+        : "text-[#6366F1]";
   const accountLevel = getAccountLevelFromTotalXp(totalXp);
 
   return (
@@ -124,18 +124,18 @@ export function StudentStatStripMotion({
             rank={accountLevel}
             size={RANK_LADDER_CHIP_SIZE}
             active
-            surface="onDark"
+            surface="light"
             animate={accountRank.key === "mentrixer" || accountRank.key === "apex"}
           />
           <div className="min-w-0 flex-1">
             <p
               className="truncate text-sm font-bold uppercase tracking-wide"
-              style={{ color: accountRank.labelOnDark }}
+              style={{ color: accountRank.labelOnLight }}
             >
               {normalizeRankTitle(accountRank.title)}
             </p>
             <span className="mt-0.5 flex items-center gap-2">
-              <XpCountDisplay xp={totalXp} size={22} />
+              <XpCountDisplay xp={totalXp} size={22} surface="light" />
             </span>
           </div>
         </TiltCard>
@@ -145,7 +145,7 @@ export function StudentStatStripMotion({
         <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
           <StatValue icon="quest">
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold tabular-nums text-white">
+              <span className="text-2xl font-bold tabular-nums text-[#0B1220]">
                 {questAccuracy ? `${questAccuracy.accuracyPercent}%` : "—"}
               </span>
               {trendArrow ? <span className={`text-lg font-bold ${trendColor}`}>{trendArrow}</span> : null}
@@ -158,7 +158,7 @@ export function StudentStatStripMotion({
       <motion.div variants={item}>
         <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
           <StatValue icon="session">
-            <span className="text-2xl font-bold tabular-nums text-white">{sessionsCompleted}</span>
+            <span className="text-2xl font-bold tabular-nums text-[#0B1220]">{sessionsCompleted}</span>
           </StatValue>
           <StatFootIcon icon="session" label="Sessions completed" />
         </TiltCard>
@@ -167,7 +167,7 @@ export function StudentStatStripMotion({
       <motion.div variants={item}>
         <TiltCard tiltLimit={12} scale={1.04} className={`${statCard} flex-col`}>
           <StatValue icon="session">
-            <span className="text-2xl font-bold tabular-nums text-white">{ratingLabel}</span>
+            <span className="text-2xl font-bold tabular-nums text-[#0B1220]">{ratingLabel}</span>
           </StatValue>
           <StatFootIcon icon="session" label="Average session rating" />
         </TiltCard>
@@ -179,7 +179,7 @@ export function StudentStatStripMotion({
           scale={1.04}
           className={`${statCard} flex-col items-center justify-center ${streakAtRisk ? "ring-2 ring-amber-400/70" : ""}`}
         >
-          <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} showLabel surface="dark" />
+          <StreakCountDisplay days={streak} size={28} atRisk={streakAtRisk} showLabel surface="light" />
         </TiltCard>
       </motion.div>
     </motion.div>

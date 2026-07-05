@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { FallingRoleSliceArena, type SliceRole } from "@/features/marketing/landing/v2/motion/falling-role-slice-arena";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
@@ -61,7 +62,6 @@ const Check = ({ className = "" }: { className?: string }) => (
 
 function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean }) {
   const { cinematic } = useLandingMotion();
-  const isMentrixer = side.tone === "blue";
 
   return (
     <motion.article
@@ -69,37 +69,23 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
       initial={{ opacity: 0, y: 20, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={springSoft}
-      className={cn(
-        "relative overflow-hidden rounded-2xl border p-6 backdrop-blur-sm",
-        highlight && "ring-1 ring-white/25 shadow-2xl",
-        isMentrixer
-          ? "border-indigo-400/35 bg-gradient-to-br from-indigo-950/55 via-slate-950/50 to-slate-900/55 shadow-indigo-950/25"
-          : "border-violet-400/35 bg-gradient-to-br from-violet-950/55 via-violet-900/45 to-slate-950/55 shadow-violet-950/25",
-      )}
+      className={cn(landingHub.stickyCard, "relative overflow-hidden p-6", highlight && "ring-2 ring-[#6366F1]")}
     >
-      <p
-        className={cn(
-          "relative inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em]",
-          isMentrixer ? "text-indigo-300" : "text-violet-300",
-        )}
-      >
-        <RoleIcon role={side.role} size={16} className="brightness-0 invert" />
+      <p className={cn("relative inline-flex items-center gap-1.5", landingHub.eyebrow)}>
+        <RoleIcon role={side.role} size={16} />
         {side.role}
       </p>
-      <h3 className="relative mt-2 text-lg font-bold text-white md:text-[19px]">{side.title}</h3>
-      <ul className="relative mt-4 space-y-2.5 text-[13px] text-slate-200/95">
+      <h3 className={cn("relative mt-2 text-lg font-bold md:text-[19px]", landingHub.title)}>{side.title}</h3>
+      <ul className={cn("relative mt-4 space-y-2.5 text-[13px]", landingHub.body)}>
         {side.points.map((point) => (
           <li key={point} className="flex gap-2.5">
-            <Check className={isMentrixer ? "text-indigo-300" : "text-violet-300"} />
+            <Check className="text-[#6366F1]" />
             {point}
           </li>
         ))}
       </ul>
       <motion.div whileHover={cinematic ? { scale: 1.03 } : undefined} whileTap={cinematic ? { scale: 0.98 } : undefined}>
-        <Link
-          href={side.href}
-          className="relative mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[#0B1120]"
-        >
+        <Link href={side.href} className={cn("relative mt-7", landingHub.btnPrimary)}>
           <RoleIcon role={side.role} size={18} />
           {side.cta}
           <ArrowRight />
@@ -150,7 +136,7 @@ export function DualPathReactionGame({ sides }: Props) {
           {mounted ? (
             <FallingRoleSliceArena
               key={arenaKey}
-              className="lp-path-arena mx-auto h-[min(480px,78vw)] min-h-[360px] w-full max-w-4xl rounded-3xl border-white/10 bg-slate-950/60"
+              className={cn("lp-path-arena mx-auto h-[min(480px,78vw)] min-h-[360px] w-full max-w-4xl", landingHub.gamePanel)}
               minHeight={360}
               hudInset={96}
               gameSeconds={14}
@@ -168,12 +154,12 @@ export function DualPathReactionGame({ sides }: Props) {
             />
           ) : (
             <div
-              className="lp-path-arena mx-auto h-[min(480px,78vw)] min-h-[360px] w-full max-w-4xl rounded-3xl border border-white/10 bg-slate-950/60"
+              className={cn("lp-path-arena mx-auto h-[min(480px,78vw)] min-h-[360px] w-full max-w-4xl", landingHub.gamePanel)}
               aria-hidden
             />
           )}
 
-          <p className="mt-3 text-center text-[10px] text-slate-500">
+          <p className={`mt-3 text-center ${landingHub.hint}`}>
             Tap the badges as they fall.
           </p>
         </>
@@ -187,13 +173,10 @@ export function DualPathReactionGame({ sides }: Props) {
           className="mx-auto max-w-lg"
         >
           <div className="mb-6 text-center">
-            <h2
-              id="path-heading"
-              className="font-bold text-white text-[clamp(22px,3.2vw,34px)] tracking-[-0.03em]"
-            >
+            <h2 id="path-heading" className={landingHub.title}>
               Two sides. One platform.
             </h2>
-            <p className="mt-2 text-[13px] text-slate-300">
+            <p className={`mt-2 ${landingHub.body}`}>
               The learner who climbs today becomes the Guide who earns tomorrow. Same arena.
             </p>
           </div>
@@ -205,13 +188,13 @@ export function DualPathReactionGame({ sides }: Props) {
             <button
               type="button"
               onClick={resetGame}
-              className="cursor-pointer rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-white/15"
+              className={cn("cursor-pointer rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide", landingHub.btnSecondary)}
             >
               Play again
             </button>
           </div>
 
-          <p className="mt-3 text-center text-[10px] text-slate-500">
+          <p className={`mt-3 text-center ${landingHub.hint}`}>
             Mini game only. Your real path starts when you sign up.
           </p>
         </motion.div>

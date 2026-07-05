@@ -4,9 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import { IMAGE_QUALITY } from "@/shared/core/image-defaults";
-import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import {
-  fadeUp,
   staggerContainer,
   viewportOnce,
 } from "@/features/marketing/landing/v2/motion/landing-motion";
@@ -20,106 +18,49 @@ import {
   CANONICAL_SESSION_ICON,
 } from "@/shared/icons/vocab-canonical";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import {
+  LandingSectionHeader,
+  LandingSectionShell,
+} from "@/features/marketing/landing/ui/landing-section-shell";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 type Feature = {
   title: string;
   image: string;
   vocabIcon: VocabIconName;
   rotation: number;
-  accent: string;
 };
 
-/** Two polaroids per row — compact timeline for the landing page. */
 const FEATURE_ROWS: Feature[][] = [
   [
-    {
-      title: "Skill Duels",
-      image: "/images/features/live-duels.webp",
-      vocabIcon: CANONICAL_DUELS_ICON,
-      rotation: -2,
-      accent: "from-violet-500/50",
-    },
-    {
-      title: "Division Leaderboard",
-      image: "/images/features/duel-arena.webp",
-      vocabIcon: CANONICAL_LEAGUE_ICON,
-      rotation: 2,
-      accent: "from-indigo-500/50",
-    },
+    { title: "Skill Duels", image: "/images/features/live-duels.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: -2 },
+    { title: "Division Leaderboard", image: "/images/features/duel-arena.webp", vocabIcon: CANONICAL_LEAGUE_ICON, rotation: 2 },
   ],
   [
-    {
-      title: "Quest Practice",
-      image: "/images/features/problem-solver.webp",
-      vocabIcon: CANONICAL_QUEST_ICON,
-      rotation: 1,
-      accent: "from-purple-500/50",
-    },
-    {
-      title: "Rank Card",
-      image: "/images/features/learning-path.webp",
-      vocabIcon: CANONICAL_RANK_PROOF_ICON,
-      rotation: -1,
-      accent: "from-blue-500/50",
-    },
+    { title: "Quest Practice", image: "/images/features/problem-solver.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: 1 },
+    { title: "Rank Card", image: "/images/features/learning-path.webp", vocabIcon: CANONICAL_RANK_PROOF_ICON, rotation: -1 },
   ],
   [
-    {
-      title: "Impact Score",
-      image: "/images/features/league.webp",
-      vocabIcon: "impact-score",
-      rotation: -2,
-      accent: "from-violet-500/50",
-    },
-    {
-      title: "Division Wars",
-      image: "/images/features/clan-wars.webp",
-      vocabIcon: CANONICAL_DUELS_ICON,
-      rotation: 2,
-      accent: "from-indigo-500/50",
-    },
+    { title: "Impact Score", image: "/images/features/league.webp", vocabIcon: "impact-score", rotation: -2 },
+    { title: "Division Wars", image: "/images/features/clan-wars.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: 2 },
   ],
   [
-    {
-      title: "Session Room",
-      image: "/images/features/session-room.webp",
-      vocabIcon: CANONICAL_SESSION_ICON,
-      rotation: 1,
-      accent: "from-purple-500/50",
-    },
-    {
-      title: "Quest Pack",
-      image: "/images/features/study-package.webp",
-      vocabIcon: CANONICAL_QUEST_ICON,
-      rotation: -1,
-      accent: "from-blue-500/50",
-    },
+    { title: "Session Room", image: "/images/features/session-room.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: 1 },
+    { title: "Quest Pack", image: "/images/features/study-package.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: -1 },
   ],
   [
-    {
-      title: "Guide Studio",
-      image: "/images/features/studio-output.webp",
-      vocabIcon: CANONICAL_SESSION_ICON,
-      rotation: -2,
-      accent: "from-violet-500/50",
-    },
-    {
-      title: "Breakthrough Events",
-      image: "/images/features/guide-knowledge.webp",
-      vocabIcon: CANONICAL_BREAKTHROUGH_ICON,
-      rotation: 2,
-      accent: "from-indigo-500/50",
-    },
+    { title: "Guide Studio", image: "/images/features/studio-output.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: -2 },
+    { title: "Breakthrough Events", image: "/images/features/guide-knowledge.webp", vocabIcon: CANONICAL_BREAKTHROUGH_ICON, rotation: 2 },
   ],
 ];
 
 function FeatureIconBadge({ name }: { name: VocabIconName }) {
   return (
     <div
-      className="relative z-10 flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/35 bg-white/10 p-2 shadow-[0_0_20px_rgba(255,255,255,0.12)] backdrop-blur-sm sm:size-12"
+      className={`${landingHub.stickyCard} flex size-11 shrink-0 rotate-0 items-center justify-center p-2 sm:size-12`}
       aria-hidden
     >
-      <MentrixaVocabIcon name={name} size={28} className="text-white" title={name} />
+      <MentrixaVocabIcon name={name} size={28} surface="light" title={name} />
     </div>
   );
 }
@@ -128,7 +69,7 @@ function PolaroidPhoto({ feature }: { feature: Feature }) {
   return (
     <div className="relative">
       <div
-        className="lp-polaroid relative overflow-hidden rounded-sm bg-white p-2 pb-9 shadow-xl shadow-black/35 sm:p-2 sm:pb-10"
+        className="lp-polaroid relative overflow-hidden rounded-sm bg-white p-2 pb-9 shadow-[2px_4px_0_rgba(11,18,32,0.18)] sm:p-2 sm:pb-10"
         style={{ transform: `rotate(${feature.rotation}deg)` }}
       >
         <div className="relative h-[140px] w-[200px] overflow-hidden rounded-[2px] sm:h-[160px] sm:w-[240px]">
@@ -142,17 +83,11 @@ function PolaroidPhoto({ feature }: { feature: Feature }) {
             quality={IMAGE_QUALITY}
           />
         </div>
-        <p className="absolute inset-x-0 bottom-2 px-2 text-center text-[11px] font-semibold tracking-tight text-slate-700 sm:text-xs">
+        <p className="absolute inset-x-0 bottom-2 px-2 text-center text-[11px] font-semibold tracking-tight text-[#334155] sm:text-xs">
           {feature.title}
         </p>
-        <div className="pointer-events-none absolute -right-2 -top-1.5 h-6 w-10 rotate-12 bg-amber-100/70 shadow-sm" />
+        <div className="pointer-events-none absolute -right-2 -top-1.5 h-6 w-10 rotate-12 bg-[#EDE9FE]/90 shadow-sm" />
       </div>
-      <div
-        className={cn(
-          "pointer-events-none absolute -inset-3 -z-10 rounded-2xl bg-gradient-to-br to-transparent opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100",
-          feature.accent,
-        )}
-      />
     </div>
   );
 }
@@ -188,49 +123,26 @@ function PolaroidCard({ feature, align }: { feature: Feature; align: "left" | "r
 
 export function FeaturesBentoSection() {
   return (
-    <section
-      id="features"
-      className="relative overflow-hidden bg-[#0F172A] py-16 md:py-20"
-    >
-      <ArenaMeshBackground variant="section" showWatermark={false} />
+    <LandingSectionShell id="features" innerClassName="max-w-5xl">
+      <motion.div initial="hidden" whileInView="visible" viewport={viewportOnce} variants={staggerContainer}>
+        <LandingSectionHeader
+          eyebrow="The arena"
+          title="AP Calculus AB. One skill tree. Public rank."
+          subtitle="Quest daily. Duel peers. Book a Guide when a verified gap shows up. Same loop until rank moves."
+        />
+      </motion.div>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewportOnce}
-          variants={staggerContainer}
-        >
-          <motion.h2
-            variants={fadeUp}
-            custom={0}
-            className="mx-auto max-w-3xl text-center text-[clamp(22px,3.4vw,34px)] font-bold leading-tight tracking-[-0.03em] text-white"
-          >
-            Any skill. Any stage.
-          </motion.h2>
-          <motion.p
-            variants={fadeUp}
-            custom={1}
-            className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-slate-300 md:text-[15px]"
-          >
-            Exam next week. Interview next month. Skill you have been building for a year. Same arena.
-            Same rank. Same loop.
-          </motion.p>
-        </motion.div>
+      <div className={`${landingHub.notebookCard} relative mt-10 space-y-8 sm:space-y-10`}>
+        <div className="pointer-events-none absolute bottom-4 left-1/2 top-4 hidden w-px -translate-x-1/2 bg-[#C4B5FD]/60 sm:block" />
 
-        <div className="relative mt-10 space-y-8 sm:space-y-10">
-          <div className="pointer-events-none absolute bottom-4 left-1/2 top-4 hidden w-px -translate-x-1/2 bg-gradient-to-b from-violet-500/40 via-indigo-400/25 to-transparent sm:block" />
-
-          {FEATURE_ROWS.map((row, rowIndex) => (
-            <div key={rowIndex} className="relative grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
-              <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-indigo-400/70 bg-slate-950 sm:block" />
-
-              <PolaroidCard feature={row[0]!} align="left" />
-              <PolaroidCard feature={row[1]!} align="right" />
-            </div>
-          ))}
-        </div>
+        {FEATURE_ROWS.map((row, rowIndex) => (
+          <div key={rowIndex} className="relative grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#6366F1] bg-[#EDE9FE] sm:block" />
+            <PolaroidCard feature={row[0]!} align="left" />
+            <PolaroidCard feature={row[1]!} align="right" />
+          </div>
+        ))}
       </div>
-    </section>
+    </LandingSectionShell>
   );
 }

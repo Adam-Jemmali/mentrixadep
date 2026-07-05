@@ -5,6 +5,7 @@ import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 import type { ProgressSnapshotRow } from "@/features/progress-snapshot/types";
 
 export function ProgressArchiveClient({
@@ -17,22 +18,23 @@ export function ProgressArchiveClient({
   return (
     <div className={mentrixStudent.pageBgHub}>
       <main className={`${mentrixStudent.main} space-y-6`}>
-        <div>
-          <Link href="/student" className="text-sm text-violet-300 hover:text-violet-100">
-            Back to hub
-          </Link>
-          <h1 className="mt-2 text-2xl font-black text-white">Progress archive</h1>
-          <p className="mt-1 text-sm text-violet-200/85">
-            Weekly snapshots of rank movement, accuracy, and division standing.
-          </p>
-        </div>
+        <Link href="/student" className={mentrixStudent.hubGhostLink}>
+          ← Back to hub
+        </Link>
+
+        <ProductPageHeader
+          icon="progress-archive"
+          eyebrow="Archive"
+          title="Progress archive"
+          subtitle="Weekly snapshots of rank movement, accuracy, and division standing."
+        />
 
         {!momentumActive ? (
-          <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>
+          <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
             Your current week snapshot stays free on the hub. The full archive is included with Momentum.
           </div>
         ) : snapshots.length === 0 ? (
-          <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>
+          <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
             Archives appear after your first weekly snapshot email.
           </div>
         ) : (
@@ -41,15 +43,15 @@ export function ProgressArchiveClient({
               const data = snapshot.snapshot_data;
               return (
                 <li key={snapshot.id} className={`${mentrixStudent.card} p-5`}>
-                  <p className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                  <p className="mx-hub-type-ui text-[#6366F1]">
                     Week of {new Date(snapshot.generated_at).toLocaleDateString()}
                   </p>
                   <div className="mt-3 flex items-center gap-3">
                     <RankBadge rank={data.rankChange.previous} size={RANK_LADDER_CHIP_SIZE} surface="light" active />
-                    <span className="text-zinc-400">→</span>
+                    <span className="mx-hub-ink-muted">→</span>
                     <RankBadge rank={data.rankChange.current} size={RANK_LADDER_CHIP_SIZE} surface="light" active />
                   </div>
-                  <p className="mt-2 text-sm text-zinc-700">
+                  <p className={`mt-2 ${mentrixStudent.pageSubtitle}`}>
                     {normalizeRankTitle(data.rankChange.previous.title)} →{" "}
                     {normalizeRankTitle(data.rankChange.current.title)} · Quest accuracy{" "}
                     {data.accuracyThisWeek}%

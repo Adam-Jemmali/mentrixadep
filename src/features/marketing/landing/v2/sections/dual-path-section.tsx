@@ -1,15 +1,15 @@
 "use client";
 
-import { ArenaMeshBackground } from "@/features/marketing/landing/v2/backgrounds/arena-mesh-background";
 import { DualPathReactionGame, type DualPathSide } from "@/features/marketing/landing/v2/sections/dual-path-reaction-game";
 import { GuideRankLadderPreview } from "@/features/marketing/landing/v2/sections/guide-rank-ladder-preview";
+import { LandingSectionShell } from "@/features/marketing/landing/ui/landing-section-shell";
 
 const SIDES: DualPathSide[] = [
   {
     role: "Mentrixer",
     title: "Stop learning in private and hoping it stuck",
     points: [
-      "One arena for whatever skill is in front of you now.",
+      "AP Calculus AB arena with verified first attempts only.",
       "Quest daily. Duel peers. Rank updates in public.",
       "Stuck? Book a Guide who sees your history and drills the right gap.",
     ],
@@ -33,13 +33,9 @@ const SIDES: DualPathSide[] = [
 
 export function DualPathSection() {
   return (
-    <section id="path" className="relative overflow-hidden bg-[#0F172A] py-20 md:py-28">
-      <ArenaMeshBackground variant="section" />
-
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <DualPathReactionGame sides={SIDES} />
-        <GuideRankLadderPreview />
-      </div>
-    </section>
+    <LandingSectionShell id="path">
+      <DualPathReactionGame sides={SIDES} />
+      <GuideRankLadderPreview />
+    </LandingSectionShell>
   );
 }

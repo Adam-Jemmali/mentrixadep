@@ -21,7 +21,7 @@ export function LoopReportPageClient({
     <div className={mentrixStudent.pageBgHub}>
       <main className={`${mentrixStudent.main} space-y-6`}>
         <div>
-          <Link href="/student" className="text-sm text-violet-300 hover:text-violet-100">
+          <Link href="/student" className="text-sm text-purple-600 hover:text-violet-100">
             Back to hub
           </Link>
           <VocabSectionHeading

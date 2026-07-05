@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 type Props = {
   href: string;
@@ -14,11 +15,10 @@ type Props = {
 
 const variants = {
   primary:
-    "lp-cta-premium bg-white text-[#0B1120] shadow-[0_0_40px_rgba(99,102,241,0.35),0_8px_32px_rgba(0,0,0,0.35)] hover:shadow-[0_0_56px_rgba(124,58,237,0.45),0_12px_40px_rgba(0,0,0,0.4)]",
-  secondary:
-    "border border-white/20 bg-white/[0.04] text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/30 hover:bg-white/[0.08]",
+    "border border-[#6366F1] bg-[#7C3AED] text-white shadow-[2px_4px_0_#0B1220] hover:bg-[#6D28D9]",
+  secondary: landingHub.btnSecondary,
   ghost:
-    "border border-white/10 bg-white/[0.06] text-white/95 hover:bg-white/[0.1]",
+    "border border-[#A5B4FC] bg-white text-[#4F46E5] shadow-[2px_3px_0_rgba(11,18,32,0.08)] hover:border-[#6366F1] hover:bg-[#EDE9FE]",
 };
 
 export function LandingShimmerButton({
@@ -42,7 +42,7 @@ export function LandingShimmerButton({
           className="pointer-events-none absolute -inset-px overflow-hidden rounded-xl"
         >
           <motion.span
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent"
             animate={{ x: ["-120%", "220%"] }}
             transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
           />
