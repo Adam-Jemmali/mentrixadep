@@ -17,12 +17,12 @@ export function billingIntervalRadioMessage(
 ): MentrixaRadioMessage {
   if (interval === "annual") {
     return {
-      verdict: "",
+      verdict: "You will pay $249 CAD per year when you subscribe.",
       nextAction: "Choose annual if you expect at least one Guide session per month.",
     };
   }
   return {
-    verdict: "Monthly billing keeps Momentum flexible with no annual commitment.",
+    verdict: "You will pay $29 CAD every month when you subscribe.",
     nextAction: "Switch to annual later from subscribe if your cadence firms up.",
   };
 }

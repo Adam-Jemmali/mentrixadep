@@ -3915,6 +3915,14 @@ html.lp-landing-logo-cursor-active * {
     @apply flex rounded-xl border border-indigo-100 bg-indigo-50/40 p-1;
   }
 
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__label {
+    @apply text-base font-semibold text-[#4F46E5];
+  }
+
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__items--segmented {
+    @apply gap-1.5 rounded-2xl border-2 border-[#7C3AED]/45 bg-[#EDE9FE]/60 p-1.5 shadow-[inset_0_0_0_1px_rgba(124,58,237,0.14)];
+  }
+
   .mentrixa-radio-group--dark .mentrixa-radio-group__items--segmented {
     @apply border-slate-700 bg-slate-900/60;
   }
@@ -3935,12 +3943,40 @@ html.lp-landing-logo-cursor-active * {
     @apply justify-center rounded-lg px-3 py-2;
   }
 
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option-content {
+    @apply flex-col gap-0.5 rounded-xl border-2 border-transparent px-3 py-2.5 text-center;
+  }
+
   .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option[data-selected="true"] .mentrixa-radio-group__option-content {
     @apply bg-white text-indigo-900 shadow-sm;
   }
 
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option[data-selected="true"] .mentrixa-radio-group__option-content {
+    @apply border-[#7C3AED] bg-white text-[#4F46E5] shadow-[0_0_0_1px_rgba(124,58,237,0.35),0_8px_20px_-12px_rgba(124,58,237,0.55)] ring-2 ring-[#7C3AED]/35;
+  }
+
   .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option:not([data-selected="true"]) .mentrixa-radio-group__option-content {
     @apply text-slate-600;
+  }
+
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option:not([data-selected="true"]) .mentrixa-radio-group__option-content {
+    @apply border-[#C4B5FD]/70 bg-white/35 text-slate-600;
+  }
+
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option-label {
+    @apply text-base font-bold;
+  }
+
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option-description {
+    @apply mt-0 text-[11px] font-semibold leading-tight text-[#64748B];
+  }
+
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__items--segmented .mentrixa-radio-group__option[data-selected="true"] .mentrixa-radio-group__option-description {
+    @apply text-[#6366F1];
+  }
+
+  .mentrixa-radio-group--billing-interval .mentrixa-radio-group__footer {
+    @apply rounded-xl border-2 border-[#7C3AED]/35 bg-white/80 px-3 py-2.5 text-sm font-semibold text-[#334155];
   }
 
   .mentrixa-radio-group__items--segmented .mentrixa-radio-group__control {

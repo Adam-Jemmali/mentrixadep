@@ -49,6 +49,9 @@ function isArenaNavLink(link: string): boolean {
   return ARENA_NAV_LINKS.has(link);
 }
 
+const STUDENT_NAV_HANDWRITING_LABEL =
+  "font-['Caveat',cursive] text-[15px] font-semibold leading-none tracking-wide";
+
 const STUDENT_NAV_ITEMS: { name: string; link: string; icon: VocabIconName }[] = [
   { name: "Home", link: "/student", icon: "home" },
   { name: "Skills", link: "/student/mastery", icon: "skills" },
@@ -213,11 +216,11 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
             <MentrixaWordmark trixaClassName="text-white" />
           </Link>
           
-          <NavItems 
+          <NavItems
+            labelClassName={STUDENT_NAV_HANDWRITING_LABEL}
             items={STUDENT_NAV_ITEMS.map((item) => ({
               ...item,
-              icon: navItemIcon(item.icon, item.name),
-              iconOnly: true,
+              icon: navItemIcon(item.icon, item.name, 22),
             }))}
             onItemClick={handleNavItemClick}
             onItemPointerDown={handleArenaNavPointerDown}
@@ -364,14 +367,14 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   onMouseEnter={() => handleArenaNavHover(item)}
                   onClick={() => handleNavItemClick(item)}
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-lg px-4 py-3 transition-colors",
+                    "flex flex-row items-center gap-3 rounded-lg px-4 py-3 transition-colors",
                     isActive(item.link)
                       ? "border border-violet-400/50 bg-gradient-to-r from-[#7C3AED]/35 to-[#6366F1]/35 text-white"
                       : "text-white/95 hover:bg-violet-500/10 hover:text-white"
                   )}
                 >
-                  {navItemIcon(item.icon, item.name, 30)}
-                  <span className="sr-only">{item.name}</span>
+                  {navItemIcon(item.icon, item.name, 26)}
+                  <span className={STUDENT_NAV_HANDWRITING_LABEL}>{item.name}</span>
                 </Link>
               ))}
             </MobileNavMenu>

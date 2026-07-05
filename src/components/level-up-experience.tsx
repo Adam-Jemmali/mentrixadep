@@ -7,6 +7,12 @@ import { createClient } from "@/shared/integrations/supabase/client";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { AuthUser } from "@/shared/core/auth";
 import type { RankLevelUpPayload } from "@/features/xp/components/rank-level-up-modal";
+import { StreakRiskPopup } from "@/features/xp/ui/streak-risk-popup";
+import {
+  dismissStreakRiskUntil,
+  isStreakRiskDismissed,
+  STREAK_RISK_MESSAGE,
+} from "@/features/xp/streak-risk-pure";
 
 const RankLevelUpModal = dynamic(
   () =>
@@ -32,12 +38,6 @@ type RankModalState = {
   subtitle?: string;
 };
 
-const STREAK_RISK_DISMISS_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-
-function streakRiskDismissedUntilKey(userId: string) {
-  return `mentrixa-streak-risk-dismissed-until:${userId}`;
-}
-
 export function LevelUpExperience({ user }: { user: AuthUser | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -50,6 +50,8 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
   const showStreak = Boolean(
     user && user.approved && isStudent && pathname.startsWith("/student"),
   );
+
+  const showBottomStreakBanner = showStreak && pathname !== "/student";
 
   const refreshStreak = useCallback(async () => {
     if (!uid || !showStreak) return;
@@ -65,15 +67,11 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
         hoursSinceAction: number | null;
       };
       if (s.atRisk && s.streakDays > 0) {
-        if (typeof window !== "undefined") {
-          const raw = localStorage.getItem(streakRiskDismissedUntilKey(uid));
-          const until = raw ? Number(raw) : NaN;
-          if (Number.isFinite(until) && Date.now() < until) {
-            setStreakBanner(null);
-            return;
-          }
+        if (isStreakRiskDismissed(uid)) {
+          setStreakBanner(null);
+          return;
         }
-        setStreakBanner("Streak risk. Keep going today.");
+        setStreakBanner(STREAK_RISK_MESSAGE);
       } else {
         setStreakBanner(null);
       }
@@ -159,12 +157,7 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
   }, [uid, user?.approved]);
 
   const dismissStreakBanner = useCallback(() => {
-    if (uid && typeof window !== "undefined") {
-      localStorage.setItem(
-        streakRiskDismissedUntilKey(uid),
-        String(Date.now() + STREAK_RISK_DISMISS_COOLDOWN_MS),
-      );
-    }
+    if (uid) dismissStreakRiskUntil(uid);
     setStreakBanner(null);
   }, [uid]);
 
@@ -174,19 +167,9 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
 
   return (
     <>
-      {streakBanner && showStreak ? (
-        <div className="fixed bottom-4 left-1/2 z-40 flex max-w-lg -translate-x-1/2 items-start gap-2 rounded-md border border-amber-200 bg-amber-50 py-2.5 pl-4 pr-2 shadow-sm">
-          <p className="min-w-0 flex-1 text-center text-xs leading-snug text-amber-950">{streakBanner}</p>
-          <button
-            type="button"
-            onClick={dismissStreakBanner}
-            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-amber-800 transition hover:bg-amber-100 hover:text-amber-950"
-            aria-label="Dismiss streak reminder"
-          >
-            <span className="text-lg leading-none" aria-hidden>
-              ×
-            </span>
-          </button>
+      {streakBanner && showBottomStreakBanner ? (
+        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2">
+          <StreakRiskPopup onDismiss={dismissStreakBanner} />
         </div>
       ) : null}
 

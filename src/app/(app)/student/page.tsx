@@ -217,7 +217,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               <StudentHeroQuickActions className="sm:pt-1" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div
+              className={`flex flex-wrap items-center gap-x-5 gap-y-3${streakAtRisk && streak > 0 ? " pb-12" : ""}`}
+            >
               <RankBadge rank={accountRank} size="md" active showGlow={accountRank.key === "mentrixer"} priority />
               <p
                 className="text-sm font-bold uppercase tracking-wide sm:text-base"
@@ -227,7 +229,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               </p>
               <XpCountDisplay xp={totalXp} size={22} showLabel accent="indigo" surface="light" />
               {streak > 0 ? (
-                <StreakCountDisplay days={streak} size={22} atRisk={streakAtRisk} showLabel accent="violet" surface="light" />
+                <StreakCountDisplay
+                  days={streak}
+                  size={22}
+                  atRisk={streakAtRisk}
+                  showRiskPopup
+                  userId={user.id}
+                  showLabel
+                  accent="violet"
+                  surface="light"
+                />
               ) : null}
               {questAccuracy ? (
                 <span className="inline-flex items-center gap-2">

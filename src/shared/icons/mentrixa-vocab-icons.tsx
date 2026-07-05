@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/shared/core/utils";
 import {
   getVocabIconMeta,
@@ -22,6 +23,11 @@ import {
   hubAccentValueClass,
   type HubAccent,
 } from "@/features/student-profile/student-hub-accent";
+import { StreakRiskPopup } from "@/features/xp/ui/streak-risk-popup";
+import {
+  dismissStreakRiskUntil,
+  isStreakRiskDismissed,
+} from "@/features/xp/streak-risk-pure";
 
 const TIER_VOCAB_TO_ID: Partial<Record<VocabIconName, PricingTierId>> = {
   "tier-arena": "arena",
@@ -31,10 +37,6 @@ const TIER_VOCAB_TO_ID: Partial<Record<VocabIconName, PricingTierId>> = {
 
 const GOLD_FILTER =
   "brightness(0) saturate(100%) invert(73%) sepia(48%) saturate(746%) hue-rotate(8deg) brightness(95%) contrast(92%)";
-
-/** Flame yellow for streak fire on paper and dark surfaces. */
-const STREAK_FLAME_FILTER =
-  "brightness(0) saturate(100%) invert(79%) sepia(86%) saturate(640%) hue-rotate(360deg) brightness(104%) contrast(101%)";
 
 const XP_LIGHT_CHIP =
   "rounded-md bg-[#6366F1] p-0.5 ring-1 ring-[#7C3AED] shadow-sm";
@@ -461,6 +463,9 @@ export function StreakCountDisplay({
   showLabel = false,
   accent = "violet",
   surface = "dark",
+  atRisk = false,
+  userId,
+  showRiskPopup = false,
 }: {
   days: number;
   size?: number;
@@ -470,24 +475,47 @@ export function StreakCountDisplay({
   showLabel?: boolean;
   accent?: HubAccent;
   surface?: "dark" | "light";
+  /** When set, streak-risk dismiss is persisted for this user. */
+  userId?: string;
+  /** Show the yellow streak-risk popup anchored to this stat. */
+  showRiskPopup?: boolean;
 }) {
   const daySize = Math.max(14, Math.round(size * 0.72));
   const when = referenceDate ?? new Date();
   const dayIcon = weekdayVocabIcon(when);
   const dayName = weekdayLabel(when);
+  const [riskDismissed, setRiskDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!userId || !atRisk || !showRiskPopup) {
+      setRiskDismissed(false);
+      return;
+    }
+    setRiskDismissed(isStreakRiskDismissed(userId));
+  }, [userId, atRisk, showRiskPopup]);
+
+  const dismissRisk = useCallback(() => {
+    if (userId) dismissStreakRiskUntil(userId);
+    setRiskDismissed(true);
+  }, [userId]);
+
+  const showPopup = showRiskPopup && atRisk && days > 0 && !riskDismissed;
 
   return (
     <span
-      className={cn("inline-flex flex-col items-center gap-1", className)}
-      aria-label={`${days} day streak · ${dayName}`}
-      title={`${days} day streak · ${dayName}`}
+      className={cn("relative inline-flex flex-col items-center gap-1", className)}
+      aria-label={`${days} day streak · ${dayName}${atRisk ? " · at risk" : ""}`}
+      title={`${days} day streak · ${dayName}${atRisk ? " · at risk" : ""}`}
     >
       <span className="inline-flex items-center gap-1.5">
         <span
-          className="inline-flex shrink-0 items-center justify-center"
-          style={{ width: size, height: size, filter: STREAK_FLAME_FILTER }}
+          className={cn(
+            "inline-flex shrink-0 items-center justify-center",
+            atRisk && "rounded-full ring-2 ring-amber-400/80 ring-offset-1 ring-offset-transparent",
+          )}
+          style={{ width: size, height: size }}
         >
-          <MentrixaVocabIcon name="streak" size={size} surface="light" title="Streak" />
+          <MentrixaVocabIcon name="streak" size={size} surface={surface} title="Streak" />
         </span>
         <span className={cn("font-mono text-sm font-bold tabular-nums leading-none", hubAccentValueClass(accent, surface))}>
           {days}
@@ -499,6 +527,7 @@ export function StreakCountDisplay({
           Streak
         </span>
       ) : null}
+      {showPopup ? <StreakRiskPopup inline onDismiss={dismissRisk} /> : null}
     </span>
   );
 }

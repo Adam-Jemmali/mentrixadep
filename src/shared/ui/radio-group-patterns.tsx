@@ -4,6 +4,10 @@ import { useState } from "react";
 import { RadioGroup, Radio, Description } from "@/shared/ui/hero-radio-group";
 import { cn } from "@/shared/core/utils";
 import {
+  formatStudentMomentumSubscriptionAnnualPrice,
+  formatStudentMomentumSubscriptionMonthlyPrice,
+} from "@/features/booking/booking-pricing";
+import {
   billingIntervalRadioAriaLabel,
   billingIntervalRadioMessage,
   contactCategoryRadioMessage,
@@ -92,8 +96,13 @@ export function MentrixaRadioGroup({
                 <Radio.Indicator className="mentrixa-radio-group__indicator" />
               </Radio.Control>
               <span className="mentrixa-radio-group__option-label">{option.label}</span>
+              {layout === "segmented" && option.description ? (
+                <Description className="mentrixa-radio-group__option-description">
+                  {option.description}
+                </Description>
+              ) : null}
             </Radio.Content>
-            {option.description ? (
+            {layout !== "segmented" && option.description ? (
               <Description className="mentrixa-radio-group__option-description">
                 {option.description}
               </Description>
@@ -119,17 +128,26 @@ export function MentrixaBillingIntervalRadioGroup({
 }) {
   return (
     <MentrixaRadioGroup
+      label="Choose how you will be billed"
       ariaLabel={billingIntervalRadioAriaLabel()}
       value={value}
       onChange={(next) => onChange(next as MentrixaBillingInterval)}
       tone={tone}
       layout="segmented"
       variant="secondary"
-      className={className}
+      className={cn("mentrixa-radio-group--billing-interval", className)}
       message={billingIntervalRadioMessage(value)}
       options={[
-        { value: "annual", label: "Annual" },
-        { value: "monthly", label: "Monthly" },
+        {
+          value: "annual",
+          label: "Annual",
+          description: formatStudentMomentumSubscriptionAnnualPrice(),
+        },
+        {
+          value: "monthly",
+          label: "Monthly",
+          description: formatStudentMomentumSubscriptionMonthlyPrice(),
+        },
       ]}
     />
   );

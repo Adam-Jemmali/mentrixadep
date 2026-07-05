@@ -195,6 +195,17 @@ export function MomentumMembershipPanel({
         {active ? MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE : MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE}
       </p>
 
+      {isSubscribe && !active ? (
+        <p
+          className="mt-4 rounded-xl border-2 border-[#7C3AED] bg-white px-4 py-3 text-sm font-bold text-[#4F46E5]"
+          aria-live="polite"
+        >
+          {interval === "annual"
+            ? "Checkout will bill you annually at $249 CAD per year."
+            : "Checkout will bill you monthly at $29 CAD per month."}
+        </p>
+      ) : null}
+
       <div className="mt-6 flex flex-wrap gap-3">
         {active ? (
           <>

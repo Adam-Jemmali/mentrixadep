@@ -35,6 +35,8 @@ type NavItemsProps = {
     iconOnly?: boolean;
   }[];
   className?: string;
+  /** Optional label styling (e.g. handwriting font on student nav). */
+  labelClassName?: string;
   onItemClick?: (item: { name: string; link: string }) => void;
   onItemPointerDown?: (item: { name: string; link: string }) => void;
   onItemHover?: (item: { name: string; link: string }) => void;
@@ -125,6 +127,7 @@ export const NavBody = ({ children, className, visible, solid = false }: NavBody
 export const NavItems = ({
   items,
   className,
+  labelClassName,
   onItemClick,
   onItemPointerDown,
   onItemHover,
@@ -153,7 +156,7 @@ export const NavItems = ({
       onClick={() => onItemClick?.(item)}
       className={cn(
         "relative text-[13px] text-current transition-opacity duration-150 ease-out hover:opacity-100",
-        item.iconOnly ? "flex items-center justify-center px-3 py-2.5" : "px-4 py-2",
+        item.iconOnly ? "flex items-center justify-center px-3 py-2.5" : "px-2 py-2 sm:px-2.5",
         active && "font-black text-white",
       )}
       aria-label={item.iconOnly ? item.name : undefined}
@@ -177,6 +180,8 @@ export const NavItems = ({
         {item.icon ? <span className={cn("shrink-0", item.iconOnly ? "opacity-100" : "opacity-90")}>{item.icon}</span> : null}
         {item.iconOnly ? (
           <span className="sr-only">{item.name}</span>
+        ) : labelClassName ? (
+          <span className={cn("whitespace-nowrap", labelClassName)}>{item.name}</span>
         ) : (
           <BubbleText text={item.name} className="text-current" />
         )}
