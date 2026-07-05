@@ -30,9 +30,9 @@ export function LoopReportPageClient({
             surface="dark"
             as="h1"
             className="mt-2"
-            labelClassName="text-xl font-black normal-case tracking-tight text-white sm:text-2xl"
+            labelClassName="text-xl font-black normal-case tracking-tight text-purple-800 sm:text-2xl"
           />
-          <p className="mt-1 text-sm text-violet-200/85">
+          <p className="mt-1 text-sm text-blue-600">
             Every retest scheduled from sessions, breakthroughs, and duels.
           </p>
         </div>
