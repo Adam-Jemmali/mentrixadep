@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { Button } from "@/shared/ui/button";
-import { XP } from "@/features/xp/xp-constants";
+
 import { emitXpAward } from "@/features/xp/xp-events";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { TiltCard } from "@/shared/ui/tilt-card";
@@ -43,8 +43,19 @@ import {
 } from "@/features/quest/guest-try-recents";
 import { buildGuestTrySkillSummary } from "@/features/quest/guest-try-skill-summary";
 import { GuestTryResultsPanel } from "@/features/quest/ui/guest-try-results-panel";
-import { GuestTryRankPreview } from "@/features/quest/ui/guest-try-rank-preview";
 import { GuestTryDiagnosticLanding } from "@/features/quest/ui/guest-try-diagnostic-landing";
+import { GuestTryRankPreview } from "@/features/quest/ui/guest-try-rank-preview";
+import {
+  buildGuestTryBreakthroughReceipts,
+  buildGuestTryPassportPreview,
+} from "@/features/quest/guest-try-passport-preview-pure";
+import {
+  QuestPracticePackWizard,
+  practiceDifficultyLabel,
+} from "@/features/quest/ui/quest-practice-pack-wizard";
+import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
+import { QuestSessionProgressBar } from "@/shared/ui/progress-bar-patterns";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { StepTraceInput } from "@/features/diagnostics/step-trace-input";
 import { getDiagnosticVerdict, type DiagnosticVerdict } from "@/features/diagnostics/diagnostic-verdict";
@@ -194,6 +205,7 @@ export function GuestQuestClient({
   const [subjectKey, setSubjectKey] = useState(defaultSubjects[0]?.key ?? "general");
   const [subjectName, setSubjectName] = useState(defaultSubjects[0]?.name ?? "General");
   const [phase, setPhase] = useState<"wizard" | "run" | "done">("wizard");
+  const [difficulty, setDifficulty] = useState<PracticeDifficulty>("intermediate");
   const [questions, setQuestions] = useState<GuestTryQuestion[] | null>(null);
   const [qIndex, setQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -209,7 +221,6 @@ export function GuestQuestClient({
   const [correctCelebrationOpen, setCorrectCelebrationOpen] = useState(false);
   const [recents, setRecents] = useState<GuestTryRecentEntry[]>([]);
   const xpEmittedRef = useRef(false);
-  const maxPendingXp = XP.QUEST_COMPLETE + XP.QUEST_PERFECT_BONUS;
   const [timeLeft, setTimeLeft] = useState(0);
   const [timeLimitSec, setTimeLimitSec] = useState(0);
   const timeLeftRef = useRef(0);
@@ -454,7 +465,7 @@ export function GuestQuestClient({
       const res = await fetch("/api/guest-practice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: subjectName, difficulty: "advanced" }),
+        body: JSON.stringify({ subject: subjectName, difficulty }),
       });
       const j = await res.json();
       if (!j.success) {
@@ -554,11 +565,10 @@ export function GuestQuestClient({
 
   if (phase === "wizard") {
     const apCalcOnly =
-      (diagnosticMode || embedded) &&
       defaultSubjects.length === 1 &&
       isApCalculusAbSubject(defaultSubjects[0]?.name ?? "");
 
-    if (apCalcOnly) {
+    if (diagnosticMode && apCalcOnly) {
       return (
         <GuestTryDiagnosticLanding
           embedded={embedded}
@@ -569,6 +579,25 @@ export function GuestQuestClient({
             void startStepTraceDiagnostic();
           }}
         />
+      );
+    }
+
+    if (apCalcOnly && !embedded) {
+      return (
+        <div className={mentrixStudent.mainSlim}>
+          <QuestPracticePackWizard
+            busy={busy}
+            err={err}
+            difficulty={difficulty}
+            onDifficultyChange={setDifficulty}
+            onStart={() => {
+              playClickSound();
+              void start();
+            }}
+            startLabel="Start verified pack"
+            subtitle="Free try. Same Quest pack students run inside the app."
+          />
+        </div>
       );
     }
 
@@ -794,7 +823,6 @@ export function GuestQuestClient({
     const progress = ((qIndex + 1) / questions.length) * 100;
     const kindUi = guestTryKindUi(q.kind);
     const promptDisplay = displayGuestQuestText(q.prompt);
-    const runCorrect = results.filter(Boolean).length;
 
     return (
       <AnimatePresence mode="wait">
@@ -804,57 +832,38 @@ export function GuestQuestClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.3 }}
-          className="max-w-3xl mx-auto py-8 px-4"
+          className={`${mentrixStudent.mainSlim} touch-pan-y`}
         >
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <GuestTryRankPreview totalXp={0} pendingXp={maxPendingXp} variant="compact" />
-            <p className="text-[11px] font-medium text-slate-500 tabular-nums">
-              {runCorrect} correct so far, up to {maxPendingXp} XP
+          <div className={`${mentrixStudent.card} w-full px-4 py-6 sm:p-8`}>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <p className={`text-xs font-mono ${mentrixStudent.textMutedOnLight}`}>
+              Q{qIndex + 1}/{questions.length}
             </p>
+            <QuestTimerProgressCircle
+              timeLeftSec={timeLeft}
+              timeLimitSec={timeLimitSec || guestTryTimeLimitSec(questions.length)}
+            />
           </div>
-
-          {/* Progress bar */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Q{qIndex + 1} / {questions.length}
-              </span>
-              <div className="flex items-center gap-3">
-                <QuestTimerProgressCircle
-                  timeLeftSec={timeLeft}
-                  timeLimitSec={timeLimitSec || guestTryTimeLimitSec(questions.length)}
-                  size="md"
-                />
-                <span className="text-xs font-medium text-slate-500">{Math.round(progress)}%</span>
-              </div>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              />
-            </div>
+          <div className="mb-8">
+            <QuestSessionProgressBar value={progress} />
           </div>
 
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
               <QuestKindMetaTag label={kindUi.badge} tone="light" />
-              <p className="text-[11px] text-slate-500 max-w-lg leading-snug">{kindUi.hint}</p>
+              <p className="text-[11px] text-[#475569] max-w-lg leading-snug">{kindUi.hint}</p>
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap mt-0.5">
-              Practice pack, Advanced
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6366F1] whitespace-nowrap mt-0.5">
+              {practiceDifficultyLabel(difficulty)}
             </span>
           </div>
 
-          {/* Question card */}
-          <TiltCard tiltLimit={2} className="rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)] p-6 sm:p-8 block">
-            <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-3">
               {q.nodeName ? (
                 <div className="flex items-center gap-2.5">
                   <ApCalcSkillGlyph nodeName={q.nodeName} size="sm" />
-                  <span className="text-xs font-semibold text-slate-700">{q.nodeName}</span>
+                  <span className="text-xs font-semibold text-[#334155]">{q.nodeName}</span>
                 </div>
               ) : null}
               {q.examStakes ? <ExamStakesLabel examStakes={q.examStakes} tone="light" /> : null}
@@ -1155,7 +1164,7 @@ export function GuestQuestClient({
                 </motion.div>
               )}
             </AnimatePresence>
-          </TiltCard>
+          </div>
 
           <PracticeCorrectCelebration
             open={correctCelebrationOpen && wasCorrect === true}
@@ -1167,6 +1176,7 @@ export function GuestQuestClient({
               next();
             }}
           />
+          </div>
         </motion.div>
       </AnimatePresence>
     );
@@ -1180,6 +1190,18 @@ export function GuestQuestClient({
       ? buildApCalcGuestDiagnosticVerdict(questions, results, selectedIndices)
       : null;
     const skillSummary = buildGuestTrySkillSummary(questions, results, subjectName);
+    const breakthroughReceipts = buildGuestTryBreakthroughReceipts(
+      questions.map((question, index) => ({
+        nodeName: question.nodeName,
+        correct: results[index] === true,
+      })),
+    );
+    const passportPreview = buildGuestTryPassportPreview({
+      correct,
+      total: questions.length,
+      wouldXp,
+      breakthroughReceipts,
+    });
 
     return (
       <GuestTryResultsPanel
@@ -1191,6 +1213,7 @@ export function GuestQuestClient({
         wouldXp={wouldXp}
         skillSummary={skillSummary}
         apCalcVerdict={apCalcVerdict}
+        passportPreview={passportPreview}
         onRunAnother={() => {
           playClickSound();
           setPhase("wizard");

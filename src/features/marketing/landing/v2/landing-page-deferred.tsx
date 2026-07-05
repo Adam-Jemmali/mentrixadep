@@ -31,6 +31,11 @@ export const DeferredWhyMentrixSection = dynamic(
   { loading: () => <SectionFallback /> },
 );
 
+export const DeferredGuideSection = dynamic(
+  () => import("@/features/marketing/landing/v2/sections/guide-section").then((m) => m.GuideSection),
+  { loading: () => <SectionFallback className="min-h-[520px]" /> },
+);
+
 export const DeferredFlowStepsSection = dynamic(
   () => import("@/features/marketing/landing/v2/sections/flow-steps-section").then((m) => m.FlowStepsSection),
   { loading: () => <SectionFallback className="min-h-[360px]" /> },

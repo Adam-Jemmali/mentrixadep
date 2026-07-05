@@ -82,7 +82,7 @@ export const LANDING_FEATURES = {
   guide: {
     eyebrow: "Guide",
     title: "Five tools.",
-    subtitle: "Teach. Pack. Get paid.",
+    subtitle: "Preview below. Full breakdown in Guide section.",
     polaroidTitles: ["Session", "Studio", "Pack", "Impact", "Breakthrough"] as const,
   },
 } as const;
@@ -189,6 +189,39 @@ export const LANDING_GUIDE_LADDER = {
   sentence: "Practitioner to Elite. First-try lift. Not Mentrixer rank.",
 } as const;
 
+/** Dedicated Guide explainer — role, tools, dashboard access. */
+export const LANDING_GUIDE = {
+  eyebrow: "Guide",
+  title: "What Guides do.",
+  subtitle: "Live teachers on Mentrixa. Impact Score proof. Never Mentrixer rank.",
+  definition: {
+    word: "Role",
+    sentence: "Guides run live breakthrough sessions when a Mentrixer hits a verified gap on Calculus AB.",
+  },
+  notRank: "Guides do not climb the Mentrixer feed or XP ladder.",
+  featuresTitle: "Five tools.",
+  featuresSubtitle: "What you run every session.",
+  features: [
+    { word: "Session", sentence: "Live video call. You read their verified record before you speak." },
+    { word: "Studio", sentence: "Transcript becomes a Quest pack. You approve before send." },
+    { word: "Pack", sentence: "Practice items land in their hub within ten minutes of hangup." },
+    { word: "Impact", sentence: "Your score moves when their first tries improve on nodes you taught." },
+    { word: "Breakthrough", sentence: "$39 flat per session. Stripe pays when the call ends." },
+  ] as const,
+  accessTitle: "Dashboard access.",
+  accessSubtitle: "What you get after approval.",
+  access: [
+    { word: "Hub", sentence: "Session requests, earnings, and impact trend in one command center." },
+    { word: "Stripe", sentence: "Connect once. Payout hits when the breakthrough session ends." },
+    { word: "Schedule", sentence: "Set availability slots. Accept requests or auto-approve." },
+    { word: "Profile", sentence: "Public Guide page with Impact Score and rank badge." },
+    { word: "Studio", sentence: "Draft, review, and ship Quest packs from every call." },
+  ] as const,
+  verdict: "Guide Impact and Mentrixer rank carry equal weight. Different proof.",
+  cta: "Apply as Guide",
+  href: "/auth/signup?role=tutor",
+} as const;
+
 export const LANDING_PRICING = {
   eyebrow: "Mentrixer offer",
   headline: "Three tiers.",
@@ -252,6 +285,13 @@ export const LANDING_FAQ = {
           verdict: "You review before send. Not live AI coaching.",
           nextAction: "Apply as Guide to use Studio.",
         },
+        {
+          id: "guide-access",
+          title: "What do Guides get access to?",
+          body: "Guide hub, Stripe payouts, availability calendar, Studio, and public Impact profile.",
+          verdict: "Separate dashboard. Never mixed with Mentrixer rank tools.",
+          nextAction: "Apply as Guide to open your hub.",
+        },
       ],
     },
     {
@@ -294,7 +334,8 @@ export const LANDING_NAV = {
     { name: "Mentrixer", link: "#features" },
     { name: "Climb", link: "#ranks" },
     { name: "Offer", link: "#pricing" },
-    { name: "Guide", link: "#path" },
+    { name: "Guide", link: "#guide" },
+    { name: "Path", link: "#path" },
     { name: "Contact", link: "#contact" },
     { name: "Sign in", link: "/auth/signin?signin=1" },
   ],

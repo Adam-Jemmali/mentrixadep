@@ -44,16 +44,10 @@ import {
 } from "@/shared/ui/alert-patterns";
 import {
   ExamStakesDisclosure,
-  VerifiedFirstAttemptDisclosure,
 } from "@/shared/ui/disclosure-patterns";
 import { QuestPracticeToolsDrawer } from "@/features/quest/ui/quest-practice-tools-drawer";
+import { QuestPracticePackWizard } from "@/features/quest/ui/quest-practice-pack-wizard";
 import { MentrixaVocabIcon, VocabSectionHeading, VOCAB_HEADING_ICON_SIZE } from "@/shared/icons/mentrixa-vocab-icons";
-
-const DIFFICULTIES: { value: PracticeDifficulty; label: string }[] = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
-];
 
 type Phase = "wizard" | "run" | "done";
 
@@ -390,99 +384,59 @@ export function QuestPracticeWorkspace({
   };
 
   if (phase === "wizard") {
-    return (
-      <div className="relative w-full">
-        {busy ? (
-          <div
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-[#FAFAF8]/92 px-8 backdrop-blur-sm"
-            aria-busy="true"
-            aria-live="polite"
-          >
-            <QuestPackLoadPendingPanel className="max-w-xs" />
-          </div>
-        ) : null}
-        <div className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}>
-        {!onboardingMode ? (
-          <VocabSectionHeading
-            name="quest"
-            label="Practice packs"
-            surface="light"
-            labelClassName="mx-hub-type-ui text-[#6366F1]"
-            className="block w-full"
-          />
-        ) : (
-          <VocabSectionHeading
-            name="quest"
-            label="First quest"
-            surface="light"
-            labelClassName="mx-hub-type-ui text-[#6366F1]"
-            className="block w-full"
-          />
-        )}
-        <h1 className={`flex items-center gap-4 ${mentrixStudent.cardTitle}`}>
-          <MentrixaVocabIcon name="verified" size={VOCAB_HEADING_ICON_SIZE} gold surface="light" title="Verified" />
-          <span>{onboardingMode ? "Your first verified skills" : "Verified practice pack"}</span>
-        </h1>
-        <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
-          {onboardingMode
-            ? "Five first attempts from the AP Calculus AB item bank. Each answer is permanent."
-            : null}
-        </p>
-
-        {!onboardingMode ? (
-          <div className="mt-4">
-            <VerifiedFirstAttemptDisclosure subjectLabel={AP_CALC_AB_SUBJECT} tone="light" />
-          </div>
-        ) : null}
-
-        {onboardingMode ? (
-          <div className="mt-6">
-            <OnboardingQuestProgressBar phase="wizard" />
-          </div>
-        ) : null}
-
-        <div className="mt-8 space-y-6">
-          <div>
-            <label className={`text-xs font-medium ${mentrixStudent.textMutedOnDark}`}>Subject</label>
-            <p className={`mt-2 rounded-xl border border-[#A5B4FC] bg-white px-4 py-3 text-sm font-semibold text-[#0B1220]`}>
-              {AP_CALC_AB_SUBJECT}
-            </p>
-          </div>
-
-          {!onboardingMode && (
-            <div>
-              <label className={`text-xs font-medium ${mentrixStudent.textMutedOnDark}`}>Difficulty</label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {DIFFICULTIES.map((d) => (
-                  <button
-                    key={d.value}
-                    type="button"
-                    onClick={() => setDifficulty(d.value)}
-                    className={
-                      difficulty === d.value ? mentrixStudent.chipActive : mentrixStudent.chipIdle
-                    }
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
+    if (onboardingMode) {
+      return (
+        <div className="relative w-full">
+          {busy ? (
+            <div
+              className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-[#FAFAF8]/92 px-8 backdrop-blur-sm"
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <QuestPackLoadPendingPanel className="max-w-xs" />
             </div>
-          )}
-
-          {err ? (
-            isPracticeLockedAttemptError(err) ? (
-              <PracticeLockedAttemptAlert />
-            ) : (
-              <p className="text-sm font-medium text-red-600">{err}</p>
-            )
           ) : null}
+          <div className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}>
+            <VocabSectionHeading
+              name="quest"
+              label="First quest"
+              surface="light"
+              labelClassName="mx-hub-type-ui text-[#6366F1]"
+              className="block w-full"
+            />
+            <h1 className={`flex items-center gap-4 ${mentrixStudent.cardTitle}`}>
+              <MentrixaVocabIcon name="verified" size={VOCAB_HEADING_ICON_SIZE} gold surface="light" title="Verified" />
+              <span>Your first verified skills</span>
+            </h1>
+            <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
+              Five first attempts from the AP Calculus AB item bank. Each answer is permanent.
+            </p>
+            <div className="mt-6">
+              <OnboardingQuestProgressBar phase="wizard" />
+            </div>
+            {err ? (
+              isPracticeLockedAttemptError(err) ? (
+                <PracticeLockedAttemptAlert />
+              ) : (
+                <p className="text-sm font-medium text-red-600">{err}</p>
+              )
+            ) : null}
+            <Button className="w-full" variant="workbenchPrimary" disabled={busy} onClick={() => void beginPack()}>
+              {busy ? "Loading pack…" : "Start your first quest"}
+            </Button>
+          </div>
+        </div>
+      );
+    }
 
-          <Button className="w-full" variant="workbenchPrimary" disabled={busy} onClick={() => void beginPack()}>
-            {busy ? "Loading pack…" : onboardingMode ? "Start your first quest" : "Start verified pack"}
-          </Button>
-        </div>
-        </div>
-      </div>
+    return (
+      <QuestPracticePackWizard
+        busy={busy}
+        err={err}
+        difficulty={difficulty}
+        onDifficultyChange={setDifficulty}
+        onStart={() => void beginPack()}
+      />
     );
   }
 

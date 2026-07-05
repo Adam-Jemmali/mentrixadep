@@ -4,11 +4,13 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { GuestTryApCalcResultsReveal } from "@/features/quest/ui/guest-try-ap-calc-results-reveal";
 import { GuestTrySkillSummaryCard } from "@/features/quest/ui/guest-try-skill-card";
+import { GuestTryPassportPreview } from "@/features/quest/ui/guest-try-passport-preview";
 import type { ApCalcGuestDiagnosticVerdict } from "@/features/quest/guest-try-results";
 import type { GuestTrySkillSummary } from "@/features/quest/guest-try-skill-summary";
+import type { RankCardData } from "@/features/rank-card/types";
 import { Button } from "@/shared/ui/button";
 import { ProgressCircle } from "@/shared/ui/progress-circle";
-import { MentrixaBrandMark } from "@/shared/ui/mentrixa-ui-brand";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { cn } from "@/shared/core/utils";
 
 export type GuestTryResultsPanelProps = {
@@ -20,6 +22,7 @@ export type GuestTryResultsPanelProps = {
   wouldXp: number;
   skillSummary?: GuestTrySkillSummary | null;
   apCalcVerdict?: ApCalcGuestDiagnosticVerdict | null;
+  passportPreview?: RankCardData | null;
   onRunAnother?: () => void;
   runAnotherLabel?: string;
   showRunAnother?: boolean;
@@ -33,6 +36,7 @@ function GenericQuestResultsReveal({
   streakRecord,
   wouldXp,
   skillSummary,
+  passportPreview,
   onRunAnother,
   runAnotherLabel,
   showRunAnother,
@@ -42,20 +46,14 @@ function GenericQuestResultsReveal({
   const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
   return (
-    <div
-      className={cn(
-        "relative w-full overflow-hidden bg-[#0a1628] text-white",
-        embedded ? "min-h-[70vh]" : "min-h-dvh",
-      )}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,211,238,0.12),transparent_55%)]" />
+    <div className={cn("mentrix-student-type-scope mx-auto w-full max-w-4xl px-4 py-10", embedded ? "pb-16" : "pb-24")}>
       <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 280, damping: 26 }}
-        className="relative z-10 mx-auto w-full max-w-2xl px-4 py-10 pb-24 sm:py-12 sm:pb-28"
+        className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}
       >
-        <div className="mb-8 flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
+        <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
           <div className="relative">
             <ProgressCircle
               aria-label={`${correct} of ${total} correct`}
@@ -66,62 +64,46 @@ function GenericQuestResultsReveal({
               color={accuracy >= 80 ? "success" : accuracy >= 50 ? "warning" : "danger"}
             >
               <ProgressCircle.Track className="!h-24 !w-24 sm:!h-28 sm:!w-28">
-                <ProgressCircle.TrackCircle className="stroke-white/10" />
+                <ProgressCircle.TrackCircle className="stroke-[#E0E7FF]" />
                 <ProgressCircle.FillCircle />
               </ProgressCircle.Track>
             </ProgressCircle>
             <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-mono text-2xl font-black tabular-nums">{accuracy}%</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span className="font-mono text-2xl font-black tabular-nums text-[#0B1220]">{accuracy}%</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#475569]">
                 {correct}/{total}
               </span>
             </span>
           </div>
           <div>
-            <h2 className="text-3xl font-black italic tracking-tighter text-white sm:text-4xl">
-              QUEST COMPLETE
-            </h2>
-            <p className="mt-2 text-sm text-slate-400">
+            <h2 className="text-2xl font-bold text-[#0B1220] sm:text-3xl">Quest complete</h2>
+            <p className="mt-2 text-sm text-[#475569]">
               Best streak {streakRecord} · Would earn {wouldXp} XP with an account
             </p>
           </div>
         </div>
 
-        <div className="w-full rounded-[2.5rem] border border-white/10 bg-[#0c1829]/95 p-6 sm:p-8">
-          {skillSummary && skillSummary.lines.length > 0 ? (
-            <GuestTrySkillSummaryCard
-              summary={skillSummary}
-              className="mb-8 !backdrop-blur-none bg-white/[0.04]"
-            />
-          ) : null}
+        {skillSummary && skillSummary.lines.length > 0 ? (
+          <GuestTrySkillSummaryCard summary={skillSummary} className="!bg-white/80" />
+        ) : null}
 
-          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <MentrixaBrandMark kind="mentrixer" size="sm" className="shrink-0 opacity-85" />
-            <p className="text-sm leading-relaxed text-slate-300">
-              This run does not count toward verified rank until you sign up and hit first attempts on each skill node.
-            </p>
-          </div>
+        <p className="text-sm leading-relaxed text-[#475569]">
+          This run does not count toward verified rank until you sign up and lock first attempts on each skill node.
+        </p>
 
-          <div className="flex flex-col items-center gap-3">
-            <Button
-              asChild
-              className="h-14 w-full rounded-2xl bg-white text-base font-semibold text-slate-900 hover:bg-slate-100"
-            >
-              <Link href="/auth/signup">{signupHint}</Link>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button asChild className="h-12 flex-1" variant="workbenchPrimary">
+            <Link href="/auth/signup">{signupHint}</Link>
+          </Button>
+          {showRunAnother && onRunAnother ? (
+            <Button type="button" variant="outline" className="h-12 flex-1 border-[#A5B4FC] text-[#4F46E5]" onClick={onRunAnother}>
+              {runAnotherLabel}
             </Button>
-            {showRunAnother && onRunAnother ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 w-full rounded-2xl border-2 border-cyan-400/80 bg-cyan-500/20 font-semibold text-cyan-50"
-                onClick={onRunAnother}
-              >
-                {runAnotherLabel}
-              </Button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </motion.div>
+
+      {passportPreview ? <GuestTryPassportPreview data={passportPreview} className="mt-10" /> : null}
     </div>
   );
 }
@@ -135,8 +117,9 @@ export function GuestTryResultsPanel({
   wouldXp,
   skillSummary = null,
   apCalcVerdict = null,
+  passportPreview = null,
   onRunAnother,
-  runAnotherLabel = "Run another diagnostic",
+  runAnotherLabel = "Run another pack",
   showRunAnother = true,
   signupHint = "Create your free account to save rank, XP, and skill progress",
 }: GuestTryResultsPanelProps) {
@@ -148,6 +131,7 @@ export function GuestTryResultsPanel({
         total={total}
         wouldXp={wouldXp}
         embedded={embedded}
+        passportPreview={passportPreview}
         onRunAnother={onRunAnother}
         runAnotherLabel={runAnotherLabel}
         showRunAnother={showRunAnother}
@@ -163,6 +147,7 @@ export function GuestTryResultsPanel({
       streakRecord={streakRecord}
       wouldXp={wouldXp}
       skillSummary={skillSummary}
+      passportPreview={passportPreview}
       onRunAnother={onRunAnother}
       runAnotherLabel={runAnotherLabel}
       showRunAnother={showRunAnother}

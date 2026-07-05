@@ -10,7 +10,8 @@ import {
   formatTrapInsightHeadline,
 } from "@/features/quest/ap-calc-skill-visual-pure";
 import { ApCalcSkillGlyph } from "@/features/quest/ui/ap-calc-skill-glyph";
-import { GuestTryPassportTeaser } from "@/features/quest/ui/guest-try-passport-teaser";
+import { GuestTryPassportPreview } from "@/features/quest/ui/guest-try-passport-preview";
+import type { RankCardData } from "@/features/rank-card/types";
 import { Button } from "@/shared/ui/button";
 import { ProgressCircle } from "@/shared/ui/progress-circle";
 import { ExamStakesDisclosure } from "@/shared/ui/disclosure-patterns";
@@ -210,8 +211,9 @@ export function GuestTryApCalcResultsReveal({
   verdict,
   correct,
   total,
-  wouldXp = 0,
+  wouldXp: _wouldXp = 0,
   embedded = false,
+  passportPreview = null,
   onRunAnother,
   runAnotherLabel = "Run another diagnostic",
   showRunAnother = true,
@@ -221,6 +223,7 @@ export function GuestTryApCalcResultsReveal({
   total: number;
   wouldXp?: number;
   embedded?: boolean;
+  passportPreview?: RankCardData | null;
   onRunAnother?: () => void;
   runAnotherLabel?: string;
   showRunAnother?: boolean;
@@ -301,7 +304,9 @@ export function GuestTryApCalcResultsReveal({
             </motion.div>
           ) : null}
 
-          <GuestTryPassportTeaser correct={correct} total={total} wouldXp={wouldXp} />
+          {passportPreview ? (
+            <GuestTryPassportPreview data={passportPreview} />
+          ) : null}
 
           <motion.div variants={rise} className="flex flex-col gap-3 pt-1">
             <Button

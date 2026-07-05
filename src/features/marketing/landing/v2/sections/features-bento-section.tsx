@@ -208,6 +208,11 @@ export function FeaturesBentoSection() {
           <div className="mt-8">
             <RoleFeatureGrid rows={GUIDE_ROWS} indexOffset={5} />
           </div>
+          <p className="mt-6 text-center">
+            <a href="#guide" className={landingHub.linkBack}>
+              Full Guide breakdown
+            </a>
+          </p>
         </div>
       </div>
     </LandingSectionShell>

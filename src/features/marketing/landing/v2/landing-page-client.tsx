@@ -9,6 +9,7 @@ import {
   DeferredDualPathSection,
   DeferredFeaturesBentoSection,
   DeferredFlowStepsSection,
+  DeferredGuideSection,
   DeferredLandingFooterBlock,
   DeferredLandingFaqSection,
   DeferredOutcomesSection,
@@ -68,6 +69,7 @@ export function LandingPageClient() {
       markLandingSection("features", "features"),
       markLandingSection("ranks", "rank-ladder"),
       markLandingSection("flow", "flow"),
+      markLandingSection("guide", "guide"),
       markLandingSection("path", "dual-path"),
       markLandingSection("pricing", "pricing"),
     ];
@@ -108,6 +110,8 @@ export function LandingPageClient() {
         title={LANDING_STORY_BRIDGES[2].title}
         subtitle={LANDING_STORY_BRIDGES[2].subtitle}
       />
+
+      <DeferredGuideSection />
 
       <DeferredFlowStepsSection />
 
