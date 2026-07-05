@@ -14,18 +14,10 @@ import {
   NavbarLogo,
 } from "@/shared/ui/resizable-navbar";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_NAV } from "@/features/marketing/landing/landing-copy-pure";
 import { cn } from "@/shared/core/utils";
 
 const ICON_VERSION = "20260410";
-
-const LANDING_NAV_ITEMS = [
-  { name: "How it works", link: "#flow" },
-  { name: "Your rank", link: "#ranks" },
-  { name: "Pricing", link: "#pricing" },
-  { name: "For Guides", link: "#path" },
-  { name: "Contact", link: "#contact" },
-  { name: "Sign in", link: "/auth/signin?signin=1" },
-];
 
 const RoleIcon = memo(function RoleIcon({
   role,
@@ -59,7 +51,7 @@ export function MarketingLandingNav() {
         <NavBody className={cn(landingHub.navShell, "lp-nav-shell !text-[#334155]")}>
           <NavbarLogo />
           <NavItems
-            items={LANDING_NAV_ITEMS}
+            items={[...LANDING_NAV.items]}
             className="!text-[#475569]"
             labelClassName="text-[#475569]"
           />
@@ -71,11 +63,11 @@ export function MarketingLandingNav() {
               prefetch={false}
             >
               <RoleIcon role="guide" />
-              Earn as a Guide
+              {LANDING_NAV.guideCta}
             </NavbarButton>
             <NavbarButton href="/auth/signup" variant="primary" className="hidden sm:inline-flex" prefetch={false}>
               <RoleIcon role="mentrixer" className="brightness-0 invert" />
-              Start free
+              {LANDING_NAV.mentrixerCta}
             </NavbarButton>
           </div>
         </NavBody>
@@ -92,7 +84,7 @@ export function MarketingLandingNav() {
               onClose={() => setMobileNavOpen(false)}
               className={cn(landingHub.navShell, "lp-nav-mobile-shell !text-[#334155]")}
             >
-              {LANDING_NAV_ITEMS.map((item) => (
+              {LANDING_NAV.items.map((item) => (
                 <a
                   key={item.link}
                   href={item.link}
@@ -106,11 +98,11 @@ export function MarketingLandingNav() {
               <div className="mt-2 flex flex-col gap-2">
                 <NavbarButton href="/auth/signup?role=tutor" variant="secondary" className="w-full" prefetch={false}>
                   <RoleIcon role="guide" />
-                  Earn as a Guide
+                  {LANDING_NAV.guideCta}
                 </NavbarButton>
                 <NavbarButton href="/auth/signup" variant="primary" className="w-full" prefetch={false}>
                   <RoleIcon role="mentrixer" className="brightness-0 invert" />
-                  Start free
+                  {LANDING_NAV.mentrixerCta}
                 </NavbarButton>
               </div>
             </MobileNavMenu>

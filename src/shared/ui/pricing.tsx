@@ -4,10 +4,8 @@ import { useRef } from "react";
 import { TimelineContent } from "@/shared/ui/timeline-animation";
 import { VerticalCutReveal } from "@/shared/ui/vertical-cut-reveal";
 import {
-  PRICING_SECTION_HEADLINE,
-  PRICING_SECTION_SUBHEAD,
-  PRICING_SECTION_VERDICT,
-} from "@/features/pricing/pricing-tiers-pure";
+  LANDING_PRICING,
+} from "@/features/marketing/landing/landing-copy-pure";
 import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
 import { PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
@@ -39,7 +37,7 @@ export default function PricingSection() {
           customVariants={revealVariants}
           className={landingHub.eyebrow}
         >
-          Pricing
+          {LANDING_PRICING.eyebrow}
         </TimelineContent>
 
         <h2 className={landingHub.title}>
@@ -51,7 +49,7 @@ export default function PricingSection() {
             containerClassName="justify-center"
             transition={{ type: "spring", stiffness: 250, damping: 40 }}
           >
-            {PRICING_SECTION_HEADLINE}
+            {LANDING_PRICING.headline}
           </VerticalCutReveal>
         </h2>
 
@@ -62,7 +60,7 @@ export default function PricingSection() {
           customVariants={revealVariants}
           className={landingHub.body}
         >
-          {PRICING_SECTION_SUBHEAD}
+          {LANDING_PRICING.subhead}
         </TimelineContent>
 
         <TimelineContent
@@ -72,7 +70,7 @@ export default function PricingSection() {
           customVariants={revealVariants}
           className={`text-sm font-semibold ${landingHub.inkMuted}`}
         >
-          {PRICING_SECTION_VERDICT}
+          {LANDING_PRICING.verdict}
         </TimelineContent>
       </LandingStickyCard>
 

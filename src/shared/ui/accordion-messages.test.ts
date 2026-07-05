@@ -15,10 +15,10 @@ describe("accordion messages", () => {
     expect(first.nextAction).toBeTruthy();
   });
 
-  it("frames landing FAQ heading around verified rank", () => {
+  it("frames landing FAQ heading for objection handling", () => {
     const heading = landingFaqSectionHeading();
-    expect(heading.title).toMatch(/question/i);
-    expect(heading.subtitle).toMatch(/verified/i);
+    expect(heading.title).toMatch(/deciding/i);
+    expect(heading.subtitle).toMatch(/mentors/i);
   });
 
   it("summarizes skill tree unit verification counts", () => {

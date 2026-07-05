@@ -11,7 +11,7 @@ import { LandingShimmerButton } from "@/features/marketing/landing/v2/motion/lan
 import { fadeUp, staggerContainer } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
-import { MentrixaGoalStickyNote } from "@/features/marketing/ui/mentrixa-goal-sticky-note";
+import { LANDING_FOOTER } from "@/features/marketing/landing/landing-copy-pure";
 
 const ICON_VERSION = "20260410";
 
@@ -55,7 +55,10 @@ export function LandingFooterBlock() {
           className="relative z-10 mx-auto max-w-2xl"
         >
           <motion.div variants={fadeUp} custom={0}>
-            <MentrixaGoalStickyNote variant="landing" density="full" className="text-center" rotate={false} />
+            <LandingStickyCard rotate={false} className="text-center rotate-[0.2deg] px-5 py-7">
+              <p className={landingHub.eyebrow}>{LANDING_FOOTER.ctaEyebrow}</p>
+              <p className={`mt-3 text-xl font-bold ${landingHub.title}`}>{LANDING_FOOTER.ctaTitle}</p>
+            </LandingStickyCard>
           </motion.div>
           <motion.div
             variants={fadeUp}
@@ -64,12 +67,12 @@ export function LandingFooterBlock() {
           >
             <LandingShimmerButton href="/auth/signup" variant="primary" className="sm:min-w-[220px]">
               <RoleIcon role="mentrixer" />
-              Prove what you know. Start free
+              {LANDING_FOOTER.mentrixerCta}
               <ArrowRight />
             </LandingShimmerButton>
             <LandingShimmerButton href="/auth/signup?role=tutor" variant="secondary" className="sm:min-w-[200px]">
               <RoleIcon role="guide" />
-              Earn from what you know →
+              {LANDING_FOOTER.guideCta}
             </LandingShimmerButton>
           </motion.div>
         </motion.div>
@@ -84,20 +87,20 @@ export function LandingFooterBlock() {
         >
           <LandingStickyCard rotate className="rotate-[-0.35deg] px-5 py-8 text-center sm:px-7">
             <motion.p variants={fadeUp} custom={0} className={`mb-3 ${landingHub.eyebrow}`}>
-              Contact and feedback
+              {LANDING_FOOTER.contactEyebrow}
             </motion.p>
             <motion.h2 variants={fadeUp} custom={1} className={landingHub.title}>
-              Bug? Broken rank? Tell us.
+              {LANDING_FOOTER.contactTitle}
             </motion.h2>
             <motion.p variants={fadeUp} custom={2} className={`mx-auto mt-4 max-w-xl ${landingHub.body}`}>
-              We read everything. We reply to everything.
+              {LANDING_FOOTER.contactBody}
             </motion.p>
             <motion.div variants={fadeUp} custom={3} className="mt-8 flex justify-center">
               <ContactSocialLinks variant="default" />
             </motion.div>
             <motion.div variants={fadeUp} custom={4} className="mt-10">
               <LandingShimmerButton href="/contact" variant="primary">
-                Send it directly →
+                {LANDING_FOOTER.contactButton}
                 <ArrowRight />
               </LandingShimmerButton>
             </motion.div>
@@ -114,7 +117,7 @@ export function LandingFooterBlock() {
                 <span className={`text-[15px] font-bold tracking-tight ${landingHub.title}`}>Mentrixa</span>
               </Link>
               <p className={`mt-2 max-w-xs text-[12px] leading-snug ${landingHub.bodySm}`}>
-                Built for AP Calculus AB students who want to know before it counts.
+                {LANDING_FOOTER.tagline}
               </p>
             </div>
 

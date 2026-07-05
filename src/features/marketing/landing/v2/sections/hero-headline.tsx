@@ -3,19 +3,20 @@
 import { useEffect, useState } from "react";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { HeroHeadlineAnimated } from "@/features/marketing/landing/v2/sections/hero-headline-animated";
+import { LANDING_HERO } from "@/features/marketing/landing/landing-copy-pure";
 
 type Props = {
   className?: string;
 };
 
-const FULL_LABEL = "You never find out if you are good at what you are building.";
-
 function HeroHeadlineStatic({ className }: Props) {
   return (
-    <h1 className={className} aria-label={FULL_LABEL}>
-      <span className="block">You never find out</span>
-      <span className="block">if you are good</span>
-      <span className="block">at what you are building.</span>
+    <h1 className={className} aria-label={LANDING_HERO.ariaLabel}>
+      <span className="block">{LANDING_HERO.line1}</span>
+      <span className="block">
+        {LANDING_HERO.line2Prefix}
+        {LANDING_HERO.line2Highlight}.
+      </span>
     </h1>
   );
 }

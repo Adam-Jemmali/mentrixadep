@@ -8,7 +8,7 @@ import { HeroHeadline } from "@/features/marketing/landing/v2/sections/hero-head
 import { LandingShimmerButton } from "@/features/marketing/landing/v2/motion/landing-shimmer-button";
 import { fadeUp, staggerContainer } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { HeroScrollCue } from "@/features/marketing/landing/v2/hero/hero-scroll-cue";
-import { MentrixaGoalStickyNote } from "@/features/marketing/ui/mentrixa-goal-sticky-note";
+import { LANDING_HERO } from "@/features/marketing/landing/landing-copy-pure";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -54,20 +54,16 @@ export function HeroClimbSection() {
               className="mt-9 flex justify-center lg:justify-start"
             >
               <LandingShimmerButton href="/try" variant="primary" className="lp-cta-pulse">
-                Find out what you do not know
+                {LANDING_HERO.cta}
               </LandingShimmerButton>
-            </motion.div>
-
-            <motion.div variants={fadeUp} custom={3} className="mx-auto mt-6 max-w-xl lg:mx-0">
-              <MentrixaGoalStickyNote variant="landing" density="compact" className="text-left" rotate={false} />
             </motion.div>
 
             <motion.p
               variants={fadeUp}
-              custom={4}
-              className={`mt-4 text-center lg:text-left ${landingHub.bodySm}`}
+              custom={3}
+              className={`mt-6 text-center lg:text-left ${landingHub.bodySm}`}
             >
-              Free forever. No card until you book a Guide. Accuracy improves or the session is free.
+              {LANDING_HERO.footnote}
             </motion.p>
           </motion.div>
 

@@ -20,16 +20,9 @@ import {
   LandingStickyCard,
 } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_RANK_LADDER } from "@/features/marketing/landing/landing-copy-pure";
 
-const RANK_MOTIVATION: Record<AccountRankKey, string> = {
-  wanderer: "You showed up. Rank starts now.",
-  seeker: "You came back. Most do not.",
-  scholar: "You are in the game.",
-  contender: "Your name is on the board.",
-  rival: "The top sees you coming.",
-  apex: "One rank from MENTRIXER.",
-  mentrixer: "Proven in public. Earned.",
-};
+const RANK_MOTIVATION: Record<AccountRankKey, string> = LANDING_RANK_LADDER.motivation;
 
 export function RankLadderShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -71,7 +64,7 @@ export function RankLadderShowcase() {
     };
   }, []);
 
-  const [coachMessage, setCoachMessage] = useState("Tap a rank or scroll. Are you as good as you think?");
+  const [coachMessage, setCoachMessage] = useState(LANDING_RANK_LADDER.initialCoach);
   const active = ACCOUNT_RANK_VISUALS[activeIndex]!;
 
   useEffect(() => {
@@ -92,15 +85,15 @@ export function RankLadderShowcase() {
           variants={staggerContainer}
         >
           <LandingSectionHeader
-            eyebrow="Prove what you know"
-            title="Seven ranks. One question. Are you as good as you think?"
+            eyebrow={LANDING_RANK_LADDER.eyebrow}
+            title={LANDING_RANK_LADDER.title}
           />
         </motion.div>
 
         <LandingSpeechBubble
           message={coachMessage}
           tone="coach"
-          label="Where everyone starts"
+          label={LANDING_RANK_LADDER.bubbleLabel}
           className="mx-auto mt-8"
         />
 

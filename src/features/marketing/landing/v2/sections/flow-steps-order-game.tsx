@@ -9,6 +9,7 @@ import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motio
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_FLOW_GAME } from "@/features/marketing/landing/landing-copy-pure";
 
 const STEPS: { id: StepId; number: string; vocabIcon: VocabIconName; title: string }[] = [
   { id: "book", number: "01", vocabIcon: "flow-book", title: "Book" },
@@ -47,7 +48,7 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
   const [completed, setCompleted] = useState(false);
 
   const [coach, setCoach] = useState<{ message: string; tone: CoachTone }>({
-    message: "Get the sequence right. Every person who moves their rank runs these four in this exact order. Drag them into place.",
+    message: LANDING_FLOW_GAME.start,
     tone: "coach",
   });
 
@@ -68,9 +69,9 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
     const correct = next.every((id, i) => id === CORRECT_ORDER[i]);
     if (correct) {
       setCompleted(true);
-      setCoach({ message: "Loop locked. Book. Meet. Unpack. Climb. Every subject.", tone: "success" });
+      setCoach({ message: LANDING_FLOW_GAME.success, tone: "success" });
     } else {
-      setCoach({ message: "Close. Keep sorting until Book leads the line.", tone: "error" });
+      setCoach({ message: LANDING_FLOW_GAME.retry, tone: "error" });
     }
   }, []);
 
@@ -112,14 +113,14 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
     setOrder(shuffleIds(CORRECT_ORDER));
     setCompleted(false);
     setCoach({
-      message: "Get the sequence right. Every person who moves their rank runs these four in this exact order. Drag them into place.",
+      message: LANDING_FLOW_GAME.start,
       tone: "coach",
     });
   }, []);
 
   return (
     <div className={cn(landingHub.notebookCard, "relative mt-10 rotate-0 p-4 sm:p-6")}>
-      <LandingSpeechBubble message={coach.message} tone={coach.tone} label="Get the order right" className="mx-auto mb-5" />
+      <LandingSpeechBubble message={coach.message} tone={coach.tone} label={LANDING_FLOW_GAME.label} className="mx-auto mb-5" />
 
       <Reorder.Group
         axis="y"

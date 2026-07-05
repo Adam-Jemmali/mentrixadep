@@ -16,13 +16,7 @@ import {
   LandingStickyCard,
 } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
-
-const OUTCOME_LINES = [
-  "Ten minutes after every call, Quest builds your summary, flashcards, and drills from that session.",
-  "Quest drills the concept your accuracy keeps dropping on. Not random practice.",
-  "One account. AP Calculus AB skill tree, leaderboard, and Guide pool.",
-  "Guides set rates. Stripe pays when the call ends. No invoices.",
-];
+import { LANDING_OUTCOMES } from "@/features/marketing/landing/landing-copy-pure";
 
 export function OutcomesSection() {
   const { cinematic } = useLandingMotion();
@@ -35,7 +29,7 @@ export function OutcomesSection() {
         viewport={viewportOnce}
         variants={staggerContainer}
       >
-        <LandingSectionHeader eyebrow="What you get" title="Verified proof, not practice theater." />
+        <LandingSectionHeader eyebrow={LANDING_OUTCOMES.eyebrow} title={LANDING_OUTCOMES.title} />
       </motion.div>
 
       <motion.div
@@ -45,9 +39,9 @@ export function OutcomesSection() {
         variants={staggerContainer}
         className="mx-auto mt-10 grid gap-4 sm:grid-cols-2 lg:gap-5"
       >
-        {OUTCOME_LINES.map((line, i) => (
+        {LANDING_OUTCOMES.items.map((item, i) => (
           <motion.div
-            key={line}
+            key={item.word}
             variants={i % 2 === 0 ? slideFromLeft : slideFromRight}
             custom={Math.floor(i / 2)}
             whileHover={cinematic ? cardHoverLift : undefined}
@@ -61,7 +55,8 @@ export function OutcomesSection() {
                 transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 style={{ originX: 0 }}
               />
-              <p className={landingHub.body}>{line}</p>
+              <p className={landingHub.eyebrow}>{item.word}</p>
+              <p className={`mt-2 ${landingHub.body}`}>{item.sentence}</p>
             </LandingStickyCard>
           </motion.div>
         ))}

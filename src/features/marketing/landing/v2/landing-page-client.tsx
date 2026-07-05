@@ -19,6 +19,7 @@ import {
 } from "@/features/marketing/landing/v2/landing-page-deferred";
 import { markLandingSection } from "@/features/marketing/landing-perf";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_STORY_BRIDGES } from "@/features/marketing/landing/landing-copy-pure";
 import { useTrack } from "@/shared/integrations/use-track";
 
 export function LandingPageClient() {
@@ -83,17 +84,17 @@ export function LandingPageClient() {
       <DeferredSocialProofStrip />
 
       <LandingStoryBridge
-        chapter="Who"
-        title="AP Calculus AB students who need proof, not practice."
-        subtitle="If you cannot show rank against real Mentrixers, you do not know if you are ready. Mentrixa records your first attempt on each skill permanently."
+        chapter={LANDING_STORY_BRIDGES[0].chapter}
+        title={LANDING_STORY_BRIDGES[0].title}
+        subtitle={LANDING_STORY_BRIDGES[0].subtitle}
       />
 
       <DeferredOutcomesSection />
 
       <LandingStoryBridge
-        chapter="Why now"
-        title="Every day without a verified attempt is a wrong rank."
-        subtitle="The exam does not wait. Retakes feel good but never move rank. One quest run starts the record that stays public."
+        chapter={LANDING_STORY_BRIDGES[1].chapter}
+        title={LANDING_STORY_BRIDGES[1].title}
+        subtitle={LANDING_STORY_BRIDGES[1].subtitle}
       />
 
       <DeferredFeaturesBentoSection />
@@ -103,9 +104,9 @@ export function LandingPageClient() {
       <DeferredWhyMentrixSection />
 
       <LandingStoryBridge
-        chapter="The loop"
-        title="Four moves. Same verified loop."
-        subtitle="Compete on first attempts. Book a Guide when stuck. Meet live. Climb tomorrow with proof that moved."
+        chapter={LANDING_STORY_BRIDGES[2].chapter}
+        title={LANDING_STORY_BRIDGES[2].title}
+        subtitle={LANDING_STORY_BRIDGES[2].subtitle}
       />
 
       <DeferredFlowStepsSection />

@@ -4,15 +4,14 @@ import { GUIDE_RANKS } from "@/features/guide-rank/constants";
 import { GuideRankBadgeIcon } from "@/features/guide-rank/components/guide-rank-icons";
 import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_GUIDE_LADDER } from "@/features/marketing/landing/landing-copy-pure";
 
 /** Practitioner → Elite strip for the landing For Guides path. */
 export function GuideRankLadderPreview({ className }: { className?: string }) {
   return (
     <div className={cn(landingHub.stickyCard, "mt-10 rotate-[0.3deg] px-4 py-5 sm:px-6", className)}>
-      <p className={`text-center ${landingHub.eyebrow}`}>Guide Impact ladder</p>
-      <p className={cn("mt-1 text-center text-xs", landingHub.bodySm)}>
-        Impact Score moves you from Practitioner to Elite. Not stars. Verified movement.
-      </p>
+      <p className={`text-center ${landingHub.eyebrow}`}>{LANDING_GUIDE_LADDER.eyebrow}</p>
+      <p className={cn("mt-1 text-center text-xs", landingHub.bodySm)}>{LANDING_GUIDE_LADDER.sentence}</p>
       <ol className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         {GUIDE_RANKS.map((rank, index) => (
           <li key={rank.key} className="flex items-center gap-2 sm:gap-3">

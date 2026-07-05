@@ -24,9 +24,9 @@ export const MENTRIXA_GOAL_COMPACT: Pick<MentrixaGoalBlock, "who" | "whyNow" | "
 };
 
 export const MENTRIXA_GOAL_LANDING: MentrixaGoalBlock = {
-  who: "High school students grinding AP Calculus AB who need to know if they are actually ready.",
-  why: "You never find out if you are good at what you are building until someone real compares you on the same questions.",
-  whyNow: "The exam does not wait. Your rank updates every first attempt. Start before the gap becomes a habit.",
-  verdict: "Public rank from verified first attempts. No AI questions. No retakes that move rank.",
-  nextAction: "Try one quest free. See where you stand.",
+  who: "Calculus AB students who need a public badge.",
+  why: "First tries are permanent proof against real Mentrixers.",
+  whyNow: "One quest locks today's record before the exam.",
+  verdict: "Badge moves on first tries only.",
+  nextAction: "Run one quest free.",
 };

@@ -22,11 +22,7 @@ const WireframeDottedGlobe = dynamic(
   },
 );
 
-const MOTTO =
-  "Every action moves rank. No participation points. Only competition counts.";
-
-const VISION =
-  "You put in the hours. You still do not know if it stuck. Mentrixa tells you the truth against real people before it costs you.";
+import { LANDING_SOCIAL } from "@/features/marketing/landing/landing-copy-pure";
 
 export function SocialProofStrip() {
   const reduceMotion = usePrefersReducedMotion();
@@ -88,10 +84,10 @@ export function SocialProofStrip() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         >
           <LandingStickyCard rotate={false} className="pointer-events-auto max-w-xl rotate-[0.25deg] px-5 py-6 text-center sm:px-7">
-            <p className={`text-balance text-lg font-bold leading-snug sm:text-xl md:text-[1.35rem] ${landingHub.title}`}>
-              {MOTTO}
+            <p className={landingHub.eyebrow}>{LANDING_SOCIAL.word}</p>
+            <p className={`mx-auto mt-3 max-w-lg text-balance text-lg font-bold leading-snug sm:text-xl ${landingHub.title}`}>
+              {LANDING_SOCIAL.sentence}
             </p>
-            <p className={`mx-auto mt-3 max-w-lg text-pretty sm:text-[15px] ${landingHub.body}`}>{VISION}</p>
           </LandingStickyCard>
         </motion.div>
       </div>

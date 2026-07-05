@@ -22,13 +22,13 @@ import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_HERO_GAME } from "@/features/marketing/landing/landing-copy-pure";
 
 const ICON_VERSION = "20260410";
 /** Orbit ring radius — sized so enlarged slot badges clear the center hub. */
 const RADIUS = 172;
 const GAME_SECONDS = 40;
-const COACH_START =
-  "The ring spins. You have 40 seconds. Tap a rank, then tap its slot on the wheel. Lowest at the top.";
+const COACH_START = LANDING_HERO_GAME.coachStart;
 const ORBIT_SPIN_SECONDS = 18;
 
 const STABLE_TRAY_ORDER: AccountRankKey[] = [
@@ -107,7 +107,7 @@ export function HeroRankOrbitGame() {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           setTimedOut(true);
-          setCoach({ message: "Time's up. Your rank does not lie. Play again.", tone: "error" });
+          setCoach({ message: LANDING_HERO_GAME.timeUp, tone: "error" });
           return 0;
         }
         return prev - 1;
@@ -123,9 +123,7 @@ export function HeroRankOrbitGame() {
       const elapsed = GAME_SECONDS - secondsLeft;
       setCoach({
         message:
-          elapsed > 0
-            ? `Ladder locked in ${elapsed} second${elapsed === 1 ? "" : "s"}. Nice climb.`
-            : "Ladder locked. Nice climb.",
+          elapsed > 0 ? LANDING_HERO_GAME.lockedIn(elapsed) : LANDING_HERO_GAME.locked,
         tone: "success",
       });
     }
@@ -139,7 +137,7 @@ export function HeroRankOrbitGame() {
       if (slotIndex !== expected) {
         setShakeSlot(slotIndex);
         setCoach({
-          message: `${normalizeRankTitle(rankByKey(key).title)} belongs elsewhere. Follow the ladder.`,
+          message: `${normalizeRankTitle(rankByKey(key).title)}. ${LANDING_HERO_GAME.wrongSlot}`,
           tone: "error",
         });
         window.setTimeout(() => setShakeSlot(null), 520);
@@ -161,7 +159,7 @@ export function HeroRankOrbitGame() {
     (slotIndex: number) => {
       if (gameLocked) return;
       if (!selectedKey) {
-        setCoach({ message: "Pick a rank chip below first, then tap its slot.", tone: "neutral" });
+        setCoach({ message: LANDING_HERO_GAME.pickFirst, tone: "neutral" });
         return;
       }
       if (placed[slotIndex]) return;
@@ -179,7 +177,7 @@ export function HeroRankOrbitGame() {
         setCoach({
           message: next
             ? `Selected ${normalizeRankTitle(rankByKey(key).title)}. Tap the matching slot.`
-            : "Pick a rank chip, then tap its slot on the wheel.",
+            : LANDING_HERO_GAME.pickFirst,
           tone: "coach",
         });
         return next;
@@ -457,9 +455,9 @@ export function HeroRankOrbitGame() {
       <p className={`mt-2 text-center ${landingHub.hint}`}>
         {gameLocked
           ? completed
-            ? "Mini game only. Real XP lives inside Mentrixa."
+            ? LANDING_HERO_GAME.doneHint
             : ""
-          : "The ring is spinning. Tap a rank, then tap its slot before time runs out."}
+          : LANDING_HERO_GAME.spinningHint}
       </p>
     </div>
   );

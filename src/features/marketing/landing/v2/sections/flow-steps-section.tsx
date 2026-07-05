@@ -17,6 +17,7 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_FLOW_STEPS } from "@/features/marketing/landing/landing-copy-pure";
 
 const FLOW_STEPS: {
   number: string;
@@ -24,30 +25,10 @@ const FLOW_STEPS: {
   title: string;
   line: string;
 }[] = [
-  {
-    number: "01",
-    vocabIcon: "flow-book",
-    title: "Book",
-    line: "Snapshot shows the weak spot. Quest picks the right Guide. Three clicks.",
-  },
-  {
-    number: "02",
-    vocabIcon: "flow-meet",
-    title: "Meet",
-    line: "Show up live. Your Guide already knows where you broke. Start there.",
-  },
-  {
-    number: "03",
-    vocabIcon: "flow-unpack",
-    title: "Unpack",
-    line: "Ten minutes later your Quest pack lands. Summary, flashcards, drills on what you fixed.",
-  },
-  {
-    number: "04",
-    vocabIcon: "flow-climb",
-    title: "Climb",
-    line: "XP updates. Rank moves. Big jump? You get a Breakthrough Card to share.",
-  },
+  { number: "01", vocabIcon: "flow-book", title: LANDING_FLOW_STEPS[0].title, line: LANDING_FLOW_STEPS[0].line },
+  { number: "02", vocabIcon: "flow-meet", title: LANDING_FLOW_STEPS[1].title, line: LANDING_FLOW_STEPS[1].line },
+  { number: "03", vocabIcon: "flow-unpack", title: LANDING_FLOW_STEPS[2].title, line: LANDING_FLOW_STEPS[2].line },
+  { number: "04", vocabIcon: "flow-climb", title: LANDING_FLOW_STEPS[3].title, line: LANDING_FLOW_STEPS[3].line },
 ];
 
 export function FlowStepsSection() {

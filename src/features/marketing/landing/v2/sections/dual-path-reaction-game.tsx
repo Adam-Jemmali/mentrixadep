@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_DUAL_PATH } from "@/features/marketing/landing/landing-copy-pure";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { FallingRoleSliceArena, type SliceRole } from "@/features/marketing/landing/v2/motion/falling-role-slice-arena";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
@@ -95,8 +96,7 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
   );
 }
 
-const GAME_COACH =
-  "Slice Mentrixer or Guide icons as they fall. Your top side wins.";
+const GAME_COACH = LANDING_DUAL_PATH.gameCoach;
 
 export function DualPathReactionGame({ sides }: Props) {
   const { mounted } = useLandingMotion();
@@ -108,13 +108,13 @@ export function DualPathReactionGame({ sides }: Props) {
     tone: "coach",
   });
 
-  const handleComplete = useCallback((nextWinner: SliceRole, scores: { Mentrixer: number; Guide: number }) => {
+  const handleComplete = useCallback((nextWinner: SliceRole, _scores: { Mentrixer: number; Guide: number }) => {
     setWinner(nextWinner);
     setCoach({
       message:
         nextWinner === "Mentrixer"
-          ? `You sliced ${scores.Mentrixer} Mentrixer icons. The arena picked your path.`
-          : `You sliced ${scores.Guide} Guide icons. Time to teach what you know.`,
+          ? LANDING_DUAL_PATH.mentrixerWin
+          : LANDING_DUAL_PATH.guideWin,
       tone: "success",
     });
     setPhase("result");
@@ -159,9 +159,7 @@ export function DualPathReactionGame({ sides }: Props) {
             />
           )}
 
-          <p className={`mt-3 text-center ${landingHub.hint}`}>
-            Tap the badges as they fall.
-          </p>
+          <p className={`mt-3 text-center ${landingHub.hint}`}>{LANDING_DUAL_PATH.fallHint}</p>
         </>
       ) : null}
 
@@ -174,11 +172,9 @@ export function DualPathReactionGame({ sides }: Props) {
         >
           <div className="mb-6 text-center">
             <h2 id="path-heading" className={landingHub.title}>
-              Two sides. One platform.
+              {LANDING_DUAL_PATH.pathHeading}
             </h2>
-            <p className={`mt-2 ${landingHub.body}`}>
-              The learner who climbs today becomes the Guide who earns tomorrow. Same arena.
-            </p>
+            <p className={`mt-2 ${landingHub.body}`}>{LANDING_DUAL_PATH.pathSub}</p>
           </div>
 
           <LandingSpeechBubble message={coach.message} tone={coach.tone} label="" className="mx-auto mb-5 max-w-lg" />
@@ -190,13 +186,11 @@ export function DualPathReactionGame({ sides }: Props) {
               onClick={resetGame}
               className={cn("cursor-pointer rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-wide", landingHub.btnSecondary)}
             >
-              Play again
+              {LANDING_DUAL_PATH.playAgain}
             </button>
           </div>
 
-          <p className={`mt-3 text-center ${landingHub.hint}`}>
-            Mini game only. Your real path starts when you sign up.
-          </p>
+          <p className={`mt-3 text-center ${landingHub.hint}`}>{LANDING_DUAL_PATH.signupHint}</p>
         </motion.div>
       ) : null}
     </div>

@@ -16,18 +16,7 @@ import {
   LandingStickyCard,
 } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
-
-const WITHOUT_SYSTEM = [
-  "You put in hours. Nothing moves. You do not know what broke.",
-  "The exam tells you what you missed. Too late to fix it.",
-  "Tools answer questions but leave the gap where it was.",
-];
-
-const WHY_NOW = [
-  "Rank updates on verified first attempts. You always know where you stand.",
-  "Guides see your accuracy and weakest concepts before you join. Session starts at the problem.",
-  "Honest rank on your public Rank Card. Moves when you work. Stops when you stop.",
-];
+import { LANDING_WHY } from "@/features/marketing/landing/landing-copy-pure";
 
 export function WhyMentrixSection() {
   const { cinematic } = useLandingMotion();
@@ -35,7 +24,7 @@ export function WhyMentrixSection() {
   return (
     <LandingSectionShell id="why">
       <motion.div initial="hidden" whileInView="visible" viewport={viewportOnce} variants={staggerContainer}>
-        <LandingSectionHeader title="The worst time to learn what you missed is after the exam." />
+        <LandingSectionHeader title={LANDING_WHY.title} />
       </motion.div>
 
       <motion.div
@@ -47,9 +36,9 @@ export function WhyMentrixSection() {
       >
         <motion.div variants={slideFromLeft} custom={0} whileHover={cinematic ? cardHoverLift : undefined}>
           <LandingStickyCard rotate className="rotate-[-0.6deg]">
-            <p className={landingHub.eyebrow}>Without Mentrixa</p>
+            <p className={landingHub.eyebrow}>{LANDING_WHY.withoutEyebrow}</p>
             <ul className="mt-4 space-y-3">
-              {WITHOUT_SYSTEM.map((line, i) => (
+              {LANDING_WHY.without.map((line, i) => (
                 <motion.li
                   key={line}
                   initial={{ opacity: 0, x: -16 }}
@@ -68,9 +57,9 @@ export function WhyMentrixSection() {
 
         <motion.div variants={slideFromRight} custom={0} whileHover={cinematic ? cardHoverLift : undefined}>
           <LandingStickyCard rotate={false} className="rotate-[0.5deg]">
-            <p className={landingHub.eyebrow}>With Mentrixa</p>
+            <p className={landingHub.eyebrow}>{LANDING_WHY.withEyebrow}</p>
             <ul className="mt-4 space-y-3">
-              {WHY_NOW.map((line, i) => (
+              {LANDING_WHY.with.map((line, i) => (
                 <motion.li
                   key={line}
                   initial={{ opacity: 0, x: 16 }}

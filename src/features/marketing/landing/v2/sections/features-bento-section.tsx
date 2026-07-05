@@ -23,6 +23,7 @@ import {
   LandingSectionShell,
 } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LANDING_FEATURES } from "@/features/marketing/landing/landing-copy-pure";
 
 type Feature = {
   title: string;
@@ -33,24 +34,24 @@ type Feature = {
 
 const FEATURE_ROWS: Feature[][] = [
   [
-    { title: "Skill Duels", image: "/images/features/live-duels.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: -2 },
-    { title: "Division Leaderboard", image: "/images/features/duel-arena.webp", vocabIcon: CANONICAL_LEAGUE_ICON, rotation: 2 },
+    { title: LANDING_FEATURES.polaroidTitles[0], image: "/images/features/live-duels.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: -2 },
+    { title: LANDING_FEATURES.polaroidTitles[1], image: "/images/features/duel-arena.webp", vocabIcon: CANONICAL_LEAGUE_ICON, rotation: 2 },
   ],
   [
-    { title: "Quest Practice", image: "/images/features/problem-solver.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: 1 },
-    { title: "Rank Card", image: "/images/features/learning-path.webp", vocabIcon: CANONICAL_RANK_PROOF_ICON, rotation: -1 },
+    { title: LANDING_FEATURES.polaroidTitles[2], image: "/images/features/problem-solver.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: 1 },
+    { title: LANDING_FEATURES.polaroidTitles[3], image: "/images/features/learning-path.webp", vocabIcon: CANONICAL_RANK_PROOF_ICON, rotation: -1 },
   ],
   [
-    { title: "Impact Score", image: "/images/features/league.webp", vocabIcon: "impact-score", rotation: -2 },
-    { title: "Division Wars", image: "/images/features/clan-wars.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: 2 },
+    { title: LANDING_FEATURES.polaroidTitles[4], image: "/images/features/league.webp", vocabIcon: "impact-score", rotation: -2 },
+    { title: LANDING_FEATURES.polaroidTitles[5], image: "/images/features/clan-wars.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: 2 },
   ],
   [
-    { title: "Session Room", image: "/images/features/session-room.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: 1 },
-    { title: "Quest Pack", image: "/images/features/study-package.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: -1 },
+    { title: LANDING_FEATURES.polaroidTitles[6], image: "/images/features/session-room.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: 1 },
+    { title: LANDING_FEATURES.polaroidTitles[7], image: "/images/features/study-package.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: -1 },
   ],
   [
-    { title: "Guide Studio", image: "/images/features/studio-output.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: -2 },
-    { title: "Breakthrough Events", image: "/images/features/guide-knowledge.webp", vocabIcon: CANONICAL_BREAKTHROUGH_ICON, rotation: 2 },
+    { title: LANDING_FEATURES.polaroidTitles[8], image: "/images/features/studio-output.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: -2 },
+    { title: LANDING_FEATURES.polaroidTitles[9], image: "/images/features/guide-knowledge.webp", vocabIcon: CANONICAL_BREAKTHROUGH_ICON, rotation: 2 },
   ],
 ];
 
@@ -126,9 +127,9 @@ export function FeaturesBentoSection() {
     <LandingSectionShell id="features" innerClassName="max-w-5xl">
       <motion.div initial="hidden" whileInView="visible" viewport={viewportOnce} variants={staggerContainer}>
         <LandingSectionHeader
-          eyebrow="The arena"
-          title="AP Calculus AB. One skill tree. Public rank."
-          subtitle="Quest daily. Duel peers. Book a Guide when a verified gap shows up. Same loop until rank moves."
+          eyebrow={LANDING_FEATURES.eyebrow}
+          title={LANDING_FEATURES.title}
+          subtitle={LANDING_FEATURES.subtitle}
         />
       </motion.div>
 
