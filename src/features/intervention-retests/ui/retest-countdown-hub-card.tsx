@@ -35,11 +35,6 @@ export function RetestCountdownHubCard({ state }: RetestCountdownHubCardProps) {
         <Button asChild size="sm">
           <Link href="/student/quest">Take retest in Quest</Link>
         </Button>
-        {!state.priorityRetest ? (
-          <Button asChild size="sm" variant="outline">
-            <Link href="/student/subscribe">Upgrade to Momentum</Link>
-          </Button>
-        ) : null}
       </div>
     </section>
   );

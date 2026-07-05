@@ -1,7 +1,6 @@
 import type { MovementReceiptData } from "@/features/movement-receipt/types";
 import {
   buildPeerVelocityLine,
-  buildPeerVelocityUpsellLine,
 } from "@/features/comparison/peer-velocity-pure";
 import { buildLoopSlaReceiptLine } from "@/features/entitlements/loop-sla-pure";
 import { buildPackSprintReceiptLine } from "@/features/entitlements/pack-sprint-pure";
@@ -175,7 +174,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
       ),
       nextAction: data.retest.priorityRetest
         ? "Queue practice now, then retest the moment it opens."
-        : "Upgrade to Momentum for half the retest wait, or practice related nodes now.",
+        : "Practice related nodes in Quest while you wait.",
       ctaHref: "/student/quest",
       ctaLabel: "Open Quest",
     };
@@ -186,9 +185,9 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
     verdict: appendPeerLine(`${gridLine}${creditSuffix ? ` ${creditSuffix}` : ""}`, data),
     nextAction: data.credit.momentumActive
       ? "Take a Quest on an unverified node or book your included session when the wall is real."
-      : `${buildPeerVelocityUpsellLine()} Upgrade for weekly email and priority retests.`,
-    ctaHref: data.credit.momentumActive ? "/student/guides" : "/student/subscribe",
-    ctaLabel: data.credit.momentumActive ? "Browse Guides" : "Get Momentum",
+      : "Take a Quest on an unverified node, or book a Guide when the wall is real.",
+    ctaHref: data.credit.momentumActive ? "/student/guides" : "/student/quest",
+    ctaLabel: data.credit.momentumActive ? "Browse Guides" : "Open Quest",
   };
 }
 

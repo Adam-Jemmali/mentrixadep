@@ -29,7 +29,7 @@ export function MomentumMembershipHubCard() {
           href="/student/subscribe"
           className={cn(mentrixStudent.hubBtnSolid, "shrink-0 text-center")}
         >
-          Upgrade to Momentum
+          View Momentum plan
         </Link>
       </div>
     </section>

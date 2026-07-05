@@ -38,11 +38,6 @@ export function LoopReportHubCard({ rows, momentumActive }: LoopReportHubCardPro
         <Button asChild size="sm">
           <Link href="/student/loop">Open Loop Report</Link>
         </Button>
-        {!momentumActive ? (
-          <Button asChild size="sm" variant="outline">
-            <Link href="/student/subscribe">Unlock full history</Link>
-          </Button>
-        ) : null}
       </div>
     </section>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { LoopReportRow } from "@/features/intervention-retests/retest-reads";
 import {
@@ -56,11 +55,8 @@ export function LoopReportPageClient({
         {!momentumActive ? (
           <div className={`${mentrixStudent.card} p-5`}>
             <p className="text-sm text-zinc-700">
-              Free accounts see the latest loop row on the hub. Momentum unlocks full Loop Report history.
+              Free accounts see the latest loop on the hub. Full Loop Report history is included with Momentum.
             </p>
-            <Button asChild className="mt-3" size="sm">
-              <Link href="/student/subscribe">Upgrade to Momentum</Link>
-            </Button>
           </div>
         ) : null}
       </main>

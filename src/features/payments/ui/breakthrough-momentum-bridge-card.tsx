@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/shared/ui/button";
-import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 import type { BreakthroughMomentumBridgeMessages } from "@/features/payments/breakthrough-momentum-bridge-pure";
+import { mentrixBrandUi } from "@/features/marketing/mentrix-brand-colors";
 import { PricingTierIcon } from "@/features/pricing/ui/pricing-tier-visual";
 
 type BreakthroughMomentumBridgeCardProps = {
@@ -21,11 +19,6 @@ export function BreakthroughMomentumBridgeCard({ messages }: BreakthroughMomentu
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white">{messages.verdict}</p>
           <p className="mt-1 text-xs text-violet-200/85">{messages.nextAction}</p>
-          <div className="mt-4">
-            <Button asChild size="sm">
-              <Link href="/student/subscribe">Get Momentum</Link>
-            </Button>
-          </div>
         </div>
       </div>
     </section>

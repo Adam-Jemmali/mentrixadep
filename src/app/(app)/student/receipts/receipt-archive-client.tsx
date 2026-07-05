@@ -41,10 +41,8 @@ export function ReceiptArchiveClient({
 
         {!momentumActive ? (
           <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>
-            Your current week receipt stays free on the hub. Momentum unlocks the full archive and weekly email.
-            <Link href="/student/subscribe" className="ml-1 font-semibold text-indigo-600 underline">
-              Upgrade to Momentum
-            </Link>
+            Your current week receipt stays free on the hub. The full archive and weekly email are included with
+            Momentum.
           </div>
         ) : receipts.length === 0 ? (
           <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>

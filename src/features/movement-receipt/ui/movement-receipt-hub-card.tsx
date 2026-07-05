@@ -13,7 +13,6 @@ import {
   CANONICAL_DUELS_ICON,
   CANONICAL_QUEST_ICON,
   CANONICAL_RECEIPT_ICON,
-  CANONICAL_MOMENTUM_ICON,
   CANONICAL_BOOKING_ICON,
 } from "@/shared/icons/vocab-canonical";
 import type { MovementReceiptData } from "@/features/movement-receipt/types";
@@ -118,9 +117,7 @@ export function MovementReceiptHubCard({ data, momentumActive, compact = false }
             <IconLink href="/student/briefs" icon="brief" label="All Briefs" />
             <IconLink href="/student/mastery" icon="mastery-grid" label="Skill Grid" />
           </>
-        ) : (
-          <IconLink href="/student/subscribe" icon={CANONICAL_MOMENTUM_ICON} label="Get Momentum" />
-        )}
+        ) : null}
       </div>
     </section>
   );

@@ -28,10 +28,7 @@ export function ProgressArchiveClient({
 
         {!momentumActive ? (
           <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>
-            Your current week snapshot stays free on the hub. Momentum unlocks the full archive.
-            <Link href="/student/subscribe" className="ml-1 font-semibold text-indigo-600 underline">
-              Upgrade to Momentum
-            </Link>
+            Your current week snapshot stays free on the hub. The full archive is included with Momentum.
           </div>
         ) : snapshots.length === 0 ? (
           <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>

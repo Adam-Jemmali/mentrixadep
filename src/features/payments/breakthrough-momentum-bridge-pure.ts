@@ -24,6 +24,6 @@ export function buildBreakthroughMomentumBridgeMessages(input: {
 
   return {
     verdict: `Loop opened on ${course}. On Momentum: retest unlocks in 24h not 48h. Your next included session would be $0 on ${creditDate}. Weekly Movement Receipts track whether this node stuck.`,
-    nextAction: "Upgrade to Momentum to close the loop every month.",
+    nextAction: "Your retest pipeline is running. Momentum shortens the wait and adds weekly receipts.",
   };
 }

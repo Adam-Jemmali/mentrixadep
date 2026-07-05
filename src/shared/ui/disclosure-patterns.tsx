@@ -21,6 +21,7 @@ import {
   type MentrixaDisclosureMessage,
 } from "@/shared/ui/disclosure-messages-pure";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { getVocabIconMeta } from "@/shared/icons/mentrixa-vocab-map";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export type MentrixaDisclosureTone = "light" | "dark" | "marketing";
@@ -30,6 +31,15 @@ const TONE_CLASS: Record<MentrixaDisclosureTone, string> = {
   dark: "mentrixa-disclosure--dark",
   marketing: "mentrixa-disclosure--marketing",
 };
+
+function disclosureIconSurface(tone: MentrixaDisclosureTone): "light" | "dark" {
+  return tone === "light" ? "light" : "dark";
+}
+
+function disclosureIconGold(vocabIcon: VocabIconName | undefined, tone: MentrixaDisclosureTone): boolean {
+  if (!vocabIcon || tone !== "light") return false;
+  return getVocabIconMeta(vocabIcon).allowsGold === true && vocabIcon === "verified";
+}
 
 export function MentrixaDisclosure({
   triggerLabel,
@@ -56,6 +66,9 @@ export function MentrixaDisclosure({
   className?: string;
   bodyClassName?: string;
 }) {
+  const iconSurface = disclosureIconSurface(tone);
+  const iconGold = disclosureIconGold(vocabIcon, tone);
+
   return (
     <Disclosure
       isExpanded={isExpanded}
@@ -65,7 +78,21 @@ export function MentrixaDisclosure({
       <Disclosure.Heading>
         <Disclosure.Trigger className="mentrixa-disclosure__trigger">
           {vocabIcon ? (
-            <MentrixaVocabIcon name={vocabIcon} size={16} className="shrink-0 opacity-90" title={triggerLabel} />
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-md p-1",
+                iconSurface === "light" ? "bg-white/90 ring-1 ring-indigo-100" : "bg-white/10",
+              )}
+            >
+              <MentrixaVocabIcon
+                name={vocabIcon}
+                size={20}
+                surface={iconSurface}
+                gold={iconGold}
+                className="shrink-0"
+                title={triggerLabel}
+              />
+            </span>
           ) : brandKind ? (
             <MentrixaBrandMark kind={brandKind} size="xs" className="shrink-0 opacity-85" />
           ) : null}

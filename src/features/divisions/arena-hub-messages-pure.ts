@@ -17,7 +17,7 @@ export function arenaLeaguePanelEyebrow(): string {
 }
 
 export function arenaLeaguePanelHint(): string {
-  return "Indigo outline marks focus";
+  return "";
 }
 
 export function arenaLeagueCardDescriptionFallback(): string {

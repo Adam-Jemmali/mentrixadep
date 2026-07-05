@@ -35,10 +35,7 @@ export function BriefArchiveClient({
 
         {!momentumActive ? (
           <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>
-            Your latest upcoming brief stays on the hub. Momentum unlocks the full archive.
-            <Link href="/student/subscribe" className="ml-1 font-semibold text-indigo-600 underline">
-              Upgrade to Momentum
-            </Link>
+            Your latest upcoming brief stays on the hub. The full archive is included with Momentum.
           </div>
         ) : briefs.length === 0 ? (
           <div className={`${mentrixStudent.card} p-6 text-sm text-zinc-700`}>

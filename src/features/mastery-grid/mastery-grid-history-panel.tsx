@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   buildGridHistoryVerdict,
@@ -36,9 +34,6 @@ export function MasteryGridHistoryPanel({
         <p className="mt-2 text-sm text-zinc-600">
           See how your grid changed over 4, 8, and 12 weeks with Momentum. Your current grid stays free.
         </p>
-        <Button asChild className="mt-4" size="sm">
-          <Link href="/student/subscribe">Unlock grid timeline</Link>
-        </Button>
       </section>
     );
   }
