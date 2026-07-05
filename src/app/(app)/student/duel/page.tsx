@@ -91,7 +91,7 @@ export default async function StudentDuelsPage() {
   const totalXp = typeof xpRow?.total_xp === "number" ? xpRow.total_xp : 0;
 
   return (
-    <div className={mentrixStudent.pageBgArena}>
+    <div className={mentrixStudent.pageBgHub}>
       <div className={mentrixStudent.mainWide}>
         <ProductPageHeader
           icon="duels"

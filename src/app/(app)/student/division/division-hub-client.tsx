@@ -122,7 +122,7 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                       {t.emoji}
                     </div>
                     <div className="min-w-0 flex-1 pr-1">
-                      <h2 className="text-lg font-black uppercase italic leading-tight tracking-tighter text-[#0B1220]">
+                      <h2 className="text-lg font-black uppercase italic leading-snug tracking-tighter text-[#0B1220]">
                         {c.name.replace(/\s+Division$/i, "")}
                       </h2>
                       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">

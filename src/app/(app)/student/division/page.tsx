@@ -15,7 +15,7 @@ export default async function DivisionsHubPage() {
   const cards = await getDivisionHubCards(user.id);
 
   return (
-    <div className={mentrixStudent.pageBgArena}>
+    <div className={mentrixStudent.pageBgHub}>
       <div className={mentrixStudent.mainWide}>
         <ProductPageHeader
           icon="league"

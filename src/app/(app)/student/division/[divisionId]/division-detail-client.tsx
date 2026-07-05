@@ -22,6 +22,7 @@ import { LeagueForumPanel } from "@/features/divisions/ui/league-forum-panel";
 import { setFocusedDivision } from "@/features/divisions/leaderboard";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 import { LeaderboardTierRank } from "@/features/student-profile/ui/leaderboard-tier-rank";
@@ -105,15 +106,21 @@ export function DivisionDetailClient({
 
   return (
     <div className={cn(mentrixStudent.pageBg, "pb-32")}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 space-y-12 relative z-10">
+      <div className="relative z-10 mx-auto max-w-6xl space-y-8 px-4 pt-2 sm:px-6 sm:space-y-10">
         
         {/* BREADCRUMBS */}
-        <nav className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-          <Link href="/student/division" className="hover:text-indigo-500 transition-colors">
+        <nav
+          className={cn(
+            mentrixStudent.hubNotebook,
+            "mx-surface-light flex flex-wrap items-center gap-2 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em]",
+          )}
+          aria-label="Division path"
+        >
+          <Link href="/student/division" className={cn(mentrixHubSurfaces.inkMuted, "transition-colors hover:text-[#6366F1]")}>
             Divisions
           </Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-slate-900">{initial.division.name}</span>
+          <ChevronRight className="h-3 w-3 shrink-0 text-[#6366F1]" aria-hidden />
+          <span className={mentrixHubSurfaces.inkTitle}>{initial.division.name}</span>
         </nav>
 
         {/* HERO SECTION - Clash Royale Style */}
@@ -204,10 +211,10 @@ export function DivisionDetailClient({
           <DivisionWarPanel initial={initial.divisionWar} divisionKey={divisionKey} />
         ) : null}
 
-        <div className="grid lg:grid-cols-12 gap-10">
+        <div className="grid gap-8 lg:grid-cols-12 lg:items-stretch">
           
           {/* MAIN CONTENT - Leaderboards & Activity */}
-          <div className="lg:col-span-8 space-y-12">
+          <div className="space-y-8 lg:col-span-8">
             
             {/* QUICK ACTION TILES - Duolingo Style */}
             <div className="grid sm:grid-cols-2 gap-4">
@@ -226,11 +233,13 @@ export function DivisionDetailClient({
             </div>
 
             {/* WEEKLY LEADERBOARD */}
-            <section className="space-y-6">
+            <section className="space-y-4">
               <div className="flex items-end justify-between px-2">
                 <div>
-                  <h2 className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Weekly XP · Top 50</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Resets every Monday 00:00 UTC. Top 3 each week earn bonus XP !</p>
+                  <h2 className={cn(mentrixHubSurfaces.inkTitle, "text-xl")}>Weekly XP · Top 50</h2>
+                  <p className={cn(mentrixHubSurfaces.inkMuted, "text-[10px] font-bold uppercase tracking-widest")}>
+                    Resets every Monday 00:00 UTC. Top 3 each week earn bonus XP !
+                  </p>
                 </div>
               </div>
               
@@ -238,10 +247,12 @@ export function DivisionDetailClient({
             </section>
 
             {/* ALL-TIME LEADERBOARD */}
-            <section className="space-y-6">
+            <section className="space-y-4">
               <div className="px-2">
-                <h2 className="text-xl font-black italic uppercase tracking-tighter text-slate-900">All-time division XP</h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Division Ranking</p>
+                <h2 className={cn(mentrixHubSurfaces.inkTitle, "text-xl")}>All-time division XP</h2>
+                <p className={cn(mentrixHubSurfaces.inkMuted, "text-[10px] font-bold uppercase tracking-widest")}>
+                  Global Division Ranking
+                </p>
               </div>
               <LeaderboardTableAllTime rows={initial.allTimeLeaderboard} />
             </section>
@@ -249,15 +260,15 @@ export function DivisionDetailClient({
           </div>
 
           {/* SIDEBAR - Activity */}
-          <aside className="lg:col-span-4 space-y-12 lg:sticky lg:top-8 lg:self-start">
+          <aside className={cn(mentrixStudent.hubNotebook, "space-y-6 p-4 sm:p-5 lg:col-span-4 lg:sticky lg:top-24 lg:self-stretch")}>
             
             {/* RECENT ACTIVITY */}
-            <section className="space-y-6">
-              <div className="flex items-center gap-2 px-2">
-                 <Target className="w-4 h-4 text-indigo-500" />
-                 <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">Recent activity</h2>
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 px-1">
+                 <Target className="h-4 w-4 text-[#6366F1]" />
+                 <h2 className={cn(mentrixHubSurfaces.inkLabel, "text-sm uppercase tracking-[0.2em]")}>Recent activity</h2>
               </div>
-              <div className={cn(mentrixStudent.card, "overflow-hidden")}>
+              <div className={cn(mentrixStudent.card, "overflow-hidden !border-[#C4B5FD] !bg-white/90 !p-0")}>
                 <ul className="divide-y divide-slate-100">
                   {initial.activity.length === 0 ? (
                     <li className="p-8 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 italic">No recent pulses</li>
@@ -268,7 +279,7 @@ export function DivisionDetailClient({
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
                         key={`${a.userId}-${a.completedAt}-${i}`} 
-                        className="p-4 flex gap-3 hover:bg-purple-500 transition-colors"
+                        className="flex gap-3 p-4 transition-colors hover:bg-[#EDE9FE]"
                       >
                          <div className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                             <XpIcon size={12} surface="light" title="XP" />
@@ -324,11 +335,11 @@ function ActionTile({ href, icon, title, description }: { href: string; icon: Re
           {icon}
         </div>
         <div>
-          <h3 className="text-sm font-black italic uppercase tracking-tight text-slate-900 flex items-center gap-2">
+          <h3 className={cn(mentrixHubSurfaces.inkTitle, "flex items-center gap-2 text-sm uppercase tracking-tight")}>
             {title}
-            <ChevronRight className="w-3 h-3 text-slate-300 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight className="h-3 w-3 text-[#94A3B8] transition-transform group-hover:translate-x-1" />
           </h3>
-          <p className="text-[11px] font-medium text-slate-400">{description}</p>
+          <p className={cn(mentrixHubSurfaces.inkMuted, "text-[11px] font-medium")}>{description}</p>
         </div>
         <div className="absolute top-0 right-0 p-2 opacity-[0.03] grayscale pointer-events-none group-hover:opacity-[0.06] transition-opacity">
            <Image src="/mentrixalogo/logo.webp" alt="" width={60} height={60} />

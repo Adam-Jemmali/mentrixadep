@@ -26,7 +26,9 @@ import {
   playMentrixaRankUpOnce,
 } from "@/shared/integrations/mentrixa-sounds";
 import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
+import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import {
   arenaDivisionFocus,
   arenaDivisionCardClasses,
@@ -778,6 +780,7 @@ export function DuelHub({
         className={cn(
           mentrixStudent.cardArena,
           arenaDivisionPanelClasses(),
+          "overflow-visible",
         )}
       >
         <p
@@ -809,14 +812,13 @@ export function DuelHub({
                       isSelected: true,
                       isProfileFocus,
                     }),
+                    "overflow-visible pt-8",
                   )}
                 >
                   <div
                     className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-[#6366F1]"
                     aria-hidden
                   />
-
-                
 
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-4">
@@ -826,20 +828,16 @@ export function DuelHub({
                         {t.emoji}
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-lg font-black uppercase italic leading-none tracking-tighter text-[#0B1220]">
-                          {d.name.replace(/\s+Division$/i, "")}
-                        </h2>
-                        <div className="mt-1 flex items-center gap-2">
-                          <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                           
-                          </div>
-                        </div>
+                        <AbCalculusSubjectTitle
+                          hubPaper
+                          className="text-lg sm:text-xl leading-snug"
+                        />
                       </div>
                     </div>
                   </div>
 
-                  <p className="mt-4 line-clamp-3 flex-1 text-xs font-medium leading-relaxed text-[#475569]">
-                    {d.description || "Timed AP Calculus AB battles against real Mentrixers."}
+                  <p className={cn("mt-4 line-clamp-3 flex-1 text-xs font-medium leading-relaxed", mentrixHubSurfaces.inkBody)}>
+                    {d.description || "Limits, derivatives, integrals, and verified first attempts on the AP Calculus AB skill tree."}
                   </p>
 
                   <div className="mt-6">

@@ -67,7 +67,7 @@ export default async function DuelHistoryPage() {
   headToHead.sort((a, b) => b.played - a.played);
 
   return (
-    <div className={mentrixStudent.pageBgArena}>
+    <div className={mentrixStudent.pageBgHub}>
       <main className={`${mentrixStudent.mainSlim} space-y-8`}>
         <div className="flex items-center justify-between gap-4">
           <Button variant="ghost" size="sm" className="text-violet-200 hover:text-white hover:bg-violet-500/10" asChild>

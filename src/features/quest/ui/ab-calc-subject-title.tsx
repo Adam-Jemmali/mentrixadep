@@ -13,7 +13,9 @@ export function AbCalculusSubjectTitle({
   return (
     <span
       className={cn(
-        hubPaper ? "font-bold text-[#6366F1] text-xl sm:text-2xl" : cn(mentrixProfileType.pageTitleDisplay, "text-lg sm:text-xl"),
+        hubPaper
+          ? "block font-bold leading-snug text-[#6366F1] text-xl sm:text-2xl pt-0.5"
+          : cn(mentrixProfileType.pageTitleDisplay, "text-lg sm:text-xl leading-snug"),
         className,
       )}
       aria-label={AP_CALC_AB_SUBJECT_DISPLAY}
