@@ -15,9 +15,14 @@ import { FlowStepsOrderGame } from "@/features/marketing/landing/v2/sections/flo
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
-import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
+import {
+  LandingSectionHeader,
+  LandingStickyCard,
+} from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
-import { LANDING_FLOW_STEPS } from "@/features/marketing/landing/landing-copy-pure";
+import { LANDING_FLOW, LANDING_FLOW_STEPS } from "@/features/marketing/landing/landing-copy-pure";
+import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
 const FLOW_STEPS: {
   number: string;
@@ -55,7 +60,13 @@ export function FlowStepsSection() {
   return (
     <section id="flow" ref={ref} className={landingHub.section}>
       <div className={landingHub.sectionInner}>
-        <div className="relative mt-6 hidden lg:block">
+        <LandingSectionHeader
+          eyebrow={LANDING_FLOW.eyebrow}
+          title={LANDING_FLOW.title}
+          subtitle={LANDING_FLOW.subtitle}
+        />
+
+        <div className="relative mt-10 hidden lg:block">
           <div className="absolute left-[12.5%] right-[12.5%] top-8 h-0.5 origin-left bg-[#C4B5FD]/50">
             <motion.div className="h-full origin-left bg-[#6366F1]" style={{ scaleX: lineScale }} />
           </div>
@@ -94,7 +105,11 @@ export function FlowStepsSection() {
         >
           {FLOW_STEPS.map((step, i) => (
             <motion.div key={step.title} variants={scaleIn} custom={i} whileHover={cinematic ? cardHoverLift : undefined}>
-              <LandingStickyCard rotate={i % 2 === 0} className={cn("relative overflow-hidden", i % 2 === 1 && "rotate-[0.45deg]")}>
+              <LandingStickyCard
+                rotate={i % 2 === 0}
+                variant={landingStickyVariantForIndex(i)}
+                className={cn("relative overflow-hidden", i % 2 === 1 && "rotate-[0.45deg]")}
+              >
                 {loopLocked ? (
                   <motion.span
                     className={`text-[10px] font-bold tabular-nums ${landingHub.eyebrow}`}
@@ -109,10 +124,12 @@ export function FlowStepsSection() {
                 )}
                 <div className="relative mt-3 flex items-center gap-3">
                   <motion.span
-                    className={`${landingHub.stickyCard} relative flex h-9 w-9 shrink-0 rotate-0 items-center justify-center p-0`}
+                    className="relative flex h-9 w-9 shrink-0 rotate-0 items-center justify-center"
                     animate={cinematic ? iconFloat : undefined}
                   >
-                    <MentrixaVocabIcon name={step.vocabIcon} size={20} surface="light" title={step.title} />
+                    <LandingStickyNote compact variant="strip" className="flex h-9 w-9 items-center justify-center p-0 shadow-none">
+                      <MentrixaVocabIcon name={step.vocabIcon} size={20} surface="light" title={step.title} />
+                    </LandingStickyNote>
                   </motion.span>
                   <h3 className="text-base font-bold text-[#0B1220]">{step.title}</h3>
                 </div>

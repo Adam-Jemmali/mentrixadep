@@ -55,7 +55,7 @@ export function LandingFooterBlock() {
           className="relative z-10 mx-auto max-w-2xl"
         >
           <motion.div variants={fadeUp} custom={0}>
-            <LandingStickyCard rotate={false} className="text-center rotate-[0.2deg] px-5 py-7">
+            <LandingStickyCard rotate={false} variant="pinned" className="text-center rotate-[0.2deg] px-5 py-7">
               <p className={landingHub.eyebrow}>{LANDING_FOOTER.ctaEyebrow}</p>
               <p className={`mt-3 text-xl font-bold ${landingHub.title}`}>{LANDING_FOOTER.ctaTitle}</p>
             </LandingStickyCard>
@@ -85,7 +85,7 @@ export function LandingFooterBlock() {
           animate={contactInView ? "visible" : "hidden"}
           className="relative z-10 mx-auto max-w-3xl"
         >
-          <LandingStickyCard rotate className="rotate-[-0.35deg] px-5 py-8 text-center sm:px-7">
+          <LandingStickyCard rotate variant="taped" className="rotate-[-0.35deg] px-5 py-8 text-center sm:px-7">
             <motion.p variants={fadeUp} custom={0} className={`mb-3 ${landingHub.eyebrow}`}>
               {LANDING_FOOTER.contactEyebrow}
             </motion.p>
@@ -109,7 +109,7 @@ export function LandingFooterBlock() {
       </section>
 
       <footer className={`${landingHub.sectionTight} border-t border-[#C4B5FD]/60 px-4 sm:px-5`}>
-        <LandingStickyCard rotate={false} className="mx-auto max-w-6xl rotate-[0.2deg] py-8">
+        <LandingStickyCard rotate={false} variant="clip" className="mx-auto max-w-6xl rotate-[0.2deg] py-8">
           <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
             <div>
               <Link href="/" className="inline-flex items-center gap-2.5">

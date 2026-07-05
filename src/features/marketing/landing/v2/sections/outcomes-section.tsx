@@ -17,6 +17,7 @@ import {
 } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_OUTCOMES } from "@/features/marketing/landing/landing-copy-pure";
+import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
 
 export function OutcomesSection() {
   const { cinematic } = useLandingMotion();
@@ -46,7 +47,11 @@ export function OutcomesSection() {
             custom={Math.floor(i / 2)}
             whileHover={cinematic ? cardHoverLift : undefined}
           >
-            <LandingStickyCard rotate={i % 2 === 0} className={cn("cursor-default", i % 2 === 1 && "rotate-[0.5deg]")}>
+            <LandingStickyCard
+              rotate={i % 2 === 0}
+              variant={landingStickyVariantForIndex(i)}
+              className={cn("cursor-default", i % 2 === 1 && "rotate-[0.5deg]")}
+            >
               <motion.span
                 className="mb-2 inline-block h-1 w-8 rounded-full bg-[#6366F1]"
                 initial={{ scaleX: 0 }}

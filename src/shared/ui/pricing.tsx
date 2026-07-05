@@ -29,7 +29,7 @@ export default function PricingSection() {
       id="pricing"
       ref={pricingRef}
     >
-      <LandingStickyCard rotate={false} className="mx-auto mb-14 max-w-3xl rotate-[0.2deg] space-y-3 text-center">
+      <LandingStickyCard rotate={false} variant="taped" className="mx-auto mb-14 max-w-3xl rotate-[0.2deg] space-y-3 text-center">
         <TimelineContent
           as="p"
           animationNum={0}

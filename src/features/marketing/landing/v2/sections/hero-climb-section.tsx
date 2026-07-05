@@ -10,6 +10,7 @@ import { fadeUp, staggerContainer } from "@/features/marketing/landing/v2/motion
 import { HeroScrollCue } from "@/features/marketing/landing/v2/hero/hero-scroll-cue";
 import { LANDING_HERO } from "@/features/marketing/landing/landing-copy-pure";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LandingStickyGameNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 const HeroRankStage = dynamic(
@@ -73,9 +74,9 @@ export function HeroClimbSection() {
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
             className="flex w-full items-center justify-center lg:justify-end"
           >
-            <div className={`${landingHub.stickyGameNote} rotate-[0.35deg]`}>
+            <LandingStickyGameNote variant="pinned" className="rotate-[0.35deg]">
               <HeroRankStage />
-            </div>
+            </LandingStickyGameNote>
           </motion.div>
         </div>
       </div>

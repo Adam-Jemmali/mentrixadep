@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { TypewriterText } from "@/features/marketing/landing/v2/motion/typewriter-text";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
 
@@ -42,18 +43,15 @@ export function LandingSpeechBubble({
         className={cn("lp-speech-bubble relative w-full max-w-md", className)}
         role="status"
       >
-        <div
-          className={cn(
-            landingHub.stickyCard,
-            "relative rotate-[-0.35deg] px-4 py-3",
-            TONE_BORDER[tone],
-          )}
+        <LandingStickyNote
+          variant="strip"
+          className={cn("relative rotate-[-0.35deg] px-4 py-3", TONE_BORDER[tone])}
         >
           <p className={`mb-1 ${landingHub.eyebrow} text-[10px]`}>{label}</p>
           <p className={`min-h-[2.75rem] text-sm font-semibold leading-snug sm:text-[15px] ${landingHub.body}`}>
             <TypewriterText text={message} speed={speed} resetKey={message} />
           </p>
-        </div>
+        </LandingStickyNote>
       </motion.div>
     </AnimatePresence>
   );

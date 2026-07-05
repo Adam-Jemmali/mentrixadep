@@ -21,6 +21,8 @@ import {
 } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_RANK_LADDER } from "@/features/marketing/landing/landing-copy-pure";
+import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
 const RANK_MOTIVATION: Record<AccountRankKey, string> = LANDING_RANK_LADDER.motivation;
 
@@ -97,7 +99,7 @@ export function RankLadderShowcase() {
           className="mx-auto mt-8"
         />
 
-        <LandingStickyCard rotate={false} className="mx-auto mt-8 max-w-lg rotate-[0.25deg]">
+        <LandingStickyCard rotate={false} variant="pinned" className="mx-auto mt-8 max-w-lg rotate-[0.25deg]">
           <div className="flex flex-col items-center gap-8">
             <AnimatePresence mode="wait">
               <motion.div
@@ -144,26 +146,30 @@ export function RankLadderShowcase() {
                 }}
                 transition={{ type: "spring", stiffness: 320, damping: 24 }}
                 className={cn(
-                  landingHub.stickyCard,
-                  "group relative flex shrink-0 rotate-0 snap-center cursor-pointer flex-col items-center gap-2 p-3",
+                  "group relative flex shrink-0 snap-center cursor-pointer flex-col items-center gap-2 p-3",
                   isActive && "ring-2 ring-[#6366F1]",
                 )}
                 aria-pressed={isActive}
                 aria-label={normalizeRankTitle(rank.title)}
               >
-                <RankBadge
-                  rank={rank}
-                  size="md"
-                  active={isActive}
-                  surface="light"
-                  showGlow={isActive && (rank.key === "mentrixer" || rank.key === "apex")}
-                />
-                <span
-                  className="text-[10px] font-bold uppercase tracking-wide"
-                  style={{ color: rank.labelOnLight }}
+                <LandingStickyNote
+                  variant={landingStickyVariantForIndex(i + 2)}
+                  className="flex flex-col items-center gap-2 p-3 shadow-[2px_3px_0_rgba(11,18,32,0.12)]"
                 >
-                  {normalizeRankTitle(rank.title)}
-                </span>
+                  <RankBadge
+                    rank={rank}
+                    size="md"
+                    active={isActive}
+                    surface="light"
+                    showGlow={isActive && (rank.key === "mentrixer" || rank.key === "apex")}
+                  />
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wide"
+                    style={{ color: rank.labelOnLight }}
+                  >
+                    {normalizeRankTitle(rank.title)}
+                  </span>
+                </LandingStickyNote>
               </motion.button>
             );
           })}

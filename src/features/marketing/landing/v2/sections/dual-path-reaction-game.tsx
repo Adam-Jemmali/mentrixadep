@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_DUAL_PATH } from "@/features/marketing/landing/landing-copy-pure";
+import { LandingStickyNote, LandingStickyGameNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { FallingRoleSliceArena, type SliceRole } from "@/features/marketing/landing/v2/motion/falling-role-slice-arena";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
@@ -71,8 +72,12 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
       initial={{ opacity: 0, y: 20, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={springSoft}
-      className={cn(landingHub.stickyCard, "relative overflow-hidden p-6", highlight && "ring-2 ring-[#6366F1]")}
+      className={cn(highlight && "ring-2 ring-[#6366F1] rounded-sm")}
     >
+      <LandingStickyNote
+        variant={side.role === "Mentrixer" ? "pinned" : "clip"}
+        className="relative overflow-hidden p-6"
+      >
       <p className={cn("relative inline-flex items-center gap-1.5", landingHub.eyebrow)}>
         <RoleIcon role={side.role} size={16} />
         {side.role}
@@ -93,6 +98,7 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
           <ArrowRight />
         </Link>
       </motion.div>
+      </LandingStickyNote>
     </motion.article>
   );
 }
@@ -132,8 +138,15 @@ export function DualPathReactionGame({ sides }: Props) {
 
   return (
     <div className="relative mx-auto max-w-[28rem]">
+      <div className="mb-6 text-center">
+        <h2 id="path-heading" className={landingHub.title}>
+          {LANDING_DUAL_PATH.pathHeading}
+        </h2>
+        <p className={`mt-2 ${landingHub.body}`}>{LANDING_DUAL_PATH.pathSub}</p>
+      </div>
+
       {phase === "game" ? (
-        <div className={cn(landingHub.stickyGameNote, "rotate-[0.25deg]")}>
+        <LandingStickyGameNote variant="curl" className="rotate-[0.25deg]">
           <LandingSpeechBubble
             message={coach.message}
             tone={coach.tone}
@@ -170,7 +183,7 @@ export function DualPathReactionGame({ sides }: Props) {
           )}
 
           <p className={`mt-2 text-center ${landingHub.hint}`}>{LANDING_DUAL_PATH.fallHint}</p>
-        </div>
+        </LandingStickyGameNote>
       ) : null}
 
       {phase === "result" && winner ? (
@@ -180,13 +193,6 @@ export function DualPathReactionGame({ sides }: Props) {
           transition={springSoft}
           className="mx-auto"
         >
-          <div className="mb-4 text-center">
-            <h2 id="path-heading" className={landingHub.title}>
-              {LANDING_DUAL_PATH.pathHeading}
-            </h2>
-            <p className={`mt-2 ${landingHub.body}`}>{LANDING_DUAL_PATH.pathSub}</p>
-          </div>
-
           <LandingSpeechBubble message={coach.message} tone={coach.tone} label="" className="mx-auto mb-4 text-[13px]" />
 
           <SideCard side={winningSide} highlight />

@@ -18,6 +18,7 @@ import {
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { LandingSectionHeader, LandingSectionShell, LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
 
 export function LandingFaqSection() {
   const heading = landingFaqSectionHeading();
@@ -43,7 +44,11 @@ export function LandingFaqSection() {
       >
         {categories.map((category, categoryIndex) => (
           <motion.div key={category.id} variants={fadeUp} custom={categoryIndex}>
-            <LandingStickyCard rotate={categoryIndex % 2 === 0} className={categoryIndex % 2 === 1 ? "rotate-[0.4deg]" : undefined}>
+            <LandingStickyCard
+              rotate={categoryIndex % 2 === 0}
+              variant={landingStickyVariantForIndex(categoryIndex + 1)}
+              className={categoryIndex % 2 === 1 ? "rotate-[0.4deg]" : undefined}
+            >
               <p className={`mb-3 inline-flex items-center gap-2 ${landingHub.eyebrow}`}>
                 <MentrixaVocabIcon
                   name={landingFaqCategoryVocabIcon(category.id)}

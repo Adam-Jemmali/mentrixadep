@@ -5,12 +5,14 @@ import { GuideRankBadgeIcon } from "@/features/guide-rank/components/guide-rank-
 import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_GUIDE_LADDER } from "@/features/marketing/landing/landing-copy-pure";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
-/** Practitioner → Elite strip for the landing For Guides path. */
+/** Guide Impact ladder — separate from Mentrixer XP tiers. */
 export function GuideRankLadderPreview({ className }: { className?: string }) {
   return (
-    <div className={cn(landingHub.stickyCard, "mt-10 rotate-[0.3deg] px-4 py-5 sm:px-6", className)}>
+    <LandingStickyNote variant="dog-ear" className={cn("mt-10 rotate-[0.3deg] px-4 py-5 sm:px-6", className)}>
       <p className={`text-center ${landingHub.eyebrow}`}>{LANDING_GUIDE_LADDER.eyebrow}</p>
+      <p className={cn("mt-1 text-center text-base font-bold", landingHub.title)}>{LANDING_GUIDE_LADDER.title}</p>
       <p className={cn("mt-1 text-center text-xs", landingHub.bodySm)}>{LANDING_GUIDE_LADDER.sentence}</p>
       <ol className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         {GUIDE_RANKS.map((rank, index) => (
@@ -34,6 +36,6 @@ export function GuideRankLadderPreview({ className }: { className?: string }) {
           </li>
         ))}
       </ol>
-    </div>
+    </LandingStickyNote>
   );
 }

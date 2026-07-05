@@ -10,6 +10,7 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_FLOW_GAME } from "@/features/marketing/landing/landing-copy-pure";
+import { LandingStickyGameNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
 const STEPS: { id: StepId; number: string; vocabIcon: VocabIconName; title: string }[] = [
   { id: "book", number: "01", vocabIcon: "flow-book", title: "Book" },
@@ -119,7 +120,7 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
   }, []);
 
   return (
-    <div className={cn(landingHub.stickyGameNote, "relative mt-10 rotate-[0.2deg]")}>
+    <LandingStickyGameNote variant="taped" className="relative mt-10 rotate-[0.2deg]">
       <LandingSpeechBubble message={coach.message} tone={coach.tone} label={LANDING_FLOW_GAME.label} className="mx-auto mb-4 text-[13px]" />
 
       <Reorder.Group
@@ -210,6 +211,6 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
           <p className={`text-center ${landingHub.hint}`}>{LANDING_FLOW_GAME.dragHint}</p>
         )}
       </div>
-    </div>
+    </LandingStickyGameNote>
   );
 }

@@ -1,5 +1,7 @@
 import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
+import type { LandingStickyVariant } from "@/features/marketing/landing/landing-sticky-variants";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
 export function LandingSectionShell({
   id,
@@ -24,14 +26,18 @@ export function LandingSectionShell({
 export function LandingStickyCard({
   className,
   rotate = true,
+  variant = "curl",
   children,
 }: {
   className?: string;
   rotate?: boolean;
+  variant?: LandingStickyVariant;
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn(landingHub.stickyCard, rotate && "rotate-[-0.45deg]", className)}>{children}</div>
+    <LandingStickyNote variant={variant} className={cn(rotate && "rotate-[-0.45deg]", className)}>
+      {children}
+    </LandingStickyNote>
   );
 }
 

@@ -24,6 +24,8 @@ import {
 } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_FEATURES } from "@/features/marketing/landing/landing-copy-pure";
+import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
 type Feature = {
   title: string;
@@ -32,37 +34,44 @@ type Feature = {
   rotation: number;
 };
 
-const FEATURE_ROWS: Feature[][] = [
+const MENTRIXER_ROWS: Feature[][] = [
   [
-    { title: LANDING_FEATURES.polaroidTitles[0], image: "/images/features/live-duels.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: -2 },
-    { title: LANDING_FEATURES.polaroidTitles[1], image: "/images/features/duel-arena.webp", vocabIcon: CANONICAL_LEAGUE_ICON, rotation: 2 },
+    { title: LANDING_FEATURES.mentrixer.polaroidTitles[0], image: "/images/features/live-duels.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: -2 },
+    { title: LANDING_FEATURES.mentrixer.polaroidTitles[1], image: "/images/features/duel-arena.webp", vocabIcon: CANONICAL_LEAGUE_ICON, rotation: 2 },
   ],
   [
-    { title: LANDING_FEATURES.polaroidTitles[2], image: "/images/features/problem-solver.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: 1 },
-    { title: LANDING_FEATURES.polaroidTitles[3], image: "/images/features/learning-path.webp", vocabIcon: CANONICAL_RANK_PROOF_ICON, rotation: -1 },
+    { title: LANDING_FEATURES.mentrixer.polaroidTitles[2], image: "/images/features/problem-solver.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: 1 },
+    { title: LANDING_FEATURES.mentrixer.polaroidTitles[3], image: "/images/features/learning-path.webp", vocabIcon: CANONICAL_RANK_PROOF_ICON, rotation: -1 },
   ],
   [
-    { title: LANDING_FEATURES.polaroidTitles[4], image: "/images/features/league.webp", vocabIcon: "impact-score", rotation: -2 },
-    { title: LANDING_FEATURES.polaroidTitles[5], image: "/images/features/clan-wars.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: 2 },
-  ],
-  [
-    { title: LANDING_FEATURES.polaroidTitles[6], image: "/images/features/session-room.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: 1 },
-    { title: LANDING_FEATURES.polaroidTitles[7], image: "/images/features/study-package.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: -1 },
-  ],
-  [
-    { title: LANDING_FEATURES.polaroidTitles[8], image: "/images/features/studio-output.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: -2 },
-    { title: LANDING_FEATURES.polaroidTitles[9], image: "/images/features/guide-knowledge.webp", vocabIcon: CANONICAL_BREAKTHROUGH_ICON, rotation: 2 },
+    { title: LANDING_FEATURES.mentrixer.polaroidTitles[4], image: "/images/features/clan-wars.webp", vocabIcon: CANONICAL_DUELS_ICON, rotation: -2 },
   ],
 ];
 
-function FeatureIconBadge({ name }: { name: VocabIconName }) {
+const GUIDE_ROWS: Feature[][] = [
+  [
+    { title: LANDING_FEATURES.guide.polaroidTitles[0], image: "/images/features/session-room.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: 1 },
+    { title: LANDING_FEATURES.guide.polaroidTitles[1], image: "/images/features/studio-output.webp", vocabIcon: CANONICAL_SESSION_ICON, rotation: -2 },
+  ],
+  [
+    { title: LANDING_FEATURES.guide.polaroidTitles[2], image: "/images/features/study-package.webp", vocabIcon: CANONICAL_QUEST_ICON, rotation: -1 },
+    { title: LANDING_FEATURES.guide.polaroidTitles[3], image: "/images/features/league.webp", vocabIcon: "impact-score", rotation: 2 },
+  ],
+  [
+    { title: LANDING_FEATURES.guide.polaroidTitles[4], image: "/images/features/guide-knowledge.webp", vocabIcon: CANONICAL_BREAKTHROUGH_ICON, rotation: 2 },
+  ],
+];
+
+function FeatureIconBadge({ name, index }: { name: VocabIconName; index: number }) {
   return (
-    <div
-      className={`${landingHub.stickyCard} flex size-11 shrink-0 rotate-0 items-center justify-center p-2 sm:size-12`}
+    <LandingStickyNote
+      compact
+      variant={landingStickyVariantForIndex(index + 3)}
+      className="flex size-11 shrink-0 rotate-0 items-center justify-center p-2 shadow-[1px_2px_0_rgba(11,18,32,0.12)] sm:size-12"
       aria-hidden
     >
       <MentrixaVocabIcon name={name} size={28} surface="light" title={name} />
-    </div>
+    </LandingStickyNote>
   );
 }
 
@@ -93,7 +102,15 @@ function PolaroidPhoto({ feature }: { feature: Feature }) {
   );
 }
 
-function PolaroidCard({ feature, align }: { feature: Feature; align: "left" | "right" }) {
+function PolaroidCard({
+  feature,
+  align,
+  badgeIndex,
+}: {
+  feature: Feature;
+  align: "left" | "right" | "center";
+  badgeIndex: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24, rotate: feature.rotation * 0.4 }}
@@ -102,23 +119,61 @@ function PolaroidCard({ feature, align }: { feature: Feature; align: "left" | "r
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "lp-polaroid-card group flex flex-col items-center",
-        align === "left" ? "sm:items-start sm:pr-4" : "sm:items-end sm:pl-4",
+        align === "left" && "sm:items-start sm:pr-4",
+        align === "right" && "sm:items-end sm:pl-4",
+        align === "center" && "sm:col-span-2 sm:justify-center",
       )}
     >
       <div className="relative flex items-center gap-2.5 sm:gap-3">
-        {align === "left" ? (
+        {align === "right" || align === "center" ? (
           <>
+            {align !== "center" ? <FeatureIconBadge name={feature.vocabIcon} index={badgeIndex} /> : null}
             <PolaroidPhoto feature={feature} />
-            <FeatureIconBadge name={feature.vocabIcon} />
+            {align === "center" ? <FeatureIconBadge name={feature.vocabIcon} index={badgeIndex} /> : null}
           </>
         ) : (
           <>
-            <FeatureIconBadge name={feature.vocabIcon} />
             <PolaroidPhoto feature={feature} />
+            <FeatureIconBadge name={feature.vocabIcon} index={badgeIndex} />
           </>
         )}
       </div>
     </motion.div>
+  );
+}
+
+function RoleFeatureGrid({ rows, indexOffset = 0 }: { rows: Feature[][]; indexOffset?: number }) {
+  let badgeIndex = indexOffset;
+
+  return (
+    <div className="relative space-y-8 sm:space-y-10">
+      <div className="pointer-events-none absolute bottom-4 left-1/2 top-4 hidden w-px -translate-x-1/2 bg-[#C4B5FD]/60 sm:block" />
+      {rows.map((row, rowIndex) => (
+        <div
+          key={rowIndex}
+          className={cn(
+            "relative grid grid-cols-1 gap-6 sm:gap-8",
+            row.length === 1 ? "sm:grid-cols-1" : "sm:grid-cols-2",
+          )}
+        >
+          {row.length === 2 ? (
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#6366F1] bg-[#EDE9FE] sm:block" />
+          ) : null}
+          {row.map((feature, i) => {
+            const currentBadgeIndex = badgeIndex;
+            badgeIndex += 1;
+            return (
+              <PolaroidCard
+                key={feature.title}
+                feature={feature}
+                badgeIndex={currentBadgeIndex}
+                align={row.length === 1 ? "center" : i === 0 ? "left" : "right"}
+              />
+            );
+          })}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -127,22 +182,33 @@ export function FeaturesBentoSection() {
     <LandingSectionShell id="features" innerClassName="max-w-5xl">
       <motion.div initial="hidden" whileInView="visible" viewport={viewportOnce} variants={staggerContainer}>
         <LandingSectionHeader
-          eyebrow={LANDING_FEATURES.eyebrow}
           title={LANDING_FEATURES.title}
           subtitle={LANDING_FEATURES.subtitle}
         />
       </motion.div>
 
-      <div className={`${landingHub.notebookCard} relative mt-10 space-y-8 sm:space-y-10`}>
-        <div className="pointer-events-none absolute bottom-4 left-1/2 top-4 hidden w-px -translate-x-1/2 bg-[#C4B5FD]/60 sm:block" />
-
-        {FEATURE_ROWS.map((row, rowIndex) => (
-          <div key={rowIndex} className="relative grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
-            <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#6366F1] bg-[#EDE9FE] sm:block" />
-            <PolaroidCard feature={row[0]!} align="left" />
-            <PolaroidCard feature={row[1]!} align="right" />
+      <div className={`${landingHub.notebookCard} relative mt-10 space-y-10`}>
+        <div>
+          <LandingSectionHeader
+            eyebrow={LANDING_FEATURES.mentrixer.eyebrow}
+            title={LANDING_FEATURES.mentrixer.title}
+            subtitle={LANDING_FEATURES.mentrixer.subtitle}
+          />
+          <div className="mt-8">
+            <RoleFeatureGrid rows={MENTRIXER_ROWS} />
           </div>
-        ))}
+        </div>
+
+        <div className="border-t border-[#C4B5FD]/60 pt-10">
+          <LandingSectionHeader
+            eyebrow={LANDING_FEATURES.guide.eyebrow}
+            title={LANDING_FEATURES.guide.title}
+            subtitle={LANDING_FEATURES.guide.subtitle}
+          />
+          <div className="mt-8">
+            <RoleFeatureGrid rows={GUIDE_ROWS} indexOffset={5} />
+          </div>
+        </div>
       </div>
     </LandingSectionShell>
   );
