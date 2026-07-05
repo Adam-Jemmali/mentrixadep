@@ -64,7 +64,7 @@ export function RankLadderShowcase() {
     };
   }, []);
 
-  const [coachMessage, setCoachMessage] = useState(LANDING_RANK_LADDER.initialCoach);
+  const [coachMessage, setCoachMessage] = useState<string>(LANDING_RANK_LADDER.initialCoach);
   const active = ACCOUNT_RANK_VISUALS[activeIndex]!;
 
   useEffect(() => {

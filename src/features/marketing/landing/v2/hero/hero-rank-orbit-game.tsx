@@ -72,6 +72,7 @@ function slotPosition(index: number) {
 }
 
 type CoachTone = "coach" | "success" | "error" | "neutral";
+type CoachState = { message: string; tone: CoachTone };
 
 export function HeroRankOrbitGame() {
   const { canLoop, cinematic, mounted, reduced } = useLandingMotion();
@@ -82,9 +83,9 @@ export function HeroRankOrbitGame() {
   const [placed, setPlaced] = useState<Partial<Record<number, AccountRankKey>>>({});
   const [selectedKey, setSelectedKey] = useState<AccountRankKey | null>(null);
   const [shakeSlot, setShakeSlot] = useState<number | null>(null);
-  const [coach, setCoach] = useState({
+  const [coach, setCoach] = useState<CoachState>({
     message: COACH_START,
-    tone: "coach" as CoachTone,
+    tone: "coach",
   });
   const [completed, setCompleted] = useState(false);
   const [timedOut, setTimedOut] = useState(false);

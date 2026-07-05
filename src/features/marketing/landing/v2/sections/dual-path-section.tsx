@@ -8,7 +8,12 @@ import { LANDING_DUAL_PATH } from "@/features/marketing/landing/landing-copy-pur
 export function DualPathSection() {
   return (
     <LandingSectionShell id="path">
-      <DualPathReactionGame sides={[...LANDING_DUAL_PATH.sides]} />
+      <DualPathReactionGame
+        sides={LANDING_DUAL_PATH.sides.map((side) => ({
+          ...side,
+          points: [...side.points],
+        }))}
+      />
       <GuideRankLadderPreview />
     </LandingSectionShell>
   );

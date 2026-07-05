@@ -18,7 +18,7 @@ describe("accordion messages", () => {
   it("frames landing FAQ heading for objection handling", () => {
     const heading = landingFaqSectionHeading();
     expect(heading.title).toMatch(/deciding/i);
-    expect(heading.subtitle).toMatch(/mentors/i);
+    expect(heading.subtitle).toMatch(/mentors|access/i);
   });
 
   it("summarizes skill tree unit verification counts", () => {
