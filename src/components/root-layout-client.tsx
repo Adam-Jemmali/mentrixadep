@@ -282,6 +282,12 @@ export function RootLayoutClient({
   const isArenaRoute =
     pathname.includes("/duel") ||
     pathname.includes("/division");
+  const isStudentHubRoute =
+    pathname.startsWith("/student") &&
+    !isVideoRoute &&
+    !isProfileRoute &&
+    !isWorkbenchRoute &&
+    !isArenaRoute;
 
   return (
     <ErrorBoundary>
@@ -324,6 +330,14 @@ export function RootLayoutClient({
             !isVideoRoute &&
             !isWorkbenchRoute &&
             !isArenaRoute &&
+            isStudentHubRoute &&
+            "mx-hub-desk text-[#0B1220]",
+          !isHome &&
+            !isProfileRoute &&
+            !isVideoRoute &&
+            !isWorkbenchRoute &&
+            !isArenaRoute &&
+            !isStudentHubRoute &&
             "bg-mentrixa-app text-slate-100",
           isApprovedStudent &&
             !isQuestOnboarding &&

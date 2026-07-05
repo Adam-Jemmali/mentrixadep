@@ -51,5 +51,11 @@ export const mentrixHubSurfaces = {
 
   guideSticky: "mx-hub-sticky mx-hub-ruled-lines mx-hub-paper mx-surface-light p-4 sm:p-5",
 
-  pageDesk: "bg-mentrixa-app relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-[#E2E8F0]",
+  /** Full-page hub canvas — ruled desk fill so gaps between cards never show bare dark shell. */
+  pageDeskHub:
+    "mx-hub-desk relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-[#0B1220]",
+
+  /** Arena / duel shells — dark gradient canvas. */
+  pageDeskArena:
+    "bg-mentrixa-app relative min-h-[calc(100dvh-4.75rem)] isolate overflow-hidden antialiased text-[#E2E8F0]",
 } as const;

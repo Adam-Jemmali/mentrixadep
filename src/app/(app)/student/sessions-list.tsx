@@ -397,8 +397,8 @@ export function SessionsList({
         </>
       ) : null}
 
-      <div className={`lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}`}>
-        <div className="lg:col-span-2">
+      <div className={children ? `lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}` : showHeroStats ? "mt-8" : ""}>
+        <div className={children ? "lg:col-span-2" : ""}>
           <section className={mentrixStudent.hubSessionsPanel}>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
@@ -535,9 +535,8 @@ export function SessionsList({
           </section>
         </div>
 
+        {children ? <div className="lg:col-span-1">{children}</div> : null}
       </div>
-
-      {children}
 
       <RateSessionFloating
         session={floatingSession}

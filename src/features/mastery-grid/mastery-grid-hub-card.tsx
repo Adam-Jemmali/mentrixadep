@@ -24,7 +24,7 @@ export function MasteryGridHubCard({ data, compact = false }: { data: MasteryGri
 
   return (
     <section
-      className={`${mentrixStudent.hubNotebook} ${compact ? "" : "p-5 sm:p-6"}`}
+      className={`${mentrixStudent.hubNotebook} h-full ${compact ? "" : "p-5 sm:p-6"}`}
       aria-label="Skill tree summary"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

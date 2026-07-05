@@ -7,11 +7,11 @@ import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfa
  * Logo palette only on product routes — no white containers.
  */
 export const mentrixStudent = {
-  pageBgHub: mentrixHubSurfaces.pageDesk,
+  pageBgHub: mentrixHubSurfaces.pageDeskHub,
 
-  pageBg: mentrixHubSurfaces.pageDesk,
+  pageBg: mentrixHubSurfaces.pageDeskHub,
 
-  pageBgArena: mentrixHubSurfaces.pageDesk,
+  pageBgArena: mentrixHubSurfaces.pageDeskArena,
 
   main: "max-w-7xl mx-auto px-4 sm:px-6 py-8",
   mainWide: "max-w-6xl mx-auto px-4 sm:px-6 py-8",

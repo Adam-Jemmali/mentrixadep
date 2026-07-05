@@ -4,8 +4,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/shared/core/utils";
 import { mentrixProfileType } from "@/features/student-profile/mentrix-profile-typography";
 
-/** Routes that share profile-parity typography (not the profile editor itself). */
-const PRODUCT_ROUTE = /^\/student(?:\/(?:mastery|quest|division|duel)(?:\/|$)|\/?$)/;
+/** Routes that share profile-parity typography and the hub desk canvas. */
+const PRODUCT_ROUTE =
+  /^\/student(?:\/(?:mastery|quest|division|duel|subscribe|receipts|loop|briefs|progress|certificate|booking|learning-path|clan|resolve)(?:\/|$)|\/?$)/;
 
 export function StudentProductTypography({
   children,
@@ -18,7 +19,7 @@ export function StudentProductTypography({
   }
 
   return (
-    <div className={cn(mentrixProfileType.scope, "min-h-[calc(100dvh-4.75rem)] bg-mentrixa-app")}>
+    <div className={cn(mentrixProfileType.scope, "mx-hub-desk min-h-[calc(100dvh-4.75rem)]")}>
       {children}
     </div>
   );

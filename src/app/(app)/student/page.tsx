@@ -268,13 +268,19 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         ) : null}
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-12">
+        <div className="mt-4 grid gap-4 lg:grid-cols-12 lg:items-stretch">
           {masteryGrid ? (
-            <div className="lg:col-span-7">
+            <div className="flex lg:col-span-7">
               <MasteryGridHubCard data={masteryGrid} compact />
             </div>
           ) : null}
-          <div className={masteryGrid ? "flex flex-col gap-4 lg:col-span-5" : "flex flex-col gap-4 lg:col-span-12"}>
+          <div
+            className={
+              masteryGrid
+                ? `${mentrixStudent.hubNotebook} flex min-h-full flex-col gap-4 p-4 sm:p-5 lg:col-span-5`
+                : "flex flex-col gap-4 lg:col-span-12"
+            }
+          >
             {movementReceipt ? (
               <MovementReceiptHubCard
                 data={movementReceipt.receipt_data}
@@ -282,7 +288,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 compact
               />
             ) : null}
-            <DeferredTopRivalCard rivalData={rivalData} />
+            <DeferredTopRivalCard rivalData={rivalData} className="flex-1" />
           </div>
         </div>
 
