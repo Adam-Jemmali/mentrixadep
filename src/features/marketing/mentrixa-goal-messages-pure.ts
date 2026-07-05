@@ -24,9 +24,9 @@ export const MENTRIXA_GOAL_COMPACT: Pick<MentrixaGoalBlock, "who" | "whyNow" | "
 };
 
 export const MENTRIXA_GOAL_LANDING: MentrixaGoalBlock = {
-  who: "AP Calculus AB Mentrixers on a live public feed.",
-  why: "First tries against real people on the same node. No retries move rank.",
+  who: "Mentrixers on a live feed for any skill node.",
+  why: "First tries against real people. Calculus AB live first. No retries move rank.",
   whyNow: "Chain Rule shifts the second someone locks a first try.",
   verdict: "Open feed. Verified first attempts only.",
-  nextAction: "Lock one node on the feed.",
+  nextAction: "Lock one node on Calculus AB.",
 };

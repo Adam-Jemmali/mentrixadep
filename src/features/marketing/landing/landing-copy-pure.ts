@@ -1,37 +1,41 @@
 /**
- * Mentrixa landing copy — one spine, one job per beat.
- *
- * Vision: live public verified-first-attempt standings on AP Calculus AB.
- * Anyone on the internet can watch names and accuracy move on each skill node.
- * First encounter locks forever. Retakes never move rank.
- *
- * Identity beat: what is true about you today vs a real Mentrixer, that was not true yesterday.
+ * Mentrixa landing copy — long-term: any skill node, verified first try, live public feed.
+ * Launch subject: AP Calculus AB (named wherever the product is live today).
  */
 
+/** Shared launch + long-term framing. */
+export const LANDING_SCOPE = {
+  launchSubject: "AP Calculus AB",
+  launchShort: "Calculus AB",
+  /** Universal unit — every future subject uses the same mechanic. */
+  node: "skill node",
+  longTerm: "Any skill. Same proof bar. Calculus AB first.",
+} as const;
+
 export const LANDING_HERO = {
-  line1: "Golf has live boards.",
-  line2Prefix: "Calculus ",
+  line1: "Sports have live boards.",
+  line2Prefix: "Learning ",
   line2Highlight: "never did",
-  ariaLabel: "Golf has live boards. Calculus never did.",
+  ariaLabel: "Sports have live boards. Learning never did.",
   cta: "Watch live",
-  footnote: "Verified first tries. Open to the world.",
+  footnote: "Any skill node. Calculus AB first. Public.",
 } as const;
 
 export const LANDING_SOCIAL = {
   word: "Watch",
-  sentence: "Names. First-try accuracy. Shifts as the world plays.",
+  sentence: "Any skill node. First-try accuracy. Calculus AB live now.",
 } as const;
 
 export const LANDING_STORY_BRIDGES = [
   {
     chapter: "Who",
     title: "Mentrixers",
-    subtitle: "AP Calculus AB. First encounter locks forever.",
+    subtitle: "Any skill. Calculus AB first. First try locks.",
   },
   {
     chapter: "Open",
     title: "Public",
-    subtitle: "Not a profile percentile. A live feed anyone can open.",
+    subtitle: "Live feed per skill node. Open to the internet.",
   },
   {
     chapter: "Loop",
@@ -54,7 +58,7 @@ export const LANDING_OUTCOMES = {
 export const LANDING_FEATURES = {
   eyebrow: "Surfaces",
   title: "Ten rooms.",
-  subtitle: "Each records verified first tries.",
+  subtitle: "Any skill node. Calculus AB live today.",
   polaroidTitles: [
     "Duels",
     "League",
@@ -87,18 +91,18 @@ export const LANDING_RANK_LADDER = {
 } as const;
 
 export const LANDING_WHY = {
-  title: "The old way.",
+  title: "Two worlds.",
   withoutEyebrow: "Before",
   withEyebrow: "Mentrixa",
   without: [
-    "Hours alone. No witness.",
-    "Private score. Not a live feed.",
-    "Retakes feel like growth.",
+    "Any skill. Hours alone. No live board.",
+    "Score on a profile. Hidden from the world.",
+    "Retakes feel like you improved.",
   ],
   with: [
-    "First try locks on server.",
-    "Same node. Same first question.",
-    "World watches. Retakes stay silent.",
+    "One first try per skill node. Locked.",
+    "Calculus AB live now. Every skill same bar.",
+    "Public feed. Retakes never move it.",
   ],
 } as const;
 
@@ -135,7 +139,7 @@ export const LANDING_DUAL_PATH = {
       role: "Mentrixer" as const,
       title: "Compete",
       points: [
-        "Live feed. Verified first tries only.",
+        "Any skill node. Calculus AB live. First tries only.",
         "Quest. Duel. Public passport. Free.",
         "Stuck? Guide sees your record before join.",
       ],
@@ -181,7 +185,7 @@ export const LANDING_FAQ = {
         {
           id: "what-counts",
           title: "What moves rank?",
-          body: "Verified first tries on AP Calculus AB nodes.",
+          body: "Verified first tries on any live skill node. Calculus AB today.",
           verdict: "Practice after first encounter never rewrites it.",
           nextAction: "Run a quest on an untouched node.",
         },
@@ -234,10 +238,10 @@ export const LANDING_FAQ = {
         },
         {
           id: "subjects",
-          title: "Why AP Calculus AB only?",
-          body: "Reviewed bank. Enough first tries for real percentiles.",
-          verdict: "One subject done right first.",
-          nextAction: "Win here before anything else.",
+          title: "Why Calculus AB first?",
+          body: "Any skill can join later. Each needs a reviewed bank and enough first tries for real ranks.",
+          verdict: "Calculus AB proves the model first.",
+          nextAction: "Win here. Next skill same bar.",
         },
       ],
     },
@@ -253,7 +257,7 @@ export const LANDING_FOOTER = {
   contactTitle: "Something broken?",
   contactBody: "We read every message.",
   contactButton: "Send message",
-  tagline: "Live verified first tries on AP Calculus AB.",
+  tagline: "Any skill node. Calculus AB live. Verified first tries.",
 } as const;
 
 export const LANDING_NAV = {
@@ -302,7 +306,7 @@ export const LANDING_HERO_GAME: LandingHeroGameCopy = {
 export const LANDING_METADATA = {
   titleSuffix: "Live verified standings",
   description:
-    "Live public feed of AP Calculus AB first tries. Names, accuracy, no retries. Quest, duel, Guide. Free.",
+    "Live public feed for verified first tries on any skill node. Starting AP Calculus AB. Quest, duel, Guide. Free.",
 } as const;
 
 export type LandingFaqCategoryCopy = (typeof LANDING_FAQ.categories)[number];
