@@ -5,6 +5,8 @@ import {
   formatQuestPromptText,
   parseQuestPromptBlocks,
 } from "@/features/quest/ui/format-quest-prompt";
+import { tokenizeQuestPromptHighlights } from "@/features/quest/ui/quest-prompt-highlight-pure";
+import { questPromptHighlightSpanClass } from "@/features/quest/ui/quest-prompt-highlight-styles";
 import { QuestPromptTable } from "@/features/quest/ui/quest-prompt-table";
 import {
   normalizeMathText,
@@ -15,7 +17,60 @@ import { cn } from "@/shared/core/utils";
 
 type KatexModule = typeof import("katex");
 
-function renderMathParts(text: string, katex: KatexModule["default"]): ReactNode[] {
+function HighlightedProse({
+  text,
+  variant,
+}: {
+  text: string;
+  variant: "light" | "dark";
+}) {
+  const tokens = useMemo(() => tokenizeQuestPromptHighlights(text), [text]);
+  return (
+    <>
+      {tokens.map((token, index) => {
+        const className = questPromptHighlightSpanClass(token.kind, variant);
+        if (!className) {
+          return (
+            <span key={index} className="whitespace-pre-wrap">
+              {token.text}
+            </span>
+          );
+        }
+        return (
+          <span key={index} className={className}>
+            {token.text}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+function renderProseSpan(
+  text: string,
+  key: number,
+  options: { highlightKeyTerms: boolean; variant: "light" | "dark" },
+): ReactNode {
+  if (!text) return null;
+  if (options.highlightKeyTerms) {
+    return (
+      <span key={key}>
+        <HighlightedProse text={text} variant={options.variant} />
+      </span>
+    );
+  }
+  return (
+    <span key={key} className="whitespace-pre-wrap">
+      {text}
+    </span>
+  );
+}
+
+function renderMathParts(
+  text: string,
+  katex: KatexModule["default"],
+  options: { highlightKeyTerms: boolean; variant: "light" | "dark" },
+): ReactNode[] {
   const normalizedText = normalizeMathText(text);
   const parts: ReactNode[] = [];
   let key = 0;
@@ -25,9 +80,7 @@ function renderMathParts(text: string, katex: KatexModule["default"]): ReactNode
   while ((m = re.exec(normalizedText)) !== null) {
     if (m.index > last) {
       parts.push(
-        <span key={key++} className="whitespace-pre-wrap">
-          {normalizedText.slice(last, m.index)}
-        </span>,
+        renderProseSpan(normalizedText.slice(last, m.index), key++, options),
       );
     }
     const displayMode = m[2] !== undefined;
@@ -50,11 +103,7 @@ function renderMathParts(text: string, katex: KatexModule["default"]): ReactNode
     last = m.index + m[0].length;
   }
   if (last < normalizedText.length) {
-    parts.push(
-      <span key={key++} className="whitespace-pre-wrap">
-        {normalizedText.slice(last)}
-      </span>,
-    );
+    parts.push(renderProseSpan(normalizedText.slice(last), key++, options));
   }
   return parts;
 }
@@ -63,10 +112,14 @@ function renderMathParts(text: string, katex: KatexModule["default"]): ReactNode
 export function PromptWithMathInline({
   text,
   plainNumeric = false,
+  highlightKeyTerms = false,
+  variant = "light",
   className,
 }: {
   text: string;
   plainNumeric?: boolean;
+  highlightKeyTerms?: boolean;
+  variant?: "light" | "dark";
   className?: string;
 }) {
   const formatted = useMemo(() => formatQuestPromptText(text), [text]);
@@ -84,15 +137,24 @@ export function PromptWithMathInline({
     };
   }, [needsMath, formatted]);
 
+  const renderOptions = useMemo(
+    () => ({ highlightKeyTerms, variant }),
+    [highlightKeyTerms, variant],
+  );
+
   const parts = useMemo(() => {
     if (!katex || !needsMath) return null;
-    return renderMathParts(formatted, katex);
-  }, [formatted, katex, needsMath]);
+    return renderMathParts(formatted, katex, renderOptions);
+  }, [formatted, katex, needsMath, renderOptions]);
 
   if (!needsMath) {
     return (
       <span className={cn(plainNumeric ? "tabular-nums" : undefined, className)}>
-        {formatted}
+        {highlightKeyTerms ? (
+          <HighlightedProse text={formatted} variant={variant} />
+        ) : (
+          formatted
+        )}
       </span>
     );
   }
@@ -100,7 +162,11 @@ export function PromptWithMathInline({
   if (!katex || !parts) {
     return (
       <span className={cn("whitespace-pre-wrap", className)}>
-        {formatted}
+        {highlightKeyTerms ? (
+          <HighlightedProse text={formatted} variant={variant} />
+        ) : (
+          formatted
+        )}
       </span>
     );
   }
@@ -111,16 +177,18 @@ export function PromptWithMathInline({
 function PromptTextBlock({
   text,
   variant = "light",
+  highlightKeyTerms = false,
 }: {
   text: string;
   variant?: "light" | "dark";
+  highlightKeyTerms?: boolean;
 }) {
   const formatted = useMemo(() => formatQuestPromptText(text), [text]);
   const needsMath = textContainsMath(formatted);
   const [katex, setKatex] = useState<KatexModule["default"] | null>(null);
   const proseClass =
     variant === "dark"
-      ? "text-sm leading-relaxed text-violet-100/90"
+      ? "text-sm leading-relaxed text-white"
       : "text-sm leading-relaxed text-zinc-900";
 
   useEffect(() => {
@@ -134,18 +202,37 @@ function PromptTextBlock({
     };
   }, [needsMath, formatted]);
 
+  const renderOptions = useMemo(
+    () => ({ highlightKeyTerms, variant }),
+    [highlightKeyTerms, variant],
+  );
+
   const parts = useMemo(() => {
     if (!katex || !needsMath) return null;
-    return renderMathParts(formatted, katex);
-  }, [formatted, katex, needsMath]);
+    return renderMathParts(formatted, katex, renderOptions);
+  }, [formatted, katex, needsMath, renderOptions]);
 
   if (!needsMath) {
-    return <p className={cn(proseClass, "whitespace-pre-wrap")}>{formatted}</p>;
+    return (
+      <p className={cn(proseClass, "whitespace-pre-wrap")}>
+        {highlightKeyTerms ? (
+          <HighlightedProse text={formatted} variant={variant} />
+        ) : (
+          formatted
+        )}
+      </p>
+    );
   }
 
   if (!katex || !parts) {
     return (
-      <p className={cn(proseClass, "whitespace-pre-wrap")}>{formatted}</p>
+      <p className={cn(proseClass, "whitespace-pre-wrap")}>
+        {highlightKeyTerms ? (
+          <HighlightedProse text={formatted} variant={variant} />
+        ) : (
+          formatted
+        )}
+      </p>
     );
   }
 
@@ -159,9 +246,11 @@ function PromptTextBlock({
 export function PromptWithMath({
   text,
   variant = "light",
+  highlightKeyTerms = false,
 }: {
   text: string;
   variant?: "light" | "dark";
+  highlightKeyTerms?: boolean;
 }) {
   const blocks = useMemo(() => parseQuestPromptBlocks(text), [text]);
   const needsMath = useMemo(
@@ -185,9 +274,15 @@ export function PromptWithMath({
             headers={block.headers}
             rows={block.rows}
             variant={variant}
+            highlightKeyTerms={highlightKeyTerms}
           />
         ) : (
-          <PromptTextBlock key={`text-${i}`} text={block.content} variant={variant} />
+          <PromptTextBlock
+            key={`text-${i}`}
+            text={block.content}
+            variant={variant}
+            highlightKeyTerms={highlightKeyTerms}
+          />
         ),
       )}
     </div>

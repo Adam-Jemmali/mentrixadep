@@ -1,3 +1,5 @@
+import { sanitizeQuestMathInput } from "@/features/quest/ui/sanitize-quest-math";
+
 /** Read a LaTeX command starting at index `start` (must point to `\`). */
 function readLatexCommand(text: string, start: number): string | null {
   if (text[start] !== "\\") return null;
@@ -61,22 +63,26 @@ function wrapLatexEnvironmentBlocks(text: string): string {
 /** Wrap definite-integral expressions that omit $ delimiters. */
 function wrapIntegralSpans(text: string): string {
   return text.replace(
-    /\\int(?:_\{[^}]+\})?(?:\^\{[^}]+\})?[\s\S]*?\\,?\s*dx/g,
-    (full) => (full.startsWith("$") ? full : `$${full.trim()}$`),
+    /(?<!\$)\\int(?:_\{[^}]+\})?(?:\^\{[^}]+\})?[\s\S]*?\\,?\s*d[xtyu]/g,
+    (full) => `$${full.trim()}$`,
   );
 }
 
 /**
  * Normalize mixed plain + LaTeX strings for KaTeX:
+ * - repair item-bank `\dx` and stray `$` delimiters
  * - unescape \$ → $
  * - \( ... \) → $...$
  * - wrap bare commands like \frac{a}{b} in $...$
  */
 export function normalizeMathText(input: string): string {
-  let text = input.replace(/\\\$/g, "$");
+  let text = sanitizeQuestMathInput(input);
+  text = text.replace(/\\\$/g, "$");
   text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, inner: string) => `$${inner.trim()}$`);
   text = wrapLatexEnvironmentBlocks(text);
-  text = wrapIntegralSpans(text);
+  if (!/\$\\int[\s\S]*?\\,d[xtyu]/.test(text)) {
+    text = wrapIntegralSpans(text);
+  }
   let out = "";
   let i = 0;
   while (i < text.length) {

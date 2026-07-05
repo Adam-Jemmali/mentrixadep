@@ -875,7 +875,7 @@ export function GuestQuestClient({
             ) : null}
 
             <div className="text-slate-900 text-base sm:text-[17px] leading-relaxed font-medium">
-              <PromptWithMath text={promptDisplay} />
+              <PromptWithMath text={promptDisplay} highlightKeyTerms />
             </div>
 
             {isWritten ? (
@@ -1089,7 +1089,7 @@ export function GuestQuestClient({
                           )}
                         </div>
                         <span className="text-slate-900">
-                          <PromptWithMath text={displayGuestQuestText(opt)} />
+                          <PromptWithMath text={displayGuestQuestText(opt)} highlightKeyTerms />
                         </span>
                       </div>
                     </motion.button>

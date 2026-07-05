@@ -7,10 +7,12 @@ export function QuestPromptTable({
   headers,
   rows,
   variant = "light",
+  highlightKeyTerms = false,
 }: {
   headers: string[];
   rows: string[][];
   variant?: "light" | "dark";
+  highlightKeyTerms?: boolean;
 }) {
   const colCount = Math.max(headers.length, ...rows.map((r) => r.length));
   const isDark = variant === "dark";
@@ -38,7 +40,11 @@ export function QuestPromptTable({
                   isDark ? "text-slate-400" : "text-slate-600",
                 )}
               >
-                <PromptWithMathInline text={headers[ci] ?? ""} />
+                <PromptWithMathInline
+                  text={headers[ci] ?? ""}
+                  variant={variant}
+                  highlightKeyTerms={highlightKeyTerms}
+                />
               </th>
             ))}
           </tr>
@@ -65,7 +71,12 @@ export function QuestPromptTable({
                     isDark ? "border-white/5 text-slate-200" : "border-slate-100 text-slate-800",
                   )}
                 >
-                  <PromptWithMathInline text={row[ci] ?? ""} plainNumeric />
+                  <PromptWithMathInline
+                    text={row[ci] ?? ""}
+                    plainNumeric
+                    variant={variant}
+                    highlightKeyTerms={highlightKeyTerms}
+                  />
                 </td>
               ))}
             </tr>

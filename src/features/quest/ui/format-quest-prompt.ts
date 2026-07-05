@@ -1,4 +1,6 @@
 /** One segment of a quest prompt: prose or a markdown pipe table. */
+import { sanitizeQuestMathInput } from "@/features/quest/ui/sanitize-quest-math";
+
 export type QuestPromptBlock =
   | { type: "text"; content: string }
   | { type: "table"; headers: string[]; rows: string[][] };
@@ -139,7 +141,7 @@ function transformPlainSegment(segment: string): string {
 
 /** Convert item-bank / AI markdown and plain-text math into KaTeX-friendly text. */
 export function formatQuestPromptText(input: string): string {
-  let text = input.replace(/\r\n/g, "\n");
+  let text = sanitizeQuestMathInput(input.replace(/\r\n/g, "\n"));
 
   text = text.replace(/`([^`\n]+)`/g, (_, raw: string) => inlineCodeToMath(raw.trim()));
 

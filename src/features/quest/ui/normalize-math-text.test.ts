@@ -29,6 +29,6 @@ describe("normalizeMathText", () => {
   });
 
   it("wraps bare definite integrals", () => {
-    expect(normalizeMathText("\\int_{-2}^1 h(x) \\, dx")).toBe("$\\int_{-2}^1 h(x) \\, dx$");
+    expect(normalizeMathText("\\int_{-2}^1 h(x) \\, dx")).toBe("$\\int_{-2}^1 h(x) \\,dx$");
   });
 });

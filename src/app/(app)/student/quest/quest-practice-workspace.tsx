@@ -618,9 +618,9 @@ export function QuestPracticeWorkspace({
             )}
 
             {question.kind === "mcq" ? (
-              <PromptWithMath text={question.prompt} variant="light" />
+              <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
             ) : question.kind === "problem_solving" ? (
-              <PromptWithMath text={question.prompt} variant="light" />
+              <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
             ) : (
               <p className={`${mentrixStudent.textOnLight} whitespace-pre-wrap text-sm leading-relaxed`}>
                 {question.prompt}
@@ -653,7 +653,7 @@ export function QuestPracticeWorkspace({
                       whileTap={{ scale: 0.98 }}
                       className={`${cls} [&_.katex]:text-inherit`}
                     >
-                      <PromptWithMath text={opt} variant="light" />
+                      <PromptWithMath text={opt} variant="light" highlightKeyTerms />
                     </motion.button>
                   );
                 })}

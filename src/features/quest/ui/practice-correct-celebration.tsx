@@ -170,9 +170,9 @@ export function PracticeCorrectCelebration({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.22, duration: 0.35 }}
-                className="mx-surface-light mt-4 max-h-[min(42vh,20rem)] overflow-x-auto overflow-y-auto rounded-2xl border border-emerald-200/80 bg-white px-4 py-3 text-left text-sm leading-relaxed text-zinc-800"
+                className="mt-4 max-h-[min(42vh,20rem)] overflow-x-auto overflow-y-auto rounded-2xl border border-emerald-300/35 bg-slate-950/55 px-4 py-3 text-left text-sm leading-relaxed text-white [&_.katex]:text-white [&_span]:text-white"
               >
-                <PromptWithMath text={explanation} />
+                <PromptWithMath text={explanation} variant="dark" />
               </motion.div>
 
               <motion.div
