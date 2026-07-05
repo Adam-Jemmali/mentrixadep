@@ -103,58 +103,61 @@ export function TopRivalCard({ rivalData, className }: Props) {
             ) : null}
           </div>
 
-          <div className={cn("relative flex flex-1 flex-col justify-center p-5 sm:p-6", mentrixStudent.hubBookPage)}>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex flex-col items-center gap-1.5">
-                  <LeaguePlayerAvatar displayName={myName} avatarUrl={rivalData.myAvatarUrl} size={56} />
-                  <span className="max-w-[5.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#6366F1]">
-                    {myName.split(" ")[0]}
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#0891B2]">
-                    {isRank1 ? "You Lead" : `Rank #${rivalData.myRank}`}
-                  </span>
-                </div>
-
-                {!isRank1 ? (
-                  <>
-                    <div className="flex flex-col items-center gap-0.5">
-                      <VersusMark size="sm" />
-                      <span className="text-base font-semibold text-[#4F46E5]">Versus</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <LeaguePlayerAvatar displayName={rivalName} avatarUrl={rivalData.rivalAvatarUrl} size={52} />
-                      <span className="max-w-[5.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#7C3AED]">
-                        {rivalName.split(" ")[0]}
-                      </span>
-                      <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#4F46E5]">
-                        Top Rival
-                      </span>
-                    </div>
-
-                    {rivalData.xpGap != null ? (
-                      <VocabStatColumn
-                        icon="xp"
-                        label="XP Behind"
-                        value={rivalData.xpGap}
-                        accent="violet"
-                        surface="light"
-                        iconSize={26}
-                      />
-                    ) : null}
-                  </>
-                ) : null}
+          <div className={cn("relative flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6", mentrixStudent.hubBookPage)}>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
+              <div className="flex flex-col items-center gap-1.5">
+                <LeaguePlayerAvatar displayName={myName} avatarUrl={rivalData.myAvatarUrl} size={56} />
+                <span className="max-w-[6.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#6366F1]">
+                  {myName.split(" ")[0]}
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#0891B2]">
+                  {isRank1 ? "You Lead" : `Rank #${rivalData.myRank}`}
+                </span>
               </div>
 
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
-                <Link href={ctaHref} className={mentrixStudent.hubBtn} title={ctaLabel}>
-                  <MentrixaVocabIcon name={ctaIcon} size={28} surface="dark" title={ctaLabel} />
-                  <span className="max-w-[5.5rem] text-center text-[9px] font-black uppercase leading-tight tracking-[0.1em]">
-                    {ctaLabel}
-                  </span>
-                </Link>
-              </motion.div>
+              {!isRank1 ? (
+                <>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <VersusMark size="sm" />
+                    <span className="text-base font-semibold text-[#4F46E5]">Versus</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <LeaguePlayerAvatar displayName={rivalName} avatarUrl={rivalData.rivalAvatarUrl} size={52} />
+                    <span className="max-w-[6.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#7C3AED]">
+                      {rivalName.split(" ")[0]}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#4F46E5]">
+                      Top Rival
+                    </span>
+                  </div>
+
+                  {rivalData.xpGap != null ? (
+                    <VocabStatColumn
+                      icon="xp"
+                      label="XP Behind"
+                      value={rivalData.xpGap}
+                      accent="violet"
+                      surface="light"
+                      iconSize={26}
+                    />
+                  ) : null}
+                </>
+              ) : null}
             </div>
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Link
+                href={ctaHref}
+                className={cn(
+                  mentrixStudent.hubBtnSolid,
+                  "inline-flex w-full min-w-0 items-center justify-center gap-2.5 px-4 py-2.5 whitespace-nowrap sm:w-auto",
+                )}
+                title={ctaLabel}
+              >
+                <MentrixaVocabIcon name={ctaIcon} size={22} surface="dark" title={ctaLabel} />
+                <span className="text-sm font-black uppercase tracking-[0.08em]">{ctaLabel}</span>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </div>

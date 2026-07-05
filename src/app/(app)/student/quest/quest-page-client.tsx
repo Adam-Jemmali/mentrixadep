@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { QuestPracticeWorkspace } from "./quest-practice-workspace";
 import { GuestQuestClient } from "@/app/(marketing)/try/guest-quest-client";
@@ -32,7 +33,7 @@ export function QuestPageClient({
 
   if (onboardingMode) {
     return (
-      <div className="min-h-[calc(100dvh-4.75rem)]">
+      <div className={cn(mentrixStudent.pageBgHub, "min-h-[calc(100dvh-4.75rem)]")}>
         <div className="mx-auto w-full max-w-5xl space-y-3 px-4 pt-4 sm:px-6">
           <OnboardingStepsProgressBar currentStep={1} totalSteps={5} tone="dark" />
           <VerifiedFirstAttemptAlert kind="onboarding" subjectLabel={AP_CALC_AB_SUBJECT} tone="dark" />
@@ -46,14 +47,10 @@ export function QuestPageClient({
   }
 
   return (
-    <div
-      className={
-        guestMode ? "w-full" : mentrixStudent.pageBgArena
-      }
-    >
-      <div className={guestMode ? undefined : mentrixStudent.mainWide}>
+    <div className={guestMode ? "w-full" : mentrixStudent.pageBgHub}>
+      <div className={guestMode ? undefined : cn(mentrixStudent.mainWide, "space-y-4 pb-10")}>
       {!guestMode ? (
-        <div className="mb-4">
+        <div>
           <BackButton />
         </div>
       ) : null}
@@ -73,6 +70,7 @@ export function QuestPageClient({
           eyebrow={guestMode ? questGuestPageEyebrow() : questPageEyebrow()}
           title={questPageTitle()}
           subtitle={guestMode ? questGuestPageSubtitle() : questPageSubtitle()}
+          className="mb-0"
         />
       ) : null}
 

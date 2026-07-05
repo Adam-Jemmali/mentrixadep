@@ -13,7 +13,7 @@ export const mentrixHubSurfaces = {
   stickyNote: "mx-hub-sticky mx-hub-ruled-lines mx-hub-paper mx-surface-light p-4 sm:p-5",
 
   /** League rival — open book spread. */
-  bookSpread: "mx-hub-book mx-hub-paper mx-surface-light overflow-hidden",
+  bookSpread: "mx-hub-book mx-hub-paper mx-surface-light overflow-visible",
 
   bookPage: "mx-hub-book-page mx-hub-ruled-lines",
 

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
-import { BackButton } from "@/shared/ui/back-button";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
 import { warmKatex } from "@/features/quest/ui/normalize-math-text";
 import {
@@ -392,7 +391,7 @@ export function QuestPracticeWorkspace({
 
   if (phase === "wizard") {
     return (
-      <div className="relative mx-auto max-w-xl px-4 py-10">
+      <div className="relative w-full">
         {busy ? (
           <div
             className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-[#FAFAF8]/92 px-8 backdrop-blur-sm"
@@ -400,11 +399,6 @@ export function QuestPracticeWorkspace({
             aria-live="polite"
           >
             <QuestPackLoadPendingPanel className="max-w-xs" />
-          </div>
-        ) : null}
-        {!onboardingMode ? (
-          <div className="mb-6">
-            <BackButton />
           </div>
         ) : null}
         <div className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}>
@@ -560,7 +554,7 @@ export function QuestPracticeWorkspace({
     return (
       <>
       <div
-        className={`${mentrixStudent.card} mx-auto max-w-3xl touch-pan-y px-4 py-6 sm:p-8`}
+        className={`${mentrixStudent.card} w-full touch-pan-y px-4 py-6 sm:p-8`}
         onTouchStart={(e) => {
           touchStartX.current = e.targetTouches[0]?.clientX ?? null;
         }}
