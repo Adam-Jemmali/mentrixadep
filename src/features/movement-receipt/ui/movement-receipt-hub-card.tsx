@@ -62,9 +62,7 @@ export function MovementReceiptHubCard({ data, momentumActive, compact = false }
     ? CANONICAL_QUEST_ICON
     : ctaHref.includes("duel")
       ? CANONICAL_DUELS_ICON
-      : ctaHref.includes("subscribe")
-        ? CANONICAL_MOMENTUM_ICON
-        : CANONICAL_BOOKING_ICON;
+      : CANONICAL_BOOKING_ICON;
   const ctaCaption = vocabTwoWordLabel(ctaLabel);
 
   return (
