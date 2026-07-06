@@ -18,6 +18,7 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { GuideStickyNote } from "@/features/tutor/ui/guide-sticky-note";
 import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
+import { GUIDE_PAYOUTS } from "@/features/tutor/guide-home-copy-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
 function cad(cents: number): string {
@@ -85,13 +86,13 @@ function MetricCard({
 }
 
 const PAYOUT_TABLE_HEADERS: { label: string; icon?: VocabIconName }[] = [
-  { label: "Session date", icon: "session" },
-  { label: "Learner", icon: "profile" },
-  { label: "Course", icon: "skills" },
-  { label: "Gross" },
-  { label: "Platform fee" },
-  { label: "Net" },
-  { label: "Status", icon: "status-pending" },
+  { label: GUIDE_PAYOUTS.tableSession, icon: "session" },
+  { label: GUIDE_PAYOUTS.tableLearner, icon: "profile" },
+  { label: GUIDE_PAYOUTS.tableCourse, icon: "skills" },
+  { label: GUIDE_PAYOUTS.tableGross },
+  { label: GUIDE_PAYOUTS.tableFee },
+  { label: GUIDE_PAYOUTS.tableNet },
+  { label: GUIDE_PAYOUTS.tableStatus, icon: "status-pending" },
 ];
 
 function StatusBadge({ status }: { status: string }) {
@@ -147,18 +148,17 @@ function OnboardingBanner({
       <div className="min-w-0 flex-1">
         <p className={`text-sm font-medium ${payoutsEnabled ? "text-emerald-900" : "text-amber-900"}`}>
           {payoutsEnabled
-            ? "Stripe Connect ready"
+            ? GUIDE_PAYOUTS.stripeReady
             : incomplete
-              ? "Finish Stripe onboarding to receive bookings"
-              : "Connect Stripe to receive your share of each session"}
+              ? GUIDE_PAYOUTS.stripeFinish
+              : GUIDE_PAYOUTS.stripeConnect}
         </p>
         <p className={`mt-0.5 text-xs ${payoutsEnabled ? "text-emerald-700" : "text-amber-700"}`}>
-          Students pay in CAD through Mentrixa; the platform fee stays with Mentrixa and the rest is sent to your
-          connected Stripe account (destination charge).
+          {GUIDE_PAYOUTS.stripeCadNote}
         </p>
         <div className={`mt-3 rounded border p-3 ${payoutsEnabled ? "border-emerald-200 bg-white/80" : "border-amber-200 bg-white/70"}`}>
           <p className={`text-[11px] font-semibold uppercase tracking-wide ${payoutsEnabled ? "text-emerald-800" : "text-amber-800"}`}>
-            {payoutsEnabled ? "Connected account" : "Checklist"}
+            {payoutsEnabled ? GUIDE_PAYOUTS.connectedAccount : GUIDE_PAYOUTS.checklist}
           </p>
           <ul className="mt-2 space-y-1.5 text-xs text-amber-900">
             {onboardingGuide.steps.map((step) => (
@@ -196,7 +196,7 @@ function OnboardingBanner({
             className="inline-flex items-center justify-center gap-1.5 rounded border border-[#635bff] bg-[#635bff] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-[#4b44c9]"
           >
             <ExternalLink size={12} />
-            Continue Stripe setup
+            {GUIDE_PAYOUTS.continueStripe}
           </a>
         ) : (
           <button
@@ -206,7 +206,7 @@ function OnboardingBanner({
             className="inline-flex items-center justify-center gap-1.5 rounded border border-emerald-600 bg-white px-3 py-1.5 text-xs font-medium text-emerald-900 shadow-sm transition hover:bg-emerald-50 disabled:opacity-60"
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
-            Open Stripe Express
+            {GUIDE_PAYOUTS.openExpress}
           </button>
         )}
       </div>
@@ -246,7 +246,7 @@ function TransferToBankButton({
         className="flex items-center gap-2 rounded-md border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-60"
       >
         {isPending ? <Loader2 size={14} className="animate-spin" /> : <ArrowUpRight size={14} />}
-        Stripe balance &amp; payouts
+        {GUIDE_PAYOUTS.balanceBtn}
         {availableCents > 0 && <span className="ml-1 text-xs opacity-80">{cad(availableCents)}</span>}
       </button>
       {result && <p className="mt-2 text-xs text-slate-600">{result}</p>}
@@ -259,8 +259,8 @@ function TransactionTable({ rows }: { rows: PayoutLedgerRow[] }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <CircleDollarSign size={24} className="mb-3 text-slate-300" />
-        <p className="text-sm font-medium text-slate-500">No transactions yet</p>
-        <p className="mt-1 text-xs text-slate-400">Earnings from completed sessions will appear here.</p>
+        <p className="text-sm font-medium text-slate-500">{GUIDE_PAYOUTS.noTransactions}</p>
+        <p className="mt-1 text-xs text-slate-400">{GUIDE_PAYOUTS.noTransactionsSub}</p>
       </div>
     );
   }
@@ -323,10 +323,8 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
     <section>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className={`text-sm font-semibold ${mentrixStudent.textOnLight}`}>Payouts</h2>
-          <p className={`mt-0.5 text-xs ${mentrixStudent.textMutedOnLight}`}>
-            Stripe Checkout CAD. Your share lands after each completed AP Calculus AB session.
-          </p>
+          <h2 className={`text-sm font-semibold ${mentrixStudent.textOnLight}`}>{GUIDE_PAYOUTS.title}</h2>
+          <p className={`mt-0.5 text-xs ${mentrixStudent.textMutedOnLight}`}>{GUIDE_PAYOUTS.subtitle}</p>
         </div>
         <TransferToBankButton availableCents={availableCents} payoutsEnabled={connectStatus.payoutsEnabled} />
       </div>
@@ -335,7 +333,7 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
         <div className="mb-4 flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5">
           <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
           <p className="text-xs font-medium text-emerald-800">
-            Stripe onboarding updated. When Connect shows charges and payouts enabled, learners can book paid sessions with you.
+            {GUIDE_PAYOUTS.successBanner}
           </p>
         </div>
       )}
@@ -344,7 +342,7 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
         <div className="mb-4 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5">
           <AlertCircle size={14} className="shrink-0 text-amber-600" />
           <p className="text-xs font-medium text-amber-900">
-            Stripe still needs information. Click &quot;Continue Stripe setup&quot; to finish.
+            {GUIDE_PAYOUTS.incompleteBanner}
           </p>
         </div>
       )}
@@ -352,14 +350,14 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
       {showError && (
         <div className="mb-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5">
           <AlertCircle size={14} className="shrink-0 text-red-600" />
-          <p className="text-xs font-medium text-red-800">We could not confirm your Stripe connection. Try setup again.</p>
+          <p className="text-xs font-medium text-red-800">{GUIDE_PAYOUTS.errorBanner}</p>
         </div>
       )}
       {showUnavailable && (
         <div className="mb-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5">
           <AlertCircle size={14} className="shrink-0 text-red-600" />
           <p className="text-xs font-medium text-red-800">
-            Stripe Connect may not be enabled on the platform account yet. Open the Stripe Dashboard → Connect and complete activation.
+            {GUIDE_PAYOUTS.unavailableBanner}
           </p>
         </div>
       )}
@@ -373,29 +371,28 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricCard
-          label="Available (Stripe)"
+          label={GUIDE_PAYOUTS.available}
           value={cad(availableCents)}
-          caption="In your connected Express balance"
+          caption={GUIDE_PAYOUTS.availableCaption}
           highlight={availableCents > 0}
         />
-        <MetricCard label="Queued " value={cad(queuedCents)} caption="Sessions completing / reconciliation" />
-        <MetricCard label="Awaiting transfer" value={cad(pendingCents)} caption="Ledger pending state" />
-        <MetricCard label="Lifetime earned " value={cad(lifetimeEarnedCents)} caption="Net share recorded" />
+        <MetricCard label={GUIDE_PAYOUTS.queued} value={cad(queuedCents)} caption={GUIDE_PAYOUTS.queuedCaption} />
+        <MetricCard label={GUIDE_PAYOUTS.awaiting} value={cad(pendingCents)} caption={GUIDE_PAYOUTS.awaitingCaption} />
+        <MetricCard label={GUIDE_PAYOUTS.lifetime} value={cad(lifetimeEarnedCents)} caption={GUIDE_PAYOUTS.lifetimeCaption} />
       </div>
 
       {(queuedCents > 0 || pendingCents > 0) && (
         <div className="mb-4 flex items-start gap-2 rounded border border-slate-100 bg-slate-50 px-3 py-2">
           <Clock size={13} className="mt-0.5 shrink-0 text-slate-400" />
           <p className="text-[11px] leading-relaxed text-slate-500">
-            With Connect destination charges, your share is typically available on the connected account after the payment succeeds.
-            Ledger rows update when sessions complete.
+            {GUIDE_PAYOUTS.queuedNote}
           </p>
         </div>
       )}
 
       <div className="border-t border-slate-100 pt-4">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-slate-400">Transaction history</h3>
+          <h3 className="text-xs font-medium uppercase tracking-wide text-slate-400">{GUIDE_PAYOUTS.history}</h3>
           <span className="text-[11px] text-slate-400">
             {ledger.length} transaction{ledger.length !== 1 ? "s" : ""}
           </span>

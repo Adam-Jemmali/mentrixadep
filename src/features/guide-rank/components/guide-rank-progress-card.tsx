@@ -1,6 +1,7 @@
 import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
 import type { GuideRankProgress } from "@/features/guide-rank/calculate-pure";
 import { cn } from "@/shared/core/utils";
+import { GUIDE_RANK } from "@/features/tutor/guide-home-copy-pure";
 
 export function GuideRankProgressCard({ progress }: { progress: GuideRankProgress }) {
   const isElite = progress.current.key === "elite";
@@ -35,7 +36,7 @@ export function GuideRankProgressCard({ progress }: { progress: GuideRankProgres
           </div>
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
-              Guide Rank
+              {GUIDE_RANK.eyebrow}
             </p>
             <div className="mt-2">
               <GuideRankBadge rankKey={progress.current.key} size="lg" />
@@ -50,7 +51,7 @@ export function GuideRankProgressCard({ progress }: { progress: GuideRankProgres
         <div className="mt-4 space-y-2">
           <div className="flex justify-between text-[11px] text-slate-500">
             <span>
-              Progress to {progress.next.label}
+              {GUIDE_RANK.progressTo(progress.next.label)}
             </span>
             <span className="tabular-nums">{progress.progressPercent}%</span>
           </div>

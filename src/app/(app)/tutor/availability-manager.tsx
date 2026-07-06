@@ -10,6 +10,7 @@ import { Badge } from "@/shared/ui/badge";
 import { MentrixaCountBadge } from "@/shared/ui/badge-patterns";
 import { Button } from "@/shared/ui/button";
 import { Switch } from "@/shared/ui/switch";
+import { GUIDE_SLOTS_MANAGER } from "@/features/tutor/guide-home-copy-pure";
 import {
   Dialog,
   DialogContent,
@@ -92,7 +93,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       setRows((list) =>
         list.map((r) => (r.id === id ? { ...r, active: prev.active } : r)),
       );
-      setError(err instanceof Error ? err.message : "Could not update slot");
+      setError(err instanceof Error ? err.message : GUIDE_SLOTS_MANAGER.errUpdate);
     }
   }
 
@@ -105,7 +106,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       setDeleteId(null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete");
+      setError(err instanceof Error ? err.message : GUIDE_SLOTS_MANAGER.errDelete);
     }
   }
 
@@ -117,7 +118,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       {error && <div className="mb-3 text-xs text-red-600">{error}</div>}
 
       {rows.length === 0 ? (
-        <p className="py-2 text-sm font-medium text-slate-600">No upcoming open slots.</p>
+        <p className="py-2 text-sm font-medium text-slate-600">{GUIDE_SLOTS_MANAGER.empty}</p>
       ) : (
         <div className="space-y-6">
           {grouped.map(({ course, dayOrder, byDay }) => (
@@ -154,21 +155,21 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                                     color="warning"
                                     variant="soft"
                                     className="normal-case tracking-normal px-2"
-                                    label={`${pending} pending booking${pending === 1 ? "" : "s"}`}
+                                    label={GUIDE_SLOTS_MANAGER.pendingBooking(pending)}
                                   >
-                                    {pending} pending booking{pending === 1 ? "" : "s"}
+                                    {GUIDE_SLOTS_MANAGER.pendingBooking(pending)}
                                   </MentrixaCountBadge>
                                 ) : null}
                                 {!active && (
                                   <Badge variant="outline" className="border-slate-400 text-[10px] font-semibold text-slate-800">
-                                    Hidden from learners
+                                    {GUIDE_SLOTS_MANAGER.hidden}
                                   </Badge>
                                 )}
                               </div>
                             </div>
                             <div className="flex shrink-0 items-center gap-3">
                               <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-700">Active</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-700">{GUIDE_SLOTS_MANAGER.active}</span>
                                 <Switch
                                   checked={active}
                                   onCheckedChange={(v) => handleToggle(slot.id, v)}
@@ -184,7 +185,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
                               >
                                 <span className="inline-flex items-center gap-1.5">
                                   <img src="/icons/mentrixer.svg" alt="" width={12} height={12} className="shrink-0" />
-                                  Delete
+                                  {GUIDE_SLOTS_MANAGER.delete}
                                 </span>
                               </Button>
                             </div>
@@ -203,15 +204,12 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       <Dialog open={deleteId != null} onOpenChange={(o) => !o && setDeleteId(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-purple-600">Delete open slot?</DialogTitle>
+            <DialogTitle className="text-purple-600">{GUIDE_SLOTS_MANAGER.deleteTitle}</DialogTitle>
             <DialogDescription>
               {pendingDel > 0 ? (
-                <span>
-                  This slot has {pendingDel} pending learner request{pendingDel === 1 ? "" : "s"}.
-                  Decline those requests in Command center before deleting.
-                </span>
+                <span>{GUIDE_SLOTS_MANAGER.deletePending(pendingDel)}</span>
               ) : (
-                <span>This removes the slot from your calendar. Learners will no longer see it.</span>
+                <span>{GUIDE_SLOTS_MANAGER.deleteConfirm}</span>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -219,7 +217,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
             <Button type="button" variant="outline" size="sm" onClick={() => setDeleteId(null)}>
               <span className="inline-flex items-center gap-1.5">
                 <img src="/icons/mentrixer.svg" alt="" width={12} height={12} className="shrink-0" />
-                Cancel
+                {GUIDE_SLOTS_MANAGER.cancel}
               </span>
             </Button>
             <Button
@@ -231,7 +229,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
             >
               <span className="inline-flex items-center gap-1.5">
                 <img src="/icons/mentrixer.svg" alt="" width={12} height={12} className="shrink-0" />
-                Delete slot
+                {GUIDE_SLOTS_MANAGER.deleteCta}
               </span>
             </Button>
           </DialogFooter>

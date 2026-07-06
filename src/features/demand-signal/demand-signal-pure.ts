@@ -23,7 +23,7 @@ export function formatUtcWeekStartMonday(d: Date): string {
 }
 
 export function formatDemandRowLine(nodeName: string, weakStudentCount: number): string {
-  return `${nodeName} is weak for ${weakStudentCount} students this week`;
+  return `${nodeName} weak for ${weakStudentCount} learner${weakStudentCount === 1 ? "" : "s"}`;
 }
 
 export function courseHasOpenAvailability(
@@ -67,18 +67,18 @@ export function buildGuideDemandSignals(params: {
 
 export function buildDemandSignalVerdict(signals: GuideDemandSignal[]): string {
   if (signals.length === 0) {
-    return "No weekly demand signal is available for your verified courses yet.";
+    return "No demand signal yet.";
   }
-  return `${signals[0]!.nodeName} is where students need you most this week.`;
+  return `${signals[0]!.nodeName} needs you most this week.`;
 }
 
 export function buildDemandSignalNextAction(signals: GuideDemandSignal[]): string {
   if (signals.length === 0) {
-    return "Complete course verification to see where students need help.";
+    return "Verify AB proficiency first.";
   }
   const needsSlot = signals.find((signal) => !signal.hasOpenAvailability);
   if (needsSlot) {
-    return `Open a slot for ${needsSlot.subject} to meet this demand.`;
+    return `Open ${needsSlot.subject} slot.`;
   }
-  return "Your open slots already cover this week's highest demand nodes.";
+  return "Slots cover this week's demand.";
 }

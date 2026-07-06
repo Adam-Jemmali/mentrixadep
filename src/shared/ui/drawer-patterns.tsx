@@ -93,5 +93,9 @@ export function MentrixaDrawer({
     );
   }
 
-  return panel;
+  return (
+    <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
+      {panel}
+    </Drawer>
+  );
 }

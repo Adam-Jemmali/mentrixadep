@@ -7,7 +7,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { cn } from "@/shared/core/utils";
 
 export const metadata: Metadata = {
-  title: "Guide center · Mentrixa",
+  title: "Guide · Mentrixa",
   robots: { index: false, follow: true },
 };
 
@@ -35,9 +35,9 @@ export default async function TutorPage() {
       <div className={mentrixStudent.pageBgHub}>
         <main className={mentrixStudent.main}>
           <div className={`${mentrixStudent.card} mx-auto max-w-xl p-6`}>
-            <h1 className={`text-lg font-medium ${mentrixStudent.textOnLight}`}>Guide center unavailable</h1>
+            <h1 className={`text-lg font-medium ${mentrixStudent.textOnLight}`}>Guide unavailable</h1>
             <p className={`mt-2 text-sm ${mentrixStudent.textMutedOnLight}`}>
-              We could not load your dashboard right now. Please refresh in a few seconds.
+              Refresh in a few seconds.
             </p>
           </div>
         </main>

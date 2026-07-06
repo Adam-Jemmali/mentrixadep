@@ -18,6 +18,7 @@ import {
 } from "@/features/booking/availability-slot-builder";
 import { addMinutesToHHmm } from "@/features/tutor/teaching-defaults";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { GUIDE_AVAILABILITY_FORM } from "@/features/tutor/guide-home-copy-pure";
 
 const WEEKDAYS: { value: number; label: string; full: string }[] = [
   { value: 0, label: "Mon", full: "Monday" },
@@ -148,11 +149,11 @@ export function CreateAvailabilityCard({
   const handleNext = () => {
     setSuccessMessage(null);
     if (!apCalcVerified) {
-      setError("Submit and verify AP Calculus AB proficiency before opening slots.");
+      setError(GUIDE_AVAILABILITY_FORM.errVerify);
       return;
     }
     if (weekdays.size === 0) {
-      setError("Select at least one day");
+      setError(GUIDE_AVAILABILITY_FORM.errDays);
       return;
     }
     const previewIssue = describeAvailabilityScheduleIssue(
@@ -179,19 +180,19 @@ export function CreateAvailabilityCard({
 
     const parsedPrice = Number(price);
     if (!Number.isFinite(parsedPrice)) {
-      setError("Enter a valid price");
+      setError(GUIDE_AVAILABILITY_FORM.errPrice);
       setLoading(false);
       return;
     }
     if (parsedPrice < SESSION_PRICE_CAD_MIN || parsedPrice > SESSION_PRICE_CAD_MAX) {
-      setError(`Price must be between $${SESSION_PRICE_CAD_MIN} and $${SESSION_PRICE_CAD_MAX} CAD`);
+      setError(GUIDE_AVAILABILITY_FORM.errPriceRange(SESSION_PRICE_CAD_MIN, SESSION_PRICE_CAD_MAX));
       setLoading(false);
       return;
     }
 
     const rw = Number.parseInt(recurringWeeks, 10);
     if (recurring && (!Number.isFinite(rw) || rw < 1 || rw > 52)) {
-      setError("Repeat for 1–52 weeks");
+      setError(GUIDE_AVAILABILITY_FORM.errWeeks);
       setLoading(false);
       return;
     }
@@ -234,10 +235,10 @@ export function CreateAvailabilityCard({
       setWeekdays(new Set());
       setPrice("25");
       setShowConfirmationView(false);
-      setSuccessMessage(`Created ${n} availability slot${n === 1 ? "" : "s"}.`);
+      setSuccessMessage(GUIDE_AVAILABILITY_FORM.success(n));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create availability");
+      setError(err instanceof Error ? err.message : GUIDE_AVAILABILITY_FORM.errCreate);
     } finally {
       setLoading(false);
     }
@@ -275,7 +276,7 @@ export function CreateAvailabilityCard({
         className
       )}
     >
-      <div className="relative h-auto min-h-[500px]">
+      <div className={cn("relative h-auto", shouldAnimate ? "min-h-[500px]" : "min-h-0")}>
         {/* Main Content */}
         <motion.div
           initial={false}
@@ -294,8 +295,8 @@ export function CreateAvailabilityCard({
                 <Image src={MENTRIXA_LOGO_PNG} alt="Mentrixa" width={28} height={28} className="object-contain" />
               </div>
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900">Create availability</h2>
-                <p className="text-sm font-medium text-slate-600">Set your schedule and pricing</p>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">{GUIDE_AVAILABILITY_FORM.title}</h2>
+                <p className="text-sm font-medium text-slate-600">{GUIDE_AVAILABILITY_FORM.subtitle}</p>
               </div>
             </div>
           </motion.div>
@@ -303,19 +304,17 @@ export function CreateAvailabilityCard({
           {/* AP Calculus AB — single verified subject */}
           <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-6 pb-4">
             <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#334155]">
-              Subject
+              {GUIDE_AVAILABILITY_FORM.subjectLabel}
             </label>
             <div className="rounded-lg border-2 border-[#7C3AED]/30 bg-[#EDE9FE]/60 px-4 py-3">
               <p className="text-base font-bold text-[#0B1220]">{AP_CALC_AB_SUBJECT}</p>
               <p className="mt-1 text-xs font-medium leading-relaxed text-[#475569]">
-                {apCalcVerified
-                  ? "Verified proficiency. Slots you create are bookable for AP Calculus AB learners."
-                  : "Submit AP Calculus AB proficiency on your Guide home and wait for admin verification before opening slots."}
+                {apCalcVerified ? GUIDE_AVAILABILITY_FORM.verifiedNote : GUIDE_AVAILABILITY_FORM.unverifiedNote}
               </p>
             </div>
             {!apCalcVerified ? (
               <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-950" role="status">
-                Proficiency not verified yet. Close this drawer and complete the AP Calculus AB card on your home page.
+                {GUIDE_AVAILABILITY_FORM.blockedNote}
               </p>
             ) : null}
           </motion.div>
@@ -323,7 +322,7 @@ export function CreateAvailabilityCard({
           {/* Days Selection */}
           <motion.div variants={shouldAnimate ? itemVariants : {}} className="px-6 pb-6">
             <label className="mb-3 block text-xs font-bold uppercase tracking-wide text-slate-700">
-              Days <span className="font-normal normal-case text-slate-500">(tap to toggle)</span>
+              {GUIDE_AVAILABILITY_FORM.daysLabel}
             </label>
             <div className="flex flex-wrap gap-2">
               {WEEKDAYS.map((d) => {
@@ -373,7 +372,7 @@ export function CreateAvailabilityCard({
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Session end</label>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">{GUIDE_AVAILABILITY_FORM.sessionEndLabel}</label>
                 <div
                   className={cn(
                     "rounded-lg border-2 bg-slate-50 p-2.5 font-semibold tabular-nums text-slate-900 shadow-inner",
@@ -385,9 +384,7 @@ export function CreateAvailabilityCard({
                     <span>{endTime}</span>
                   </span>
                   <p className="mt-1 text-[10px] font-medium leading-snug text-slate-600">
-                    Fixed {sessionDefaultDurationMinutes}-minute sessions (
-                    <span className="font-semibold text-slate-800">Teaching Defaults</span>). Change duration under
-                    Profile → Teaching Defaults.
+                    {GUIDE_AVAILABILITY_FORM.durationNote(sessionDefaultDurationMinutes)}
                   </p>
                 </div>
               </div>
@@ -398,13 +395,13 @@ export function CreateAvailabilityCard({
               </p>
             ) : (
               <p className="text-xs font-medium text-[#475569]">
-                Length always matches your Teaching Defaults ({sessionDefaultDurationMinutes} min).
+                {GUIDE_AVAILABILITY_FORM.durationNote(sessionDefaultDurationMinutes)}
               </p>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">Price (CAD / session)</label>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">{GUIDE_AVAILABILITY_FORM.priceLabel}</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                   <input 
@@ -419,7 +416,7 @@ export function CreateAvailabilityCard({
                 <MentrixaTimezoneSelect
                   value={timezone}
                   onChange={setTimezone}
-                  label="Timezone"
+                  label={GUIDE_AVAILABILITY_FORM.timezoneLabel}
                   brandKind="guide"
                 />
               </div>
@@ -430,8 +427,8 @@ export function CreateAvailabilityCard({
           <motion.div variants={shouldAnimate ? itemVariants : {}} className="mx-6 mb-6 rounded-lg border-2 border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-slate-900">Repeat weekly</p>
-                <p className="text-xs font-medium text-slate-600">Keep these slots open for multiple weeks</p>
+                <p className="text-sm font-bold text-slate-900">{GUIDE_AVAILABILITY_FORM.repeatTitle}</p>
+                <p className="text-xs font-medium text-slate-600">{GUIDE_AVAILABILITY_FORM.repeatSub}</p>
               </div>
               <button
                 type="button"
@@ -457,14 +454,14 @@ export function CreateAvailabilityCard({
                   className="overflow-hidden"
                 >
                   <div className="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
-                    <span className="text-xs font-bold uppercase tracking-wide text-slate-600">Repeat for</span>
+                    <span className="text-xs font-bold uppercase tracking-wide text-slate-600">{GUIDE_AVAILABILITY_FORM.repeatFor}</span>
                     <input 
                       type="number" 
                       value={recurringWeeks}
                       onChange={(e) => setRecurringWeeks(e.target.value)}
                       className="w-16 rounded border-2 border-slate-300 bg-white p-1.5 text-center text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-                    <span className="text-xs font-semibold text-slate-700">weeks</span>
+                    <span className="text-xs font-semibold text-slate-700">{GUIDE_AVAILABILITY_FORM.weeks}</span>
                   </div>
                 </motion.div>
               )}
@@ -505,10 +502,10 @@ export function CreateAvailabilityCard({
               size="lg"
               className="h-12 w-full border-2 border-indigo-800 bg-indigo-600 text-base font-bold text-white shadow-md hover:bg-indigo-700 disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             >
-              Preview &amp; create
+              {GUIDE_AVAILABILITY_FORM.previewCta}
             </Button>
             <p className="mt-2 text-center text-xs font-medium text-slate-600">
-              Next step: review everything you chose, then confirm.
+              {GUIDE_AVAILABILITY_FORM.previewHint}
             </p>
           </motion.div>
         </motion.div>
@@ -539,14 +536,14 @@ export function CreateAvailabilityCard({
                 className="justify-self-start flex items-center gap-2 border-2 border-slate-400 bg-white font-bold text-slate-900 shadow-sm hover:bg-slate-100"
               >
                 <ChevronLeft className="h-4 w-4" />
-                <span className="text-sm">Back to edit</span>
+                <span className="text-sm">{GUIDE_AVAILABILITY_FORM.backEdit}</span>
               </Button>
-              <h3 className="text-center text-lg font-bold tracking-tight text-slate-900">Review &amp; confirm</h3>
+              <h3 className="text-center text-lg font-bold tracking-tight text-slate-900">{GUIDE_AVAILABILITY_FORM.reviewTitle}</h3>
               <span className="justify-self-end" aria-hidden />
             </div>
 
             <div className="flex flex-1 flex-col space-y-4 overflow-y-auto pr-1">
-              <p className="text-xs font-bold uppercase tracking-wide text-indigo-700">You selected</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-indigo-700">{GUIDE_AVAILABILITY_FORM.youSelected}</p>
               <div className="space-y-4 rounded-xl border-2 border-indigo-300 bg-indigo-50 p-4 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <h4 className="text-xl font-extrabold tracking-tight text-slate-900">{course}</h4>
@@ -562,13 +559,13 @@ export function CreateAvailabilityCard({
                   </div>
                   <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-900">
                     <Calendar className="h-4 w-4 shrink-0 text-indigo-600" />
-                    <span>{recurring ? `${recurringWeeks} weeks (recurring)` : "One week only"}</span>
+                    <span>{recurring ? GUIDE_AVAILABILITY_FORM.recurringWeeks(recurringWeeks) : GUIDE_AVAILABILITY_FORM.oneWeek}</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-700">Days included</p>
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-700">{GUIDE_AVAILABILITY_FORM.daysIncluded}</p>
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAYS.filter(d => weekdays.has(d.value)).map(d => (
                     <div
@@ -584,8 +581,7 @@ export function CreateAvailabilityCard({
 
               <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
                 <p className="text-xs font-semibold leading-relaxed text-amber-950">
-                  <span className="font-black uppercase tracking-wide text-amber-900">Timezone: </span>
-                  {timezone}. Learners see these times converted to their own zone.
+                  {GUIDE_AVAILABILITY_FORM.timezoneNote(timezone)}
                 </p>
               </div>
 
@@ -605,7 +601,7 @@ export function CreateAvailabilityCard({
               className="h-14 w-full border-2 border-emerald-900 bg-emerald-600 text-base font-black uppercase tracking-wide text-white shadow-md hover:bg-emerald-700 disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             >
               <span className="flex items-center justify-center gap-2">
-                {loading ? "Creating slots…" : "Confirm & create slots"}
+                {loading ? GUIDE_AVAILABILITY_FORM.creating : GUIDE_AVAILABILITY_FORM.confirmCta}
                 {!loading && <Check className="h-5 w-5 stroke-[3]" />}
               </span>
             </Button>

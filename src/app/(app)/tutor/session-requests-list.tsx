@@ -10,6 +10,7 @@ import { useAdminViewContext } from "@/components/admin-view-context";
 import { formatSlotRangeInZone } from "@/shared/core/time-format";
 import { Button } from "@/shared/ui/button";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { GUIDE_REQUESTS_LIST } from "@/features/tutor/guide-home-copy-pure";
 
 interface SessionRequest {
   id: string;
@@ -165,10 +166,8 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
   return (
     <div>
       <div className="text-xs text-slate-400 text-right mb-2 space-y-0.5">
-        {isRefreshing ? <p className="text-slate-400">Syncing updates…</p> : null}
-        <p className="text-slate-500">
-          Declining a paid request refunds the Mentrixer
-        </p>
+        {isRefreshing ? <p className="text-slate-400">{GUIDE_REQUESTS_LIST.syncing}</p> : null}
+        <p className="text-slate-500">{GUIDE_REQUESTS_LIST.refundNote}</p>
       </div>
 
       <div className="mentrixa-table overflow-x-auto border border-slate-200 rounded-md bg-white">
@@ -190,7 +189,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
               <th className="py-2 px-3 text-left font-normal">
                 <span className="inline-flex items-center gap-1.5">
                   <MentrixaVocabIcon name="booking" size={14} title="Requested time" />
-                  Requested time
+                  {GUIDE_REQUESTS_LIST.requestedTime}
                 </span>
               </th>
               <th className="py-2 px-3 text-left font-normal">
@@ -209,7 +208,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                   colSpan={5}
                   className="py-8 px-3 text-center text-xs text-slate-400"
                 >
-                  No pending session requests.
+                  {GUIDE_REQUESTS_LIST.empty}
                 </td>
               </tr>
             ) : (
@@ -308,7 +307,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                       <div className="flex items-center gap-2">
                         {pendingActionById[request.id] ? (
                           <span className="text-[11px] font-medium text-slate-500">
-                            {pendingActionById[request.id] === "approve" ? "Accepting…" : "Declining…"}
+                            {pendingActionById[request.id] === "approve" ? GUIDE_REQUESTS_LIST.accepting : GUIDE_REQUESTS_LIST.declining}
                           </span>
                         ) : null}
                         <Button
@@ -317,7 +316,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                           onClick={() => handleApprove(request.id)}
                         >
                           <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
-                          Accept
+                          {GUIDE_REQUESTS_LIST.accept}
                         </Button>
                         <Button
                           size="sm"
@@ -326,7 +325,7 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
                           onClick={() => handleReject(request.id)}
                         >
                           <img src="/icons/mentrixer.svg" alt="" width={16} height={16} className="shrink-0" />
-                          Decline
+                          {GUIDE_REQUESTS_LIST.decline}
                         </Button>
                       </div>
                     </td>

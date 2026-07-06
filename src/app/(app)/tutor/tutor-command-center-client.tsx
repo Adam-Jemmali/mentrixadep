@@ -10,7 +10,7 @@ import { SessionRequestsList } from "./session-requests-list";
 import { TutorWeekCalendar } from "./tutor-week-calendar";
 import { AvailabilityManager } from "./availability-manager";
 import { AutoApproveToggle } from "./auto-approve-toggle";
-import { CreateAvailabilityCard } from "@/shared/ui/create-availability-card";
+import { GuideAddAvailabilityDialog } from "@/features/tutor/ui/guide-add-availability-dialog";
 import { CourseManager } from "./course-manager";
 import { TutorAvatar } from "../student/session-components/tutor-avatar";
 import { Button } from "@/shared/ui/button";
@@ -39,6 +39,7 @@ import { ChartSkeleton } from "@/shared/ui/skeleton-patterns";
 import { GuideStickyNote } from "@/features/tutor/ui/guide-sticky-note";
 import { GUIDE_SECTION_STICKY_VARIANT, landingStickyVariantForIndex } from "@/features/tutor/guide-sticky-variants";
 import { guideApCalcVerified } from "@/features/tutor/guide-ap-calc-pure";
+import { GUIDE_HOME } from "@/features/tutor/guide-home-copy-pure";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const TutorImpactTrendChart = dynamic(
@@ -110,10 +111,8 @@ export function TutorCommandCenterClient({
         aria-live="polite"
         className="pointer-events-none fixed bottom-6 left-1/2 z-[200] w-[min(92vw,24rem)] -translate-x-1/2 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-center shadow-lg"
       >
-        <p className="text-sm font-semibold text-slate-900">Slots created</p>
-        <p className="mt-1 text-xs text-slate-600">
-          Taking you to your availability slots…
-        </p>
+        <p className="text-sm font-semibold text-slate-900">{GUIDE_HOME.slotsToastTitle}</p>
+        <p className="mt-1 text-xs text-slate-600">{GUIDE_HOME.slotsToastSub}</p>
       </div>
     ) : null}
     <main className={`${mentrixStudent.main} mentrix-student-type-scope`}>
@@ -124,7 +123,7 @@ export function TutorCommandCenterClient({
           <div className="max-w-xl space-y-3">
             <TutorHeroGreeting greeting={greeting} firstName={firstName} />
             <div className="mt-1 text-sm text-white/90 h-[20px]">
-              <Typewriter text="AP Calculus AB sessions. Impact Score tracks first-attempt movement." speed={40} waitTime={5000} />
+              <Typewriter text={GUIDE_HOME.heroTagline} speed={40} waitTime={5000} />
             </div>
             
             <div className="mt-4 inline-flex flex-wrap items-center gap-3">
@@ -150,68 +149,59 @@ export function TutorCommandCenterClient({
             >
               <span className="inline-flex items-center gap-1.5">
                 <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
-                AP Calc proficiency
+                {GUIDE_HOME.btnProficiency}
               </span>
             </Button>
             <Button variant="outline" size="sm" className="h-9 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
               <Link href={`/tutor/${data.tutorId}`} className="inline-flex items-center gap-1.5">
                 <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
-                Edit Profile & Settings
+                {GUIDE_HOME.btnProfile}
               </Link>
             </Button>
             <Button type="button" size="sm" className="h-9 text-xs bg-white text-slate-900 hover:bg-slate-100" onClick={() => setAddOpen(true)}>
               <span className="inline-flex items-center gap-1.5">
                 <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
-                Add availability
+                {GUIDE_HOME.btnAddSlots}
               </span>
             </Button>
           </div>
         </div>
       </header>
 
-      <MentrixaDrawer
-        isOpen={addOpen}
+      <GuideAddAvailabilityDialog
+        open={addOpen}
         onOpenChange={setAddOpen}
-        placement="right"
-        tone="light"
-        brandKind="guide"
-        hideHeader
-        bodyClassName="p-0"
-        contentClassName="!max-w-2xl"
-      >
-        <CreateAvailabilityCard
-          apCalcVerified={apCalcVerified}
-          defaultTimezone={data.tutorTimezone}
-          sessionDefaultDurationMinutes={data.sessionDefaultDurationMinutes}
-          onSlotsCreated={() => {
-            setAddOpen(false);
-            setSlotsCreatedNotice(true);
-          }}
-        />
-      </MentrixaDrawer>
+        apCalcVerified={apCalcVerified}
+        defaultTimezone={data.tutorTimezone}
+        sessionDefaultDurationMinutes={data.sessionDefaultDurationMinutes}
+        onSlotsCreated={() => {
+          setAddOpen(false);
+          setSlotsCreatedNotice(true);
+        }}
+      />
 
       {/* Metrics */}
       <section className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
         {[
           {
-            eyebrow: "This month's earnings",
+            eyebrow: GUIDE_HOME.metrics.monthEarnings,
             value: formatUsd(metrics.earningsThisMonthCents),
             caption: metrics.stripePayoutCaption,
             highlight: false,
           },
-          { eyebrow: "Sessions this week", value: String(metrics.sessionsThisWeek), highlight: false },
+          { eyebrow: GUIDE_HOME.metrics.sessionsWeek, value: String(metrics.sessionsThisWeek), highlight: false },
           {
-            eyebrow: "Average rating",
+            eyebrow: GUIDE_HOME.metrics.avgRating,
             value: metrics.avgRating != null ? metrics.avgRating.toFixed(1) : "—",
             highlight: false,
           },
           {
-            eyebrow: "Response rate",
+            eyebrow: GUIDE_HOME.metrics.responseRate,
             value: metrics.responseRatePercent != null ? `${metrics.responseRatePercent.toFixed(1)}%` : "—",
             highlight: false,
           },
           {
-            eyebrow: "New session requests",
+            eyebrow: GUIDE_HOME.metrics.requests,
             value: String(pending),
             highlight: pending > 0,
             alert: pending > 0,
@@ -245,10 +235,8 @@ export function TutorCommandCenterClient({
           className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
           role="status"
         >
-          <p className="font-medium">Short-notice learner cancellation</p>
-          <p className="mt-1 text-amber-900/90">
-            A learner cancelled within 24 hours, so check Stripe for the final refund settlement.
-          </p>
+          <p className="font-medium">{GUIDE_HOME.lateCancelTitle}</p>
+          <p className="mt-1 text-amber-900/90">{GUIDE_HOME.lateCancelBody}</p>
           <ul className="mt-2 list-inside list-disc text-xs text-amber-900/85">
             {lateCancellationAlerts.map((a) => (
               <li key={a.id}>
@@ -266,7 +254,7 @@ export function TutorCommandCenterClient({
         <div className="lg:col-span-7">
           <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.impact} className="h-full">
             <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>
-              Impact Score trend (last 30 days)
+              {GUIDE_HOME.impactTrendTitle}
             </h2>
             <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
               <TutorImpactTrendChart data={data.impactHistoryLast30Days} />
@@ -298,7 +286,7 @@ export function TutorCommandCenterClient({
           <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.impact}>
             <h2 className={`mb-4 flex items-center gap-2 text-sm font-bold ${mentrixStudent.textOnLight}`}>
               <MentrixaVocabIcon name="impact-score" size={16} gold surface="light" title="Guide Impact Score" />
-              Guide Impact Score
+              {GUIDE_HOME.impactScoreTitle}
             </h2>
             {data.impactVerdict ? (
               <VerdictPanel verdict={data.impactVerdict} tone="light" className="mb-5" />
@@ -342,7 +330,7 @@ export function TutorCommandCenterClient({
           onClick={() => setRequestsOpen(true)}
         >
           <span className="inline-flex items-center gap-2">
-            Session requests
+            {GUIDE_HOME.mobileRequests}
             <MentrixaCountBadge count={pending} color="danger" variant="soft" />
           </span>
         </Button>
@@ -353,7 +341,7 @@ export function TutorCommandCenterClient({
           className="h-9 border-slate-200 text-xs"
           onClick={() => setEarningsOpen(true)}
         >
-          Earnings trend
+          {GUIDE_HOME.mobileEarnings}
         </Button>
       </div>
 
@@ -396,7 +384,7 @@ export function TutorCommandCenterClient({
         <section className="lg:col-span-7 min-w-0">
           <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
             <div className="mb-4">
-              <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>Requested booked sessions</h2>
+              <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>{GUIDE_HOME.bookedRequestsTitle}</h2>
             
             </div>
             <SessionRequestsList sessionRequests={sessionRequests} displayTimezone={data.tutorTimezone} />
@@ -405,11 +393,11 @@ export function TutorCommandCenterClient({
 
         <section className="lg:col-span-5 min-w-0">
           <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
-            <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>Earnings (last 30 days)</h2>
+            <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>{GUIDE_HOME.earningsTitle}</h2>
             <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
               <TutorEarningsChart data={earningsLast30Days} />
               <p className={`mt-3 text-[11px] font-medium leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
-                Totals from completed sessions (recognized when the session ends).
+                {GUIDE_HOME.earningsCaption}
               </p>
             </div>
           </ScrollRevealCard>
@@ -421,8 +409,8 @@ export function TutorCommandCenterClient({
         <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.schedule}>
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>Week&apos;s Schedule</h2>
-              <p className={`text-[11px] font-medium ${mentrixStudent.textMutedOnLight}`}>View and manage your availability slots</p>
+              <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>{GUIDE_HOME.weekScheduleTitle}</h2>
+              <p className={`text-[11px] font-medium ${mentrixStudent.textMutedOnLight}`}>{GUIDE_HOME.weekScheduleSub}</p>
             </div>
             <Button
               type="button"
@@ -433,7 +421,7 @@ export function TutorCommandCenterClient({
             >
               <span className="inline-flex items-center gap-1.5">
                 <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
-                Add availability
+                {GUIDE_HOME.btnAddSlots}
               </span>
             </Button>
           </div>
@@ -448,9 +436,9 @@ export function TutorCommandCenterClient({
         </section>
         <section id="tutor-availability-slots" className="scroll-mt-24 lg:col-span-6 min-w-0">
           <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.availability}>
-            <h2 className={`mb-3 text-sm font-semibold ${mentrixStudent.textOnLight}`}>Open slots</h2>
+            <h2 className={`mb-3 text-sm font-semibold ${mentrixStudent.textOnLight}`}>{GUIDE_HOME.openSlotsTitle}</h2>
             <div className="mb-4 flex items-center justify-between gap-3 border-b border-violet-100 pb-4">
-              <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>Auto-approve bookings</p>
+              <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>{GUIDE_HOME.autoApprove}</p>
               <AutoApproveToggle initialValue={data.autoApprove} />
             </div>
             <div className="max-h-[28rem] overflow-y-auto rounded-md border border-violet-100 bg-zinc-50/90 p-2">

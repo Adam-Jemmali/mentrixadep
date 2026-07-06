@@ -22,19 +22,19 @@ export function questToolsDrawerMessage(): MentrixaDrawerMessage {
 
 export function guideSessionRequestsDrawerMessage(): MentrixaDrawerMessage {
   return {
-    title: "Session requests",
-    description: "Approve or decline booked session requests.",
-    verdict: "Pending requests block your calendar until you respond.",
-    nextAction: "Approve to confirm the slot or decline to release it.",
+    title: "Requests",
+    description: "Approve or decline bookings.",
+    verdict: "Pending blocks your calendar.",
+    nextAction: "Accept to confirm. Decline to release.",
   };
 }
 
 export function guideEarningsDrawerMessage(): MentrixaDrawerMessage {
   return {
-    title: "Earnings (last 30 days)",
-    description: "Totals from completed sessions when each session ends.",
-    verdict: "Earnings post when a session ends, not when it is booked.",
-    nextAction: "Check payout settings if a completed session is missing.",
+    title: "Earnings · 30d",
+    description: "Completed sessions only.",
+    verdict: "Posts when session ends.",
+    nextAction: "Check payouts if one is missing.",
   };
 }
 

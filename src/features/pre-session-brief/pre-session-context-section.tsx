@@ -1,6 +1,7 @@
 "use client";
 
 import { GuidePreSessionContextPanel } from "@/features/pre-session-brief/guide-context-panel";
+import { GUIDE_PRE_SESSION } from "@/features/tutor/guide-home-copy-pure";
 
 type UpcomingSession = {
   id: string;
@@ -30,10 +31,8 @@ export function PreSessionContextSection({
 
   return (
     <section className="mb-8">
-      <h2 className="mb-1 text-sm font-bold text-slate-900">Pre-session context</h2>
-      <p className="mb-4 text-xs text-slate-500">
-        Surgical prep for upcoming calls — unlocks 2 hours before each session.
-      </p>
+      <h2 className="mb-1 text-sm font-bold text-slate-900">{GUIDE_PRE_SESSION.title}</h2>
+      <p className="mb-4 text-xs text-slate-500">{GUIDE_PRE_SESSION.subtitle}</p>
       <div className="space-y-3">
         {upcoming.map((session) => {
           const name =

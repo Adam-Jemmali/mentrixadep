@@ -9,6 +9,7 @@ import {
   buildDemandSignalVerdict,
 } from "@/features/demand-signal/demand-signal-pure";
 import { GuideDemandSignalDisclosure } from "@/shared/ui/disclosure-patterns";
+import { GUIDE_DEMAND } from "@/features/tutor/guide-home-copy-pure";
 
 export function GuideDemandSignalCard({
   signals,
@@ -26,10 +27,10 @@ export function GuideDemandSignalCard({
     <section className="mb-8">
       <ScrollRevealCard className={mentrixStudent.card + " p-5"}>
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">
-          Where you are needed
+          {GUIDE_DEMAND.eyebrow}
         </p>
         <h2 className={`mt-1 text-sm font-bold ${mentrixStudent.textOnLight}`}>
-          Guide demand signal
+          {GUIDE_DEMAND.title}
         </h2>
         <div className="mt-3">
           <GuideDemandSignalDisclosure />
@@ -41,7 +42,7 @@ export function GuideDemandSignalCard({
               {!signal.hasOpenAvailability ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <p className="text-xs text-slate-600">
-                    You have no open availability for {signal.subject}.
+                    {GUIDE_DEMAND.noSlots(signal.subject)}
                   </p>
                   {onOpenAvailability ? (
                     <Button
@@ -51,7 +52,7 @@ export function GuideDemandSignalCard({
                       className="h-7 text-[11px]"
                       onClick={() => onOpenAvailability(signal.subject)}
                     >
-                      Open a slot
+                      {GUIDE_DEMAND.addSlot}
                     </Button>
                   ) : null}
                 </div>

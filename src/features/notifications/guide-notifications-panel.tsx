@@ -8,6 +8,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { formatDateInZone } from "@/shared/core/time-format";
 import type { GuideNotificationEntry } from "@/features/notifications/load-guide-notifications";
 import { markGuideNotificationRead } from "@/features/notifications/mark-guide-notification-read";
+import { GUIDE_NOTIFICATIONS } from "@/features/tutor/guide-home-copy-pure";
 
 type Props = {
   notifications: GuideNotificationEntry[];
@@ -31,15 +32,15 @@ export function GuideNotificationsPanel({
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>
-              Notifications
+              {GUIDE_NOTIFICATIONS.title}
             </h2>
             <p className={`mt-1 text-xs ${mentrixStudent.textMutedOnLight}`}>
-              Closed-loop results from scheduled post-session retests.
+              {GUIDE_NOTIFICATIONS.subtitle}
             </p>
           </div>
           {unreadCount > 0 ? (
             <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-800">
-              {unreadCount} new
+              {GUIDE_NOTIFICATIONS.new(unreadCount)}
             </span>
           ) : null}
         </div>
