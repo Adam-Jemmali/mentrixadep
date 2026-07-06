@@ -17,6 +17,8 @@ import {
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import { landingStickyVariantForIndex } from "@/features/student-profile/student-sticky-variants";
 import {
   arenaDivisionFocus,
   arenaDivisionCardClasses,
@@ -55,7 +57,8 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
         </motion.div>
       )}
 
-      <div className={cn(mentrixStudent.cardArena, arenaDivisionPanelClasses())}>
+      <StudentStickyNote variant="pinned">
+        <div className={cn(arenaDivisionPanelClasses())}>
         <p
           className={cn(
             "inline-flex items-center gap-3 mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.22em]",
@@ -91,8 +94,10 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                 transition={{ delay: i * 0.05 }}
                 className="overflow-visible p-1"
               >
-                <div
+                <StudentStickyNote
+                  variant={landingStickyVariantForIndex(i + 1)}
                   className={cn(
+                    "relative",
                     arenaDivisionCardClasses({ isSelected: isFocused }),
                     isFocused && "pt-7",
                   )}
@@ -185,12 +190,13 @@ export function DivisionHubClient({ initialCards }: { initialCards: DivisionHubC
                   <div className="pointer-events-none absolute -bottom-2 -right-2 p-2 opacity-[0.02] grayscale transition-opacity group-hover:opacity-[0.05]">
                     <Image src="/mentrixalogo/logo.webp" alt="" width={80} height={80} />
                   </div>
-                </div>
+                </StudentStickyNote>
               </motion.li>
             );
           })}
         </motion.ul>
-      </div>
+        </div>
+      </StudentStickyNote>
     </div>
   );
 }

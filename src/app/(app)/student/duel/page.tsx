@@ -8,6 +8,8 @@ import { AccountRankLadder } from "@/features/student-profile/ui/account-rank-la
 import { YourDuelsList } from "@/features/student-profile/ui/your-duels-list";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import { landingStickyVariantForIndex, STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 import { TiltCard } from "@/shared/ui/tilt-card";
 import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
 import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
@@ -98,11 +100,13 @@ export default async function StudentDuelsPage() {
           eyebrow="Duels"
           title="AP Calculus AB duels"
           subtitle="Timed battles on the only skill tree we ship. Match real Mentrixers or spar while you wait."
+          stickyVariant={STUDENT_ROUTE_HEADER_VARIANT.duels}
         />
 
         {stats && stats.totalCompleted > 0 ? (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
+            <TiltCard tiltLimit={10} scale={1.03} className="block">
+              <StudentStickyNote variant={landingStickyVariantForIndex(0)} className="px-3 py-2.5">
               <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-2`}>
                 <MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={32} surface="light" title="Record" />
                 Record
@@ -112,8 +116,10 @@ export default async function StudentDuelsPage() {
                   words={[`${stats.wins}W - ${stats.losses}L${stats.ties > 0 ? ` - ${stats.ties}D` : ""}`]} 
                 />
               </div>
+              </StudentStickyNote>
             </TiltCard>
-            <TiltCard tiltLimit={10} scale={1.03} className={`${mentrixStudent.card} px-3 py-2.5`}>
+            <TiltCard tiltLimit={10} scale={1.03} className="block">
+              <StudentStickyNote variant={landingStickyVariantForIndex(1)} className="px-3 py-2.5">
               <p className={`${mentrixStudent.sectionEyebrow} inline-flex items-center gap-2`}>
                 <XpIcon size={32} title="Duels XP" />
                 Duels XP
@@ -122,6 +128,7 @@ export default async function StudentDuelsPage() {
                 <XpIcon size={32} title="XP" />
                 {stats.xpFromDuels}
               </p>
+              </StudentStickyNote>
             </TiltCard>
           </div>
         ) : null}
@@ -137,11 +144,13 @@ export default async function StudentDuelsPage() {
         </div>
 
 
-        <TiltCard tiltLimit={3} className={`${mentrixStudent.card} mt-8 overflow-hidden p-0 block`}>
+        <TiltCard tiltLimit={3} className="mt-8 block overflow-hidden">
+          <StudentStickyNote variant="pinned" className="overflow-hidden p-0">
           <div className={`border-b border-[#C4B5FD] px-4 py-3 ${mentrixStudent.sectionEyebrow}`}>
             Your duels
           </div>
           <YourDuelsList initialRows={rows} myId={myId} nameById={nameById} />
+          </StudentStickyNote>
         </TiltCard>
       </div>
     </div>

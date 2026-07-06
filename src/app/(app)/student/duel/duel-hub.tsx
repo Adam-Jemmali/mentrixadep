@@ -30,6 +30,8 @@ import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
 import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import { STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 import {
   arenaDivisionFocus,
   arenaDivisionCardClasses,
@@ -786,13 +788,8 @@ export function DuelHub({
         </motion.div>
       )}
 
-      <div
-        className={cn(
-          mentrixStudent.cardArena,
-          arenaDivisionPanelClasses(),
-          "overflow-visible",
-        )}
-      >
+      <StudentStickyNote variant={STUDENT_ROUTE_HEADER_VARIANT.duels}>
+        <div className={cn(arenaDivisionPanelClasses(), "overflow-visible")}>
         <p
           className={cn(
             "inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em]",
@@ -816,15 +813,13 @@ export function DuelHub({
               const isProfileFocus = preferredDivisionKey === d.key;
 
               return (
-                <div
-                  className={cn(
+                <StudentStickyNote variant="dog-ear" className={cn(
                     arenaDivisionCardClasses({
                       isSelected: true,
                       isProfileFocus,
                     }),
-                    "overflow-visible pt-8",
-                  )}
-                >
+                    "relative overflow-visible pt-8",
+                  )}>
                   <div
                     className="pointer-events-none absolute inset-x-0 top-0 h-2 rounded-t-[1.35rem] bg-[#6366F1]"
                     aria-hidden
@@ -864,12 +859,13 @@ export function DuelHub({
                       {queueLoading ? "Searching..." : "Start duel"}
                     </Button>
                   </div>
-                </div>
+                </StudentStickyNote>
               );
             })()}
           </div>
         )}
-      </div>
+        </div>
+      </StudentStickyNote>
     </div>
   );
 }

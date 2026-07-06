@@ -18,6 +18,7 @@ import { OnboardingStepsProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { VerifiedFirstAttemptAlert } from "@/shared/ui/alert-patterns";
 import { VerifiedFirstAttemptDisclosure } from "@/shared/ui/disclosure-patterns";
 import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
+import { STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 
 export function QuestPageClient({
   subjectOptions,
@@ -70,6 +71,7 @@ export function QuestPageClient({
           eyebrow={guestMode ? questGuestPageEyebrow() : questPageEyebrow()}
           title={questPageTitle()}
           subtitle={guestMode ? questGuestPageSubtitle() : questPageSubtitle()}
+          stickyVariant={STUDENT_ROUTE_HEADER_VARIANT.quest}
           className="mb-0"
         />
       ) : null}

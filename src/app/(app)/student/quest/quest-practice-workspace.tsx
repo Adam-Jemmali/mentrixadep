@@ -19,6 +19,7 @@ import { emitXpAward } from "@/features/xp/xp-events";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
 import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
@@ -507,8 +508,8 @@ export function QuestPracticeWorkspace({
   if (phase === "run" && question) {
     return (
       <>
+      <StudentStickyNote variant="taped" className="w-full touch-pan-y">
       <div
-        className={`${mentrixStudent.card} w-full touch-pan-y px-4 py-6 sm:p-8`}
         onTouchStart={(e) => {
           touchStartX.current = e.targetTouches[0]?.clientX ?? null;
         }}
@@ -674,6 +675,7 @@ export function QuestPracticeWorkspace({
           </div>
         ) : null}
       </div>
+      </StudentStickyNote>
       <QuestPracticeToolsDrawer
         questionIndex={qIndex}
         questionTotal={question.total}

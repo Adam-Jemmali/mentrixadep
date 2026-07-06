@@ -6,6 +6,8 @@ import { QuestPackLoadPendingPanel } from "@/shared/ui/spinner-patterns";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import { STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 import { MentrixaVocabIcon, VocabSectionHeading, VOCAB_HEADING_ICON_SIZE } from "@/shared/icons/mentrixa-vocab-icons";
 import { PracticeLockedAttemptAlert, isPracticeLockedAttemptError } from "@/shared/ui/alert-patterns";
 
@@ -53,7 +55,7 @@ export function QuestPracticePackWizard({
           <QuestPackLoadPendingPanel className="max-w-xs" />
         </div>
       ) : null}
-      <div className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}>
+      <StudentStickyNote variant={STUDENT_ROUTE_HEADER_VARIANT.quest} className="space-y-6">
         <VocabSectionHeading
           name="quest"
           label="Practice packs"
@@ -113,7 +115,7 @@ export function QuestPracticePackWizard({
             {busy ? "Loading pack…" : startLabel}
           </Button>
         </div>
-      </div>
+      </StudentStickyNote>
     </div>
   );
 }

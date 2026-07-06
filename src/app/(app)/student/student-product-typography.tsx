@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { cn } from "@/shared/core/utils";
 import { mentrixProfileType } from "@/features/student-profile/mentrix-profile-typography";
-import { StudentHubGoalBanner } from "@/features/student-profile/ui/student-hub-goal-banner";
 
 /** All authenticated student product routes share hub desk + handwriting scope. */
 function isStudentProductRoute(pathname: string): boolean {
@@ -26,7 +25,6 @@ export function StudentProductTypography({
 
   return (
     <div className={cn(mentrixProfileType.scope, "mx-hub-desk min-h-[calc(100dvh-4.75rem)]")}>
-      <StudentHubGoalBanner />
       {children}
     </div>
   );

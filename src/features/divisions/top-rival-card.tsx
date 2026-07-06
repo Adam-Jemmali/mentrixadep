@@ -7,6 +7,7 @@ import { cn } from "@/shared/core/utils";
 import type { TopRivalData } from "@/features/divisions/top-rival";
 import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import { MentrixaVocabIcon, VocabStatColumn, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import { VersusMark } from "@/features/divisions/versus-mark";
 import {
@@ -81,7 +82,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
   const ctaLabel = ctaLane === "duel" ? "Defend Duels" : "Close Quest";
 
   return (
-    <div className={cn("relative", className)}>
+    <StudentStickyNote variant="dog-ear" className={cn("relative h-full", className)}>
       <div className={`${mentrixStudent.hubBook}`}>
         <div className="flex flex-col sm:flex-row sm:items-stretch">
           <div
@@ -161,6 +162,6 @@ export function TopRivalCard({ rivalData, className }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </StudentStickyNote>
   );
 }

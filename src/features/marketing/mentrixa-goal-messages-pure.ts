@@ -10,9 +10,9 @@ export type MentrixaGoalBlock = {
 
 export const MENTRIXA_GOAL: MentrixaGoalBlock = {
   who: "AP Calculus AB students who want a public rank they cannot fake.",
-  why: "Courses end. Certificates lie. Your first attempt on each skill is permanent proof of what you actually know compared to real Mentrixers.",
+  why: "Courses end. Certificates lie. Your first attempt on each skill is permanent proof.",
   whyNow:
-    "Every day you practice without a verified first attempt is a day your rank stays wrong. One quest run starts the record.",
+    "Practice does not move rank. Your next first attempt does.",
   verdict: "Mentrixa is the only arena where rank moves on verified first attempts, not retakes.",
   nextAction: "Run your next quest node and lock what is true today.",
 };

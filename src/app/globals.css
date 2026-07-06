@@ -543,6 +543,10 @@ html:has(.mentrix-student-type-scope) body {
   transform: none;
 }
 
+.mentrix-student-type-scope .lp-sticky-note.mx-hub-sticky {
+  transform: none;
+}
+
 .lp-sticky-note--dog-ear.mx-hub-sticky {
   background-color: #fef9c3;
   border-color: #facc15;

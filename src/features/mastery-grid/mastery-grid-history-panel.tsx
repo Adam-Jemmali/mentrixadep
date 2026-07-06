@@ -1,6 +1,7 @@
 "use client";
 
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import {
   buildGridHistoryVerdict,
   compareGridSnapshots,
@@ -26,15 +27,17 @@ export function MasteryGridHistoryPanel({
     const latest = history[0];
     if (!latest) return null;
     return (
-      <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
-        <p className={mentrixStudent.sectionEyebrowOnLight}>Grid history</p>
-        <p className="mt-2 text-sm font-semibold text-zinc-900">
-          {latest.verifiedCount} verified nodes captured this week.
-        </p>
-        <p className="mt-2 text-sm text-zinc-600">
-          See how your grid changed over 4, 8, and 12 weeks with Momentum. Your current grid stays free.
-        </p>
-      </section>
+      <StudentStickyNote variant="pinned">
+        <section>
+          <p className={mentrixStudent.sectionEyebrowOnLight}>Grid history</p>
+          <p className="mt-2 text-sm font-semibold text-zinc-900">
+            {latest.verifiedCount} verified nodes captured this week.
+          </p>
+          <p className="mt-2 text-sm text-zinc-600">
+            See how your grid changed over 4, 8, and 12 weeks with Momentum. Your current grid stays free.
+          </p>
+        </section>
+      </StudentStickyNote>
     );
   }
 
@@ -52,7 +55,8 @@ export function MasteryGridHistoryPanel({
   });
 
   return (
-    <section className={`${mentrixStudent.card} space-y-4 p-5 sm:p-6`}>
+    <StudentStickyNote variant="taped">
+      <section className="space-y-4">
       <div>
         <p className={mentrixStudent.sectionEyebrowOnLight}>Grid timeline</p>
         <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>
@@ -75,6 +79,7 @@ export function MasteryGridHistoryPanel({
           </span>
         ))}
       </div>
-    </section>
+      </section>
+    </StudentStickyNote>
   );
 }

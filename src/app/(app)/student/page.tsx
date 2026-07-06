@@ -28,8 +28,8 @@ import { StreakCountDisplay, XpCountDisplay, MentrixaVocabIcon } from "@/shared/
 import { CANONICAL_QUEST_ICON } from "@/shared/icons/vocab-canonical";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
-import { MentrixaGoalStickyNote } from "@/features/marketing/ui/mentrixa-goal-sticky-note";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import {
   DeferredPreSessionBriefCard,
   DeferredProgressSnapshotCard,
@@ -212,7 +212,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     <div className={mentrixStudent.pageBgHub}>
       <StudentHubRealtimeRefresh userId={user.id} />
       <main className={mentrixStudent.main}>
-        <div className={`${mentrixStudent.hubHero} mb-4`}>
+        <StudentStickyNote variant="pinned" className="mb-4">
           <div className="relative flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <StudentHeroGreeting greeting={greeting} firstName={firstName} />
@@ -268,11 +268,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               />
             ) : null}
           </div>
-        </div>
-
-        <div className="mt-4">
-          <MentrixaGoalStickyNote variant="student" density="full" />
-        </div>
+        </StudentStickyNote>
 
         {!activeGoal ? (
           <div className="mt-4">
@@ -283,13 +279,13 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         <div className="mt-4 grid gap-4 lg:grid-cols-12 lg:items-stretch">
           {masteryGrid ? (
             <div className="flex lg:col-span-7">
-              <MasteryGridHubCard data={masteryGrid} compact />
+              <MasteryGridHubCard data={masteryGrid} compact stickyVariant="curl" />
             </div>
           ) : null}
           <div
             className={
               masteryGrid
-                ? `${mentrixStudent.hubNotebook} flex min-h-full flex-col gap-4 p-4 sm:p-5 lg:col-span-5`
+                ? "flex flex-col gap-4 lg:col-span-5"
                 : "flex flex-col gap-4 lg:col-span-12"
             }
           >

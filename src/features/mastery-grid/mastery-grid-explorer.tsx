@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import { STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import {
   filterMasteryNodesByQuery,
@@ -85,7 +87,8 @@ export function MasteryGridExplorer({
 
   return (
     <div className="space-y-6">
-      <section className={`${mentrixStudent.card} space-y-5 p-5 sm:p-6`}>
+      <StudentStickyNote variant={STUDENT_ROUTE_HEADER_VARIANT.skills}>
+        <section className="space-y-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Link
@@ -182,10 +185,12 @@ export function MasteryGridExplorer({
             </div>
           </div>
         ) : null}
-      </section>
+        </section>
+      </StudentStickyNote>
 
       {searching ? (
-        <section className={`${mentrixStudent.card} p-5 sm:p-6`}>
+        <StudentStickyNote variant="strip">
+          <section>
           <p className={mentrixStudent.sectionEyebrow}>
             <MentrixaVocabIcon name="skills" size={20} surface="light" title="Results" />
             <span className="sr-only">Search results</span>
@@ -228,9 +233,12 @@ export function MasteryGridExplorer({
               ))}
             </ul>
           )}
-        </section>
+          </section>
+        </StudentStickyNote>
       ) : filteredData ? (
-        <MasteryGrid data={filteredData} showLegend collapsibleUnits={false} />
+        <StudentStickyNote variant="curl">
+          <MasteryGrid data={filteredData} showLegend collapsibleUnits={false} />
+        </StudentStickyNote>
       ) : null}
     </div>
   );

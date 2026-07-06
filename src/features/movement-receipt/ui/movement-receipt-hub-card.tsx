@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import {
   MentrixaVocabIcon,
   VocabSectionHeading,
@@ -66,7 +67,8 @@ export function MovementReceiptHubCard({ data, momentumActive, compact = false }
   const ctaCaption = vocabTwoWordLabel(ctaLabel);
 
   return (
-    <section className={mentrixStudent.hubSticky} aria-label="Movement receipt">
+    <StudentStickyNote variant="clip">
+      <section aria-label="Movement receipt">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <VocabSectionHeading
           name={CANONICAL_RECEIPT_ICON}
@@ -117,6 +119,7 @@ export function MovementReceiptHubCard({ data, momentumActive, compact = false }
           </>
         ) : null}
       </div>
-    </section>
+      </section>
+    </StudentStickyNote>
   );
 }

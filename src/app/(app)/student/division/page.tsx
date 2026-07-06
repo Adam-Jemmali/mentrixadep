@@ -6,6 +6,7 @@ import {
 } from "@/features/divisions/arena-hub-messages-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
+import { STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 import { DivisionHubClient } from "./division-hub-client";
 
 export const metadata = { title: "Arena · Mentrixa" };
@@ -22,6 +23,7 @@ export default async function DivisionsHubPage() {
           eyebrow="League"
           title={arenaLeaguePageTitle()}
           subtitle={arenaLeaguePageSubtitle()}
+          stickyVariant={STUDENT_ROUTE_HEADER_VARIANT.league}
         />
 
         <DivisionHubClient initialCards={cards} />
