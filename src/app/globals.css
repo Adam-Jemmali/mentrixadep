@@ -2031,6 +2031,20 @@ html.lp-landing-logo-cursor-active * {
   filter: drop-shadow(0 0 40px rgba(99, 102, 241, 0.35));
 }
 
+/* Landing hero — notebook h1 defaults to 1.75rem; restore display size and avoid clip on italic glyphs */
+.lp-root .lp-hero-headline {
+  font-size: clamp(2rem, 6.2vw, 4.25rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.02em !important;
+  overflow: visible;
+  max-width: 100%;
+  padding-inline-end: 0.12em;
+}
+
+.lp-root .lp-hero-notebook {
+  overflow: visible;
+}
+
 .lp-hero-stage-glow {
   background: radial-gradient(
     ellipse 70% 55% at 50% 55%,

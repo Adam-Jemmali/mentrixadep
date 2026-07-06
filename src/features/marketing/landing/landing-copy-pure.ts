@@ -245,10 +245,10 @@ export const LANDING_FAQ = {
           nextAction: "Run a quest on an untouched node.",
         },
         {
-          id: "percentile",
+          id: "peer-standing",
           title: "When am I on the feed?",
           body: "After five nodes have a locked first try.",
-          verdict: "Five proofs before a public percentile.",
+          verdict: "Five proofs before peer standing goes public.",
           nextAction: "Clear five nodes this week.",
         },
         {

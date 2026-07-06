@@ -5,7 +5,7 @@ export const VERIFIED_GOLD = "#D4A017";
 export const MASTERY_STATE_LABEL: Record<MasteryNodeState, string> = {
   none: "not started",
   weak: "under seventy percent",
-  proficient: "seventy percent or higher",
+  proficient: "solid in practice",
   verified: "verified",
 };
 

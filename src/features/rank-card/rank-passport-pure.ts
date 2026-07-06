@@ -41,9 +41,9 @@ export function passportVerdictPlainText(verdict: PassportVerdict): string {
   }
   if (verdict.kind === "accumulating") {
     if (verdict.remaining > 0) {
-      return `${verdict.verifiedCount} skill${verdict.verifiedCount === 1 ? "" : "s"} verified on AP Calculus AB. Comparative rank unlocks after ${verdict.remaining} more first attempt${verdict.remaining === 1 ? "" : "s"}.`;
+      return `${verdict.verifiedCount} skill${verdict.verifiedCount === 1 ? "" : "s"} verified on AP Calculus AB. Peer standing unlocks after ${verdict.remaining} more first attempt${verdict.remaining === 1 ? "" : "s"}.`;
     }
-    return `${verdict.verifiedCount} skills verified on AP Calculus AB. Comparative rank is updating.`;
+    return `${verdict.verifiedCount} skills verified on AP Calculus AB. Peer standing is updating.`;
   }
   return "No verified first attempts on AP Calculus AB yet.";
 }

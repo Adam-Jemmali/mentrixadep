@@ -11,6 +11,7 @@ import type { PassportVerdict, RankCardData } from "@/features/rank-card/types";
 import { summarizeMasteryGrid } from "@/features/mastery-grid/mastery-grid-pure";
 import { RankBreakdownPopover } from "@/shared/ui/popover-patterns";
 import { passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
+import { explainFirstAttemptAccuracy, explainPeerStanding, formatPeerStandingShort, peerBeatCount } from "@/features/xp/rank-statistics-pure";
 import { AP_CALC_AB_SUBJECT, AP_CALC_AB_SUBJECT_DISPLAY } from "@/features/quest/ap-calc-ab-subject";
 import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
@@ -176,9 +177,16 @@ export function RankPassportArticle({
                 <span className="text-sm font-semibold text-[#7C3AED]">verified</span>
               ) : null}
             </div>
+            {verifiedCount > 0 ? (
+              <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-sm leading-relaxed")}>
+                {explainFirstAttemptAccuracy(verifiedCount, accuracyPercent)}
+              </p>
+            ) : null}
             {data.passportVerdict.kind === "ranked" ? (
-              <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-sm")}>
-                Top {data.passportVerdict.topPercent}% of all Mentrixers tested
+              <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-sm leading-relaxed")}>
+                {data.verifiedPercentile != null
+                  ? explainPeerStanding(data.verifiedPercentile)
+                  : `Top ${data.passportVerdict.topPercent}% of all Mentrixers tested`}
               </p>
             ) : null}
           </div>
@@ -248,7 +256,7 @@ export function RankPassportArticle({
                 {rankProofsCountLabel(data.verifiedSkillCount)}
               </span>
               {data.verifiedPercentile != null
-                ? ` · ${Math.round(data.verifiedPercentile)}th percentile cohort accuracy`
+                ? ` · Beat ${peerBeatCount(data.verifiedPercentile)}/100 Mentrixers (${formatPeerStandingShort(data.verifiedPercentile)})`
                 : ""}
             </p>
             <RankBreakdownPopover

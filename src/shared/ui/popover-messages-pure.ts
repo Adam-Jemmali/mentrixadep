@@ -1,12 +1,17 @@
 import type { SessionPriceSplit } from "@/features/booking/booking-pricing";
 import type { MasteryNodeState } from "@/features/mastery-grid/types";
 import {
-  formatOrdinalPercentile,
   formatVerifiedRankNextAction,
   formatVerifiedRankVerdict,
   MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE,
   type VerifiedFirstAttemptRankStats,
 } from "@/features/xp/calibrated-rank";
+import {
+  explainFirstAttemptAccuracy,
+  explainPeerStanding,
+  formatPeerStandingRow,
+  peerStandingLockedLabel,
+} from "@/features/xp/rank-statistics-pure";
 import { RANK_PROOFS_LABEL } from "@/features/xp/rank-proofs-labels";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 
@@ -19,9 +24,18 @@ export type MentrixaPopoverMessage = {
 export function rankBreakdownPopoverMessage(
   stats: VerifiedFirstAttemptRankStats,
 ): MentrixaPopoverMessage {
+  const accuracyLine =
+    stats.verifiedCount > 0
+      ? explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)
+      : "";
+  const peerLine =
+    stats.percentile != null && stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE
+      ? explainPeerStanding(stats.percentile)
+      : "";
+
   return {
     title: "",
-    verdict: formatVerifiedRankVerdict(stats) ?? "",
+    verdict: [accuracyLine, peerLine].filter(Boolean).join(" ") || (formatVerifiedRankVerdict(stats) ?? ""),
     nextAction: formatVerifiedRankNextAction(stats),
   };
 }
@@ -42,13 +56,17 @@ export function rankBreakdownPopoverRows(
 
   if (stats.percentile != null && stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE) {
     rows.push({
-      label: "Cohort percentile",
-      value: formatOrdinalPercentile(stats.percentile),
+      label: "Peer standing",
+      value: formatPeerStandingRow(stats.percentile),
+    });
+    rows.push({
+      label: "How we count it",
+      value: "Cohort math on first tries",
     });
   } else {
     rows.push({
-      label: "Percentile status",
-      value: `Unlocks at ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} ${RANK_PROOFS_LABEL.toLowerCase()}`,
+      label: "Peer standing",
+      value: peerStandingLockedLabel(MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE),
     });
   }
 
@@ -76,9 +94,13 @@ export function masteryNodeDetailPopoverMessage(
     };
   }
   if (accuracyPercent != null) {
+    const practiceNote =
+      state === "proficient"
+        ? "Practice only — rank still waits on your first verified try."
+        : "Practice accuracy counts here, but rank still waits on first attempt.";
     return {
       title: nodeName,
-      verdict: `Practice accuracy is ${accuracyPercent}% but rank still waits on first attempt.`,
+      verdict: `${practiceNote} You are at ${accuracyPercent}% in practice runs.`,
       nextAction: "Run a quest item from this node if you have not verified it yet.",
     };
   }
@@ -94,7 +116,7 @@ export function masteryNodeDetailStateLabel(state: MasteryNodeState): string {
     case "verified":
       return "Verified";
     case "proficient":
-      return "70% or higher";
+      return "Solid practice (70%+)";
     case "weak":
       return "Under 70%";
     case "none":

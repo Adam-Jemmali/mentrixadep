@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { ExamStakesDisclosure } from "@/shared/ui/disclosure-patterns";
 import { cn } from "@/shared/core/utils";
 
-const VERIFIED_GOLD = "#D4A017";
+
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -184,10 +184,7 @@ export function StepTraceDiagnosticResults({
               {runAnotherLabel}
             </Button>
           ) : null}
-          <p className="text-center text-xs text-slate-500">
-            First attempts lock rank.{" "}
-            <span style={{ color: VERIFIED_GOLD }}>Practice never rewrites them.</span>
-          </p>
+      
         </motion.div>
       </motion.div>
     </div>

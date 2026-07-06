@@ -12,7 +12,7 @@ export const landingHub = {
   eyebrow: "mx-hub-type-ui text-[#6366F1]",
   title: "text-[clamp(1.35rem,3.4vw,2.25rem)] font-bold leading-tight text-[#0B1220]",
   titleHero:
-    "text-balance font-bold italic tracking-[-0.04em] text-[#0B1220] text-[clamp(2.35rem,6.8vw,4.25rem)] leading-[1.02]",
+    "lp-hero-headline text-pretty font-bold italic tracking-[-0.02em] text-[#0B1220] leading-[1.1]",
   body: "text-base leading-relaxed text-[#334155]",
   bodySm: "text-sm leading-relaxed text-[#475569]",
   inkMuted: "text-[#475569]",

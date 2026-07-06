@@ -10,7 +10,7 @@ describe("alert messages", () => {
     const message = verifiedFirstAttemptAlertMessage("onboarding", "AP Calculus AB");
     expect(message.status).toBe("accent");
     expect(message.title).toContain("Verified first attempt");
-    expect(message.nextAction).toContain("percentile");
+    expect(message.nextAction).toContain("peer standing");
   });
 
   it("states subscription success with confirmation next action", () => {

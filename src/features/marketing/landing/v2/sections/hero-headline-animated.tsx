@@ -23,7 +23,7 @@ export function HeroHeadlineAnimated({ className }: Props) {
         {!revealed ? (
           <BrandTypewriter text={LANDING_HERO.line2Highlight} loop={false} onComplete={advance} />
         ) : (
-          <span className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500 bg-clip-text text-transparent">
+          <span className="inline bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500 bg-clip-text pe-[0.2em] text-transparent [box-decoration-break:clone]">
             {LANDING_HERO.line2Highlight}
           </span>
         )}

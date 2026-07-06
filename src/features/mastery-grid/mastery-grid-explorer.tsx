@@ -113,7 +113,7 @@ export function MasteryGridExplorer({
             <VocabMetric
               value={summary.proficientCount}
               icon="practice-pack"
-              label="proficient"
+              label="solid practice"
             />
             <VocabMetric value={summary.totalNodes} icon="skills" label="skills" />
             <VocabMetric value={data.units.length} icon="unit" label="units" />

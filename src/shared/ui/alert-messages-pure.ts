@@ -50,7 +50,7 @@ export function verifiedFirstAttemptAlertMessage(
         status: "accent",
         title: "Verified first attempt only",
         description: "Your rank moves only on first attempts.",
-        nextAction: `Five verified ${subjectLabel} skills unlock your percentile.`,
+        nextAction: `Five verified ${subjectLabel} skills unlock your peer standing.`,
       };
     case "guest_preview":
       return {

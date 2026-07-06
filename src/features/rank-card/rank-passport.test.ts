@@ -41,6 +41,6 @@ describe("practiceAccuracyToMasteryStateLabel", () => {
   it("maps practice accuracy to mastery labels", () => {
     expect(practiceAccuracyToMasteryStateLabel(0)).toBe("not started");
     expect(practiceAccuracyToMasteryStateLabel(55)).toBe("under seventy percent");
-    expect(practiceAccuracyToMasteryStateLabel(80)).toBe("seventy percent or higher");
+    expect(practiceAccuracyToMasteryStateLabel(80)).toBe("solid in practice");
   });
 });

@@ -45,7 +45,7 @@ export function BrandTypewriter({
   return (
     <span
       className={cn(
-        "inline bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500 bg-clip-text text-transparent",
+        "inline bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500 bg-clip-text pe-[0.2em] text-transparent [box-decoration-break:clone]",
         className,
       )}
     >

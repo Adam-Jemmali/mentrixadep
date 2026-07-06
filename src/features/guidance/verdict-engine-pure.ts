@@ -1,5 +1,9 @@
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { ProgressSnapshotData } from "@/features/progress-snapshot/types";
+import {
+  formatPeerStandingShort,
+  peerTopPercent,
+} from "@/features/xp/rank-statistics-pure";
 
 export type VerdictType =
   | "quest_result"
@@ -298,11 +302,11 @@ export function buildRankDeltaVerdict(
 
   const changed =
     flat && current.percentile != null
-      ? `${current.accuracyPercent}% accuracy · ${Math.round(current.percentile)}th percentile.`
+      ? `${current.accuracyPercent}% first-try accuracy · ${formatPeerStandingShort(current.percentile)} of Mentrixers.`
       : flat
-        ? `${current.accuracyPercent}% accuracy · ${current.verifiedCount} verified.`
+        ? `${current.accuracyPercent}% first-try accuracy · ${current.verifiedCount} verified.`
         : pctDelta != null
-          ? `Accuracy ${prevAcc}→${current.accuracyPercent}% · Percentile ${Math.round(prevPct!)}→${Math.round(current.percentile!)}.`
+          ? `Accuracy ${prevAcc}→${current.accuracyPercent}% · Peer standing top ${peerTopPercent(prevPct!)}%→${peerTopPercent(current.percentile!)}.`
           : `Accuracy ${prevAcc}→${current.accuracyPercent}% (${signedDelta(accDelta)}).`;
 
   const reason =

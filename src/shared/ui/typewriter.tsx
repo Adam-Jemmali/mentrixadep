@@ -57,7 +57,7 @@ export const Typewriter = ({
   const [currentTextIndex, setCurrentTextIndex] = useState(0)
 
   const texts = useMemo(() => (Array.isArray(text) ? text : [text]), [text])
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLSpanElement>(null)
   const isInView = useInView(containerRef, { once: true, margin: "-10% 0px" })
   const onCompleteRef = useRef(onComplete)
   const completedFiredRef = useRef(false)
@@ -137,7 +137,7 @@ export const Typewriter = ({
   ])
 
   return (
-    <div ref={containerRef} className={cn("inline whitespace-pre-wrap tracking-tight", className)}>
+    <span ref={containerRef} className={cn("inline whitespace-pre-wrap tracking-tight", className)}>
       <span>{displayText}</span>
       {showCursor && (
         <motion.span
@@ -156,6 +156,6 @@ export const Typewriter = ({
           {cursorChar}
         </motion.span>
       )}
-    </div>
+    </span>
   )
 }

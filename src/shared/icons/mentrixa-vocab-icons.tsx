@@ -377,7 +377,7 @@ export function MasteryGridSummaryMetrics({
       <VocabCountMetric
         value={proficientCount}
         icon="practice-pack"
-        label="Nodes Proficient"
+        label="Solid practice"
         accent="indigo"
         surface={surface}
       />

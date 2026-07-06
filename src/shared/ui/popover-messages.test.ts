@@ -7,13 +7,13 @@ import {
 } from "@/shared/ui/popover-messages-pure";
 
 describe("popover messages", () => {
-  it("builds rank breakdown rows with percentile gate", () => {
+  it("builds rank breakdown rows with peer standing gate", () => {
     const msg = rankBreakdownPopoverMessage({
       verifiedCount: 3,
       accuracyPercent: 72,
       percentile: null,
     });
-    expect(msg.verdict).toMatch(/3 skill/i);
+    expect(msg.verdict).toMatch(/2 right out of 3 first tries/i);
     expect(msg.nextAction).toMatch(/verify 2 more/i);
   });
 

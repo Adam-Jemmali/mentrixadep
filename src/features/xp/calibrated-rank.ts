@@ -11,7 +11,14 @@ import {
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
 
-export const MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE = 5;
+import {
+  explainFirstAttemptAccuracy,
+  explainPeerStanding,
+  formatPeerStandingShort,
+  MIN_VERIFIED_SKILLS_FOR_PEER_STANDING,
+} from "@/features/xp/rank-statistics-pure";
+
+export const MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE = MIN_VERIFIED_SKILLS_FOR_PEER_STANDING;
 /** Mentrixer min XP — scales percentile onto the seven account rank tiers. */
 export const MAX_XP_FOR_RANK_SCALE = MENTRIXER_MIN_XP;
 
@@ -65,7 +72,7 @@ export function formatVerifiedFirstAttemptSummary(
   if (stats.percentile == null || stats.verifiedCount < MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE) {
     return null;
   }
-  return `${stats.accuracyPercent} percent first attempt accuracy across ${stats.verifiedCount} verified AP Calculus AB skills, ${formatOrdinalPercentile(stats.percentile)}`;
+  return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} ${explainPeerStanding(stats.percentile)}`;
 }
 
 /** Receipt-style verdict for email and screen readers. */
@@ -74,10 +81,10 @@ export function formatVerifiedRankVerdict(stats: VerifiedFirstAttemptRankStats):
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
     stats.percentile != null
   ) {
-    return `${stats.accuracyPercent}% accuracy · ${Math.round(stats.percentile)}th percentile · ${stats.verifiedCount} verified.`;
+    return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} ${formatPeerStandingShort(stats.percentile)} of Mentrixers.`;
   }
   if (stats.verifiedCount > 0) {
-    return `${stats.verifiedCount} verified · ${stats.accuracyPercent}% accuracy. Percentile unlocks at ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE}.`;
+    return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} Peer standing unlocks at ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} verified skills.`;
   }
   return null;
 }
@@ -91,7 +98,7 @@ export function formatVerifiedRankNextAction(stats: VerifiedFirstAttemptRankStat
     return "Verify next node";
   }
   if (remaining > 0 && stats.verifiedCount > 0) {
-    return `Verify ${remaining} more to unlock percentile`;
+    return `Verify ${remaining} more to unlock peer standing`;
   }
   return "Verify first node";
 }

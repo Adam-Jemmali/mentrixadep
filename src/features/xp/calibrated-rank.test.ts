@@ -48,9 +48,8 @@ describe("formatVerifiedFirstAttemptSummary", () => {
       accuracyPercent: 72,
       percentile: 45,
     });
-    expect(line).toBe(
-      "72 percent first attempt accuracy across 12 verified AP Calculus AB skills, 45th percentile"
-    );
+    expect(line).toContain("9 right out of 12 first tries");
+    expect(line).toContain("beat 45 out of every 100");
   });
 
   it("returns null before five verified skills", () => {
@@ -65,14 +64,21 @@ describe("formatVerifiedFirstAttemptSummary", () => {
 });
 
 describe("formatVerifiedRankVerdict", () => {
-  it("builds percentile receipt when eligible", () => {
+  it("builds peer standing receipt when eligible", () => {
     expect(
       formatVerifiedRankVerdict({
         verifiedCount: 12,
         accuracyPercent: 76,
-        percentile: 11,
+        percentile: 89,
       })
-    ).toContain("76% first-attempt accuracy");
+    ).toContain("first tries");
+    expect(
+      formatVerifiedRankVerdict({
+        verifiedCount: 12,
+        accuracyPercent: 76,
+        percentile: 89,
+      })
+    ).toContain("Top 11%");
   });
 
   it("guides user before five verified skills", () => {
@@ -82,6 +88,6 @@ describe("formatVerifiedRankVerdict", () => {
         accuracyPercent: 50,
         percentile: null,
       })
-    ).toContain("verify 3 more");
+    ).toMatch(/verify 3 more/i);
   });
 });

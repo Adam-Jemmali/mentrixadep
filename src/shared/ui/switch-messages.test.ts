@@ -11,7 +11,7 @@ describe("switch messages", () => {
   it("frames rank card around verified passport", () => {
     const msg = privacySwitchMessage("rank_card_public");
     expect(msg.verdict).toMatch(/verified first attempt/i);
-    expect(msg.nextAction).toMatch(/percentile/i);
+    expect(msg.nextAction).toMatch(/peer standing/i);
   });
 
   it("differentiates tutor booked email copy", () => {

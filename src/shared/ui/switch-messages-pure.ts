@@ -32,7 +32,7 @@ export function privacySwitchMessage(id: MentrixaPrivacySwitchId): MentrixaSwitc
     case "rank_card_public":
       return {
         verdict: "Your public passport shows verified first attempts only.",
-        nextAction: "Keep this on after five skills unlock a shareable percentile.",
+        nextAction: "Keep this on after five skills unlock peer standing.",
       };
   }
 }

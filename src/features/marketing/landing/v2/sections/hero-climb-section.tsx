@@ -45,7 +45,7 @@ export function HeroClimbSection() {
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            className={`${landingHub.notebookCard} text-center lg:text-left`}
+            className={`${landingHub.notebookCard} lp-hero-notebook text-center lg:text-left`}
           >
             <HeroHeadline className={landingHub.titleHero} />
 

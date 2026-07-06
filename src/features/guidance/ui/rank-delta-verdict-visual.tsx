@@ -6,6 +6,7 @@ import type { RankDeltaMeta, VerdictNextAction } from "@/features/guidance/verdi
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 function DeltaBadge({ delta }: { delta: number }) {
   if (delta === 0) {
@@ -72,7 +73,7 @@ function MetricRow({
             )}
           >
             {value}
-            {icon === "verified" ? "%" : "th"}
+            {icon === "verified" || icon === "rank-proof" ? "%" : "th"}
           </span>
           <DeltaBadge delta={delta} />
         </span>
@@ -161,9 +162,9 @@ export function RankDeltaVerdictVisual({
         {meta.percentile ? (
           <MetricRow
             icon="rank-proof"
-            label="Percentile"
-            value={meta.percentile.current}
-            delta={meta.percentile.delta}
+            label="Top %"
+            value={peerTopPercent(meta.percentile.current)}
+            delta={-meta.percentile.delta}
             tone={tone}
           />
         ) : null}

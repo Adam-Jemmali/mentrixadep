@@ -33,7 +33,7 @@ const STATE_SQUARE_CLASS: Record<MasteryNodeState, string> = {
 const LEGEND_ITEMS: { word: string; state: MasteryNodeState; icon: "focus-ring" | "practice-pack" | "verified" }[] = [
   { word: "Open", state: "none", icon: "focus-ring" },
   { word: "Weak", state: "weak", icon: "practice-pack" },
-  { word: "Proficient", state: "proficient", icon: "practice-pack" },
+  { word: "Solid", state: "proficient", icon: "practice-pack" },
   { word: "Verified", state: "verified", icon: "verified" },
 ];
 
