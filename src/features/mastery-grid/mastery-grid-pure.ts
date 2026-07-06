@@ -59,7 +59,7 @@ export function buildMasteryGridNextAction(units: MasteryGridData["units"]): str
     return a.displayOrder - b.displayOrder;
   })[0]!;
 
-  return `Work on ${weakest.nodeName} next, you are at ${weakest.accuracyPercent ?? 0} percent`;
+  return `Practice ${weakest.nodeName} until green — ${weakest.accuracyPercent ?? 0}% now, need 70%.`;
 }
 
 export function flattenMasteryNodes(grid: MasteryGridData): MasteryGridNode[] {
@@ -142,9 +142,16 @@ export function pickQuestMasteryHighlight(
   }
 
   const nodeName = afterById.get(pickId)?.nodeName ?? before[pickId]?.nodeName ?? "This skill";
+  const acc = afterById.get(pickId)?.accuracyPercent;
   const verdictLine = unchanged
-    ? `${nodeName} held steady, practice again to move it`
-    : `${nodeName} moved from ${MASTERY_STATE_LABEL[fromState]} to ${MASTERY_STATE_LABEL[toState]}`;
+    ? `${nodeName} held steady — practice until the square turns green (70%+).`
+    : toState === "proficient"
+      ? `${nodeName} turned solid green at ${acc ?? 70}%+ practice.`
+      : toState === "verified"
+        ? `${nodeName} locked for rank on first try.`
+        : toState === "weak"
+          ? `${nodeName} still weak — practice until green before your next verified attempt.`
+          : `${nodeName} updated on your grid.`;
 
   return {
     nodeId: pickId,

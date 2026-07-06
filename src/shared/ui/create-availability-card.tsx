@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
-import { useState, useRef, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronDown, Calendar, Clock, DollarSign, Check, AlertCircle } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ChevronLeft, Calendar, Clock, DollarSign, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 import { createAvailabilitySlots } from "@/features/tutor/availability";
 import { useAdminViewContext } from "@/components/admin-view-context";
@@ -17,6 +17,7 @@ import {
   earliestFirstOccurrenceStartUtc,
 } from "@/features/booking/availability-slot-builder";
 import { addMinutesToHHmm } from "@/features/tutor/teaching-defaults";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 
 const WEEKDAYS: { value: number; label: string; full: string }[] = [
   { value: 0, label: "Mon", full: "Monday" },
@@ -39,7 +40,8 @@ function timeOptions(): string[] {
 }
 
 interface CreateAvailabilityCardProps {
-  tutorCourseNames: string[];
+  /** True when AP Calculus AB proficiency is admin-verified. */
+  apCalcVerified: boolean;
   defaultTimezone: string;
   /** Teaching Defaults — each opening uses exactly this many minutes (start + duration = end). */
   sessionDefaultDurationMinutes: number;
@@ -50,7 +52,7 @@ interface CreateAvailabilityCardProps {
 }
 
 export function CreateAvailabilityCard({
-  tutorCourseNames,
+  apCalcVerified,
   defaultTimezone,
   sessionDefaultDurationMinutes,
   className,
@@ -58,7 +60,7 @@ export function CreateAvailabilityCard({
   onSlotsCreated,
 }: CreateAvailabilityCardProps) {
   // Form State
-  const [course, setCourse] = useState(tutorCourseNames[0] || "");
+  const course = AP_CALC_AB_SUBJECT;
   const [weekdays, setWeekdays] = useState<Set<number>>(new Set());
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState(() => addMinutesToHHmm("09:00", sessionDefaultDurationMinutes) ?? "10:00");
@@ -68,7 +70,6 @@ export function CreateAvailabilityCard({
   const [timezone, setTimezone] = useState(defaultTimezone);
   
   // UI State
-  const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const [showConfirmationView, setShowConfirmationView] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +77,6 @@ export function CreateAvailabilityCard({
   
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const shouldAnimate = enableAnimations && !shouldReduceMotion;
 
@@ -136,17 +136,6 @@ export function CreateAvailabilityCard({
       scheduleIssue.includes("exactly") ||
       scheduleIssue.includes("already in the past"));
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsSubjectDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const toggleDay = (d: number) => {
     setWeekdays((prev) => {
       const next = new Set(prev);
@@ -158,8 +147,8 @@ export function CreateAvailabilityCard({
 
   const handleNext = () => {
     setSuccessMessage(null);
-    if (!course) {
-      setError("Select a subject");
+    if (!apCalcVerified) {
+      setError("Submit and verify AP Calculus AB proficiency before opening slots.");
       return;
     }
     if (weekdays.size === 0) {
@@ -274,7 +263,7 @@ export function CreateAvailabilityCard({
     },
   };
 
-  const hasCourses = tutorCourseNames.length > 0;
+  const canCreateSlots = apCalcVerified;
 
   return (
     <motion.div
@@ -311,50 +300,24 @@ export function CreateAvailabilityCard({
             </div>
           </motion.div>
 
-          {/* Subject Selector */}
-          <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-6 pb-4 z-50 relative">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">
+          {/* AP Calculus AB — single verified subject */}
+          <motion.div variants={shouldAnimate ? itemVariants : {}} className="p-6 pb-4">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#334155]">
               Subject
             </label>
-            <div className="relative" ref={dropdownRef}>
-              <Button
-                variant="outline"
-                onClick={() => hasCourses && setIsSubjectDropdownOpen(!isSubjectDropdownOpen)}
-                disabled={!hasCourses}
-                className={cn(
-                  "h-auto w-full justify-between rounded-lg border-2 border-slate-300 bg-white p-3 text-left font-semibold text-slate-900 shadow-sm hover:border-indigo-400 hover:bg-indigo-50/40",
-                  isSubjectDropdownOpen && "border-indigo-500 ring-2 ring-indigo-200",
-                  !hasCourses && "cursor-not-allowed opacity-50"
-                )}
-              >
-                <span>{course || "Add subjects first"}</span>
-                <ChevronDown className={cn("h-4 w-4 shrink-0 text-slate-600 transition-transform", isSubjectDropdownOpen && "rotate-180")} />
-              </Button>
-              <AnimatePresence>
-                {isSubjectDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-lg border-2 border-slate-300 bg-white shadow-xl"
-                  >
-                    {tutorCourseNames.map((name) => (
-                      <button
-                        key={name}
-                        type="button"
-                        onClick={() => { setCourse(name); setIsSubjectDropdownOpen(false); }}
-                        className={cn(
-                          "w-full border-b border-slate-100 p-3 text-left text-sm font-semibold text-slate-900 transition-colors last:border-b-0",
-                          name === course ? "bg-indigo-100 text-indigo-950" : "bg-white hover:bg-indigo-50"
-                        )}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <div className="rounded-lg border-2 border-[#7C3AED]/30 bg-[#EDE9FE]/60 px-4 py-3">
+              <p className="text-base font-bold text-[#0B1220]">{AP_CALC_AB_SUBJECT}</p>
+              <p className="mt-1 text-xs font-medium leading-relaxed text-[#475569]">
+                {apCalcVerified
+                  ? "Verified proficiency. Slots you create are bookable for AP Calculus AB learners."
+                  : "Submit AP Calculus AB proficiency on your Guide home and wait for admin verification before opening slots."}
+              </p>
             </div>
+            {!apCalcVerified ? (
+              <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-950" role="status">
+                Proficiency not verified yet. Close this drawer and complete the AP Calculus AB card on your home page.
+              </p>
+            ) : null}
           </motion.div>
 
           {/* Days Selection */}
@@ -434,9 +397,8 @@ export function CreateAvailabilityCard({
                 {scheduleIssue}
               </p>
             ) : (
-              <p className="text-xs font-medium text-slate-500">
-               Length always matches your Teaching Defaul (
-                {sessionDefaultDurationMinutes} min).
+              <p className="text-xs font-medium text-[#475569]">
+                Length always matches your Teaching Defaults ({sessionDefaultDurationMinutes} min).
               </p>
             )}
 
@@ -539,7 +501,7 @@ export function CreateAvailabilityCard({
             <Button
               type="button"
               onClick={handleNext}
-              disabled={!hasCourses || weekdays.size === 0 || Boolean(scheduleIssue)}
+              disabled={!canCreateSlots || weekdays.size === 0 || Boolean(scheduleIssue)}
               size="lg"
               className="h-12 w-full border-2 border-indigo-800 bg-indigo-600 text-base font-bold text-white shadow-md hover:bg-indigo-700 disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             >

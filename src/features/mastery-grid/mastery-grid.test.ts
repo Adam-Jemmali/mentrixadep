@@ -87,7 +87,7 @@ describe("buildMasteryGridNextAction", () => {
         ],
       },
     ]);
-    expect(line).toBe("Work on Chain rule next, you are at 40 percent");
+    expect(line).toBe("Practice Chain rule until green — 40% now, need 70%.");
   });
 });
 
@@ -150,9 +150,7 @@ describe("pickQuestMasteryHighlight", () => {
     const highlight = pickQuestMasteryHighlight(before, after, ["b", "a"]);
     expect(highlight?.nodeId).toBe("a");
     expect(highlight?.unchanged).toBe(false);
-    expect(highlight?.verdictLine).toBe(
-      "Limits intro moved from not started to verified"
-    );
+    expect(highlight?.verdictLine).toBe("Limits intro locked for rank on first try.");
   });
 
   it("reports held steady when no state changed", () => {
@@ -163,7 +161,7 @@ describe("pickQuestMasteryHighlight", () => {
     const highlight = pickQuestMasteryHighlight(before, after, ["a"]);
     expect(highlight?.unchanged).toBe(true);
     expect(highlight?.verdictLine).toBe(
-      "Chain rule held steady, practice again to move it"
+      "Chain rule held steady — practice until the square turns green (70%+)."
     );
   });
 });

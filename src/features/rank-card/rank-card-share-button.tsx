@@ -118,7 +118,7 @@ export function RankCardShareButton({
       <div className="mt-6 flex items-start gap-3 border-t border-[#C4B5FD]/70 pt-5">
         <MentrixaVocabIcon name="passport" size={28} surface="light" className="shrink-0 opacity-80" />
         <p className={cn(mentrixHubSurfaces.inkMuted, "text-xs leading-relaxed")}>
-          Anyone with the link sees your verified mastery map and percentile.
+          Anyone with the link sees your verified mastery map and peer standing.
         </p>
       </div>
     </section>

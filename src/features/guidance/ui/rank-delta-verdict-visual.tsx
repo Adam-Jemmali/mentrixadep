@@ -6,7 +6,7 @@ import type { RankDeltaMeta, VerdictNextAction } from "@/features/guidance/verdi
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
+import { peerBeatCount, peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 function DeltaBadge({ delta }: { delta: number }) {
   if (delta === 0) {
@@ -34,15 +34,19 @@ function MetricRow({
   label,
   value,
   delta,
+  suffix = "%",
+  barValue,
   tone,
 }: {
   icon: "verified" | "rank-proof";
   label: string;
   value: number;
   delta: number;
+  suffix?: string;
+  barValue?: number;
   tone: "dark" | "light";
 }) {
-  const clamped = Math.max(0, Math.min(100, value));
+  const clamped = Math.max(0, Math.min(100, barValue ?? value));
   const isDark = tone === "dark";
 
   return (
@@ -73,7 +77,7 @@ function MetricRow({
             )}
           >
             {value}
-            {icon === "verified" || icon === "rank-proof" ? "%" : "th"}
+            {suffix}
           </span>
           <DeltaBadge delta={delta} />
         </span>
@@ -164,6 +168,8 @@ export function RankDeltaVerdictVisual({
             icon="rank-proof"
             label="Top %"
             value={peerTopPercent(meta.percentile.current)}
+            suffix="%"
+            barValue={peerBeatCount(meta.percentile.current)}
             delta={-meta.percentile.delta}
             tone={tone}
           />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/shared/core/auth";
 import { loadTrajectoryCertificateForViewer } from "@/features/trajectory-index/load-trajectory-certificate";
 import { verifiedPercentileGoldStyle } from "@/features/trajectory-index/trajectory-certificate-pure";
+import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 import { Button } from "@/shared/ui/button";
 import { PrintCertificateButton } from "@/features/trajectory-index/ui/print-certificate-button";
 import { ParentCustodianInvitePanel } from "@/features/parent-custodian/ui/parent-custodian-invite-panel";
@@ -39,10 +40,10 @@ export default async function StudentCertificatePage() {
       <p className="mt-2 text-sm text-zinc-600">{certificate.nextAction}</p>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-zinc-200 p-4">
-          <p className="text-xs uppercase tracking-widest text-zinc-500">Verified percentile</p>
+          <p className="text-xs uppercase tracking-widest text-zinc-500">Top % of Mentrixers</p>
           <p className="mt-1 text-2xl font-black" style={verifiedPercentileGoldStyle()}>
             {certificate.verifiedPercentile != null
-              ? `${Math.round(certificate.verifiedPercentile)}th`
+              ? `${peerTopPercent(certificate.verifiedPercentile)}%`
               : "Calibrating"}
           </p>
         </div>

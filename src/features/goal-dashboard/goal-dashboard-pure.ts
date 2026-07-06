@@ -1,4 +1,5 @@
 import type { StudentGoal } from "@/features/student-goals/types";
+import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 export function buildGoalDashboardVerdict(input: {
   goal: StudentGoal;
@@ -14,14 +15,14 @@ export function buildGoalDashboardVerdict(input: {
 
   const paceLine =
     input.currentPercentile != null && input.targetPercentile != null
-      ? `You are near the ${Math.round(input.currentPercentile)}th percentile; target is ${Math.round(input.targetPercentile)}.`
+      ? `You are top ${peerTopPercent(input.currentPercentile)}% now; target is top ${peerTopPercent(input.targetPercentile)}%.`
       : `${input.verifiedNodeCount} verified nodes on the grid so far.`;
 
   return {
     verdict: `${examLine} ${paceLine}`,
     nextAction:
       input.verifiedNodeCount < 5
-        ? "Verify 5 nodes to unlock a calibrated percentile, then retest your weakest node."
+        ? "Verify 5 nodes to unlock peer standing, then retest your weakest node."
         : "Take one retest or duel this week to stay on pace for your goal.",
   };
 }

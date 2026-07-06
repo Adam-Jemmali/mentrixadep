@@ -1,0 +1,101 @@
+import { describe, expect, it } from "vitest";
+import {
+  applyQuestPostPackStepToVerdict,
+  buildQuestPostPackStep,
+  pickPostPackFocusNode,
+  SOLID_PRACTICE_PERCENT,
+} from "@/features/quest/quest-post-step-pure";
+import type { MasteryGridData } from "@/features/mastery-grid/types";
+
+function gridWith(
+  nodes: Array<{
+    id: string;
+    nodeName: string;
+    state: "none" | "weak" | "proficient" | "verified";
+    accuracyPercent?: number | null;
+    displayOrder?: number;
+  }>,
+): MasteryGridData {
+  return {
+    subject: "AP Calculus AB",
+    units: [
+      {
+        unitNumber: 1,
+        unitName: "Limits",
+        nodes: nodes.map((node, index) => ({
+          id: node.id,
+          nodeName: node.nodeName,
+          nodeSlug: node.nodeName.toLowerCase().replace(/\s+/g, "-"),
+          displayOrder: node.displayOrder ?? index + 1,
+          state: node.state,
+          accuracyPercent: node.accuracyPercent ?? null,
+        })),
+      },
+    ],
+    nextActionLine: "",
+  };
+}
+
+describe("quest-post-step-pure", () => {
+  it("asks to practice until green when node is weak in practice", () => {
+    const step = buildQuestPostPackStep({
+      id: "a",
+      nodeName: "Chain Rule",
+      nodeSlug: "chain-rule",
+      displayOrder: 1,
+      state: "weak",
+      accuracyPercent: 55,
+    });
+    expect(step.phase).toBe("practice_to_green");
+    expect(step.nextAction.label).toContain("until green");
+    expect(step.nextAction.label).toContain(String(SOLID_PRACTICE_PERCENT));
+  });
+
+  it("routes green nodes to a verified quest attempt", () => {
+    const step = buildQuestPostPackStep({
+      id: "b",
+      nodeName: "Limits",
+      nodeSlug: "limits",
+      displayOrder: 1,
+      state: "proficient",
+      accuracyPercent: 78,
+    });
+    expect(step.phase).toBe("quest_to_verify");
+    expect(step.nextAction.label).toContain("Quest Limits");
+  });
+
+  it("overrides generic practice verdict with grid-aware next step", () => {
+    const data = gridWith([
+      { id: "a", nodeName: "Chain Rule", state: "weak", accuracyPercent: 40 },
+      { id: "b", nodeName: "Limits", state: "verified", accuracyPercent: 100 },
+    ]);
+    const focus = pickPostPackFocusNode(data, ["a", "b"]);
+    expect(focus?.nodeName).toBe("Chain Rule");
+
+    const enriched = applyQuestPostPackStepToVerdict(
+      {
+        changed: "Chain Rule moved -10 points this session.",
+        reason: "Miss pattern.",
+        nextAction: { label: "Practice Chain Rule", href: "/student/quest" },
+      },
+      data,
+      ["a", "b"],
+    );
+    expect(enriched.nextAction.label).toContain("until green");
+    expect(enriched.comparison).toContain("weekly receipt");
+  });
+
+  it("keeps retest verdicts untouched", () => {
+    const data = gridWith([{ id: "a", nodeName: "Chain Rule", state: "weak", accuracyPercent: 0 }]);
+    const enriched = applyQuestPostPackStepToVerdict(
+      {
+        changed: "Retest due.",
+        reason: "",
+        nextAction: { label: "Retest Chain Rule now", href: "/student/quest" },
+      },
+      data,
+      ["a"],
+    );
+    expect(enriched.nextAction.label).toContain("Retest");
+  });
+});

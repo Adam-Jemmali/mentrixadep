@@ -1,5 +1,6 @@
 import { loadParentCustodianView } from "@/features/parent-custodian/load-parent-custodian-view";
 import { verifiedPercentileGoldStyle } from "@/features/trajectory-index/trajectory-certificate-pure";
+import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 interface ParentViewPageProps {
   params: Promise<{ token: string }>;
@@ -31,10 +32,10 @@ export default async function ParentCustodianViewPage({ params }: ParentViewPage
       <p className="mt-2 text-sm text-zinc-600">{view.nextAction}</p>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-zinc-200 p-4">
-          <p className="text-xs uppercase tracking-widest text-zinc-500">Verified percentile</p>
+          <p className="text-xs uppercase tracking-widest text-zinc-500">Top % of Mentrixers</p>
           <p className="mt-1 text-2xl font-black" style={verifiedPercentileGoldStyle()}>
             {view.verifiedPercentile != null
-              ? `${Math.round(view.verifiedPercentile)}th`
+              ? `${peerTopPercent(view.verifiedPercentile)}%`
               : "Calibrating"}
           </p>
         </div>

@@ -16,6 +16,9 @@ import { triggerManualPayout } from "@/features/payments/payout-ledger";
 import { useRouter } from "next/navigation";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { GuideStickyNote } from "@/features/tutor/ui/guide-sticky-note";
+import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
 function cad(cents: number): string {
   return `$${(cents / 100).toLocaleString("en-CA", {
@@ -76,7 +79,7 @@ function MetricCard({
       >
         {value}
       </p>
-      {caption && <p className="mt-1.5 text-[11px] leading-snug text-slate-400">{caption}</p>}
+      {caption && <p className="mt-1.5 text-[11px] leading-snug text-[#64748B]">{caption}</p>}
     </div>
   );
 }
@@ -316,11 +319,14 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
   const showUnavailable = connectParam === "unavailable";
 
   return (
-    <section className="rounded-md border border-slate-200 bg-white p-4 sm:p-6">
+    <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.payouts}>
+    <section>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-medium text-slate-900">Payouts</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Stripe Checkout CAD</p>
+          <h2 className={`text-sm font-semibold ${mentrixStudent.textOnLight}`}>Payouts</h2>
+          <p className={`mt-0.5 text-xs ${mentrixStudent.textMutedOnLight}`}>
+            Stripe Checkout CAD. Your share lands after each completed AP Calculus AB session.
+          </p>
         </div>
         <TransferToBankButton availableCents={availableCents} payoutsEnabled={connectStatus.payoutsEnabled} />
       </div>
@@ -397,5 +403,6 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
         <TransactionTable rows={ledger} />
       </div>
     </section>
+    </GuideStickyNote>
   );
 }

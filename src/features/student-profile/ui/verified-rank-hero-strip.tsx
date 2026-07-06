@@ -6,6 +6,11 @@ import type { VerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-ran
 import {
   MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE,
 } from "@/features/xp/calibrated-rank";
+import {
+  peerBeatCount,
+  peerTopPercent,
+  peerStandingLockedLabel,
+} from "@/features/xp/rank-statistics-pure";
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { CANONICAL_QUEST_ICON } from "@/shared/icons/vocab-canonical";
@@ -62,7 +67,7 @@ export function VerifiedRankHeroStrip({
 }) {
   if (stats.verifiedCount <= 0) return null;
 
-  const percentileUnlocked =
+  const peerStandingUnlocked =
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE && stats.percentile != null;
 
   const remaining = MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE - stats.verifiedCount;
@@ -73,11 +78,14 @@ export function VerifiedRankHeroStrip({
 
   const cta =
     nextActionLabel ??
-    (percentileUnlocked
+    (peerStandingUnlocked
       ? "Verify next node"
       : remaining > 0
         ? `Verify ${remaining} more`
         : "Verify first node");
+
+  const topPercent = stats.percentile != null ? peerTopPercent(stats.percentile) : null;
+  const beatCount = stats.percentile != null ? peerBeatCount(stats.percentile) : null;
 
   return (
     <div className={cn("max-w-2xl space-y-2", className)}>
@@ -90,25 +98,35 @@ export function VerifiedRankHeroStrip({
           barValue={stats.accuracyPercent}
           barColor="#7C3AED"
         />
-        {percentileUnlocked ? (
+        {peerStandingUnlocked && topPercent != null && beatCount != null ? (
           <HeroMetric
             icon="rank-proof"
-            label="Percentile"
-            value={Math.round(stats.percentile!)}
-            suffix="th"
-            barValue={Math.round(stats.percentile!)}
+            label="Top %"
+            value={topPercent}
+            suffix="%"
+            barValue={beatCount}
             barColor="#6366F1"
           />
         ) : (
           <HeroMetric
             icon="skills"
-            label="Unlock"
+            label="Peer standing"
             value={`${stats.verifiedCount}/${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE}`}
             barValue={unlockProgress}
             barColor="#0891B2"
           />
         )}
       </div>
+
+      {!peerStandingUnlocked ? (
+        <p className="text-[10px] font-semibold text-[#475569]">
+          {peerStandingLockedLabel(MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE)}
+        </p>
+      ) : beatCount != null ? (
+        <p className="text-[10px] font-semibold text-[#475569]">
+          Beat {beatCount} out of every 100 Mentrixers on first-try accuracy.
+        </p>
+      ) : null}
 
       <Link
         href={nextActionHref}

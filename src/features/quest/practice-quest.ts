@@ -46,6 +46,7 @@ import {
   pickQuestMasteryHighlight,
   snapshotPackNodesFromGrid,
 } from "@/features/mastery-grid/mastery-grid-pure";
+import { applyQuestPostPackStepToVerdict } from "@/features/quest/quest-post-step-pure";
 import { z } from "zod";
 import { trackEvent } from "@/shared/integrations/analytics";
 import type {
@@ -754,6 +755,15 @@ export async function finalizePracticeQuest(
         masteryGrid = await loadMasteryGrid(user.id);
         masteryHighlight =
           pickQuestMasteryHighlight(meta.masteryBeforePack, masteryGrid, packNodeOrder) ?? undefined;
+        if (questVerdict && masteryGrid) {
+          questVerdict = applyQuestPostPackStepToVerdict(
+            questVerdict,
+            masteryGrid,
+            packNodeOrder,
+            masteryHighlight,
+          );
+          result.questVerdict = questVerdict;
+        }
         result.masteryGrid = masteryGrid;
         result.masteryHighlight = masteryHighlight;
         await patchPackMetadata(questId, (m) => ({

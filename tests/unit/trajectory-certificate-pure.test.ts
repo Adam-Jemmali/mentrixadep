@@ -18,7 +18,7 @@ describe("trajectory-certificate-pure", () => {
       generatedOn: "2026-07-01",
       archiveWeeks: 8,
     });
-    expect(copy.verdict).toContain("82");
+    expect(copy.verdict).toContain("Top 18%");
     expect(copy.nextAction).toContain("Print");
   });
 });

@@ -1,3 +1,5 @@
+import { formatPeerStandingShort } from "@/features/xp/rank-statistics-pure";
+
 export const PARENT_CUSTODIAN_INVITE_TTL_DAYS = 14;
 
 export type ParentCustodianInviteCopy = {
@@ -25,13 +27,13 @@ export function buildParentCustodianViewCopy(input: {
       ? `Trajectory Index ${input.trajectoryScore}.`
       : "Trajectory is still building from verified first attempts.";
 
-  const percentileLine =
+  const peerLine =
     input.verifiedPercentile != null
-      ? `Verified percentile ${Math.round(input.verifiedPercentile)}.`
-      : "Verified percentile is calibrating.";
+      ? `${formatPeerStandingShort(input.verifiedPercentile)} of Mentrixers.`
+      : "Peer standing is calibrating.";
 
   return {
-    verdict: `${input.studentFirstName}'s movement is read-only here. ${trajectoryLine} ${percentileLine}`,
+    verdict: `${input.studentFirstName}'s movement is read-only here. ${trajectoryLine} ${peerLine}`,
     nextAction: "This view does not book sessions or change rank. Ask your student to act on the next coaching beat.",
   };
 }

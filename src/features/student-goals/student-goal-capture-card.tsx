@@ -120,7 +120,7 @@ export function StudentGoalCaptureCard({ subject = AP_CALC_AB_SUBJECT }: Props) 
             className="min-h-11 flex-1 border-violet-200 text-sm"
             onClick={() => setStep("percentile_target")}
           >
-            Reach a specific percentile
+            Reach a top % target
           </Button>
           <Button
             type="button"
@@ -163,7 +163,7 @@ export function StudentGoalCaptureCard({ subject = AP_CALC_AB_SUBJECT }: Props) 
       {step === "percentile_target" ? (
         <div className="mt-4 space-y-3">
           <label className={`block text-sm font-medium ${mentrixStudent.textOnLight}`}>
-            Target percentile
+            Target top %
             <input
               type="number"
               min={1}

@@ -403,7 +403,9 @@ export function TutorDashboardClient({
 
             <div className="mt-6">
               <CreateAvailabilityCard
-                tutorCourseNames={tutorCourses.filter((c) => c.verified).map((c) => c.course_name)}
+                apCalcVerified={tutorCourses.some(
+                  (c) => c.verified && c.course_name.toLowerCase().includes("calculus"),
+                )}
                 defaultTimezone={tutorTimezone}
                 sessionDefaultDurationMinutes={sessionDefaultDurationMinutes}
                 className="border-none shadow-none bg-transparent max-w-full"

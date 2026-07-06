@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { GoalDashboardData } from "@/features/goal-dashboard/load-goal-dashboard";
+import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 export function GoalDashboardCard({ data }: { data: GoalDashboardData }) {
   return (
@@ -23,9 +24,9 @@ export function GoalDashboardCard({ data }: { data: GoalDashboardData }) {
           <p className="mt-1 text-lg font-black text-zinc-900">{data.verifiedNodeCount}</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Percentile</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Top %</p>
           <p className="mt-1 text-lg font-black text-zinc-900">
-            {data.currentPercentile != null ? `${Math.round(data.currentPercentile)}th` : "Calibrating"}
+            {data.currentPercentile != null ? `${peerTopPercent(data.currentPercentile)}%` : "Calibrating"}
           </p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">

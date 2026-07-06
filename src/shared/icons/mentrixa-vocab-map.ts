@@ -181,7 +181,7 @@ export const VOCAB_ICON_REGISTRY: Record<VocabIconName, VocabIconMeta> = {
   verified: { name: "verified", label: "Verified", category: "core", allowsGold: true },
   "rank-proof": { name: "rank-proof", label: "Rank proof", category: "core", allowsGold: true },
   "practice-pack": { name: "practice-pack", label: "Practice pack", category: "core" },
-  percentile: { name: "percentile", label: "Percentile", category: "core", allowsGold: true },
+  percentile: { name: "percentile", label: "Peer standing", category: "core", allowsGold: true },
   xp: { name: "xp", label: "XP", category: "core" },
   streak: { name: "streak", label: "Streak", category: "core" },
   day: { name: "day", label: "Day", category: "core" },

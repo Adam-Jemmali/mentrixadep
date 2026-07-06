@@ -15,6 +15,7 @@ import {
 import { loadComparisonContext } from "@/features/comparison/load-comparison-context";
 import type { ComparisonActorKind } from "@/features/comparison/comparison-context-pure";
 import { applyActiveGoalToVerdict } from "@/features/student-goals/apply-goal-to-verdict";
+import { formatPeerStandingShort } from "@/features/xp/rank-statistics-pure";
 import { progressSnapshotDataSchema } from "@/features/progress-snapshot/types";
 import {
   loadApCalcSkillNodeGraph,
@@ -353,7 +354,7 @@ async function getWeeklySnapshotVerdict(
     return finalizeStudentVerdict(
       userId,
       {
-        changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skills${rank.percentile != null ? ` at the ${Math.round(rank.percentile)}th percentile` : ""}.`,
+        changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skills${rank.percentile != null ? ` · ${formatPeerStandingShort(rank.percentile)} of Mentrixers` : ""}.`,
         reason: "A post-session retest is due before new practice will move your verified rank.",
         nextAction: {
           label: `Retest ${dueRetest.nodeName}`,
@@ -367,7 +368,7 @@ async function getWeeklySnapshotVerdict(
   return finalizeStudentVerdict(
     userId,
     {
-      changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skill${rank.verifiedCount === 1 ? "" : "s"}${rank.percentile != null ? ` (${Math.round(rank.percentile)}th percentile)` : ""}.`,
+      changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skill${rank.verifiedCount === 1 ? "" : "s"}${rank.percentile != null ? ` · ${formatPeerStandingShort(rank.percentile)} of Mentrixers` : ""}.`,
       reason: "No weekly snapshot is stored yet; rank reflects your latest verified first attempts.",
       nextAction: {
         label: "Start a verified practice pack",

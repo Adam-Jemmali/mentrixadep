@@ -4,6 +4,7 @@ import { TutorCommandCenterClient } from "./tutor-command-center-client";
 import { requireRole } from "@/shared/core/auth";
 import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/features/student-profile/student-dashboard-helpers";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { cn } from "@/shared/core/utils";
 
 export const metadata: Metadata = {
   title: "Guide center · Mentrixa",
@@ -24,7 +25,7 @@ export default async function TutorPage() {
     const greeting = greetingForHour(hour, firstName);
 
     return (
-      <div className={mentrixStudent.pageBgHub}>
+      <div className={cn(mentrixStudent.pageBgHub, "mentrix-student-type-scope")}>
         <TutorCommandCenterClient data={data} greeting={greeting} firstName={firstName} />
       </div>
     );

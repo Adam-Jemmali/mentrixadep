@@ -6,11 +6,11 @@ import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import Image from "next/image";
-import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
-import { GooeyText } from "@/shared/ui/gooey-text";
-import { ParticleTextEffect } from "@/shared/ui/particle-text";
-import { BubbleText } from "@/shared/ui/bubble-text";
+import { GuideStickyNote } from "@/features/tutor/ui/guide-sticky-note";
+import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
+import { AP_CALC_AB_SUBJECT, findGuideApCalcCourse } from "@/features/tutor/guide-ap-calc-pure";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 interface TutorCourseItem {
   id: string;
@@ -24,7 +24,7 @@ interface CourseManagerProps {
 }
 
 export function CourseManager({ courses }: CourseManagerProps) {
-  const [courseName, setCourseName] = useState("");
+  const apCalc = findGuideApCalcCourse(courses);
   const [proof, setProof] = useState("");
   const [evidenceLink, setEvidenceLink] = useState("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
@@ -35,16 +35,16 @@ export function CourseManager({ courses }: CourseManagerProps) {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!courseName.trim() || !proof.trim()) {
-      setError("Course name and mastery proof are required");
+    if (!proof.trim()) {
+      setError("Describe how you mastered AP Calculus AB.");
       return;
     }
     if (!evidenceLink.trim() && !evidenceFile) {
-      setError("Add either an evidence link or upload an evidence file");
+      setError("Add a transcript link or upload evidence.");
       return;
     }
     if (evidenceLink.trim() && evidenceFile) {
-      setError("Choose one evidence source: link or file upload, not both");
+      setError("Choose one evidence source: link or file, not both.");
       return;
     }
     setLoading(true);
@@ -62,14 +62,13 @@ export function CourseManager({ courses }: CourseManagerProps) {
         finalEvidence = uploaded.url;
       }
 
-      await addTutorCourse(courseName, proof, finalEvidence, viewingAsUserId ?? undefined);
-      setCourseName("");
+      await addTutorCourse(AP_CALC_AB_SUBJECT, proof, finalEvidence, viewingAsUserId ?? undefined);
       setProof("");
       setEvidenceLink("");
       setEvidenceFile(null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add course");
+      setError(err instanceof Error ? err.message : "Failed to submit proficiency");
     } finally {
       setLoading(false);
     }
@@ -80,197 +79,123 @@ export function CourseManager({ courses }: CourseManagerProps) {
       await removeTutorCourse(courseId, viewingAsUserId ?? undefined);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove course");
+      setError(err instanceof Error ? err.message : "Failed to remove proficiency");
     }
   }
 
   return (
-    <div id="course-manager" className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/90 p-8 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] backdrop-blur-2xl">
-      {/* Cinematic Soft Glows */}
-      <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-mentrixa-500/5 blur-[100px] pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-cyan-500/5 blur-[100px] pointer-events-none" />
-
-      {/* Particle Header */}
-      <div className="absolute -top-16 left-0 right-0 h-48 pointer-events-none opacity-40 z-0">
-        <ParticleTextEffect 
-          words={["COURSES", "MASTERY", "EXPERTISE"]} 
-          className="h-full scale-110" 
-        />
+    <section id="course-manager">
+    <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.home} className="h-full">
+      <div className="flex items-center gap-2">
+        <MentrixaVocabIcon name="skills" size={18} surface="light" title="AP Calculus AB" />
+        <p className={mentrixStudent.sectionEyebrowOnLight}>Guide proficiency</p>
       </div>
+      <h2 className={`mt-2 ${mentrixStudent.cardTitle}`}>{AP_CALC_AB_SUBJECT}</h2>
+      <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
+        Mentrixa is AP Calculus AB only for verified quest and Guide sessions. Submit mastery proof once.
+        Admin verifies before you can open bookable slots.
+      </p>
 
-      <div className="relative z-20">
-        <div className="flex flex-col gap-2 mb-10">
-          <GooeyText 
-            texts={["PROFICIENCIES", "KNOWLEDGE", "GUIDANCE"]} 
-            className="justify-start w-auto"
-            textClassName="text-2xl font-black tracking-[-0.05em] text-slate-900"
-          />
-          <div className="flex items-center gap-3">
-            <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-mentrixa-600 ml-0.5">
-              Courses
-            </h2>
-            <div className="h-[1px] flex-1 bg-gradient-to-r from-mentrixa-200 to-transparent" />
-          </div>
-        </div>
-
-        {courses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center rounded-[1.5rem] border border-slate-100 bg-slate-50/50 mb-10 backdrop-blur-sm">
-            <div className="relative mb-6">
-              <Image src={MENTRIXA_LOGO_PNG} alt="" width={48} height={48} className="relative opacity-20 grayscale" />
-            </div>
-            <p className="text-sm font-bold text-slate-800 tracking-tight">
-              Awaiting your expertise.
-            </p>
-            <p className="text-xs text-slate-500 mt-2 max-w-[200px] mx-auto leading-relaxed">
-              Add the subjects you master to begin your journey as a Guide.
-            </p>
-          </div>
-        ) : (
-          <div className="mb-10 space-y-4">
-            {courses.map((c) => (
-              <div 
-                key={c.id} 
-                className="group relative flex items-start justify-between p-5 rounded-2xl border border-slate-100 bg-white transition-all hover:bg-slate-50 hover:border-slate-200 hover:scale-[1.01] hover:shadow-lg"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base font-bold text-slate-900 tracking-tight">{c.course_name}</span>
-                    {c.verified && (
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                    )}
-                    {!c.verified && (
-                      <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                        Pending admin review
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity">
-                    {c.proof_description}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(c.id)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition hover:bg-red-50 hover:text-red-500 opacity-0 group-hover:opacity-100 border border-slate-200"
-                  title="Remove course"
-                >
-                  <span className="text-base font-bold leading-none mt-[-1px]">×</span>
-                </button>
+      {apCalc ? (
+        <div className="mt-5 rounded-xl border border-[#C4B5FD] bg-white/90 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-base font-semibold text-[#0B1220]">{apCalc.course_name}</span>
+                {apCalc.verified ? (
+                  <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+                    Verified
+                  </span>
+                ) : (
+                  <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900">
+                    Pending review
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-
-        <form onSubmit={handleAdd} className="relative space-y-5 rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-6 shadow-inner">
-          <div className="relative space-y-5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Subject Title</label>
-              <Input
-                value={courseName}
-                onChange={(e) => setCourseName(e.target.value)}
-                placeholder="e.g. Linear Algebra"
-                className="h-12 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-mentrixa-500 focus:ring-mentrixa-500/10 rounded-xl font-bold"
-                maxLength={100}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Evidence of Mastery</label>
-              <textarea
-                value={proof}
-                onChange={(e) => setProof(e.target.value)}
-                placeholder="e.g. TA for 3 terms, A+ grade, Published research..."
-                className="w-full h-28 text-sm rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-mentrixa-500/10 focus:border-mentrixa-500 transition-all font-semibold"
-                maxLength={500}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
-                Physical evidence
-              </label>
-              <Input
-                value={evidenceLink}
-                onChange={(e) => setEvidenceLink(e.target.value)}
-                placeholder="https://... (certificate, transcript, portfolio, publication)"
-                className="h-12 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-mentrixa-500 focus:ring-mentrixa-500/10 rounded-xl font-semibold"
-                maxLength={500}
-                type="url"
-                disabled={Boolean(evidenceFile)}
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-slate-500">or upload file:</span>
-                <input
-                  type="file"
-                  accept=".pdf,image/png,image/jpeg"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    setEvidenceFile(file);
-                    if (file) setEvidenceLink("");
-                  }}
-                  className="text-[11px] text-slate-600 file:mr-2 file:rounded file:border file:border-slate-300 file:bg-white file:px-2 file:py-1 file:text-[11px] file:text-slate-700"
-                  disabled={Boolean(evidenceLink.trim())}
-                />
-              </div>
-              {evidenceFile ? (
-                <p className="text-[11px] text-slate-600">
-                  Selected: {evidenceFile.name} ({Math.max(1, Math.round(evidenceFile.size / 1024))} KB)
+              <p className="mt-2 text-sm leading-relaxed text-[#334155]">{apCalc.proof_description}</p>
+              {!apCalc.verified ? (
+                <p className="mt-2 text-xs font-medium text-amber-900">
+                  You cannot open availability until admin verifies this proficiency.
                 </p>
               ) : null}
-              <p className="text-[11px] text-slate-500">
-                Admin reviews this evidence before proficiency is established.
-              </p>
             </div>
-
-            {error && <p className="text-xs font-bold text-red-500 bg-red-50 px-4 py-3 rounded-xl border border-red-200">{error}</p>}
-            
-            <Button 
-              type="submit" 
-              className="relative w-full h-12 bg-slate-900 text-white hover:bg-slate-800 transition-all font-black overflow-hidden group shadow-xl rounded-xl" 
-              disabled={loading}
+            <button
+              type="button"
+              onClick={() => void handleRemove(apCalc.id)}
+              className="shrink-0 rounded-full border border-[#CBD5E1] bg-white px-2 py-1 text-xs font-semibold text-[#64748B] hover:border-red-200 hover:text-red-700"
+              title="Remove proficiency submission"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Syncing...
-                </span>
-              ) : (
-                <span className="relative flex items-center justify-center gap-2">
-                  <Image src={MENTRIXA_LOGO_PNG} alt="" width={18} height={18} className="h-4.5 w-4.5 brightness-0 invert" />
-                  <BubbleText text="Establish Proficiency" className="text-white font-black text-sm" />
-                </span>
-              )}
-            </Button>
+              Remove
+            </button>
           </div>
-        </form>
-      </div>
-    </div>
-  );
-}
+        </div>
+      ) : (
+        <form onSubmit={handleAdd} className="mt-5 space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wide text-[#475569]">
+              Evidence of mastery
+            </label>
+            <textarea
+              value={proof}
+              onChange={(e) => setProof(e.target.value)}
+              placeholder="e.g. AP score 5, TA for two terms, competition coaching record"
+              className="w-full min-h-[7rem] rounded-xl border border-[#CBD5E1] bg-white px-4 py-3 text-sm text-[#0B1220] placeholder:text-[#64748B] resize-none focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED]"
+              maxLength={500}
+            />
+          </div>
 
-function Loader2(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 2v4" />
-      <path d="m16.2 7.8 2.9-2.9" />
-      <path d="M18 12h4" />
-      <path d="m16.2 16.2 2.9 2.9" />
-      <path d="M12 18v4" />
-      <path d="m4.9 19.1 2.9-2.9" />
-      <path d="M2 12h4" />
-      <path d="m4.9 4.9 2.9 2.9" />
-    </svg>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wide text-[#475569]">
+              Physical evidence
+            </label>
+            <Input
+              value={evidenceLink}
+              onChange={(e) => setEvidenceLink(e.target.value)}
+              placeholder="https:// transcript, certificate, or portfolio"
+              className="h-11 border-[#CBD5E1] bg-white text-[#0B1220] placeholder:text-[#64748B]"
+              maxLength={500}
+              type="url"
+              disabled={Boolean(evidenceFile)}
+            />
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#475569]">
+              <span>or upload PDF or image:</span>
+              <input
+                type="file"
+                accept=".pdf,image/png,image/jpeg"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setEvidenceFile(file);
+                  if (file) setEvidenceLink("");
+                }}
+                className="text-xs text-[#334155] file:mr-2 file:rounded file:border file:border-[#CBD5E1] file:bg-white file:px-2 file:py-1 file:text-xs file:font-semibold file:text-[#0B1220]"
+                disabled={Boolean(evidenceLink.trim())}
+              />
+            </div>
+            {evidenceFile ? (
+              <p className="text-xs font-medium text-[#334155]">
+                Selected: {evidenceFile.name} ({Math.max(1, Math.round(evidenceFile.size / 1024))} KB)
+              </p>
+            ) : null}
+          </div>
+
+          {error ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-900">
+              {error}
+            </p>
+          ) : null}
+
+          <Button type="submit" className="w-full" variant="workbenchPrimary" disabled={loading}>
+            {loading ? "Submitting…" : "Submit AP Calculus AB proficiency"}
+          </Button>
+        </form>
+      )}
+
+      {error && apCalc ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-900">
+          {error}
+        </p>
+      ) : null}
+    </GuideStickyNote>
+    </section>
   );
 }

@@ -3,7 +3,6 @@
 import { CreateAvailabilityCard } from "@/shared/ui/create-availability-card";
 
 export default function AvailabilityDemoPage() {
-  const dummyCourses = ["Mathematics", "Physics", "Computer Science", "Chemistry"];
   const dummyTimezone = "America/New_York";
 
   return (
@@ -11,7 +10,7 @@ export default function AvailabilityDemoPage() {
       <div className="w-full max-w-2xl">
         <h1 className="text-white text-2xl font-bold mb-8 text-center">Premium Availability UI Preview</h1>
         <CreateAvailabilityCard
-          tutorCourseNames={dummyCourses}
+          apCalcVerified
           defaultTimezone={dummyTimezone}
           sessionDefaultDurationMinutes={60}
         />

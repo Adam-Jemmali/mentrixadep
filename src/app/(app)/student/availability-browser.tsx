@@ -24,6 +24,7 @@ import {
   impactForCourseFilter,
   type GuideImpactEntry,
 } from "@/features/guide-impact/impact-score-pure";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 
@@ -95,7 +96,7 @@ export function AvailabilityBrowser({
 }: AvailabilityBrowserProps) {
   const [query, setQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>(
-    studentCourseNames.length > 0 ? (studentCourseNames[0] ?? "all") : "all",
+    studentCourseNames.length > 0 ? (studentCourseNames[0] ?? "all") : AP_CALC_AB_SUBJECT,
   );
   const [selectedSlot, setSelectedSlot] = useState<Availability | null>(null);
   const [sortBy, setSortBy] = useState<"impact" | "name">("name");
@@ -103,7 +104,6 @@ export function AvailabilityBrowser({
 
   const defaultSortByImpact = useMemo(() => {
     if (questHistorySubjects.length === 0) return false;
-    if (courseFilter === "all") return true;
     const cf = courseFilter.toLowerCase();
     return questHistorySubjects.some((s) => s.toLowerCase() === cf);
   }, [questHistorySubjects, courseFilter]);
@@ -126,8 +126,6 @@ export function AvailabilityBrowser({
         email: string;
         avatarUrl: string | null;
         priceCents: number;
-        rating: number;
-        sessions: number;
         impactScore: number;
         impactSessions: number;
         impactSubject: string | null;
@@ -143,7 +141,7 @@ export function AvailabilityBrowser({
       const tutorId = slot.tutor_id ?? "";
       const impactEntries = guideImpactByTutorId[tutorId] ?? [];
       const courseImpact =
-        courseFilter !== "all"
+        courseFilter
           ? impactForCourseFilter(impactEntries, courseFilter)
           : impactEntries[0] ?? null;
 
@@ -154,8 +152,6 @@ export function AvailabilityBrowser({
           email,
           avatarUrl,
           priceCents: getStudentSessionCheckoutCents({ momentumSubscriber }),
-          rating: 4.8,
-          sessions: 24,
           impactScore: courseImpact?.impactScore ?? 0,
           impactSessions: courseImpact?.sessionsCounted ?? 0,
           impactSubject: courseImpact?.subject ?? null,
@@ -179,7 +175,7 @@ export function AvailabilityBrowser({
       );
     }
 
-    if (courseFilter !== "all") {
+    if (courseFilter) {
       const cf = courseFilter.toLowerCase();
       list = list.filter((g) => g.slots.some((s) => s.course.toLowerCase() === cf));
     }
@@ -212,20 +208,22 @@ export function AvailabilityBrowser({
       <Input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by name or course"
-        aria-label="Search guides by name or course"
+        placeholder="Search by name or skill"
+        aria-label="Search guides by name or skill"
         className={`mb-3 ${mentrixStudent.hubFieldInput}`}
       />
 
       <MentrixaFilterSelect
-        aria-label="Filter guides by course"
+        aria-label="Filter guides by skill"
         className="mb-4 w-full max-w-xs"
         value={courseFilter}
         onChange={setCourseFilter}
-        placeholder="All courses"
+        placeholder={AP_CALC_AB_SUBJECT}
         options={[
-          { id: "all", label: "All courses" },
-          ...courses.map((course) => ({ id: course, label: course })),
+          { id: AP_CALC_AB_SUBJECT, label: AP_CALC_AB_SUBJECT },
+          ...courses
+            .filter((course) => course.toLowerCase() !== AP_CALC_AB_SUBJECT.toLowerCase())
+            .map((course) => ({ id: course, label: course })),
         ]}
       />
 
@@ -305,15 +303,14 @@ export function AvailabilityBrowser({
                     subject={guide.impactSubject ?? undefined}
                     size="sm"
                   />
-                ) : null}
+                ) : (
+                  <p className="mt-0.5 text-sm text-[#64748B]">Impact Score builds after 3 counted sessions.</p>
+                )}
                 {rematchBadgesByTutorId[guide.tutorId]?.label ? (
                   <p className="mt-1 text-base font-medium text-[#0891B2]">
                     {rematchBadgesByTutorId[guide.tutorId]!.label}
                   </p>
                 ) : null}
-                <div className="mt-0.5 text-base text-[#64748B]">
-                  {guide.rating.toFixed(1)} rating · {guide.sessions} sessions
-                </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {guide.slots.map((slot) => (
                     <Button
@@ -325,7 +322,7 @@ export function AvailabilityBrowser({
                         e.stopPropagation();
                         setSelectedSlot(slot);
                       }}
-                      className="h-7 border-violet-500/35 bg-indigo-950/60 px-2 text-[10px] text-violet-100 hover:border-violet-400/50"
+                      className="h-8 border-[#C4B5FD] bg-white px-2.5 text-xs font-semibold text-[#0B1220] hover:border-[#7C3AED] hover:bg-[#EDE9FE]"
                     >
                       {slot.course} · {formatTimeInZone(slot.start_time, displayTimeZone)}
                     </Button>

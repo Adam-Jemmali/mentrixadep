@@ -1,3 +1,5 @@
+import { formatPeerStandingShort } from "@/features/xp/rank-statistics-pure";
+
 const VERIFIED_GOLD = "#D4A017";
 
 export type TrajectoryCertificateData = {
@@ -13,10 +15,10 @@ export function buildTrajectoryCertificateVerdict(data: TrajectoryCertificateDat
   verdict: string;
   nextAction: string;
 } {
-  const percentileLine =
+  const peerLine =
     data.verifiedPercentile != null
-      ? `Verified percentile ${Math.round(data.verifiedPercentile)} on ${data.subject}.`
-      : `Verified percentile on ${data.subject} is still calibrating.`;
+      ? `${formatPeerStandingShort(data.verifiedPercentile)} of Mentrixers verified on ${data.subject}.`
+      : `Peer standing on ${data.subject} is still calibrating.`;
 
   const trajectoryLine =
     data.trajectoryScore != null
@@ -24,8 +26,8 @@ export function buildTrajectoryCertificateVerdict(data: TrajectoryCertificateDat
       : `Trajectory archive spans ${data.archiveWeeks} weeks of verified movement.`;
 
   return {
-    verdict: `${percentileLine} ${trajectoryLine}`,
-    nextAction: "Print or save this certificate for your exam-season record. Gold marks verified percentile only.",
+    verdict: `${peerLine} ${trajectoryLine}`,
+    nextAction: "Print or save this certificate for your exam-season record. Gold marks verified peer standing only.",
   };
 }
 
