@@ -4,6 +4,9 @@ export const PLATFORM_FEE_BPS = 1500;
 /** Flat student price — one Guide session (CAD cents). */
 export const BREAKTHROUGH_SESSION_PRICE_CENTS = 3900;
 
+/** Flat student price — one Guide session (CAD dollars). */
+export const BREAKTHROUGH_SESSION_PRICE_CAD = BREAKTHROUGH_SESSION_PRICE_CENTS / 100;
+
 /** Momentum Pack — three sessions within 90 days (CAD cents). */
 export const MOMENTUM_PACK_PRICE_CENTS = 9900;
 export const MOMENTUM_PACK_SESSION_COUNT = 3;

@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { useState, useEffect, useMemo, type ReactNode } from "react";
-import { ChevronLeft, Calendar, Clock, DollarSign, Check, AlertCircle } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 import { createAvailabilitySlots } from "@/features/tutor/availability";
 import { useAdminViewContext } from "@/components/admin-view-context";
@@ -11,7 +11,7 @@ import Image from "next/image";
 import { Button } from "@/shared/ui/button";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { MentrixaSelect, MentrixaTimezoneSelect } from "@/shared/ui/select-patterns";
-import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/features/booking/availability-schemas";
+import { BREAKTHROUGH_SESSION_PRICE_CAD, formatStudentBreakthroughPrice } from "@/features/booking/booking-pricing";
 import { describeAvailabilityScheduleIssue } from "@/features/booking/availability-slot-builder";
 import { addMinutesToHHmm } from "@/features/tutor/teaching-defaults";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
@@ -83,7 +83,6 @@ export function CreateAvailabilityCard({
   const [endTime, setEndTime] = useState(() => addMinutesToHHmm("09:00", sessionDefaultDurationMinutes) ?? "10:00");
   const [recurring, setRecurring] = useState(false);
   const [recurringWeeks, setRecurringWeeks] = useState("12");
-  const [price, setPrice] = useState("25");
   const [timezone, setTimezone] = useState(defaultTimezone);
   const [showConfirmationView, setShowConfirmationView] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -173,18 +172,6 @@ export function CreateAvailabilityCard({
     setError(null);
     setSuccessMessage(null);
 
-    const parsedPrice = Number(price);
-    if (!Number.isFinite(parsedPrice)) {
-      setError(GUIDE_AVAILABILITY_FORM.errPrice);
-      setLoading(false);
-      return;
-    }
-    if (parsedPrice < SESSION_PRICE_CAD_MIN || parsedPrice > SESSION_PRICE_CAD_MAX) {
-      setError(GUIDE_AVAILABILITY_FORM.errPriceRange(SESSION_PRICE_CAD_MIN, SESSION_PRICE_CAD_MAX));
-      setLoading(false);
-      return;
-    }
-
     const rw = Number.parseInt(recurringWeeks, 10);
     if (recurring && (!Number.isFinite(rw) || rw < 1 || rw > 52)) {
       setError(GUIDE_AVAILABILITY_FORM.errWeeks);
@@ -199,7 +186,7 @@ export function CreateAvailabilityCard({
       endTime,
       recurring,
       recurringWeeks: recurring ? rw : undefined,
-      priceCad: parsedPrice,
+      priceCad: BREAKTHROUGH_SESSION_PRICE_CAD,
       maxStudents: 1 as const,
       timezone,
     };
@@ -226,7 +213,6 @@ export function CreateAvailabilityCard({
       created = true;
       const n = res.created;
       setWeekdays(new Set());
-      setPrice("25");
       setShowConfirmationView(false);
       setSuccessMessage(GUIDE_AVAILABILITY_FORM.success(n));
       router.refresh();
@@ -427,23 +413,8 @@ export function CreateAvailabilityCard({
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                {GUIDE_AVAILABILITY_FORM.priceLabel}
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full rounded-lg border-2 border-slate-300 bg-white p-2.5 pl-9 font-bold tabular-nums text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
-            <div>{timezoneField}</div>
-          </div>
+          <div>{timezoneField}</div>
+          <p className="text-xs font-medium text-[#475569]">{GUIDE_AVAILABILITY_FORM.fixedPriceNote}</p>
         </Section>
 
         <Section fast={fast} variants={shouldAnimate ? itemVariants : {}} className="mx-6 mb-6 rounded-lg border-2 border-slate-200 bg-slate-50 p-4">
@@ -544,7 +515,7 @@ export function CreateAvailabilityCard({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h4 className="text-xl font-extrabold tracking-tight text-slate-900">{skill}</h4>
                 <div className="rounded-lg border-2 border-slate-900 bg-white px-3 py-2 text-right shadow-sm">
-                  <p className="text-2xl font-black tabular-nums text-slate-900">${price}</p>
+                  <p className="text-2xl font-black tabular-nums text-slate-900">{formatStudentBreakthroughPrice()}</p>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">CAD / session</p>
                 </div>
               </div>

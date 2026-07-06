@@ -17,7 +17,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { APP_TIMEZONES } from "@/shared/core/timezones";
-import { SESSION_PRICE_CAD_MAX, SESSION_PRICE_CAD_MIN } from "@/features/booking/availability-schemas";
+import { BREAKTHROUGH_SESSION_PRICE_CAD } from "@/features/booking/booking-pricing";
 import {
   describeAvailabilityScheduleIssue,
   earliestFirstOccurrenceStartUtc,
@@ -61,7 +61,6 @@ export function CreateAvailabilityForm({
   const [endTime, setEndTime] = useState(() => addMinutesToHHmm("09:00", sessionDefaultDurationMinutes) ?? "10:00");
   const [recurring, setRecurring] = useState(false);
   const [recurringWeeks, setRecurringWeeks] = useState("12");
-  const [price, setPrice] = useState("25");
   const [timezone, setTimezone] = useState(defaultTimezone);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -143,20 +142,6 @@ export function CreateAvailabilityForm({
       setLoading(false);
       return;
     }
-    const parsedPrice = Number(price);
-    if (!Number.isFinite(parsedPrice)) {
-      setError("Enter a valid price");
-      setLoading(false);
-      return;
-    }
-    if (parsedPrice < SESSION_PRICE_CAD_MIN || parsedPrice > SESSION_PRICE_CAD_MAX) {
-      setError(
-        `Price must be between $${SESSION_PRICE_CAD_MIN} and $${SESSION_PRICE_CAD_MAX} CAD per session`,
-      );
-      setLoading(false);
-      return;
-    }
-
     const rw = Number.parseInt(recurringWeeks, 10);
     if (recurring && (!Number.isFinite(rw) || rw < 1 || rw > 52)) {
       setError("Repeat for 1–52 weeks");
@@ -171,7 +156,7 @@ export function CreateAvailabilityForm({
       endTime,
       recurring,
       recurringWeeks: recurring ? rw : undefined,
-      priceCad: parsedPrice,
+      priceCad: BREAKTHROUGH_SESSION_PRICE_CAD,
       maxStudents: 1 as const,
       timezone,
     };
@@ -197,7 +182,6 @@ export function CreateAvailabilityForm({
         throw new Error(res.error);
       }
       setWeekdays(new Set());
-      setPrice("25");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create availability");
@@ -326,21 +310,9 @@ export function CreateAvailabilityForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-slate-900">Price (CAD / session)</Label>
-            <div className="relative mt-1.5">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700">$</span>
-              <Input
-                type="number"
-                min={SESSION_PRICE_CAD_MIN}
-                max={SESSION_PRICE_CAD_MAX}
-                step={1}
-                className="h-9 border-slate-300 bg-white pl-6 text-slate-950"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
-            </div>
-            <p className="mt-1 text-[10px] text-slate-600">
-              ${SESSION_PRICE_CAD_MIN}–${SESSION_PRICE_CAD_MAX} CAD
+            <Label className="text-slate-900">Session price</Label>
+            <p className="mt-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm font-semibold text-slate-900">
+              $39 CAD fixed
             </p>
           </div>
           <div>
