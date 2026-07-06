@@ -241,20 +241,20 @@ export function TutorDashboardClient({
       <header className={`${mentrixStudent.heroGradientLite} relative mb-8 overflow-hidden p-6 sm:p-8`}>
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-xl space-y-3">
-            <TutorHeroGreeting greeting={greeting} firstName={firstName} />
-            <div className="mt-1 text-sm text-white/90 h-[20px]">
+            <TutorHeroGreeting greeting={greeting} firstName={firstName} tone="light" />
+            <div className={`mt-1 h-[20px] text-sm ${mentrixStudent.pageSubtitle}`}>
               <Typewriter text="Studio Guide Manage Mentrixa" speed={40} waitTime={5000} />
             </div>
             
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-emerald-300/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-50 shadow-sm backdrop-blur-sm">
+              <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-900 shadow-sm">
                 Guide Studio
               </span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 lg:items-end shrink-0">
-            <Button size="sm" className="h-9 text-xs bg-white text-slate-900 hover:bg-slate-100">
+            <Button size="sm" className={`h-9 text-xs ${mentrixStudent.hubBtnSolid}`}>
               Add availability
             </Button>
           </div>

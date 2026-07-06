@@ -2,7 +2,7 @@
 
 export const GUIDE_HOME = {
   heroTagline: "Calculus AB. Impact from first tries.",
-  btnProficiency: "AB proficiency",
+  btnProficiency: "AP CALCULUS AB proficiency",
   btnProfile: "Profile",
   btnAddSlots: "Add slots",
   slotsToastTitle: "Slots live",
@@ -32,7 +32,7 @@ export const GUIDE_HOME = {
 
 export const GUIDE_PROFICIENCY = {
   eyebrow: "Proficiency",
-  intro: "Calculus AB only. Proof once. Slots after verify.",
+  intro: "Calculus AB only. Proof once. Instant scan. Slots after verify.",
   verified: "Verified",
   pending: "Pending",
   slotsLocked: "Slots locked until verified.",
@@ -43,7 +43,7 @@ export const GUIDE_PROFICIENCY = {
   evidencePlaceholder: "https:// transcript or certificate",
   evidenceOrUpload: "or upload PDF/image:",
   submit: "Submit proficiency",
-  submitting: "Submitting…",
+  submitting: "Scanning…",
   errMastery: "Add mastery proof.",
   errEvidence: "Add link or file.",
   errBoth: "Link or file, not both.",
@@ -51,13 +51,18 @@ export const GUIDE_PROFICIENCY = {
   errRemove: "Remove failed.",
 } as const;
 
+export const GUIDE_PROFICIENCY_SCAN = {
+  scanning: "Proficiency scan",
+  submitScan: "Run proficiency scan",
+} as const;
+
 export const GUIDE_AVAILABILITY_FORM = {
   title: "Open slots",
   subtitle: "Schedule slots",
   skillLabel: "Skill",
   verifiedNote: "Verified. Bookable for mentrixers.",
-  unverifiedNote: "Verify AB proficiency on home first.",
-  blockedNote: "Not verified. Finish AB card on home.",
+  unverifiedNote: "Verify AP CALCULUS AB proficiency on home first.",
+  blockedNote: "Not verified. Finish AP CALCULUS AB card on home.",
   daysLabel: "Days",
   sessionEndLabel: "Ends",
   durationNote: (min: number) => `${min} min fixed. Profile → Teaching Defaults.`,
@@ -139,7 +144,7 @@ export function guideDemandVerdict(nodeName: string): string {
 }
 
 export const GUIDE_DEMAND_EMPTY_VERDICT = "No demand signal yet.";
-export const GUIDE_DEMAND_EMPTY_ACTION = "Verify AB proficiency first.";
+export const GUIDE_DEMAND_EMPTY_ACTION = "Verify AP CALCULUS AB proficiency first.";
 export function guideDemandOpenSlotAction(subject: string): string {
   return `Open ${subject} slot.`;
 }

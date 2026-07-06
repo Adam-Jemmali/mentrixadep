@@ -16,6 +16,10 @@ import {
   validateUploadedFile,
   validateUUID,
 } from "@/shared/core/security";
+import {
+  scanGuideProficiencyProof,
+  type ProficiencyScanResult,
+} from "@/features/tutor/guide-proficiency-scan-pure";
 
 function isMissingTutorCoursesRelation(error: { message?: string; code?: string }): boolean {
   const m = (error.message ?? "").toLowerCase();
@@ -54,7 +58,10 @@ export async function addTutorCourse(
   proofDescription: string,
   evidenceUrl: string,
   onBehalfOfUserId?: string,
-) {
+): Promise<
+  | { success: true; verified: boolean; scan: ProficiencyScanResult }
+  | { success: false; error: string; scan: ProficiencyScanResult }
+> {
   const user = await requireRole(["tutor", "admin"]);
   const actingAsId = user.role === "admin" && onBehalfOfUserId ? onBehalfOfUserId : user.id;
   const client = user.role === "admin" ? createAdminClient() : await createClient();
@@ -72,16 +79,27 @@ export async function addTutorCourse(
   assertNoBlockedLanguage(validProof, "proof of mastery");
   assertNoBlockedLanguage(validEvidence, "evidence link");
 
+  const scan = scanGuideProficiencyProof({
+    proofDescription: validProof,
+    evidenceUrl: validEvidence,
+  });
+
+  if (scan.verdict !== "verified") {
+    return {
+      success: false,
+      error: scan.nextAction,
+      scan,
+    };
+  }
+
   const proofPayload = `${validProof}\nEvidence: ${validEvidence}`;
 
-  const { error } = await client
-    .from("tutor_courses")
-    .insert({
-      tutor_id: actingAsId,
-      course_name: validName,
-      proof_description: proofPayload,
-      verified: true,
-    });
+  const { error } = await client.from("tutor_courses").insert({
+    tutor_id: actingAsId,
+    course_name: validName,
+    proof_description: proofPayload,
+    verified: true,
+  });
 
   if (error) {
     if (error.code === "23505") throw new Error("You already added this course");
@@ -89,7 +107,7 @@ export async function addTutorCourse(
   }
 
   revalidatePath("/tutor");
-  return { success: true };
+  return { success: true, verified: true, scan };
 }
 
 function evidenceExtFromMime(mimeType: string): "pdf" | "jpg" | "png" {

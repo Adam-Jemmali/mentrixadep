@@ -121,8 +121,8 @@ export function TutorCommandCenterClient({
         <HeroGuideBounce />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-xl space-y-3">
-            <TutorHeroGreeting greeting={greeting} firstName={firstName} />
-            <div className="mt-1 text-sm text-white/90 h-[20px]">
+            <TutorHeroGreeting greeting={greeting} firstName={firstName} tone="light" />
+            <div className={`mt-1 h-[20px] text-sm ${mentrixStudent.pageSubtitle}`}>
               <Typewriter text={GUIDE_HOME.heroTagline} speed={40} waitTime={5000} />
             </div>
             
@@ -134,7 +134,9 @@ export function TutorCommandCenterClient({
                 avatarUrl={data.guideProfile.avatarUrl} 
                 size="sm" 
               />
-              <span className="text-sm font-medium text-white">{data.guideProfile.displayName}</span>
+              <span className={`text-sm font-semibold ${mentrixStudent.textOnLight}`}>
+                {data.guideProfile.displayName}
+              </span>
             </div>
           </div>
 
@@ -142,7 +144,7 @@ export function TutorCommandCenterClient({
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-9 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" 
+              className={`h-9 text-xs ${mentrixStudent.hubGhostLink}`}
               onClick={() => {
                 document.getElementById("skill-manager")?.scrollIntoView({ behavior: "smooth" });
               }}
@@ -152,13 +154,13 @@ export function TutorCommandCenterClient({
                 {GUIDE_HOME.btnProficiency}
               </span>
             </Button>
-            <Button variant="outline" size="sm" className="h-9 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" asChild>
+            <Button variant="outline" size="sm" className={`h-9 text-xs ${mentrixStudent.hubGhostLink}`} asChild>
               <Link href={`/tutor/${data.tutorId}`} className="inline-flex items-center gap-1.5">
                 <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
                 {GUIDE_HOME.btnProfile}
               </Link>
             </Button>
-            <Button type="button" size="sm" className="h-9 text-xs bg-white text-slate-900 hover:bg-slate-100" onClick={() => setAddOpen(true)}>
+            <Button type="button" size="sm" className={`h-9 text-xs ${mentrixStudent.hubBtnSolid}`} onClick={() => setAddOpen(true)}>
               <span className="inline-flex items-center gap-1.5">
                 <img src="/icons/guide.svg" alt="" width={16} height={16} className="shrink-0" />
                 {GUIDE_HOME.btnAddSlots}

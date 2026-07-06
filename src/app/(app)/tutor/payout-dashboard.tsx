@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import {
   ArrowUpRight,
@@ -12,7 +12,7 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 import type { PayoutDashboardData, PayoutLedgerRow } from "@/features/payments/payout-ledger";
-import { triggerManualPayout } from "@/features/payments/payout-ledger";
+import { fetchPayoutLedgerPage, triggerManualPayout } from "@/features/payments/payout-ledger";
 import { useRouter } from "next/navigation";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
@@ -20,6 +20,7 @@ import { GuideStickyNote } from "@/features/tutor/ui/guide-sticky-note";
 import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
 import { GUIDE_PAYOUTS } from "@/features/tutor/guide-home-copy-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MentrixaTablePagination } from "@/shared/ui/pagination-patterns";
 
 function cad(cents: number): string {
   return `$${(cents / 100).toLocaleString("en-CA", {
@@ -254,8 +255,14 @@ function TransferToBankButton({
   );
 }
 
-function TransactionTable({ rows }: { rows: PayoutLedgerRow[] }) {
-  if (rows.length === 0) {
+function TransactionTable({
+  rows,
+  loading,
+}: {
+  rows: PayoutLedgerRow[];
+  loading?: boolean;
+}) {
+  if (rows.length === 0 && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <CircleDollarSign size={24} className="mb-3 text-slate-300" />
@@ -266,41 +273,113 @@ function TransactionTable({ rows }: { rows: PayoutLedgerRow[] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-100">
-            {PAYOUT_TABLE_HEADERS.map((h) => (
-              <th
-                key={h.label}
-                className="pb-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400 first:pl-0 last:pr-0 px-3"
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  {h.icon ? (
-                    <MentrixaVocabIcon name={h.icon} size={12} className="text-slate-400" title={h.label} />
-                  ) : null}
-                  {h.label}
-                </span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id} className="border-b border-slate-50 transition-colors hover:bg-slate-50/60">
-              <td className="py-3 pl-0 pr-3 text-xs text-slate-600 tabular-nums whitespace-nowrap">{fmtDate(row.session_date)}</td>
-              <td className="py-3 px-3 text-xs text-slate-700 max-w-[140px] truncate">{row.student_name ?? "—"}</td>
-              <td className="py-3 px-3 text-xs text-slate-700 max-w-[160px] truncate">{row.course ?? "—"}</td>
-              <td className="py-3 px-3 text-xs tabular-nums text-slate-700">{cad(row.gross_cents)}</td>
-              <td className="py-3 px-3 text-xs tabular-nums text-slate-500">−{cad(row.platform_fee_cents)}</td>
-              <td className="py-3 px-3 text-xs tabular-nums font-medium text-slate-900">{cad(row.net_cents)}</td>
-              <td className="py-3 pl-3 pr-0">
-                <StatusBadge status={row.status} />
-              </td>
+    <div className="relative overflow-hidden rounded-lg border border-slate-200/80 bg-white/60">
+      <div className="max-h-[min(22rem,52vh)] overflow-auto">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="sticky top-0 z-10 bg-[#F8FAFC] shadow-[0_1px_0_#E2E8F0]">
+            <tr className="border-b border-slate-100">
+              {PAYOUT_TABLE_HEADERS.map((h) => (
+                <th
+                  key={h.label}
+                  className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-slate-500 first:pl-4 last:pr-4"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {h.icon ? (
+                      <MentrixaVocabIcon name={h.icon} size={12} className="text-slate-400" title={h.label} />
+                    ) : null}
+                    {h.label}
+                  </span>
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className={loading ? "opacity-50" : undefined}>
+            {rows.map((row) => (
+              <tr key={row.id} className="border-b border-slate-50 transition-colors hover:bg-slate-50/80">
+                <td className="whitespace-nowrap py-3 pl-4 pr-3 text-xs tabular-nums text-slate-600">
+                  {fmtDate(row.session_date)}
+                </td>
+                <td className="max-w-[140px] truncate px-3 py-3 text-xs text-slate-700">
+                  {row.student_name ?? "—"}
+                </td>
+                <td className="max-w-[160px] truncate px-3 py-3 text-xs text-slate-700">
+                  {row.course ?? "—"}
+                </td>
+                <td className="px-3 py-3 text-xs tabular-nums text-slate-700">{cad(row.gross_cents)}</td>
+                <td className="px-3 py-3 text-xs tabular-nums text-slate-500">−{cad(row.platform_fee_cents)}</td>
+                <td className="px-3 py-3 text-xs font-medium tabular-nums text-slate-900">{cad(row.net_cents)}</td>
+                <td className="py-3 pl-3 pr-4">
+                  <StatusBadge status={row.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {loading ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/40">
+          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PayoutHistoryPanel({
+  initialRows,
+  totalCount,
+  pageSize,
+}: {
+  initialRows: PayoutLedgerRow[];
+  totalCount: number;
+  pageSize: number;
+}) {
+  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState(initialRows);
+  const [total, setTotal] = useState(totalCount);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setRows(initialRows);
+    setTotal(totalCount);
+    setPage(1);
+  }, [initialRows, totalCount]);
+
+  useEffect(() => {
+    if (page === 1) {
+      setRows(initialRows);
+      return;
+    }
+
+    let cancelled = false;
+    startTransition(() => {
+      void fetchPayoutLedgerPage(page, pageSize)
+        .then((result) => {
+          if (cancelled) return;
+          setRows(result.rows);
+          setTotal(result.totalCount);
+        })
+        .catch(() => {
+          if (!cancelled) setPage(1);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, pageSize, initialRows]);
+
+  return (
+    <div className="space-y-3">
+      <TransactionTable rows={rows} loading={isPending} />
+      <MentrixaTablePagination
+        page={page}
+        totalItems={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        noun="transactions"
+        size="sm"
+      />
     </div>
   );
 }
@@ -311,7 +390,7 @@ interface TutorPayoutDashboardProps {
 }
 
 export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboardProps) {
-  const { connectStatus, pendingCents, queuedCents, availableCents, lifetimeEarnedCents, ledger } = data;
+  const { connectStatus, pendingCents, queuedCents, availableCents, lifetimeEarnedCents, ledger, ledgerTotalCount, ledgerPageSize } = data;
 
   const [showSuccess] = useState(connectParam === "success");
   const showError = connectParam === "error";
@@ -394,10 +473,14 @@ export function TutorPayoutDashboard({ data, connectParam }: TutorPayoutDashboar
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-xs font-medium uppercase tracking-wide text-slate-400">{GUIDE_PAYOUTS.history}</h3>
           <span className="text-[11px] text-slate-400">
-            {ledger.length} transaction{ledger.length !== 1 ? "s" : ""}
+            {ledgerTotalCount} transaction{ledgerTotalCount !== 1 ? "s" : ""}
           </span>
         </div>
-        <TransactionTable rows={ledger} />
+        <PayoutHistoryPanel
+          initialRows={ledger}
+          totalCount={ledgerTotalCount}
+          pageSize={ledgerPageSize}
+        />
       </div>
     </section>
     </GuideStickyNote>

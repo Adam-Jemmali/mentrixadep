@@ -1,26 +1,42 @@
 "use client";
 
 import { Typewriter } from "@/shared/ui/typewriter";
+import { cn } from "@/shared/core/utils";
 
-export function TutorHeroGreeting({ greeting, firstName }: { greeting: string; firstName: string }) {
+export function TutorHeroGreeting({
+  greeting,
+  firstName,
+  tone = "light",
+}: {
+  greeting: string;
+  firstName: string;
+  tone?: "light" | "dark";
+}) {
   const texts = [
     greeting,
     `Ready to guide, ${firstName}?`,
     "Your learners are waiting.",
     "Share your expertise.",
     "Guide them to the win.",
-    "Mentrixa Guide Center."
+    "Mentrixa Guide Center.",
   ];
 
+  const onLight = tone === "light";
+
   return (
-    <div className="h-[60px] md:h-[80px] flex items-center justify-start text-white text-2xl md:text-3xl font-black w-full">
-      <Typewriter 
-        text={texts} 
+    <div
+      className={cn(
+        "flex h-[60px] w-full items-center justify-start text-2xl font-black md:h-[80px] md:text-3xl",
+        onLight ? "text-[#0B1220]" : "text-white",
+      )}
+    >
+      <Typewriter
+        text={texts}
         speed={60}
         deleteSpeed={30}
         waitTime={3000}
-        className="text-white drop-shadow-sm"
-        cursorClassName="text-white/70"
+        className={cn(onLight ? "text-[#0B1220]" : "text-white drop-shadow-sm")}
+        cursorClassName={onLight ? "text-[#6366F1]" : "text-white/70"}
       />
     </div>
   );

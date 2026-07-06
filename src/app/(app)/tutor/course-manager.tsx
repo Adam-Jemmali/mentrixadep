@@ -12,6 +12,8 @@ import { AP_CALC_AB_SUBJECT, findGuideApCalcCourse } from "@/features/tutor/guid
 import { GUIDE_PROFICIENCY } from "@/features/tutor/guide-home-copy-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import type { ProficiencyScanResult } from "@/features/tutor/guide-proficiency-scan-pure";
+import { GuideProficiencyScanReveal } from "@/features/tutor/ui/guide-proficiency-scan-reveal";
 
 interface TutorCourseItem {
   id: string;
@@ -31,6 +33,8 @@ export function CourseManager({ courses }: CourseManagerProps) {
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<ProficiencyScanResult | null>(null);
+  const [scanComplete, setScanComplete] = useState(false);
   const router = useRouter();
   const { viewingAsUserId } = useAdminViewContext();
 
@@ -50,6 +54,8 @@ export function CourseManager({ courses }: CourseManagerProps) {
     }
     setLoading(true);
     setError(null);
+    setScanResult(null);
+    setScanComplete(false);
     try {
       let finalEvidence = evidenceLink.trim();
 
@@ -63,15 +69,34 @@ export function CourseManager({ courses }: CourseManagerProps) {
         finalEvidence = uploaded.url;
       }
 
-      await addTutorCourse(AP_CALC_AB_SUBJECT, proof, finalEvidence, viewingAsUserId ?? undefined);
+      const result = await addTutorCourse(
+        AP_CALC_AB_SUBJECT,
+        proof,
+        finalEvidence,
+        viewingAsUserId ?? undefined,
+      );
+
+      setScanResult(result.scan);
+
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+
       setProof("");
       setEvidenceLink("");
       setEvidenceFile(null);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : GUIDE_PROFICIENCY.errSubmit);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function handleScanComplete(verdict: ProficiencyScanResult["verdict"]) {
+    setScanComplete(true);
+    if (verdict === "verified") {
+      router.refresh();
     }
   }
 
@@ -83,6 +108,8 @@ export function CourseManager({ courses }: CourseManagerProps) {
       setError(err instanceof Error ? err.message : GUIDE_PROFICIENCY.errRemove);
     }
   }
+
+  const showForm = !apCalc && !(scanResult && scanResult.verdict === "verified" && scanComplete);
 
   return (
     <section id="skill-manager">
@@ -127,7 +154,13 @@ export function CourseManager({ courses }: CourseManagerProps) {
               </button>
             </div>
           </div>
-        ) : (
+        ) : null}
+
+        {scanResult ? (
+          <GuideProficiencyScanReveal scan={scanResult} onComplete={handleScanComplete} />
+        ) : null}
+
+        {showForm ? (
           <form onSubmit={handleAdd} className="mt-5 space-y-4">
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wide text-[#475569]">
@@ -139,6 +172,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
                 placeholder={GUIDE_PROFICIENCY.masteryPlaceholder}
                 className="w-full min-h-[7rem] rounded-xl border border-[#CBD5E1] bg-white px-4 py-3 text-sm text-[#0B1220] placeholder:text-[#64748B] resize-none focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED]"
                 maxLength={500}
+                disabled={loading || Boolean(scanResult && !scanComplete)}
               />
             </div>
 
@@ -153,7 +187,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
                 className="h-11 border-[#CBD5E1] bg-white text-[#0B1220] placeholder:text-[#64748B]"
                 maxLength={500}
                 type="url"
-                disabled={Boolean(evidenceFile)}
+                disabled={Boolean(evidenceFile) || loading || Boolean(scanResult && !scanComplete)}
               />
               <div className="flex flex-wrap items-center gap-2 text-xs text-[#475569]">
                 <span>{GUIDE_PROFICIENCY.evidenceOrUpload}</span>
@@ -166,7 +200,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
                     if (file) setEvidenceLink("");
                   }}
                   className="text-xs text-[#334155] file:mr-2 file:rounded file:border file:border-[#CBD5E1] file:bg-white file:px-2 file:py-1 file:text-xs file:font-semibold file:text-[#0B1220]"
-                  disabled={Boolean(evidenceLink.trim())}
+                  disabled={Boolean(evidenceLink.trim()) || loading || Boolean(scanResult && !scanComplete)}
                 />
               </div>
               {evidenceFile ? (
@@ -182,11 +216,31 @@ export function CourseManager({ courses }: CourseManagerProps) {
               </p>
             ) : null}
 
-            <Button type="submit" className="w-full" variant="workbenchPrimary" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full"
+              variant="workbenchPrimary"
+              disabled={loading || Boolean(scanResult && !scanComplete)}
+            >
               {loading ? GUIDE_PROFICIENCY.submitting : GUIDE_PROFICIENCY.submit}
             </Button>
           </form>
-        )}
+        ) : null}
+
+        {scanResult && scanComplete && scanResult.verdict === "needs_revision" ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3 w-full"
+            onClick={() => {
+              setScanResult(null);
+              setScanComplete(false);
+              setError(null);
+            }}
+          >
+            Revise proof
+          </Button>
+        ) : null}
 
         {error && apCalc ? (
           <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-900">

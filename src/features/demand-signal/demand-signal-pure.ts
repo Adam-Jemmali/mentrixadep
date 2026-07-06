@@ -74,7 +74,7 @@ export function buildDemandSignalVerdict(signals: GuideDemandSignal[]): string {
 
 export function buildDemandSignalNextAction(signals: GuideDemandSignal[]): string {
   if (signals.length === 0) {
-    return "Verify AB proficiency first.";
+    return "Verify AP CALCULUS AB proficiency first.";
   }
   const needsSlot = signals.find((signal) => !signal.hasOpenAvailability);
   if (needsSlot) {

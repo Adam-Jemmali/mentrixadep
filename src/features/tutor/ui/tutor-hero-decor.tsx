@@ -11,8 +11,8 @@ export function TutorHeroDecor() {
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[length:20px_20px] opacity-[0.03]" />
       
       {/* Decorative lines */}
-      <div className="absolute right-0 top-0 h-px w-1/2 bg-gradient-to-l from-white/20 to-transparent" />
-      <div className="absolute bottom-0 left-0 h-px w-1/3 bg-gradient-to-r from-white/20 to-transparent" />
+      <div className="absolute right-0 top-0 h-px w-1/2 bg-gradient-to-l from-[#C4B5FD]/60 to-transparent" />
+      <div className="absolute bottom-0 left-0 h-px w-1/3 bg-gradient-to-r from-[#C4B5FD]/60 to-transparent" />
     </div>
   );
 }

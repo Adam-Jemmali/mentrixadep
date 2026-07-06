@@ -60,7 +60,140 @@ export type PayoutDashboardData = {
   availableCents: number;
   lifetimeEarnedCents: number;
   ledger: PayoutLedgerRow[];
+  ledgerTotalCount: number;
+  ledgerPageSize: number;
 };
+
+export const PAYOUT_LEDGER_PAGE_SIZE = 10;
+
+function ledgerCents(v: unknown): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") return Number(v) || 0;
+  return 0;
+}
+
+async function enrichLedgerRows(
+  admin: ReturnType<typeof createAdminClient>,
+  rows: Array<Record<string, unknown>>,
+): Promise<PayoutLedgerRow[]> {
+  const studentIds = [
+    ...new Set(
+      rows
+        .map((r) => (r.student_id != null ? String(r.student_id) : null))
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const nameMap = new Map<string, string>();
+  if (studentIds.length > 0) {
+    const { data: settings } = await admin
+      .from("user_settings")
+      .select("user_id, display_name")
+      .in("user_id", studentIds);
+    (settings ?? []).forEach((s) => {
+      if (s.display_name) nameMap.set(s.user_id, s.display_name);
+    });
+
+    await Promise.all(
+      studentIds
+        .filter((id) => !nameMap.has(id))
+        .map(async (id) => {
+          try {
+            const { data: authUser } = await admin.auth.admin.getUserById(id);
+            const email = authUser?.user?.email;
+            if (email) nameMap.set(id, email.split("@")[0] ?? "Learner");
+          } catch {
+            // ignore
+          }
+        }),
+    );
+  }
+
+  return rows.map((r) => {
+    const sid = r.student_id != null ? String(r.student_id) : null;
+    return {
+      id: String(r.id),
+      session_id: r.session_id != null ? String(r.session_id) : null,
+      session_date: typeof r.session_date === "string" ? r.session_date : null,
+      course: typeof r.course === "string" ? r.course : null,
+      gross_cents: ledgerCents(r.gross_cents),
+      platform_fee_cents: ledgerCents(r.platform_fee_cents),
+      net_cents: ledgerCents(r.net_cents),
+      status: typeof r.status === "string" ? r.status : "unknown",
+      transfer_id: r.transfer_id != null ? String(r.transfer_id) : null,
+      transferred_at: typeof r.transferred_at === "string" ? r.transferred_at : null,
+      hold_until: typeof r.hold_until === "string" ? r.hold_until : null,
+      created_at: typeof r.created_at === "string" ? r.created_at : new Date().toISOString(),
+      student_id: sid,
+      student_name: sid ? (nameMap.get(sid) ?? null) : null,
+    };
+  });
+}
+
+async function loadLedgerMetricSums(
+  admin: ReturnType<typeof createAdminClient>,
+  tutorId: string,
+): Promise<{ queuedCents: number; lifetimeEarnedCents: number }> {
+  const { data } = await admin
+    .from("tutor_payout_ledger")
+    .select("net_cents, status")
+    .eq("tutor_id", tutorId);
+
+  let queuedCents = 0;
+  let lifetimeEarnedCents = 0;
+  for (const row of data ?? []) {
+    const net = ledgerCents(row.net_cents);
+    const status = String(row.status ?? "");
+    if (status === "pending" || status === "held") {
+      queuedCents += net;
+    } else if (status === "transferred") {
+      lifetimeEarnedCents += net;
+    }
+  }
+  return { queuedCents, lifetimeEarnedCents };
+}
+
+export async function fetchPayoutLedgerPage(
+  page: number,
+  pageSize: number = PAYOUT_LEDGER_PAGE_SIZE,
+  tutorIdOverride?: string,
+): Promise<{ rows: PayoutLedgerRow[]; totalCount: number; pageSize: number }> {
+  if (tutorIdOverride) validateUUID(tutorIdOverride);
+  const user = await requireRole(["tutor", "admin"]);
+  const tutorId = tutorIdOverride ?? user.id;
+  const admin = createAdminClient();
+
+  const safePageSize = Math.min(Math.max(pageSize, 5), 50);
+  const safePage = Math.max(1, Math.floor(page));
+  const from = (safePage - 1) * safePageSize;
+  const to = from + safePageSize - 1;
+
+  const { count, error: countError } = await admin
+    .from("tutor_payout_ledger")
+    .select("id", { count: "exact", head: true })
+    .eq("tutor_id", tutorId);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  const { data: ledgerRows, error } = await admin
+    .from("tutor_payout_ledger")
+    .select("*")
+    .eq("tutor_id", tutorId)
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const rows = await enrichLedgerRows(admin, (ledgerRows ?? []) as Array<Record<string, unknown>>);
+  return {
+    rows,
+    totalCount: count ?? 0,
+    pageSize: safePageSize,
+  };
+}
 
 export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<PayoutDashboardData> {
   if (tutorIdOverride) validateUUID(tutorIdOverride);
@@ -77,6 +210,8 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
     availableCents: 0,
     lifetimeEarnedCents: 0,
     ledger: [],
+    ledgerTotalCount: 0,
+    ledgerPageSize: PAYOUT_LEDGER_PAGE_SIZE,
   };
 
   const user = await requireRole(["tutor", "admin"]);
@@ -142,85 +277,9 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
       }
     }
 
-    const { data: ledgerRows } = await admin
-      .from("tutor_payout_ledger")
-      .select("*")
-      .eq("tutor_id", tutorId)
-      .order("created_at", { ascending: false })
-      .limit(100);
+    const { queuedCents, lifetimeEarnedCents } = await loadLedgerMetricSums(admin, tutorId);
 
-    const rows: PayoutLedgerRow[] = ledgerRows ?? [];
-
-    const studentIds = [...new Set(rows.map((r) => r.student_id).filter(Boolean))] as string[];
-    const nameMap = new Map<string, string>();
-    if (studentIds.length > 0) {
-      const { data: settings } = await admin
-        .from("user_settings")
-        .select("user_id, display_name")
-        .in("user_id", studentIds);
-      (settings ?? []).forEach((s) => {
-        if (s.display_name) nameMap.set(s.user_id, s.display_name);
-      });
-
-      await Promise.all(
-        studentIds
-          .filter((id) => !nameMap.has(id))
-          .map(async (id) => {
-            try {
-              const { data: authUser } = await admin.auth.admin.getUserById(id);
-              const email = authUser?.user?.email;
-              if (email) nameMap.set(id, email.split("@")[0] ?? "Learner");
-            } catch {
-              // ignore
-            }
-          }),
-      );
-    }
-
-    const cents = (v: unknown): number => {
-      if (typeof v === "number" && Number.isFinite(v)) return v;
-      if (typeof v === "string" && v.trim() !== "") return Number(v) || 0;
-      return 0;
-    };
-
-    const enrichedLedger: PayoutLedgerRow[] = rows.map((r) => {
-      const sid = r.student_id != null ? String(r.student_id) : null;
-      return {
-        id: String((r as { id: unknown }).id),
-        session_id: r.session_id != null ? String(r.session_id) : null,
-        session_date: typeof r.session_date === "string" ? r.session_date : null,
-        course: typeof r.course === "string" ? r.course : null,
-        gross_cents: cents((r as { gross_cents?: unknown }).gross_cents),
-        platform_fee_cents: cents((r as { platform_fee_cents?: unknown }).platform_fee_cents),
-        net_cents: cents((r as { net_cents?: unknown }).net_cents),
-        status: typeof (r as { status?: unknown }).status === "string" ? String((r as { status: string }).status) : "unknown",
-        transfer_id: (r as { transfer_id?: unknown }).transfer_id != null ? String((r as { transfer_id: unknown }).transfer_id) : null,
-        transferred_at:
-          typeof (r as { transferred_at?: unknown }).transferred_at === "string"
-            ? (r as { transferred_at: string }).transferred_at
-            : null,
-        hold_until: typeof (r as { hold_until?: unknown }).hold_until === "string" ? (r as { hold_until: string }).hold_until : null,
-        created_at:
-          typeof (r as { created_at?: unknown }).created_at === "string"
-            ? (r as { created_at: string }).created_at
-            : new Date().toISOString(),
-        student_id: sid,
-        student_name: sid ? (nameMap.get(sid) ?? null) : null,
-      };
-    });
-
-    let queuedCents = 0;
-    let lifetimeEarnedCents = 0;
-
-    for (const row of enrichedLedger) {
-      if (row.status === "pending") {
-        queuedCents += row.net_cents;
-      } else if (row.status === "transferred") {
-        lifetimeEarnedCents += row.net_cents;
-      } else if (row.status === "held") {
-        queuedCents += row.net_cents;
-      }
-    }
+    const ledgerPage = await fetchPayoutLedgerPage(1, PAYOUT_LEDGER_PAGE_SIZE, tutorId);
 
     return {
       connectStatus,
@@ -228,7 +287,9 @@ export async function getPayoutDashboardData(tutorIdOverride?: string): Promise<
       queuedCents,
       availableCents,
       lifetimeEarnedCents,
-      ledger: enrichedLedger,
+      ledger: ledgerPage.rows,
+      ledgerTotalCount: ledgerPage.totalCount,
+      ledgerPageSize: ledgerPage.pageSize,
     };
   } catch (e) {
     console.error("[connect:payout-loader] failed", {
