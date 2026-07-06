@@ -4,7 +4,7 @@ import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
 import { getTutorCourses } from "@/features/tutor/courses";
 import { normalizeTeachingDefaultDurationMinutes } from "@/features/tutor/teaching-defaults";
-import type { PayoutDashboardData } from "@/features/payments/payout-ledger";
+import type { PayoutDashboardData } from "@/features/payments/payout-ledger-pure";
 import { sanitizeForRsc } from "@/shared/core/rsc-serialize";
 import {
   utcStartOfWeekMonday,

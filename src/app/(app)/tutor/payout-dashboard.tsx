@@ -11,7 +11,7 @@ import {
   ExternalLink,
   CircleDollarSign,
 } from "lucide-react";
-import type { PayoutDashboardData, PayoutLedgerRow } from "@/features/payments/payout-ledger";
+import type { PayoutDashboardData, PayoutLedgerRow } from "@/features/payments/payout-ledger-pure";
 import { fetchPayoutLedgerPage, triggerManualPayout } from "@/features/payments/payout-ledger";
 import { useRouter } from "next/navigation";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";

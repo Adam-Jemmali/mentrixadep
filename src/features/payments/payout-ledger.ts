@@ -20,8 +20,13 @@ import {
   resolveStoredStripeAccountId,
   type ConnectStatus,
 } from "@/features/payments/connect-onboarding";
+import {
+  PAYOUT_LEDGER_PAGE_SIZE,
+  type PayoutDashboardData,
+  type PayoutLedgerRow,
+} from "@/features/payments/payout-ledger-pure";
 
-export type { ConnectStatus };
+export type { ConnectStatus, PayoutDashboardData, PayoutLedgerRow };
 
 function scheduleConnectPayoutRetries(tutorId: string, logPrefix: string): void {
   after(async () => {
@@ -35,36 +40,6 @@ function scheduleConnectPayoutRetries(tutorId: string, logPrefix: string): void 
     }
   });
 }
-
-export type PayoutLedgerRow = {
-  id: string;
-  session_id: string | null;
-  session_date: string | null;
-  course: string | null;
-  gross_cents: number;
-  platform_fee_cents: number;
-  net_cents: number;
-  status: string;
-  transfer_id: string | null;
-  transferred_at: string | null;
-  hold_until: string | null;
-  created_at: string;
-  student_id?: string | null;
-  student_name?: string | null;
-};
-
-export type PayoutDashboardData = {
-  connectStatus: ConnectStatus;
-  pendingCents: number;
-  queuedCents: number;
-  availableCents: number;
-  lifetimeEarnedCents: number;
-  ledger: PayoutLedgerRow[];
-  ledgerTotalCount: number;
-  ledgerPageSize: number;
-};
-
-export const PAYOUT_LEDGER_PAGE_SIZE = 10;
 
 function ledgerCents(v: unknown): number {
   if (typeof v === "number" && Number.isFinite(v)) return v;
