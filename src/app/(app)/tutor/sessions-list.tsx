@@ -62,7 +62,7 @@ export function SessionsList({
           <thead className="border-b-2 border-slate-300 bg-slate-200 text-slate-900">
             <tr>
               <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
-                Course
+                Skill
               </th>
               <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
                 Learner
@@ -171,7 +171,7 @@ export function SessionsList({
         <thead className="border-b-2 border-slate-300 bg-slate-200 text-slate-900">
           <tr>
             <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
-              Course
+              Skill
             </th>
             <th className="py-2 px-3 text-left text-[11px] font-bold uppercase tracking-wide">
               Learner

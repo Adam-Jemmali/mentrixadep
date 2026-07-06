@@ -144,7 +144,7 @@ export function TutorCommandCenterClient({
               size="sm" 
               className="h-9 text-xs border-white/20 bg-white/10 text-white hover:bg-white/20" 
               onClick={() => {
-                document.getElementById("course-manager")?.scrollIntoView({ behavior: "smooth" });
+                document.getElementById("skill-manager")?.scrollIntoView({ behavior: "smooth" });
               }}
             >
               <span className="inline-flex items-center gap-1.5">

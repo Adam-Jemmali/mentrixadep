@@ -85,7 +85,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
   }
 
   return (
-    <section id="course-manager">
+    <section id="skill-manager">
       <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.home} className="h-full">
         <div className="flex items-center gap-2">
           <MentrixaVocabIcon name="skills" size={18} surface="light" title="AP Calculus AB" />

@@ -88,7 +88,7 @@ function MetricCard({
 const PAYOUT_TABLE_HEADERS: { label: string; icon?: VocabIconName }[] = [
   { label: GUIDE_PAYOUTS.tableSession, icon: "session" },
   { label: GUIDE_PAYOUTS.tableLearner, icon: "profile" },
-  { label: GUIDE_PAYOUTS.tableCourse, icon: "skills" },
+  { label: GUIDE_PAYOUTS.tableSkill, icon: "skills" },
   { label: GUIDE_PAYOUTS.tableGross },
   { label: GUIDE_PAYOUTS.tableFee },
   { label: GUIDE_PAYOUTS.tableNet },

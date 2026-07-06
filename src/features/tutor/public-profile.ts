@@ -6,6 +6,7 @@ import { getUserSettings } from "@/features/settings/user-settings";
 import { getGuideBreakthroughs } from "@/features/guide-rank/reads";
 import { averageImpactScore } from "@/features/guide-rank/calculate-pure";
 import { normalizeTeachingDefaultDurationMinutes } from "@/features/tutor/teaching-defaults";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 
 async function fetchTutorPublicProfileUncached(tutorId: string) {
   const adminClient = createAdminClient();
@@ -160,7 +161,9 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
       ...(tutorCourseRows ?? []).map((r) => r.course_name),
       ...impactScores.map((i) => i.subject),
     ]),
-  ).sort();
+  )
+    .filter(isApCalculusAbSubject)
+    .sort();
 
   let responseRatePercent: number | null = null;
   const { data: availIds } = await adminClient

@@ -429,16 +429,16 @@ export function TutorStudioClient({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by course or learner…"
+            placeholder="Search by skill or learner…"
             className="h-10 min-w-[220px] flex-1 border-indigo-100 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus-visible:border-indigo-300 focus-visible:ring-indigo-200"
           />
 
           <Select value={courseFilter} onValueChange={setCourseFilter}>
             <SelectTrigger className="h-10 w-[170px] border-indigo-100 bg-white text-xs text-slate-700 focus-visible:border-indigo-300 focus-visible:ring-indigo-200">
-              <SelectValue placeholder="Course" />
+              <SelectValue placeholder="Skill" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All courses</SelectItem>
+              <SelectItem value="all">All skills</SelectItem>
               {courses.map((course) => (
                 <SelectItem key={course} value={course}>
                   {course}
@@ -469,7 +469,7 @@ export function TutorStudioClient({
               <SelectItem value="newest">Newest sessions</SelectItem>
               <SelectItem value="oldest">Oldest sessions</SelectItem>
               <SelectItem value="student_az">Learner A to Z</SelectItem>
-              <SelectItem value="course_az">Course A to Z</SelectItem>
+              <SelectItem value="course_az">Skill A to Z</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -481,8 +481,8 @@ export function TutorStudioClient({
             <tr>
               <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">
                 <span className="inline-flex items-center gap-1.5">
-                  <MentrixaVocabIcon name="skills" size={14} title="Course" />
-                  Course
+                  <MentrixaVocabIcon name="skills" size={14} title="Skill" />
+                  Skill
                 </span>
               </th>
               <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-indigo-700">

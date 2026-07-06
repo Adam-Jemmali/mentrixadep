@@ -29,7 +29,7 @@ import { updateUserSettings, type UserSettings } from "@/features/settings/user-
 import { cn } from "@/shared/core/utils";
 import { TEACHING_DEFAULT_DURATION_OPTIONS_MINUTES } from "@/features/tutor/teaching-defaults";
 import { TutorQualityBadge } from "@/components/tutor-quality-badge";
-import { ImpactScoreBreakdown } from "@/features/guide-impact/components/impact-score-badge";
+import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { GuideImpactNodeChips } from "@/features/guide-impact/components/guide-impact-node-chips";
 import type { GuideImpactEntry, GuideImpactNodeEntry } from "@/features/guide-impact/impact-score-pure";
 import { subjectsMatch } from "@/features/guide-impact/impact-score-pure";
@@ -298,11 +298,18 @@ export function TutorProfileClient({
     });
   }, [profile.availability]);
 
+  const displaySkills = useMemo(
+    () => profile.courses.filter(isApCalculusAbSubject),
+    [profile.courses],
+  );
+
   const trimmedGuideBio = (profile.bio ?? "").trim();
   const guideSnapshotText =
     trimmedGuideBio.length > 0
       ? trimmedGuideBio
-      : `Teaching ${profile.courses.length > 0 ? profile.courses.slice(0, 2).join(" • ") : "multi-subject sessions"} with clarity, structure, and momentum.`;
+      : displaySkills.length > 0
+        ? `Verified ${displaySkills.join(" • ")}. First-try impact, not ratings.`
+        : "AP Calculus AB Guide. Verified first-try impact.";
 
   const impactScores = profile.impactScores ?? [];
   const impactNodeScores = profile.impactNodeScores ?? [];
@@ -471,9 +478,9 @@ export function TutorProfileClient({
                 <TutorQualityBadge tutorId={profile.id} />
               </div>
 
-              {profile.courses.length > 0 ? (
+              {displaySkills.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {profile.courses.map((c) => {
+                  {displaySkills.map((c) => {
                     const subjectImpact = impactScores.find(
                       (s) => subjectsMatch(s.subject, c) && s.sessionsCounted >= 3,
                     );
@@ -522,9 +529,9 @@ export function TutorProfileClient({
                 </div>
                 <div className="mentrixa-stat-cell">
                   <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0F172A]">
-                    {profile.courses.length}
+                    {displaySkills.length}
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-400">Subjects</span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Skills</span>
                 </div>
               </div>
             </div>
@@ -547,16 +554,16 @@ export function TutorProfileClient({
                   <p className="mt-1 font-mono text-2xl font-black text-indigo-900">{profile.ratingCount}</p>
                 </div>
                 <div className="rounded-2xl border border-indigo-50 bg-white p-5 text-center shadow-sm">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Courses</p>
-                  <p className="mt-1 font-mono text-2xl font-black text-indigo-900">{profile.courses.length}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Skills</p>
+                  <p className="mt-1 font-mono text-2xl font-black text-indigo-900">{displaySkills.length}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 grid gap-10 lg:grid-cols-3">
-          <div className="space-y-10 lg:col-span-2">
+        <div className="mt-12 space-y-10">
+          <div className="space-y-10">
             <section className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
               <h2 className="mb-6 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">
                 Recent Breakthroughs
@@ -680,33 +687,6 @@ export function TutorProfileClient({
             ) : null}
 
             {isOwnProfile ? <AccountSecurityPanel className="mt-8" /> : null}
-          </div>
-
-          <div className="space-y-10">
-            <div className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
-              <h2 className="mb-8 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">Course Arsenal</h2>
-              {profile.courses.length === 0 ? (
-                <p className="rounded-2xl border-2 border-dashed border-indigo-50 py-4 text-center text-xs italic text-slate-400">
-                  No subjects listed yet.
-                </p>
-              ) : (
-                <ul className="space-y-3">
-                  {profile.courses.map((course) => (
-                    <li key={course} className="rounded-2xl border border-indigo-50 bg-slate-50/30 p-4 text-sm font-bold text-indigo-900">
-                      {course}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {impactScores.length > 1 ? (
-                <div className="mt-6 border-t border-indigo-50 pt-6">
-                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-indigo-400">
-                    Impact by subject
-                  </p>
-                  <ImpactScoreBreakdown entries={impactScores} />
-                </div>
-              ) : null}
-            </div>
           </div>
         </div>
 

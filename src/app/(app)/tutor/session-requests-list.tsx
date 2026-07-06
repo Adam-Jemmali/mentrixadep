@@ -182,8 +182,8 @@ export function SessionRequestsList({ sessionRequests, displayTimezone }: Sessio
               </th>
               <th className="py-2 px-3 text-left font-normal">
                 <span className="inline-flex items-center gap-1.5">
-                  <MentrixaVocabIcon name="skills" size={14} title="Course" />
-                  Course
+                  <MentrixaVocabIcon name="skills" size={14} title="Skill" />
+                  Skill
                 </span>
               </th>
               <th className="py-2 px-3 text-left font-normal">

@@ -54,7 +54,7 @@ export const GUIDE_PROFICIENCY = {
 export const GUIDE_AVAILABILITY_FORM = {
   title: "Open slots",
   subtitle: "Schedule and price",
-  subjectLabel: "Subject",
+  skillLabel: "Skill",
   verifiedNote: "Verified. Bookable for AB learners.",
   unverifiedNote: "Verify AB proficiency on home first.",
   blockedNote: "Not verified. Finish AB card on home.",
@@ -118,7 +118,7 @@ export const GUIDE_PAYOUTS = {
   unavailableBanner: "Connect not enabled on platform. Finish in Stripe Dashboard.",
   tableSession: "Session",
   tableLearner: "Learner",
-  tableCourse: "Course",
+  tableSkill: "Skill",
   tableGross: "Gross",
   tableFee: "Fee",
   tableNet: "Net",
