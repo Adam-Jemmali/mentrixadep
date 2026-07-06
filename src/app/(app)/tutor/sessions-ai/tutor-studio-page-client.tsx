@@ -50,7 +50,7 @@ export function TutorStudioPageClient({
             <Typewriter text="Studio" speed={70} waitTime={8000} />
           </h1>
           <p className={`mt-2 max-w-xl text-sm leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
-            Turn live {AP_CALC_AB_SUBJECT} session transcripts into reviewed quest packages. No live AI questions.
+            Turn live {AP_CALC_AB_SUBJECT} session transcripts into REVIEWD quest packages.
             Impact Score measures first-attempt movement after your sessions.
           </p>
           <p className="mt-2 text-xs font-mono tabular-nums text-[#6366F1]">
