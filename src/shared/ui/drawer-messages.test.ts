@@ -9,14 +9,14 @@ describe("drawer messages", () => {
   it("pairs quest tools verdict with next action", () => {
     const msg = questToolsDrawerMessage();
     expect(msg.title).toBe("Quest tools");
-    expect(msg.verdict).toMatch(/first attempt/i);
+    expect(msg.verdict).toMatch(/first answer/i);
     expect(msg.nextAction).toMatch(/swipe/i);
   });
 
   it("includes student and course in mastery grid description", () => {
     const msg = guideMasteryGridDrawerMessage("Alex", "AP Calculus AB");
     expect(msg.description).toBe("Alex · AP Calculus AB");
-    expect(msg.nextAction).toMatch(/verified attempt/i);
+    expect(msg.nextAction).toMatch(/locked first answer/i);
   });
 
   it("falls back when mastery grid context is missing", () => {

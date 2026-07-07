@@ -61,12 +61,12 @@ export function skillTreeUnitAccordionFooter(unit: MasteryGridUnit): {
   const weak = unit.nodes.filter((n) => n.state === "weak" || n.state === "none").length;
   if (weak > 0) {
     return {
-      verdict: `${weak} skill${weak === 1 ? "" : "s"} in this unit still need a verified first attempt.`,
+      verdict: `${weak} skill${weak === 1 ? "" : "s"} in this unit still need a locked first answer.`,
       nextAction: "Run quest practice.",
     };
   }
   return {
-    verdict: "Every skill in this unit has a verified first attempt on record.",
+    verdict: "Every skill in this unit has a locked first answer on record.",
     nextAction: "Book a Guide session to lift weak accuracy on verified nodes.",
   };
 }

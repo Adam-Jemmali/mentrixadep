@@ -29,7 +29,7 @@ export function GuideImpactNodeChips({
           Guide Impact Score
         </p>
         <p className="mt-1 text-sm text-slate-600">
-          Verified first attempts on new skill nodes after sessions with this Guide.
+          Verified first answers on new skill nodes after sessions with this Guide.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">

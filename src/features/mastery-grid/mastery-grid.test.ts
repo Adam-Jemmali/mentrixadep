@@ -150,7 +150,7 @@ describe("pickQuestMasteryHighlight", () => {
     const highlight = pickQuestMasteryHighlight(before, after, ["b", "a"]);
     expect(highlight?.nodeId).toBe("a");
     expect(highlight?.unchanged).toBe(false);
-    expect(highlight?.verdictLine).toBe("Limits intro locked for rank on first try.");
+    expect(highlight?.verdictLine).toBe("Limits intro locked for rank on first answer.");
   });
 
   it("reports held steady when no state changed", () => {

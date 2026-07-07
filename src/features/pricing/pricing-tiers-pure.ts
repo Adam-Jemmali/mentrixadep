@@ -217,7 +217,7 @@ export function buildPricingTiers(): PricingTierDefinition[] {
       receipts: [
         "Full Mastery Grid and public rank page",
         "Unlimited practice from the reviewed AP Calculus AB item bank",
-        "Duels and Verified First Attempt rank",
+        "Duels and first-answer rank",
         "Beat Line: one rival, one move",
         "Current week grid view",
       ],

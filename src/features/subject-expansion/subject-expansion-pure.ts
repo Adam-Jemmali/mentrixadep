@@ -39,10 +39,10 @@ export function buildSubjectExpansionVerdict(input: {
 
   const remaining = Math.max(0, input.minVerifiedFirstAttempts - input.verifiedFirstAttempts);
   return {
-    verdict: `${input.subject} is not on the Momentum stack yet. The bar is ${input.minVerifiedFirstAttempts.toLocaleString()} verified first attempts across the cohort.`,
+    verdict: `${input.subject} is not on the Momentum stack yet. The bar is ${input.minVerifiedFirstAttempts.toLocaleString()} locked first answers across the cohort.`,
     nextAction:
       remaining > 0
-        ? `${remaining.toLocaleString()} more verified first attempts are needed before this subject clears the bar.`
+        ? `${remaining.toLocaleString()} more locked first answers are needed before this subject clears the bar.`
         : "This subject clears the bar when the reviewed item bank and cohort volume are both sufficient.",
   };
 }

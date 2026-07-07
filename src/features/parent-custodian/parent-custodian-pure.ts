@@ -25,7 +25,7 @@ export function buildParentCustodianViewCopy(input: {
   const trajectoryLine =
     input.trajectoryScore != null
       ? `Trajectory Index ${input.trajectoryScore}.`
-      : "Trajectory is still building from verified first attempts.";
+      : "Trajectory is still building from locked first answers.";
 
   const peerLine =
     input.verifiedPercentile != null

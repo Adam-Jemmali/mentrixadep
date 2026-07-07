@@ -197,7 +197,7 @@ export function buildQuestResultVerdict(
   const reason = focus.misconceptionTag?.trim()
     ? `The miss pattern tagged "${focus.misconceptionTag.trim()}" on ${focus.nodeName} drove the gap.`
     : delta < 0
-      ? `${focus.nodeName} scored below your usual pace on first attempts in this pack.`
+      ? `${focus.nodeName} scored below your usual pace on first answers in this pack.`
       : delta > 0
         ? `${focus.nodeName} improved against your running average in this pack.`
         : `${focus.nodeName} matched your established pace on this node.`;
@@ -302,9 +302,9 @@ export function buildRankDeltaVerdict(
 
   const changed =
     flat && current.percentile != null
-      ? `${current.accuracyPercent}% first-try accuracy · ${formatPeerStandingShort(current.percentile)} of Mentrixers.`
+      ? `${current.accuracyPercent}% first-answer accuracy · ${formatPeerStandingShort(current.percentile)} of Mentrixers.`
       : flat
-        ? `${current.accuracyPercent}% first-try accuracy · ${current.verifiedCount} verified.`
+        ? `${current.accuracyPercent}% first-answer accuracy · ${current.verifiedCount} verified.`
         : pctDelta != null
           ? `Accuracy ${prevAcc}→${current.accuracyPercent}% · Peer standing top ${peerTopPercent(prevPct!)}%→${peerTopPercent(current.percentile!)}.`
           : `Accuracy ${prevAcc}→${current.accuracyPercent}% (${signedDelta(accDelta)}).`;
@@ -395,8 +395,8 @@ export function buildImpactScoreVerdict(
 
   const reason =
     focus.impactLift >= 0
-      ? `${focus.nodeName} improved most after your sessions: ${Math.round(focus.beforeAccuracy)}% before to ${Math.round(focus.afterAccuracy)}% after on first attempts.`
-      : `${focus.nodeName} declined most after your sessions: ${Math.round(focus.beforeAccuracy)}% before to ${Math.round(focus.afterAccuracy)}% after on first attempts.`;
+      ? `${focus.nodeName} improved most after your sessions: ${Math.round(focus.beforeAccuracy)}% before to ${Math.round(focus.afterAccuracy)}% after on first answers.`
+      : `${focus.nodeName} declined most after your sessions: ${Math.round(focus.beforeAccuracy)}% before to ${Math.round(focus.afterAccuracy)}% after on first answers.`;
 
   return {
     changed,

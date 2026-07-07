@@ -410,7 +410,7 @@ export function QuestPracticeWorkspace({
               <span>Your first verified skills</span>
             </h1>
             <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
-              Five first attempts from the AP Calculus AB item bank. Each answer is permanent.
+              Five first answers from the AP Calculus AB item bank. Each answer is permanent.
             </p>
             <div className="mt-6">
               <OnboardingQuestProgressBar phase="wizard" />

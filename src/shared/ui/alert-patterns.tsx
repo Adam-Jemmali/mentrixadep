@@ -236,5 +236,5 @@ export function PracticeLockedAttemptAlert({ className }: { className?: string }
 
 export function isPracticeLockedAttemptError(message: string | null | undefined): boolean {
   if (!message) return false;
-  return /locked|first attempt only/i.test(message);
+  return /locked|first answers only/i.test(message);
 }

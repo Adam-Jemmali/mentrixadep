@@ -36,7 +36,7 @@ export function guideImpactDisclosureMessage(): MentrixaDisclosureMessage {
     triggerLabel: "Why Guide Impact matters",
     body: "Sessions move verified rank",
     verdict: "Movement not likeability",
-    nextAction: "Target missed first attempts",
+    nextAction: "Target missed first answers",
   };
 }
 

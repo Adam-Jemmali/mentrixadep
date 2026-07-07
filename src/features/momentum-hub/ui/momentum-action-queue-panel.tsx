@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import type { ActionQueueItem } from "@/features/momentum-hub/momentum-action-queue-pure";
+import { MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW } from "@/features/payments/momentum-membership-pure";
 
 type MomentumActionQueuePanelProps = {
   items: ActionQueueItem[];
@@ -22,6 +23,9 @@ export function MomentumActionQueuePanel({
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Momentum action queue">
       <VocabSectionHeading name="quest" label="Action queue" surface="light" />
+      <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+        {MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW}
+      </p>
 
       <ol className="mt-4 space-y-3">
         {items.map((item, index) => (

@@ -48,7 +48,7 @@ export function buildGuideMemoryBlock(input: {
 
   const nextAction = input.weakestOpenNode
     ? `Target ${input.weakestOpenNode} in this call. That node is still your weakest open wall.`
-    : "Open with the node that still will not move on first attempt.";
+    : "Open with the node that still will not move on your first answer.";
 
   return { verdict, nextAction };
 }

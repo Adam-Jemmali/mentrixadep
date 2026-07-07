@@ -32,7 +32,7 @@ describe("passportVerdictPlainText", () => {
   it("formats top percent copy", () => {
     const text = passportVerdictPlainText({ kind: "ranked", topPercent: 12 });
     expect(text).toBe(
-      "Top 12 percent of everyone verified on AP Calculus AB, first attempt only, no retakes"
+      "Top 12 percent of everyone verified on AP Calculus AB, first answers only, no retakes"
     );
   });
 });

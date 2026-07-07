@@ -4,12 +4,16 @@ import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { GoalDashboardData } from "@/features/goal-dashboard/load-goal-dashboard";
+import { MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW } from "@/features/payments/momentum-membership-pure";
 import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 export function GoalDashboardCard({ data }: { data: GoalDashboardData }) {
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Goal dashboard">
       <p className={mentrixStudent.sectionEyebrowOnLight}>Goal dashboard</p>
+      <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+        {MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW}
+      </p>
       <p className="mt-2 text-sm font-semibold text-zinc-900">{data.verdict}</p>
       {data.peerTrendLine ? (
         <p className="mt-1 text-sm text-indigo-800">{data.peerTrendLine}</p>

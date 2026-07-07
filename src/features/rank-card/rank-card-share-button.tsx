@@ -58,7 +58,7 @@ export function RankCardShareButton({
           </span>
         </h2>
         <p className={cn(mentrixHubSurfaces.inkBody, "max-w-md text-sm leading-relaxed")}>
-          Public proof from first attempts only. Live at{" "}
+          Public proof from first answers only. Live at{" "}
           <span className="font-mono font-semibold text-[#4F46E5]">
             mentrixa.one/rank/{username}
           </span>

@@ -88,7 +88,7 @@ function GenericQuestResultsReveal({
         ) : null}
 
         <p className="text-sm leading-relaxed text-[#475569]">
-          This run does not count toward verified rank until you sign up and lock first attempts on each skill node.
+          This run does not count toward verified rank until you sign up and lock your first answer on each skill.
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">

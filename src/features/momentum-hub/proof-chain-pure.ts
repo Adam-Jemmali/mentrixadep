@@ -97,7 +97,7 @@ export function buildOpenLoopProofSteps(input: OpenLoopProofInput): ProofChainSt
       : "Window: 48h.";
 
   const step3 = input.isDue ? "Retest open in Quest." : "Retest unlocks soon.";
-  const step4 = "Rank updates after first try.";
+  const step4 = "Rank updates after your first answer.";
 
   return [
     { id: "intervention", label: "", detail: step1, status: "complete" },
@@ -136,7 +136,7 @@ export function buildClosedLoopProofSteps(input: ClosedLoopProofInput): ProofCha
       detail: `Closed in ${Math.round(input.closureHours)}h.`,
       status: "complete",
     },
-    { id: "retest", label: "", detail: "First try recorded.", status: "complete" },
+    { id: "retest", label: "", detail: "First answer recorded.", status: "complete" },
     {
       id: "movement",
       label: "",

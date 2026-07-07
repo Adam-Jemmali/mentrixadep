@@ -10,7 +10,7 @@ describe("buildGuideInterventionRetestNotificationBody", () => {
         delta: 12.4,
       }),
     ).toBe(
-      "Your session with Alex improved their first attempt accuracy on Chain rule by 12 percentage points",
+      "Your session with Alex improved their first-answer accuracy on Chain rule by 12 percentage points",
     );
   });
 

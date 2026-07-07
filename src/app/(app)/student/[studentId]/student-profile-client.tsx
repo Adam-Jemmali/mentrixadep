@@ -414,7 +414,7 @@ function ProfileShareSections({
           siteUrl={getSiteUrl()}
           passportVerdict={
             data.rankCardPassportVerdict ??
-            "No verified first attempts on AP Calculus AB yet."
+            "No locked first answers on AP Calculus AB yet."
           }
           rankTitle={accountRank.title}
           rankLevel={accountRank.level}

@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import type { TrajectoryPanelView } from "@/features/momentum-hub/momentum-trajectory-enrichment-pure";
+import { MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW } from "@/features/payments/momentum-membership-pure";
 
 function TrajectorySparkline({ points }: { points: { date: string; score: number }[] }) {
   if (points.length < 2) {
@@ -70,6 +71,9 @@ export function MomentumTrajectoryPanel({ data }: MomentumTrajectoryPanelProps) 
     return (
       <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Trajectory index teaser">
         <VocabSectionHeading name="trajectory-certificate" label="Trajectory index" surface="light" gold />
+        <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+          {MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW}
+        </p>
         <p className="mt-3 text-2xl font-bold tabular-nums text-zinc-400">{data.scoreBand}</p>
         <p className="mt-3 text-sm text-zinc-600">{data.upsellLine}</p>
         <Button asChild className="mt-4" size="sm">
@@ -85,6 +89,9 @@ export function MomentumTrajectoryPanel({ data }: MomentumTrajectoryPanelProps) 
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Trajectory index">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <VocabSectionHeading name="trajectory-certificate" label="Trajectory index" surface="light" gold />
+        <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+          {MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW}
+        </p>
         <div className="text-right">
           <p className="text-3xl font-bold tabular-nums text-[#D4A017]">{trajectory.score}</p>
           {weekOverWeek ? (

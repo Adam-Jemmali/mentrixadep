@@ -65,7 +65,7 @@ function resolveStakes(problem: StepTraceProblem): { stakesSentence: string; exa
 }
 
 function buildScoreFootnote(completion: StepTraceCompletion): string {
-  return `${completion.steps_correct_first_try} of ${completion.total_steps} steps correct on first try`;
+  return `${completion.steps_correct_first_try} of ${completion.total_steps} steps correct on first answer`;
 }
 
 function findFirstDivergence(

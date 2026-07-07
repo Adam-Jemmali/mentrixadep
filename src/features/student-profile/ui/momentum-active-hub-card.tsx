@@ -8,6 +8,7 @@ import { formatMomentumRenewalLabel } from "@/features/payments/momentum-members
 import { momentumCompRenewalLabel } from "@/features/entitlements/momentum-comp-members-pure";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
 import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
+import { MomentumMembershipPerksGrid } from "@/features/student-profile/ui/momentum-membership-perks-grid";
 import { cn } from "@/shared/core/utils";
 
 type MomentumActiveHubCardProps = {
@@ -60,23 +61,7 @@ export function MomentumActiveHubCard({
           {renewal ? (
             <p className={cn("mt-2 text-xs", mentrixHubSurfaces.inkMuted)}>{renewal}</p>
           ) : null}
-          <p className={cn("mt-3 text-xs font-semibold", mentrixHubSurfaces.inkBody)}>
-            These Momentum membership features are unlocked on your hub: weekly Movement Receipt by email, Proof Chain counterfactuals, priority retests, grid timeline, Loop Report, and progress archive.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-[#4F46E5]">
-            <Link href="/student/progress" className="underline hover:text-[#6D28D9]">
-              Progress archive
-            </Link>
-            <Link href="/student/loop" className="underline hover:text-[#6D28D9]">
-              Loop Report
-            </Link>
-            <Link href="/student/receipts" className="underline hover:text-[#6D28D9]">
-              Receipt archive
-            </Link>
-            <Link href="/student/mastery" className="underline hover:text-[#6D28D9]">
-              Grid timeline
-            </Link>
-          </div>
+          <MomentumMembershipPerksGrid momentumActive className="mt-4" />
         </div>
         <div className="flex shrink-0 flex-col gap-2">
           <Button asChild className={mentrixStudent.hubBtnSolid}>

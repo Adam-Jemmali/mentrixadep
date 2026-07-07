@@ -28,7 +28,7 @@ export function formatMasteryNodeTooltip(
   accuracyPercent: number | null,
 ): string {
   if (accuracyPercent == null) return `${nodeName}: not attempted`;
-  if (state === "verified") return `${nodeName}: verified first attempt`;
+  if (state === "verified") return `${nodeName}: locked first answer`;
   return `${nodeName}: ${accuracyPercent}%`;
 }
 

@@ -61,7 +61,7 @@ export function settingsPasswordFieldMessage(
       };
     case "new_password":
       return {
-        verdict: "Strong passwords protect verified first attempts.",
+        verdict: "Strong passwords protect your locked first answers.",
         nextAction: "Use at least 8 characters with one uppercase and one number.",
       };
     case "confirm_password":

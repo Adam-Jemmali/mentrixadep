@@ -10,7 +10,7 @@ import {
 describe("switch messages", () => {
   it("frames rank card around verified passport", () => {
     const msg = privacySwitchMessage("rank_card_public");
-    expect(msg.verdict).toMatch(/verified first attempt/i);
+    expect(msg.verdict).toMatch(/first answers only/i);
     expect(msg.nextAction).toMatch(/peer standing/i);
   });
 

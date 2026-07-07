@@ -48,7 +48,7 @@ export function GuestTryPassportTeaser({
             <span className="font-semibold text-slate-200">
               {correct}/{total} correct
             </span>{" "}
-            only counts after signup and first attempts.
+            only counts after signup and your first answers.
           </p>
           <div className="mt-3 flex items-center gap-2">
             {sampleDots.map((hit, index) => (
@@ -85,7 +85,7 @@ export function GuestTryPassportTeaser({
           className="text-xs font-semibold"
           style={{ color: VERIFIED_GOLD }}
         >
-          Lock first attempts →
+          Lock your first answers →
         </Link>
       </div>
     </motion.div>

@@ -18,7 +18,7 @@ export function buildRetestHubMessages(state: PendingRetestHubState): {
 
   if (state.isDue) {
     return {
-      verdict: `Retest due on ${state.nodeName}. Your first attempt here is rank-critical.`,
+      verdict: `Retest due on ${state.nodeName}. Your first answer here counts for rank.`,
       nextAction: `Tap Start retest — Quest loads ${state.nodeName} immediately.`,
       countdownLabel: "Due now",
     };

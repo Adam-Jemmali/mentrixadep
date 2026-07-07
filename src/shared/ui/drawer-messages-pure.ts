@@ -1,3 +1,5 @@
+import { MENTRIXA_FIRST_ANSWER } from "@/features/copy/mentrixa-simple-copy-pure";
+
 export type MentrixaDrawerKind =
   | "quest_tools"
   | "guide_session_requests"
@@ -15,7 +17,7 @@ export function questToolsDrawerMessage(): MentrixaDrawerMessage {
   return {
     title: "Quest tools",
     description: "Session context for this verified pack.",
-    verdict: "First attempts lock rank.",
+    verdict: MENTRIXA_FIRST_ANSWER.locksRank,
     nextAction: "Swipe left or right on the question card to move between items.",
   };
 }
@@ -45,8 +47,8 @@ export function guideMasteryGridDrawerMessage(
   return {
     title: "Student mastery grid",
     description: `${studentName} · ${course}`,
-    verdict: "Verified first attempts show what is locked for rank.",
-    nextAction: "Target nodes with no verified attempt before the session.",
+    verdict: "Locked first answers show what counts for rank.",
+    nextAction: "Target nodes with no locked first answer before the session.",
   };
 }
 

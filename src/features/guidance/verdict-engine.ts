@@ -369,7 +369,7 @@ async function getWeeklySnapshotVerdict(
     userId,
     {
       changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skill${rank.verifiedCount === 1 ? "" : "s"}${rank.percentile != null ? ` · ${formatPeerStandingShort(rank.percentile)} of Mentrixers` : ""}.`,
-      reason: "No weekly snapshot is stored yet; rank reflects your latest verified first attempts.",
+      reason: "No weekly snapshot is stored yet; rank reflects your latest locked first answers.",
       nextAction: {
         label: "Start a verified practice pack",
         href: "/student/quest",

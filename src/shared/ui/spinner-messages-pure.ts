@@ -21,7 +21,7 @@ export function questPackLoadSpinnerMessage(): MentrixaSpinnerMessage {
     title: "Loading verified pack",
     ariaLabel: "Loading verified quest pack",
     description: "Questions from the reviewed item bank.",
-    nextAction: "Get ready for your first attempt.",
+    nextAction: "Get ready for your first answer.",
   };
 }
 

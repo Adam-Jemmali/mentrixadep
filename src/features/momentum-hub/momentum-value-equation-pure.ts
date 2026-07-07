@@ -62,7 +62,7 @@ export function buildRetestGuidedAction(input: {
       perceivedLikelihood:
         closureRate != null
           ? `You closed ${closureRate}% of loops this month`
-          : "First-attempt retest is rank-critical proof",
+          : "First-answer retest is rank-critical proof",
       timeDelay: input.isDue ? "~4 min to finish" : "Unlocks when window opens",
       effort: "1 tap — Quest opens on this node",
     },
@@ -116,12 +116,12 @@ export function buildBottleneckGuidedAction(
       href: "/student/quest?mode=verify",
       chips: {
         dreamOutcome: "Lift Verified nodes component on Trajectory Index",
-        perceivedLikelihood: "Item bank is reviewed — first attempt counts",
+        perceivedLikelihood: "Item bank is reviewed. Your first answer counts.",
         timeDelay: "~8 min for a focused pack",
         effort: "One Quest pack on an unverified node",
       },
       verdict: bottleneck.fixAction,
-      nextAction: "Pick an unverified node. First try is permanent.",
+      nextAction: "Pick an open node. Your first answer is permanent.",
     };
   }
 

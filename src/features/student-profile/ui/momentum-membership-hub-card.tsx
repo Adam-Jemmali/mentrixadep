@@ -4,6 +4,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE } from "@/features/payments/momentum-membership-pure";
 import { PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
+import { MomentumMembershipPerksGrid } from "@/features/student-profile/ui/momentum-membership-perks-grid";
 import { cn } from "@/shared/core/utils";
 
 /** Hub upsell — shown when the learner is not on Momentum. */
@@ -24,6 +25,7 @@ export function MomentumMembershipHubCard() {
           <p className={cn("mt-2 text-xs font-semibold", mentrixHubSurfaces.inkBody)}>
             {MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE}
           </p>
+          <MomentumMembershipPerksGrid momentumActive={false} className="mt-4" />
         </div>
         <Link
           href="/student/subscribe"

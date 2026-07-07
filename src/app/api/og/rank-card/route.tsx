@@ -94,7 +94,7 @@ export async function GET(request: Request) {
             <div style={{ fontSize: 34, fontWeight: 700, lineHeight: 1.25, color: "#f8fafc" }}>
               Top{" "}
               <span style={{ color: VERIFIED_GOLD, fontWeight: 900 }}>{card.topPercentGold}</span>{" "}
-              percent of everyone verified on {AP_CALC_AB_SUBJECT}, first attempt only, no retakes
+              percent of everyone verified on {AP_CALC_AB_SUBJECT}, first answers only, no retakes
             </div>
           ) : (
             <div style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.35, color: "#e2e8f0" }}>
@@ -110,7 +110,7 @@ export async function GET(request: Request) {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 14, color: "#64748b" }}>
-            Server verified. First attempts only.
+            Server verified. First answers only.
           </div>
           <div style={{ fontSize: 18, color: "#94a3b8", fontFamily: "monospace" }}>
             mentrixa.one/rank/{username}

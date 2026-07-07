@@ -148,7 +148,7 @@ export function pickQuestMasteryHighlight(
     : toState === "proficient"
       ? `${nodeName} turned solid green at ${acc ?? 70}%+ practice.`
       : toState === "verified"
-        ? `${nodeName} locked for rank on first try.`
+        ? `${nodeName} locked for rank on first answer.`
         : toState === "weak"
           ? `${nodeName} still weak — practice until green before your next verified attempt.`
           : `${nodeName} updated on your grid.`;

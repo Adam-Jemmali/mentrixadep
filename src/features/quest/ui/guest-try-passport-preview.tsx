@@ -28,7 +28,7 @@ export function GuestTryPassportPreview({
       <p className="mt-4 text-center text-sm leading-relaxed text-[#475569]">
         This is the same public passport students get at{" "}
         <span className="font-mono text-[#6366F1]">mentrixa.one/rank/you</span>.{" "}
-        <span style={{ color: VERIFIED_GOLD }}>Sign up to lock first attempts.</span>
+        <span style={{ color: VERIFIED_GOLD }}>Sign up to lock your first answers.</span>
       </p>
       <div className="mt-4 flex justify-center">
         <Link

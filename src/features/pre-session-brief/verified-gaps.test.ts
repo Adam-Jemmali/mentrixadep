@@ -12,7 +12,7 @@ describe("formatVerifiedGapLine", () => {
         correctCount: 2,
       })
     ).toBe(
-      "Chain Rule and Implicit, Chain rule basics: verified first attempt incorrect, practice 2 of 5"
+      "Chain Rule and Implicit, Chain rule basics: locked first answer incorrect, practice 2 of 5"
     );
   });
 

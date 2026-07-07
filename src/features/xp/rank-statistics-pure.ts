@@ -34,17 +34,17 @@ export function explainFirstAttemptAccuracy(
   accuracyPercent: number,
 ): string {
   if (verifiedCount <= 0) {
-    return "No verified first tries yet.";
+    return "No first answers yet.";
   }
   const correct = estimateCorrectFirstAttempts(accuracyPercent, verifiedCount);
-  return `${correct} right out of ${verifiedCount} first tries. ${correct} ÷ ${verifiedCount} × 100 = ${accuracyPercent}%.`;
+  return `${correct} right out of ${verifiedCount} first answers. ${correct} ÷ ${verifiedCount} × 100 = ${accuracyPercent}%.`;
 }
 
 /** Full peer-standing sentence — real cohort statistics, not random scores. */
 export function explainPeerStanding(cumeDistPercentile: number): string {
   const beat = peerBeatCount(cumeDistPercentile);
   const top = peerTopPercent(cumeDistPercentile);
-  return `You beat ${beat} out of every 100 Mentrixers on first-try accuracy. Top ${top}%. Counted from everyone with ${MIN_VERIFIED_SKILLS_FOR_PEER_STANDING}+ verified skills.`;
+  return `You beat ${beat} out of every 100 Mentrixers on first-answer accuracy. Top ${top}%. Counted from everyone with ${MIN_VERIFIED_SKILLS_FOR_PEER_STANDING}+ verified skills.`;
 }
 
 export function formatPeerStandingShort(cumeDistPercentile: number): string {

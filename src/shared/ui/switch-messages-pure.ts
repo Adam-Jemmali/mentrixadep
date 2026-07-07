@@ -1,3 +1,5 @@
+import { MENTRIXA_FIRST_ANSWER } from "@/features/copy/mentrixa-simple-copy-pure";
+
 export type MentrixaPrivacySwitchId =
   | "profile_visible_to_tutors"
   | "duel_opt_in"
@@ -26,12 +28,12 @@ export function privacySwitchMessage(id: MentrixaPrivacySwitchId): MentrixaSwitc
       };
     case "duel_opt_in":
       return {
-        verdict: "Duels move division standing, not verified first-attempt rank.",
+        verdict: MENTRIXA_FIRST_ANSWER.duelsNotRank,
         nextAction: "Turn off when you need uninterrupted quest focus.",
       };
     case "rank_card_public":
       return {
-        verdict: "Your public passport shows verified first attempts only.",
+        verdict: MENTRIXA_FIRST_ANSWER.passportShows,
         nextAction: "Keep this on after five skills unlock peer standing.",
       };
   }

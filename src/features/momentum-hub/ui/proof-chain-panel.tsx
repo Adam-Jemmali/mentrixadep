@@ -6,6 +6,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 import type { ProofChainPanelData, ProofChainStep } from "@/features/momentum-hub/proof-chain-pure";
+import { MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW } from "@/features/payments/momentum-membership-pure";
 
 function stepStatusClass(status: ProofChainStep["status"]): string {
   switch (status) {
@@ -48,6 +49,9 @@ export function ProofChainPanel({ data }: { data: ProofChainPanelData }) {
         aria-label="Proof Chain teaser"
       >
         <VocabSectionHeading name="loop-report" label="Proof Chain" surface="light" />
+        <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+          {MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW}
+        </p>
         <p className="mt-3 text-sm font-semibold text-zinc-800">
           {data.stepCount} steps locked on {data.nodeName}
         </p>
@@ -67,7 +71,12 @@ export function ProofChainPanel({ data }: { data: ProofChainPanelData }) {
       aria-label="Proof Chain"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <VocabSectionHeading name="loop-report" label="Proof Chain" surface="light" />
+        <div>
+          <VocabSectionHeading name="loop-report" label="Proof Chain" surface="light" />
+          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-violet-700">
+            {MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW}
+          </p>
+        </div>
         {data.stallDays > 0 ? (
           <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-center">
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-800">Stall</p>

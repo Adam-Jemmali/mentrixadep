@@ -199,7 +199,7 @@ export function buildApCalcGuestDiagnosticVerdict(
       verdictLine1: "Nothing broke in this five-question sample.",
       verdictLine2: "The full AP Calculus AB tree is wider than one diagnostic.",
       gapSentence:
-        "You answered every item correctly here. The ranked arena still tracks first attempts across every skill node.",
+        "You answered every item correctly here. The ranked arena still tracks your first answer on every skill.",
       stakesSentence,
       examStakes,
       scoreFootnote: `${correct} of ${total} correct on this sample`,

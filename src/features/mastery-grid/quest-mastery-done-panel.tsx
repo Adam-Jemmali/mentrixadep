@@ -58,7 +58,7 @@ export function QuestMasteryDonePanel({
           Your mastery map updated
         </h2>
         <p className={`mt-2 max-w-xl text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
-          Green means solid in practice at {SOLID_PRACTICE_PERCENT}%+. Gold locks rank on first try only.
+          Green means solid in practice at {SOLID_PRACTICE_PERCENT}%+. Gold locks rank on your first answer only.
         </p>
       </header>
 

@@ -15,7 +15,7 @@ describe("spinner messages", () => {
   it("ties quest pack load to reviewed item bank", () => {
     const msg = questPackLoadSpinnerMessage();
     expect(msg.description).toMatch(/reviewed/i);
-    expect(msg.nextAction).toMatch(/first attempt/i);
+    expect(msg.nextAction).toMatch(/first answer/i);
   });
 
   it("routes kinds through mentrixaSpinnerMessage", () => {

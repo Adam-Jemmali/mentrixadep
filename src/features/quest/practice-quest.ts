@@ -405,7 +405,7 @@ export async function submitPracticeMcq(
 
   const priorAnswer = meta.session?.answers.find((a) => a.index === questionIndex);
   if (priorAnswer) {
-    return { error: "This answer is locked — first attempt only." };
+    return { error: "This answer is locked. First answers only." };
   }
 
   const correct = selectedIndex === mcq.correctIndex;

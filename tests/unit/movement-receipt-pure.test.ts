@@ -106,7 +106,7 @@ describe("buildMovementReceiptVerdict", () => {
       momentumActive: false,
       credit: { momentumActive: false, creditsRemaining: 0, monthlyCreditsRemaining: 0, periodMonth: null },
     });
-    expect(nextAction).toContain("verified first attempt");
+    expect(nextAction).toContain("first answer");
     expect(ctaLabel).toBe("View Mastery Grid");
   });
 

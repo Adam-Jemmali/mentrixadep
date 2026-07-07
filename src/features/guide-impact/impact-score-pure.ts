@@ -62,11 +62,11 @@ export function formatImpactScoreVerdict(
   subject?: string,
 ): string {
   const subjectPart = subject ? ` in ${subject}` : "";
-  return `Students improved first-attempt accuracy on ${Math.round(score)}% of post-session skill checks${subjectPart} — based on ${sessionsCounted} completed sessions.`;
+  return `Students improved first-answer accuracy on ${Math.round(score)}% of post-session skill checks${subjectPart} — based on ${sessionsCounted} completed sessions.`;
 }
 
 export function formatImpactNodeVerdict(entry: GuideImpactNodeEntry): string {
-  return `${entry.nodeName}: ${Math.round(entry.afterAccuracy)}% first-attempt accuracy after sessions, vs ${Math.round(entry.beforeAccuracy)}% before, across ${entry.studentsCounted} students.`;
+  return `${entry.nodeName}: ${Math.round(entry.afterAccuracy)}% first-answer accuracy after sessions, vs ${Math.round(entry.beforeAccuracy)}% before, across ${entry.studentsCounted} students.`;
 }
 
 export function subjectsMatch(a: string, b: string): boolean {

@@ -18,7 +18,7 @@ export function formatVerifiedGapLine(gap: VerifiedGapNodeInput): string {
     return `${base}: ${practice}`;
   }
   const verified = gap.verifiedFirstAttempt ? "correct" : "incorrect";
-  return `${base}: verified first attempt ${verified}, ${practice}`;
+  return `${base}: locked first answer ${verified}, ${practice}`;
 }
 
 export async function loadVerifiedFirstAttemptMap(

@@ -37,7 +37,7 @@ describe("accordion messages", () => {
         { id: "a", nodeName: "Limits", nodeSlug: "limits", displayOrder: 1, state: "none", accuracyPercent: null },
       ],
     });
-    expect(footer.verdict).toMatch(/verified first attempt/i);
+    expect(footer.verdict).toMatch(/locked first answer/i);
     expect(footer.nextAction).toMatch(/quest practice/i);
   });
 });

@@ -6,10 +6,10 @@ import {
 } from "@/shared/ui/alert-messages-pure";
 
 describe("alert messages", () => {
-  it("states verified first attempt verdict and next action for onboarding", () => {
+  it("states first-answer verdict and next action for onboarding", () => {
     const message = verifiedFirstAttemptAlertMessage("onboarding", "AP Calculus AB");
     expect(message.status).toBe("accent");
-    expect(message.title).toContain("Verified first attempt");
+    expect(message.title).toContain("First answers");
     expect(message.nextAction).toContain("peer standing");
   });
 

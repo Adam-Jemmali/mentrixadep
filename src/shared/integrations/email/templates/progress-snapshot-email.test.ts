@@ -48,12 +48,12 @@ describe("progressSnapshotEmailBody", () => {
       snapshot: baseSnapshot,
       weeklyVerdict: {
         changed: "You verified 2 new skills this week.",
-        reason: "Both were first attempts above 70%.",
+        reason: "Both were first answers above 70%.",
         nextAction: { label: "Keep your streak", href: "/student/quest" },
       },
     });
     expect(html).toContain("You verified 2 new skills this week.");
-    expect(html).toContain("Both were first attempts above 70%.");
+    expect(html).toContain("Both were first answers above 70%.");
     expect(html).toContain("/student/quest");
     expect(html).toContain("Keep your streak");
   });
@@ -111,7 +111,7 @@ describe("progressSnapshotEmailBody", () => {
         snapshot,
         weeklyVerdict: {
           changed: "You logged practice but no new verified skills.",
-          reason: "Rank still moves on first attempts only.",
+          reason: "Rank still moves on first answers only.",
           nextAction: { label: "Run a verified pack", href: "/student/quest" },
         },
       }),

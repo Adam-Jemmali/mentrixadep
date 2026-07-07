@@ -91,11 +91,11 @@ export function buildQuestPostPackStep(node: MasteryGridNode): QuestPostPackStep
 
   if (node.state === "weak") {
     const verifiedMiss = acc === 0;
-    const accLabel = verifiedMiss ? "first try missed" : `${acc ?? 0}% in practice`;
+    const accLabel = verifiedMiss ? "first answer missed" : `${acc ?? 0}% in practice`;
     return {
       phase: "practice_to_green",
       changed: verifiedMiss
-        ? `${name} locked weak on first try.`
+        ? `${name} locked weak on first answer.`
         : `${name} is ${accLabel} — not solid yet.`,
       reason: verifiedMiss
         ? "Rank will not move on replays. Practice until green builds the fluency retests and Guides expect."
@@ -126,7 +126,7 @@ export function buildQuestPostPackStep(node: MasteryGridNode): QuestPostPackStep
   return {
     phase: "next_open_node",
     changed: `${name} is verified for rank.`,
-    reason: "Keep green nodes sharp in practice. Your next rank move is a first try on a new skill.",
+    reason: "Keep green nodes sharp in practice. Your next rank move is a first answer on a new skill.",
     nextAction: {
       label: "Run next verified pack",
       href: "/student/quest",
@@ -161,7 +161,7 @@ export function applyQuestPostPackStepToVerdict(
             label: `Quest ${nextOpen.nodeName} to lock rank`,
             href: questPromptHref(nextOpen.nodeName),
           },
-          reason: `${focus.nodeName} is done for rank. ${nextOpen.nodeName} is green and ready for a verified first try.`,
+          reason: `${focus.nodeName} is done for rank. ${nextOpen.nodeName} is green and ready for a locked first answer.`,
         };
       } else if (nextOpen.state === "none" || nextOpen.state === "weak") {
         step = {

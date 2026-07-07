@@ -37,13 +37,13 @@ export function buildPassportVerdict(params: {
 
 export function passportVerdictPlainText(verdict: PassportVerdict): string {
   if (verdict.kind === "ranked") {
-    return `Top ${verdict.topPercent} percent of everyone verified on AP Calculus AB, first attempt only, no retakes`;
+    return `Top ${verdict.topPercent} percent of everyone verified on AP Calculus AB, first answers only, no retakes`;
   }
   if (verdict.kind === "accumulating") {
     if (verdict.remaining > 0) {
-      return `${verdict.verifiedCount} skill${verdict.verifiedCount === 1 ? "" : "s"} verified on AP Calculus AB. Peer standing unlocks after ${verdict.remaining} more first attempt${verdict.remaining === 1 ? "" : "s"}.`;
+      return `${verdict.verifiedCount} skill${verdict.verifiedCount === 1 ? "" : "s"} verified on AP Calculus AB. Peer standing unlocks after ${verdict.remaining} more first answer${verdict.remaining === 1 ? "" : "s"}.`;
     }
     return `${verdict.verifiedCount} skills verified on AP Calculus AB. Peer standing is updating.`;
   }
-  return "No verified first attempts on AP Calculus AB yet.";
+  return "No locked first answers on AP Calculus AB yet.";
 }

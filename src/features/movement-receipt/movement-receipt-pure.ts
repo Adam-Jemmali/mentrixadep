@@ -212,7 +212,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
     verdict: appendPeerLine(`${gridLine}${creditSuffix ? ` ${creditSuffix}` : ""}`, data),
     nextAction: data.credit.momentumActive
       ? "Book your included Guide session on the node that still will not move."
-      : "Take a verified first attempt on an unverified node, or book a Guide when the wall is real.",
+      : "Take your first answer on an open node, or book a Guide when the wall is real.",
     ctaHref: data.credit.momentumActive ? bookGuideWithCreditHref(null) : "/student/mastery",
     ctaLabel: data.credit.momentumActive ? "Book with credit" : "View Mastery Grid",
   };

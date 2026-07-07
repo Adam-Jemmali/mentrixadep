@@ -2,7 +2,7 @@ import type { LoopReportRow } from "@/features/intervention-retests/retest-reads
 
 export function buildLoopReportRowVerdict(row: LoopReportRow): string {
   if (row.completedAt && row.preAccuracy != null && row.postAccuracy != null) {
-    return `First attempt on ${row.nodeName} moved ${Math.round(row.preAccuracy * 100)}% → ${Math.round(row.postAccuracy * 100)}% after your ${formatSource(row.sourceType)}.`;
+    return `First answer on ${row.nodeName} moved ${Math.round(row.preAccuracy * 100)}% → ${Math.round(row.postAccuracy * 100)}% after your ${formatSource(row.sourceType)}.`;
   }
   if (row.isDue) {
     return `Retest due on ${row.nodeName} — take it now to lock movement.`;

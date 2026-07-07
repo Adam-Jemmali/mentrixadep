@@ -6,7 +6,7 @@ export const AP_CALC_AB_DIVISION_KEY = "ap-calculus-ab";
 export const AP_CALC_AB_DIVISION_NAME = AP_CALC_AB_SUBJECT;
 
 export const AP_CALC_AB_DIVISION_DESCRIPTION =
-  "Limits, derivatives, integrals and verified first attempts.";
+  "Limits, derivatives, integrals and locked first answers.";
 
 /** Legacy division keys whose XP folds into AP Calculus AB league totals. */
 export const LEGACY_DIVISION_XP_KEYS = new Set([

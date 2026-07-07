@@ -842,7 +842,7 @@ export function DuelHub({
                   </div>
 
                   <p className={cn("mt-4 line-clamp-3 flex-1 text-xs font-medium leading-relaxed", mentrixHubSurfaces.inkBody)}>
-                    {d.description || "Limits, derivatives, integrals, and verified first attempts on the AP Calculus AB skill tree."}
+                    {d.description || "Limits, derivatives, integrals, and locked first answers on the AP Calculus AB skill tree."}
                   </p>
 
                   <div className="mt-6">

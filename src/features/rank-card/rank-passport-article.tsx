@@ -27,7 +27,7 @@ function PassportVerdictHeadline({ verdict }: { verdict: PassportVerdict }) {
         <span className="font-black" style={{ color: VERIFIED_GOLD }}>
           {verdict.topPercent}
         </span>{" "}
-        percent of everyone verified on {AP_CALC_AB_SUBJECT}, first attempt only, no retakes
+        percent of everyone verified on {AP_CALC_AB_SUBJECT}, first answers only, no retakes
       </p>
     );
   }

@@ -66,7 +66,7 @@ describe("getDiagnosticVerdict", () => {
     expect(verdict?.comparisonSentence).toBe(
       "Better than 30% of everyone verified on this node.",
     );
-    expect(verdict?.scoreFootnote).toBe("2 of 2 steps correct on first try");
+    expect(verdict?.scoreFootnote).toBe("2 of 2 steps correct on first answer");
     expect(verdict?.ctaLabel).toBe("Save this and start fixing it");
   });
 
@@ -136,7 +136,7 @@ describe("getDiagnosticVerdict", () => {
       correctChoice: "Power rule",
     });
     expect(verdict?.stakesSentence).toContain("AP Calculus AB exam");
-    expect(verdict?.scoreFootnote).toBe("0 of 2 steps correct on first try");
+    expect(verdict?.scoreFootnote).toBe("0 of 2 steps correct on first answer");
   });
 
   it("returns null when completion does not cover every step", () => {

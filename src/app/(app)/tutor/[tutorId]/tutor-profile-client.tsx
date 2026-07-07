@@ -308,8 +308,8 @@ export function TutorProfileClient({
     trimmedGuideBio.length > 0
       ? trimmedGuideBio
       : displaySkills.length > 0
-        ? `Verified ${displaySkills.join(" • ")}. First-try impact, not ratings.`
-        : "AP Calculus AB Guide. Verified first-try impact.";
+        ? `Verified ${displaySkills.join(" • ")}. First-answer impact, not ratings.`
+        : "AP Calculus AB Guide. First-answer impact.";
 
   const impactScores = profile.impactScores ?? [];
   const impactNodeScores = profile.impactNodeScores ?? [];

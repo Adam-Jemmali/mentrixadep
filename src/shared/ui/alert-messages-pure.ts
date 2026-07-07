@@ -1,3 +1,5 @@
+import { MENTRIXA_FIRST_ANSWER } from "@/features/copy/mentrixa-simple-copy-pure";
+
 export type MentrixaAlertStatus = "default" | "accent" | "success" | "warning" | "danger";
 
 export type SubscriptionAlertKind = "success" | "canceled" | "checkout_error";
@@ -48,23 +50,23 @@ export function verifiedFirstAttemptAlertMessage(
     case "onboarding":
       return {
         status: "accent",
-        title: "Verified first attempt only",
-        description: "Your rank moves only on first attempts.",
-        nextAction: `Five verified ${subjectLabel} skills unlock your peer standing.`,
+        title: MENTRIXA_FIRST_ANSWER.only,
+        description: MENTRIXA_FIRST_ANSWER.rankMovesOn,
+        nextAction: MENTRIXA_FIRST_ANSWER.fiveSkillsUnlock(subjectLabel),
       };
     case "guest_preview":
       return {
         status: "accent",
-        title: "Verified first attempts only",
+        title: MENTRIXA_FIRST_ANSWER.only,
         description: `${subjectLabel} practice preview uses the same reviewed item bank as signed in students.`,
         nextAction: "Sign up free to save your permanent rank.",
       };
     case "practice_pack":
       return {
         status: "accent",
-        title: "First attempt locks rank",
+        title: MENTRIXA_FIRST_ANSWER.locksRank,
         description: "Reviewed item bank only. Each skill counts once toward rank.",
-        nextAction: "Practice after your first answer never moves rank.",
+        nextAction: MENTRIXA_FIRST_ANSWER.practiceNeverMovesRank,
       };
   }
 }
@@ -82,7 +84,7 @@ export function practiceLockedAttemptAlertMessage(): MentrixaAlertMessage {
   return {
     status: "warning",
     title: "Answer locked",
-    description: "This skill already has a verified first attempt on record.",
+    description: MENTRIXA_FIRST_ANSWER.alreadyLocked,
     nextAction: "Practice here for review only. Rank will not move.",
   };
 }

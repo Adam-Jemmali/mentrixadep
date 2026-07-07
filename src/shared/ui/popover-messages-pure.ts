@@ -49,7 +49,7 @@ export function rankBreakdownPopoverRows(
       value: String(stats.verifiedCount),
     },
     {
-      label: "First-attempt accuracy",
+      label: "First-answer accuracy",
       value: stats.verifiedCount > 0 ? `${stats.accuracyPercent}%` : "Not started",
     },
   ];
@@ -61,7 +61,7 @@ export function rankBreakdownPopoverRows(
     });
     rows.push({
       label: "How we count it",
-      value: "Cohort math on first tries",
+      value: "Cohort math on first answers",
     });
   } else {
     rows.push({
@@ -89,15 +89,15 @@ export function masteryNodeDetailPopoverMessage(
   if (state === "verified") {
     return {
       title: nodeName,
-      verdict: "Locked for rank — your first attempt is permanent.",
+      verdict: "Locked for rank. Your first answer is permanent.",
       nextAction: "Practice here for fluency; it will not change your verified mark.",
     };
   }
   if (accuracyPercent != null) {
     const practiceNote =
       state === "proficient"
-        ? "Practice only — rank still waits on your first verified try."
-        : "Practice accuracy counts here, but rank still waits on first attempt.";
+        ? "Practice only. Rank still waits on your first answer."
+        : "Practice accuracy counts here, but rank still waits on your first answer.";
     return {
       title: nodeName,
       verdict: `${practiceNote} You are at ${accuracyPercent}% in practice runs.`,
@@ -106,7 +106,7 @@ export function masteryNodeDetailPopoverMessage(
   }
   return {
     title: nodeName,
-    verdict: "No verified first attempt on record for this node.",
+    verdict: "No locked first answer on record for this node.",
     nextAction: "Start a verified practice pack that includes this skill.",
   };
 }

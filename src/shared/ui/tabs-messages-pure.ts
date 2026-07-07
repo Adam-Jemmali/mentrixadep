@@ -1,3 +1,5 @@
+import { MENTRIXA_FIRST_ANSWER } from "@/features/copy/mentrixa-simple-copy-pure";
+
 export type MentrixaProfileTabId = "identity" | "membership" | "standing" | "share";
 
 export type MentrixaStudioFilterTabId = "all" | "generated" | "pending";
@@ -25,13 +27,13 @@ export function profileTabMessage(tab: MentrixaProfileTabId): MentrixaTabMessage
     case "standing":
       return {
         label: "Standing",
-        verdict: "Division XP and battle log show arena activity, not verified first-attempt rank.",
+        verdict: MENTRIXA_FIRST_ANSWER.duelsNotRank,
         nextAction: "Run quests to move verified skills; duels move division standing.",
       };
     case "share":
       return {
         label: "Share",
-        verdict: "Your public rank passport shows verified first attempts only.",
+        verdict: MENTRIXA_FIRST_ANSWER.passportShows,
         nextAction: "Keep rank card public if you want a shareable verified passport.",
       };
   }

@@ -29,7 +29,7 @@ export function clearAvatarConfirmMessage(): MentrixaConfirmDialogMessage {
     status: "warning",
     title: "Remove profile photo?",
     description: "Your Mentrixer card will show initials until you upload a new image.",
-    nextAction: "Rank, XP, and verified first attempts stay unchanged.",
+    nextAction: "Rank, XP, and locked first answers stay unchanged.",
     cancelLabel: "Keep photo",
     confirmLabel: "Remove photo",
   };
