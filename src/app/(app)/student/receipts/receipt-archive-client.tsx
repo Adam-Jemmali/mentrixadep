@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { MOMENTUM_MEMBERSHIP_INCLUDED_COPY, MOMENTUM_MEMBERSHIP_UNLOCK_COPY } from "@/features/payments/momentum-membership-pure";
+import { MOMENTUM_MEMBERSHIP_INCLUDED_COPY } from "@/features/payments/momentum-membership-pure";
 import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 import type { MovementReceiptRow } from "@/features/movement-receipt/types";
