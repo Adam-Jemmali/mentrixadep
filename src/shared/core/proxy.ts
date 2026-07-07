@@ -177,6 +177,11 @@ function isPublicPrefixPath(pathname: string): boolean {
   );
 }
 
+/** Cron routes authorize via CRON_SECRET in the route handler, not session cookies. */
+function isCronApiPath(pathname: string): boolean {
+  return pathname.startsWith("/api/cron/");
+}
+
 function applySecurityHeaders(res: NextResponse, pathname?: string): NextResponse {
   const isDev = process.env.NODE_ENV === "development";
   /** Email clients / in-app browsers load links in iframes; skip DENY + relax CSP frame-ancestors (avoids ERR_BLOCKED_BY_RESPONSE). */
@@ -503,7 +508,8 @@ async function runSupabaseAuthGuard(
     maintenanceMode = maintenanceSetting?.value?.enabled === true;
   }
 
-  const publicOk = isPublicRoute(pathname) || isPublicPrefixPath(pathname);
+  const publicOk =
+    isPublicRoute(pathname) || isPublicPrefixPath(pathname) || isCronApiPath(pathname);
 
   if (
     maintenanceMode &&
