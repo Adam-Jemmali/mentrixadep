@@ -104,7 +104,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
 
           <div className={cn("relative flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6", mentrixStudent.hubBookPage)}>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">
-              {BEAT_LINE_CATEGORY} · free for every Mentrixer
+              {BEAT_LINE_CATEGORY} · free
             </p>
             <p className="text-sm font-bold text-[#0B1220]">{beatLine.verdict}</p>
 

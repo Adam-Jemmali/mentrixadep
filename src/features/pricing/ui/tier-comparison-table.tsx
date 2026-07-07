@@ -68,7 +68,7 @@ export function TierComparisonTable({
         )}
       >
         <p className={cn("text-sm font-bold", dark ? "text-white" : "text-slate-900")}>
-          Feature matrix
+          Compare tiers
         </p>
       </div>
       <table className="w-full min-w-[640px] text-left text-sm">

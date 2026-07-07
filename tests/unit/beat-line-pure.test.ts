@@ -36,6 +36,6 @@ describe("buildBeatLineView", () => {
   });
 
   it("exports a marketing summary", () => {
-    expect(BEAT_LINE_SUMMARY).toContain("real rival");
+    expect(BEAT_LINE_SUMMARY).toContain("One rival");
   });
 });

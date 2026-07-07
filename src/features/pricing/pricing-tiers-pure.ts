@@ -44,7 +44,7 @@ export const PRICING_SECTION_NEXT_ACTION = "Pick your path.";
 
 /** One-line Momentum value prop for landing and subscribe surfaces. */
 export const MOMENTUM_PACKAGE_SUMMARY =
-  "Playbook picks your highest-value move. Proof Chain shows what closes if you act. Weekly Movement Receipts keep the loop honest.";
+  "Playbook picks your move. Proof Chain closes the loop. Receipts keep score.";
 
 /** Shared fun layer for Arena and Momentum — one real league rival. */
 export { BEAT_LINE_CATEGORY, BEAT_LINE_SUMMARY } from "@/features/divisions/beat-line-pure";
@@ -62,25 +62,25 @@ const memberRate = momentumSubscriberSessionPriceLabel();
 export function buildTierComparisonRows(): TierComparisonRow[] {
   return [
     {
-      feature: "Mastery Grid and public rank",
+      feature: "Mastery Grid + public rank",
       arena: "yes",
       breakthrough: "yes",
       momentum: "yes",
     },
     {
-      feature: "Unlimited item bank practice (AP Calculus AB)",
+      feature: "Unlimited practice (Calc AB)",
       arena: "yes",
       breakthrough: "yes",
       momentum: "yes",
     },
     {
-      feature: "Duels and verified rank",
+      feature: "Duels + verified rank",
       arena: "yes",
       breakthrough: "yes",
       momentum: "yes",
     },
     {
-      feature: "The Beat Line: one real league rival with guided Quest or Duel move",
+      feature: "Beat Line: one rival, one move",
       arena: "yes",
       breakthrough: "yes",
       momentum: "yes",
@@ -92,111 +92,111 @@ export function buildTierComparisonRows(): TierComparisonRow[] {
       momentum: "yes",
     },
     {
-      feature: "Pre-session brief and follow-up retest pack",
+      feature: "Pre-session brief + retest pack",
       arena: "no",
       breakthrough: "yes",
       momentum: "yes",
     },
     {
-      feature: "Included Guide session credit",
+      feature: "Monthly session credit",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: `Member session rate (${memberRate} vs ${formatStudentBreakthroughPrice()})`,
+      feature: `Member rate (${memberRate} vs ${formatStudentBreakthroughPrice()})`,
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Weekly Movement Receipt by email",
+      feature: "Weekly Movement Receipt",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Mastery Grid timeline and full progress archive",
+      feature: "Grid timeline + archive",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Goal pace dashboard and peer trends",
+      feature: "Goal pace + peer trends",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Momentum Playbook: one highest-value move with guided CTA",
+      feature: "Playbook: best next move",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Action Queue ranking retest, credit, and session next steps",
+      feature: "Action Queue: ranked steps",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Proof Chain with Trajectory counterfactual on stalled loops",
+      feature: "Proof Chain + Trajectory lift",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "30-day Trajectory trend with peer pace and bottleneck drill-down",
+      feature: "30-day Trajectory + bottleneck",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Loop Velocity Index vs cohort median closure time",
+      feature: "Loop Velocity vs cohort",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Loop closure timeline with pre→post proof per Guide session",
+      feature: "Loop closure timeline",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Priority retests (24h vs 48h)",
+      feature: "Priority retests (24h)",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Guide memory and full brief archive",
+      feature: "Guide memory + brief archive",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Trajectory certificate export",
+      feature: "Trajectory certificate",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Loop SLA credit restore if movement does not improve",
+      feature: "Loop SLA credit restore",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
@@ -218,7 +218,7 @@ export function buildPricingTiers(): PricingTierDefinition[] {
         "Full Mastery Grid and public rank page",
         "Unlimited practice from the reviewed AP Calculus AB item bank",
         "Duels and Verified First Attempt rank",
-        "The Beat Line: one real rival on the league board with a guided move to pass them",
+        "Beat Line: one rival, one move",
         "Current week grid view",
       ],
       exclusions: [
@@ -261,7 +261,7 @@ export function buildPricingTiers(): PricingTierDefinition[] {
       receipts: [
         "One included Guide session per month at $0 checkout when credit applies",
         `Member session rate ${momentumSubscriberSessionPriceLabel()} versus ${formatStudentBreakthroughPrice()} pay as you go`,
-        "The Beat Line: same real-rival chase as Arena, plus coaching intelligence on top",
+        "Beat Line: same rival chase, plus coaching tools",
         "Priority retests 24h after session versus 48h on Breakthrough",
         "Loop SLA: included credit restored if verified movement does not improve in 7 days",
         "Momentum Playbook: one highest-value move with guided next step on your hub",

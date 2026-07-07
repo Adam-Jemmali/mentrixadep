@@ -226,7 +226,7 @@ export const LANDING_PRICING = {
   eyebrow: "Mentrixer offer",
   headline: "Three tiers.",
   subhead: "Live feed stays free.",
-  verdict: "Arena stays free with The Beat Line. Momentum adds Playbook, Proof Chain, and weekly Movement Receipts.",
+  verdict: "Arena free with Beat Line. Momentum adds coaching intelligence.",
 } as const;
 
 export const LANDING_FAQ = {

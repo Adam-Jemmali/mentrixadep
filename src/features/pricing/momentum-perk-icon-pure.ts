@@ -17,7 +17,7 @@ export function momentumPerkVocabIcon(receipt: string): VocabIconName {
   if (line.includes("movement receipt")) return CANONICAL_RECEIPT_ICON;
   if (line.includes("playbook")) return CANONICAL_MOMENTUM_ICON;
   if (line.includes("action queue")) return CANONICAL_QUEST_ICON;
-  if (line.includes("proof chain") || line.includes("counterfactual")) return CANONICAL_LOOP_REPORT_ICON;
+  if (line.includes("proof chain") || line.includes("trajectory lift")) return CANONICAL_LOOP_REPORT_ICON;
   if (line.includes("trajectory index") || line.includes("loop velocity")) return CANONICAL_RANK_PROOF_ICON;
   if (line.includes("included guide session") || line.includes("session credit")) return CANONICAL_SESSION_ICON;
   if (line.includes("member session rate") || line.includes("versus")) return CANONICAL_MOMENTUM_ICON;

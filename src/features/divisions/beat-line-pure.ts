@@ -2,9 +2,8 @@ import type { TopRivalData } from "@/features/divisions/top-rival";
 import type { MomentumValueChips } from "@/features/momentum-hub/momentum-value-equation-pure";
 
 /** Shared Arena + Momentum social layer: one real person directly above you on the league board. */
-export const BEAT_LINE_CATEGORY = "The Beat Line";
-export const BEAT_LINE_SUMMARY =
-  "One real rival on the league board. Not a bot. Not a crowd. One person, one XP gap, one move to pass them.";
+export const BEAT_LINE_CATEGORY = "Beat Line";
+export const BEAT_LINE_SUMMARY = "One rival above you. One XP gap. One move.";
 
 export type BeatLineView = {
   verdict: string;

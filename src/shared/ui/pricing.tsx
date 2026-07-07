@@ -93,7 +93,7 @@ export default function PricingSection() {
         customVariants={revealVariants}
       >
         <LandingStickyCard rotate={false} className="mx-auto mt-10 max-w-3xl rotate-[0.1deg] px-5 py-4 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#22D3EE]">The Beat Line · Arena + Momentum</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#22D3EE]">Beat Line</p>
           <p className={`mt-2 text-sm font-semibold ${landingHub.inkMuted}`}>{BEAT_LINE_SUMMARY}</p>
         </LandingStickyCard>
       </TimelineContent>
@@ -105,7 +105,7 @@ export default function PricingSection() {
         customVariants={revealVariants}
       >
         <LandingStickyCard rotate={false} className="mx-auto mt-6 max-w-3xl rotate-[-0.1deg] px-5 py-4 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">Momentum includes</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">Momentum</p>
           <p className={`mt-2 text-sm font-semibold ${landingHub.inkMuted}`}>{MOMENTUM_PACKAGE_SUMMARY}</p>
         </LandingStickyCard>
       </TimelineContent>

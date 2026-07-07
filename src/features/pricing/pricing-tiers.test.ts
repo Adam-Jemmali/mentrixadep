@@ -56,6 +56,7 @@ describe("pricing tiers copy", () => {
     const rows = buildTierComparisonRows();
     expect(rows.some((row) => row.feature.includes("Playbook"))).toBe(true);
     expect(rows.some((row) => row.feature.includes("Proof Chain"))).toBe(true);
+    expect(rows.some((row) => row.feature.startsWith("Beat Line"))).toBe(true);
   });
 
   it("marks momentum-exclusive rows in the comparison matrix", () => {
