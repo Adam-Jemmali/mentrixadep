@@ -65,6 +65,8 @@ const publicRoutes = new Set([
   "/terms",
   /** Guest quest demo — no auth required, uses rate limiting via cookies */
   "/try",
+  /** Public live verified first attempt board */
+  "/arena",
   /** Shareable Rank Card OG image */
   "/api/og/rank-card",
   "/api/og/breakthrough",

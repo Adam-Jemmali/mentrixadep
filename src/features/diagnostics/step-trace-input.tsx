@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/shared/ui/button";
 import { PromptWithMath, PromptWithMathInline } from "@/features/quest/ui/prompt-with-math";
 import { warmKatex } from "@/features/quest/ui/normalize-math-text";
-import { ExamStakesLabel } from "@/shared/ui/tooltip-patterns";
+import { formatTrapInsightHeadline } from "@/features/quest/ap-calc-skill-visual-pure";
 import { ApCalcSkillGlyph } from "@/features/quest/ui/ap-calc-skill-glyph";
+import { ExamStakesLabel } from "@/shared/ui/tooltip-patterns";
 import { cn } from "@/shared/core/utils";
 import type { StepTraceCompletion, StepTraceProblem } from "@/features/diagnostics/step-trace-types";
 import {
@@ -76,6 +77,7 @@ export function StepTraceInput({
   const awaitingContinue = liveStep?.awaitingContinue ?? false;
   const canPick = !session.complete && !awaitingContinue;
   const showRetryHint = lastOutcome === "wrong_retry";
+  const revealMisconception = liveStep?.misconception_tags[0]?.trim();
 
   const shellClass =
     variant === "dark"
@@ -244,8 +246,16 @@ export function StepTraceInput({
               exit={{ opacity: 0 }}
               className="mt-6 space-y-3"
             >
+              {revealMisconception ? (
+                <p className={cn("text-sm leading-relaxed", stepMetaClass)}>
+                  Trap:{" "}
+                  <span className={variant === "dark" ? "text-violet-200" : "text-violet-700"}>
+                    {formatTrapInsightHeadline(revealMisconception)}
+                  </span>
+                </p>
+              ) : null}
               <p className={cn("text-sm leading-relaxed", stepMetaClass)}>
-                The correct next move is highlighted. Trace continues so the diagnostic still finishes.
+                Correct move highlighted. Trace continues so you still reach a verdict.
               </p>
               <Button
                 type="button"

@@ -1,3 +1,4 @@
+import { publishVerifiedAttemptLiveBoardEvents } from "@/features/live-board/write-live-board-events";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { z } from "zod";
@@ -37,6 +38,18 @@ export async function recordVerifiedFirstAttemptForNode(
   }
 
   const admin = createAdminClient();
+
+  const { data: priorRankCache } = await admin
+    .from("ap_calc_verified_rank_cache")
+    .select("accuracy_percent")
+    .eq("user_id", parsedUserId.data)
+    .maybeSingle();
+
+  const priorAccuracyPercent =
+    priorRankCache?.accuracy_percent == null
+      ? null
+      : Number(priorRankCache.accuracy_percent);
+
   const { error } = await admin.from("verified_first_attempts").insert({
     user_id: parsedUserId.data,
     skill_node_id: parsedNodeId.data,
@@ -45,6 +58,14 @@ export async function recordVerifiedFirstAttemptForNode(
   });
 
   if (!error) {
+    void publishVerifiedAttemptLiveBoardEvents({
+      userId: parsedUserId.data,
+      skillNodeId: parsedNodeId.data,
+      isCorrect,
+      priorAccuracyPercent: Number.isFinite(priorAccuracyPercent)
+        ? priorAccuracyPercent
+        : null,
+    });
     return { recorded: true, alreadyExists: false };
   }
 

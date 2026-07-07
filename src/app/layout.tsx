@@ -1,9 +1,22 @@
 import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import { OrganizationJsonLd } from "@/components/organization-json-ld";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/shared/core/site";
 import { ConsoleSilencer } from "@/components/console-silencer";
 import "./globals.css";
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   themeColor: "#1E3A5F",
@@ -70,7 +83,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${geist.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <meta name="google-site-verification" content="7qMsPjvmHXjq4yWwD5z0HMpqJuyTBlhpDONtfRfh9dk" />
         {/* Favicons: versioned ICO first to bust stale crawler caches, SVG for modern clients. */}

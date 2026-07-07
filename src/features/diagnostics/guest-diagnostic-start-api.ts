@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getClientIpFromRequest } from "@/shared/core/security";
 import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const selected = await selectGuestStepTraceItem();
+    const selected = await selectGuestStepTraceItem(randomUUID());
     if (!selected) {
       return NextResponse.json(
         { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE },

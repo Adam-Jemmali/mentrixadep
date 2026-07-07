@@ -114,7 +114,6 @@ describe("vercel cron config", () => {
     const requiredPaths = [
       "/api/cron/complete-sessions",
       "/api/cron/process-payouts",
-      "/api/cron/process-background-jobs",
     ];
 
     for (const requiredPath of requiredPaths) {
@@ -122,5 +121,22 @@ describe("vercel cron config", () => {
       expect(cron, `Missing cron for ${requiredPath}`).toBeTruthy();
       expect(cron?.schedule?.trim().length, `Missing schedule for ${requiredPath}`).toBeGreaterThan(0);
     }
+  });
+
+  it("does not schedule process-background-jobs on Vercel (GitHub Actions every 15 min)", () => {
+    const cfg = readVercelConfig();
+    const crons = cfg.crons ?? [];
+    const bgJob = crons.find((c) => c.path === "/api/cron/process-background-jobs");
+    expect(bgJob, "process-background-jobs must run via GitHub Actions, not vercel.json").toBeUndefined();
+  });
+});
+
+describe("github background job cron", () => {
+  it("runs process-background-jobs every 15 minutes", () => {
+    const workflowPath = join(process.cwd(), ".github/workflows/cron-background-jobs.yml");
+    const raw = readFileSync(workflowPath, "utf8");
+    expect(raw).toMatch(/cron:\s*["']\*\/15 \* \* \* \*["']/);
+    expect(raw).toContain("/api/cron/process-background-jobs");
+    expect(raw).toContain("Authorization: Bearer");
   });
 });

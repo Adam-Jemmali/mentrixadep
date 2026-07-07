@@ -116,9 +116,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["Geist", "system-ui", "sans-serif"],
-        sans:    ["Geist", "system-ui", "sans-serif"],
-        mono:    ["Geist Mono", "monospace"],
+        display: ["var(--font-geist)", "system-ui", "sans-serif"],
+        sans:    ["var(--font-geist)", "system-ui", "sans-serif"],
+        mono:    ["var(--font-geist-mono)", "monospace"],
       },
       borderRadius: {
         lg:   "var(--radius)",

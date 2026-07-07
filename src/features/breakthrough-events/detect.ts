@@ -12,6 +12,7 @@ import {
 import { queueBreakthroughAdaptiveQuests } from "@/features/breakthrough-events/adaptive-quests";
 import { scheduleBreakthroughRetest } from "@/features/intervention-retests/schedule-intervention-retests";
 import { notifyGuideOfBreakthrough } from "@/features/breakthrough-events/guide-notify";
+import { publishBreakthroughLiveBoardEvent } from "@/features/live-board/write-live-board-events";
 import { trackEvent } from "@/shared/integrations/analytics";
 
 type ConceptAccuracyRow = { quest_id: string; accuracy: number; created_at: string };
@@ -186,6 +187,13 @@ export async function detectBreakthroughsAfterQuest(params: {
           accuracy_after: accuracyAfter,
           triggered_by: sessionId ? "session" : "quest",
         },
+      });
+
+      void publishBreakthroughLiveBoardEvent({
+        studentId: params.studentId,
+        subject,
+        concept,
+        accuracyAfter,
       });
 
       return {

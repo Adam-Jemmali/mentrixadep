@@ -1,11 +1,13 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const REQUIRED_PATHS = [
+const REQUIRED_VERCEL_PATHS = [
   "/api/cron/complete-sessions",
   "/api/cron/process-payouts",
-  "/api/cron/process-background-jobs",
 ];
+
+/** Scheduled in .github/workflows/cron-background-jobs.yml (every 15 min), not vercel.json. */
+const GITHUB_SCHEDULED_PATHS = ["/api/cron/process-background-jobs"];
 
 function loadVercelConfig() {
   const filePath = resolve(process.cwd(), "vercel.json");
@@ -16,7 +18,7 @@ function loadVercelConfig() {
 function findMissingCronPaths(config) {
   const crons = Array.isArray(config?.crons) ? config.crons : [];
   const configured = new Set(crons.map((c) => String(c.path || "").trim()));
-  return REQUIRED_PATHS.filter((p) => !configured.has(p));
+  return REQUIRED_VERCEL_PATHS.filter((p) => !configured.has(p));
 }
 
 async function pingCron(baseUrl, path, secret) {
@@ -73,7 +75,8 @@ async function main() {
   }
 
   const results = [];
-  for (const path of REQUIRED_PATHS) {
+  const pingPaths = [...REQUIRED_VERCEL_PATHS, ...GITHUB_SCHEDULED_PATHS];
+  for (const path of pingPaths) {
     results.push(await pingCron(baseUrl, path, secret));
   }
 

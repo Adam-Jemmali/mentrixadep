@@ -1,5 +1,5 @@
-# Background job worker cannot run more than once/day on Vercel Hobby, so it is scheduled
-# in vercel.json. Use this workflow only when you need a manual drain (Actions → Run workflow).
+# Background job worker runs every 15 minutes (Vercel Hobby cannot schedule sub-daily crons).
+# Also available manually: Actions → Cron Background Jobs → Run workflow.
 #
 # Required repository secret: CRON_SECRET
 # Optional variable: PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
@@ -7,6 +7,8 @@
 name: Cron Background Jobs
 
 on:
+  schedule:
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:

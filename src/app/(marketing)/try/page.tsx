@@ -13,7 +13,7 @@ export default function TryPage() {
         <div className="mb-6">
           <BackButton href="/" variant="light" />
         </div>
-        <GuestQuestClient defaultSubjects={AP_CALC_SUBJECT_OPTIONS} />
+        <GuestQuestClient defaultSubjects={AP_CALC_SUBJECT_OPTIONS} diagnosticMode />
       </div>
     </TryQuestShell>
   );

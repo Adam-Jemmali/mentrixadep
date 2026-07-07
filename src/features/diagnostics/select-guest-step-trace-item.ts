@@ -31,13 +31,9 @@ export type GuestStepTraceSelection = StepTraceProblem & {
   unitName: string;
   nodeSlug?: string;
 };
-
-function pickOne<T>(items: T[]): T | null {
-  if (items.length === 0) return null;
-  const index = Math.floor(Math.random() * items.length);
-  return items[index] ?? null;
-}
-
+import {
+  pickDeterministicByTier,
+} from "@/features/diagnostics/select-guest-step-trace-pure";
 function resolveSkillNode(raw: StepTraceItemRow["skill_nodes"]): SkillNodeJoin | null {
   if (!raw) return null;
   if (Array.isArray(raw)) return raw[0] ?? null;
@@ -74,8 +70,8 @@ function bankEntryToSelection(
   };
 }
 
-async function selectFromOfflineBank(): Promise<GuestStepTraceSelection | null> {
-  const entry = pickGuestStepTraceBankEntry();
+async function selectFromOfflineBank(sessionSeed: string): Promise<GuestStepTraceSelection | null> {
+  const entry = pickGuestStepTraceBankEntry(sessionSeed);
   if (!entry) return null;
   const skillNodeId = await resolveSkillNodeIdBySlug(entry.nodeSlug);
   return bankEntryToSelection(entry, skillNodeId);
@@ -84,8 +80,11 @@ async function selectFromOfflineBank(): Promise<GuestStepTraceSelection | null> 
 /**
  * Single indexed read against approved step-trace rows — no live generation.
  * Falls back to the offline reviewed bank when item_bank.step_sequence is not seeded.
+ * Selection is deterministic per sessionSeed so viral traffic does not reshuffle items.
  */
-export async function selectGuestStepTraceItem(): Promise<GuestStepTraceSelection | null> {
+export async function selectGuestStepTraceItem(
+  sessionSeed: string,
+): Promise<GuestStepTraceSelection | null> {
   const admin = createAdminClient();
 
   const { data, error } = await admin
@@ -124,7 +123,14 @@ export async function selectGuestStepTraceItem(): Promise<GuestStepTraceSelectio
       eligible.push({ row, node, sequence });
     }
 
-    const picked = pickOne(eligible);
+    const picked = pickDeterministicByTier(
+      eligible.map((entry) => ({
+        ...entry,
+        unitNumber: entry.node.unit_number,
+        nodeSlug: entry.node.node_slug,
+      })),
+      sessionSeed,
+    );
     if (picked) {
       return {
         itemId: picked.row.id,
@@ -140,5 +146,5 @@ export async function selectGuestStepTraceItem(): Promise<GuestStepTraceSelectio
     }
   }
 
-  return selectFromOfflineBank();
+  return selectFromOfflineBank(sessionSeed);
 }

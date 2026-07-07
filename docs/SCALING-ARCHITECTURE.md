@@ -75,7 +75,7 @@ Migration: [`supabase/092-background-jobs.sql`](../supabase/092-background-jobs.
 | `payout.ledger` | Session completion | Stripe Connect ledger |
 | `analytics.track` | Optional async path | `analytics_events` insert |
 
-Worker cron: `GET /api/cron/process-background-jobs` every 15 minutes (processes up to 10 jobs).
+Worker cron: `GET /api/cron/process-background-jobs` every 15 minutes via [`.github/workflows/cron-background-jobs.yml`](../.github/workflows/cron-background-jobs.yml) (GitHub Actions + `CRON_SECRET`). Not in `vercel.json` (Hobby plan limit). Processes up to 50 jobs per run.
 
 Code: [`src/lib/jobs/`](../src/lib/jobs/).
 

@@ -55,7 +55,7 @@ export function MomentumActiveHubCard({
           </div>
           <p className={cn("mt-3 text-sm", mentrixHubSurfaces.inkBody)}>
             {sessionCreditsRemaining > 0
-              ? `You have ${sessionCreditsRemaining} included session credit${sessionCreditsRemaining === 1 ? "" : "s"} this month${creditExpiry ? ` — book before ${creditExpiry}` : ""}.`
+              ? `You have ${sessionCreditsRemaining} included session credit${sessionCreditsRemaining === 1 ? "" : "s"} this month${creditExpiry ? `  book before ${creditExpiry}` : ""}.`
               : "Your included session credit for this month is used. Extra sessions book at the Momentum membership session rate."}
           </p>
           {renewal ? (

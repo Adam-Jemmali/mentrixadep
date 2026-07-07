@@ -778,7 +778,7 @@ export function GuestQuestClient({
 
   if (phase === "run" && apCalcStepTrace && stepTraceProblem) {
     return (
-      <div className="max-w-3xl mx-auto py-8 px-4">
+      <div className="mx-shell-arena min-h-[80dvh] py-8 px-4">
         <StepTraceInput
           problem={stepTraceProblem}
           variant="dark"

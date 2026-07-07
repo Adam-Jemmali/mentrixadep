@@ -2,6 +2,7 @@ import {
   parseStepTraceSequence,
   type StepTraceSequence,
 } from "@/features/diagnostics/step-trace-types";
+import { pickDeterministicByTier } from "@/features/diagnostics/select-guest-step-trace-pure";
 
 /** Offline reviewed pool for guest try when item_bank.step_sequence is not seeded yet. */
 export type GuestStepTraceBankEntry = {
@@ -292,12 +293,13 @@ function assertBankValid(entries: GuestStepTraceBankEntry[]): GuestStepTraceBank
 
 export const GUEST_STEP_TRACE_BANK = assertBankValid(RAW_BANK);
 
-function pickOne<T>(items: T[]): T | null {
-  if (items.length === 0) return null;
-  const index = Math.floor(Math.random() * items.length);
-  return items[index] ?? null;
-}
-
-export function pickGuestStepTraceBankEntry(): GuestStepTraceBankEntry | null {
-  return pickOne(GUEST_STEP_TRACE_BANK);
+export function pickGuestStepTraceBankEntry(sessionSeed: string): GuestStepTraceBankEntry | null {
+  return pickDeterministicByTier(
+    GUEST_STEP_TRACE_BANK.map((entry) => ({
+      ...entry,
+      unitNumber: entry.unitNumber,
+      nodeSlug: entry.nodeSlug,
+    })),
+    sessionSeed,
+  );
 }

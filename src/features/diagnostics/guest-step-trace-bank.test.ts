@@ -18,7 +18,10 @@ describe("guest-step-trace-bank", () => {
     }
   });
 
-  it("picks a random bank entry", () => {
-    expect(pickGuestStepTraceBankEntry()).not.toBeNull();
+  it("picks deterministically from a session seed", () => {
+    const first = pickGuestStepTraceBankEntry("session-a");
+    const second = pickGuestStepTraceBankEntry("session-a");
+    expect(first).not.toBeNull();
+    expect(first?.itemId).toBe(second?.itemId);
   });
 });

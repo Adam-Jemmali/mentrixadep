@@ -2581,6 +2581,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           division_key: string
+          forfeited_by: string | null
           id: string
           initiator_id: string | null
           is_ai_opponent: boolean
@@ -2606,6 +2607,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           division_key: string
+          forfeited_by?: string | null
           id?: string
           initiator_id?: string | null
           is_ai_opponent?: boolean
@@ -2631,6 +2633,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           division_key?: string
+          forfeited_by?: string | null
           id?: string
           initiator_id?: string | null
           is_ai_opponent?: boolean

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { HeroHeadline } from "@/features/marketing/landing/v2/sections/hero-headline";
@@ -33,6 +34,7 @@ export function HeroClimbSection() {
   useEffect(() => {
     router.prefetch("/auth/signup");
     router.prefetch("/try");
+    router.prefetch(LANDING_HERO.arenaHref);
   }, [router]);
 
   return (
@@ -48,6 +50,20 @@ export function HeroClimbSection() {
             className={`${landingHub.notebookCard} lp-hero-notebook text-center lg:text-left`}
           >
             <HeroHeadline className={landingHub.titleHero} />
+
+            <motion.p
+              variants={fadeUp}
+              custom={1}
+              className={`mt-4 text-center lg:text-left ${landingHub.bodySm}`}
+            >
+              {LANDING_HERO.arenaLine}{" "}
+              <Link
+                href={LANDING_HERO.arenaHref}
+                className="font-semibold text-[#7C3AED] underline-offset-2 hover:text-[#6D28D9] hover:underline"
+              >
+                {LANDING_HERO.arenaLink}
+              </Link>
+            </motion.p>
 
             <motion.div
               variants={fadeUp}
