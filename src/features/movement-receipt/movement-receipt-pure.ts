@@ -4,6 +4,7 @@ import {
 } from "@/features/comparison/peer-velocity-pure";
 import { buildLoopSlaReceiptLine } from "@/features/entitlements/loop-sla-pure";
 import { buildPackSprintReceiptLine } from "@/features/entitlements/pack-sprint-pure";
+import { retestQuestHref, bookGuideWithCreditHref, practiceQuestHref } from "@/features/momentum-hub/momentum-value-equation-pure";
 
 export type MovementReceiptMessages = {
   verdict: string;
@@ -14,6 +15,17 @@ export type MovementReceiptMessages = {
 
 function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
   return count === 1 ? singular : pluralForm;
+}
+
+function retestOrPracticeHref(
+  nodeName: string,
+  skillNodeId: string | null | undefined,
+  isDue: boolean,
+): string {
+  if (skillNodeId) {
+    return isDue ? retestQuestHref(nodeName, skillNodeId) : practiceQuestHref(nodeName, skillNodeId);
+  }
+  return practiceQuestHref(nodeName);
 }
 
 export function formatGridMovementLine(grid: MovementReceiptData["grid"]): string {
@@ -97,17 +109,18 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
     return {
       verdict: appendPeerLine(`${slaLine} ${gridLine}`, data),
       nextAction: "Book your restored included session on the node that still will not move.",
-      ctaHref: "/student/guides",
+      ctaHref: bookGuideWithCreditHref(null),
       ctaLabel: "Book make-good session",
     };
   }
 
   if (data.retest.nodeName && data.retest.isDue) {
+    const href = retestOrPracticeHref(data.retest.nodeName, data.retest.skillNodeId, true);
     return {
       verdict: appendPeerLine(`Retest due on ${data.retest.nodeName}. ${gridLine}`, data),
-      nextAction: "Open Quest and take the retest now to lock this week's verified movement.",
-      ctaHref: "/student/quest",
-      ctaLabel: "Take retest",
+      nextAction: `Tap below — Quest opens ${data.retest.nodeName} retest in ~4 min.`,
+      ctaHref: href,
+      ctaLabel: `Start retest: ${data.retest.nodeName}`,
     };
   }
 
@@ -118,7 +131,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
     return {
       verdict: appendPeerLine(`${packSprintLine}. ${gridLine}${retestHint}`, data),
       nextAction: "Book a sprint session on the node that still will not move before the pack expires.",
-      ctaHref: "/student/guides",
+      ctaHref: bookGuideWithCreditHref(null),
       ctaLabel: "Book sprint session",
     };
   }
@@ -130,7 +143,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
     return {
       verdict: appendPeerLine(`Your included session credit is unused. ${gridLine}${retestHint}`, data),
       nextAction: "Book your included Guide session before the month turns or you lose this coaching beat.",
-      ctaHref: "/student/guides",
+      ctaHref: bookGuideWithCreditHref(null),
       ctaLabel: "Book with credit",
     };
   }
@@ -147,10 +160,16 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
       verdict: appendPeerLine(`${gridLine}${pace}${loopLine ? ` ${loopLine}` : ""}${retestHint}`, data),
       nextAction:
         data.retest.nodeName && !data.retest.isDue
-          ? "Practice the node."
-          : "Take 1 retest",
-      ctaHref: data.retest.nodeName ? "/student/quest" : "/student/mastery",
-      ctaLabel: data.retest.nodeName ? "Open Quest" : "View Mastery Grid",
+          ? `Practice ${data.retest.nodeName} until the retest unlocks.`
+          : "Take the retest on your weakest open loop.",
+      ctaHref: data.retest.nodeName
+        ? retestOrPracticeHref(data.retest.nodeName, data.retest.skillNodeId, data.retest.isDue)
+        : "/student/mastery",
+      ctaLabel: data.retest.nodeName
+        ? data.retest.isDue
+          ? `Start retest: ${data.retest.nodeName}`
+          : `Practice: ${data.retest.nodeName}`
+        : "View Mastery Grid",
     };
   }
 
@@ -160,8 +179,14 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
       nextAction: data.retest.nodeName
         ? `Complete the retest on ${data.retest.nodeName} to verify the loop closed.`
         : "Book your next Guide session on the node that still will not move.",
-      ctaHref: data.retest.nodeName ? "/student/quest" : "/student/guides",
-      ctaLabel: data.retest.nodeName ? "Take retest" : "Browse Guides",
+      ctaHref: data.retest.nodeName
+        ? retestOrPracticeHref(data.retest.nodeName, data.retest.skillNodeId, data.retest.isDue)
+        : bookGuideWithCreditHref(null),
+      ctaLabel: data.retest.nodeName
+        ? data.retest.isDue
+          ? `Start retest: ${data.retest.nodeName}`
+          : `Practice: ${data.retest.nodeName}`
+        : "Book with credit",
     };
   }
 
@@ -172,11 +197,13 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
         `${priority}Retest on ${data.retest.nodeName}${data.retest.isDue ? " is due now" : data.retest.countdownLabel ? ` unlocks in ${data.retest.countdownLabel}` : " is scheduled"}. ${gridLine}`,
         data,
       ),
-      nextAction: data.retest.priorityRetest
-        ? "Queue practice now, then retest the moment it opens."
-        : "Practice related nodes in Quest while you wait.",
-      ctaHref: "/student/quest",
-      ctaLabel: "Open Quest",
+      nextAction: data.retest.isDue
+        ? `Tap below — Quest loads ${data.retest.nodeName} retest immediately.`
+        : `Practice ${data.retest.nodeName} until the retest unlocks, then return here.`,
+      ctaHref: retestOrPracticeHref(data.retest.nodeName, data.retest.skillNodeId, data.retest.isDue),
+      ctaLabel: data.retest.isDue
+        ? `Start retest: ${data.retest.nodeName}`
+        : `Queue practice: ${data.retest.nodeName}`,
     };
   }
 
@@ -184,10 +211,10 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
   return {
     verdict: appendPeerLine(`${gridLine}${creditSuffix ? ` ${creditSuffix}` : ""}`, data),
     nextAction: data.credit.momentumActive
-      ? "Take a Quest on an unverified node or book your included session when the wall is real."
-      : "Take a Quest on an unverified node, or book a Guide when the wall is real.",
-    ctaHref: data.credit.momentumActive ? "/student/guides" : "/student/quest",
-    ctaLabel: data.credit.momentumActive ? "Browse Guides" : "Open Quest",
+      ? "Book your included Guide session on the node that still will not move."
+      : "Take a verified first attempt on an unverified node, or book a Guide when the wall is real.",
+    ctaHref: data.credit.momentumActive ? bookGuideWithCreditHref(null) : "/student/mastery",
+    ctaLabel: data.credit.momentumActive ? "Book with credit" : "View Mastery Grid",
   };
 }
 

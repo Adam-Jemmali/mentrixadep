@@ -63,7 +63,7 @@ describe("buildMovementReceiptVerdict", () => {
     });
     expect(verdict).toContain("included session credit is unused");
     expect(nextAction).toContain("Book your included Guide session");
-    expect(ctaHref).toBe("/student/guides");
+    expect(ctaHref).toBe("/student#browse-guides");
   });
 
   it("prioritizes sprint pack credits in verdict", () => {
@@ -83,7 +83,7 @@ describe("buildMovementReceiptVerdict", () => {
     });
     expect(verdict).toContain("Sprint: 2 of 3 remaining, 41 days left");
     expect(nextAction).toContain("sprint session");
-    expect(ctaHref).toBe("/student/guides");
+    expect(ctaHref).toBe("/student#browse-guides");
   });
 
   it("celebrates grid movement with pace", () => {
@@ -101,12 +101,13 @@ describe("buildMovementReceiptVerdict", () => {
   });
 
   it("upsells Momentum on stall for free users", () => {
-    const { nextAction } = buildMovementReceiptVerdict({
+    const { nextAction, ctaLabel } = buildMovementReceiptVerdict({
       ...baseReceipt,
       momentumActive: false,
       credit: { momentumActive: false, creditsRemaining: 0, monthlyCreditsRemaining: 0, periodMonth: null },
     });
-    expect(nextAction).toContain("Upgrade for weekly email");
+    expect(nextAction).toContain("verified first attempt");
+    expect(ctaLabel).toBe("View Mastery Grid");
   });
 
   it("weaves peer velocity into verdict for Momentum", () => {

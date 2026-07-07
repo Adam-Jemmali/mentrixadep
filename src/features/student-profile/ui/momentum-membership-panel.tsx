@@ -9,6 +9,7 @@ import { momentumPerkVocabIcon } from "@/features/pricing/momentum-perk-icon-pur
 import { cn } from "@/shared/core/utils";
 import {
   buildPricingTiers,
+  MOMENTUM_PACKAGE_SUMMARY,
   subscriptionPriceLabel,
   type SubscriptionBillingInterval,
 } from "@/features/pricing/pricing-tiers-pure";
@@ -145,19 +146,27 @@ export function MomentumMembershipPanel({
       ) : null}
 
       {momentumTier && isSubscribe ? (
-        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-          {momentumTier.receipts.slice(0, 8).map((receipt) => (
-            <li key={receipt} className={cn("flex items-center gap-2.5 text-xs", mentrixHubSurfaces.inkBody)}>
-              <MentrixaVocabIcon
-                name={momentumPerkVocabIcon(receipt)}
-                size={20}
-                surface="light"
-                title={receipt}
-              />
-              <span className="line-clamp-2">{receipt}</span>
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className={cn("mt-5 text-sm font-semibold", mentrixHubSurfaces.inkBody)}>
+            {MOMENTUM_PACKAGE_SUMMARY}
+          </p>
+          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-[#6366F1]">
+            What&apos;s included
+          </p>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {momentumTier.receipts.map((receipt) => (
+              <li key={receipt} className={cn("flex items-center gap-2.5 text-xs", mentrixHubSurfaces.inkBody)}>
+                <MentrixaVocabIcon
+                  name={momentumPerkVocabIcon(receipt)}
+                  size={20}
+                  surface="light"
+                  title={receipt}
+                />
+                <span>{receipt}</span>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : momentumTier ? (
         <ul className="mt-5 space-y-2.5">
           <p className="text-[10px] font-black uppercase tracking-widest text-[#6366F1]">What you get</p>

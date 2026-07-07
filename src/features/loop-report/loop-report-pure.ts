@@ -12,9 +12,9 @@ export function buildLoopReportRowVerdict(row: LoopReportRow): string {
 
 export function buildLoopReportNextAction(row: LoopReportRow): string {
   if (row.isDue || !row.completedAt) {
-    return "Open Quest and complete the retest.";
+    return `Tap Start retest below — Quest loads ${row.nodeName} in ~4 min.`;
   }
-  return "Practice the node once more, then book your next Guide session.";
+  return `Practice ${row.nodeName} once more, then book your next Guide session.`;
 }
 
 function formatSource(sourceType: string): string {

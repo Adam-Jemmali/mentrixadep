@@ -16,6 +16,7 @@ export const movementReceiptLoopSchema = z.object({
 
 export const movementReceiptRetestSchema = z.object({
   nodeName: z.string().nullable(),
+  skillNodeId: z.string().nullable().optional(),
   isDue: z.boolean(),
   countdownLabel: z.string().nullable(),
   priorityRetest: z.boolean(),

@@ -5,15 +5,16 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import type { TopRivalData } from "@/features/divisions/top-rival";
+import { buildBeatLineView } from "@/features/divisions/beat-line-pure";
+import { MomentumValueChipsRow } from "@/features/momentum-hub/ui/momentum-value-chips";
 import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import { MentrixaVocabIcon, VocabStatColumn, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import { VersusMark } from "@/features/divisions/versus-mark";
 import {
-  CANONICAL_DUELS_ICON,
-  CANONICAL_QUEST_ICON,
-} from "@/shared/icons/vocab-canonical";
+  BEAT_LINE_CATEGORY,
+} from "@/features/divisions/beat-line-pure";
 
 interface Props {
   rivalData: TopRivalData;
@@ -71,15 +72,12 @@ function LeaguePlayerAvatar({
 }
 
 export function TopRivalCard({ rivalData, className }: Props) {
-  if (rivalData.status === "no_division") return null;
+  const beatLine = buildBeatLineView(rivalData);
+  if (!beatLine) return null;
 
   const isRank1 = rivalData.status === "rank_1";
-  const ctaLane = rivalData.ctaLane ?? (isRank1 ? "duel" : "quest");
   const myName = rivalData.myDisplayName ?? "You";
   const rivalName = rivalData.rivalName ?? "Rival";
-  const ctaHref = ctaLane === "duel" ? "/student/duel" : "/student/quest";
-  const ctaIcon = ctaLane === "duel" ? CANONICAL_DUELS_ICON : CANONICAL_QUEST_ICON;
-  const ctaLabel = ctaLane === "duel" ? "Defend Duels" : "Close Quest";
 
   return (
     <StudentStickyNote variant="dog-ear" className={cn("relative h-full", className)}>
@@ -105,6 +103,11 @@ export function TopRivalCard({ rivalData, className }: Props) {
           </div>
 
           <div className={cn("relative flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6", mentrixStudent.hubBookPage)}>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">
+              {BEAT_LINE_CATEGORY} · free for every Mentrixer
+            </p>
+            <p className="text-sm font-bold text-[#0B1220]">{beatLine.verdict}</p>
+
             <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
               <div className="flex flex-col items-center gap-1.5">
                 <LeaguePlayerAvatar displayName={myName} avatarUrl={rivalData.myAvatarUrl} size={56} />
@@ -128,7 +131,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
                       {rivalName.split(" ")[0]}
                     </span>
                     <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#4F46E5]">
-                      Top Rival
+                      Beat Line
                     </span>
                   </div>
 
@@ -146,17 +149,25 @@ export function TopRivalCard({ rivalData, className }: Props) {
               ) : null}
             </div>
 
+            <MomentumValueChipsRow chips={beatLine.chips} />
+            <p className="text-sm text-zinc-600">{beatLine.nextAction}</p>
+
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
               <Link
-                href={ctaHref}
+                href={beatLine.ctaHref}
                 className={cn(
                   mentrixStudent.hubBtnSolid,
                   "inline-flex w-full min-w-0 items-center justify-center gap-2.5 px-4 py-2.5 whitespace-nowrap sm:w-auto",
                 )}
-                title={ctaLabel}
+                title={beatLine.ctaLabel}
               >
-                <MentrixaVocabIcon name={ctaIcon} size={22} surface="dark" title={ctaLabel} />
-                <span className="text-sm font-black uppercase tracking-[0.08em]">{ctaLabel}</span>
+                <MentrixaVocabIcon
+                  name={beatLine.ctaHref.includes("duel") ? "duels" : "quest"}
+                  size={22}
+                  surface="dark"
+                  title={beatLine.ctaLabel}
+                />
+                <span className="text-sm font-black uppercase tracking-[0.08em]">{beatLine.ctaLabel}</span>
               </Link>
             </motion.div>
           </div>

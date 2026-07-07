@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { formatMomentumRenewalLabel } from "@/features/payments/momentum-membership-pure";
+import { momentumCompRenewalLabel } from "@/features/entitlements/momentum-comp-members-pure";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
 import { cn } from "@/shared/core/utils";
 
@@ -13,6 +14,7 @@ type MomentumActiveHubCardProps = {
   sessionCreditsRemaining: number;
   sessionCreditPeriodMonth: string | null;
   subscription: StudentSubscriptionRow | null;
+  momentumCompMember?: boolean;
 };
 
 function formatCreditExpiry(periodMonth: string | null): string | null {
@@ -33,8 +35,11 @@ export function MomentumActiveHubCard({
   sessionCreditsRemaining,
   sessionCreditPeriodMonth,
   subscription,
+  momentumCompMember = false,
 }: MomentumActiveHubCardProps) {
-  const renewal = formatMomentumRenewalLabel(subscription);
+  const renewal =
+    formatMomentumRenewalLabel(subscription, { compMember: momentumCompMember }) ??
+    (momentumCompMember ? momentumCompRenewalLabel(true) : null);
   const creditExpiry = formatCreditExpiry(sessionCreditPeriodMonth);
 
   return (
@@ -54,7 +59,7 @@ export function MomentumActiveHubCard({
             <p className={cn("mt-2 text-xs", mentrixHubSurfaces.inkMuted)}>{renewal}</p>
           ) : null}
           <p className={cn("mt-3 text-xs font-semibold", mentrixHubSurfaces.inkBody)}>
-            Weekly Movement Receipt by email, priority retests, grid timeline, Loop Report, and progress archive are unlocked on your hub.
+            Weekly Movement Receipt by email, Proof Chain counterfactuals, priority retests, grid timeline, Loop Report, and progress archive are unlocked on your hub.
           </p>
           <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-[#4F46E5]">
             <Link href="/student/progress" className="underline hover:text-[#6D28D9]">

@@ -6,6 +6,7 @@ import { VerticalCutReveal } from "@/shared/ui/vertical-cut-reveal";
 import {
   LANDING_PRICING,
 } from "@/features/marketing/landing/landing-copy-pure";
+import { MOMENTUM_PACKAGE_SUMMARY, BEAT_LINE_SUMMARY } from "@/features/pricing/pricing-tiers-pure";
 import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
 import { PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
@@ -82,6 +83,30 @@ export default function PricingSection() {
       >
         <LandingStickyCard rotate className="mx-auto max-w-5xl rotate-[-0.25deg] py-6">
           <PricingTierVisualGrid iconSize={88} showCta surface="light" className="relative py-4" />
+        </LandingStickyCard>
+      </TimelineContent>
+
+      <TimelineContent
+        as="div"
+        animationNum={5}
+        timelineRef={pricingRef}
+        customVariants={revealVariants}
+      >
+        <LandingStickyCard rotate={false} className="mx-auto mt-10 max-w-3xl rotate-[0.1deg] px-5 py-4 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#22D3EE]">The Beat Line · Arena + Momentum</p>
+          <p className={`mt-2 text-sm font-semibold ${landingHub.inkMuted}`}>{BEAT_LINE_SUMMARY}</p>
+        </LandingStickyCard>
+      </TimelineContent>
+
+      <TimelineContent
+        as="div"
+        animationNum={5.5}
+        timelineRef={pricingRef}
+        customVariants={revealVariants}
+      >
+        <LandingStickyCard rotate={false} className="mx-auto mt-6 max-w-3xl rotate-[-0.1deg] px-5 py-4 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">Momentum includes</p>
+          <p className={`mt-2 text-sm font-semibold ${landingHub.inkMuted}`}>{MOMENTUM_PACKAGE_SUMMARY}</p>
         </LandingStickyCard>
       </TimelineContent>
 

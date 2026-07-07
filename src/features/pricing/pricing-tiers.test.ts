@@ -29,12 +29,33 @@ describe("pricing tiers copy", () => {
     expect(breakthrough?.exclusions.some((line) => line.includes("monthly credit"))).toBe(true);
   });
 
+  it("lists Beat Line for Arena and Momentum", () => {
+    const arena = buildPricingTiers().find((tier) => tier.id === "arena");
+    const momentum = buildPricingTiers().find((tier) => tier.id === "momentum");
+    expect(arena?.receipts.some((line) => line.includes("Beat Line"))).toBe(true);
+    expect(momentum?.receipts.some((line) => line.includes("Beat Line"))).toBe(true);
+    const rows = buildTierComparisonRows();
+    const beatLineRow = rows.find((row) => row.feature.includes("Beat Line"));
+    expect(beatLineRow?.arena).toBe("yes");
+    expect(beatLineRow?.momentum).toBe("yes");
+    expect(beatLineRow?.momentumExclusive).toBeFalsy();
+  });
+
   it("lists momentum subscription receipts and routes to subscribe", () => {
     const momentum = buildPricingTiers().find((tier) => tier.id === "momentum");
     expect(momentum?.receipts.some((line) => line.includes("Movement Receipt"))).toBe(true);
-    expect(momentum?.receipts.some((line) => line.includes("certificate"))).toBe(true);
+    expect(momentum?.receipts.some((line) => line.includes("Playbook"))).toBe(true);
+    expect(momentum?.receipts.some((line) => line.includes("Proof Chain"))).toBe(true);
+    expect(momentum?.receipts.some((line) => line.includes("Action Queue"))).toBe(true);
+    expect(momentum?.receipts.length).toBeGreaterThanOrEqual(15);
     expect(momentum?.buttonLink).toBe("/student/subscribe");
     expect(momentum?.popularBadge).toBe("Only subscription");
+  });
+
+  it("includes Playbook in the comparison matrix", () => {
+    const rows = buildTierComparisonRows();
+    expect(rows.some((row) => row.feature.includes("Playbook"))).toBe(true);
+    expect(rows.some((row) => row.feature.includes("Proof Chain"))).toBe(true);
   });
 
   it("marks momentum-exclusive rows in the comparison matrix", () => {

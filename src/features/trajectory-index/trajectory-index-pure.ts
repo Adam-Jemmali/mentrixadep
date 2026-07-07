@@ -10,6 +10,10 @@ export type TrajectoryIndexResult = {
   verifiedComponent: number;
   retestComponent: number;
   loopComponent: number;
+  verifiedNodesGained30d: number;
+  retestsCompleted30d: number;
+  retestsDuePast30d: number;
+  positiveLoops30d: number;
   verdict: string;
   nextAction: string;
 };
@@ -50,6 +54,10 @@ export function buildTrajectoryIndex(input: TrajectoryIndexInput): TrajectoryInd
     verifiedComponent,
     retestComponent,
     loopComponent,
+    verifiedNodesGained30d: input.verifiedNodesGained30d,
+    retestsCompleted30d: input.retestsCompleted30d,
+    retestsDuePast30d: input.retestsDuePast30d,
+    positiveLoops30d: input.positiveLoops30d,
     verdict,
     nextAction,
   };

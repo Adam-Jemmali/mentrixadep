@@ -19,7 +19,7 @@ export function buildRetestHubMessages(state: PendingRetestHubState): {
   if (state.isDue) {
     return {
       verdict: `Retest due on ${state.nodeName}. Your first attempt here is rank-critical.`,
-      nextAction: "Open Quest and take the retest now.",
+      nextAction: `Tap Start retest — Quest loads ${state.nodeName} immediately.`,
       countdownLabel: "Due now",
     };
   }
@@ -27,14 +27,14 @@ export function buildRetestHubMessages(state: PendingRetestHubState): {
   if (state.priorityRetest) {
     return {
       verdict: `Priority retest on ${state.nodeName} unlocks in ${countdown}. Momentum cut your wait in half.`,
-      nextAction: "Queue a practice pack while you wait, then retest the moment it opens.",
+      nextAction: `Queue practice on ${state.nodeName} until the window opens, then retest.`,
       countdownLabel: countdown,
     };
   }
 
   return {
     verdict: `Retest on ${state.nodeName} unlocks in ${countdown}. Momentum members wait half as long.`,
-    nextAction: "Practice related nodes in Quest while you wait.",
+    nextAction: `Practice ${state.nodeName} in Quest while you wait, then return here to retest.`,
     countdownLabel: countdown,
   };
 }

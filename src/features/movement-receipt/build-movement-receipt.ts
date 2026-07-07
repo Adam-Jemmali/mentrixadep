@@ -231,6 +231,7 @@ export async function buildMovementReceiptForStudent(
     loops,
     retest: {
       nodeName: pendingRetest?.nodeName ?? null,
+      skillNodeId: pendingRetest?.skillNodeId ?? null,
       isDue: pendingRetest?.isDue ?? false,
       countdownLabel: pendingRetest
         ? pendingRetest.isDue

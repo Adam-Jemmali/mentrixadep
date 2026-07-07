@@ -12,7 +12,20 @@ export default async function LoopReportPage() {
     limit: fullHistory ? 50 : 1,
   });
 
+  const totalRowCount = fullHistory
+    ? rows.length
+    : (
+        await loadLoopReportRows(user.id, {
+          fullHistory: true,
+          limit: 50,
+        })
+      ).length;
+
   return (
-    <LoopReportPageClient rows={rows} momentumActive={entitlements.momentumActive} />
+    <LoopReportPageClient
+      rows={rows}
+      momentumActive={entitlements.momentumActive}
+      totalRowCount={totalRowCount}
+    />
   );
 }
