@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
-import { Lock } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 import type { ProofChainPanelData, ProofChainStep } from "@/features/momentum-hub/proof-chain-pure";
 

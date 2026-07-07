@@ -57,5 +57,5 @@ export function formatPeerStandingRow(cumeDistPercentile: number): string {
 }
 
 export function peerStandingLockedLabel(minSkills = MIN_VERIFIED_SKILLS_FOR_PEER_STANDING): string {
-  return `Unlocks at ${minSkills} verified skills`;
+  return `Unlocks at ${minSkills} verified`;
 }

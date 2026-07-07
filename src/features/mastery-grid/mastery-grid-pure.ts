@@ -49,7 +49,7 @@ export function buildMasteryGridNextAction(units: MasteryGridData["units"]): str
 
   if (attempted.length === 0) {
     const first = unitOneFirstNode(units);
-    return first ? `Start with ${first.nodeName}` : "Start your first verified practice pack.";
+    return first ? `Start: ${first.nodeName}` : "Start Quest.";
   }
 
   const weakest = [...attempted].sort((a, b) => {
@@ -59,7 +59,7 @@ export function buildMasteryGridNextAction(units: MasteryGridData["units"]): str
     return a.displayOrder - b.displayOrder;
   })[0]!;
 
-  return `Practice ${weakest.nodeName} until green — ${weakest.accuracyPercent ?? 0}% now, need 70%.`;
+    return `Practice ${weakest.nodeName} — ${weakest.accuracyPercent ?? 0}% now.`;
 }
 
 export function flattenMasteryNodes(grid: MasteryGridData): MasteryGridNode[] {

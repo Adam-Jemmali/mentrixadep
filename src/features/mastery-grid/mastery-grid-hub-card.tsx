@@ -97,7 +97,7 @@ export function MasteryGridHubCard({
         </div>
       ) : null}
 
-      <p className={`${compact ? "mt-2 text-xs" : "mt-4"} text-sm font-medium text-[#475569]`}>{nextAction}</p>
+      {!compact ? <p className="mt-4 text-xs font-medium text-[#475569]">{nextAction}</p> : null}
       </section>
     </StudentStickyNote>
   );

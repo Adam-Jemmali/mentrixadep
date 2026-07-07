@@ -59,7 +59,7 @@ describe("buildMasteryGridNextAction", () => {
         ],
       },
     ]);
-    expect(line).toBe("Start with Introducing limits");
+    expect(line).toBe("Start: Introducing limits");
   });
 
   it("suggests weakest attempted node", () => {
@@ -87,7 +87,7 @@ describe("buildMasteryGridNextAction", () => {
         ],
       },
     ]);
-    expect(line).toBe("Practice Chain rule until green — 40% now, need 70%.");
+    expect(line).toBe("Practice Chain rule — 40% now.");
   });
 });
 

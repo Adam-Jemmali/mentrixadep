@@ -93,7 +93,7 @@ export function buildMomentumActionQueue(input: {
     items.push({
       kind: retest.isDue ? "retest_due" : "retest_scheduled",
       priority: retest.isDue ? 1 : 2,
-      headline: retest.isDue ? `Retest due on ${retest.nodeName}` : `Priority retest on ${retest.nodeName}`,
+      headline: retest.isDue ? `Retest: ${retest.nodeName}` : `Retest soon: ${retest.nodeName}`,
       evidence: guided.verdict,
       countdownLabel: countdown,
       hoursSaved: !retest.isDue && retest.priorityRetest ? 24 : undefined,
@@ -111,7 +111,7 @@ export function buildMomentumActionQueue(input: {
     items.push({
       kind: "session_credit",
       priority: 3,
-      headline: `${input.sessionCreditsRemaining} included session credit${input.sessionCreditsRemaining === 1 ? "" : "s"} left`,
+      headline: `${input.sessionCreditsRemaining} session credit${input.sessionCreditsRemaining === 1 ? "" : "s"} left`,
       evidence: guided.verdict,
       ctaHref: guided.href,
       ctaLabel: guided.label,
@@ -122,7 +122,7 @@ export function buildMomentumActionQueue(input: {
     items.push({
       kind: "guide_memory",
       priority: 4,
-      headline: `Guide memory: ${input.guideMemory.guideName}`,
+      headline: `Guide: ${input.guideMemory.guideName}`,
       evidence: input.guideMemory.verdict,
       ctaHref: "/student?sessionsTab=upcoming#sessions-history",
       ctaLabel: "View upcoming session",
@@ -133,7 +133,7 @@ export function buildMomentumActionQueue(input: {
     items.push({
       kind: "weakest_node",
       priority: 5,
-      headline: `Weakest open node: ${input.weakestNodeName}`,
+      headline: `Weak node: ${input.weakestNodeName}`,
       evidence: "Target in Quest or book a Guide.",
       ctaHref: input.weakestNodeId
         ? practiceQuestHref(input.weakestNodeName, input.weakestNodeId)
@@ -149,7 +149,7 @@ export function buildMomentumActionQueue(input: {
     items.push({
       kind: "closed_loop_followup",
       priority: 6,
-      headline: "Latest closed loop",
+      headline: "Last closed loop",
       evidence: buildLoopReportRowVerdict(latestClosed),
       ctaHref: "/student/loop",
       ctaLabel: "View loop history",
@@ -163,7 +163,7 @@ export function buildMomentumActionQueue(input: {
 
   const upsellLine =
     !input.momentumActive && items.length > 0
-      ? "Momentum unlocks the full queue and priority retests."
+      ? "Momentum unlocks more steps and priority retests."
       : null;
 
   return { items: trimmed, upsellLine };

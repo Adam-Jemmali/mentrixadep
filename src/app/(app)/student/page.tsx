@@ -13,8 +13,6 @@ import {
   getStudentSessionsHubBundle,
 } from "@/features/student-profile/hub-snapshot";
 import { getTopRival } from "@/features/divisions/top-rival";
-import { getQuestAccuracyTrend } from "@/features/quest/quest-reads";
-import { getActiveProgressSnapshot } from "@/features/progress-snapshot/reads";
 import type { StudentCourse, UserXp } from "@/shared/types/database";
 import {
   formatVerifiedRankNextAction,
@@ -24,15 +22,13 @@ import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { StreakCountDisplay, XpCountDisplay, MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
-import { CANONICAL_QUEST_ICON } from "@/shared/icons/vocab-canonical";
+import { StreakCountDisplay, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import {
   DeferredPreSessionBriefCard,
-  DeferredProgressSnapshotCard,
   DeferredSessionsList,
   DeferredStudentGoalCaptureCard,
   DeferredStudentCommandCenterClient,
@@ -56,20 +52,17 @@ import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
 import { getStudentEntitlements } from "@/features/entitlements/entitlements";
-import { loadGuideImpactReceipts } from "@/features/guide-impact/impact-receipt-reads";
-import { GuideImpactReceiptCard } from "@/features/guide-impact/ui/guide-impact-receipt-card";
 import { loadActiveMovementReceiptForViewer } from "@/features/movement-receipt/load-movement-receipt";
 import { MovementReceiptHubCard } from "@/features/movement-receipt/ui/movement-receipt-hub-card";
 import { loadMomentumActionQueue } from "@/features/momentum-hub/load-momentum-action-queue";
-import { loadMomentumTrajectoryPanel } from "@/features/momentum-hub/load-momentum-trajectory-panel";
-import { MomentumActionQueuePanel } from "@/features/momentum-hub/ui/momentum-action-queue-panel";
-import { MomentumTrajectoryPanel } from "@/features/momentum-hub/ui/momentum-trajectory-panel";
-import { ProofChainPanel } from "@/features/momentum-hub/ui/proof-chain-panel";
-import { loadProofChainPanel } from "@/features/momentum-hub/load-proof-chain";
 import { loadMomentumPlaybook } from "@/features/momentum-hub/load-momentum-playbook";
-import { MomentumPlaybookPanel } from "@/features/momentum-hub/ui/momentum-playbook-panel";
-import { MomentumActiveHubCard } from "@/features/student-profile/ui/momentum-active-hub-card";
-import { getStudentSubscription } from "@/features/payments/student-subscription";
+import { buildBeatLineView } from "@/features/divisions/beat-line-pure";
+import {
+  pickStudentHubDoNext,
+  pickStudentHubMoreSteps,
+} from "@/features/student-profile/student-hub-do-next-pure";
+import { StudentHubDoNextCard } from "@/features/student-profile/ui/student-hub-do-next";
+import { StudentHubMoreSteps } from "@/features/student-profile/ui/student-hub-more-steps";
 import { getGuideRematchBadgesForStudent } from "@/features/matchmaker/load-guide-rematch-badges";
 import { isGuideMemoryWindowOpen } from "@/features/guide-memory/guide-memory-pure";
 import { getActivePackSprintState } from "@/features/entitlements/session-credits";
@@ -90,38 +83,25 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, questAccuracy, progressSnapshot, verifiedRankStats, masteryGrid, activeGoal, entitlements, impactReceipts, movementReceipt, momentumTrajectory, momentumActionQueue, subscription, proofChain, momentumPlaybook] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, movementReceipt, momentumActionQueue, momentumPlaybook] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
       getUpcomingSessionBriefs().catch(() => []),
       getTutorAvailability(),
       getTopRival(),
-      getQuestAccuracyTrend(user.id),
-      getActiveProgressSnapshot().catch(() => null),
       loadVerifiedFirstAttemptRankStats(user.id),
       loadMasteryGrid(user.id).catch(() => null),
       loadActiveStudentGoalForViewer(AP_CALC_AB_SUBJECT),
       getStudentEntitlements(user.id),
-      loadGuideImpactReceipts(user.id, {
-        fullHistory: false,
-        limit: 1,
-      }).catch(() => []),
       loadActiveMovementReceiptForViewer().catch(() => null),
-      loadMomentumTrajectoryPanel().catch(() => null),
       Promise.resolve(null),
-      getStudentSubscription(user.id),
-      loadProofChainPanel().catch(() => null),
       loadMomentumPlaybook().catch(() => null),
     ]);
 
   const momentumSubscriber = entitlements.momentumActive;
   const archiveSubscriber = entitlements.momentumActive;
   const sessionCreditAvailable = entitlements.sessionCreditsRemaining > 0;
-
-  const impactReceiptsFull = momentumSubscriber
-    ? await loadGuideImpactReceipts(user.id, { fullHistory: true, limit: 20 }).catch(() => impactReceipts)
-    : impactReceipts;
 
   const { upcomingSessions, pastSessions } = sessionsBundle;
 
@@ -196,6 +176,21 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       : undefined,
   ).catch(() => momentumActionQueue);
 
+  const beatLineView = buildBeatLineView(rivalData);
+  const hubDoNext = pickStudentHubDoNext({
+    playbook: momentumPlaybook,
+    queueItems: resolvedActionQueue?.items ?? [],
+    beatLine: beatLineView,
+  });
+  const hubMoreSteps = pickStudentHubMoreSteps(
+    resolvedActionQueue?.items ?? [],
+    momentumPlaybook != null,
+  );
+  const showBeatLineCard =
+    rivalData.status !== "no_division" &&
+    !(hubDoNext && beatLineView && hubDoNext.ctaHref === beatLineView.ctaHref);
+  const showMovementReceipt = movementReceipt != null && hubDoNext == null;
+
   const packSprintSuccess =
     query.booking === "pack_success"
       ? await getActivePackSprintState(user.id).catch(() => null)
@@ -238,21 +233,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                   atRisk={streakAtRisk}
                   showRiskPopup
                   userId={user.id}
-                  showLabel
                   accent="violet"
                   surface="light"
                 />
-              ) : null}
-              {questAccuracy ? (
-                <span className="inline-flex items-center gap-2">
-                  <MentrixaVocabIcon name={CANONICAL_QUEST_ICON} size={20} surface="light" title="Quest" />
-                  <span className="font-mono text-sm font-bold tabular-nums text-[#0891B2]">
-                    {questAccuracy.accuracyPercent}%
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#6366F1]">
-                    Quest
-                  </span>
-                </span>
               ) : null}
             </div>
 
@@ -271,6 +254,27 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         ) : null}
 
+        {hubDoNext ? (
+          <div className="mt-4">
+            <StudentHubDoNextCard action={hubDoNext} />
+          </div>
+        ) : null}
+
+        {hubMoreSteps.length > 0 ? (
+          <div className="mt-3">
+            <StudentHubMoreSteps items={hubMoreSteps} />
+          </div>
+        ) : null}
+
+        {!momentumSubscriber && resolvedActionQueue?.upsellLine ? (
+          <p className="mt-3 text-sm font-medium text-violet-900">
+            {resolvedActionQueue.upsellLine}{" "}
+            <Link href="/student/subscribe" className="font-semibold underline">
+              Momentum
+            </Link>
+          </p>
+        ) : null}
+
         <div className="mt-4 grid gap-4 lg:grid-cols-12 lg:items-stretch">
           {masteryGrid ? (
             <div className="flex lg:col-span-7">
@@ -284,55 +288,18 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 : "flex flex-col gap-4 lg:col-span-12"
             }
           >
-            {movementReceipt ? (
+            {showMovementReceipt ? (
               <MovementReceiptHubCard
                 data={movementReceipt.receipt_data}
                 momentumActive={archiveSubscriber}
                 compact
               />
             ) : null}
-            <DeferredTopRivalCard rivalData={rivalData} className="flex-1" />
+            {showBeatLineCard ? (
+              <DeferredTopRivalCard rivalData={rivalData} className="flex-1" />
+            ) : null}
           </div>
         </div>
-
-        {(momentumSubscriber || resolvedActionQueue || momentumTrajectory || proofChain || momentumPlaybook || impactReceiptsFull.length > 0) ? (
-          <div className="mt-4 space-y-4">
-            {momentumPlaybook ? <MomentumPlaybookPanel playbook={momentumPlaybook} /> : null}
-            {proofChain ? (
-              <ProofChainPanel data={proofChain} />
-            ) : null}
-            {momentumSubscriber ? (
-              <MomentumActiveHubCard
-                sessionCreditsRemaining={entitlements.sessionCreditsRemaining}
-                sessionCreditPeriodMonth={entitlements.sessionCreditPeriodMonth}
-                subscription={subscription}
-                momentumCompMember={entitlements.momentumCompMember}
-              />
-            ) : null}
-            <div className="grid gap-4 md:grid-cols-2">
-              {resolvedActionQueue ? (
-                <MomentumActionQueuePanel
-                  items={resolvedActionQueue.items}
-                  upsellLine={resolvedActionQueue.upsellLine}
-                  momentumActive={resolvedActionQueue.momentumActive}
-                />
-              ) : null}
-              {momentumTrajectory ? <MomentumTrajectoryPanel data={momentumTrajectory} /> : null}
-              {impactReceiptsFull.length > 0 ? (
-                <GuideImpactReceiptCard
-                  receipts={impactReceiptsFull}
-                  momentumActive={momentumSubscriber}
-                />
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-
-        {progressSnapshot ? (
-          <div className="mt-4">
-            <DeferredProgressSnapshotCard snapshot={progressSnapshot} momentumSubscriber={momentumSubscriber} />
-          </div>
-        ) : null}
 
         {query.booking === "pack_success" ? (
           <PackSprintSuccessPanel packSprint={packSprintSuccess} daysUntilExam={daysUntilExam} />

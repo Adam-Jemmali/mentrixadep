@@ -95,12 +95,12 @@ export function formatVerifiedRankNextAction(stats: VerifiedFirstAttemptRankStat
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
     stats.percentile != null
   ) {
-    return "Verify next node";
+    return "Verify next";
   }
   if (remaining > 0 && stats.verifiedCount > 0) {
-    return `Verify ${remaining} more to unlock peer standing`;
+    return `Verify ${remaining} more`;
   }
-  return "Verify first node";
+  return "Start Quest";
 }
 
 export async function loadVerifiedFirstAttemptRankStats(

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
-import { Lock } from "lucide-react";
 import type { TrajectoryPanelView } from "@/features/momentum-hub/momentum-trajectory-enrichment-pure";
 
 function TrajectorySparkline({ points }: { points: { date: string; score: number }[] }) {
@@ -71,10 +70,7 @@ export function MomentumTrajectoryPanel({ data }: MomentumTrajectoryPanelProps) 
     return (
       <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Trajectory index teaser">
         <VocabSectionHeading name="trajectory-certificate" label="Trajectory index" surface="light" gold />
-        <div className="mt-3 flex items-center gap-3">
-          <Lock className="h-5 w-5 text-zinc-400" aria-hidden />
-          <p className="text-2xl font-bold tabular-nums text-zinc-400">{data.scoreBand}</p>
-        </div>
+        <p className="mt-3 text-2xl font-bold tabular-nums text-zinc-400">{data.scoreBand}</p>
         <p className="mt-3 text-sm text-zinc-600">{data.upsellLine}</p>
         <Button asChild className="mt-4" size="sm">
           <Link href="/student/subscribe">Unlock Trajectory Index</Link>
