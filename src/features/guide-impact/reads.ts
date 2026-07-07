@@ -110,7 +110,7 @@ export async function getStudentQuestCourseNames(userId: string): Promise<string
     .limit(200);
 
   const names = new Set<string>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   for (const row of (data as any[]) ?? []) {
     const quest = Array.isArray(row.quests) ? row.quests[0] : row.quests;
     const course = quest?.metadata?.course;

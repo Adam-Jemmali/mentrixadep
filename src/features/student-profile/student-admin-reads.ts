@@ -82,7 +82,7 @@ export async function getStudentDashboardForAdmin(studentId: string) {
     (a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime(),
   );
   const sessionIds = pastSessionsRaw.map((s) => s.id);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let ratings: any[] = [];
   if (sessionIds.length > 0) {
     const { data: ratingsData } = await adminClient

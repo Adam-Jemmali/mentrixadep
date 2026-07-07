@@ -1105,7 +1105,7 @@ export function VideoCall({
                 }
               };
 
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+               
               const onError = (_e: Event) => {
                 if (localVideoRef.current) {
                   localVideoRef.current.removeEventListener("error", onError);
@@ -1250,7 +1250,7 @@ export function VideoCall({
                   }
                 };
 
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                 
                 const onError = (_e: Event) => {
                   if (remoteVideoRef.current) {
                     remoteVideoRef.current.removeEventListener("error", onError);
@@ -1449,7 +1449,7 @@ export function VideoCall({
         // Handle incoming offers
         channel.on("broadcast", { event: "offer" }, async (message: unknown) => {
           // Extract payload - Supabase Realtime wraps it
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
 
           if (!payload || payload.from === userId) return; // Ignore own messages
@@ -1533,7 +1533,7 @@ export function VideoCall({
         // Handle incoming answers
         channel.on("broadcast", { event: "answer" }, async (message: unknown) => {
           // Extract payload - Supabase Realtime wraps it
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
 
           if (!payload || payload.from === userId) return;
@@ -1598,7 +1598,7 @@ export function VideoCall({
         // Handle ICE candidates
         channel.on("broadcast", { event: "ice-candidate" }, async (message: unknown) => {
           // Extract payload - Supabase Realtime wraps it
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
 
           if (!payload || payload.from === userId) return;
@@ -1626,7 +1626,7 @@ export function VideoCall({
         });
 
         channel.on("broadcast", { event: "session-warning" }, (message: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
           if (!payload || payload.from === userId) return;
           const level = payload.level === "15s" ? "15s" : payload.level === "60s" ? "60s" : null;
@@ -1637,7 +1637,7 @@ export function VideoCall({
         });
 
         channel.on("broadcast", { event: "participant-reconnecting" }, (message: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
           if (!payload || payload.from === userId) return;
           if (userRole === "student") {
@@ -1646,7 +1646,7 @@ export function VideoCall({
         });
 
         channel.on("broadcast", { event: "participant-reconnected" }, (message: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
           if (!payload || payload.from === userId) return;
           setShowStudentReconnectingOverlay(false);
@@ -1655,21 +1655,21 @@ export function VideoCall({
         });
 
         channel.on("broadcast", { event: "screen-share-started" }, (message: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
           if (!payload || payload.from === userId) return;
           setRemoteIsScreenShare(true);
         });
 
         channel.on("broadcast", { event: "screen-share-stopped" }, (message: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
           if (!payload || payload.from === userId) return;
           setRemoteIsScreenShare(false);
         });
 
         channel.on("broadcast", { event: "recording-available" }, (message: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const payload = (message as any).payload || message;
           if (!payload || !payload.recordingId) return;
           console.log("[video-call] Recording ID received from peer:", payload.recordingId);
@@ -2095,7 +2095,7 @@ export function VideoCall({
 
       closeRecordingAudioContext();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       let audioContext: AudioContext | null = null;
       let destination: MediaStreamAudioDestinationNode | null = null;
@@ -2246,7 +2246,7 @@ export function VideoCall({
         const startedAtIso =
           recordingStartTimeRef.current?.toISOString() ?? new Date().toISOString();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         let uploadResult: any = null;
         try {
           console.log("Recording stopped, processing...", {

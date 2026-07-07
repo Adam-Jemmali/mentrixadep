@@ -41,14 +41,12 @@ export async function recordVerifiedFirstAttemptForNode(
 
   const { data: priorRankCache } = await admin
     .from("ap_calc_verified_rank_cache")
-    .select("accuracy_percent")
+    .select("percentile")
     .eq("user_id", parsedUserId.data)
     .maybeSingle();
 
-  const priorAccuracyPercent =
-    priorRankCache?.accuracy_percent == null
-      ? null
-      : Number(priorRankCache.accuracy_percent);
+  const priorPercentile =
+    priorRankCache?.percentile == null ? null : Number(priorRankCache.percentile);
 
   const { error } = await admin.from("verified_first_attempts").insert({
     user_id: parsedUserId.data,
@@ -62,9 +60,7 @@ export async function recordVerifiedFirstAttemptForNode(
       userId: parsedUserId.data,
       skillNodeId: parsedNodeId.data,
       isCorrect,
-      priorAccuracyPercent: Number.isFinite(priorAccuracyPercent)
-        ? priorAccuracyPercent
-        : null,
+      priorPercentile: Number.isFinite(priorPercentile) ? priorPercentile : null,
     });
     return { recorded: true, alreadyExists: false };
   }

@@ -20,11 +20,11 @@ describe("live board events pure", () => {
     expect(resolveLiveBoardDisplayName("", "  z@x.com", 1000)).toBe("Z1000");
   });
 
-  it("detects verified rank tier advance from aggregate accuracy", () => {
+  it("detects verified rank tier advance from peer percentile", () => {
     const before = detectVerifiedRankTierAdvance(40, 45);
     expect(before.advanced).toBe(false);
 
-    const after = detectVerifiedRankTierAdvance(40, 72);
+    const after = detectVerifiedRankTierAdvance(40, 92);
     expect(after.advanced).toBe(true);
     expect(after.newLevel).toBeGreaterThan(1);
   });

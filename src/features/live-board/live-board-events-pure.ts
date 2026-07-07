@@ -1,4 +1,4 @@
-import { rankLevelFromAccuracy } from "@/features/xp/calibrated-rank";
+import { rankLevelFromPercentile } from "@/features/xp/calibrated-rank";
 
 export type LiveBoardEventType = "verified_attempt" | "rank_advance" | "breakthrough";
 
@@ -26,10 +26,10 @@ export function resolveLiveBoardDisplayName(
 }
 
 export function detectVerifiedRankTierAdvance(
-  priorAccuracyPercent: number | null | undefined,
-  newAccuracyPercent: number,
+  priorPercentile: number | null | undefined,
+  newPercentile: number | null | undefined,
 ): { advanced: boolean; newLevel: number } {
-  const priorLevel = rankLevelFromAccuracy(priorAccuracyPercent ?? 0);
-  const newLevel = rankLevelFromAccuracy(newAccuracyPercent);
+  const priorLevel = rankLevelFromPercentile(priorPercentile ?? 0);
+  const newLevel = rankLevelFromPercentile(newPercentile ?? 0);
   return { advanced: newLevel > priorLevel, newLevel };
 }

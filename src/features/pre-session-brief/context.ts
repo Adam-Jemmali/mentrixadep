@@ -48,7 +48,7 @@ async function questAccuracyForWindow(
     .limit(120);
 
   const buckets: QuestBucket[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   for (const row of (progressRows as any[]) ?? []) {
     const quest = Array.isArray(row.quests) ? row.quests[0] : row.quests;
     if (!quest) continue;
@@ -185,7 +185,7 @@ async function resolveDivisionForSubject(
 
   const { data: mappings } = await admin.from("course_division_map").select("course, divisions(key)");
   const courseToDiv = new Map<string, string>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (mappings as any[])?.forEach((m) => {
     const key = m.divisions?.key || m.divisions?.[0]?.key;
     if (m.course && key) courseToDiv.set(String(m.course), String(key));

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { BEAT_LINE_SUMMARY, buildBeatLineView } from "@/features/divisions/beat-line-pure";
-import type { TopRivalData } from "@/features/divisions/top-rival";
 
 describe("buildBeatLineView", () => {
   it("returns null when user has no league XP", () => {

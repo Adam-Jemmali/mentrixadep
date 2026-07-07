@@ -8,6 +8,7 @@ import { fadeUp, staggerContainer } from "@/features/marketing/landing/v2/motion
 import { ARENA_PAGE_COPY } from "@/features/live-board/live-board-messages-pure";
 import { LiveBoardFeed } from "@/features/live-board/ui/live-board-feed";
 import { ArenaLeadersPanel } from "@/features/live-board/ui/arena-leaders-panel";
+import { ArenaLiveRibbon } from "@/features/live-board/ui/arena-live-ribbon";
 import type { ArenaLeaderRow, LiveBoardEventRow } from "@/features/live-board/types";
 
 type Props = {
@@ -51,7 +52,8 @@ export function ArenaPageClient({ initialEvents, leaders }: Props) {
         </motion.div>
       </motion.header>
 
-      <LiveBoardFeed initialEvents={initialEvents} />
+      <ArenaLiveRibbon leaders={leaders} />
+      <LiveBoardFeed initialEvents={initialEvents} leaders={leaders} />
       <ArenaLeadersPanel leaders={leaders} />
     </div>
   );

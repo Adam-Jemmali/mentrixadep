@@ -35,7 +35,7 @@ const envSchema = z.object({
 });
 
 const result = envSchema.safeParse(process.env);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const data = result.success ? result.data : ({} as any);
 
 export const env = {

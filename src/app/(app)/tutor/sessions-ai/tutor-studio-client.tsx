@@ -34,7 +34,7 @@ const STREAM_END = "\n__MENTRIXA_STUDIO_END__";
 const playClickSound = () => {
   if (typeof window === "undefined") return;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -53,7 +53,7 @@ const playClickSound = () => {
 const playTypeSound = () => {
   if (typeof window === "undefined") return;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();

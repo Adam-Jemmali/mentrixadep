@@ -286,7 +286,7 @@ export async function getQuestAccuracyTrend(userId: string): Promise<QuestAccura
     .order("last_attempt_at", { ascending: false })
     .limit(40);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   if (!progressRows || (progressRows as any[]).length === 0) return null;
 
   const relevantQuests: { correct: number; total: number }[] = [];
@@ -296,18 +296,18 @@ export async function getQuestAccuracyTrend(userId: string): Promise<QuestAccura
     .from("course_division_map")
     .select("course, divisions(key)");
   const courseToDiv = new Map<string, string>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (allMappings as any[])?.forEach((m) => {
     const key = m.divisions?.key || m.divisions?.[0]?.key;
     if (m.course && key) courseToDiv.set(m.course, key);
   });
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   for (const row of (progressRows as any[])) {
     const questData = Array.isArray(row.quests) ? row.quests[0] : row.quests;
     if (!questData) continue;
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const meta = questData.metadata as any;
     const course = meta?.course || "";
     

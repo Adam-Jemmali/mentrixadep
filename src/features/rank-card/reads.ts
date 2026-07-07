@@ -12,7 +12,9 @@ import { loadPassportBreakthroughReceipts } from "@/features/rank-card/load-pass
 import { buildPassportVerdict } from "@/features/rank-card/rank-passport-pure";
 import {
   getApCalcVerifiedRankStats,
+  getCalibratedRank,
 } from "@/features/xp/calibrated-rank";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 
 type LoadOptions = {
   referrer?: string | null;
@@ -65,6 +67,11 @@ export async function getRankCardByUsername(
   const totalXp = xpRow?.total_xp ?? 0;
   const globalRank = rankFromTotalXp(totalXp);
   const verifiedStats = await getApCalcVerifiedRankStats(studentId);
+  const calibratedRank = await getCalibratedRank(studentId, AP_CALC_AB_SUBJECT);
+  const passportRank =
+    calibratedRank.source === "verified_first_attempt"
+      ? calibratedRank
+      : { title: globalRank.title, level: globalRank.level };
   const [subjects, warBadges, masteryGrid, breakthroughReceipts] = await Promise.all([
     buildRankCardSubjects(studentId, totalXp),
     getActiveWarBadgesForUser(studentId),
@@ -93,8 +100,8 @@ export async function getRankCardByUsername(
     displayName,
     globalRankTitle: globalRank.title,
     globalRankLevel: globalRank.level,
-    rankTitle: globalRank.title,
-    rankLevel: globalRank.level,
+    rankTitle: passportRank.title,
+    rankLevel: passportRank.level,
     totalXp,
     verifiedPercentile: verifiedStats.percentile,
     verifiedSkillCount: verifiedStats.verifiedCount,

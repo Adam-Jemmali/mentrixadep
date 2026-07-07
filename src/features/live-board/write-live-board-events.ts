@@ -2,6 +2,7 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { resolveApCalcAbSkillNodeForConcept } from "@/features/breakthrough-events/resolve-skill-node";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { normalizeArenaAvatarUrl } from "@/features/live-board/live-board-avatar-pure";
 import {
   detectVerifiedRankTierAdvance,
   resolveLiveBoardDisplayName,
@@ -21,6 +22,7 @@ type LiveBoardInsert = {
   event_type: LiveBoardEventType;
   user_id: string;
   display_name: string;
+  avatar_url?: string | null;
   skill_node_id?: string | null;
   node_name: string;
   unit_name: string;
@@ -29,19 +31,22 @@ type LiveBoardInsert = {
   is_first_attempt?: boolean;
 };
 
-async function loadLiveBoardDisplayName(
+async function loadLiveBoardPersona(
   admin: AdminClient,
   userId: string,
-): Promise<string> {
+): Promise<{ displayName: string; avatarUrl: string | null }> {
   const [{ data: settings }, { data: user }] = await Promise.all([
-    admin.from("user_settings").select("display_name").eq("user_id", userId).maybeSingle(),
+    admin.from("user_settings").select("display_name, avatar_url").eq("user_id", userId).maybeSingle(),
     admin.from("users").select("email").eq("id", userId).maybeSingle(),
   ]);
 
-  return resolveLiveBoardDisplayName(
-    settings?.display_name,
-    user?.email ?? null,
-  );
+  return {
+    displayName: resolveLiveBoardDisplayName(
+      settings?.display_name,
+      user?.email ?? null,
+    ),
+    avatarUrl: normalizeArenaAvatarUrl(settings?.avatar_url as string | null | undefined),
+  };
 }
 
 async function loadSkillNodeLabels(
@@ -77,19 +82,24 @@ async function insertLiveBoardEvent(
   }
 }
 
-async function loadVerifiedRankAccuracy(
+async function loadVerifiedRankSnapshot(
   admin: AdminClient,
   userId: string,
-): Promise<number | null> {
+): Promise<{ accuracyPercent: number | null; percentile: number | null }> {
   const { data } = await admin
     .from("ap_calc_verified_rank_cache")
-    .select("accuracy_percent")
+    .select("accuracy_percent, percentile")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (data?.accuracy_percent == null) return null;
-  const value = Number(data.accuracy_percent);
-  return Number.isFinite(value) ? value : null;
+  const accuracyPercent =
+    data?.accuracy_percent == null ? null : Number(data.accuracy_percent);
+  const percentile = data?.percentile == null ? null : Number(data.percentile);
+
+  return {
+    accuracyPercent: Number.isFinite(accuracyPercent) ? accuracyPercent : null,
+    percentile: Number.isFinite(percentile) ? percentile : null,
+  };
 }
 
 /** After a new verified first attempt row is committed. Best-effort; never throws. */
@@ -97,12 +107,12 @@ export async function publishVerifiedAttemptLiveBoardEvents(params: {
   userId: string;
   skillNodeId: string;
   isCorrect: boolean;
-  priorAccuracyPercent?: number | null;
+  priorPercentile?: number | null;
 }): Promise<void> {
   try {
     const admin = createAdminClient();
-    const [displayName, nodeLabels] = await Promise.all([
-      loadLiveBoardDisplayName(admin, params.userId),
+    const [persona, nodeLabels] = await Promise.all([
+      loadLiveBoardPersona(admin, params.userId),
       loadSkillNodeLabels(admin, params.skillNodeId),
     ]);
 
@@ -111,7 +121,8 @@ export async function publishVerifiedAttemptLiveBoardEvents(params: {
     await insertLiveBoardEvent(admin, {
       event_type: "verified_attempt",
       user_id: params.userId,
-      display_name: displayName,
+      display_name: persona.displayName,
+      avatar_url: persona.avatarUrl,
       skill_node_id: nodeLabels.id,
       node_name: nodeLabels.node_name,
       unit_name: nodeLabels.unit_name,
@@ -119,13 +130,11 @@ export async function publishVerifiedAttemptLiveBoardEvents(params: {
       is_first_attempt: true,
     });
 
-    const newAccuracy =
-      (await loadVerifiedRankAccuracy(admin, params.userId)) ??
-      verifiedAttemptAccuracyPct(params.isCorrect);
+    const newSnapshot = await loadVerifiedRankSnapshot(admin, params.userId);
 
     const { advanced, newLevel } = detectVerifiedRankTierAdvance(
-      params.priorAccuracyPercent,
-      newAccuracy,
+      params.priorPercentile,
+      newSnapshot.percentile,
     );
 
     if (!advanced) return;
@@ -135,7 +144,8 @@ export async function publishVerifiedAttemptLiveBoardEvents(params: {
     await insertLiveBoardEvent(admin, {
       event_type: "rank_advance",
       user_id: params.userId,
-      display_name: displayName,
+      display_name: persona.displayName,
+      avatar_url: persona.avatarUrl,
       skill_node_id: nodeLabels.id,
       node_name: nodeLabels.node_name,
       unit_name: nodeLabels.unit_name,
@@ -161,8 +171,8 @@ export async function publishBreakthroughLiveBoardEvent(params: {
 
   try {
     const admin = createAdminClient();
-    const [displayName, resolvedNode] = await Promise.all([
-      loadLiveBoardDisplayName(admin, params.studentId),
+    const [persona, resolvedNode] = await Promise.all([
+      loadLiveBoardPersona(admin, params.studentId),
       resolveApCalcAbSkillNodeForConcept(admin, params.concept),
     ]);
 
@@ -180,7 +190,8 @@ export async function publishBreakthroughLiveBoardEvent(params: {
     await insertLiveBoardEvent(admin, {
       event_type: "breakthrough",
       user_id: params.studentId,
-      display_name: displayName,
+      display_name: persona.displayName,
+      avatar_url: persona.avatarUrl,
       skill_node_id: skillNodeId,
       node_name: nodeName,
       unit_name: unitName,

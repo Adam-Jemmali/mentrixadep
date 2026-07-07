@@ -305,7 +305,7 @@ export async function getAvailableCourses() {
   
   // Check cache first (2 minute TTL for course list)
   const cacheKey = "available-courses";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const cached = (await import("@/shared/core/cache")).cache.get<string[]>(cacheKey);
   if (cached) {
     return cached;

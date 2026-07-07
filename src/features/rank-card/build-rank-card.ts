@@ -42,7 +42,7 @@ async function loadQuestRows(
     .limit(500);
 
   const rows: QuestRow[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   for (const row of (data as any[]) ?? []) {
     const quest = Array.isArray(row.quests) ? row.quests[0] : row.quests;
     if (!quest || !row.last_attempt_at) continue;
@@ -77,7 +77,7 @@ async function countAllQuestsBySubject(
     .limit(800);
 
   const counts = new Map<string, number>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   for (const row of (data as any[]) ?? []) {
     const quest = Array.isArray(row.quests) ? row.quests[0] : row.quests;
     const meta = quest?.metadata as Record<string, unknown> | null;
@@ -94,7 +94,7 @@ async function divisionKeyForSubject(
   const { data: mappings } = await admin.from("course_division_map").select("course, divisions(key)");
   for (const row of mappings ?? []) {
     if (subjectsLooselyMatch(String(row.course), subject)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const key = (row as any).divisions?.key ?? (row as any).divisions?.[0]?.key;
       if (key) return String(key);
     }
@@ -232,12 +232,12 @@ async function breakthroughsForSubject(
       return attempts > 0 ? Math.round(100 / attempts) : null;
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     for (const row of (preRows as any[]) ?? []) {
       const s = scoreFromRow(row);
       if (s != null) preScores.push(s);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     for (const row of (postRows as any[]) ?? []) {
       const s = scoreFromRow(row);
       if (s != null) postScores.push(s);

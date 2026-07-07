@@ -155,7 +155,7 @@ function calibratedRankFromStats(
     return null;
   }
 
-  const level = rankLevelFromAccuracy(stats.accuracyPercent);
+  const level = rankLevelFromPercentile(stats.percentile);
   const visual = getAccountRankByLevel(level);
   return {
     title: normalizeRankTitle(visual.title),

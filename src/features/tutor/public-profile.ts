@@ -326,7 +326,7 @@ export async function getTutorDashboardForAdmin(tutorId: string) {
   }
 
   const availabilityIds = (reqAvailResult.data ?? []).map((a) => a.id);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let sessionRequests: any[] = [];
   if (availabilityIds.length > 0) {
     const { data: reqs } = await adminClient

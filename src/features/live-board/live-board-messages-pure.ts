@@ -2,14 +2,31 @@ import type { LiveBoardEventRow } from "@/features/live-board/types";
 
 export const ARENA_PAGE_COPY = {
   title: "AP Calculus AB — Live Rank Arena",
-  subtitle: "Every score here is a first attempt. No retries. Updated as it happens.",
+  subtitle: "Real Mentrixers. Real photos. Every score is a first attempt that locks forever.",
   cta: "Take this test and see where you rank",
   ctaHref: "/try",
-  feedEyebrow: "Live feed",
-  leadersTitle: "Top verified accuracy",
-  leadersSubtitle: "First attempts only. Refreshed on schedule.",
+  feedEyebrow: "Live right now",
+  leadersTitle: "Top verified Mentrixers",
+  leadersSubtitle:
+    "Their face, their passport, their real cohort rank. First attempts only.",
   emptyFeed: "No live events yet. Lock your first skill to appear here.",
+  liveRibbonLabel: "In the arena now",
 } as const;
+
+export function liveBoardEventTypeLabel(
+  eventType: LiveBoardEventRow["event_type"],
+): string {
+  switch (eventType) {
+    case "verified_attempt":
+      return "First try locked";
+    case "rank_advance":
+      return "Rank up";
+    case "breakthrough":
+      return "Breakthrough";
+    default:
+      return "Update";
+  }
+}
 
 const MS_MINUTE = 60_000;
 const MS_HOUR = 3_600_000;

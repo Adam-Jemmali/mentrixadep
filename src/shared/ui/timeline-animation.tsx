@@ -40,7 +40,7 @@ export const TimelineContent = ({
   
   // Use motion() to wrap the dynamic component
   // Use any to avoid "Type instantiation is excessively deep" with complex ElementType
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const MotionComponent = (motion as any)[Component as string] || motion(Component as any);
 
   return (

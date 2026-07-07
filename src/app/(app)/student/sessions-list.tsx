@@ -400,7 +400,7 @@ export function SessionsList({
       <div className={children ? `lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}` : showHeroStats ? "mt-8" : ""}>
         <div className={children ? "lg:col-span-2" : ""}>
           <section className={mentrixStudent.hubSessionsPanel}>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            { }
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
               <TabsList className="mx-hub-tabs-list mb-5 flex h-auto w-full gap-2 rounded-xl p-1.5 overflow-x-auto">
                 <TabsTrigger

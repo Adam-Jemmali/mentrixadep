@@ -127,14 +127,14 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const accountRank = getAccountRankFromTotalXp(totalXp);
   const rankNextAction = formatVerifiedRankNextAction(verifiedRankStats);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const studyPackageSnapshots = [...pastSessions, ...upcomingSessions].map((s: any) => ({
     sessionId: s.id as string,
     course: s.course as string,
     publishedAt: (s.ai_package?.package_published_at as string | null | undefined) ?? null,
   }));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const upcomingForClient = upcomingSessions.map((s: any) => ({
     id: s.id,
     course: s.course,
@@ -312,7 +312,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
         {sessionBriefs.length > 0 && (
           <div className="mt-6 space-y-3">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            { }
             {sessionBriefs.map((brief: any) => (
               <DeferredPreSessionBriefCard key={brief.id} brief={brief} />
             ))}
