@@ -760,6 +760,8 @@ export function StudentProfileClient({
                     <MomentumMembershipPanel
                       subscription={subscription}
                       variant="profile"
+                      momentumActive={entitlements?.momentumActive}
+                      momentumCompMember={entitlements?.momentumCompMember}
                       sessionCreditsRemaining={entitlements?.sessionCreditsRemaining ?? 0}
                       sessionCreditPeriodMonth={entitlements?.sessionCreditPeriodMonth ?? null}
                       packSprint={entitlements?.packSprint ?? null}

@@ -10,7 +10,8 @@ export type MomentumSessionCreditGrantSource =
   | "subscription_invoice"
   | "monthly_grant"
   | "sla_makegood"
-  | "alumni_quarterly";
+  | "alumni_quarterly"
+  | "comp_member";
 
 export function momentumCreditRedemptionKey(userId: string, availabilityId: string): string {
   return `redeem:${userId}:${availabilityId}`;

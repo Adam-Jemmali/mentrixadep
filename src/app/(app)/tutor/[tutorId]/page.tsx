@@ -3,10 +3,7 @@ import type { Metadata } from "next";
 import { getTutorPublicProfile } from "@/features/tutor/public-profile";
 import { getCurrentUser } from "@/shared/core/auth";
 import { getSiteUrl } from "@/shared/core/site";
-import {
-  getStudentSubscription,
-  isMomentumSubscriptionActive,
-} from "@/features/payments/student-subscription";
+import { isMomentumMemberForUser } from "@/features/entitlements/momentum-comp-members";
 import { TutorProfileClient } from "./tutor-profile-client";
 
 interface Props {
@@ -40,11 +37,10 @@ export default async function TutorProfilePage({ params }: Props) {
 
   if (!profile) notFound();
 
-  const subscription =
+  const momentumSubscriber =
     currentUser?.role === "student" || currentUser?.role === "admin"
-      ? await getStudentSubscription(currentUser.id)
-      : null;
-  const momentumSubscriber = isMomentumSubscriptionActive(subscription);
+      ? await isMomentumMemberForUser(currentUser.id)
+      : false;
 
   return (
     <TutorProfileClient

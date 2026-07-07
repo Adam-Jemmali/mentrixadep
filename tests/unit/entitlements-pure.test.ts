@@ -54,4 +54,19 @@ describe("buildStudentEntitlements", () => {
     expect(entitlements.sessionCreditsRemaining).toBe(0);
     expect(entitlements.entitlementIds).not.toContain("momentum.session_credit");
   });
+
+  it("grants full momentum perks for comp members without Stripe", () => {
+    const entitlements = buildStudentEntitlements({
+      userId: "trapdime",
+      subscription: null,
+      sessionCreditsRemaining: 1,
+      sessionCreditPeriodMonth: "2026-07-01",
+      momentumCompMember: true,
+    });
+    expect(entitlements.momentumActive).toBe(true);
+    expect(entitlements.momentumCompMember).toBe(true);
+    expect(entitlements.entitlementIds).toContain("momentum.active");
+    expect(entitlements.entitlementIds).toContain("momentum.member_session_rate");
+    expect(entitlements.sessionCreditsRemaining).toBe(1);
+  });
 });

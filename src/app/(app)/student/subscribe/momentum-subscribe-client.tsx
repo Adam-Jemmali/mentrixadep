@@ -22,6 +22,7 @@ export function MomentumSubscribeClient({
   sessionCreditsRemaining = 0,
   sessionCreditPeriodMonth = null,
   momentumActive = false,
+  momentumCompMember = false,
   daysUntilExam = null,
   packSprint = null,
   monthlyCreditsRemaining = 0,
@@ -30,6 +31,7 @@ export function MomentumSubscribeClient({
   sessionCreditsRemaining?: number;
   sessionCreditPeriodMonth?: string | null;
   momentumActive?: boolean;
+  momentumCompMember?: boolean;
   daysUntilExam?: number | null;
   packSprint?: PackSprintState | null;
   monthlyCreditsRemaining?: number;
@@ -91,6 +93,8 @@ export function MomentumSubscribeClient({
       <main className={`${mentrixStudent.main} relative z-10`}>
         <MomentumMembershipPanel
           subscription={initialSubscription}
+          momentumActive={momentumActive}
+          momentumCompMember={momentumCompMember}
           sessionCreditsRemaining={sessionCreditsRemaining}
           sessionCreditPeriodMonth={sessionCreditPeriodMonth}
           packSprint={packSprint}

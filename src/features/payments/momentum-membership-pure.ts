@@ -9,6 +9,7 @@ import {
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
 import { isMomentumSubscriptionActive } from "@/features/payments/student-subscription";
+import { momentumCompRenewalLabel } from "@/features/entitlements/momentum-comp-members-pure";
 
 export const MOMENTUM_MEMBERSHIP_VERDICT =
   "Momentum is the only subscription. It unlocks weekly proof, coaching memory, and included session credits. Your rank and Mastery Grid stay free in the Arena.";
@@ -29,7 +30,11 @@ export function momentumVsBreakthroughValueLine(): string {
 
 export function formatMomentumRenewalLabel(
   subscription: StudentSubscriptionRow | null,
+  options?: { compMember?: boolean },
 ): string | null {
+  if (options?.compMember && !isMomentumSubscriptionActive(subscription)) {
+    return momentumCompRenewalLabel(true);
+  }
   if (!subscription?.current_period_end || !isMomentumSubscriptionActive(subscription)) {
     return null;
   }

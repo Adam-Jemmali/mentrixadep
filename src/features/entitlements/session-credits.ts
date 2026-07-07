@@ -11,10 +11,7 @@ import {
   utcPeriodMonthKey,
   type MomentumSessionCreditGrantSource,
 } from "@/features/entitlements/session-credits-pure";
-import {
-  getStudentSubscription,
-  isMomentumSubscriptionActive,
-} from "@/features/payments/student-subscription";
+import { isMomentumMemberForUser } from "@/features/entitlements/momentum-comp-members";
 
 export type MomentumSessionCreditRow = {
   id: string;
@@ -139,8 +136,8 @@ export async function grantMomentumMonthlySessionCredit(params: {
   stripeInvoiceId?: string | null;
   periodMonth?: string;
 }): Promise<"granted" | "skipped"> {
-  const subscription = await getStudentSubscription(params.userId);
-  if (!isMomentumSubscriptionActive(subscription)) {
+  const momentumMember = await isMomentumMemberForUser(params.userId);
+  if (!momentumMember) {
     return "skipped";
   }
 
@@ -195,8 +192,8 @@ export async function grantMomentumPackCredits(params: {
   credits: number;
   stripeCheckoutSessionId: string;
 }): Promise<"granted" | "skipped"> {
-  const subscription = await getStudentSubscription(params.userId);
-  if (!isMomentumSubscriptionActive(subscription)) {
+  const momentumMember = await isMomentumMemberForUser(params.userId);
+  if (!momentumMember) {
     return "skipped";
   }
 
@@ -480,8 +477,8 @@ export type GrantMomentumSlaMakeGoodCreditResult =
 export async function grantMomentumSlaMakeGoodCredit(params: {
   userId: string;
 }): Promise<GrantMomentumSlaMakeGoodCreditResult> {
-  const subscription = await getStudentSubscription(params.userId);
-  if (!isMomentumSubscriptionActive(subscription)) {
+  const momentumMember = await isMomentumMemberForUser(params.userId);
+  if (!momentumMember) {
     return { ok: false, reason: "not_subscriber" };
   }
 

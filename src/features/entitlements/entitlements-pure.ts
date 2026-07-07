@@ -1,5 +1,5 @@
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
-import { isMomentumSubscriptionActive } from "@/features/payments/student-subscription";
+import { resolveMomentumActive } from "@/features/entitlements/momentum-comp-members-pure";
 import type { PackSprintState } from "@/features/entitlements/pack-sprint-pure";
 
 export type StudentEntitlementId =
@@ -25,6 +25,7 @@ export type StudentEntitlementId =
 export type StudentEntitlements = {
   userId: string;
   momentumActive: boolean;
+  momentumCompMember: boolean;
   sessionCreditsRemaining: number;
   sessionCreditPeriodMonth: string | null;
   packSprint: PackSprintState | null;
@@ -47,8 +48,13 @@ export function buildStudentEntitlements(input: {
   sessionCreditPeriodMonth: string | null;
   packSprint?: PackSprintState | null;
   monthlyCreditsRemaining?: number;
+  momentumCompMember?: boolean;
 }): StudentEntitlements {
-  const momentumActive = isMomentumSubscriptionActive(input.subscription);
+  const momentumCompMember = input.momentumCompMember ?? false;
+  const momentumActive = resolveMomentumActive({
+    subscription: input.subscription,
+    compMember: momentumCompMember,
+  });
   const sessionCreditsRemaining = momentumActive ? input.sessionCreditsRemaining : 0;
   const memberSessionRateActive = momentumActive;
 
@@ -80,6 +86,7 @@ export function buildStudentEntitlements(input: {
   return {
     userId: input.userId,
     momentumActive,
+    momentumCompMember,
     sessionCreditsRemaining,
     sessionCreditPeriodMonth: sessionCreditsRemaining > 0 ? input.sessionCreditPeriodMonth : null,
     packSprint: input.packSprint ?? null,

@@ -29,6 +29,8 @@ import { PricingTierIcon, PricingTierVisualGrid } from "@/features/pricing/ui/pr
 
 type MomentumMembershipPanelProps = {
   subscription: StudentSubscriptionRow | null;
+  momentumActive?: boolean;
+  momentumCompMember?: boolean;
   sessionCreditsRemaining?: number;
   sessionCreditPeriodMonth?: string | null;
   packSprint?: PackSprintState | null;
@@ -44,6 +46,8 @@ type MomentumMembershipPanelProps = {
 
 export function MomentumMembershipPanel({
   subscription,
+  momentumActive,
+  momentumCompMember = false,
   sessionCreditsRemaining = 0,
   sessionCreditPeriodMonth = null,
   packSprint = null,
@@ -56,9 +60,10 @@ export function MomentumMembershipPanel({
   checkoutSuccess = false,
   className,
 }: MomentumMembershipPanelProps) {
-  const active = checkoutSuccess || isMomentumSubscriptionActive(subscription);
+  const stripeActive = isMomentumSubscriptionActive(subscription);
+  const active = checkoutSuccess || momentumActive === true || (momentumActive === undefined && stripeActive);
   const momentumTier = buildPricingTiers().find((tier) => tier.id === "momentum");
-  const renewal = formatMomentumRenewalLabel(subscription);
+  const renewal = formatMomentumRenewalLabel(subscription, { compMember: momentumCompMember });
   const isSubscribe = variant === "subscribe";
   const roi = !active ? buildMomentumRoiSummary(interval) : null;
   const creditsCopy =
