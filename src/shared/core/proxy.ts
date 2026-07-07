@@ -19,7 +19,7 @@ import { waitlistRoleFromQuery } from "@/features/registration/waitlist-role";
 
 /**
  * Exact paths that do not require a session (plus publicPrefixes below).
- * Note: /api/stripe/webhook is also excluded from the proxy matcher so the route
+ * Note: /api/stripe/webhook and /api/cron/* are also excluded from the proxy matcher so the route
  * receives the raw body for signature verification — never add body limits there.
  */
 const publicRoutes = new Set([
@@ -242,6 +242,11 @@ function finalizeResponse(
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const method = request.method;
+
+  // Cron + Stripe webhook authenticate in route handlers (CRON_SECRET / Stripe signature).
+  if (pathname.startsWith("/api/cron/") || pathname.startsWith("/api/stripe/webhook")) {
+    return applySecurityHeaders(NextResponse.next({ request }), pathname);
+  }
 
   // Supabase can fallback recovery links to SITE_URL (/). Normalize here server-side.
   if (pathname === "/" && method === "GET") {
@@ -656,7 +661,8 @@ async function runSupabaseAuthGuard(
 export const config = {
   matcher: [
     // Never run middleware on Stripe webhooks (raw body + signature verification).
+    // Cron routes authenticate via CRON_SECRET in the route handler, not session cookies.
     // Also exclude Next internals, static assets.
-    "/((?!api/stripe/webhook|_next/static|_next/image|favicon.ico|geo/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json|ico|woff2?|txt|xml|webmanifest)$).*)",
+    "/((?!api/stripe/webhook|api/cron/|_next/static|_next/image|favicon.ico|geo/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json|ico|woff2?|txt|xml|webmanifest)$).*)",
   ],
 };
