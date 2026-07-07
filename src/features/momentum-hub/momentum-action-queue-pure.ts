@@ -13,7 +13,6 @@ import {
   buildCreditGuidedAction,
   buildRetestGuidedAction,
   practiceQuestHref,
-  type MomentumValueChips,
 } from "@/features/momentum-hub/momentum-value-equation-pure";
 import type { TrajectoryCounterfactual } from "@/features/momentum-hub/proof-chain-pure";
 
@@ -34,7 +33,6 @@ export type ActionQueueItem = {
   hoursSaved?: number;
   ctaHref: string;
   ctaLabel: string;
-  valueChips?: MomentumValueChips;
 };
 
 export type GuideMemoryQueueInput = {
@@ -101,7 +99,6 @@ export function buildMomentumActionQueue(input: {
       hoursSaved: !retest.isDue && retest.priorityRetest ? 24 : undefined,
       ctaHref: guided.href,
       ctaLabel: guided.label,
-      valueChips: guided.chips,
     });
   }
 
@@ -118,7 +115,6 @@ export function buildMomentumActionQueue(input: {
       evidence: guided.verdict,
       ctaHref: guided.href,
       ctaLabel: guided.label,
-      valueChips: guided.chips,
     });
   }
 
@@ -138,19 +134,13 @@ export function buildMomentumActionQueue(input: {
       kind: "weakest_node",
       priority: 5,
       headline: `Weakest open node: ${input.weakestNodeName}`,
-      evidence: "Target this node in Quest or book your Guide on it.",
+      evidence: "Target in Quest or book a Guide.",
       ctaHref: input.weakestNodeId
         ? practiceQuestHref(input.weakestNodeName, input.weakestNodeId)
         : bookGuideWithCreditHref(input.weakestNodeName),
       ctaLabel: input.weakestNodeId
         ? `Practice ${input.weakestNodeName}`
         : `Book Guide on ${input.weakestNodeName}`,
-      valueChips: {
-        dreamOutcome: "Flip weakest node toward verified",
-        perceivedLikelihood: "Guide sessions start a Proof Chain on this wall",
-        timeDelay: "~8 min practice or one live session",
-        effort: "1 tap — opens focused path",
-      },
     });
   }
 
@@ -173,7 +163,7 @@ export function buildMomentumActionQueue(input: {
 
   const upsellLine =
     !input.momentumActive && items.length > 0
-      ? "Momentum unlocks the full Action Queue, priority retests, and hours saved on every loop."
+      ? "Momentum unlocks the full queue and priority retests."
       : null;
 
   return { items: trimmed, upsellLine };

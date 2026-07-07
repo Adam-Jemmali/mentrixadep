@@ -5,7 +5,6 @@ import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import type { ActionQueueItem } from "@/features/momentum-hub/momentum-action-queue-pure";
-import { MomentumValueChipsRow } from "@/features/momentum-hub/ui/momentum-value-chips";
 
 type MomentumActionQueuePanelProps = {
   items: ActionQueueItem[];
@@ -23,9 +22,6 @@ export function MomentumActionQueuePanel({
   return (
     <section className={`${mentrixStudent.card} p-5 sm:p-6`} aria-label="Momentum action queue">
       <VocabSectionHeading name="quest" label="Action queue" surface="light" />
-      <p className="mt-1 text-xs font-medium text-zinc-500">
-        Ranked by value: dream outcome, likelihood, time, and effort.
-      </p>
 
       <ol className="mt-4 space-y-3">
         {items.map((item, index) => (
@@ -54,9 +50,6 @@ export function MomentumActionQueuePanel({
                 </div>
               ) : null}
             </div>
-            {item.valueChips && momentumActive ? (
-              <MomentumValueChipsRow chips={item.valueChips} />
-            ) : null}
             <div className="mt-3">
               <Button asChild size="sm" variant={index === 0 ? "default" : "outline"}>
                 <Link href={item.ctaHref}>{item.ctaLabel}</Link>

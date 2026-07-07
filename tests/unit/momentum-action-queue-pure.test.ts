@@ -43,7 +43,6 @@ describe("buildMomentumActionQueue", () => {
     expect(items[0]?.kind).toBe("retest_due");
     expect(items[0]?.ctaHref).toContain("retestNode=node-1");
     expect(items[0]?.ctaLabel).toContain("Derivative of a constant");
-    expect(items[0]?.valueChips?.dreamOutcome).toContain("+12");
   });
 
   it("dedupes closed loop when same node is due for retest", () => {

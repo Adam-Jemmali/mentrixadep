@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import type { TopRivalData } from "@/features/divisions/top-rival";
 import { buildBeatLineView } from "@/features/divisions/beat-line-pure";
-import { MomentumValueChipsRow } from "@/features/momentum-hub/ui/momentum-value-chips";
 import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
@@ -148,9 +147,6 @@ export function TopRivalCard({ rivalData, className }: Props) {
                 </>
               ) : null}
             </div>
-
-            <MomentumValueChipsRow chips={beatLine.chips} />
-            <p className="text-sm text-zinc-600">{beatLine.nextAction}</p>
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
               <Link

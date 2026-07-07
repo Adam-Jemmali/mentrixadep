@@ -26,7 +26,7 @@ export function formatLoopSourceLabel(sourceType: string): string {
     case "duel_loss":
       return "Duel loss";
     default:
-      return "Intervention";
+      return "Session";
   }
 }
 

@@ -16,10 +16,9 @@ describe("buildBeatLineView", () => {
     });
     expect(view?.verdict).toContain("Beat Line");
     expect(view?.ctaHref).toBe("/student/duel");
-    expect(view?.chips.effort).toContain("1 tap");
   });
 
-  it("frames rival chase with value equation chips", () => {
+  it("frames rival chase with a single verdict", () => {
     const view = buildBeatLineView({
       status: "has_rival",
       myRank: 14,
@@ -31,8 +30,6 @@ describe("buildBeatLineView", () => {
     });
     expect(view?.verdict).toContain("Jordan");
     expect(view?.ctaLabel).toContain("Beat Jordan");
-    expect(view?.chips.dreamOutcome).toContain("Pass Jordan");
-    expect(view?.chips.timeDelay).toMatch(/~\d+ min/);
   });
 
   it("exports a marketing summary", () => {

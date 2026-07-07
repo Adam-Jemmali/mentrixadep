@@ -80,44 +80,40 @@ function formatAccuracy(ratio: number | null): string {
 }
 
 export function buildOpenLoopProofSteps(input: OpenLoopProofInput): ProofChainStep[] {
-  const preLabel = formatAccuracy(input.preAccuracy);
+  const pre = formatAccuracy(input.preAccuracy);
   const source = formatLoopSourceLabel(input.sourceType);
 
-  const waitDetail = input.isDue
-    ? input.priorityRetest
-      ? `Priority window open ${input.stallDays} day${input.stallDays === 1 ? "" : "s"}.`
-      : `Overdue ${input.stallDays} day${input.stallDays === 1 ? "" : "s"}.`
+  const step1 =
+    pre === "—"
+      ? `${source} on ${input.nodeName}.`
+      : `${source} left you at ${pre} on ${input.nodeName}.`;
+
+  const step2 = input.isDue
+    ? input.stallDays > 0
+      ? `Overdue ${input.stallDays}d.`
+      : "Window open."
     : input.priorityRetest
-      ? "Momentum priority window: 24h after intervention."
-      : "Standard window: 48h after intervention.";
+      ? "Priority window: 24h."
+      : "Window: 48h.";
+
+  const step3 = input.isDue ? "Retest open in Quest." : "Retest unlocks soon.";
+  const step4 = "Rank updates after first try.";
 
   return [
-    {
-      id: "intervention",
-      label: "Intervention",
-      detail: `${source} locked pre-accuracy at ${preLabel} on ${input.nodeName}.`,
-      status: "complete",
-    },
+    { id: "intervention", label: "", detail: step1, status: "complete" },
     {
       id: "wait",
-      label: "Retest window",
-      detail: waitDetail,
+      label: "",
+      detail: step2,
       status: input.isDue ? "stalled" : "complete",
     },
     {
       id: "retest",
-      label: "First retest",
-      detail: input.isDue
-        ? "Rank-critical retest is open now in Quest."
-        : "Unlocks when the window opens.",
+      label: "",
+      detail: step3,
       status: input.isDue ? "current" : "locked",
     },
-    {
-      id: "movement",
-      label: "Verified movement",
-      detail: "Post-accuracy and grid flip publish only after first retest.",
-      status: "locked",
-    },
+    { id: "movement", label: "", detail: step4, status: "locked" },
   ];
 }
 
@@ -130,26 +126,21 @@ export function buildClosedLoopProofSteps(input: ClosedLoopProofInput): ProofCha
   return [
     {
       id: "intervention",
-      label: "Intervention",
+      label: "",
       detail: `${formatLoopSourceLabel(input.sourceType)} on ${input.nodeName}.`,
       status: "complete",
     },
     {
       id: "wait",
-      label: "Retest window",
+      label: "",
       detail: `Closed in ${Math.round(input.closureHours)}h.`,
       status: "complete",
     },
-    {
-      id: "retest",
-      label: "First retest",
-      detail: "First attempt after intervention recorded.",
-      status: "complete",
-    },
+    { id: "retest", label: "", detail: "First try recorded.", status: "complete" },
     {
       id: "movement",
-      label: "Verified movement",
-      detail: `Pre ${pre}% → post ${post}% (${sign}${delta}). Permanent for rank.`,
+      label: "",
+      detail: `${pre}% → ${post}% (${sign}${delta}). Permanent.`,
       status: delta > 0 ? "complete" : "stalled",
     },
   ];
@@ -174,8 +165,8 @@ export function projectTrajectoryLiftIfOverdueClosed(
       currentScore: trajectory.score,
       projectedScore: projected.score,
       lift: 0,
-      verdict: "Closing this retest stops further Trajectory decay.",
-      nextAction: "Take the retest in Quest now to lock the loop.",
+      verdict: "Closing this retest stops Trajectory decay.",
+      nextAction: "Take the retest in Quest.",
     };
   }
 
@@ -183,8 +174,8 @@ export function projectTrajectoryLiftIfOverdueClosed(
     currentScore: trajectory.score,
     projectedScore: projected.score,
     lift,
-    verdict: `Closing this overdue retest lifts your Trajectory Index ${trajectory.score} → ${projected.score}.`,
-    nextAction: "Take the retest in Quest now. This lift is computed from your real retest backlog.",
+    verdict: `Close this retest → Trajectory ${trajectory.score} → ${projected.score}.`,
+    nextAction: "Take the retest in Quest.",
   };
 }
 
@@ -214,15 +205,12 @@ export function buildLoopVelocityIndex(input: {
 
   const verdict =
     cohortHours != null && userHours < cohortHours
-      ? `You close coaching loops in ${Math.round(userHours)}h median. Active Momentum cohort median is ${Math.round(cohortHours)}h.`
+      ? `You close loops in ${Math.round(userHours)}h. Cohort median: ${Math.round(cohortHours)}h.`
       : cohortHours != null
-        ? `Your median loop closure is ${Math.round(userHours)}h vs cohort ${Math.round(cohortHours)}h.`
-        : `Your median loop closure is ${Math.round(userHours)}h over the last 30 days.`;
+        ? `Your median: ${Math.round(userHours)}h. Cohort: ${Math.round(cohortHours)}h.`
+        : `Median closure: ${Math.round(userHours)}h (30d).`;
 
-  const nextAction =
-    score >= 70
-      ? "Keep closing loops within 48h of intervention to hold velocity."
-      : "Close the next retest within 24h of unlock to lift Loop Velocity.";
+  const nextAction = score >= 70 ? "Keep closing within 48h." : "Close the next retest within 24h.";
 
   return {
     score,
@@ -272,8 +260,7 @@ export function buildProofChainPanelData(input: {
       mode: "teaser",
       nodeName,
       stepCount: 4,
-      upsellLine:
-        "Momentum Proof Chain shows the unforgeable path from Guide session to verified movement, plus the Trajectory points left on the table while a retest stalls.",
+      upsellLine: "Momentum shows session → retest → rank movement on every loop.",
     };
   }
 
@@ -292,17 +279,17 @@ export function buildProofChainPanelData(input: {
 
   let verdict = focus
     ? focus.isDue
-      ? `Proof Chain stalled ${stallDays} day${stallDays === 1 ? "" : "s"} on ${nodeName}. Rank cannot move until first retest.`
-      : `Proof Chain active on ${nodeName}. Retest unlocks the only path to verified movement.`
+      ? `Retest overdue ${stallDays}d on ${nodeName}.`
+      : `Loop open on ${nodeName}.`
     : input.closedLoop
-      ? `Latest closed loop on ${nodeName} is verified proof of movement.`
-      : "Your Proof Chain tracks intervention → retest → permanent rank movement.";
+      ? `${nodeName} closed. Movement verified.`
+      : "Session → retest → rank movement.";
 
   let nextAction = focus?.isDue
-    ? "Take the retest in Quest now to publish movement to your grid and Trajectory Index."
+    ? "Take the retest in Quest."
     : focus
-      ? "Practice related nodes until the retest window opens."
-      : "Book your next Guide session to start a new Proof Chain.";
+      ? "Practice until the retest opens."
+      : "Book a Guide to start a new loop.";
 
   if (counterfactual && counterfactual.lift > 0) {
     verdict = counterfactual.verdict;

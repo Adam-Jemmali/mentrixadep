@@ -6,7 +6,6 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import { Lock } from "lucide-react";
 import type { TrajectoryPanelView } from "@/features/momentum-hub/momentum-trajectory-enrichment-pure";
-import { MomentumValueChipsRow } from "@/features/momentum-hub/ui/momentum-value-chips";
 
 function TrajectorySparkline({ points }: { points: { date: string; score: number }[] }) {
   if (points.length < 2) {
@@ -111,11 +110,9 @@ export function MomentumTrajectoryPanel({ data }: MomentumTrajectoryPanelProps) 
       </div>
 
       <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-        <p className="text-[10px] font-black uppercase tracking-widest text-amber-800">Bottleneck</p>
-        <p className="mt-1 text-sm font-semibold text-amber-950">
-          {bottleneck.label} at {bottleneck.current} — dragging your index.
+        <p className="text-sm font-semibold text-amber-950">
+          {bottleneck.label} at {bottleneck.current} — {bottleneck.fixAction}
         </p>
-        <p className="mt-1 text-sm text-amber-900">{bottleneck.fixAction}</p>
       </div>
 
       {peerLine ? (
@@ -136,25 +133,23 @@ export function MomentumTrajectoryPanel({ data }: MomentumTrajectoryPanelProps) 
         </div>
       ) : null}
 
-      <p className="mt-3 text-sm text-zinc-600">{trajectory.nextAction}</p>
-
       {guidedAction ? (
-        <>
-          <MomentumValueChipsRow chips={guidedAction.chips} />
-          <div className="mt-4">
-            <Button asChild size="lg" className={mentrixStudent.hubBtnSolid}>
-              <Link href={guidedAction.href}>{guidedAction.label}</Link>
-            </Button>
-          </div>
-        </>
+        <div className="mt-4">
+          <Button asChild size="lg" className={mentrixStudent.hubBtnSolid}>
+            <Link href={guidedAction.href}>{guidedAction.label}</Link>
+          </Button>
+        </div>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 space-y-3">
+          <p className="text-sm text-zinc-600">{trajectory.nextAction}</p>
+          <div className="flex flex-wrap gap-2">
           <Button asChild size="sm" variant="outline">
             <Link href="/student/loop">Full loop history</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link href="/student/certificate">Trajectory certificate</Link>
           </Button>
+          </div>
         </div>
       )}
     </section>

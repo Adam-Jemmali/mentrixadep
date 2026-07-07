@@ -68,11 +68,9 @@ export function buildRetestGuidedAction(input: {
     },
     verdict:
       lift > 0
-        ? `Closing ${input.nodeName} moves Trajectory ${input.counterfactual!.currentScore} → ${input.counterfactual!.projectedScore}.`
-        : `Rank is frozen on ${input.nodeName} until first retest.`,
-    nextAction: input.isDue
-      ? `Tap below. Quest loads ${input.nodeName} retest immediately.`
-      : `Practice related items until the retest unlocks, then return here.`,
+        ? `Close ${input.nodeName} → Trajectory ${input.counterfactual!.currentScore} → ${input.counterfactual!.projectedScore}.`
+        : `Rank frozen on ${input.nodeName} until retest.`,
+    nextAction: input.isDue ? "Take the retest in Quest." : "Practice until the retest opens.",
   };
 }
 
@@ -92,8 +90,8 @@ export function buildCreditGuidedAction(input: {
       timeDelay: input.creditExpiryLabel ? `Book before ${input.creditExpiryLabel}` : "Use this month",
       effort: "Pick a slot — credit applies at checkout",
     },
-    verdict: "Your included session is the fastest path to a new Proof Chain.",
-    nextAction: "Book on your weakest open node so the Guide targets what still will not move.",
+    verdict: "Included session ready. Book on your weakest open node.",
+    nextAction: "Book before the month turns.",
   };
 }
 
@@ -123,7 +121,7 @@ export function buildBottleneckGuidedAction(
         effort: "One Quest pack on an unverified node",
       },
       verdict: bottleneck.fixAction,
-      nextAction: "Pick a node you have not verified yet. First attempt is permanent.",
+      nextAction: "Pick an unverified node. First try is permanent.",
     };
   }
 
