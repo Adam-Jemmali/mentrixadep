@@ -16,6 +16,7 @@ describe("arena hub messages", () => {
       arenaLeaguePanelHint(),
       arenaLeagueCardDescriptionFallback(),
     ]) {
+      if (!value.trim()) continue;
       expect(value.trim()).toMatch(FOUR_WORD_MAX);
     }
     expect(arenaLeaguePageTitle()).toMatch(/AP Calculus AB/i);

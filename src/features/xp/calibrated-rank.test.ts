@@ -48,7 +48,7 @@ describe("formatVerifiedFirstAttemptSummary", () => {
       accuracyPercent: 72,
       percentile: 45,
     });
-    expect(line).toContain("9 right out of 12 first tries");
+    expect(line).toContain("9 right out of 12 first answers");
     expect(line).toContain("beat 45 out of every 100");
   });
 
@@ -71,7 +71,7 @@ describe("formatVerifiedRankVerdict", () => {
         accuracyPercent: 76,
         percentile: 89,
       })
-    ).toContain("first tries");
+    ).toContain("first answers");
     expect(
       formatVerifiedRankVerdict({
         verifiedCount: 12,

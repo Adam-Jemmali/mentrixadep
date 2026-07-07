@@ -13,7 +13,7 @@ describe("popover messages", () => {
       accuracyPercent: 72,
       percentile: null,
     });
-    expect(msg.verdict).toMatch(/2 right out of 3 first tries/i);
+    expect(msg.verdict).toMatch(/2 right out of 3 first answers/i);
     expect(msg.nextAction).toMatch(/verify 2 more/i);
   });
 

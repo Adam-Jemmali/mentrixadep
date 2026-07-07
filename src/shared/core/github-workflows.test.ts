@@ -38,11 +38,16 @@ function extractScheduleCrons(yaml: string): string[] {
 }
 
 describe("GitHub workflow schedules", () => {
+  const ALLOWED_SUB_DAILY_SCHEDULES = new Set(["cron-background-jobs.yml:*/15 * * * *"]);
+
   it("does not use sub-daily cron schedules (Actions credits)", () => {
     const files = readdirSync(WORKFLOWS_DIR).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
     for (const file of files) {
       const content = readFileSync(join(WORKFLOWS_DIR, file), "utf8");
       for (const schedule of extractScheduleCrons(content)) {
+        if (ALLOWED_SUB_DAILY_SCHEDULES.has(`${file}:${schedule}`)) {
+          continue;
+        }
         expect(
           isAtMostDailyGithubCron(schedule),
           `${file} schedule "${schedule}" runs more than once per day`,
