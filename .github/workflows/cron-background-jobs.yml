@@ -26,9 +26,15 @@ jobs:
           BASE_URL="${{ vars.PLAYWRIGHT_BASE_URL || 'https://mentrixa.one' }}"
           URL="${BASE_URL%/}/api/cron/process-background-jobs"
           echo "Pinging ${URL}"
-          code=$(curl -sS -o /tmp/cron-body.txt -w "%{http_code}" \
+          headers=$(mktemp)
+          code=$(curl -sS -D "${headers}" -o /tmp/cron-body.txt -w "%{http_code}" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             "${URL}")
           echo "HTTP ${code}"
+          if [ "${code}" = "307" ] || [ "${code}" = "302" ] || [ "${code}" = "301" ]; then
+            echo "Redirect location:"
+            grep -i '^location:' "${headers}" || true
+            echo "Cron routes must bypass session middleware — deploy latest main and retry."
+          fi
           cat /tmp/cron-body.txt
           test "${code}" -ge 200 && test "${code}" -lt 300
