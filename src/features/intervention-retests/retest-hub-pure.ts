@@ -33,7 +33,7 @@ export function buildRetestHubMessages(state: PendingRetestHubState): {
   }
 
   return {
-    verdict: `Retest on ${state.nodeName} unlocks in ${countdown}. Momentum members wait half as long.`,
+    verdict: `Retest on ${state.nodeName} unlocks in ${countdown}. Momentum membership members wait half as long.`,
     nextAction: `Practice ${state.nodeName} in Quest while you wait, then return here to retest.`,
     countdownLabel: countdown,
   };

@@ -93,7 +93,7 @@ function PolaroidPhoto({ feature }: { feature: Feature }) {
             quality={IMAGE_QUALITY}
           />
         </div>
-        <p className="absolute inset-x-0 bottom-2 px-2 text-center text-[11px] font-semibold tracking-tight text-[#334155] sm:text-xs">
+        <p className="absolute inset-x-0 bottom-2 px-2 text-center text-[11px] font-semibold tracking-tight text-[#334155] lp-body sm:text-xs">
           {feature.title}
         </p>
         <div className="pointer-events-none absolute -right-2 -top-1.5 h-6 w-10 rotate-12 bg-[#EDE9FE]/90 shadow-sm" />

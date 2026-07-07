@@ -21,7 +21,7 @@ describe("chip messages", () => {
     const active = subscriptionTierChipPresentation("momentum", { active: true });
     expect(inactive.visual).toBe("accent");
     expect(active.visual).toBe("accent");
-    expect(active.label).toMatch(/active/i);
+    expect(active.label).toContain("Momentum membership member");
   });
 
   it("keeps arena tier on accent without verified gold", () => {

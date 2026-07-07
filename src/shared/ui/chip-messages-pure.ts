@@ -1,4 +1,5 @@
 import type { PricingTierId } from "@/features/pricing/pricing-tiers-pure";
+import { MOMENTUM_MEMBERSHIP_MEMBER_LABEL } from "@/features/payments/momentum-membership-pure";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export type MentrixaChipVisual =
@@ -78,7 +79,7 @@ export function subscriptionTierChipPresentation(
       return { label: "Breakthrough", visual: "accent" };
     case "momentum":
       return {
-        label: active ? "Momentum active" : "Momentum",
+        label: active ? MOMENTUM_MEMBERSHIP_MEMBER_LABEL : "Momentum membership",
         visual: "accent",
       };
   }

@@ -8,6 +8,8 @@ import {
 } from "@/features/entitlements/pack-sprint-pure";
 import {
   momentumCreditRedemptionKey,
+  pickMonthlySessionCreditForConsume,
+  summarizeMonthlySessionCredits,
   utcPeriodMonthKey,
   type MomentumSessionCreditGrantSource,
 } from "@/features/entitlements/session-credits-pure";
@@ -38,23 +40,34 @@ export type MomentumSessionCreditsSummary = {
   packSprint: PackSprintState | null;
 };
 
-async function getMonthlyMomentumSessionCreditRow(
+async function listMonthlyMomentumSessionCreditRows(
   userId: string,
   periodMonth: string = utcPeriodMonthKey(),
-): Promise<MomentumSessionCreditRow | null> {
+): Promise<MomentumSessionCreditRow[]> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("momentum_session_credits")
     .select("id, user_id, period_month, credits_granted, credits_remaining")
     .eq("user_id", userId)
-    .eq("period_month", periodMonth)
-    .maybeSingle();
+    .eq("period_month", periodMonth);
 
   if (error) {
     console.warn("[session-credits] monthly read failed:", error.message);
+    return [];
+  }
+  return (data as MomentumSessionCreditRow[]) ?? [];
+}
+
+async function getMonthlyMomentumSessionCreditRow(
+  userId: string,
+  periodMonth: string = utcPeriodMonthKey(),
+): Promise<MomentumSessionCreditRow | null> {
+  const rows = await listMonthlyMomentumSessionCreditRows(userId, periodMonth);
+  const { representative } = summarizeMonthlySessionCredits(rows);
+  if (!representative) {
     return null;
   }
-  return (data as MomentumSessionCreditRow | null) ?? null;
+  return rows.find((row) => row.id === representative.id) ?? null;
 }
 
 async function getEarliestActivePackCreditRow(userId: string): Promise<MomentumPackCreditRow | null> {
@@ -90,15 +103,18 @@ export async function getActivePackSprintState(userId: string): Promise<PackSpri
 export async function getMomentumSessionCreditsSummary(
   userId: string,
 ): Promise<MomentumSessionCreditsSummary> {
-  const [monthlyCredit, packCredit] = await Promise.all([
-    getMonthlyMomentumSessionCreditRow(userId),
+  const periodMonth = utcPeriodMonthKey();
+  const [monthlyRows, packCredit] = await Promise.all([
+    listMonthlyMomentumSessionCreditRows(userId, periodMonth),
     getEarliestActivePackCreditRow(userId),
   ]);
 
-  const monthlyRemaining =
-    monthlyCredit && (monthlyCredit.credits_remaining ?? 0) > 0
-      ? monthlyCredit.credits_remaining
-      : 0;
+  const monthlySummary = summarizeMonthlySessionCredits(monthlyRows);
+  const monthlyCredit =
+    monthlySummary.representative && monthlySummary.totalRemaining > 0
+      ? (monthlyRows.find((row) => row.id === monthlySummary.representative?.id) ?? null)
+      : null;
+  const monthlyRemaining = monthlySummary.totalRemaining;
   const packRemaining =
     packCredit && (packCredit.credits_remaining ?? 0) > 0 ? packCredit.credits_remaining : 0;
 
@@ -150,6 +166,7 @@ export async function grantMomentumMonthlySessionCredit(params: {
     .select("id")
     .eq("user_id", params.userId)
     .eq("period_month", periodMonth)
+    .eq("grant_source", params.grantSource)
     .maybeSingle();
 
   if (existing) {
@@ -293,10 +310,12 @@ export async function consumeMomentumSessionCredit(params: {
     };
   }
 
-  const [monthlyCredit, packCredit] = await Promise.all([
-    getMonthlyMomentumSessionCreditRow(params.userId),
+  const periodMonth = utcPeriodMonthKey();
+  const [monthlyRows, packCredit] = await Promise.all([
+    listMonthlyMomentumSessionCreditRows(params.userId, periodMonth),
     getEarliestActivePackCreditRow(params.userId),
   ]);
+  const monthlyCredit = pickMonthlySessionCreditForConsume(monthlyRows);
 
   const candidate = selectCreditConsumeCandidate({
     pack: packCredit

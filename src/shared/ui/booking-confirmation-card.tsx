@@ -192,8 +192,8 @@ export function BookingConfirmationCard({
             </div>
             <div className={tierClass("member")}>
               <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                <MentrixaVocabIcon name="momentum" size={12} surface="light" title="Member" />
-                Member
+                <MentrixaVocabIcon name="momentum" size={12} surface="light" title="Momentum membership" />
+                Momentum membership
               </p>
               <p className="mt-1 text-sm font-bold text-white">{priceAnchor.memberLabel}</p>
             </div>
@@ -228,7 +228,7 @@ export function BookingConfirmationCard({
           ) : momentumSubscriber ? null : (
             <p className="mt-2 text-xs leading-relaxed text-slate-400">
               <Link href="/student/subscribe" className="font-medium text-indigo-400 underline hover:text-indigo-300">
-                View Momentum plan
+                View Momentum membership plan
               </Link>
             </p>
           )}

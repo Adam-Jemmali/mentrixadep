@@ -60,7 +60,7 @@ export function OutcomesSection() {
                 transition={{ delay: 0.2 + i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 style={{ originX: 0 }}
               />
-              <p className={landingHub.eyebrow}>{item.word}</p>
+              <p className={landingHub.stickyWord}>{item.word}</p>
               <p className={`mt-2 ${landingHub.body}`}>{item.sentence}</p>
             </LandingStickyCard>
           </motion.div>

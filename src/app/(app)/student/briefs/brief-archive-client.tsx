@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MOMENTUM_MEMBERSHIP_INCLUDED_COPY } from "@/features/payments/momentum-membership-pure";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 import type { BriefArchiveRow } from "@/features/pre-session-brief/load-brief-archive";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
@@ -29,14 +31,18 @@ export function BriefArchiveClient({
 
         {!momentumActive ? (
           <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
-            Your latest upcoming brief stays on the hub. The full archive is included with Momentum.
+            Your latest upcoming brief stays on the hub. The full archive is a Momentum membership feature.{" "}
+            {MOMENTUM_MEMBERSHIP_INCLUDED_COPY}
           </div>
         ) : briefs.length === 0 ? (
           <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
+            <MomentumMembershipMemberChip className="mb-3" />
             Briefs appear here after your first pre-session brief is generated.
           </div>
         ) : (
-          <ul className="space-y-4">
+          <>
+            <MomentumMembershipMemberChip />
+            <ul className="space-y-4">
             {briefs.map((brief) => (
               <li key={brief.id} className={`${mentrixStudent.card} p-5 sm:p-6`}>
                 <VocabSectionHeading name="brief" label="Session brief" surface="light" />
@@ -61,6 +67,7 @@ export function BriefArchiveClient({
               </li>
             ))}
           </ul>
+          </>
         )}
       </main>
     </div>

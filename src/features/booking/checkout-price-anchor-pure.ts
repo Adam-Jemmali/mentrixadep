@@ -50,12 +50,12 @@ export function buildCheckoutPriceAnchor(input: {
       paygLabel,
       memberLabel,
       creditLabel,
-      headline: `${formatUsdFromCents(MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS)} member rate at checkout`,
+      headline: `${formatUsdFromCents(MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS)} Momentum membership session rate at checkout`,
       subline: input.sessionCreditAvailable
         ? (input.packSprintCreditsRemaining ?? 0) > 0
           ? "Use sprint or monthly credit at checkout. Sprint credits expire first."
           : "Check the box above to use your included credit instead."
-        : "Your included credit for this month is used. Extra sessions book at the member rate.",
+        : "Your included credit for this month is used. Extra sessions book at the Momentum membership session rate.",
     };
   }
 
@@ -65,6 +65,6 @@ export function buildCheckoutPriceAnchor(input: {
     memberLabel,
     creditLabel,
     headline: `${formatUsdFromCents(BREAKTHROUGH_SESSION_PRICE_CENTS)} pay as you go at checkout`,
-    subline: `Momentum members book at ${memberLabel} with an included monthly credit. Annual saves $219 on 12 sessions.`,
+    subline: `Momentum membership members book at ${memberLabel} with an included monthly credit. Annual saves $219 on 12 sessions.`,
   };
 }

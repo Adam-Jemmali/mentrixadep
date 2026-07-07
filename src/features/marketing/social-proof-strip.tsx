@@ -84,8 +84,8 @@ export function SocialProofStrip() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         >
           <LandingStickyCard rotate={false} className="pointer-events-auto max-w-xl rotate-[0.25deg] px-5 py-6 text-center sm:px-7">
-            <p className={landingHub.eyebrow}>{LANDING_SOCIAL.word}</p>
-            <p className={`mx-auto mt-3 max-w-lg text-balance text-lg font-bold leading-snug sm:text-xl ${landingHub.title}`}>
+            <p className={landingHub.stickyWord}>{LANDING_SOCIAL.word}</p>
+            <p className={`mx-auto mt-3 max-w-lg text-balance text-lg font-semibold leading-snug sm:text-xl ${landingHub.body}`}>
               {LANDING_SOCIAL.sentence}
             </p>
           </LandingStickyCard>

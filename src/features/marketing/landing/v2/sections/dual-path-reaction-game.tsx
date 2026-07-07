@@ -78,7 +78,7 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
         variant={side.role === "Mentrixer" ? "pinned" : "clip"}
         className="relative overflow-hidden p-6"
       >
-      <p className={cn("relative inline-flex items-center gap-1.5", landingHub.eyebrow)}>
+      <p className={cn("relative inline-flex items-center gap-1.5", landingHub.stickyWord)}>
         <RoleIcon role={side.role} size={16} />
         {side.role}
       </p>

@@ -36,7 +36,7 @@ export function WhyMentrixSection() {
       >
         <motion.div variants={slideFromLeft} custom={0} whileHover={cinematic ? cardHoverLift : undefined}>
           <LandingStickyCard rotate variant="dog-ear" className="rotate-[-0.6deg]">
-            <p className={landingHub.eyebrow}>{LANDING_WHY.withoutEyebrow}</p>
+            <p className={landingHub.stickyWord}>{LANDING_WHY.withoutEyebrow}</p>
             <ul className="mt-4 space-y-3">
               {LANDING_WHY.without.map((line, i) => (
                 <motion.li
@@ -57,7 +57,7 @@ export function WhyMentrixSection() {
 
         <motion.div variants={slideFromRight} custom={0} whileHover={cinematic ? cardHoverLift : undefined}>
           <LandingStickyCard rotate={false} variant="taped" className="rotate-[0.5deg]">
-            <p className={landingHub.eyebrow}>{LANDING_WHY.withEyebrow}</p>
+            <p className={landingHub.stickyWord}>{LANDING_WHY.withEyebrow}</p>
             <ul className="mt-4 space-y-3">
               {LANDING_WHY.with.map((line, i) => (
                 <motion.li

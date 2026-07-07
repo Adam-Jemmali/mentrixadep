@@ -7,6 +7,8 @@ import {
   compareGridSnapshots,
   type GridSnapshotWeek,
 } from "@/features/mastery-grid/grid-history-pure";
+import { MOMENTUM_MEMBERSHIP_UNLOCK_COPY } from "@/features/payments/momentum-membership-pure";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 
 type MasteryGridHistoryPanelProps = {
   history: GridSnapshotWeek[];
@@ -34,7 +36,7 @@ export function MasteryGridHistoryPanel({
             {latest.verifiedCount} verified nodes captured this week.
           </p>
           <p className="mt-2 text-sm text-zinc-600">
-            See how your grid changed over 4, 8, and 12 weeks with Momentum. Your current grid stays free.
+            See how your grid changed over 4, 8, and 12 weeks. {MOMENTUM_MEMBERSHIP_UNLOCK_COPY} Your current grid stays free.
           </p>
         </section>
       </StudentStickyNote>
@@ -58,7 +60,8 @@ export function MasteryGridHistoryPanel({
     <StudentStickyNote variant="taped">
       <section className="space-y-4">
       <div>
-        <p className={mentrixStudent.sectionEyebrowOnLight}>Grid timeline</p>
+        <MomentumMembershipMemberChip />
+        <p className={`${mentrixStudent.sectionEyebrowOnLight} mt-2`}>Grid timeline</p>
         <p className="mt-2 text-sm font-semibold text-zinc-900">{verdict}</p>
         <p className="mt-1 text-sm text-zinc-600">{nextAction}</p>
       </div>

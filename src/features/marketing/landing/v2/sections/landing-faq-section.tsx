@@ -49,7 +49,7 @@ export function LandingFaqSection() {
               variant={landingStickyVariantForIndex(categoryIndex + 1)}
               className={categoryIndex % 2 === 1 ? "rotate-[0.4deg]" : undefined}
             >
-              <p className={`mb-3 inline-flex items-center gap-2 ${landingHub.eyebrow}`}>
+              <p className={`mb-3 inline-flex items-center gap-2 ${landingHub.stickyWord}`}>
                 <MentrixaVocabIcon
                   name={landingFaqCategoryVocabIcon(category.id)}
                   size={16}
@@ -67,7 +67,7 @@ export function LandingFaqSection() {
                     verdict={item.verdict}
                     nextAction={item.nextAction}
                   >
-                    <p>{item.body}</p>
+                    <p className={landingHub.body}>{item.body}</p>
                   </MentrixaAccordionItem>
                 ))}
               </MentrixaAccordion>

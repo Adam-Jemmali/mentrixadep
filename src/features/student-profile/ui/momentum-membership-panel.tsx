@@ -243,7 +243,7 @@ export function MomentumMembershipPanel({
           </Button>
         ) : (
           <Button asChild className={mentrixStudent.hubBtnSolid}>
-            <Link href="/student/subscribe">View Momentum plan</Link>
+            <Link href="/student/subscribe">View Momentum membership plan</Link>
           </Button>
         )}
         {!isSubscribe ? (

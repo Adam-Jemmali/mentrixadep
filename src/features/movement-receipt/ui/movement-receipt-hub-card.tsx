@@ -21,6 +21,7 @@ import {
   stripGridMovementFromVerdict,
 } from "@/features/movement-receipt/movement-receipt-pure";
 import { buildPeerVelocityUpsellLine } from "@/features/comparison/peer-velocity-pure";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { GridMovementVisual } from "@/features/movement-receipt/ui/grid-movement-visual";
 
 type MovementReceiptHubCardProps = {
@@ -79,6 +80,7 @@ export function MovementReceiptHubCard({ data, momentumActive, compact = false }
 
       {momentumActive ? (
         <div className="mt-3 space-y-2">
+          <MomentumMembershipMemberChip />
           {supplementalVerdict ? (
             <p className="text-sm font-semibold text-[#334155]">{supplementalVerdict}</p>
           ) : null}
@@ -97,7 +99,7 @@ export function MovementReceiptHubCard({ data, momentumActive, compact = false }
           <p className="text-sm font-medium text-[#4F46E5]">
             {buildPeerVelocityUpsellLine()}{" "}
             <Link href="/student/subscribe" className="underline">
-              Momentum
+              Momentum membership
             </Link>
           </p>
         </div>

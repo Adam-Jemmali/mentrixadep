@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MOMENTUM_MEMBERSHIP_INCLUDED_COPY, MOMENTUM_MEMBERSHIP_UNLOCK_COPY } from "@/features/payments/momentum-membership-pure";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import type { LoopReportRow } from "@/features/intervention-retests/retest-reads";
 import {
   buildLoopReportNextAction,
@@ -57,6 +59,7 @@ export function LoopReportPageClient({
           <Link href="/student" className="text-sm text-purple-600 hover:text-violet-100">
             Back to hub
           </Link>
+          {momentumActive ? <MomentumMembershipMemberChip className="mt-2" /> : null}
           <VocabSectionHeading
             name="loop-report"
             label="Loop Report"
@@ -132,11 +135,11 @@ export function LoopReportPageClient({
             <div className="flex items-center gap-2 text-zinc-700">
               <Lock className="h-4 w-4" aria-hidden />
               <p className="text-sm font-semibold">
-                {lockedCount} more loop{lockedCount === 1 ? "" : "s"} in your history — unlock with Momentum.
+                {lockedCount} more loop{lockedCount === 1 ? "" : "s"} in your history. {MOMENTUM_MEMBERSHIP_UNLOCK_COPY}
               </p>
             </div>
             <Link href="/student/subscribe" className="mt-2 inline-block text-sm font-semibold text-violet-700 underline">
-              View Momentum plan
+              View Momentum membership plan
             </Link>
           </div>
         ) : null}
@@ -144,7 +147,8 @@ export function LoopReportPageClient({
         {!momentumActive && lockedCount === 0 ? (
           <div className={`${mentrixStudent.card} p-5`}>
             <p className="text-sm text-zinc-700">
-              Free accounts see the latest loop. Full Loop Report history is included with Momentum.
+              Free accounts see the latest loop. Full Loop Report history is a Momentum membership feature.{" "}
+              {MOMENTUM_MEMBERSHIP_INCLUDED_COPY}
             </p>
           </div>
         ) : null}

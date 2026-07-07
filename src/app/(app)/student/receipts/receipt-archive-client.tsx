@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MOMENTUM_MEMBERSHIP_INCLUDED_COPY, MOMENTUM_MEMBERSHIP_UNLOCK_COPY } from "@/features/payments/momentum-membership-pure";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 import type { MovementReceiptRow } from "@/features/movement-receipt/types";
 import {
@@ -36,15 +38,18 @@ export function ReceiptArchiveClient({
 
         {!momentumActive ? (
           <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
-            Your current week receipt stays free on the hub. The full archive and weekly email are included with
-            Momentum.
+            Your current week receipt stays free on the hub. The full archive and weekly email are Momentum membership
+            features. {MOMENTUM_MEMBERSHIP_INCLUDED_COPY}
           </div>
         ) : receipts.length === 0 ? (
           <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
+            <MomentumMembershipMemberChip className="mb-3" />
             Archives appear after your first Monday Movement Receipt is generated.
           </div>
         ) : (
-          <ul className="space-y-4">
+          <>
+            <MomentumMembershipMemberChip />
+            <ul className="space-y-4">
             {receipts.map((receipt) => {
               const { verdict, nextAction } = buildMovementReceiptVerdict(receipt.receipt_data);
               const supplementalVerdict = stripGridMovementFromVerdict(verdict, receipt.receipt_data.grid);
@@ -78,6 +83,7 @@ export function ReceiptArchiveClient({
               );
             })}
           </ul>
+          </>
         )}
       </main>
     </div>

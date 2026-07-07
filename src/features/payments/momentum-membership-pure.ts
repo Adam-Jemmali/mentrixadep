@@ -11,21 +11,29 @@ import type { StudentSubscriptionRow } from "@/features/payments/student-subscri
 import { isMomentumSubscriptionActive } from "@/features/payments/student-subscription";
 import { momentumCompRenewalLabel } from "@/features/entitlements/momentum-comp-members-pure";
 
+export const MOMENTUM_MEMBERSHIP_MEMBER_LABEL = "Momentum membership member";
+
+export const MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW = "Momentum membership feature";
+
+export const MOMENTUM_MEMBERSHIP_INCLUDED_COPY = "Included with Momentum membership.";
+
+export const MOMENTUM_MEMBERSHIP_UNLOCK_COPY = "Unlock with Momentum membership.";
+
 export const MOMENTUM_MEMBERSHIP_VERDICT =
-  "Momentum is the only subscription. It unlocks weekly proof, coaching memory, and included session credits. Your rank and Mastery Grid stay free in the Arena.";
+  "Momentum membership is the only subscription. It unlocks weekly proof, coaching memory, and included session credits. Your rank and Mastery Grid stay free in the Arena.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE =
-  "Subscribe to unlock Movement Receipts, archive access, priority retests, and one included Guide session per month.";
+  "Subscribe to Momentum membership to unlock Movement Receipts, archive access, priority retests, and one included Guide session per month.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE =
-  "Book your next Guide session. Use your included monthly credit or the member rate.";
+  "You are a Momentum membership member. Book your next Guide session with your included monthly credit or the membership session rate.";
 
 export function momentumSubscriberSessionPriceLabel(): string {
   return `${formatUsdFromCents(MOMENTUM_SUBSCRIBER_SESSION_PRICE_CENTS)} CAD`;
 }
 
 export function momentumVsBreakthroughValueLine(): string {
-  return `One Guide session is ${formatStudentBreakthroughPrice()} pay as you go. Momentum members book at ${momentumSubscriberSessionPriceLabel()} per session plus subscription perks.`;
+  return `One Guide session is ${formatStudentBreakthroughPrice()} pay as you go. Momentum membership members book at ${momentumSubscriberSessionPriceLabel()} per session plus subscription perks.`;
 }
 
 export function formatMomentumRenewalLabel(

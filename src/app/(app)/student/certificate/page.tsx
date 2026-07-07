@@ -14,10 +14,10 @@ export default async function StudentCertificatePage() {
     return (
       <main className="mx-auto max-w-2xl px-4 py-10">
         <p className="text-sm text-zinc-600">
-          Trajectory certificate export is available to Momentum members.
+          Trajectory certificate export is a Momentum membership feature.
         </p>
         <Button asChild className="mt-4">
-          <Link href="/student/subscribe">View plans</Link>
+          <Link href="/student/subscribe">View Momentum membership plan</Link>
         </Button>
       </main>
     );

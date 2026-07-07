@@ -64,7 +64,7 @@ function StickyGrid({
             variant={landingStickyVariantForIndex(i + indexOffset)}
             className={cn("h-full cursor-default", i % 2 === 1 && "rotate-[0.45deg]")}
           >
-            <p className={landingHub.eyebrow}>{item.word}</p>
+            <p className={landingHub.stickyWord}>{item.word}</p>
             <p className={`mt-2 ${landingHub.body}`}>{item.sentence}</p>
           </LandingStickyCard>
         </motion.div>
@@ -96,7 +96,7 @@ export function GuideSection() {
         className="mx-auto mt-10 max-w-2xl"
       >
         <LandingStickyCard rotate={false} variant="clip" className="text-center rotate-[0.25deg] px-5 py-6 sm:px-7">
-          <p className={`inline-flex items-center justify-center gap-2 ${landingHub.eyebrow}`}>
+          <p className={`inline-flex items-center justify-center gap-2 ${landingHub.stickyWord}`}>
             <GuideRoleIcon />
             {LANDING_GUIDE.definition.word}
           </p>

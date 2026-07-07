@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { formatMomentumRenewalLabel } from "@/features/payments/momentum-membership-pure";
 import { momentumCompRenewalLabel } from "@/features/entitlements/momentum-comp-members-pure";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { cn } from "@/shared/core/utils";
 
 type MomentumActiveHubCardProps = {
@@ -49,17 +49,19 @@ export function MomentumActiveHubCard({
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <VocabSectionHeading name="momentum" label="Momentum active" surface="light" labelClassName="text-[#6366F1]" />
-          <p className={cn("mt-2 text-sm", mentrixHubSurfaces.inkBody)}>
+          <div className="flex flex-wrap items-center gap-2">
+            <MomentumMembershipMemberChip />
+          </div>
+          <p className={cn("mt-3 text-sm", mentrixHubSurfaces.inkBody)}>
             {sessionCreditsRemaining > 0
               ? `You have ${sessionCreditsRemaining} included session credit${sessionCreditsRemaining === 1 ? "" : "s"} this month${creditExpiry ? ` — book before ${creditExpiry}` : ""}.`
-              : "Your included session credit for this month is used. Extra sessions book at the member rate."}
+              : "Your included session credit for this month is used. Extra sessions book at the Momentum membership session rate."}
           </p>
           {renewal ? (
             <p className={cn("mt-2 text-xs", mentrixHubSurfaces.inkMuted)}>{renewal}</p>
           ) : null}
           <p className={cn("mt-3 text-xs font-semibold", mentrixHubSurfaces.inkBody)}>
-            Weekly Movement Receipt by email, Proof Chain counterfactuals, priority retests, grid timeline, Loop Report, and progress archive are unlocked on your hub.
+            These Momentum membership features are unlocked on your hub: weekly Movement Receipt by email, Proof Chain counterfactuals, priority retests, grid timeline, Loop Report, and progress archive.
           </p>
           <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold text-[#4F46E5]">
             <Link href="/student/progress" className="underline hover:text-[#6D28D9]">
@@ -81,7 +83,7 @@ export function MomentumActiveHubCard({
             <Link href="/student#browse-guides">Book a Guide session</Link>
           </Button>
           <Button asChild variant="outline" className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]">
-            <Link href="/student/subscribe">Manage plan</Link>
+            <Link href="/student/subscribe">Manage Momentum membership</Link>
           </Button>
         </div>
       </div>

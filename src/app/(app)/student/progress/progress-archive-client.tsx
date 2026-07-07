@@ -5,6 +5,8 @@ import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { MOMENTUM_MEMBERSHIP_INCLUDED_COPY } from "@/features/payments/momentum-membership-pure";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { ProductPageHeader } from "@/features/student-profile/ui/product-page-header";
 import type { ProgressSnapshotRow } from "@/features/progress-snapshot/types";
 
@@ -31,14 +33,18 @@ export function ProgressArchiveClient({
 
         {!momentumActive ? (
           <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
-            Your current week snapshot stays free on the hub. The full archive is included with Momentum.
+            Your current week snapshot stays free on the hub. The full archive is a Momentum membership feature.{" "}
+            {MOMENTUM_MEMBERSHIP_INCLUDED_COPY}
           </div>
         ) : snapshots.length === 0 ? (
           <div className={`${mentrixStudent.card} p-6 ${mentrixStudent.pageSubtitle}`}>
+            <MomentumMembershipMemberChip className="mb-3" />
             Archives appear after your first weekly snapshot email.
           </div>
         ) : (
-          <ul className="space-y-4">
+          <>
+            <MomentumMembershipMemberChip />
+            <ul className="space-y-4">
             {snapshots.map((snapshot) => {
               const data = snapshot.snapshot_data;
               return (
@@ -60,6 +66,7 @@ export function ProgressArchiveClient({
               );
             })}
           </ul>
+          </>
         )}
       </main>
     </div>

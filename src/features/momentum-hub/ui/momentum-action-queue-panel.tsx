@@ -63,7 +63,7 @@ export function MomentumActionQueuePanel({
         <p className="mt-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-medium text-violet-900">
           {upsellLine}{" "}
           <Link href="/student/subscribe" className="font-semibold underline">
-            View Momentum plan
+            View Momentum membership plan
           </Link>
         </p>
       ) : null}

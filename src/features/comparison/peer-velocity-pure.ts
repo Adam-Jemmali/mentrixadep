@@ -47,5 +47,5 @@ export function buildPeerVelocityLine(snapshot: PeerVelocitySnapshot): string {
 }
 
 export function buildPeerVelocityUpsellLine(): string {
-  return "Momentum members see cohort velocity on every Movement Receipt.";
+  return "Momentum membership members see cohort velocity on every Movement Receipt.";
 }

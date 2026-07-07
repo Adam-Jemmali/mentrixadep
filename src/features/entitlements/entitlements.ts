@@ -1,15 +1,18 @@
 import { buildStudentEntitlements, type StudentEntitlements } from "@/features/entitlements/entitlements-pure";
 import { resolveMomentumCompMember } from "@/features/entitlements/momentum-comp-members";
 import { getMomentumSessionCreditsSummary, grantMomentumMonthlySessionCredit } from "@/features/entitlements/session-credits";
-import { getStudentSubscription } from "@/features/payments/student-subscription";
+import { getStudentSubscription, isMomentumSubscriptionActive } from "@/features/payments/student-subscription";
 
 export type { StudentEntitlements, StudentEntitlementId } from "@/features/entitlements/entitlements-pure";
 export { hasEntitlement, buildStudentEntitlements } from "@/features/entitlements/entitlements-pure";
 
 export async function getStudentEntitlements(userId: string): Promise<StudentEntitlements> {
-  const compMember = await resolveMomentumCompMember(userId);
+  const [compMember, subscription] = await Promise.all([
+    resolveMomentumCompMember(userId),
+    getStudentSubscription(userId),
+  ]);
 
-  if (compMember) {
+  if (compMember && !isMomentumSubscriptionActive(subscription)) {
     try {
       await grantMomentumMonthlySessionCredit({
         userId,
@@ -20,10 +23,7 @@ export async function getStudentEntitlements(userId: string): Promise<StudentEnt
     }
   }
 
-  const [subscription, credits] = await Promise.all([
-    getStudentSubscription(userId),
-    getMomentumSessionCreditsSummary(userId),
-  ]);
+  const credits = await getMomentumSessionCreditsSummary(userId);
 
   return buildStudentEntitlements({
     userId,

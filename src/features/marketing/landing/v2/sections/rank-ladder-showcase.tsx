@@ -118,7 +118,7 @@ export function RankLadderShowcase() {
                   showGlow={mounted && (active.key === "mentrixer" || active.key === "apex")}
                   priority
                 />
-                <RankTitle rank={active} tone="light" className="text-lg font-bold text-[#0B1220]" />
+                <RankTitle rank={active} tone="light" className={cn("text-lg font-bold text-[#0B1220]", landingHub.title)} />
                 <p className={`text-xs font-medium tabular-nums ${landingHub.inkMuted}`}>
                   {active.minXp.toLocaleString()} XP
                   {active.maxXp != null ? ` to ${active.maxXp.toLocaleString()} XP` : "+"}
@@ -164,7 +164,7 @@ export function RankLadderShowcase() {
                     showGlow={isActive && (rank.key === "mentrixer" || rank.key === "apex")}
                   />
                   <span
-                    className="text-[10px] font-bold uppercase tracking-wide"
+                    className="lp-body text-[10px] font-bold uppercase tracking-wide"
                     style={{ color: rank.labelOnLight }}
                   >
                     {normalizeRankTitle(rank.title)}

@@ -52,6 +52,10 @@ import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
 import { getStudentEntitlements } from "@/features/entitlements/entitlements";
+import { getStudentSubscription } from "@/features/payments/student-subscription";
+import { MomentumActiveHubCard } from "@/features/student-profile/ui/momentum-active-hub-card";
+import { MomentumMembershipHubCard } from "@/features/student-profile/ui/momentum-membership-hub-card";
+import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { loadActiveMovementReceiptForViewer } from "@/features/movement-receipt/load-movement-receipt";
 import { MovementReceiptHubCard } from "@/features/movement-receipt/ui/movement-receipt-hub-card";
 import { loadMomentumActionQueue } from "@/features/momentum-hub/load-momentum-action-queue";
@@ -83,7 +87,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, movementReceipt, momentumActionQueue, momentumPlaybook] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, movementReceipt, momentumActionQueue, momentumPlaybook] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -94,6 +98,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       loadMasteryGrid(user.id).catch(() => null),
       loadActiveStudentGoalForViewer(AP_CALC_AB_SUBJECT),
       getStudentEntitlements(user.id),
+      getStudentSubscription(user.id),
       loadActiveMovementReceiptForViewer().catch(() => null),
       Promise.resolve(null),
       loadMomentumPlaybook().catch(() => null),
@@ -237,6 +242,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                   surface="light"
                 />
               ) : null}
+              {momentumSubscriber ? <MomentumMembershipMemberChip /> : null}
             </div>
 
             {verifiedRankStats.verifiedCount > 0 ? (
@@ -247,6 +253,21 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             ) : null}
           </div>
         </StudentStickyNote>
+
+        {momentumSubscriber ? (
+          <div className="mt-4">
+            <MomentumActiveHubCard
+              sessionCreditsRemaining={entitlements.sessionCreditsRemaining}
+              sessionCreditPeriodMonth={entitlements.sessionCreditPeriodMonth}
+              subscription={subscription}
+              momentumCompMember={entitlements.momentumCompMember}
+            />
+          </div>
+        ) : (
+          <div className="mt-4">
+            <MomentumMembershipHubCard />
+          </div>
+        )}
 
         {!activeGoal ? (
           <div className="mt-4">
@@ -270,7 +291,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           <p className="mt-3 text-sm font-medium text-violet-900">
             {resolvedActionQueue.upsellLine}{" "}
             <Link href="/student/subscribe" className="font-semibold underline">
-              Momentum
+              Momentum membership
             </Link>
           </p>
         ) : null}

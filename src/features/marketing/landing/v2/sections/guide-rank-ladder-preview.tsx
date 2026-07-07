@@ -12,8 +12,8 @@ export function GuideRankLadderPreview({ className }: { className?: string }) {
   return (
     <LandingStickyNote variant="dog-ear" className={cn("mt-10 rotate-[0.3deg] px-4 py-5 sm:px-6", className)}>
       <p className={`text-center ${landingHub.eyebrow}`}>{LANDING_GUIDE_LADDER.eyebrow}</p>
-      <p className={cn("mt-1 text-center text-base font-bold", landingHub.title)}>{LANDING_GUIDE_LADDER.title}</p>
-      <p className={cn("mt-1 text-center text-xs", landingHub.bodySm)}>{LANDING_GUIDE_LADDER.sentence}</p>
+      <p className={cn("mt-1 text-center", landingHub.title)}>{LANDING_GUIDE_LADDER.title}</p>
+      <p className={cn("mt-2 text-center", landingHub.bodySm)}>{LANDING_GUIDE_LADDER.sentence}</p>
       <ol className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         {GUIDE_RANKS.map((rank, index) => (
           <li key={rank.key} className="flex items-center gap-2 sm:gap-3">
@@ -24,7 +24,7 @@ export function GuideRankLadderPreview({ className }: { className?: string }) {
               >
                 <GuideRankBadgeIcon rankKey={rank.key} color={rank.color} className="h-8 w-8 sm:h-9 sm:w-9" />
               </div>
-              <span className="max-w-[4.5rem] text-center text-[9px] font-bold uppercase tracking-wide text-[#475569]">
+              <span className="max-w-[4.5rem] text-center text-[9px] font-bold uppercase tracking-wide text-[#475569] lp-body">
                 {rank.label}
               </span>
             </div>

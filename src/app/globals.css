@@ -1363,6 +1363,53 @@ html[data-mentrixa-perf="lite"] .page-fade {
   color: #0b1220;
 }
 
+/* Landing typography — Caveat for titles only; Geist for body, subtitles, and labels. */
+.lp-root .mx-hub-paper,
+.lp-root .mx-hub-notebook,
+.lp-root .lp-sticky-note.mx-hub-paper {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.lp-root .mx-hub-paper :where([class*="text-sm"]) {
+  font-size: 0.875rem !important;
+  line-height: 1.55 !important;
+}
+
+.lp-root .mx-hub-paper :where([class*="text-xs"]) {
+  font-size: 0.75rem !important;
+  line-height: 1.45 !important;
+}
+
+.lp-root .mx-hub-paper :where([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"]) {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+.lp-hand-title {
+  font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+}
+
+.lp-body {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+.lp-sticky-word {
+  font-family: "Caveat", "Segoe Print", cursive !important;
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #6366f1 !important;
+  line-height: 1.1 !important;
+}
+
 /* Climb up and reset layout wrappers so landing goes edge-to-edge */
 main:has(.lp-root) {
   padding-top: 0 !important;

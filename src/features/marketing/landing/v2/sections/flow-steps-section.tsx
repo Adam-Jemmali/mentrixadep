@@ -131,7 +131,7 @@ export function FlowStepsSection() {
                       <MentrixaVocabIcon name={step.vocabIcon} size={20} surface="light" title={step.title} />
                     </LandingStickyNote>
                   </motion.span>
-                  <h3 className="text-base font-bold text-[#0B1220]">{step.title}</h3>
+                  <h3 className={cn("text-base font-bold text-[#0B1220]", landingHub.title)}>{step.title}</h3>
                 </div>
                 <div className={`relative mt-3 min-h-[2.75rem] text-[13px] leading-snug md:text-sm ${landingHub.body}`}>
                   {loopLocked ? (
