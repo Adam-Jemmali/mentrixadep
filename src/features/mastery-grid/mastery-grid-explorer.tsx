@@ -99,10 +99,16 @@ export function MasteryGridExplorer({
             >
               <MentrixaVocabIcon name="home" size={32} surface="light" title="Home" />
             </Link>
-            <h1 className="mt-3 flex items-center gap-3" aria-label="Skill tree">
-              <VocabSectionHeading name="skills" label="Skill tree" surface="light" as="span" />
+            <h1 className="mt-3" aria-label="Skill tree">
+              <VocabSectionHeading
+                name="skills"
+                label="Skill tree"
+                surface="light"
+                as="span"
+                labelClassName="mx-hand-title !text-2xl !font-bold !normal-case !tracking-normal !text-[#0B1220] sm:!text-3xl"
+              />
             </h1>
-            <p className={`mt-1 ${mentrixStudent.pageSubtitle}`}>
+            <p className={`mt-1 text-sm font-medium leading-relaxed ${mentrixStudent.pageSubtitle}`}>
               <span className="sr-only">One subject, one unit at a time.</span>
             </p>
           </div>

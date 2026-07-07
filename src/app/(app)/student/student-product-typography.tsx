@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/shared/core/utils";
 import { mentrixProfileType } from "@/features/student-profile/mentrix-profile-typography";
 
-/** All authenticated student product routes share hub desk + handwriting scope. */
+/** All authenticated student product routes share hub desk + readable Geist typography. */
 function isStudentProductRoute(pathname: string): boolean {
   if (!pathname.startsWith("/student")) return false;
   if (pathname.startsWith("/student/duel/") && pathname !== "/student/duel" && pathname !== "/student/duel/history") {

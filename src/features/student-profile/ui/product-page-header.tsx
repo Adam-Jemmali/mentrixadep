@@ -32,9 +32,11 @@ export function ProductPageHeader({
           labelClassName={hubEyebrowClass}
           className="block w-full"
         />
-        <h1 className={`mt-4 ${mentrixStudent.pageTitle}`}>{title}</h1>
+        <h1 className={`mt-4 mx-hand-title ${mentrixStudent.pageTitle}`}>{title}</h1>
         {subtitle ? (
-          <p className={`mt-2 max-w-xl ${mentrixStudent.pageSubtitle}`}>{subtitle}</p>
+          <p className={`mt-2 max-w-xl text-sm font-medium leading-relaxed ${mentrixStudent.pageSubtitle}`}>
+            {subtitle}
+          </p>
         ) : null}
       </header>
     </StudentStickyNote>

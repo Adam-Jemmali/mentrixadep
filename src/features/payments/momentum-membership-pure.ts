@@ -23,7 +23,7 @@ export const MOMENTUM_MEMBERSHIP_VERDICT =
   "Momentum membership is the only subscription. It unlocks weekly proof, coaching memory, and included session credits. Your rank and Mastery Grid stay free in the Arena.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_INACTIVE =
-  "Subscribe to Momentum membership to unlock Movement Receipts, archive access, priority retests, and one included Guide session per month.";
+  "Subscribe to Momentum membership for one included Guide session per month, the member session rate, weekly Movement Receipts, and Guide memory across calls.";
 
 export const MOMENTUM_MEMBERSHIP_NEXT_ACTION_ACTIVE =
   "You are a Momentum membership member. Book your next Guide session with your included monthly credit or the membership session rate.";

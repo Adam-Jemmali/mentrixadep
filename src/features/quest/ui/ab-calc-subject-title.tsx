@@ -14,7 +14,7 @@ export function AbCalculusSubjectTitle({
     <span
       className={cn(
         hubPaper
-          ? "block font-bold leading-snug text-[#6366F1] text-xl sm:text-2xl pt-0.5"
+          ? "mx-hand-title block font-bold leading-snug text-[#6366F1] text-xl sm:text-2xl pt-0.5"
           : cn(mentrixProfileType.pageTitleDisplay, "text-lg sm:text-xl leading-snug"),
         className,
       )}

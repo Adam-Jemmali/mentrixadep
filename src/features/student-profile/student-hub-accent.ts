@@ -38,10 +38,10 @@ export const mentrixHubAccent = {
     cyan: "rounded-lg bg-cyan-100 p-1 ring-1 ring-cyan-300",
     navy: "rounded-lg bg-slate-100 p-1 ring-1 ring-slate-300",
   },
-  heroTitle: "font-bold text-[#0B1220] text-3xl sm:text-4xl",
-  subjectTitle: "font-bold text-[#6366F1] text-xl sm:text-2xl",
-  verdictLead: "font-semibold text-[#4F46E5]",
-  verdictHighlight: "font-black text-[#0891B2]",
+  heroTitle: "mx-hand-title font-bold text-[#0B1220] text-3xl sm:text-4xl leading-tight",
+  subjectTitle: "mx-hand-title font-bold text-[#6366F1] text-xl sm:text-2xl leading-tight",
+  verdictLead: "text-sm font-semibold text-[#4F46E5]",
+  verdictHighlight: "text-sm font-black text-[#0891B2]",
 } as const;
 
 export function hubAccentValueClass(accent: HubAccent | undefined, surface: "dark" | "light"): string {

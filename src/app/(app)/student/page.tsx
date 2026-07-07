@@ -58,24 +58,10 @@ import { MomentumMembershipHubCard } from "@/features/student-profile/ui/momentu
 import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { loadActiveMovementReceiptForViewer } from "@/features/movement-receipt/load-movement-receipt";
 import { MovementReceiptHubCard } from "@/features/movement-receipt/ui/movement-receipt-hub-card";
-import { loadMomentumActionQueue } from "@/features/momentum-hub/load-momentum-action-queue";
-import { loadMomentumPlaybook } from "@/features/momentum-hub/load-momentum-playbook";
-import { loadProofChainPanel } from "@/features/momentum-hub/load-proof-chain";
-import { loadMomentumTrajectoryPanel } from "@/features/momentum-hub/load-momentum-trajectory-panel";
-import { loadGoalDashboardForViewer } from "@/features/goal-dashboard/load-goal-dashboard";
-import { ProofChainPanel } from "@/features/momentum-hub/ui/proof-chain-panel";
-import { MomentumTrajectoryPanel } from "@/features/momentum-hub/ui/momentum-trajectory-panel";
-import { GoalDashboardCard } from "@/features/goal-dashboard/ui/goal-dashboard-card";
-import { MomentumActionQueuePanel } from "@/features/momentum-hub/ui/momentum-action-queue-panel";
 import { buildBeatLineView } from "@/features/divisions/beat-line-pure";
-import {
-  pickStudentHubDoNext,
-  pickStudentHubMoreSteps,
-} from "@/features/student-profile/student-hub-do-next-pure";
+import { pickStudentHubDoNext } from "@/features/student-profile/student-hub-do-next-pure";
 import { StudentHubDoNextCard } from "@/features/student-profile/ui/student-hub-do-next";
-import { StudentHubMoreSteps } from "@/features/student-profile/ui/student-hub-more-steps";
 import { getGuideRematchBadgesForStudent } from "@/features/matchmaker/load-guide-rematch-badges";
-import { isGuideMemoryWindowOpen } from "@/features/guide-memory/guide-memory-pure";
 import { getActivePackSprintState } from "@/features/entitlements/session-credits";
 import { PackSprintSuccessPanel } from "@/features/entitlements/ui/pack-sprint-success-panel";
 import { daysUntilDate } from "@/features/goal-dashboard/goal-dashboard-pure";
@@ -94,7 +80,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, movementReceipt, momentumActionQueue, momentumPlaybook, proofChainPanel, trajectoryPanel] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, movementReceipt] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -107,16 +93,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       getStudentEntitlements(user.id),
       getStudentSubscription(user.id),
       loadActiveMovementReceiptForViewer().catch(() => null),
-      Promise.resolve(null),
-      loadMomentumPlaybook().catch(() => null),
-      loadProofChainPanel().catch(() => null),
-      loadMomentumTrajectoryPanel().catch(() => null),
     ]);
-
   const momentumSubscriber = entitlements.momentumActive;
-  const goalDashboard = momentumSubscriber
-    ? await loadGoalDashboardForViewer().catch(() => null)
-    : null;
   const archiveSubscriber = entitlements.momentumActive;
   const sessionCreditAvailable = entitlements.sessionCreditsRemaining > 0;
 
@@ -172,37 +150,8 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
   const weekRange = getWeekRangeUTC(now);
 
-  const firstUpcomingWithGuide = upcomingSessions.find(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (s: any) => s.tutor_id && isGuideMemoryWindowOpen(String(s.start_time), now.getTime()),
-  );
-
-  const resolvedActionQueue = await loadMomentumActionQueue(
-    firstUpcomingWithGuide
-      ? {
-          upcomingSession: {
-            tutorId: String(firstUpcomingWithGuide.tutor_id),
-            startTime: String(firstUpcomingWithGuide.start_time),
-            guideName:
-              firstUpcomingWithGuide.tutor?.display_name?.trim() ||
-              (typeof firstUpcomingWithGuide.tutor?.email === "string"
-                ? firstUpcomingWithGuide.tutor.email.split("@")[0]
-                : "Guide"),
-          },
-        }
-      : undefined,
-  ).catch(() => momentumActionQueue);
-
   const beatLineView = buildBeatLineView(rivalData);
-  const hubDoNext = pickStudentHubDoNext({
-    playbook: momentumPlaybook,
-    queueItems: resolvedActionQueue?.items ?? [],
-    beatLine: beatLineView,
-  });
-  const hubMoreSteps = pickStudentHubMoreSteps(
-    resolvedActionQueue?.items ?? [],
-    momentumPlaybook != null,
-  );
+  const hubDoNext = pickStudentHubDoNext({ beatLine: beatLineView });
   const showBeatLineCard =
     rivalData.status !== "no_division" &&
     !(hubDoNext && beatLineView && hubDoNext.ctaHref === beatLineView.ctaHref);
@@ -214,12 +163,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       : null;
   const daysUntilExam =
     activeGoal?.targetDate != null ? daysUntilDate(activeGoal.targetDate) : null;
-
-  const showMemberActionQueue =
-    momentumSubscriber && (resolvedActionQueue?.items.length ?? 0) > 0;
-  const showHubMoreSteps = !showMemberActionQueue && hubMoreSteps.length > 0;
-  const hubDoNextFromMomentum =
-    momentumSubscriber && momentumPlaybook != null && hubDoNext != null;
 
   return (
     <div className={mentrixStudent.pageBgHub}>
@@ -293,53 +236,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         ) : null}
 
-        {proofChainPanel ? (
-          <div id="momentum-proof-chain" className="mt-4 scroll-mt-24">
-            <ProofChainPanel data={proofChainPanel} />
-          </div>
-        ) : null}
-
-        {trajectoryPanel ? (
-          <div id="momentum-trajectory" className="mt-4 scroll-mt-24">
-            <MomentumTrajectoryPanel data={trajectoryPanel} />
-          </div>
-        ) : null}
-
-        {goalDashboard ? (
-          <div id="momentum-goal-pace" className="mt-4 scroll-mt-24">
-            <GoalDashboardCard data={goalDashboard} />
-          </div>
-        ) : null}
-
         {hubDoNext ? (
-          <div id="momentum-playbook" className="mt-4 scroll-mt-24">
-            <StudentHubDoNextCard action={hubDoNext} momentumFeature={hubDoNextFromMomentum} />
+          <div className="mt-4">
+            <StudentHubDoNextCard action={hubDoNext} />
           </div>
-        ) : null}
-
-        {showMemberActionQueue && resolvedActionQueue ? (
-          <div id="momentum-action-queue" className="mt-4 scroll-mt-24">
-            <MomentumActionQueuePanel
-              items={resolvedActionQueue.items}
-              upsellLine={null}
-              momentumActive
-            />
-          </div>
-        ) : null}
-
-        {showHubMoreSteps ? (
-          <div className="mt-3">
-            <StudentHubMoreSteps items={hubMoreSteps} />
-          </div>
-        ) : null}
-
-        {!momentumSubscriber && resolvedActionQueue?.upsellLine ? (
-          <p className="mt-3 text-sm font-medium text-violet-900">
-            {resolvedActionQueue.upsellLine}{" "}
-            <Link href="/student/subscribe" className="font-semibold underline">
-              Momentum membership
-            </Link>
-          </p>
         ) : null}
 
         <div className="mt-4 grid gap-4 lg:grid-cols-12 lg:items-stretch">

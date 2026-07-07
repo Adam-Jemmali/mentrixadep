@@ -1,39 +1,22 @@
 import { describe, expect, it } from "vitest";
-import {
-  pickStudentHubDoNext,
-  pickStudentHubMoreSteps,
-} from "@/features/student-profile/student-hub-do-next-pure";
+import { pickStudentHubDoNext } from "@/features/student-profile/student-hub-do-next-pure";
 
 describe("pickStudentHubDoNext", () => {
-  it("prefers playbook over queue", () => {
+  it("returns Beat Line when a rival is in range", () => {
     const next = pickStudentHubDoNext({
-      playbook: {
-        rank: "retest_due",
-        primary: {
-          verdict: "Retest due.",
-          label: "Start retest",
-          href: "/student/quest",
-          chips: { dreamOutcome: "", perceivedLikelihood: "", timeDelay: "", effort: "" },
-          nextAction: "",
-        },
+      beatLine: {
+        verdict: "You are 2 verified nodes behind Alex.",
+        ctaLabel: "Close the gap",
+        ctaHref: "/student/quest",
+        rivalName: "Alex",
+        gapNodes: 2,
       },
-      queueItems: [{ kind: "session_credit", priority: 3, headline: "Credit", evidence: "", ctaHref: "/", ctaLabel: "Book" }],
-      beatLine: null,
     });
-    expect(next?.verdict).toBe("Retest due.");
+    expect(next?.verdict).toContain("Alex");
+    expect(next?.ctaHref).toBe("/student/quest");
   });
-});
 
-describe("pickStudentHubMoreSteps", () => {
-  it("shows up to two queue rows when playbook owns do-next", () => {
-    const items = pickStudentHubMoreSteps(
-      [
-        { kind: "retest_due", priority: 1, headline: "A", evidence: "", ctaHref: "/", ctaLabel: "Go" },
-        { kind: "session_credit", priority: 3, headline: "B", evidence: "", ctaHref: "/", ctaLabel: "Book" },
-      ],
-      true,
-    );
-    expect(items).toHaveLength(2);
-    expect(items[0]?.headline).toBe("A");
+  it("returns null when Beat Line is unavailable", () => {
+    expect(pickStudentHubDoNext({ beatLine: null })).toBeNull();
   });
 });

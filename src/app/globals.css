@@ -330,7 +330,7 @@ html:has(.mentrix-student-type-scope) body {
   color: #0b1220;
 }
 
-/* Student hub — paper canvas surfaces (solid fills, ruled lines, handwriting). */
+/* Student hub — paper canvas surfaces (solid fills, ruled lines). */
 .mx-hub-ruled-lines {
   background-image: repeating-linear-gradient(
     to bottom,
@@ -1408,6 +1408,74 @@ html[data-mentrixa-perf="lite"] .page-fade {
   text-transform: uppercase !important;
   color: #6366f1 !important;
   line-height: 1.1 !important;
+}
+
+/* Handwriting reserved for explicit title classes — student product + landing. */
+.mx-hand-title,
+.lp-hand-title {
+  font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+}
+
+/* Student product — Geist on paper; Caveat only on .mx-hand-title / .lp-hand-title. */
+.mentrix-student-type-scope .mx-hub-paper,
+.mentrix-student-type-scope .mx-hub-notebook,
+.mentrix-student-type-scope .mx-hub-sticky,
+.mentrix-student-type-scope .mx-hub-certificate,
+.mentrix-student-type-scope .mx-hub-book,
+.mentrix-student-type-scope .lp-sticky-note.mx-hub-paper {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.mentrix-student-type-scope .mx-hub-paper :where([class*="text-sm"]) {
+  font-size: 0.875rem !important;
+  line-height: 1.55 !important;
+}
+
+.mentrix-student-type-scope .mx-hub-paper :where([class*="text-xs"]),
+.mentrix-student-type-scope .mx-hub-paper :where([class*="text-[9px]"]),
+.mentrix-student-type-scope .mx-hub-paper :where([class*="text-[10px]"]),
+.mentrix-student-type-scope .mx-hub-paper :where([class*="text-[11px]"]) {
+  font-size: 0.75rem !important;
+  line-height: 1.45 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  font-weight: inherit !important;
+}
+
+.mentrix-student-type-scope .mx-hub-paper :where([class*="text-lg"], [class*="text-xl"], [class*="text-2xl"], [class*="text-3xl"], [class*="text-4xl"]) {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+.mentrix-student-type-scope .mx-hub-paper :where([class*="font-mono"]) {
+  font-family: var(--font-geist-mono), ui-monospace, monospace !important;
+  font-weight: inherit !important;
+}
+
+.mentrix-student-type-scope .mx-hub-btn-hand {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.mentrix-student-type-scope .mx-hub-tab-trigger {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.mentrix-student-type-scope .mx-hub-paper-table th,
+.mentrix-student-type-scope .mx-hub-paper-table td {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
 }
 
 /* Climb up and reset layout wrappers so landing goes edge-to-edge */
@@ -3298,16 +3366,6 @@ html.lp-landing-logo-cursor-active * {
     color: #f5f3ff;
   }
 
-  .mentrix-student-type-scope :where(.mx-hub-certificate, .mx-hub-notebook, .mx-hub-sticky, .mx-hub-book) :where(h1, h2, h3, h4) {
-    font-family: "Caveat", cursive;
-    font-weight: 700;
-    font-size: 1.75rem;
-    letter-spacing: 0.01em;
-    text-transform: none;
-    color: #0b1220 !important;
-  }
-
-  /* Hub paper — default body ink on sticky, notebook, certificate (landing + student). */
   .mentrix-student-type-scope :where(.mx-hub-sticky, .mx-hub-notebook, .mx-hub-certificate, .mx-hub-book, .mx-hub-paper) {
     color: #0b1220;
   }

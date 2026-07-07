@@ -3,6 +3,7 @@ import {
   buildPricingTiers,
   buildTierComparisonRows,
   FREE_TIER_PAYWALL_COMMITMENT,
+  MOMENTUM_PACKAGE_SUMMARY,
   PRICING_SECTION_HEADLINE,
 } from "@/features/pricing/pricing-tiers-pure";
 import { BREAKTHROUGH_SESSION_PRICE_CENTS } from "@/features/booking/booking-pricing";
@@ -31,38 +32,34 @@ describe("pricing tiers copy", () => {
 
   it("lists Beat Line for Arena and Momentum", () => {
     const arena = buildPricingTiers().find((tier) => tier.id === "arena");
-    const momentum = buildPricingTiers().find((tier) => tier.id === "momentum");
-    expect(arena?.receipts.some((line) => line.includes("Beat Line"))).toBe(true);
-    expect(momentum?.receipts.some((line) => line.includes("Beat Line"))).toBe(true);
     const rows = buildTierComparisonRows();
     const beatLineRow = rows.find((row) => row.feature.includes("Beat Line"));
+    expect(arena?.receipts.some((line) => line.includes("Beat Line"))).toBe(true);
     expect(beatLineRow?.arena).toBe("yes");
     expect(beatLineRow?.momentum).toBe("yes");
     expect(beatLineRow?.momentumExclusive).toBeFalsy();
   });
 
-  it("lists momentum subscription receipts and routes to subscribe", () => {
+  it("lists only tangible momentum subscription receipts", () => {
     const momentum = buildPricingTiers().find((tier) => tier.id === "momentum");
+    expect(momentum?.receipts).toHaveLength(5);
     expect(momentum?.receipts.some((line) => line.includes("Movement Receipt"))).toBe(true);
-    expect(momentum?.receipts.some((line) => line.includes("Playbook"))).toBe(true);
-    expect(momentum?.receipts.some((line) => line.includes("Proof Chain"))).toBe(true);
-    expect(momentum?.receipts.some((line) => line.includes("Action Queue"))).toBe(true);
-    expect(momentum?.receipts.length).toBeGreaterThanOrEqual(15);
+    expect(momentum?.receipts.some((line) => line.includes("Guide memory"))).toBe(true);
+    expect(momentum?.receipts.some((line) => line.includes("Playbook"))).toBe(false);
+    expect(momentum?.receipts.some((line) => line.includes("Trajectory certificate"))).toBe(false);
     expect(momentum?.buttonLink).toBe("/student/subscribe");
     expect(momentum?.popularBadge).toBe("Only subscription");
+    expect(MOMENTUM_PACKAGE_SUMMARY).toContain("Movement Receipt");
+    expect(MOMENTUM_PACKAGE_SUMMARY).not.toContain("Playbook");
   });
 
-  it("includes Playbook in the comparison matrix", () => {
-    const rows = buildTierComparisonRows();
-    expect(rows.some((row) => row.feature.includes("Playbook"))).toBe(true);
-    expect(rows.some((row) => row.feature.includes("Proof Chain"))).toBe(true);
-    expect(rows.some((row) => row.feature.startsWith("Beat Line"))).toBe(true);
-  });
-
-  it("marks momentum-exclusive rows in the comparison matrix", () => {
+  it("marks five momentum-exclusive rows in the comparison matrix", () => {
     const exclusive = buildTierComparisonRows().filter((row) => row.momentumExclusive);
-    expect(exclusive.length).toBeGreaterThan(5);
+    expect(exclusive).toHaveLength(5);
     expect(exclusive.every((row) => row.arena === "no" && row.breakthrough === "no")).toBe(true);
+    expect(exclusive.some((row) => row.feature.startsWith("Monthly session credit"))).toBe(true);
+    expect(exclusive.some((row) => row.feature.includes("Movement Receipt"))).toBe(true);
+    expect(exclusive.some((row) => row.feature.includes("Playbook"))).toBe(false);
   });
 
   it("anchors the section headline on three clear tiers", () => {

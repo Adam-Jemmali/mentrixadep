@@ -49,8 +49,8 @@ function isArenaNavLink(link: string): boolean {
   return ARENA_NAV_LINKS.has(link);
 }
 
-const STUDENT_NAV_HANDWRITING_LABEL =
-  "font-['Caveat',cursive] text-[15px] font-semibold leading-none tracking-wide";
+const STUDENT_NAV_LABEL =
+  "font-sans text-sm font-semibold leading-none tracking-wide text-violet-100/90";
 
 const STUDENT_NAV_ITEMS: { name: string; link: string; icon: VocabIconName }[] = [
   { name: "Home", link: "/student", icon: "home" },
@@ -217,7 +217,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
           </Link>
           
           <NavItems
-            labelClassName={STUDENT_NAV_HANDWRITING_LABEL}
+            labelClassName={STUDENT_NAV_LABEL}
             items={STUDENT_NAV_ITEMS.map((item) => ({
               ...item,
               icon: navItemIcon(item.icon, item.name, 22),
@@ -374,7 +374,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   )}
                 >
                   {navItemIcon(item.icon, item.name, 26)}
-                  <span className={STUDENT_NAV_HANDWRITING_LABEL}>{item.name}</span>
+                  <span className={STUDENT_NAV_LABEL}>{item.name}</span>
                 </Link>
               ))}
             </MobileNavMenu>

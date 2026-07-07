@@ -44,7 +44,7 @@ export const PRICING_SECTION_NEXT_ACTION = "Pick your path.";
 
 /** One-line Momentum value prop for landing and subscribe surfaces. */
 export const MOMENTUM_PACKAGE_SUMMARY =
-  "Playbook picks your move. Proof Chain closes the loop. Receipts keep score.";
+  "One included session per month, member session rate, weekly Movement Receipt, Guide memory across calls, and Loop SLA credit restore.";
 
 /** Shared fun layer for Arena and Momentum — one real league rival. */
 export { BEAT_LINE_CATEGORY, BEAT_LINE_SUMMARY } from "@/features/divisions/beat-line-pure";
@@ -119,77 +119,7 @@ export function buildTierComparisonRows(): TierComparisonRow[] {
       momentumExclusive: true,
     },
     {
-      feature: "Grid timeline + archive",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Goal pace + peer trends",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Playbook: best next move",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Action Queue: ranked steps",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Proof Chain + Trajectory lift",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "30-day Trajectory + bottleneck",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Loop Velocity vs cohort",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Loop closure timeline",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Priority retests (24h)",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
       feature: "Guide memory + brief archive",
-      arena: "no",
-      breakthrough: "no",
-      momentum: "yes",
-      momentumExclusive: true,
-    },
-    {
-      feature: "Trajectory certificate",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
@@ -223,9 +153,8 @@ export function buildPricingTiers(): PricingTierDefinition[] {
       ],
       exclusions: [
         `Guide sessions: ${formatStudentBreakthroughPrice()} per session (Breakthrough) or Momentum subscription`,
-        "No Movement Receipts, coaching archive, or trajectory certificate",
+        "No Movement Receipts or Guide memory across sessions",
         "No included session credits or member session rate",
-        "Standard retest queue only when you pay for a session",
       ],
       buttonText: "Start free",
       buttonLink: "/auth/signup",
@@ -246,8 +175,7 @@ export function buildPricingTiers(): PricingTierDefinition[] {
       exclusions: [
         "No included monthly credit — subscribe to Momentum for that",
         `No member rate — full ${formatStudentBreakthroughPrice()} every session unless you join Momentum`,
-        "No weekly Movement Receipts or progress archive",
-        "No priority retests, Guide memory, or goal dashboard",
+        "No weekly Movement Receipts or Guide memory across sessions",
       ],
       buttonText: "Find my Guide",
       buttonLink: "/auth/signup",
@@ -261,22 +189,9 @@ export function buildPricingTiers(): PricingTierDefinition[] {
       receipts: [
         "One included Guide session per month at $0 checkout when credit applies",
         `Member session rate ${momentumSubscriberSessionPriceLabel()} versus ${formatStudentBreakthroughPrice()} pay as you go`,
-        "Beat Line: same rival chase, plus coaching tools",
-        "Priority retests 24h after session versus 48h on Breakthrough",
-        "Loop SLA: included credit restored if verified movement does not improve in 7 days",
-        "Momentum Playbook: one highest-value move with guided next step on your hub",
-        "Action Queue ranking retest, included credit, and Guide memory by value",
-        "Proof Chain from intervention to verified movement with Trajectory counterfactual",
-        "30-day Trajectory Index with trend, bottleneck drill-down, and peer pace",
-        "Loop Velocity Index versus active Momentum cohort median closure time",
         "Weekly Movement Receipt by email with grid, retest, and credit status",
-        "Full Loop Report with closure funnel and pre→post proof per Guide session",
-        "Mastery Grid timeline and full progress archive",
-        "Goal pace dashboard with exam countdown and peer trends",
         "Guide memory and full brief archive across sessions",
-        "Full Guide Impact receipt history",
-        "Early pre-session brief 24h before your call",
-        "Trajectory certificate export with verified percentile",
+        "Loop SLA: included credit restored if verified movement does not improve in 7 days",
       ],
       exclusions: [
         "Does not replace the Arena — rank and grid stay free without Momentum",

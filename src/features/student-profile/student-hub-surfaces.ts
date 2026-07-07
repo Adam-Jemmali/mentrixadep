@@ -1,4 +1,4 @@
-/** Canvas-style hub containers — paper surfaces with ruled lines and handwriting. */
+/** Canvas-style hub containers — paper surfaces; Geist body, Caveat on .mx-hand-title only. */
 export const mentrixHubSurfaces = {
   paper: "mx-hub-paper",
 
@@ -42,10 +42,10 @@ export const mentrixHubSurfaces = {
   fieldInput:
     "min-h-11 w-full rounded-lg border border-[#A5B4FC] bg-white px-3 text-base text-[#0B1220] placeholder:text-[#94A3B8] focus:border-[#6366F1] focus:outline-none focus:ring-2 focus:ring-[#6366F1]/20",
 
-  inkTitle: "text-2xl font-bold text-[#0B1220]",
-  inkLabel: "text-lg font-semibold text-[#6366F1]",
-  inkBody: "text-base text-[#334155]",
-  inkMuted: "text-base text-[#475569]",
+  inkTitle: "mx-hand-title text-2xl font-bold leading-tight text-[#0B1220] sm:text-3xl",
+  inkLabel: "mx-hub-type-ui !text-[#6366F1]",
+  inkBody: "text-sm font-medium leading-relaxed text-[#334155]",
+  inkMuted: "text-sm font-medium leading-relaxed text-[#475569]",
 
   sessionsPanel: "mx-hub-notebook mx-hub-ruled-lines mx-hub-paper mx-surface-light p-4 sm:p-6",
 

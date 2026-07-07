@@ -227,11 +227,6 @@ export function MomentumMembershipPanel({
               <Link href="/student#browse-guides">Book a Guide session</Link>
             </Button>
             {!isSubscribe ? (
-              <Button asChild variant="outline" className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]">
-                <Link href="/student/certificate">Trajectory certificate</Link>
-              </Button>
-            ) : null}
-            {!isSubscribe ? (
               <Button asChild variant="ghost" className="text-[#4F46E5] hover:bg-[#EDE9FE]">
                 <Link href="/student/subscribe">Manage plan</Link>
               </Button>

@@ -149,9 +149,6 @@ export function MomentumTrajectoryPanel({ data }: MomentumTrajectoryPanelProps) 
           <Button asChild size="sm" variant="outline">
             <Link href="/student/loop">Full loop history</Link>
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/student/certificate">Trajectory certificate</Link>
-          </Button>
           </div>
         </div>
       )}
