@@ -1,4 +1,11 @@
-import { sanitizeQuestMathInput } from "@/features/quest/ui/sanitize-quest-math";
+import {
+  fixDifferentialShorthand,
+  sanitizeQuestMathInput,
+} from "@/features/quest/ui/sanitize-quest-math";
+
+type SegmentKind = "plain" | "inline" | "display";
+
+type InputSegment = { kind: SegmentKind; content: string };
 
 /** Read a LaTeX command starting at index `start` (must point to `\`). */
 function readLatexCommand(text: string, start: number): string | null {
@@ -52,6 +59,51 @@ function findMathDelimiterEnd(text: string, start: number, display: boolean): nu
   return start + 1;
 }
 
+/** Split text into prose vs existing $ / $$ math spans. */
+function splitInputSegments(text: string): InputSegment[] {
+  const parts: InputSegment[] = [];
+  let i = 0;
+  let plainStart = 0;
+
+  const flushPlain = (end: number) => {
+    if (end > plainStart) {
+      parts.push({ kind: "plain", content: text.slice(plainStart, end) });
+    }
+    plainStart = end;
+  };
+
+  while (i < text.length) {
+    if (text.slice(i, i + 2) === "$$") {
+      flushPlain(i);
+      const close = text.indexOf("$$", i + 2);
+      if (close < 0) {
+        i += 1;
+        continue;
+      }
+      parts.push({ kind: "display", content: text.slice(i, close + 2) });
+      i = close + 2;
+      plainStart = i;
+      continue;
+    }
+    if (text[i] === "$" && text[i - 1] !== "\\") {
+      flushPlain(i);
+      const end = findMathDelimiterEnd(text, i, false);
+      if (end <= i + 1) {
+        i += 1;
+        continue;
+      }
+      parts.push({ kind: "inline", content: text.slice(i, end) });
+      i = end;
+      plainStart = i;
+      continue;
+    }
+    i += 1;
+  }
+
+  flushPlain(text.length);
+  return parts.length > 0 ? parts : [{ kind: "plain", content: text }];
+}
+
 /** Wrap full \\begin{...}...\\end{...} blocks for KaTeX display math. */
 function wrapLatexEnvironmentBlocks(text: string): string {
   return text.replace(
@@ -68,21 +120,29 @@ function wrapIntegralSpans(text: string): string {
   );
 }
 
-/**
- * Normalize mixed plain + LaTeX strings for KaTeX:
- * - repair item-bank `\dx` and stray `$` delimiters
- * - unescape \$ → $
- * - \( ... \) → $...$
- * - wrap bare commands like \frac{a}{b} in $...$
- */
-export function normalizeMathText(input: string): string {
-  let text = sanitizeQuestMathInput(input);
-  text = text.replace(/\\\$/g, "$");
-  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, inner: string) => `$${inner.trim()}$`);
+const DISPLAY_ENV_RE =
+  /\\begin\{(cases|array|align\*?|aligned|gather\*?|matrix|pmatrix|bmatrix|vmatrix)\}/;
+
+function repairMathBody(body: string): string {
+  return fixDifferentialShorthand(body.replace(/\\\s+d([xtyu])/g, "\\,d$1"));
+}
+
+function finalizeMathSegment(kind: "inline" | "display", wrapped: string): string {
+  const body = kind === "display" ? wrapped.slice(2, -2) : wrapped.slice(1, -1);
+  const repaired = repairMathBody(body);
+  if (kind === "inline" && DISPLAY_ENV_RE.test(repaired)) {
+    return `$$${repaired}$$`;
+  }
+  return kind === "display" ? `$$${repaired}$$` : `$${repaired}$`;
+}
+
+function normalizePlainSegment(segment: string): string {
+  let text = segment;
   text = wrapLatexEnvironmentBlocks(text);
   if (!/\$\\int[\s\S]*?\\,d[xtyu]/.test(text)) {
     text = wrapIntegralSpans(text);
   }
+
   let out = "";
   let i = 0;
   while (i < text.length) {
@@ -110,6 +170,27 @@ export function normalizeMathText(input: string): string {
     i += 1;
   }
   return out;
+}
+
+/**
+ * Normalize mixed plain + LaTeX strings for KaTeX:
+ * - repair item-bank `\dx` and stray `$` delimiters
+ * - unescape \$ → $
+ * - \( ... \) → $...$
+ * - wrap bare commands like \frac{a}{b} in $...$
+ * - never double-wrap environments already inside $...$
+ */
+export function normalizeMathText(input: string): string {
+  let text = sanitizeQuestMathInput(input);
+  text = text.replace(/\\\$/g, "$");
+  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, inner: string) => `$${inner.trim()}$`);
+
+  return splitInputSegments(text)
+    .map((segment) => {
+      if (segment.kind === "plain") return normalizePlainSegment(segment.content);
+      return finalizeMathSegment(segment.kind, segment.content);
+    })
+    .join("");
 }
 
 export function textContainsMath(input: string): boolean {

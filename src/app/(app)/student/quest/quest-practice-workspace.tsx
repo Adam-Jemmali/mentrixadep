@@ -577,9 +577,7 @@ export function QuestPracticeWorkspace({
             ) : question.kind === "problem_solving" ? (
               <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
             ) : (
-              <p className={`${mentrixStudent.textOnLight} whitespace-pre-wrap text-sm leading-relaxed`}>
-                {question.prompt}
-              </p>
+              <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
             )}
 
             {question.kind === "mcq" && (

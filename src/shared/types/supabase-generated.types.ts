@@ -1311,6 +1311,66 @@ export type Database = {
           },
         ]
       }
+      live_board_events: {
+        Row: {
+          accuracy_pct: number | null
+          avatar_url: string | null
+          display_name: string
+          event_type: string
+          id: string
+          is_first_attempt: boolean
+          new_rank_tier: string | null
+          node_name: string
+          occurred_at: string
+          skill_node_id: string | null
+          unit_name: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_pct?: number | null
+          avatar_url?: string | null
+          display_name: string
+          event_type: string
+          id?: string
+          is_first_attempt?: boolean
+          new_rank_tier?: string | null
+          node_name: string
+          occurred_at?: string
+          skill_node_id?: string | null
+          unit_name: string
+          user_id: string
+        }
+        Update: {
+          accuracy_pct?: number | null
+          avatar_url?: string | null
+          display_name?: string
+          event_type?: string
+          id?: string
+          is_first_attempt?: boolean
+          new_rank_tier?: string | null
+          node_name?: string
+          occurred_at?: string
+          skill_node_id?: string | null
+          unit_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_board_events_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_board_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mastery_grid_snapshots: {
         Row: {
           created_at: string

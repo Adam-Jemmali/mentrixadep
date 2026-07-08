@@ -129,6 +129,13 @@ describe("vercel cron config", () => {
     const bgJob = crons.find((c) => c.path === "/api/cron/process-background-jobs");
     expect(bgJob, "process-background-jobs must run via GitHub Actions, not vercel.json").toBeUndefined();
   });
+
+  it("does not schedule refresh-rank-cache on Vercel (GitHub Actions every 5 min)", () => {
+    const cfg = readVercelConfig();
+    const crons = cfg.crons ?? [];
+    const rankCache = crons.find((c) => c.path === "/api/cron/refresh-rank-cache");
+    expect(rankCache, "refresh-rank-cache must run via GitHub Actions, not vercel.json").toBeUndefined();
+  });
 });
 
 describe("github background job cron", () => {
@@ -137,6 +144,15 @@ describe("github background job cron", () => {
     const raw = readFileSync(workflowPath, "utf8");
     expect(raw).toMatch(/cron:\s*["']\*\/15 \* \* \* \*["']/);
     expect(raw).toContain("/api/cron/process-background-jobs");
+    expect(raw).toContain("Authorization: Bearer");
+    expect(raw).toMatch(/curl\s+-sS\s+-L\b/);
+  });
+
+  it("runs refresh-rank-cache every 5 minutes", () => {
+    const workflowPath = join(process.cwd(), ".github/workflows/cron-refresh-rank-cache.yml");
+    const raw = readFileSync(workflowPath, "utf8");
+    expect(raw).toMatch(/cron:\s*["']\*\/5 \* \* \* \*["']/);
+    expect(raw).toContain("/api/cron/refresh-rank-cache");
     expect(raw).toContain("Authorization: Bearer");
     expect(raw).toMatch(/curl\s+-sS\s+-L\b/);
   });

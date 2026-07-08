@@ -77,6 +77,8 @@ Migration: [`supabase/092-background-jobs.sql`](../supabase/092-background-jobs.
 
 Worker cron: `GET /api/cron/process-background-jobs` every 15 minutes via [`.github/workflows/cron-background-jobs.yml`](../.github/workflows/cron-background-jobs.yml) (GitHub Actions + `CRON_SECRET`). Not in `vercel.json` (Hobby plan limit). Processes up to 50 jobs per run.
 
+Rank cache cron: `GET /api/cron/refresh-rank-cache` every 5 minutes via [`.github/workflows/cron-refresh-rank-cache.yml`](../.github/workflows/cron-refresh-rank-cache.yml) (GitHub Actions + `CRON_SECRET`). Not in `vercel.json` (Hobby plan limit). Migration [`supabase/151-rank-cache-batch-refresh.sql`](../supabase/151-rank-cache-batch-refresh.sql) removes the per-VFA full rebuild trigger; `users.last_vfa_at` drives `refresh_ap_calc_verified_rank_cache_recent('10 minutes')`.
+
 Code: [`src/lib/jobs/`](../src/lib/jobs/).
 
 ---

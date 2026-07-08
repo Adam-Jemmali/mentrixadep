@@ -1,0 +1,40 @@
+# Rank cache refresh runs every 5 minutes (Vercel Hobby cannot schedule sub-daily crons).
+# Also available manually: Actions → Cron Refresh Rank Cache → Run workflow.
+#
+# Required repository secret: CRON_SECRET
+# Optional variable: PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
+
+name: Cron Refresh Rank Cache
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh-rank-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger /api/cron/refresh-rank-cache
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "CRON_SECRET is not set — add it under repository secrets to run this workflow."
+            exit 1
+          fi
+          BASE_URL="${{ vars.PLAYWRIGHT_BASE_URL || 'https://mentrixa.one' }}"
+          URL="${BASE_URL%/}/api/cron/refresh-rank-cache"
+          echo "Pinging ${URL}"
+          headers=$(mktemp)
+          code=$(curl -sS -L --max-redirs 5 -D "${headers}" -o /tmp/cron-rank-cache-body.txt -w "%{http_code}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${URL}")
+          echo "HTTP ${code}"
+          if [ "${code}" = "307" ] || [ "${code}" = "302" ] || [ "${code}" = "301" ]; then
+            echo "Redirect location:"
+            grep -i '^location:' "${headers}" || true
+            echo "Cron routes must bypass session middleware — deploy latest main and retry."
+          fi
+          cat /tmp/cron-rank-cache-body.txt
+          test "${code}" -ge 200 && test "${code}" -lt 300

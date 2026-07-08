@@ -9,6 +9,9 @@
     "src/app/api/cron/process-background-jobs/route.ts": {
       "maxDuration": 60
     },
+    "src/app/api/cron/refresh-rank-cache/route.ts": {
+      "maxDuration": 60
+    },
     "src/app/api/cron/enforce-session-timing/route.ts": {
       "maxDuration": 60
     },

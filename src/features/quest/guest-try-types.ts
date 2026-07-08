@@ -239,7 +239,7 @@ export function normalizeGuestTryQuestion(row: unknown, fallbackIndex: number): 
   const id = typeof o.id === "string" ? o.id.slice(0, 80) : `q${fallbackIndex}`;
   const kindRaw = typeof o.kind === "string" ? o.kind.trim().toLowerCase().replace(/\s+/g, "_") : "";
   const promptRaw = typeof o.prompt === "string" ? clampPrompt(o.prompt, 4000) : "";
-  const prompt = stripGuestTryPromptDecorators(promptRaw);
+  const prompt = stripGuestTryPromptDecorators(promptRaw, { preserveMath: true });
   const explanation = typeof o.explanation === "string" ? clampPrompt(o.explanation, 2000) : "";
   if (prompt.length < 8 || explanation.length < 4) return null;
 

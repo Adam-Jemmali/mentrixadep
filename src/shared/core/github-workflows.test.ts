@@ -38,7 +38,10 @@ function extractScheduleCrons(yaml: string): string[] {
 }
 
 describe("GitHub workflow schedules", () => {
-  const ALLOWED_SUB_DAILY_SCHEDULES = new Set(["cron-background-jobs.yml:*/15 * * * *"]);
+  const ALLOWED_SUB_DAILY_SCHEDULES = new Set([
+    "cron-background-jobs.yml:*/15 * * * *",
+    "cron-refresh-rank-cache.yml:*/5 * * * *",
+  ]);
 
   it("does not use sub-daily cron schedules (Actions credits)", () => {
     const files = readdirSync(WORKFLOWS_DIR).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));

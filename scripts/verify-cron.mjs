@@ -7,7 +7,10 @@ const REQUIRED_VERCEL_PATHS = [
 ];
 
 /** Scheduled in .github/workflows/cron-background-jobs.yml (every 15 min), not vercel.json. */
-const GITHUB_SCHEDULED_PATHS = ["/api/cron/process-background-jobs"];
+const GITHUB_SCHEDULED_PATHS = [
+  "/api/cron/process-background-jobs",
+  "/api/cron/refresh-rank-cache",
+];
 
 function loadVercelConfig() {
   const filePath = resolve(process.cwd(), "vercel.json");
