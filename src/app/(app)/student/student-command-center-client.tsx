@@ -14,7 +14,8 @@ import {
   defaultShippedSubjectName,
   isSingleShippedSubject,
 } from "@/features/quest/shipped-subjects";
-import type { GuideImpactEntry } from "@/features/guide-impact/impact-score-pure";
+import type { GuideNodeImpactRollingBatch } from "@/features/guide-impact/impact-score-pure";
+import type { WeakestRollingStatNode } from "@/features/guide-impact/reads";
 import {
   formatMatchedSkillsLine,
   type MatchmakerGuideResult,
@@ -50,8 +51,9 @@ export function StudentCommandCenterClient({
   availableCourses,
   tutorExpertise,
   displayTimeZone = "UTC",
-  guideImpactByTutorId = {},
-  questHistorySubjects = [],
+  guideNodeImpactRolling,
+  weakestRollingNode = null,
+  prefillWeakestNodeFilter = false,
   guideRankByTutorId = {},
   momentumSubscriber = false,
   sessionCreditAvailable = false,
@@ -67,8 +69,9 @@ export function StudentCommandCenterClient({
   tutorExpertise: Record<string, TutorExpertiseEntry[]>;
   /** Profile timezone. Slots display in this zone. */
   displayTimeZone?: string;
-  guideImpactByTutorId?: Record<string, GuideImpactEntry[]>;
-  questHistorySubjects?: string[];
+  guideNodeImpactRolling?: GuideNodeImpactRollingBatch;
+  weakestRollingNode?: WeakestRollingStatNode | null;
+  prefillWeakestNodeFilter?: boolean;
   guideRankByTutorId?: Record<string, string>;
   momentumSubscriber?: boolean;
   sessionCreditAvailable?: boolean;
@@ -277,8 +280,9 @@ export function StudentCommandCenterClient({
           tutorExpertise={tutorExpertise}
           syncCourseFilter={syncFilter}
           displayTimeZone={displayTimeZone}
-          guideImpactByTutorId={guideImpactByTutorId}
-          questHistorySubjects={questHistorySubjects}
+          guideNodeImpactRolling={guideNodeImpactRolling}
+          weakestRollingNode={weakestRollingNode}
+          prefillWeakestNodeFilter={prefillWeakestNodeFilter}
           guideRankByTutorId={guideRankByTutorId}
           momentumSubscriber={momentumSubscriber}
           sessionCreditAvailable={sessionCreditAvailable}

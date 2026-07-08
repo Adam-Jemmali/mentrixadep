@@ -19,11 +19,13 @@ import { splitSessionPriceCents, getStudentSessionCheckoutCents } from "@/featur
 import { Typewriter } from "@/shared/ui/typewriter";
 import { BookingConfirmationCard } from "@/shared/ui/booking-confirmation-card";
 import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
-import { ImpactScoreBadge } from "@/features/guide-impact/components/impact-score-badge";
+import { GuideBrowseImpactChips } from "@/features/guide-impact/components/guide-browse-impact-chips";
 import {
-  impactForCourseFilter,
-  type GuideImpactEntry,
+  guideImpactOnSkillNode,
+  type GuideImpactRollingNodeChip,
+  type GuideNodeImpactRollingBatch,
 } from "@/features/guide-impact/impact-score-pure";
+import type { WeakestRollingStatNode } from "@/features/guide-impact/reads";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
@@ -65,11 +67,12 @@ interface AvailabilityBrowserProps {
   syncCourseFilter?: string | null;
   /** IANA timezone for displaying slot instants (student profile or admin viewing student). */
   displayTimeZone?: string;
-  guideImpactByTutorId?: Record<string, GuideImpactEntry[]>;
   guideRankByTutorId?: Record<string, string>;
   rematchBadgesByTutorId?: Record<string, { label: string }>;
-  /** Courses the student has completed quests in — drives default “Highest Impact” sort. */
-  questHistorySubjects?: string[];
+  guideNodeImpactRolling?: GuideNodeImpactRollingBatch;
+  weakestRollingNode?: WeakestRollingStatNode | null;
+  /** Pre-enable weakest-node impact filter when arriving from a verdict nextAction. */
+  prefillWeakestNodeFilter?: boolean;
   /** Active Momentum subscription — member session rate at checkout. */
   momentumSubscriber?: boolean;
   /** Unused included session credit for the current UTC month. */
@@ -85,10 +88,15 @@ export function AvailabilityBrowser({
   tutorExpertise = {},
   syncCourseFilter,
   displayTimeZone = "UTC",
-  guideImpactByTutorId = {},
   guideRankByTutorId = {},
   rematchBadgesByTutorId = {},
-  questHistorySubjects = [],
+  guideNodeImpactRolling = {
+    topChipsByGuideId: {},
+    impactByGuideAndNode: {},
+    avgImpactByGuideId: {},
+  },
+  weakestRollingNode = null,
+  prefillWeakestNodeFilter = false,
   momentumSubscriber = false,
   sessionCreditAvailable = false,
   packSprintCreditsRemaining = 0,
@@ -99,18 +107,16 @@ export function AvailabilityBrowser({
     studentCourseNames.length > 0 ? (studentCourseNames[0] ?? "all") : AP_CALC_AB_SUBJECT,
   );
   const [selectedSlot, setSelectedSlot] = useState<Availability | null>(null);
-  const [sortBy, setSortBy] = useState<"impact" | "name">("name");
-  const [minImpact80, setMinImpact80] = useState(false);
-
-  const defaultSortByImpact = useMemo(() => {
-    if (questHistorySubjects.length === 0) return false;
-    const cf = courseFilter.toLowerCase();
-    return questHistorySubjects.some((s) => s.toLowerCase() === cf);
-  }, [questHistorySubjects, courseFilter]);
+  const [sortBy, setSortBy] = useState<"impact" | "name">("impact");
+  const [weakestNodeFilter, setWeakestNodeFilter] = useState(
+    prefillWeakestNodeFilter && Boolean(weakestRollingNode),
+  );
 
   useEffect(() => {
-    setSortBy(defaultSortByImpact ? "impact" : "name");
-  }, [defaultSortByImpact]);
+    if (prefillWeakestNodeFilter && weakestRollingNode) {
+      setWeakestNodeFilter(true);
+    }
+  }, [prefillWeakestNodeFilter, weakestRollingNode?.skillNodeId]);
 
   useEffect(() => {
     if (syncCourseFilter == null || syncCourseFilter === undefined) return;
@@ -126,9 +132,8 @@ export function AvailabilityBrowser({
         email: string;
         avatarUrl: string | null;
         priceCents: number;
-        impactScore: number;
-        impactSessions: number;
-        impactSubject: string | null;
+        avgImpactScore: number;
+        impactChips: GuideImpactRollingNodeChip[];
         slots: Availability[];
       }
     >();
@@ -139,11 +144,8 @@ export function AvailabilityBrowser({
       const key = slot.tutor_id ?? email;
       const avatarUrl = slot.tutor?.avatar_url ?? null;
       const tutorId = slot.tutor_id ?? "";
-      const impactEntries = guideImpactByTutorId[tutorId] ?? [];
-      const courseImpact =
-        courseFilter
-          ? impactForCourseFilter(impactEntries, courseFilter)
-          : impactEntries[0] ?? null;
+      const avgImpactScore = guideNodeImpactRolling.avgImpactByGuideId[tutorId] ?? 0;
+      const impactChips = guideNodeImpactRolling.topChipsByGuideId[tutorId] ?? [];
 
       if (!map.has(key)) {
         map.set(key, {
@@ -152,9 +154,8 @@ export function AvailabilityBrowser({
           email,
           avatarUrl,
           priceCents: getStudentSessionCheckoutCents({ momentumSubscriber }),
-          impactScore: courseImpact?.impactScore ?? 0,
-          impactSessions: courseImpact?.sessionsCounted ?? 0,
-          impactSubject: courseImpact?.subject ?? null,
+          avgImpactScore,
+          impactChips,
           slots: [],
         });
       }
@@ -164,8 +165,15 @@ export function AvailabilityBrowser({
 
     let list = Array.from(map.values());
 
-    if (minImpact80) {
-      list = list.filter((g) => g.impactScore > 80 && g.impactSessions >= 3);
+    if (weakestNodeFilter && weakestRollingNode) {
+      list = list.filter((g) => {
+        const nodeImpact = guideImpactOnSkillNode(
+          guideNodeImpactRolling.impactByGuideAndNode,
+          g.tutorId,
+          weakestRollingNode.skillNodeId,
+        );
+        return nodeImpact != null && nodeImpact > 70;
+      });
     }
 
     if (query) {
@@ -188,12 +196,21 @@ export function AvailabilityBrowser({
       .filter((g) => g.slots.length > 0)
       .sort((a, b) => {
         if (sortBy === "impact") {
-          const diff = b.impactScore - a.impactScore;
+          const diff = b.avgImpactScore - a.avgImpactScore;
           if (diff !== 0) return diff;
         }
         return a.name.localeCompare(b.name);
       });
-  }, [availability, query, courseFilter, guideImpactByTutorId, minImpact80, sortBy, momentumSubscriber]);
+  }, [
+    availability,
+    query,
+    courseFilter,
+    guideNodeImpactRolling,
+    weakestNodeFilter,
+    weakestRollingNode,
+    sortBy,
+    momentumSubscriber,
+  ]);
 
   return (
     <aside>
@@ -237,14 +254,21 @@ export function AvailabilityBrowser({
             { id: "name", label: "Name (A–Z)" },
           ]}
         />
-        <label className="inline-flex cursor-pointer items-center gap-2 text-base text-[#475569]">
+        <label
+          className={`inline-flex items-center gap-2 text-base text-[#475569] ${
+            weakestRollingNode ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+          }`}
+        >
           <input
             type="checkbox"
-            checked={minImpact80}
-            onChange={(e) => setMinImpact80(e.target.checked)}
-            className="rounded border-[#A5B4FC] bg-white"
+            checked={weakestNodeFilter}
+            disabled={!weakestRollingNode}
+            onChange={(e) => setWeakestNodeFilter(e.target.checked)}
+            className="rounded border-[#A5B4FC] bg-white disabled:cursor-not-allowed"
           />
-          Impact Score &gt; 80
+          {weakestRollingNode
+            ? `Impact above 70 on ${weakestRollingNode.nodeName}`
+            : "Impact above 70 on your weakest node"}
         </label>
       </div>
 
@@ -296,16 +320,7 @@ export function AvailabilityBrowser({
                     <span className="block text-sm font-normal text-[#64748B]">incl. fee</span>
                   </div>
                 </div>
-                {guide.impactSessions >= 3 ? (
-                  <ImpactScoreBadge
-                    impactScore={guide.impactScore}
-                    sessionsCounted={guide.impactSessions}
-                    subject={guide.impactSubject ?? undefined}
-                    size="sm"
-                  />
-                ) : (
-                  <p className="mt-0.5 text-sm text-[#64748B]">Impact Score builds after 3 counted sessions.</p>
-                )}
+                <GuideBrowseImpactChips chips={guide.impactChips} className="mt-1" />
                 {rematchBadgesByTutorId[guide.tutorId]?.label ? (
                   <p className="mt-1 text-base font-medium text-[#0891B2]">
                     {rematchBadgesByTutorId[guide.tutorId]!.label}

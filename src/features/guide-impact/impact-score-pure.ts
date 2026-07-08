@@ -15,6 +15,20 @@ export type GuideImpactNodeEntry = {
   impactLift: number;
 };
 
+/** Top node chips for guide browse — sourced from guide_node_impact_rolling. */
+export type GuideImpactRollingNodeChip = {
+  skillNodeId: string;
+  nodeName: string;
+  impactScore: number;
+  sessionsCounted: number;
+};
+
+export type GuideNodeImpactRollingBatch = {
+  topChipsByGuideId: Record<string, GuideImpactRollingNodeChip[]>;
+  impactByGuideAndNode: Record<string, Record<string, number>>;
+  avgImpactByGuideId: Record<string, number>;
+};
+
 /** Matches Mastery Grid node color states. */
 export type ImpactNodeColorState = "none" | "weak" | "proficient" | "verified";
 
@@ -128,4 +142,26 @@ export function sortImpactNodesByLift(entries: GuideImpactNodeEntry[]): GuideImp
     if (b.impactLift !== a.impactLift) return b.impactLift - a.impactLift;
     return b.impactScore - a.impactScore;
   });
+}
+
+export function pickTopImpactRollingChips(
+  chips: GuideImpactRollingNodeChip[],
+  limit = 3,
+): GuideImpactRollingNodeChip[] {
+  return [...chips].sort((a, b) => b.impactScore - a.impactScore).slice(0, limit);
+}
+
+export function averageImpactRollingScore(chips: GuideImpactRollingNodeChip[]): number | null {
+  if (chips.length === 0) return null;
+  const total = chips.reduce((sum, chip) => sum + chip.impactScore, 0);
+  return Math.round(total / chips.length);
+}
+
+export function guideImpactOnSkillNode(
+  impactByGuideAndNode: Record<string, Record<string, number>>,
+  guideId: string,
+  skillNodeId: string,
+): number | null {
+  const score = impactByGuideAndNode[guideId]?.[skillNodeId];
+  return score == null ? null : score;
 }

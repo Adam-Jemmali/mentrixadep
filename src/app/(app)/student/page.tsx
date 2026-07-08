@@ -44,8 +44,8 @@ import {
 import { getUpcomingSessionBriefs } from "@/features/pre-session-brief/brief";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 import {
-  getGuideImpactScoresMap,
-  getStudentQuestCourseNames,
+  getGuideNodeImpactRollingBatch,
+  loadWeakestRollingStatNode,
 } from "@/features/guide-impact/reads";
 import { getGuideRanksMap } from "@/features/guide-rank/reads";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
@@ -72,6 +72,9 @@ interface StudentPageProps {
     reason?: string;
     openStudyPackage?: string;
     sessionsTab?: string;
+    guide?: string;
+    focus?: string;
+    subject?: string;
   }>;
 }
 
@@ -101,13 +104,18 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const { upcomingSessions, pastSessions } = sessionsBundle;
 
   const tutorIdsForImpact = Array.from(new Set(availability.map((a) => a.tutor_id)));
-  const [guideImpactByTutorId, rawQuestHistorySubjects, guideRankByTutorId, rematchBadgesByTutorId] = await Promise.all([
-    getGuideImpactScoresMap(tutorIdsForImpact).catch(() => ({})),
-    getStudentQuestCourseNames(user.id).catch(() => [] as string[]),
-    getGuideRanksMap(tutorIdsForImpact).catch(() => ({})),
-    getGuideRematchBadgesForStudent(user.id, tutorIdsForImpact).catch(() => ({})),
-  ]);
-  const questHistorySubjects = rawQuestHistorySubjects.filter((s) => s === AP_CALC_AB_SUBJECT);
+  const browsePrefillWeakestNodeFilter = Boolean(query.guide?.trim() || query.focus?.trim());
+  const [guideNodeImpactRolling, weakestRollingNode, guideRankByTutorId, rematchBadgesByTutorId] =
+    await Promise.all([
+      getGuideNodeImpactRollingBatch(tutorIdsForImpact).catch(() => ({
+        topChipsByGuideId: {},
+        impactByGuideAndNode: {},
+        avgImpactByGuideId: {},
+      })),
+      loadWeakestRollingStatNode(user.id).catch(() => null),
+      getGuideRanksMap(tutorIdsForImpact).catch(() => ({})),
+      getGuideRematchBadgesForStudent(user.id, tutorIdsForImpact).catch(() => ({})),
+    ]);
 
   const userXp = (snapshot.user_xp as UserXp | null) ?? null;
   const studentCourses = snapshot.student_courses as unknown as StudentCourse[];
@@ -328,8 +336,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             availableCourses={courses}
             tutorExpertise={tutorExpertise}
             displayTimeZone={timeZone}
-            guideImpactByTutorId={guideImpactByTutorId}
-            questHistorySubjects={questHistorySubjects}
+            guideNodeImpactRolling={guideNodeImpactRolling}
+            weakestRollingNode={weakestRollingNode}
+            prefillWeakestNodeFilter={browsePrefillWeakestNodeFilter}
             guideRankByTutorId={guideRankByTutorId}
             momentumSubscriber={momentumSubscriber}
             sessionCreditAvailable={sessionCreditAvailable}
