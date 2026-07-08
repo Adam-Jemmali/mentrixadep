@@ -7,19 +7,19 @@ import {
   ARENA_PAGE_COPY,
   formatLiveBoardEventDescription,
   formatLiveBoardTimeAgo,
-  liveBoardEventTypeLabel,
 } from "@/features/live-board/live-board-messages-pure";
 import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader-profile";
 import type { LiveBoardEventRow } from "@/features/live-board/types";
 import { ArenaPersonAvatar } from "@/features/live-board/ui/arena-person-avatar";
 import { normalizeArenaAvatarUrl } from "@/features/live-board/live-board-avatar-pure";
+import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { easeOutExpo } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { cn } from "@/shared/core/utils";
 
 const FEED_LIMIT = 50;
 const ROW_ENTER_MS = 0.2;
-const LIVE_WINDOW_MS = 3 * 60_000;
 
 type Props = {
   initialEvents: LiveBoardEventRow[];
@@ -61,35 +61,19 @@ function parseRealtimeRow(record: Record<string, unknown>): LiveBoardEventRow | 
   };
 }
 
-function eventChipClass(eventType: LiveBoardEventRow["event_type"]): string {
-  switch (eventType) {
-    case "verified_attempt":
-      return "border-[#7C3AED]/40 bg-[#7C3AED]/15 text-[#C4B5FD]";
-    case "rank_advance":
-      return "border-[#D4A017]/40 bg-[#D4A017]/10 text-[#FDE68A]";
-    case "breakthrough":
-      return "border-[#22C55E]/40 bg-[#22C55E]/10 text-[#86EFAC]";
-    default:
-      return "border-white/15 bg-white/5 text-slate-300";
-  }
-}
-
 export function LiveBoardFeed({ initialEvents, leaders }: Props) {
   const reducedMotion = usePrefersReducedMotion();
   const [events, setEvents] = useState(initialEvents);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const avatarByUserId = useMemo(() => {
-    const map = new Map<string, { avatarUrl: string | null; rankLevel: number }>();
+    const map = new Map<string, string | null>();
     for (const leader of leaders) {
-      map.set(leader.userId, {
-        avatarUrl: leader.avatarUrl,
-        rankLevel: leader.accountRankLevel,
-      });
+      map.set(leader.userId, leader.avatarUrl);
     }
     for (const event of initialEvents) {
-      if (!map.has(event.user_id)) {
-        map.set(event.user_id, { avatarUrl: event.avatar_url, rankLevel: 1 });
+      if (!map.has(event.user_id) || !map.get(event.user_id)) {
+        map.set(event.user_id, event.avatar_url);
       }
     }
     return map;
@@ -119,10 +103,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           const row = parseRealtimeRow(payload.new as Record<string, unknown>);
           if (!row) return;
           if (row.avatar_url) {
-            avatarByUserId.set(row.user_id, {
-              avatarUrl: row.avatar_url,
-              rankLevel: avatarByUserId.get(row.user_id)?.rankLevel ?? 1,
-            });
+            avatarByUserId.set(row.user_id, row.avatar_url);
           }
           setEvents((current) => {
             if (current.some((event) => event.id === row.id)) return current;
@@ -147,9 +128,9 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
             transition: { duration: 0 },
           }
         : {
-            initial: { opacity: 0, y: -12 },
+            initial: { opacity: 0, y: -8 },
             animate: { opacity: 1, y: 0 },
-            exit: { opacity: 0, y: -8 },
+            exit: { opacity: 0, y: -6 },
             transition: { duration: ROW_ENTER_MS, ease: easeOutExpo },
           },
     [reducedMotion],
@@ -161,18 +142,16 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
         {ARENA_PAGE_COPY.feedEyebrow}
       </p>
 
-      <div className="mt-3 max-h-[min(56vh,30rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#0F172A]/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm">
+      <div className={cn(mentrixStudent.hubSticky, "mt-3 rotate-0 overflow-hidden")}>
         {events.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-slate-400">
+          <p className={cn(mentrixHubSurfaces.inkMuted, "px-4 py-8 text-center text-sm")}>
             {ARENA_PAGE_COPY.emptyFeed}
           </p>
         ) : (
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-[#E0E7FF]">
             <AnimatePresence initial={false}>
               {events.map((event) => {
-                const isLive = nowMs - Date.parse(event.occurred_at) < LIVE_WINDOW_MS;
-                const persona = avatarByUserId.get(event.user_id);
-                const avatarUrl = event.avatar_url ?? persona?.avatarUrl ?? null;
+                const avatarUrl = event.avatar_url ?? avatarByUserId.get(event.user_id) ?? null;
 
                 return (
                   <motion.li
@@ -184,33 +163,19 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
                     <ArenaPersonAvatar
                       displayName={event.display_name}
                       avatarUrl={avatarUrl}
-                      size="md"
-                      rankLevel={persona?.rankLevel}
-                      live={isLive}
+                      size="sm"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <p className="truncate text-sm font-bold text-white">
-                          {event.display_name}
-                        </p>
-                        <span
-                          className={cn(
-                            "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]",
-                            eventChipClass(event.event_type),
-                          )}
-                        >
-                          {liveBoardEventTypeLabel(event.event_type)}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-sm leading-relaxed text-slate-300">
+                      <p className="text-sm font-bold text-[#0B1220]">{event.display_name}</p>
+                      <p className={cn(mentrixHubSurfaces.inkBody, "mt-0.5 leading-relaxed")}>
                         {formatLiveBoardEventDescription(event)}
                       </p>
-                      <p className="mt-1 text-[11px] font-medium text-slate-500">
+                      <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-xs")}>
                         {event.unit_name} · {event.node_name}
                       </p>
                     </div>
                     <time
-                      className="shrink-0 pt-1 text-xs text-slate-500"
+                      className="shrink-0 pt-1 text-xs text-[#64748B]"
                       dateTime={event.occurred_at}
                     >
                       {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}

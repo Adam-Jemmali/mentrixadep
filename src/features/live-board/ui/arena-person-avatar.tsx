@@ -2,17 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  arenaAvatarAccent,
-} from "@/features/live-board/live-board-avatar-pure";
-import { getAccountRankByLevel } from "@/features/xp/rank-icons";
+import { arenaAvatarAccent, arenaAvatarInitial } from "@/features/live-board/live-board-avatar-pure";
 import { cn } from "@/shared/core/utils";
 
 const SIZE_PX = {
-  sm: 36,
+  sm: 40,
   md: 48,
-  lg: 72,
-  xl: 96,
+  lg: 64,
+  xl: 80,
 } as const;
 
 type Size = keyof typeof SIZE_PX;
@@ -22,8 +19,6 @@ type Props = {
   avatarUrl?: string | null;
   avatarInitial?: string;
   size?: Size;
-  rankLevel?: number;
-  live?: boolean;
   className?: string;
 };
 
@@ -32,62 +27,50 @@ export function ArenaPersonAvatar({
   avatarUrl,
   avatarInitial,
   size = "md",
-  rankLevel,
-  live = false,
   className,
 }: Props) {
   const [broken, setBroken] = useState(false);
   const px = SIZE_PX[size];
-  const ringColor = rankLevel != null ? getAccountRankByLevel(rankLevel).color : "#7C3AED";
   const accent = arenaAvatarAccent(displayName);
-  const initial = (avatarInitial ?? displayName.trim().charAt(0) ?? "M").toUpperCase();
+  const initial = (avatarInitial ?? arenaAvatarInitial(displayName)).toUpperCase();
 
   useEffect(() => {
     setBroken(false);
   }, [avatarUrl]);
 
+  if (avatarUrl && !broken) {
+    return (
+      <Image
+        src={avatarUrl}
+        alt=""
+        width={px}
+        height={px}
+        unoptimized
+        className={cn(
+          "shrink-0 rounded-full border border-[#C4B5FD] bg-white object-cover",
+          className,
+        )}
+        style={{ width: px, height: px }}
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+
   return (
     <span
-      className={cn("relative inline-flex shrink-0", className)}
-      style={{ width: px, height: px }}
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-full border border-[#C4B5FD] font-bold text-white",
+        className,
+      )}
+      style={{
+        width: px,
+        height: px,
+        fontSize: px * 0.38,
+        background: `linear-gradient(145deg, ${accent.from}, ${accent.to})`,
+      }}
+      aria-hidden
     >
-      <span
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: `linear-gradient(135deg, ${ringColor}, ${accent.to})`,
-          padding: size === "xl" ? 3 : size === "lg" ? 2.5 : 2,
-        }}
-      >
-        <span className="relative flex h-full w-full overflow-hidden rounded-full bg-[#0B1220]">
-          {avatarUrl && !broken ? (
-            <Image
-              src={avatarUrl}
-              alt=""
-              width={px}
-              height={px}
-              unoptimized
-              className="h-full w-full object-cover"
-              onError={() => setBroken(true)}
-            />
-          ) : (
-            <span
-              className="flex h-full w-full items-center justify-center font-bold text-white"
-              style={{
-                background: `linear-gradient(145deg, ${accent.from}, ${accent.to})`,
-                fontSize: px * 0.36,
-              }}
-              aria-hidden
-            >
-              {initial}
-            </span>
-          )}
-        </span>
-      </span>
-      {live ? (
-        <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#0B1220] bg-[#22C55E]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-        </span>
-      ) : null}
+      {initial}
     </span>
   );
 }

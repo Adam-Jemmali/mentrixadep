@@ -6,12 +6,11 @@ export const ARENA_PAGE_COPY = {
     "Real faces. Real account ranks. Gold Top % is verified peer standing from first attempts only.",
   cta: "Take this test and see where you rank",
   ctaHref: "/try",
-  feedEyebrow: "Live right now",
+  feedEyebrow: "Live feed",
   leadersTitle: "Who is ahead right now",
   leadersSubtitle:
-    "Account rank matches the student hub. Top % is the verified cohort verdict. Tap a card for the full passport.",
+    "Same sticky-note cards as the student hub. Account rank from XP. Gold Top % is verified peer standing.",
   emptyFeed: "No live events yet. Lock your first skill to appear here.",
-  liveRibbonLabel: "In the arena now",
 } as const;
 
 export function liveBoardEventTypeLabel(
