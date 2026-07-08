@@ -15,33 +15,10 @@ jobs:
   refresh-rank-cache:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Trigger /api/cron/refresh-rank-cache
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          if [ -z "${CRON_SECRET}" ]; then
-            echo "CRON_SECRET is not set — add it under repository secrets to run this workflow."
-            exit 1
-          fi
-          CRON_SECRET="$(printf '%s' "${CRON_SECRET}" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-          BASE_URL="${{ vars.PLAYWRIGHT_BASE_URL || 'https://mentrixa.one' }}"
-          URL="${BASE_URL%/}/api/cron/refresh-rank-cache"
-          echo "Pinging ${URL}"
-          headers=$(mktemp)
-          code=$(curl -sS -L --max-redirs 5 -D "${headers}" -o /tmp/cron-rank-cache-body.txt -w "%{http_code}" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "x-cron-secret: ${CRON_SECRET}" \
-            "${URL}")
-          echo "HTTP ${code}"
-          if [ "${code}" = "307" ] || [ "${code}" = "302" ] || [ "${code}" = "301" ]; then
-            echo "Redirect location:"
-            grep -i '^location:' "${headers}" || true
-            echo "Cron routes must bypass session middleware — deploy latest main and retry."
-          fi
-          cat /tmp/cron-rank-cache-body.txt
-          if [ "${code}" = "401" ]; then
-            echo "Unauthorized: GitHub CRON_SECRET does not match production CRON_SECRET on ${BASE_URL}."
-            echo "Update repository secret CRON_SECRET to match Vercel env, then re-run."
-            exit 1
-          fi
-          test "${code}" -ge 200 && test "${code}" -lt 300
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
+        run: bash scripts/github-cron-ping.sh /api/cron/refresh-rank-cache

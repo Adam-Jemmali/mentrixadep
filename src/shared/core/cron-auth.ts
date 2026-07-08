@@ -25,8 +25,12 @@ function verifySignature(
   }
 
   const url = new URL(request.url);
-  const payload = `${timestamp}.${request.method.toUpperCase()}.${url.pathname}`;
-  const expected = createHmac("sha256", secret).update(payload).digest("hex");
+  const expected = buildCronRequestSignature(
+    secret,
+    request.method,
+    url.pathname,
+    timestampMs,
+  );
 
   const expectedBuf = Buffer.from(expected);
   const providedBuf = Buffer.from(signature.trim().toLowerCase());
@@ -37,6 +41,17 @@ function verifySignature(
     return { ok: false, reason: "Invalid cron signature." };
   }
   return { ok: true };
+}
+
+/** HMAC signature for x-cron-timestamp / x-cron-signature headers (GitHub Actions ping script). */
+export function buildCronRequestSignature(
+  secret: string,
+  method: string,
+  pathname: string,
+  timestampMs: number,
+): string {
+  const payload = `${timestampMs}.${method.toUpperCase()}.${pathname}`;
+  return createHmac("sha256", secret).update(payload).digest("hex");
 }
 
 function readProvidedCronSecret(request: Request): string {
@@ -69,10 +84,10 @@ export function authorizeCronRequest(
     return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  const requireSig = (process.env.CRON_REQUIRE_SIGNATURE ?? "false").toLowerCase() === "true";
+  // Bearer / x-cron-secret is sufficient for schedulers (Vercel cron, GitHub Actions).
   const hasSigHeaders =
     !!request.headers.get("x-cron-timestamp") || !!request.headers.get("x-cron-signature");
-  if (requireSig || hasSigHeaders) {
+  if (hasSigHeaders) {
     const sig = verifySignature(request, secret);
     if (!sig.ok) {
       return { ok: false, response: NextResponse.json({ error: sig.reason }, { status: 401 }) };

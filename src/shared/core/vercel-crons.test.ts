@@ -139,22 +139,23 @@ describe("vercel cron config", () => {
 });
 
 describe("github background job cron", () => {
-  it("runs process-background-jobs every 15 minutes", () => {
+  it("runs process-background-jobs every 15 minutes via shared ping script", () => {
     const workflowPath = join(process.cwd(), ".github/workflows/cron-background-jobs.yml");
+    const pingScript = join(process.cwd(), "scripts/github-cron-ping.sh");
     const raw = readFileSync(workflowPath, "utf8");
+    const script = readFileSync(pingScript, "utf8");
     expect(raw).toMatch(/cron:\s*["']\*\/15 \* \* \* \*["']/);
-    expect(raw).toContain("/api/cron/process-background-jobs");
-    expect(raw).toContain("Authorization: Bearer");
-    expect(raw).toContain("x-cron-secret:");
-    expect(raw).toMatch(/curl\s+-sS\s+-L\b/);
+    expect(raw).toContain("github-cron-ping.sh /api/cron/process-background-jobs");
+    expect(script).toContain("x-cron-signature:");
   });
 
-  it("runs refresh-rank-cache every 5 minutes", () => {
+  it("runs refresh-rank-cache every 5 minutes via shared ping script", () => {
     const workflowPath = join(process.cwd(), ".github/workflows/cron-refresh-rank-cache.yml");
+    const pingScript = join(process.cwd(), "scripts/github-cron-ping.sh");
     const raw = readFileSync(workflowPath, "utf8");
+    const script = readFileSync(pingScript, "utf8");
     expect(raw).toMatch(/cron:\s*["']\*\/5 \* \* \* \*["']/);
-    expect(raw).toContain("/api/cron/refresh-rank-cache");
-    expect(raw).toContain("Authorization: Bearer");
-    expect(raw).toContain("x-cron-secret:");
+    expect(raw).toContain("github-cron-ping.sh /api/cron/refresh-rank-cache");
+    expect(script).toContain("openssl dgst -sha256 -hmac");
   });
 });

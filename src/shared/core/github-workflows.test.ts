@@ -46,12 +46,15 @@ describe("GitHub workflow schedules", () => {
   it("schedules background jobs and rank cache via GitHub Actions", () => {
     const bgJobs = readFileSync(join(WORKFLOWS_DIR, "cron-background-jobs.yml"), "utf8");
     const rankCache = readFileSync(join(WORKFLOWS_DIR, "cron-refresh-rank-cache.yml"), "utf8");
+    const pingScript = readFileSync(join(process.cwd(), "scripts/github-cron-ping.sh"), "utf8");
     expect(bgJobs).toMatch(/cron:\s*["']\*\/15 \* \* \* \*["']/);
-    expect(bgJobs).toContain("/api/cron/process-background-jobs");
-    expect(bgJobs).toContain("x-cron-secret:");
+    expect(bgJobs).toContain("github-cron-ping.sh /api/cron/process-background-jobs");
     expect(rankCache).toMatch(/cron:\s*["']\*\/5 \* \* \* \*["']/);
-    expect(rankCache).toContain("/api/cron/refresh-rank-cache");
-    expect(rankCache).toContain("x-cron-secret:");
+    expect(rankCache).toContain("github-cron-ping.sh /api/cron/refresh-rank-cache");
+    expect(pingScript).toContain("Authorization: Bearer");
+    expect(pingScript).toContain("x-cron-secret:");
+    expect(pingScript).toContain("x-cron-timestamp:");
+    expect(pingScript).toContain("x-cron-signature:");
   });
 
   it("does not use sub-daily cron schedules (Actions credits)", () => {

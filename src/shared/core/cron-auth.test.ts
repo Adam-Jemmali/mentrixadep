@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { NextResponse } from "next/server";
-import { authorizeCronRequest } from "@/shared/core/cron-auth";
+import { authorizeCronRequest, buildCronRequestSignature } from "@/shared/core/cron-auth";
 
 const TEST_SECRET = "test-cron-secret-value";
 
@@ -61,6 +61,34 @@ describe("authorizeCronRequest", () => {
   it("trims Bearer prefix whitespace drift", () => {
     const result = authorizeCronRequest(
       cronRequest({ Authorization: `Bearer  ${TEST_SECRET}  ` }),
+    );
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("accepts bearer only when CRON_REQUIRE_SIGNATURE is true (GitHub Actions)", () => {
+    process.env.CRON_REQUIRE_SIGNATURE = "true";
+    const result = authorizeCronRequest(
+      cronRequest({
+        Authorization: `Bearer ${TEST_SECRET}`,
+        "x-cron-secret": TEST_SECRET,
+      }),
+    );
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("validates HMAC when signature headers are sent", () => {
+    const path = "/api/cron/process-background-jobs";
+    const ts = Date.now();
+    const sig = buildCronRequestSignature(TEST_SECRET, "GET", path, ts);
+    const result = authorizeCronRequest(
+      new Request(`http://localhost${path}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${TEST_SECRET}`,
+          "x-cron-timestamp": String(ts),
+          "x-cron-signature": sig,
+        },
+      }),
     );
     expect(result).toEqual({ ok: true });
   });

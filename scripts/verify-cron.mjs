@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -27,11 +28,16 @@ function findMissingCronPaths(config) {
 async function pingCron(baseUrl, path, secret) {
   const url = new URL(path, baseUrl).toString();
   const trimmed = String(secret).trim();
+  const ts = Date.now();
+  const payload = `${ts}.GET.${path}`;
+  const signature = createHmac("sha256", trimmed).update(payload).digest("hex");
   const res = await fetch(url, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${trimmed}`,
       "x-cron-secret": trimmed,
+      "x-cron-timestamp": String(ts),
+      "x-cron-signature": signature,
     },
   });
 
