@@ -2,13 +2,14 @@ import type { LiveBoardEventRow } from "@/features/live-board/types";
 
 export const ARENA_PAGE_COPY = {
   title: "AP Calculus AB — Live Rank Arena",
-  subtitle: "Real Mentrixers. Real photos. Every score is a first attempt that locks forever.",
+  subtitle:
+    "Real faces. Real account ranks. Gold Top % is verified peer standing from first attempts only.",
   cta: "Take this test and see where you rank",
   ctaHref: "/try",
   feedEyebrow: "Live right now",
-  leadersTitle: "Top verified Mentrixers",
+  leadersTitle: "Who is ahead right now",
   leadersSubtitle:
-    "Their face, their passport, their real cohort rank. First attempts only.",
+    "Account rank matches the student hub. Top % is the verified cohort verdict. Tap a card for the full passport.",
   emptyFeed: "No live events yet. Lock your first skill to appear here.",
   liveRibbonLabel: "In the arena now",
 } as const;

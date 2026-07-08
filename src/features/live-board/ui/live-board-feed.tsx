@@ -9,7 +9,8 @@ import {
   formatLiveBoardTimeAgo,
   liveBoardEventTypeLabel,
 } from "@/features/live-board/live-board-messages-pure";
-import type { ArenaLeaderRow, LiveBoardEventRow } from "@/features/live-board/types";
+import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader-profile";
+import type { LiveBoardEventRow } from "@/features/live-board/types";
 import { ArenaPersonAvatar } from "@/features/live-board/ui/arena-person-avatar";
 import { normalizeArenaAvatarUrl } from "@/features/live-board/live-board-avatar-pure";
 import { easeOutExpo } from "@/features/marketing/landing/v2/motion/landing-motion";
@@ -22,7 +23,7 @@ const LIVE_WINDOW_MS = 3 * 60_000;
 
 type Props = {
   initialEvents: LiveBoardEventRow[];
-  leaders: ArenaLeaderRow[];
+  leaders: ArenaLeaderProfile[];
 };
 
 function parseRealtimeRow(record: Record<string, unknown>): LiveBoardEventRow | null {
@@ -79,13 +80,16 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const avatarByUserId = useMemo(() => {
-    const map = new Map<string, string | null>();
+    const map = new Map<string, { avatarUrl: string | null; rankLevel: number }>();
     for (const leader of leaders) {
-      map.set(leader.userId, leader.avatarUrl);
+      map.set(leader.userId, {
+        avatarUrl: leader.avatarUrl,
+        rankLevel: leader.accountRankLevel,
+      });
     }
     for (const event of initialEvents) {
-      if (!map.has(event.user_id) || !map.get(event.user_id)) {
-        map.set(event.user_id, event.avatar_url);
+      if (!map.has(event.user_id)) {
+        map.set(event.user_id, { avatarUrl: event.avatar_url, rankLevel: 1 });
       }
     }
     return map;
@@ -115,7 +119,10 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           const row = parseRealtimeRow(payload.new as Record<string, unknown>);
           if (!row) return;
           if (row.avatar_url) {
-            avatarByUserId.set(row.user_id, row.avatar_url);
+            avatarByUserId.set(row.user_id, {
+              avatarUrl: row.avatar_url,
+              rankLevel: avatarByUserId.get(row.user_id)?.rankLevel ?? 1,
+            });
           }
           setEvents((current) => {
             if (current.some((event) => event.id === row.id)) return current;
@@ -164,8 +171,8 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
             <AnimatePresence initial={false}>
               {events.map((event) => {
                 const isLive = nowMs - Date.parse(event.occurred_at) < LIVE_WINDOW_MS;
-                const avatarUrl =
-                  event.avatar_url ?? avatarByUserId.get(event.user_id) ?? null;
+                const persona = avatarByUserId.get(event.user_id);
+                const avatarUrl = event.avatar_url ?? persona?.avatarUrl ?? null;
 
                 return (
                   <motion.li
@@ -178,6 +185,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
                       displayName={event.display_name}
                       avatarUrl={avatarUrl}
                       size="md"
+                      rankLevel={persona?.rankLevel}
                       live={isLive}
                     />
                     <div className="min-w-0 flex-1">

@@ -9,11 +9,12 @@ import { ARENA_PAGE_COPY } from "@/features/live-board/live-board-messages-pure"
 import { LiveBoardFeed } from "@/features/live-board/ui/live-board-feed";
 import { ArenaLeadersPanel } from "@/features/live-board/ui/arena-leaders-panel";
 import { ArenaLiveRibbon } from "@/features/live-board/ui/arena-live-ribbon";
-import type { ArenaLeaderRow, LiveBoardEventRow } from "@/features/live-board/types";
+import type { LiveBoardEventRow } from "@/features/live-board/types";
+import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader-profile";
 
 type Props = {
   initialEvents: LiveBoardEventRow[];
-  leaders: ArenaLeaderRow[];
+  leaders: ArenaLeaderProfile[];
 };
 
 export function ArenaPageClient({ initialEvents, leaders }: Props) {

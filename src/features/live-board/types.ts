@@ -1,3 +1,8 @@
+import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader-profile";
+
+/** Leaderboard row — same rank source as student hub (XP account rank). */
+export type ArenaLeaderRow = ArenaLeaderProfile;
+
 export type LiveBoardEventType = "verified_attempt" | "rank_advance" | "breakthrough";
 
 export type LiveBoardEventRow = {
@@ -13,17 +18,4 @@ export type LiveBoardEventRow = {
   new_rank_tier: string | null;
   is_first_attempt: boolean;
   occurred_at: string;
-};
-
-export type ArenaLeaderRow = {
-  userId: string;
-  displayName: string;
-  username: string | null;
-  avatarUrl: string | null;
-  rankTier: string;
-  rankLevel: number;
-  accuracyPercent: number;
-  percentile: number;
-  topPercent: number;
-  verifiedCount: number;
 };

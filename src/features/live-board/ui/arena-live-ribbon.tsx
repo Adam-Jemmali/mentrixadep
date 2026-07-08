@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { ARENA_PAGE_COPY } from "@/features/live-board/live-board-messages-pure";
-import type { ArenaLeaderRow } from "@/features/live-board/types";
+import {
+  arenaLeaderAvatarInitial,
+  type ArenaLeaderProfile,
+} from "@/features/live-board/load-arena-leader-profile";
 import { ArenaPersonAvatar } from "@/features/live-board/ui/arena-person-avatar";
 import { cn } from "@/shared/core/utils";
 
 type Props = {
-  leaders: ArenaLeaderRow[];
+  leaders: ArenaLeaderProfile[];
 };
 
 export function ArenaLiveRibbon({ leaders }: Props) {
@@ -21,7 +24,6 @@ export function ArenaLiveRibbon({ leaders }: Props) {
       className="relative mt-10 overflow-hidden rounded-2xl border border-[#7C3AED]/35 bg-gradient-to-br from-[#1E1B4B]/90 via-[#0F172A]/95 to-[#0B1220] p-5 shadow-[0_0_40px_rgba(124,58,237,0.15)]"
     >
       <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#7C3AED]/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-10 left-6 h-24 w-24 rounded-full bg-[#6366F1]/15 blur-2xl" />
 
       <div className="relative flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -34,8 +36,8 @@ export function ArenaLiveRibbon({ leaders }: Props) {
           </p>
           <p className="mt-2 text-sm font-semibold text-white">
             {featured.length === 1
-              ? `${featured[0]!.displayName} is on the board`
-              : `${featured.length} Mentrixers shaping the live board`}
+              ? `${featured[0]!.displayName} is leading right now`
+              : `${featured.length} Mentrixers on the board right now`}
           </p>
         </div>
 
@@ -52,8 +54,9 @@ export function ArenaLiveRibbon({ leaders }: Props) {
                 <ArenaPersonAvatar
                   displayName={leader.displayName}
                   avatarUrl={leader.avatarUrl}
+                  avatarInitial={arenaLeaderAvatarInitial(leader)}
                   size={index === 0 ? "lg" : "md"}
-                  rankLevel={leader.rankLevel}
+                  rankLevel={leader.accountRankLevel}
                   live={index === 0}
                 />
               </span>

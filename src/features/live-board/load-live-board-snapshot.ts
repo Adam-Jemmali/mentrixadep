@@ -1,38 +1,12 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import type { ArenaLeaderRow, LiveBoardEventRow, LiveBoardEventType } from "@/features/live-board/types";
+import type { LiveBoardEventRow, LiveBoardEventType } from "@/features/live-board/types";
 import { normalizeArenaAvatarUrl } from "@/features/live-board/live-board-avatar-pure";
 import {
-  MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE,
-  rankLevelFromPercentile,
-} from "@/features/xp/calibrated-rank";
-import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
-import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
-
-function leaderDisplayName(settingsDisplayName: string | null | undefined): string {
-  const trimmed = typeof settingsDisplayName === "string" ? settingsDisplayName.trim() : "";
-  if (trimmed) return trimmed.slice(0, 100);
-  return "Mentrixer";
-}
-
-async function loadAvatarUrlsByUserIds(
-  admin: ReturnType<typeof createAdminClient>,
-  userIds: string[],
-): Promise<Map<string, string | null>> {
-  const unique = [...new Set(userIds.filter(Boolean))];
-  if (unique.length === 0) return new Map();
-
-  const { data } = await admin
-    .from("user_settings")
-    .select("user_id, avatar_url")
-    .in("user_id", unique);
-
-  return new Map(
-    (data ?? []).map((row) => [
-      String(row.user_id),
-      normalizeArenaAvatarUrl(row.avatar_url as string | null),
-    ]),
-  );
-}
+  enrichArenaLeaderProfiles,
+  resolveAvatarFromAuthMetadata,
+  type ArenaLeaderProfileInput,
+} from "@/features/live-board/load-arena-leader-profile";
+import { MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE } from "@/features/xp/calibrated-rank";
 
 function parseLiveBoardEvent(row: Record<string, unknown>): LiveBoardEventRow | null {
   const eventType = String(row.event_type ?? "");
@@ -97,7 +71,25 @@ export async function loadLiveBoardEvents(limit = 50): Promise<LiveBoardEventRow
     const missingAvatarUserIds = parsed
       .filter((row) => !row.avatar_url)
       .map((row) => row.user_id);
-    const avatarsByUser = await loadAvatarUrlsByUserIds(admin, missingAvatarUserIds);
+
+    const avatarsByUser = new Map<string, string | null>();
+    if (missingAvatarUserIds.length > 0) {
+      await Promise.all(
+        missingAvatarUserIds.map(async (userId) => {
+          try {
+            const { data } = await admin.auth.admin.getUserById(userId);
+            avatarsByUser.set(
+              userId,
+              resolveAvatarFromAuthMetadata(
+                data.user?.user_metadata as Record<string, unknown> | undefined,
+              ),
+            );
+          } catch {
+            avatarsByUser.set(userId, null);
+          }
+        }),
+      );
+    }
 
     return parsed.map((row) => ({
       ...row,
@@ -112,7 +104,7 @@ export async function loadLiveBoardEvents(limit = 50): Promise<LiveBoardEventRow
   }
 }
 
-export async function loadArenaLeaders(limit = 10): Promise<ArenaLeaderRow[]> {
+export async function loadArenaLeaders(limit = 10) {
   try {
     const admin = createAdminClient();
     const { data: cacheRows, error } = await admin
@@ -130,47 +122,42 @@ export async function loadArenaLeaders(limit = 10): Promise<ArenaLeaderRow[]> {
 
     const userIds = cacheRows.map((row) => String(row.user_id));
 
-    const { data: settingsRows } = await admin
-      .from("user_settings")
-      .select("user_id, display_name, rank_card_username, avatar_url")
-      .in("user_id", userIds);
+    const [{ data: settingsRows }, { data: xpRows }] = await Promise.all([
+      admin
+        .from("user_settings")
+        .select("user_id, display_name, rank_card_username, avatar_url")
+        .in("user_id", userIds),
+      admin.from("user_xp").select("user_id, total_xp").in("user_id", userIds),
+    ]);
 
     const settingsByUser = new Map(
-      (settingsRows ?? []).map((row) => [
-        String(row.user_id),
-        {
-          displayName: row.display_name as string | null,
-          username:
-            typeof row.rank_card_username === "string" && row.rank_card_username.trim()
-              ? row.rank_card_username.trim().toLowerCase()
-              : null,
-          avatarUrl: normalizeArenaAvatarUrl(row.avatar_url as string | null),
-        },
-      ]),
+      (settingsRows ?? []).map((row) => [String(row.user_id), row]),
+    );
+    const xpByUser = new Map(
+      (xpRows ?? []).map((row) => [String(row.user_id), Number(row.total_xp ?? 0)]),
     );
 
-    return cacheRows.map((row) => {
+    const inputs: ArenaLeaderProfileInput[] = cacheRows.map((row) => {
       const userId = String(row.user_id);
-      const accuracyPercent = Number(row.accuracy_percent ?? 0);
-      const percentile = Number(row.percentile ?? 0);
-      const rankLevel = rankLevelFromPercentile(percentile);
-      const rankTier = normalizeRankTitle(getAccountRankByLevel(rankLevel).title);
       const settings = settingsByUser.get(userId);
-      const displayName = leaderDisplayName(settings?.displayName);
-
       return {
         userId,
-        displayName,
-        username: settings?.username ?? null,
-        avatarUrl: settings?.avatarUrl ?? null,
-        rankTier,
-        rankLevel,
-        accuracyPercent,
-        percentile,
-        topPercent: peerTopPercent(percentile),
+        displayName: (settings?.display_name as string | null) ?? null,
+        email: null,
+        username:
+          typeof settings?.rank_card_username === "string" &&
+          settings.rank_card_username.trim()
+            ? settings.rank_card_username.trim().toLowerCase()
+            : null,
+        settingsAvatarUrl: (settings?.avatar_url as string | null) ?? null,
+        totalXp: xpByUser.get(userId) ?? 0,
+        accuracyPercent: Number(row.accuracy_percent ?? 0),
         verifiedCount: Number(row.verified_count ?? 0),
+        percentile: Number(row.percentile ?? 0),
       };
     });
+
+    return enrichArenaLeaderProfiles(inputs);
   } catch (err) {
     console.error(
       "loadArenaLeaders failed",

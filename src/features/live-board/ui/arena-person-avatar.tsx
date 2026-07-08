@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   arenaAvatarAccent,
-  arenaAvatarInitial,
 } from "@/features/live-board/live-board-avatar-pure";
 import { getAccountRankByLevel } from "@/features/xp/rank-icons";
 import { cn } from "@/shared/core/utils";
@@ -21,6 +20,7 @@ type Size = keyof typeof SIZE_PX;
 type Props = {
   displayName: string;
   avatarUrl?: string | null;
+  avatarInitial?: string;
   size?: Size;
   rankLevel?: number;
   live?: boolean;
@@ -30,6 +30,7 @@ type Props = {
 export function ArenaPersonAvatar({
   displayName,
   avatarUrl,
+  avatarInitial,
   size = "md",
   rankLevel,
   live = false,
@@ -39,7 +40,7 @@ export function ArenaPersonAvatar({
   const px = SIZE_PX[size];
   const ringColor = rankLevel != null ? getAccountRankByLevel(rankLevel).color : "#7C3AED";
   const accent = arenaAvatarAccent(displayName);
-  const initial = arenaAvatarInitial(displayName);
+  const initial = (avatarInitial ?? displayName.trim().charAt(0) ?? "M").toUpperCase();
 
   useEffect(() => {
     setBroken(false);
