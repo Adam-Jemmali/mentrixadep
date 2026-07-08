@@ -16,6 +16,7 @@ import { AP_CALC_AB_SUBJECT, AP_CALC_AB_SUBJECT_DISPLAY } from "@/features/quest
 import { rankProofsCountLabel } from "@/features/xp/rank-proofs-labels";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
 
 const VERIFIED_GOLD = "#D4A017";
 
@@ -82,12 +83,15 @@ export function RankPassportArticle({
   data,
   previewMode = false,
   totalSkillNodes,
+  isOwner = false,
   className,
 }: {
   data: RankCardData;
   previewMode?: boolean;
   /** When mastery grid is absent — e.g. guest try preview. */
   totalSkillNodes?: number;
+  /** When true, rank_delta nextAction is shown to the passport owner only. */
+  isOwner?: boolean;
   className?: string;
 }) {
   const siteHost = getSiteUrl().replace(/^https?:\/\//, "").replace(/\/$/, "");
@@ -223,6 +227,56 @@ export function RankPassportArticle({
             </div>
           </div>
 
+          <div className="h-px bg-[#E0E7FF]" />
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#475569]">
+              Peer standing
+            </p>
+            <div className="mt-2">
+              <PassportVerdictHeadline verdict={data.passportVerdict} />
+            </div>
+            {data.verifiedSkillCount > 0 ? (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <p className="inline-flex flex-wrap items-center gap-2 font-mono text-xs tabular-nums text-[#475569]">
+                  <span className="inline-flex items-center gap-1">
+                    <MentrixaVocabIcon name="rank-proof" size={14} gold />
+                    {rankProofsCountLabel(data.verifiedSkillCount)}
+                  </span>
+                  {data.verifiedPercentile != null
+                    ? ` · Beat ${peerBeatCount(data.verifiedPercentile)}/100 Mentrixers (${formatPeerStandingShort(data.verifiedPercentile)})`
+                    : ""}
+                </p>
+                <RankBreakdownPopover
+                  stats={{
+                    verifiedCount: data.verifiedSkillCount,
+                    accuracyPercent,
+                    percentile: data.verifiedPercentile,
+                  }}
+                  tone="light"
+                  triggerLabel="Breakdown"
+                />
+              </div>
+            ) : null}
+          </div>
+
+          {data.rankDeltaVerdict ? (
+            <>
+              <div className="h-px bg-[#E0E7FF]" />
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#475569]">
+                  Rank movement
+                </p>
+                <VerdictPanel
+                  verdict={data.rankDeltaVerdict}
+                  tone="light"
+                  showNextAction={isOwner}
+                  className="mt-3"
+                />
+              </div>
+            </>
+          ) : null}
+
           {data.breakthroughReceipts.length > 0 ? (
             <>
               <div className="h-px bg-[#E0E7FF]" />
@@ -245,32 +299,6 @@ export function RankPassportArticle({
           ) : null}
         </div>
       </div>
-
-      <section className="border-t border-[#E0E7FF] px-5 py-5 sm:px-6">
-        <PassportVerdictHeadline verdict={data.passportVerdict} />
-        {data.verifiedSkillCount > 0 ? (
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <p className="inline-flex flex-wrap items-center gap-2 font-mono text-xs tabular-nums text-[#475569]">
-              <span className="inline-flex items-center gap-1">
-                <MentrixaVocabIcon name="rank-proof" size={14} gold />
-                {rankProofsCountLabel(data.verifiedSkillCount)}
-              </span>
-              {data.verifiedPercentile != null
-                ? ` · Beat ${peerBeatCount(data.verifiedPercentile)}/100 Mentrixers (${formatPeerStandingShort(data.verifiedPercentile)})`
-                : ""}
-            </p>
-            <RankBreakdownPopover
-              stats={{
-                verifiedCount: data.verifiedSkillCount,
-                accuracyPercent,
-                percentile: data.verifiedPercentile,
-              }}
-              tone="light"
-              triggerLabel="Breakdown"
-            />
-          </div>
-        ) : null}
-      </section>
 
       <footer className="border-t border-[#E0E7FF] px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">

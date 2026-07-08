@@ -6,11 +6,17 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import Link from "next/link";
 
-export function RankCardPublicPage({ data }: { data: RankCardData }) {
+export function RankCardPublicPage({
+  data,
+  isOwner = false,
+}: {
+  data: RankCardData;
+  isOwner?: boolean;
+}) {
   return (
     <div className="mentrix-student-type-scope mx-auto max-w-4xl px-4 pb-16 pt-8 sm:px-6 lg:pb-24 lg:pt-12">
       <RankPassportTopBar />
-      <RankPassportArticle data={data} className="mb-8" />
+      <RankPassportArticle data={data} className="mb-8" isOwner={isOwner} />
       {data.masteryGrid ? (
         <div className="mb-8">
           <MasteryGrid data={data.masteryGrid} showLegend readOnly className="rotate-0" />

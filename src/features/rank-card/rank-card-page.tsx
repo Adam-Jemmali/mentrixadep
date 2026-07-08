@@ -8,6 +8,7 @@ import {
 } from "@/features/rank-card/rank-card-public-page";
 import { passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { getCurrentUser } from "@/shared/core/auth";
 import { getSiteUrl } from "@/shared/core/site";
 
 type Props = { params: Promise<{ username: string }> };
@@ -60,7 +61,10 @@ export default async function RankCardPage({ params }: Props) {
 
   return (
     <div className={mentrixStudent.pageBgArena}>
-      <RankCardPublicPage data={card} />
+      <RankCardPublicPage
+        data={card}
+        isOwner={(await getCurrentUser())?.id === card.userId}
+      />
     </div>
   );
 }

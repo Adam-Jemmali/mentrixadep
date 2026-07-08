@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import { masteryGridDataSchema } from "@/features/mastery-grid/schema";
 
 export const rankCardBreakthroughSchema = z.object({
@@ -46,6 +47,7 @@ export const rankCardSubjectSchema = z.object({
 });
 
 export const rankCardDataSchema = z.object({
+  userId: z.string().uuid(),
   username: z.string(),
   displayName: z.string(),
   globalRankTitle: z.string(),
@@ -66,6 +68,7 @@ export const rankCardDataSchema = z.object({
     }),
   ),
   masteryGrid: masteryGridDataSchema.nullable().optional(),
+  rankDeltaVerdict: z.custom<Verdict>().nullable().optional(),
   isPrivate: z.literal(false),
 });
 

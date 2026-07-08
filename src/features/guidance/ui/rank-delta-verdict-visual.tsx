@@ -145,11 +145,13 @@ export function RankDeltaVerdictVisual({
   nextAction,
   tone = "light",
   className,
+  showNextAction = true,
 }: {
   meta: RankDeltaMeta;
   nextAction: VerdictNextAction;
   tone?: "dark" | "light";
   className?: string;
+  showNextAction?: boolean;
 }) {
   const showDrivers = meta.drivers.length > 0 && !meta.flat;
 
@@ -189,16 +191,18 @@ export function RankDeltaVerdictVisual({
         </div>
       ) : null}
 
-      <Link
-        href={nextAction.href}
-        className={cn(
-          tone === "dark" ? mentrixStudent.pillPrimary : mentrixStudent.hubBtnSolid,
-          "inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em]",
-        )}
-      >
-        <MentrixaVocabIcon name="quest" size={16} surface="dark" title="Quest" />
-        {nextAction.label}
-      </Link>
+      {showNextAction ? (
+        <Link
+          href={nextAction.href}
+          className={cn(
+            tone === "dark" ? mentrixStudent.pillPrimary : mentrixStudent.hubBtnSolid,
+            "inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em]",
+          )}
+        >
+          <MentrixaVocabIcon name="quest" size={16} surface="dark" title="Quest" />
+          {nextAction.label}
+        </Link>
+      ) : null}
     </div>
   );
 }

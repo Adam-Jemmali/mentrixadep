@@ -9,6 +9,7 @@ import { trackEvent } from "@/shared/integrations/analytics";
 import { getActiveWarBadgesForUser } from "@/features/division-wars/war-notifications";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { loadPassportBreakthroughReceipts } from "@/features/rank-card/load-passport-breakthroughs";
+import { loadRankPassportVerdict } from "@/features/rank-card/load-rank-passport-verdict";
 import { buildPassportVerdict } from "@/features/rank-card/rank-passport-pure";
 import {
   getApCalcVerifiedRankStats,
@@ -65,11 +66,13 @@ export async function getRankCardByUsername(
   const totalXp = xpRow?.total_xp ?? 0;
   const globalRank = rankFromTotalXp(totalXp);
   const verifiedStats = await getApCalcVerifiedRankStats(studentId);
-  const [subjects, warBadges, masteryGrid, breakthroughReceipts] = await Promise.all([
+  const [subjects, warBadges, masteryGrid, breakthroughReceipts, rankDeltaVerdict] =
+    await Promise.all([
     buildRankCardSubjects(studentId, totalXp),
     getActiveWarBadgesForUser(studentId),
     loadMasteryGrid(studentId).catch(() => null),
     loadPassportBreakthroughReceipts(studentId).catch(() => []),
+    loadRankPassportVerdict(studentId).catch(() => null),
   ]);
   const topSubject = subjects[0] ?? null;
   const passportVerdict = buildPassportVerdict({
@@ -89,6 +92,7 @@ export async function getRankCardByUsername(
   }
 
   return {
+    userId: studentId,
     username,
     displayName,
     globalRankTitle: globalRank.title,
@@ -104,6 +108,7 @@ export async function getRankCardByUsername(
     topSubject,
     warBadges,
     masteryGrid,
+    rankDeltaVerdict,
     isPrivate: false as const,
   };
 }

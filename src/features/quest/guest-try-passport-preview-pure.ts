@@ -17,6 +17,7 @@ export function buildGuestTryPassportPreview(params: {
   const verifiedCount = Math.max(0, Math.min(params.correct, params.total));
 
   return {
+    userId: "00000000-0000-0000-0000-000000000000",
     username: "you",
     displayName: "You",
     globalRankTitle: rank.title,
@@ -45,6 +46,7 @@ export function buildGuestTryPassportPreview(params: {
     },
     warBadges: [],
     masteryGrid: null,
+    rankDeltaVerdict: null,
     isPrivate: false,
   };
 }
