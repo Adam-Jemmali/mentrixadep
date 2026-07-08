@@ -26,10 +26,12 @@ function findMissingCronPaths(config) {
 
 async function pingCron(baseUrl, path, secret) {
   const url = new URL(path, baseUrl).toString();
+  const trimmed = String(secret).trim();
   const res = await fetch(url, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${secret}`,
+      Authorization: `Bearer ${trimmed}`,
+      "x-cron-secret": trimmed,
     },
   });
 

@@ -1,7 +1,7 @@
 # Background job worker runs every 15 minutes (Vercel Hobby cannot schedule sub-daily crons).
 # Also available manually: Actions → Cron Background Jobs → Run workflow.
 #
-# Required repository secret: CRON_SECRET
+# Required repository secret: CRON_SECRET (must match Vercel/production CRON_SECRET exactly)
 # Optional variable: PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
 
 name: Cron Background Jobs
@@ -23,12 +23,15 @@ jobs:
             echo "CRON_SECRET is not set — add it under repository secrets to run this workflow."
             exit 1
           fi
+          # Trim accidental whitespace/newlines from GitHub secret copy/paste.
+          CRON_SECRET="$(printf '%s' "${CRON_SECRET}" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
           BASE_URL="${{ vars.PLAYWRIGHT_BASE_URL || 'https://mentrixa.one' }}"
           URL="${BASE_URL%/}/api/cron/process-background-jobs"
           echo "Pinging ${URL}"
           headers=$(mktemp)
           code=$(curl -sS -L --max-redirs 5 -D "${headers}" -o /tmp/cron-body.txt -w "%{http_code}" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
             "${URL}")
           echo "HTTP ${code}"
           if [ "${code}" = "307" ] || [ "${code}" = "302" ] || [ "${code}" = "301" ]; then
@@ -37,4 +40,9 @@ jobs:
             echo "Cron routes must bypass session middleware — deploy latest main and retry."
           fi
           cat /tmp/cron-body.txt
+          if [ "${code}" = "401" ]; then
+            echo "Unauthorized: GitHub CRON_SECRET does not match production CRON_SECRET on ${BASE_URL}."
+            echo "Update repository secret CRON_SECRET to match Vercel env, then re-run."
+            exit 1
+          fi
           test "${code}" -ge 200 && test "${code}" -lt 300

@@ -48,8 +48,10 @@ describe("GitHub workflow schedules", () => {
     const rankCache = readFileSync(join(WORKFLOWS_DIR, "cron-refresh-rank-cache.yml"), "utf8");
     expect(bgJobs).toMatch(/cron:\s*["']\*\/15 \* \* \* \*["']/);
     expect(bgJobs).toContain("/api/cron/process-background-jobs");
+    expect(bgJobs).toContain("x-cron-secret:");
     expect(rankCache).toMatch(/cron:\s*["']\*\/5 \* \* \* \*["']/);
     expect(rankCache).toContain("/api/cron/refresh-rank-cache");
+    expect(rankCache).toContain("x-cron-secret:");
   });
 
   it("does not use sub-daily cron schedules (Actions credits)", () => {

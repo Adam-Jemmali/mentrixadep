@@ -58,4 +58,22 @@ describe("process-background-jobs-cron", () => {
     expect(body.rows_failed).toBe(0);
     expect(body.completed).toBe(3);
   });
+
+  it("accepts x-cron-secret like GitHub Actions (no x-forwarded-for)", async () => {
+    processBackgroundJobsMock.mockResolvedValue({
+      claimed: 0,
+      completed: 0,
+      retried: 0,
+      failed: 0,
+    });
+    const { GET } = await import("@/features/jobs/process-background-jobs-cron");
+
+    const response = await GET(
+      new Request("http://localhost/api/cron/process-background-jobs", {
+        headers: { "x-cron-secret": TEST_CRON_SECRET },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+  });
 });

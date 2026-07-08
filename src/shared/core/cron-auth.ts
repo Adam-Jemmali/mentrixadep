@@ -3,16 +3,6 @@ import { NextResponse } from "next/server";
 
 const DEFAULT_SIGNATURE_TTL_SEC = 300;
 
-function getRequestIp(request: Request): string | null {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const real = request.headers.get("x-real-ip")?.trim();
-  return real || null;
-}
-
 function verifySignature(
   request: Request,
   secret: string,
@@ -49,6 +39,21 @@ function verifySignature(
   return { ok: true };
 }
 
+function readProvidedCronSecret(request: Request): string {
+  const auth = request.headers.get("authorization") ?? "";
+  const bearer = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  const headerSecret = (request.headers.get("x-cron-secret") ?? "").trim();
+  return bearer || headerSecret;
+}
+
+function cronSecretsMatch(expected: string, provided: string): boolean {
+  if (!expected || !provided) return false;
+  const expectedBuf = Buffer.from(expected);
+  const providedBuf = Buffer.from(provided);
+  if (expectedBuf.length !== providedBuf.length) return false;
+  return timingSafeEqual(expectedBuf, providedBuf);
+}
+
 export function authorizeCronRequest(
   request: Request,
 ): { ok: true } | { ok: false; response: NextResponse } {
@@ -59,23 +64,9 @@ export function authorizeCronRequest(
       response: NextResponse.json({ error: "Cron is not configured." }, { status: 503 }),
     };
   }
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${secret}`) {
+  const provided = readProvidedCronSecret(request);
+  if (!cronSecretsMatch(secret, provided)) {
     return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  }
-
-  const rawAllowlist = (process.env.CRON_ALLOWED_IPS ?? "").trim();
-  if (rawAllowlist) {
-    const ip = getRequestIp(request);
-    const allowed = new Set(
-      rawAllowlist
-        .split(",")
-        .map((v) => v.trim())
-        .filter(Boolean),
-    );
-    if (!ip || !allowed.has(ip)) {
-      return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-    }
   }
 
   const requireSig = (process.env.CRON_REQUIRE_SIGNATURE ?? "false").toLowerCase() === "true";
