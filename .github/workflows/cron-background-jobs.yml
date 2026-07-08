@@ -27,7 +27,7 @@ jobs:
           URL="${BASE_URL%/}/api/cron/process-background-jobs"
           echo "Pinging ${URL}"
           headers=$(mktemp)
-          code=$(curl -sS -D "${headers}" -o /tmp/cron-body.txt -w "%{http_code}" \
+          code=$(curl -sS -L --max-redirs 5 -D "${headers}" -o /tmp/cron-body.txt -w "%{http_code}" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             "${URL}")
           echo "HTTP ${code}"

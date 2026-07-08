@@ -16,7 +16,7 @@ describe("rank-statistics-pure", () => {
 
   it("explains accuracy as division times 100", () => {
     expect(explainFirstAttemptAccuracy(5, 80)).toBe(
-      "4 right out of 5 first tries. 4 ÷ 5 × 100 = 80%.",
+      "4 right out of 5 first answers. 4 ÷ 5 × 100 = 80%.",
     );
   });
 

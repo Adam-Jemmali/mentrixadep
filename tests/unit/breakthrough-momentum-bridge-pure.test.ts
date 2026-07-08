@@ -22,7 +22,7 @@ describe("buildBreakthroughMomentumBridgeMessages", () => {
     });
     expect(messages?.verdict).toContain("24h not 48h");
     expect(messages?.verdict).toContain("Movement Receipts");
-    expect(messages?.nextAction).toContain("Upgrade to Momentum");
+    expect(messages?.nextAction).toContain("Momentum shortens the wait");
   });
 });
 

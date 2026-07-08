@@ -138,5 +138,6 @@ describe("github background job cron", () => {
     expect(raw).toMatch(/cron:\s*["']\*\/15 \* \* \* \*["']/);
     expect(raw).toContain("/api/cron/process-background-jobs");
     expect(raw).toContain("Authorization: Bearer");
+    expect(raw).toMatch(/curl\s+-sS\s+-L\b/);
   });
 });
