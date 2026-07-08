@@ -1,5 +1,5 @@
 /**
- * Minimal Supabase admin mock for `applyXpAward` (ledger + user_xp + optional achievements).
+ * Minimal Supabase admin mock for `applyXpAward` (ledger + user_xp + achievements + analytics).
  */
 
 export type MockUserXpRow = {
@@ -64,6 +64,11 @@ export function createApplyXpAdminMock() {
         };
       }
       if (table === "user_achievements") {
+        return {
+          insert: async () => ({ error: null }),
+        };
+      }
+      if (table === "analytics_events") {
         return {
           insert: async () => ({ error: null }),
         };

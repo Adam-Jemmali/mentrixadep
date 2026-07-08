@@ -43,6 +43,15 @@ describe("GitHub workflow schedules", () => {
     "cron-refresh-rank-cache.yml:*/5 * * * *",
   ]);
 
+  it("schedules background jobs and rank cache via GitHub Actions", () => {
+    const bgJobs = readFileSync(join(WORKFLOWS_DIR, "cron-background-jobs.yml"), "utf8");
+    const rankCache = readFileSync(join(WORKFLOWS_DIR, "cron-refresh-rank-cache.yml"), "utf8");
+    expect(bgJobs).toMatch(/cron:\s*["']\*\/15 \* \* \* \*["']/);
+    expect(bgJobs).toContain("/api/cron/process-background-jobs");
+    expect(rankCache).toMatch(/cron:\s*["']\*\/5 \* \* \* \*["']/);
+    expect(rankCache).toContain("/api/cron/refresh-rank-cache");
+  });
+
   it("does not use sub-daily cron schedules (Actions credits)", () => {
     const files = readdirSync(WORKFLOWS_DIR).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
     for (const file of files) {

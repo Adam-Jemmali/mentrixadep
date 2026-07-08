@@ -8,6 +8,10 @@ vi.mock("@/shared/integrations/supabase/admin", () => ({
   createAdminClient: () => mockAdmin,
 }));
 
+vi.mock("@/shared/integrations/analytics", () => ({
+  trackEvent: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/features/divisions/division-week", () => ({
   getUtcWeekMondayString: () => "2025-01-06",
 }));
