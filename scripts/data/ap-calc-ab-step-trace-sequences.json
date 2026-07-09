@@ -1,0 +1,455 @@
+[
+  {
+    "seed_id": "step-trace-power-01",
+    "node_slug": "power-rule",
+    "prompt": "Find $\\frac{d}{dx}(5x^3)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "Which rule applies to $5x^3$?",
+        "options": ["Power rule", "Product rule", "Chain rule"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "Product rule": "treats monomial as a product of functions",
+          "Chain rule": "confuses power with composition"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "After applying the power rule, what is the derivative?",
+        "options": ["$15x^2$", "$5x^2$", "$15x^3$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$5x^2$": "forgets to multiply by the coefficient",
+          "$15x^3$": "forgets to reduce the exponent"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-limit-laws-01",
+    "node_slug": "limit-laws-and-algebraic-limits",
+    "prompt": "Evaluate $\\lim_{x \\to 2}(3x + 1)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "Is this limit direct substitution?",
+        "options": [
+          "Yes, the expression is continuous at $x = 2$",
+          "No, factor first",
+          "No, rationalize first"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "No, factor first": "overcomplicates a continuous linear function",
+          "No, rationalize first": "forces algebra when substitution works"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Substitute $x = 2$ to get the limit value.",
+        "options": ["$7$", "$5$", "$6$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$5$": "forgets to add the constant term",
+          "$6$": "arithmetic slip on $3(2) + 1$"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-chain-01",
+    "node_slug": "chain-rule-basics",
+    "prompt": "Find $\\frac{d}{dx}((2x + 1)^4)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "Identify the outer function $f(u)$ where $u = 2x + 1$.",
+        "options": ["$u^4$", "$2u^4$", "$(2u)^4$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$2u^4$": "pulls the inner coefficient into the outer layer",
+          "$(2u)^4$": "treats the inner linear term as part of the outer base"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Apply the chain rule: outer derivative times inner derivative.",
+        "options": ["$4(2x+1)^3 \\cdot 2$", "$4(2x+1)^3$", "$4(2x+1)^3 \\cdot (2x+1)$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$4(2x+1)^3$": "forgets the inner derivative",
+          "$4(2x+1)^3 \\cdot (2x+1)$": "multiplies by the inner function instead of its derivative"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-algebraic-limit-01",
+    "node_slug": "limits-by-algebraic-manipulation",
+    "prompt": "Evaluate $\\lim_{x \\to 2}\\frac{x^2 - 4}{x - 2}$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "What happens if you substitute $x = 2$ directly?",
+        "options": [
+          "You get $\\frac{0}{0}$, an indeterminate form",
+          "The limit is $0$",
+          "The limit is undefined and does not exist"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "The limit is $0$": "confuses indeterminate form with limit value",
+          "The limit is undefined and does not exist": "gives up before simplifying the removable discontinuity"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "After factoring the numerator, what is the simplified limit?",
+        "options": ["$4$", "$2$", "$0$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$2$": "cancels incorrectly after factoring",
+          "$0$": "stops at the hole value without simplifying"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-sum-rule-01",
+    "node_slug": "sum-and-difference-rules",
+    "prompt": "Find $\\frac{d}{dx}(x^2 + 3x)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "How should you differentiate a sum of terms?",
+        "options": [
+          "Differentiate each term and add the results",
+          "Differentiate only the highest power term",
+          "Multiply the derivatives of each term"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "Differentiate only the highest power term": "drops terms in a sum",
+          "Multiply the derivatives of each term": "applies product rule to a sum"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "What is the derivative?",
+        "options": ["$2x + 3$", "$2x + 3x$", "$x + 3$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$2x + 3x$": "forgets that the derivative of $3x$ is $3$",
+          "$x + 3$": "power rule slip on $x^2$"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-constant-multiple-01",
+    "node_slug": "constant-multiple-rule",
+    "prompt": "Find $\\frac{d}{dx}(-4x^2)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "What does the constant multiple rule let you do?",
+        "options": [
+          "Pull the constant out before differentiating",
+          "Ignore the constant entirely",
+          "Differentiate the constant and the variable separately as a product"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "Ignore the constant entirely": "drops the scalar factor",
+          "Differentiate the constant and the variable separately as a product": "misapplies product rule to a scalar multiple"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "What is the derivative?",
+        "options": ["$-8x$", "$-4x$", "$-8x^2$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$-4x$": "forgets to reduce the exponent",
+          "$-8x^2$": "forgets to reduce the exponent after multiplying by 2"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-one-sided-01",
+    "node_slug": "one-sided-limits",
+    "prompt": "For $f(x) = \\begin{cases} x + 1 & x < 2 \\\\ 5 & x = 2 \\\\ 9 - x & x > 2 \\end{cases}$, find $\\lim_{x \\to 2^-} f(x)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "Which piece of the graph applies as $x \\to 2$ from the left?",
+        "options": ["$x + 1$", "$5$", "$9 - x$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$5$": "uses the defined point value instead of the nearby branch",
+          "$9 - x$": "uses the right hand branch for a left hand limit"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Evaluate the left hand limit.",
+        "options": ["$3$", "$5$", "$7$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$5$": "reports the function value at the point",
+          "$7$": "evaluates the wrong branch"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-implicit-01",
+    "node_slug": "implicit-differentiation-basics",
+    "prompt": "If $x^2 + y^2 = 25$, find $\\frac{dy}{dx}$ at the point where $x = 3$ and $y > 0$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "Differentiate both sides with respect to $x$. What is $\\frac{d}{dx}(y^2)$?",
+        "options": ["$2y\\frac{dy}{dx}$", "$2y$", "$2x$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$2y$": "forgets the chain rule on $y$",
+          "$2x$": "differentiates $y^2$ as if $y$ were $x$"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Solve for $\\frac{dy}{dx}$ when $x = 3$ and $y = 4$.",
+        "options": ["$-\\frac{3}{4}$", "$\\frac{3}{4}$", "$-\\frac{4}{3}$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$\\frac{3}{4}$": "sign error isolating $\\frac{dy}{dx}$",
+          "$-\\frac{4}{3}$": "inverts the slope ratio"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-squeeze-01",
+    "node_slug": "squeeze-theorem",
+    "prompt": "Use the squeeze theorem to find $\\lim_{x \\to 0} x^2 \\sin\\left(\\frac{1}{x}\\right)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "What bound is always true for $\\sin\\left(\\frac{1}{x}\\right)$?",
+        "options": [
+          "$-1 \\le \\sin\\left(\\frac{1}{x}\\right) \\le 1$",
+          "$0 \\le \\sin\\left(\\frac{1}{x}\\right) \\le 1$",
+          "$\\sin\\left(\\frac{1}{x}\\right)$ is unbounded"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$0 \\le \\sin\\left(\\frac{1}{x}\\right) \\le 1$": "restricts sine to nonnegative values only",
+          "$\\sin\\left(\\frac{1}{x}\\right)$ is unbounded": "treats oscillation as divergence"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Multiply the bound by $x^2$ and take the limit as $x \\to 0$.",
+        "options": ["$0$", "$1$", "Does not exist"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$1$": "uses the bound value instead of the squeezed limit",
+          "Does not exist": "gives up because of oscillation"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-graph-limit-01",
+    "node_slug": "estimating-limits-from-graphs",
+    "prompt": "The graph has an open circle at $(2, 1)$ and the nearby branch approaches $y = 4$. What is $\\lim_{x \\to 2} f(x)$?",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "Which y value does the graph approach as $x \\to 2$?",
+        "options": [
+          "The nearby branch height, $4$",
+          "The open circle value, $1$",
+          "The average of $1$ and $4$"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "The open circle value, $1$": "reads the hole instead of the approaching trend",
+          "The average of $1$ and $4$": "averages unrelated graph features"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "State the limit.",
+        "options": ["$4$", "$1$", "Does not exist"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$1$": "confuses limit with function value at the hole",
+          "Does not exist": "treats a removable gap as nonexistence"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-continuity-01",
+    "node_slug": "continuity-at-a-point",
+    "prompt": "Is $f(x) = \\frac{x^2 - 1}{x - 1}$ continuous at $x = 1$ after defining $f(1) = 2$?",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "What is $\\lim_{x \\to 1} \\frac{x^2 - 1}{x - 1}$ after simplifying?",
+        "options": ["$2$", "$0$", "Does not exist"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$0$": "stops at the indeterminate form",
+          "Does not exist": "does not factor the removable discontinuity"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Compare the limit to the defined value $f(1) = 2$.",
+        "options": [
+          "They match, so $f$ is continuous at $x = 1$",
+          "They differ, so $f$ is not continuous",
+          "Continuity cannot be decided from the limit alone"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "They differ, so $f$ is not continuous": "miscomputes the limit",
+          "Continuity cannot be decided from the limit alone": "forgets continuity requires $f(a)$ to equal the limit"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-sin-01",
+    "node_slug": "derivatives-of-sin-x-and-cos-x",
+    "prompt": "Find $\\frac{d}{dx}(3\\sin x)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "What is the derivative of $\\sin x$?",
+        "options": ["$\\cos x$", "$-\\cos x$", "$\\sin x$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$-\\cos x$": "sign error on the sine derivative",
+          "$\\sin x$": "does not differentiate sine"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Apply the constant multiple rule.",
+        "options": ["$3\\cos x$", "$3\\sin x$", "$\\cos x$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$3\\sin x$": "forgets to differentiate",
+          "$\\cos x$": "drops the coefficient"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-exp-01",
+    "node_slug": "derivative-of-e-to-the-x",
+    "prompt": "Find $\\frac{d}{dx}(e^{3x})$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "What is the derivative of $e^u$ with respect to $x$ when $u = 3x$?",
+        "options": [
+          "$e^{3x} \\cdot 3$",
+          "$e^{3x}$",
+          "$3e^{x}$"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$e^{3x}$": "forgets the chain rule on the exponent",
+          "$3e^{x}$": "drops the inner factor in the exponent"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Write the final derivative.",
+        "options": ["$3e^{3x}$", "$e^{3x}$", "$3xe^{3x}$"],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$e^{3x}$": "omits the inner derivative",
+          "$3xe^{3x}$": "differentiates the exponent as a product"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-chain-composite-01",
+    "node_slug": "chain-rule-with-composite-functions",
+    "prompt": "Find $\\frac{d}{dx}\\left(\\sqrt{x^2 + 1}\\right)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "Rewrite $\\sqrt{x^2 + 1}$ as a composite function.",
+        "options": [
+          "$(x^2 + 1)^{1/2}$",
+          "$x^2 + 1^{1/2}$",
+          "$x + 1$"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$x^2 + 1^{1/2}$": "applies the root only to the constant term",
+          "$x + 1$": "drops the square in the radicand"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Differentiate using the chain rule.",
+        "options": [
+          "$\\frac{x}{\\sqrt{x^2 + 1}}$",
+          "$\\frac{1}{2\\sqrt{x^2 + 1}}$",
+          "$\\frac{2x}{\\sqrt{x^2 + 1}}$"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$\\frac{1}{2\\sqrt{x^2 + 1}}$": "forgets the derivative of the inner function",
+          "$\\frac{2x}{\\sqrt{x^2 + 1}}$": "forgets the outer power factor of one half"
+        }
+      }
+    ]
+  },
+  {
+    "seed_id": "step-trace-inverse-sin-01",
+    "node_slug": "derivative-of-inverse-sin-x",
+    "prompt": "Find $\\frac{d}{dx}\\left(\\arcsin(2x)\\right)$.",
+    "step_sequence": [
+      {
+        "step_number": 1,
+        "prompt": "What is the derivative of $\\arcsin(u)$?",
+        "options": [
+          "$\\frac{1}{\\sqrt{1 - u^2}} \\cdot \\frac{du}{dx}$",
+          "$\\frac{1}{\\sqrt{1 - x^2}}$",
+          "$\\frac{1}{1 + u^2} \\cdot \\frac{du}{dx}$"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$\\frac{1}{\\sqrt{1 - x^2}}$": "forgets the chain rule on the inner argument",
+          "$\\frac{1}{1 + u^2} \\cdot \\frac{du}{dx}$": "uses the arctangent derivative pattern"
+        }
+      },
+      {
+        "step_number": 2,
+        "prompt": "Substitute $u = 2x$ and simplify.",
+        "options": [
+          "$\\frac{2}{\\sqrt{1 - 4x^2}}$",
+          "$\\frac{1}{\\sqrt{1 - 4x^2}}$",
+          "$\\frac{2}{\\sqrt{1 - x^2}}$"
+        ],
+        "correct_option_index": 0,
+        "misconception_tag_per_wrong_option": {
+          "$\\frac{1}{\\sqrt{1 - 4x^2}}$": "forgets the derivative of $2x$",
+          "$\\frac{2}{\\sqrt{1 - x^2}}$": "squares only the variable, not the inner term"
+        }
+      }
+    ]
+  }
+]

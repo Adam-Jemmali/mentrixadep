@@ -45,6 +45,8 @@ describe("schedule-session-retests pure", () => {
       3,
       () => "Jun 3, 2026",
     );
-    expect(line).toBe("Retest scheduled for Alex on Jun 3, 2026 across 3 skills covered");
+    expect(line).toBe(
+      "Retest scheduled for Alex on Jun 3, 2026 across 3 skills. Your impact score will update when it completes.",
+    );
   });
 });

@@ -1,19 +1,29 @@
 #!/usr/bin/env npx tsx
 /**
- * Print AP Calculus AB item bank coverage stats.
+ * Weekly AP Calculus AB item bank coverage report.
  *
- * Usage: npx tsx scripts/item-bank-status.ts
+ * Usage: npm run item-bank:status
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  SUBJECT,
+  MIN_APPROVED_PER_NODE,
+  MIN_GLOBAL_APPROVED,
+  MAX_GLOBAL_APPROVED,
+  MIN_STEP_TRACE_UNITS_1_3,
+  buildNodeStatusRows,
+  formatCoverageVerdict,
+  formatStatusTable,
+  summarizeCoverage,
+  type ItemBankInput,
+  type SkillNodeInput,
+} from "./lib/item-bank-status-pure";
 
-const SUBJECT = "AP Calculus AB";
-const MIN_GLOBAL = 300;
-const MAX_GLOBAL = 500;
-const MIN_PER_NODE = 3;
+const PAGE_SIZE = 1000;
 
 function loadEnv(): void {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -33,8 +43,35 @@ function loadEnv(): void {
   }
 }
 
+async function fetchAllItems(
+  supabase: SupabaseClient,
+  nodeIds: string[],
+): Promise<ItemBankInput[]> {
+  if (nodeIds.length === 0) return [];
+
+  const rows: ItemBankInput[] = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("item_bank")
+      .select("skill_node_id, status, step_sequence")
+      .in("skill_node_id", nodeIds)
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) {
+      throw new Error(`Failed to load item_bank rows: ${error.message}`);
+    }
+
+    const page = (data ?? []) as ItemBankInput[];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+
+  return rows;
+}
+
 async function main(): Promise<void> {
   loadEnv();
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
@@ -46,46 +83,38 @@ async function main(): Promise<void> {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: nodes } = await supabase
+  const { data: nodes, error: nodesError } = await supabase
     .from("skill_nodes")
-    .select("id, node_name, unit_number")
+    .select("id, node_name, unit_name, unit_number")
     .eq("subject", SUBJECT)
     .order("display_order");
 
-  const nodeIds = (nodes ?? []).map((n) => n.id);
-  const { data: items } = await supabase
-    .from("item_bank")
-    .select("skill_node_id, status")
-    .in("skill_node_id", nodeIds.length ? nodeIds : ["00000000-0000-0000-0000-000000000000"]);
-
-  const approvedByNode = new Map<string, number>();
-  let approved = 0;
-  let pending = 0;
-  let rejected = 0;
-
-  for (const row of items ?? []) {
-    if (row.status === "approved") {
-      approved++;
-      approvedByNode.set(row.skill_node_id, (approvedByNode.get(row.skill_node_id) ?? 0) + 1);
-    } else if (row.status === "pending_review") pending++;
-    else if (row.status === "rejected") rejected++;
+  if (nodesError) {
+    console.error(`Failed to load skill_nodes: ${nodesError.message}`);
+    process.exit(1);
   }
 
-  const below = (nodes ?? []).filter((n) => (approvedByNode.get(n.id) ?? 0) < MIN_PER_NODE);
+  const skillNodes = (nodes ?? []) as SkillNodeInput[];
+  const nodeIds = skillNodes.map((node) => node.id);
+  const items = await fetchAllItems(supabase, nodeIds);
+  const rows = buildNodeStatusRows(skillNodes, items);
+  const summary = summarizeCoverage(skillNodes, items);
+  const useColor = process.stdout.isTTY === true;
 
-  console.log(`AP Calculus AB item bank`);
-  console.log(`  Approved: ${approved} (target ${MIN_GLOBAL}–${MAX_GLOBAL})`);
-  console.log(`  Pending: ${pending}  Rejected: ${rejected}`);
-  console.log(`  Nodes below ${MIN_PER_NODE} approved: ${below.length} / ${nodes?.length ?? 0}`);
-
-  if (below.length > 0 && below.length <= 15) {
-    for (const n of below) {
-      console.log(`    U${n.unit_number} ${n.node_name}: ${approvedByNode.get(n.id) ?? 0}`);
-    }
-  }
-
-  const ok = approved >= MIN_GLOBAL && approved <= MAX_GLOBAL && below.length === 0;
-  console.log(ok ? "OK: coverage target met." : "GAP: run npm run item-bank:generate");
+  console.log(`${SUBJECT} item bank status`);
+  console.log(
+    `Totals: approved=${summary.approved_total} (target ${MIN_GLOBAL_APPROVED}-${MAX_GLOBAL_APPROVED}), pending=${summary.pending_total}, rejected=${summary.rejected_total}`,
+  );
+  console.log(
+    `Step-trace pool Units 1-3: ${summary.step_trace_units_1_3} approved rows (target ${MIN_STEP_TRACE_UNITS_1_3}+)`,
+  );
+  console.log(
+    `Flagged: ${summary.nodes_below_min} nodes below ${MIN_APPROVED_PER_NODE} approved, ${summary.nodes_missing_step_trace} nodes without step-trace items`,
+  );
+  console.log("");
+  console.log(formatStatusTable(rows, useColor));
+  console.log("");
+  console.log(formatCoverageVerdict(summary));
 }
 
 main().catch((err: unknown) => {

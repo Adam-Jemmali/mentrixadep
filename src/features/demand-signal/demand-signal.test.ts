@@ -34,7 +34,7 @@ const rows = [
 describe("formatDemandRowLine", () => {
   it("formats the weekly weak-student row copy", () => {
     expect(formatDemandRowLine("Chain rule", 12)).toBe(
-      "Chain rule weak for 12 learners",
+      "Chain rule is weak for 12 students this week",
     );
   });
 });

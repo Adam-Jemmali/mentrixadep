@@ -1,15 +1,17 @@
 export function buildGuideInterventionRetestNotificationBody(params: {
   studentName: string;
   nodeName: string;
-  delta: number;
+  preAccuracy: number;
+  postAccuracy: number;
 }): string {
   const student = params.studentName.trim() || "your student";
   const node = params.nodeName.trim() || "the skill node";
-  const delta = Number.isFinite(params.delta) ? params.delta : 0;
+  const pre = Math.round(Number(params.preAccuracy ?? 0));
+  const post = Math.round(Number(params.postAccuracy ?? 0));
 
-  if (delta > 0) {
-    return `Your session with ${student} improved their first-answer accuracy on ${node} by ${Math.round(Math.abs(delta))} percentage points`;
+  if (post > pre) {
+    return `${student} accuracy on ${node} moved from ${pre}% to ${post}% after your session and package`;
   }
 
-  return `Your session with ${student} did not move their accuracy on ${node}. Consider a different approach next time.`;
+  return `${student} accuracy on ${node} did not move. Consider addressing it differently next session.`;
 }

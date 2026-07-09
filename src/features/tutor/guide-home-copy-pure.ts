@@ -130,13 +130,19 @@ export const GUIDE_PAYOUTS = {
 
 export const GUIDE_DEMAND = {
   eyebrow: "Demand",
-  title: "Where needed",
-  noSlots: (subject: string) => `No slots for ${subject}.`,
-  addSlot: "Add slot",
+  title: "Where students need you",
+  noSlots: "You have no open slots here.",
+  addSlot: "Add availability",
+} as const;
+
+export const GUIDE_WEEKLY_IMPACT = {
+  title: "Your impact this week",
+  subtitle: "Per node you taught in the last 7 days.",
+  empty: "No completed sessions this week. Impact reads post-session first answers only.",
 } as const;
 
 export function guideDemandRowLine(nodeName: string, count: number): string {
-  return `${nodeName} weak for ${count} learner${count === 1 ? "" : "s"}`;
+  return `${nodeName} is weak for ${count} student${count === 1 ? "" : "s"} this week`;
 }
 
 export function guideDemandVerdict(nodeName: string): string {

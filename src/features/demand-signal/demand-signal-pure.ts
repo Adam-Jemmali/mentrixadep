@@ -23,7 +23,7 @@ export function formatUtcWeekStartMonday(d: Date): string {
 }
 
 export function formatDemandRowLine(nodeName: string, weakStudentCount: number): string {
-  return `${nodeName} weak for ${weakStudentCount} learner${weakStudentCount === 1 ? "" : "s"}`;
+  return `${nodeName} is weak for ${weakStudentCount} student${weakStudentCount === 1 ? "" : "s"} this week`;
 }
 
 export function courseHasOpenAvailability(

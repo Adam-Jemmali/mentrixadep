@@ -32,15 +32,13 @@ import { PreSessionContextSection } from "@/features/pre-session-brief/pre-sessi
 import { GuideRankProgressCard } from "@/features/guide-rank/components/guide-rank-progress-card";
 import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
 import { GuideDemandSignalCard } from "@/features/demand-signal/components/guide-demand-signal-card";
-import { GuideImpactDisclosure } from "@/shared/ui/disclosure-patterns";
-import { VerdictPanel } from "@/features/guidance/verdict-panel";
+import { GuideWeeklyImpactPanel } from "@/features/tutor/ui/guide-weekly-impact-panel";
 import { GuideNotificationsPanel } from "@/features/notifications/guide-notifications-panel";
 import { ChartSkeleton } from "@/shared/ui/skeleton-patterns";
 import { GuideStickyNote } from "@/features/tutor/ui/guide-sticky-note";
 import { GUIDE_SECTION_STICKY_VARIANT, landingStickyVariantForIndex } from "@/features/tutor/guide-sticky-variants";
 import { guideApCalcVerified } from "@/features/tutor/guide-ap-calc-pure";
 import { GUIDE_HOME } from "@/features/tutor/guide-home-copy-pure";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 const TutorImpactTrendChart = dynamic(
   () => import("./tutor-impact-trend-chart").then((m) => m.TutorImpactTrendChart),
@@ -249,6 +247,38 @@ export function TutorCommandCenterClient({
         </div>
       )}
 
+      <GuideDemandSignalCard
+        signals={data.demandSignals}
+        onOpenAvailability={() => setAddOpen(true)}
+      />
+
+      <GuideWeeklyImpactPanel nodes={data.weeklyNodeImpacts} />
+
+      {data.upcomingSessions.length > 0 ? (
+        <PreSessionContextSection
+          guideId={data.tutorId}
+          upcomingSessions={data.upcomingSessions}
+          displayTimeZone={data.tutorTimezone}
+        />
+      ) : null}
+
+      <section className="mb-8">
+        <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.payouts}>
+          <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>{GUIDE_HOME.earningsTitle}</h2>
+          <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
+            {data.earningsForecastLine ? (
+              <p className={`mb-3 text-sm font-medium ${mentrixStudent.textOnLight}`}>
+                {data.earningsForecastLine}
+              </p>
+            ) : null}
+            <TutorEarningsChart data={earningsLast30Days} />
+            <p className={`mt-3 text-[11px] font-medium leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
+              {GUIDE_HOME.earningsCaption}
+            </p>
+          </div>
+        </GuideStickyNote>
+      </section>
+
       <section className="mb-8 grid gap-6 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <GuideRankProgressCard progress={data.rankProgress} />
@@ -265,64 +295,12 @@ export function TutorCommandCenterClient({
         </div>
       </section>
 
-      <GuideDemandSignalCard
-        signals={data.demandSignals}
-        onOpenAvailability={() => setAddOpen(true)}
-      />
-
       <GuideNotificationsPanel
         notifications={data.guideNotifications}
         displayTimeZone={data.tutorTimezone}
       />
 
-      {data.upcomingSessions.length > 0 ? (
-        <PreSessionContextSection
-          guideId={data.tutorId}
-          upcomingSessions={data.upcomingSessions}
-          displayTimeZone={data.tutorTimezone}
-        />
-      ) : null}
-
-      {data.impactScores.filter((s) => s.sessionsCounted >= 3).length > 0 || data.impactVerdict ? (
-        <section className="mb-8">
-          <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.impact}>
-            <h2 className={`mb-4 flex items-center gap-2 text-sm font-bold ${mentrixStudent.textOnLight}`}>
-              <MentrixaVocabIcon name="impact-score" size={16} gold surface="light" title="Guide Impact Score" />
-              {GUIDE_HOME.impactScoreTitle}
-            </h2>
-            {data.impactVerdict ? (
-              <VerdictPanel verdict={data.impactVerdict} tone="light" className="mb-5" />
-            ) : null}
-            <div className="mb-4">
-              <GuideImpactDisclosure />
-            </div>
-            {data.impactScores.filter((s) => s.sessionsCounted >= 3).length > 0 ? (
-              <ul className="divide-y divide-slate-100">
-                {data.impactScores
-                  .filter((s) => s.sessionsCounted >= 3)
-                  .slice(0, 5)
-                  .map((s) => (
-                    <li key={s.subject} className="flex items-center justify-between py-3 text-sm">
-                      <span className="font-medium text-slate-800">{s.subject}</span>
-                      <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold tabular-nums text-slate-500">
-                        <MentrixaVocabIcon
-                          name="impact-score"
-                          size={12}
-                          gold
-                          surface="light"
-                          title="Guide Impact Score"
-                        />
-                        {Math.round(s.impactScore)}/100
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            ) : null}
-          </GuideStickyNote>
-        </section>
-      ) : null}
-
-      {/* Actions + chart */}
+      {/* Actions + requests */}
       <div className="mb-4 flex flex-wrap gap-2 lg:hidden">
         <Button
           type="button"
@@ -375,6 +353,11 @@ export function TutorCommandCenterClient({
         description={earningsCopy.description}
       >
         <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
+          {data.earningsForecastLine ? (
+            <p className={`mb-3 text-sm font-medium ${mentrixStudent.textOnLight}`}>
+              {data.earningsForecastLine}
+            </p>
+          ) : null}
           <TutorEarningsChart data={earningsLast30Days} />
         </div>
         <p className={`mt-4 text-xs leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
@@ -382,26 +365,13 @@ export function TutorCommandCenterClient({
         </p>
       </MentrixaDrawer>
 
-      <div className="hidden gap-6 lg:grid lg:grid-cols-12">
-        <section className="lg:col-span-7 min-w-0">
+      <div className="hidden lg:block">
+        <section className="mb-8 min-w-0">
           <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
             <div className="mb-4">
               <h2 className={`text-sm font-bold ${mentrixStudent.textOnLight}`}>{GUIDE_HOME.bookedRequestsTitle}</h2>
-            
             </div>
             <SessionRequestsList sessionRequests={sessionRequests} displayTimezone={data.tutorTimezone} />
-          </ScrollRevealCard>
-        </section>
-
-        <section className="lg:col-span-5 min-w-0">
-          <ScrollRevealCard className={mentrixStudent.card + " p-5 h-full"}>
-            <h2 className={`mb-4 text-sm font-bold ${mentrixStudent.textOnLight}`}>{GUIDE_HOME.earningsTitle}</h2>
-            <div className="rounded-xl border border-violet-100 bg-zinc-50/50 p-4">
-              <TutorEarningsChart data={earningsLast30Days} />
-              <p className={`mt-3 text-[11px] font-medium leading-relaxed ${mentrixStudent.textMutedOnLight}`}>
-                {GUIDE_HOME.earningsCaption}
-              </p>
-            </div>
           </ScrollRevealCard>
         </section>
       </div>

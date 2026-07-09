@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { runGsapAction, useGsapEffect } from "@/shared/core/gsap-lazy";
 import { deleteStudioPackage, publishStudioPackage, saveStudioPackageDraft, type TutorSessionWithPackage } from "@/features/studio-ai/studio-packages";
+import { StudioSessionMasteryPanel } from "@/features/studio-ai/studio-session-mastery-panel";
 import { formatStudioRetestConfirmationLine } from "@/features/breakthrough-events/schedule-session-retests-pure";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import type { SessionAiPackage } from "@/shared/types/database";
@@ -661,6 +662,7 @@ export function TutorStudioClient({
                         sessionId={session.id}
                         course={session.course}
                         pkg={pkg}
+                        onBehalfOfTutorId={viewingAsUserId ?? undefined}
                         regenLeft={regenLeft}
                         tutorNotes={contextBySession[session.id] ?? ""}
                         onTutorNotesChange={(v: string) =>
@@ -794,6 +796,7 @@ function SessionPackageEditor({
   sessionId,
   pkg,
   course,
+  onBehalfOfTutorId,
   savingId,
   publishingId,
   streamingId,
@@ -812,6 +815,7 @@ function SessionPackageEditor({
   sessionId: string;
   pkg: SessionAiPackage;
   course: string;
+  onBehalfOfTutorId?: string;
   savingId: string | null;
   publishingId: string | null;
   streamingId: string | null;
@@ -894,14 +898,9 @@ function SessionPackageEditor({
                   Send to learner
                 </Button>
               ) : (
-                <div className="flex flex-col items-start gap-2">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/30">
-                    <CheckCircle2 className="h-4 w-4 text-blue-300" />
-                    <span className="text-xs font-bold text-blue-50">Published</span>
-                  </div>
-                  {retestConfirmationLine ? (
-                    <p className="text-xs font-medium text-blue-100/95">{retestConfirmationLine}</p>
-                  ) : null}
+                <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/30">
+                  <CheckCircle2 className="h-4 w-4 text-blue-300" />
+                  <span className="text-xs font-bold text-blue-50">Published</span>
                 </div>
               )}
 
@@ -951,6 +950,19 @@ function SessionPackageEditor({
             className="min-h-[80px] text-sm bg-white border-blue-100 focus:border-blue-300 focus:ring-blue-200 transition-all rounded-xl shadow-sm"
           />
         </motion.div>
+
+        <StudioSessionMasteryPanel
+          sessionId={sessionId}
+          followUpTopics={draft.follow_up_topics}
+          published={published}
+          onBehalfOfTutorId={onBehalfOfTutorId}
+        />
+
+        {retestConfirmationLine ? (
+          <p className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm font-medium text-emerald-950">
+            {retestConfirmationLine}
+          </p>
+        ) : null}
       </div>
 
       <div className="mx-auto max-w-2xl space-y-8 pb-20">

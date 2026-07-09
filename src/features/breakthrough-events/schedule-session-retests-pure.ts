@@ -60,6 +60,6 @@ export function formatStudioRetestConfirmationLine(
 ): string {
   const name = studentName.trim() || "your student";
   const dateLabel = formatDate(scheduledAtIso);
-  const skillLabel = skillsCovered === 1 ? "1 skill covered" : `${skillsCovered} skills covered`;
-  return `Retest scheduled for ${name} on ${dateLabel} across ${skillLabel}`;
+  const skillLabel = skillsCovered === 1 ? "1 skill" : `${skillsCovered} skills`;
+  return `Retest scheduled for ${name} on ${dateLabel} across ${skillLabel}. Your impact score will update when it completes.`;
 }

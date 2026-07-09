@@ -33,6 +33,9 @@ import {
   loadGuideNotifications,
   type GuideNotificationEntry,
 } from "@/features/notifications/load-guide-notifications";
+import { loadGuideWeeklyNodeImpacts } from "@/features/tutor/command-center-weekly-impact";
+import type { GuideWeeklyNodeImpact } from "@/features/tutor/command-center-weekly-impact-pure";
+import { loadGuideEarningsForecastLine } from "@/features/tutor/load-earnings-forecast";
 
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
@@ -51,6 +54,7 @@ export type TutorCommandCenterPayload = {
     pendingRequestCount: number;
   };
   earningsLast30Days: TutorCommandCenterEarningsDay[];
+  earningsForecastLine: string | null;
   lateCancellationAlerts: { id: string; course: string; start_time: string }[];
   sessionRequests: Awaited<ReturnType<typeof import('@/features/tutor/session-requests').getSessionRequests>>;
   calendar: {
@@ -88,6 +92,7 @@ export type TutorCommandCenterPayload = {
   impactHistoryLast30Days: { date: string; impactScore: number }[];
   completedSessionsTotal: number;
   demandSignals: GuideDemandSignal[];
+  weeklyNodeImpacts: GuideWeeklyNodeImpact[];
   guideNotifications: GuideNotificationEntry[];
 };
 
@@ -113,6 +118,7 @@ function fallbackTutorCommandCenterPayload(
       pendingRequestCount: 0,
     },
     earningsLast30Days: [],
+    earningsForecastLine: null,
     lateCancellationAlerts: [],
     sessionRequests: [],
     calendar: {
@@ -139,6 +145,7 @@ function fallbackTutorCommandCenterPayload(
     impactHistoryLast30Days: [],
     completedSessionsTotal: 0,
     demandSignals: [],
+    weeklyNodeImpacts: [],
     guideNotifications: [],
   };
 }
@@ -161,6 +168,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const monthEndExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const MS24 = 24 * 60 * 60 * 1000;
 
     const [
@@ -401,6 +409,24 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       [],
     );
 
+    const weeklyNodeImpacts = await loadTutorSection(
+      "weeklyNodeImpacts",
+      () => loadGuideWeeklyNodeImpacts(tutorId, sevenDaysAgo.toISOString()),
+      [],
+    );
+
+    const earningsForecastLine = await loadTutorSection(
+      "earningsForecast",
+      () =>
+        loadGuideEarningsForecastLine({
+          guideId: tutorId,
+          openSlots: (availability ?? []).map((slot) => ({
+            course: String(slot.course),
+          })),
+        }),
+      null,
+    );
+
     let calendarAvailability = calAvailRes.data ?? [];
     const calAvailIds = calendarAvailability.map((a) => a.id);
     if (calAvailIds.length > 0) {
@@ -435,6 +461,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         pendingRequestCount: sessionRequests.length,
       },
       earningsLast30Days,
+      earningsForecastLine,
       lateCancellationAlerts,
       sessionRequests,
       calendar: {
@@ -462,6 +489,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       impactHistoryLast30Days,
       completedSessionsTotal,
       demandSignals,
+      weeklyNodeImpacts,
       guideNotifications,
     };
 
