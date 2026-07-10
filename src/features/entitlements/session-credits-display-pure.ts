@@ -26,7 +26,7 @@ export function buildSessionCreditsHubVerdict(input: {
 
   const nextAction = input.packSprint
     ? "Book a sprint session on the node that still will not move before the pack expires."
-    : "Book your included session before the month turns or you lose this coaching beat.";
+    : "";
 
   return {
     verdict: parts.join(" "),

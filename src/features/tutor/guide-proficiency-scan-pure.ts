@@ -4,7 +4,6 @@ export type ProficiencyScanCheckId =
   | "skill_match"
   | "mastery_signal"
   | "evidence_link"
-  | "evidence_format"
   | "proof_depth";
 
 export type ProficiencyScanCheck = {
@@ -25,31 +24,23 @@ export type ProficiencyScanResult = {
 };
 
 const CALC_RE =
-  /\b(ap\s*)?calculus|calc(?:ulus)?\s*(?:ab|bc)?\b|derivative|integral|limit|series|differential/i;
+  /\b(ap\s*)?calculus|calc(?:ulus)?\s*(?:ab|bc)?\b|derivative|integral|limit|series|differential|\bap\s*5\b/i;
 const MASTERY_RE =
-  /\b(ap\s*(?:calc(?:ulus)?)?\s*(?:ab|bc)?\s*[:\-]?\s*[45]|score[d]?\s*(?:a\s*)?[45]|perfect\s*score)\b/i;
+  /\b(ap\s*(?:calc(?:ulus)?)?\s*(?:ab|bc)?\s*[:\-]?\s*[45]|score[d]?\s*(?:a\s*)?[45]|perfect\s*score|[45]\s*on\s*ap)\b/i;
 const ROLE_RE =
-  /\b(teaching assistant|\bta\b|tutor|instructor|lecturer|coach|professor|adjunct)\b/i;
+  /\b(teaching assistant|\bta\b|tutor|instructor|lecturer|coach|professor|adjunct|teach|taught|helped)\b/i;
 const DEGREE_RE =
-  /\b(b\.?s\.?|m\.?s\.?|ph\.?d\.?|bachelor|master|degree).{0,24}(math|calculus|stem)\b/i;
+  /\b(b\.?s\.?|m\.?s\.?|ph\.?d\.?|bachelor|master|degree|major).{0,32}(math|calculus|stem)?\b/i;
 const EXPERIENCE_RE =
-  /\b\d+\+?\s*(?:years?|yrs?).{0,20}(teach|tutor|coach|session|student)/i;
+  /\b\d+\+?\s*(?:years?|yrs?|semesters?|sessions?).{0,28}(teach|tutor|coach|session|student|calc)?/i;
 
 function hasMasterySignal(proof: string): boolean {
   return (
     MASTERY_RE.test(proof) ||
     ROLE_RE.test(proof) ||
     DEGREE_RE.test(proof) ||
-    EXPERIENCE_RE.test(proof)
-  );
-}
-
-function evidenceLooksLikeDocument(url: string): boolean {
-  const lower = url.toLowerCase();
-  if (/\.(pdf|png|jpe?g|webp)(\?|$)/i.test(lower)) return true;
-  if (/\/tutor-evidence\//i.test(lower)) return true;
-  return /\b(transcript|certificate|cert|diploma|score|ap[-_]?score|collegeboard|credly|acclaim)\b/i.test(
-    lower,
+    EXPERIENCE_RE.test(proof) ||
+    /\b(certificate|transcript|credential|qualified)\b/i.test(proof)
   );
 }
 
@@ -61,13 +52,10 @@ export function scanGuideProficiencyProof(input: {
   const evidence = input.evidenceUrl.trim();
   const proofLower = proof.toLowerCase();
 
-  const skillMatch = CALC_RE.test(proof) || /\bap\s*5\b/i.test(proof);
+  const skillMatch = CALC_RE.test(proof) || /\bap\b/i.test(proof);
   const masterySignal = hasMasterySignal(proof);
   const evidenceLink = /^https?:\/\/.{8,}/i.test(evidence);
-  const evidenceFormat = evidenceLink && evidenceLooksLikeDocument(evidence);
-  const proofDepth =
-    proof.length >= 24 &&
-    (/\d/.test(proof) || ROLE_RE.test(proof) || DEGREE_RE.test(proof) || /\bap\b/i.test(proofLower));
+  const proofDepth = proof.length >= 12 && (/\d/.test(proof) || ROLE_RE.test(proof) || /\bap\b/i.test(proofLower) || masterySignal);
 
   const checks: ProficiencyScanCheck[] = [
     {
@@ -92,15 +80,7 @@ export function scanGuideProficiencyProof(input: {
       pass: evidenceLink,
       detail: evidenceLink
         ? "Secure link attached."
-        : "Upload a file or paste a full https link.",
-    },
-    {
-      id: "evidence_format",
-      label: "Evidence format",
-      pass: evidenceFormat,
-      detail: evidenceFormat
-        ? "Transcript, certificate, or upload recognized."
-        : "Use PDF, image, or a transcript or certificate URL.",
+        : "Paste a full https link to a transcript, certificate, or portfolio.",
     },
     {
       id: "proof_depth",
@@ -108,15 +88,14 @@ export function scanGuideProficiencyProof(input: {
       pass: proofDepth,
       detail: proofDepth
         ? "Enough detail to verify."
-        : "Add scores, roles, or years with numbers.",
+        : "Add a short note with your score, role, or years.",
     },
   ];
 
   const passed = checks.filter((c) => c.pass).length;
   const score = Math.round((passed / checks.length) * 100);
 
-  const criticalPass =
-    skillMatch && masterySignal && evidenceLink && evidenceFormat && proofDepth;
+  const criticalPass = skillMatch && masterySignal && evidenceLink && proofDepth;
 
   if (criticalPass) {
     return {

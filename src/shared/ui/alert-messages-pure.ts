@@ -2,7 +2,12 @@ import { MENTRIXA_FIRST_ANSWER } from "@/features/copy/mentrixa-simple-copy-pure
 
 export type MentrixaAlertStatus = "default" | "accent" | "success" | "warning" | "danger";
 
-export type SubscriptionAlertKind = "success" | "canceled" | "checkout_error";
+export type SubscriptionAlertKind =
+  | "success"
+  | "canceled"
+  | "checkout_error"
+  | "renewal_off"
+  | "renewal_on";
 
 export type VerifiedFirstAttemptAlertKind = "onboarding" | "guest_preview" | "practice_pack";
 
@@ -38,6 +43,20 @@ export function subscriptionAlertMessage(
         title: "Could not start checkout.",
         description: error?.trim() || "Stripe did not return a checkout session.",
         nextAction: "Retry checkout or return to the hub and come back later.",
+      };
+    case "renewal_off":
+      return {
+        status: "warning",
+        title: "Momentum renewal is off.",
+        description: error?.trim() || "You keep access through the end of your paid period.",
+        nextAction: "Already paid time is not refunded. Resume renewal any time before access ends.",
+      };
+    case "renewal_on":
+      return {
+        status: "success",
+        title: "Momentum renewal is on.",
+        description: error?.trim() || "Billing continues on your current plan.",
+        nextAction: "Book Guide sessions with your included credit and membership rate.",
       };
   }
 }

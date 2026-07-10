@@ -34,3 +34,33 @@ export function clearAvatarConfirmMessage(): MentrixaConfirmDialogMessage {
     confirmLabel: "Remove photo",
   };
 }
+
+export function cancelMomentumRenewalConfirmMessage(
+  periodEndLabel: string | null,
+): MentrixaConfirmDialogMessage {
+  const until = periodEndLabel
+    ? ` until ${periodEndLabel}`
+    : " through the end of your paid period";
+  return {
+    status: "warning",
+    title: "Turn off Momentum renewal?",
+    description: `You keep Momentum membership${until}. No further charges after that. Already paid time is not refunded.`,
+    nextAction: "Included credits and member session rate stay available until access ends.",
+    cancelLabel: "Keep membership",
+    confirmLabel: "Turn off renewal",
+  };
+}
+
+export function resumeMomentumRenewalConfirmMessage(
+  periodEndLabel: string | null,
+): MentrixaConfirmDialogMessage {
+  const renews = periodEndLabel ? ` Renewal returns on ${periodEndLabel}.` : "";
+  return {
+    status: "success",
+    title: "Resume Momentum renewal?",
+    description: `Your membership stays active.${renews} Billing continues on your current plan.`,
+    nextAction: "You can turn renewal off again any time before the next charge.",
+    cancelLabel: "Leave off",
+    confirmLabel: "Resume renewal",
+  };
+}

@@ -10,7 +10,9 @@ import {
 import type { MentrixaAlertStatus } from "@/shared/ui/alert-messages-pure";
 import {
   cancelBookingConfirmMessage,
+  cancelMomentumRenewalConfirmMessage,
   clearAvatarConfirmMessage,
+  resumeMomentumRenewalConfirmMessage,
   type MentrixaConfirmDialogMessage,
 } from "@/shared/ui/alert-dialog-messages-pure";
 
@@ -146,6 +148,50 @@ export function ClearAvatarConfirmDialog({
     <MentrixaConfirmDialog
       trigger={trigger}
       message={clearAvatarConfirmMessage()}
+      brandKind="mentrixer"
+      onConfirm={onConfirm}
+      confirming={confirming}
+    />
+  );
+}
+
+export function CancelMomentumRenewalConfirmDialog({
+  periodEndLabel,
+  onConfirm,
+  confirming = false,
+  trigger,
+}: {
+  periodEndLabel: string | null;
+  onConfirm: () => void | boolean | Promise<void | boolean>;
+  confirming?: boolean;
+  trigger: ReactNode;
+}) {
+  return (
+    <MentrixaConfirmDialog
+      trigger={trigger}
+      message={cancelMomentumRenewalConfirmMessage(periodEndLabel)}
+      brandKind="mentrixer"
+      onConfirm={onConfirm}
+      confirming={confirming}
+    />
+  );
+}
+
+export function ResumeMomentumRenewalConfirmDialog({
+  periodEndLabel,
+  onConfirm,
+  confirming = false,
+  trigger,
+}: {
+  periodEndLabel: string | null;
+  onConfirm: () => void | boolean | Promise<void | boolean>;
+  confirming?: boolean;
+  trigger: ReactNode;
+}) {
+  return (
+    <MentrixaConfirmDialog
+      trigger={trigger}
+      message={resumeMomentumRenewalConfirmMessage(periodEndLabel)}
       brandKind="mentrixer"
       onConfirm={onConfirm}
       confirming={confirming}

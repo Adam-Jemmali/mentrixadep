@@ -109,6 +109,7 @@ export async function handleStripeSubscriptionDeleted(
     .update({
       local_status: "canceled",
       stripe_status: subscription.status,
+      cancel_at_period_end: false,
       current_period_end: subscription.ended_at
         ? new Date(subscription.ended_at * 1000).toISOString()
         : new Date().toISOString(),

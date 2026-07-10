@@ -12,6 +12,7 @@ import {
   MOMENTUM_SUBSCRIPTION_MONTHLY_CENTS,
 } from "@/features/booking/booking-pricing";
 import { subscriptionBillingIntervalSchema } from "@/features/payments/student-subscription";
+import { assertNoActiveMomentumSubscription } from "@/features/payments/cancel-momentum-subscription";
 import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
 import { captureUnexpectedError, withStripeApiSpan } from "@/shared/integrations/observability";
 
@@ -103,6 +104,11 @@ export async function POST(req: NextRequest) {
     }
 
     const interval = parsed.data.interval;
+    const alreadyActive = await assertNoActiveMomentumSubscription(user.id);
+    if (alreadyActive) {
+      return NextResponse.json({ error: alreadyActive }, { status: 409 });
+    }
+
     const stripe = getStripeServer();
     const origin = getSiteUrl().replace(/\/$/, "");
 

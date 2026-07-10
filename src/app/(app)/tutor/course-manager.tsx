@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addTutorCourse, removeTutorCourse, uploadTutorCourseEvidence } from "@/features/tutor/courses";
+import { addTutorCourse, removeTutorCourse } from "@/features/tutor/courses";
 import { useAdminViewContext } from "@/components/admin-view-context";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
@@ -30,7 +30,6 @@ export function CourseManager({ courses }: CourseManagerProps) {
   const apCalc = findGuideApCalcCourse(courses);
   const [proof, setProof] = useState("");
   const [evidenceLink, setEvidenceLink] = useState("");
-  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<ProficiencyScanResult | null>(null);
@@ -44,12 +43,8 @@ export function CourseManager({ courses }: CourseManagerProps) {
       setError(GUIDE_PROFICIENCY.errMastery);
       return;
     }
-    if (!evidenceLink.trim() && !evidenceFile) {
+    if (!evidenceLink.trim()) {
       setError(GUIDE_PROFICIENCY.errEvidence);
-      return;
-    }
-    if (evidenceLink.trim() && evidenceFile) {
-      setError(GUIDE_PROFICIENCY.errBoth);
       return;
     }
     setLoading(true);
@@ -57,22 +52,10 @@ export function CourseManager({ courses }: CourseManagerProps) {
     setScanResult(null);
     setScanComplete(false);
     try {
-      let finalEvidence = evidenceLink.trim();
-
-      if (evidenceFile) {
-        const fd = new FormData();
-        fd.set("file", evidenceFile);
-        const uploaded = await uploadTutorCourseEvidence(fd, viewingAsUserId ?? undefined);
-        if (!uploaded.success) {
-          throw new Error(uploaded.error);
-        }
-        finalEvidence = uploaded.url;
-      }
-
       const result = await addTutorCourse(
         AP_CALC_AB_SUBJECT,
         proof,
-        finalEvidence,
+        evidenceLink.trim(),
         viewingAsUserId ?? undefined,
       );
 
@@ -85,7 +68,6 @@ export function CourseManager({ courses }: CourseManagerProps) {
 
       setProof("");
       setEvidenceLink("");
-      setEvidenceFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : GUIDE_PROFICIENCY.errSubmit);
     } finally {
@@ -187,27 +169,8 @@ export function CourseManager({ courses }: CourseManagerProps) {
                 className="h-11 border-[#CBD5E1] bg-white text-[#0B1220] placeholder:text-[#64748B]"
                 maxLength={500}
                 type="url"
-                disabled={Boolean(evidenceFile) || loading || Boolean(scanResult && !scanComplete)}
+                disabled={loading || Boolean(scanResult && !scanComplete)}
               />
-              <div className="flex flex-wrap items-center gap-2 text-xs text-[#475569]">
-                <span>{GUIDE_PROFICIENCY.evidenceOrUpload}</span>
-                <input
-                  type="file"
-                  accept=".pdf,image/png,image/jpeg"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    setEvidenceFile(file);
-                    if (file) setEvidenceLink("");
-                  }}
-                  className="text-xs text-[#334155] file:mr-2 file:rounded file:border file:border-[#CBD5E1] file:bg-white file:px-2 file:py-1 file:text-xs file:font-semibold file:text-[#0B1220]"
-                  disabled={Boolean(evidenceLink.trim()) || loading || Boolean(scanResult && !scanComplete)}
-                />
-              </div>
-              {evidenceFile ? (
-                <p className="text-xs font-medium text-[#334155]">
-                  {evidenceFile.name} ({Math.max(1, Math.round(evidenceFile.size / 1024))} KB)
-                </p>
-              ) : null}
             </div>
 
             {error ? (

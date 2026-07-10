@@ -27,6 +27,7 @@ import { SubscriptionTierChip } from "@/shared/ui/chip-patterns";
 import { MomentumSubscriptionDisclosure, MomentumLoopSlaDisclosure } from "@/shared/ui/disclosure-patterns";
 import { MentrixaBillingIntervalRadioGroup } from "@/shared/ui/radio-group-patterns";
 import { PricingTierIcon, PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
+import { MomentumCancelControls } from "@/features/student-profile/ui/momentum-cancel-controls";
 
 type MomentumMembershipPanelProps = {
   subscription: StudentSubscriptionRow | null;
@@ -251,6 +252,14 @@ export function MomentumMembershipPanel({
           </Button>
         )}
       </div>
+
+      {active ? (
+        <MomentumCancelControls
+          subscription={subscription}
+          momentumCompMember={momentumCompMember}
+          className="mt-4"
+        />
+      ) : null}
     </section>
   );
 }
