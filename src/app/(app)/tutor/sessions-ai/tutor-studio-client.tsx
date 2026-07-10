@@ -24,11 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/radix-select";
-import { Loader2, MessageSquare, Copy, Save, Send, CheckCircle2, Trash2 } from "lucide-react";
+import { Loader2, MessageSquare, Save, Send, CheckCircle2, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
+import { STUDIO_LOOP } from "@/features/studio-ai/studio-loop-copy-pure";
 
 const STREAM_END = "\n__MENTRIXA_STUDIO_END__";
 
@@ -119,14 +120,12 @@ export function TutorStudioClient({
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [errorByRow, setErrorByRow] = useState<Record<string, string>>({});
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [retestConfirmBySession, setRetestConfirmBySession] = useState<Record<string, string>>({});
   const [removingId, setRemovingId] = useState<string | null>(null);
   const { viewingAsUserId } = useAdminViewContext();
   const router = useRouter();
-
   const expandedRowRef = useRef<HTMLTableRowElement | null>(null);
 
   useEffect(() => {
@@ -236,16 +235,6 @@ export function TutorStudioClient({
       else next.add(cardKey);
       return next;
     });
-  };
-
-  const handleCopyQuestLink = async (sessionId: string, questIndex: number, prompt: string) => {
-    const link = `/student/quest?prompt=${encodeURIComponent(prompt)}`;
-    const key = `${sessionId}-${questIndex}`;
-    await navigator.clipboard.writeText(link);
-    setCopiedKey(key);
-    window.setTimeout(() => {
-      setCopiedKey((current) => (current === key ? null : current));
-    }, 2000);
   };
 
   async function runStreamRequest(
@@ -661,6 +650,11 @@ export function TutorStudioClient({
                       <SessionPackageEditor
                         sessionId={session.id}
                         course={session.course}
+                        learnerName={
+                          session.student_display_name?.trim() ||
+                          session.student_email?.split("@")[0] ||
+                          "the learner"
+                        }
                         pkg={pkg}
                         onBehalfOfTutorId={viewingAsUserId ?? undefined}
                         regenLeft={regenLeft}
@@ -669,12 +663,10 @@ export function TutorStudioClient({
                           setContextBySession((prev) => ({ ...prev, [session.id]: v }))
                         }
                         flippedCards={flippedCards}
-                        copiedKey={copiedKey}
                         savingId={savingId}
                         publishingId={publishingId}
                         streamingId={streamingId}
                         onToggleCard={toggleCardFlip}
-                        onCopyLink={handleCopyQuestLink}
                         onSave={async (draft: DraftEdit) => {
                           setSavingId(session.id);
                           setErrorByRow((prev) => ({ ...prev, [session.id]: "" }));
@@ -796,6 +788,7 @@ function SessionPackageEditor({
   sessionId,
   pkg,
   course,
+  learnerName,
   onBehalfOfTutorId,
   savingId,
   publishingId,
@@ -804,9 +797,7 @@ function SessionPackageEditor({
   tutorNotes,
   onTutorNotesChange,
   flippedCards,
-  copiedKey,
   onToggleCard,
-  onCopyLink,
   onSave,
   onPublish,
   onRegenerate,
@@ -815,6 +806,7 @@ function SessionPackageEditor({
   sessionId: string;
   pkg: SessionAiPackage;
   course: string;
+  learnerName: string;
   onBehalfOfTutorId?: string;
   savingId: string | null;
   publishingId: string | null;
@@ -823,9 +815,7 @@ function SessionPackageEditor({
   tutorNotes: string;
   onTutorNotesChange: (v: string) => void;
   flippedCards: Set<string>;
-  copiedKey: string | null;
   onToggleCard: (key: string) => void;
-  onCopyLink: (sessionId: string, i: number, prompt: string) => void;
   onSave: (draft: DraftEdit) => Promise<void>;
   onPublish: () => Promise<void>;
   onRegenerate: () => void;
@@ -934,19 +924,20 @@ function SessionPackageEditor({
           transition={{ delay: 0.1 }}
           className="rounded-2xl border border-blue-100 bg-blue-50/30 p-5 shadow-inner"
         >
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-1">
             <MessageSquare className="h-4 w-4 text-blue-600" />
             <label className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
-              Guide notes
+              {STUDIO_LOOP.guideNotesLabel}
             </label>
           </div>
+          <p className="mb-3 text-xs text-blue-800/80">{STUDIO_LOOP.guideNotesHint(learnerName)}</p>
           <Textarea
             value={tutorNotes}
             onChange={(e) => {
               playTypeSound();
               onTutorNotesChange(e.target.value);
             }}
-            placeholder="e.g. Learner struggled with integration by parts."
+            placeholder={STUDIO_LOOP.guideNotesPlaceholder(learnerName)}
             className="min-h-[80px] text-sm bg-white border-blue-100 focus:border-blue-300 focus:ring-blue-200 transition-all rounded-xl shadow-sm"
           />
         </motion.div>
@@ -1129,20 +1120,21 @@ function SessionPackageEditor({
           </div>
         </StudioSection>
 
-        <StudioSection title="Quest prompts" icon="/icons/mentrixer.svg" delay={0.7}>
+        <StudioSection title={STUDIO_LOOP.practicePromptsTitle} icon="/icons/mentrixer.svg" delay={0.7}>
+          <p className="mb-3 text-xs text-slate-500">{STUDIO_LOOP.practicePromptsSub}</p>
           <div className="space-y-4">
             {draft.followup_quests.map((quest, questIndex) => {
               const key = `${sessionId}-${questIndex}`;
               const indexLabel = String(questIndex + 1).padStart(2, "0");
               return (
-                <motion.div 
-                  key={key} 
+                <motion.div
+                  key={key}
                   className="flex items-start gap-4 p-4 rounded-2xl bg-blue-50/30 border border-blue-100"
                 >
                   <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
                     {indexLabel}
                   </span>
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1">
                     <Textarea
                       className="min-h-[70px] text-sm bg-white border-blue-100 focus:border-blue-300 rounded-xl leading-relaxed"
                       value={quest.prompt}
@@ -1156,30 +1148,6 @@ function SessionPackageEditor({
                         setDraft((d) => ({ ...d, followup_quests: next }));
                       }}
                     />
-                    <div className="flex items-center justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-8 text-[11px] font-bold gap-1.5 transition-all ${
-                          copiedKey === key ? "text-blue-700 bg-blue-100" : "text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                        }`}
-                        onClick={() => {
-                          void onCopyLink(sessionId, questIndex, quest.prompt);
-                        }}
-                      >
-                        {copiedKey === key ? (
-                          <>
-                            <CheckCircle2 className="h-3 w-3" />
-                            Copied
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3" />
-                            Copy Quest link
-                          </>
-                        )}
-                      </Button>
-                    </div>
                   </div>
                 </motion.div>
               );

@@ -57,12 +57,22 @@ export function StudioSessionMasteryPanel({
           <p className={`mb-3 text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>
             {context.studentDisplayName}
           </p>
+          {context.mode === "call_nodes" ? (
+            <p className={`mb-3 text-xs font-medium ${mentrixStudent.textMutedOnLight}`}>
+              {STUDIO_LOOP.masteryCallNodesLabel}
+            </p>
+          ) : null}
+          {context.mode === "full_grid" ? (
+            <p className={`mb-3 text-xs ${mentrixStudent.textMutedOnLight}`}>
+              {STUDIO_LOOP.masteryNoCallNodes}
+            </p>
+          ) : null}
           <MasteryGrid
             data={context.masteryGrid}
             showLegend
             readOnly
-            pinnedNodeIds={context.coveredNodeIds}
-            remainderCollapsed
+            pinnedNodeIds={context.mode === "call_nodes" ? context.coveredNodeIds : undefined}
+            remainderCollapsed={context.mode === "call_nodes"}
           />
         </div>
       ) : null}

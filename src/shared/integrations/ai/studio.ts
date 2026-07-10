@@ -38,6 +38,10 @@ import {
   getSessionPackageCache,
   setSessionPackageCache,
 } from "./shared";
+import {
+  detectStudioCallSignals,
+  studioPersonalizationDirective,
+} from "@/features/studio-ai/studio-personalization-pure";
 
 // ============================================
 // TYPES
@@ -78,6 +82,8 @@ function buildStudioSessionPrompts(
 ): { systemPrompt: string; userContent: string } {
   const course = sanitizeForPrompt(context.course);
   const durationMinutes = Number(context.durationMinutes) || 0;
+  const learnerName = sanitizeForPrompt(context.learnerName?.trim() || "the learner").slice(0, 80);
+  const guideName = sanitizeForPrompt(context.guideName?.trim() || "the Guide").slice(0, 80);
   const blocks = Array.isArray(context.contextBlocks)
     ? context.contextBlocks.map((b) => sanitizeForPrompt(b).slice(0, 8000))
     : [];
@@ -85,27 +91,53 @@ function buildStudioSessionPrompts(
     ? sanitizeForPrompt(tutorNotes).slice(0, 4000)
     : "";
   const when = context.sessionWhen?.trim() || "scheduled session";
+  const signals = detectStudioCallSignals({
+    contextBlocks: blocks,
+    guideNotes: notes,
+  });
+  const signalDirective = studioPersonalizationDirective({
+    learnerName,
+    guideName,
+    signals,
+  });
 
-  const systemPrompt = `You are Mentrixa Studio: you turn a live 1:1 tutoring session into a concise study package for the learner.
-You may receive course, timing, recording metadata (never raw video), prior session summaries, Quest topics, rating comments, and optional notes from the guide about what was covered.
+  const systemPrompt = `You are Mentrixa Studio: you turn one live 1:1 Guide call into a personalized study package for that Mentrixer only.
+
+People in this call:
+- Guide: ${guideName}
+- Mentrixer (learner): ${learnerName}
+
+You receive course, timing, call transcript or recording excerpts, in-call chat between Guide and Mentrixer, screen-share markers, whiteboard activity, prior sessions with this same pair, and optional Guide notes.
 
 Output JSON only with exactly these keys:
-- summary: string (2–4 sentences; practical, specific to this session)
-- keyPoints: string[] (4–8 bullets of what mattered)
+- summary: string (2–4 sentences)
+- keyPoints: string[] (4–8 bullets)
 - flashcards: array of exactly 5 objects { "q": string, "a": string }
 - practiceExercises: array of exactly 3 objects { "title": string, "prompt": string, "hint": string optional }
-- followUpTopics: string[] (exactly 3 short topic labels)
-- followupQuestPrompts: string[] (exactly 3 standalone prompts for independent Quest practice)
+- followUpTopics: string[] (exactly 3 short topic labels that match real AP Calculus AB skill node names when possible)
+- followupQuestPrompts: string[] (exactly 3 short practice prompts for this learner after the call)
 
-Rules:
-- Tie content to the course and context; avoid generic filler.
-- Do not claim you watched a recording unless metadata says a recording exists.
-- If context is thin, still produce good-faith educational content aligned with the course name and guide notes.`;
+${signalDirective}
+
+Personalization rules (required for every section: summary, key points, flashcards, practice exercises, follow-up topics, practice prompts):
+- Name ${learnerName} in the summary. Write as if you sat in on THIS call between ${guideName} and ${learnerName}.
+- Every section must be personalized from the primary call signal above. No generic textbook lecture that could fit any calculus session.
+- Prefer concrete moments from the winning signal: spoken lines, chat lines, screen-share work, whiteboard work, or Guide notes.
+- Flashcards, practice exercises, follow-up topics, and practice prompts must reuse the same nodes, examples, and misconceptions from that signal.
+- Do not invent struggles, dialogue, or topics that are not in the context.
+- If the primary signal is course_only, say live detail was limited and keep the package short and honest.
+- Do not claim you watched video unless recording-derived transcript or screen-share summary is present.
+- Never output Quest URLs or "copy quest link" language. Practice prompts are plain text only.
+- followUpTopics should use concrete skill labels (for example "Power Rule for Integration") so mastery pinning can match skill nodes.`;
 
   const userContent = [
     `Course: ${course}.`,
+    `Guide: ${guideName}. Mentrixer: ${learnerName}.`,
     `Session window: ${when}. Approximate duration: ${durationMinutes} minutes.`,
-    notes ? `\nGuide notes (what was covered, struggles, emphasis):\n${notes}` : "",
+    `\n${signalDirective}`,
+    notes
+      ? `\nGuide notes from ${guideName} (what ${learnerName} covered, struggles, emphasis):\n${notes}`
+      : `\nNo Guide notes yet. Personalize only from the primary call signal and supporting blocks for ${learnerName}.`,
     ...blocks.map((b) => `\n---\n${b}`),
   ].join("\n");
 

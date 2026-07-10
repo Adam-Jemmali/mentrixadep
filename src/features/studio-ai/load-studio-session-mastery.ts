@@ -3,19 +3,21 @@
 import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { validateUUID } from "@/shared/core/security";
-import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
-import {
-  resolveCoveredSkillNodeIds,
-  type SkillNodeTopicRef,
-} from "@/features/breakthrough-events/schedule-session-retests-pure";
+import type { SkillNodeTopicRef } from "@/features/breakthrough-events/schedule-session-retests-pure";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import {
+  resolveStudioCallCoveredNodeIds,
+  resolveStudioMasteryPanelMode,
+  type StudioMasteryPanelMode,
+} from "@/features/studio-ai/studio-mastery-match-pure";
 
 export type StudioSessionMasteryContext = {
   studentDisplayName: string;
   masteryGrid: MasteryGridData;
   coveredNodeIds: string[];
+  mode: StudioMasteryPanelMode;
 };
 
 export async function getStudioSessionMasteryContext(
@@ -38,17 +40,19 @@ export async function getStudioSessionMasteryContext(
   const targetTutorId =
     user.role === "admin" && onBehalfOfTutorId ? onBehalfOfTutorId : user.id;
   if (session.tutor_id !== targetTutorId && user.role !== "admin") return null;
-  if (!isApCalculusAbSubject(String(session.course))) return null;
+
+  const isApCalc = isApCalculusAbSubject(String(session.course));
+  if (!isApCalc) return null;
 
   const studentId = String(session.student_id);
-  await seedSessionTargetNodes(validSessionId, studentId, String(session.course)).catch(() => {});
 
-  const [{ data: targetRows }, { data: skillNodes }, { data: studentSettings }, masteryGrid] =
+  const [{ data: pkg }, { data: skillNodes }, { data: studentSettings }, masteryGrid] =
     await Promise.all([
       admin
-        .from("session_target_nodes")
-        .select("skill_node_id")
-        .eq("session_id", validSessionId),
+        .from("session_ai_packages")
+        .select("summary, key_points, follow_up_topics, practice_exercises, flashcards, followup_quests")
+        .eq("session_id", validSessionId)
+        .maybeSingle(),
       admin
         .from("skill_nodes")
         .select("id, node_name, node_slug")
@@ -63,13 +67,39 @@ export async function getStudioSessionMasteryContext(
 
   if (!masteryGrid) return null;
 
-  const coveredNodeIds = resolveCoveredSkillNodeIds(
-    (targetRows ?? []).map((row) => String(row.skill_node_id)),
-    followUpTopics,
+  const practiceExercises = Array.isArray(pkg?.practice_exercises)
+    ? (pkg.practice_exercises as Array<{ title?: string; prompt?: string }>)
+    : [];
+  const flashcards = Array.isArray(pkg?.flashcards)
+    ? (pkg.flashcards as Array<{ q?: string; a?: string }>)
+    : [];
+  const followupQuests = Array.isArray(pkg?.followup_quests)
+    ? (pkg.followup_quests as Array<{ prompt?: string }>)
+    : [];
+
+  const coveredNodeIds = resolveStudioCallCoveredNodeIds(
+    {
+      summary: typeof pkg?.summary === "string" ? pkg.summary : null,
+      keyPoints: Array.isArray(pkg?.key_points) ? pkg.key_points.map(String) : [],
+      followUpTopics: [
+        ...followUpTopics,
+        ...(Array.isArray(pkg?.follow_up_topics) ? pkg.follow_up_topics.map(String) : []),
+      ],
+      practiceTitles: practiceExercises.map((ex) => String(ex.title ?? "")),
+      flashcardQuestions: flashcards.map((card) => String(card.q ?? "")),
+      practicePrompts: [
+        ...practiceExercises.map((ex) => String(ex.prompt ?? "")),
+        ...followupQuests.map((quest) => String(quest.prompt ?? "")),
+      ],
+    },
     (skillNodes ?? []) as SkillNodeTopicRef[],
   );
 
-  if (coveredNodeIds.length === 0) return null;
+  const mode = resolveStudioMasteryPanelMode({
+    isApCalc: true,
+    coveredNodeIds,
+    hasMasteryGrid: true,
+  });
 
   let studentDisplayName = studentSettings?.display_name?.trim() ?? "";
   if (!studentDisplayName) {
@@ -82,5 +112,6 @@ export async function getStudioSessionMasteryContext(
     studentDisplayName,
     masteryGrid,
     coveredNodeIds,
+    mode,
   };
 }

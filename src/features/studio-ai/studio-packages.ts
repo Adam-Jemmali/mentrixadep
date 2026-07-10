@@ -25,6 +25,11 @@ import {
 } from "@/features/studio-ai/studio-internal";
 import { scheduleSessionRetestsOnPublish } from "@/features/breakthrough-events/schedule-session-retests";
 import type { StudioRetestScheduleResult } from "@/features/breakthrough-events/schedule-session-retests";
+import {
+  detectStudioCallSignals,
+  primaryStudioCallSignal,
+  studioPersonalizationDirective,
+} from "@/features/studio-ai/studio-personalization-pure";
 
 export type StudioPublishRetestConfirmation = StudioRetestScheduleResult & {
   studentDisplayName: string;
@@ -157,6 +162,43 @@ export async function buildSessionPackageRichContext(
 
   const contextBlocks: string[] = [];
 
+  const [{ data: learnerSettings }, { data: guideSettings }] = await Promise.all([
+    adminClient
+      .from("user_settings")
+      .select("display_name")
+      .eq("user_id", session.student_id)
+      .maybeSingle(),
+    adminClient
+      .from("user_settings")
+      .select("display_name")
+      .eq("user_id", session.tutor_id)
+      .maybeSingle(),
+  ]);
+
+  let learnerName = learnerSettings?.display_name?.trim() || "";
+  let guideName = guideSettings?.display_name?.trim() || "";
+  if (!learnerName || !guideName) {
+    const [learnerAuth, guideAuth] = await Promise.all([
+      !learnerName
+        ? adminClient.auth.admin.getUserById(session.student_id).catch(() => null)
+        : Promise.resolve(null),
+      !guideName
+        ? adminClient.auth.admin.getUserById(session.tutor_id).catch(() => null)
+        : Promise.resolve(null),
+    ]);
+    if (!learnerName) {
+      learnerName =
+        learnerAuth?.data?.user?.email?.split("@")[0]?.trim() || "the learner";
+    }
+    if (!guideName) {
+      guideName = guideAuth?.data?.user?.email?.split("@")[0]?.trim() || "the Guide";
+    }
+  }
+
+  contextBlocks.push(
+    `This package is for Mentrixer ${learnerName} after a live call with Guide ${guideName} on ${session.course}. Personalize every section to what they did together in this session.`,
+  );
+
   const { data: recordings } = await adminClient
     .from("video_recordings")
     .select("id, duration_seconds, storage_path, file_size, mime_type, created_at")
@@ -217,9 +259,9 @@ export async function buildSessionPackageRichContext(
                         ? `Topics heard in audio: ${mediaInsights.keyTopics.join(", ")}`
                         : "Topics heard in audio: none reliably extracted.",
                       mediaInsights.learnerQuestions.length > 0
-                        ? "Learner questions/misconceptions:\n" +
+                        ? `Questions and misconceptions from ${learnerName}:\n` +
                           mediaInsights.learnerQuestions.map((q: string) => `- ${q}`).join("\n")
-                        : "Learner questions/misconceptions: none reliably extracted.",
+                        : `Questions and misconceptions from ${learnerName}: none reliably extracted.`,
                     ].join("\n"),
                   );
                 }
@@ -253,8 +295,8 @@ export async function buildSessionPackageRichContext(
                 ? `Topics heard in audio: ${keyTopics.join(", ")}`
                 : "Topics heard in audio: none reliably extracted.",
               learnerQuestions.length > 0
-                ? "Learner questions/misconceptions:\n" + learnerQuestions.map((q) => `- ${q}`).join("\n")
-                : "Learner questions/misconceptions: none reliably extracted.",
+                ? `Questions and misconceptions from ${learnerName}:\n` + learnerQuestions.map((q) => `- ${q}`).join("\n")
+                : `Questions and misconceptions from ${learnerName}: none reliably extracted.`,
             ].join("\n"),
           );
         } else if (existingJob?.status === "failed") {
@@ -279,7 +321,7 @@ export async function buildSessionPackageRichContext(
     }
   } else {
     contextBlocks.push(
-      "No video recording is stored for this session. Generate the package from course, timing, learner quest history, and prior session summaries below.",
+      `No video recording is stored for this session with ${learnerName}. Build the package from in-call chat, screen-share timeline, whiteboard activity, Guide notes, and prior sessions with this Mentrixer.`,
     );
   }
 
@@ -311,7 +353,7 @@ export async function buildSessionPackageRichContext(
       const sum = summaryBySession.get(ps.id);
       const excerpt = sum ? String(sum).replace(/\s+/g, " ").trim().slice(0, 320) : null;
       lines.push(
-        `- ${ps.course} @ ${ps.start_time}: ${excerpt ?? "(no Quest package yet)"}`,
+        `- ${ps.course} @ ${ps.start_time}: ${excerpt ?? "(no Studio package yet)"}`,
       );
     }
     contextBlocks.push(lines.join("\n"));
@@ -388,8 +430,9 @@ export async function buildSessionPackageRichContext(
       if (lines.length > 0) {
         contextBlocks.push(
           [
-            "In-call chat transcript excerpt (chronological):",
+            `In-call chat between Guide ${guideName} and Mentrixer ${learnerName} (chronological):`,
             ...lines,
+            `Use these lines as primary evidence of what ${learnerName} asked and what ${guideName} answered.`,
           ].join("\n"),
         );
       }
@@ -405,18 +448,22 @@ export async function buildSessionPackageRichContext(
         : null;
 
     if (whiteboardSummary) {
-      const toolStats = whiteboardSummary.byTool
-        ? Object.entries(whiteboardSummary.byTool)
-            .slice(0, 8)
-            .map(([tool, count]) => `${tool}: ${count}`)
-            .join(", ")
-        : "none";
-      contextBlocks.push(
-        `Whiteboard activity: draw_events=${whiteboardSummary.drawEvents ?? 0}, clear_events=${whiteboardSummary.clearEvents ?? 0}, tools={${toolStats}}.` +
-          (aiContextRow.whiteboard_snapshot_data_url
-            ? " A whiteboard snapshot image was captured for this session (do not hallucinate image contents; use only as optional signal)."
-            : ""),
-      );
+      const drawEvents = whiteboardSummary.drawEvents ?? 0;
+      const clearEvents = whiteboardSummary.clearEvents ?? 0;
+      if (drawEvents > 0 || clearEvents > 0) {
+        const toolStats = whiteboardSummary.byTool
+          ? Object.entries(whiteboardSummary.byTool)
+              .slice(0, 8)
+              .map(([tool, count]) => `${tool}: ${count}`)
+              .join(", ")
+          : "none";
+        contextBlocks.push(
+          `Whiteboard activity: draw_events=${drawEvents}, clear_events=${clearEvents}, tools={${toolStats}}.` +
+            (aiContextRow.whiteboard_snapshot_data_url
+              ? " A whiteboard snapshot image was captured for this session (do not hallucinate image contents; use only as optional signal)."
+              : ""),
+        );
+      }
     }
 
     const timeline = Array.isArray(aiContextRow.screen_share_timeline)
@@ -446,10 +493,24 @@ export async function buildSessionPackageRichContext(
     }
   }
 
+  const signals = detectStudioCallSignals({ contextBlocks });
+  contextBlocks.unshift(
+    studioPersonalizationDirective({
+      learnerName,
+      guideName,
+      signals,
+    }),
+  );
+  contextBlocks.push(
+    `Resolved primary call signal: ${primaryStudioCallSignal(signals)}. Every Studio section must follow that signal.`,
+  );
+
   return {
     course: session.course,
     durationMinutes,
     sessionWhen,
+    learnerName,
+    guideName,
     contextBlocks,
   };
 }
@@ -825,6 +886,15 @@ export async function publishStudioPackage(
       const followUpTopics = Array.isArray(pkg.follow_up_topics)
         ? pkg.follow_up_topics.map(String)
         : [];
+      const practiceExercises = Array.isArray(pkg.practice_exercises)
+        ? (pkg.practice_exercises as Array<{ title?: string; prompt?: string }>)
+        : [];
+      const flashcards = Array.isArray(pkg.flashcards)
+        ? (pkg.flashcards as Array<{ q?: string }>)
+        : [];
+      const followupQuests = Array.isArray(pkg.followup_quests)
+        ? (pkg.followup_quests as Array<{ prompt?: string }>)
+        : [];
 
       const scheduled = await scheduleSessionRetestsOnPublish({
         sessionId: validSessionId,
@@ -832,6 +902,16 @@ export async function publishStudioPackage(
         course: String(session.course),
         publishedAt: now,
         followUpTopics,
+        packageSource: {
+          summary: typeof pkg.summary === "string" ? pkg.summary : null,
+          keyPoints: Array.isArray(pkg.key_points) ? pkg.key_points.map(String) : [],
+          practiceTitles: practiceExercises.map((ex) => String(ex.title ?? "")),
+          flashcardQuestions: flashcards.map((card) => String(card.q ?? "")),
+          practicePrompts: [
+            ...practiceExercises.map((ex) => String(ex.prompt ?? "")),
+            ...followupQuests.map((quest) => String(quest.prompt ?? "")),
+          ],
+        },
       });
 
       if (scheduled) {

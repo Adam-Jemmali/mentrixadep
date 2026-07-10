@@ -281,6 +281,10 @@ export interface SessionPackageRichContext {
   course: string;
   durationMinutes: number;
   sessionWhen?: string;
+  /** Mentrixer display name when known. */
+  learnerName?: string;
+  /** Guide display name when known. */
+  guideName?: string;
   contextBlocks: string[];
 }
 

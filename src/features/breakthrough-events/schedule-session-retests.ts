@@ -1,13 +1,12 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
 import { loadVerifiedFirstAttemptMap } from "@/features/pre-session-brief/verified-gaps";
 import {
   addStudioRetestDelay,
-  resolveCoveredSkillNodeIds,
   type SkillNodeTopicRef,
 } from "@/features/breakthrough-events/schedule-session-retests-pure";
 import { scheduleStudioPackageRetests } from "@/features/intervention-retests/schedule-intervention-retests";
 import { AP_CALC_AB_SUBJECT, isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { resolveStudioCallCoveredNodeIds } from "@/features/studio-ai/studio-mastery-match-pure";
 
 export type StudioRetestScheduleResult = {
   retestScheduledAt: string;
@@ -20,26 +19,32 @@ export async function scheduleSessionRetestsOnPublish(params: {
   course: string;
   publishedAt: string;
   followUpTopics: string[];
+  packageSource?: {
+    summary?: string | null;
+    keyPoints?: string[] | null;
+    practiceTitles?: string[] | null;
+    flashcardQuestions?: string[] | null;
+    practicePrompts?: string[] | null;
+  };
 }): Promise<StudioRetestScheduleResult | null> {
   if (!isApCalculusAbSubject(params.course)) return null;
 
   const admin = createAdminClient();
-  await seedSessionTargetNodes(params.sessionId, params.studentId, params.course);
 
-  const [{ data: targetRows }, { data: skillNodes }] = await Promise.all([
-    admin
-      .from("session_target_nodes")
-      .select("skill_node_id")
-      .eq("session_id", params.sessionId),
-    admin
-      .from("skill_nodes")
-      .select("id, node_name, node_slug")
-      .eq("subject", AP_CALC_AB_SUBJECT),
-  ]);
+  const { data: skillNodes } = await admin
+    .from("skill_nodes")
+    .select("id, node_name, node_slug")
+    .eq("subject", AP_CALC_AB_SUBJECT);
 
-  const coveredNodeIds = resolveCoveredSkillNodeIds(
-    (targetRows ?? []).map((row) => String(row.skill_node_id)),
-    params.followUpTopics,
+  const coveredNodeIds = resolveStudioCallCoveredNodeIds(
+    {
+      summary: params.packageSource?.summary ?? null,
+      keyPoints: params.packageSource?.keyPoints ?? [],
+      followUpTopics: params.followUpTopics,
+      practiceTitles: params.packageSource?.practiceTitles ?? [],
+      flashcardQuestions: params.packageSource?.flashcardQuestions ?? [],
+      practicePrompts: params.packageSource?.practicePrompts ?? [],
+    },
     (skillNodes ?? []) as SkillNodeTopicRef[],
   );
 
