@@ -14,6 +14,7 @@ import {
   linkMomentumCreditRedemptionToSessionRequest,
   restoreMomentumSessionCredit,
 } from "@/features/entitlements/session-credits";
+import { momentumCreditRedemptionKey } from "@/features/entitlements/session-credits-pure";
 import { captureUnexpectedError, withStripeApiSpan } from "@/shared/integrations/observability";
 import { trackEvent } from "@/shared/integrations/analytics";
 import { enforceApiRouteRateLimit } from "@/shared/core/security/rate-limiter";
@@ -384,7 +385,19 @@ export async function POST(req: NextRequest) {
 
       if (consumed.ok) {
         try {
+          const { data: tutorMeta } = await adminClient
+            .from("users")
+            .select("id, approved, auto_approve")
+            .eq("id", availability.tutor_id)
+            .maybeSingle();
+
+          if (!tutorMeta?.approved) {
+            throw new Error("This Guide is not accepting bookings right now.");
+          }
+
           const result = await bookSessionAsUser(availabilityId, user.id);
+
+          // Auto-approve may already remove the slot. Mark booked when the row remains.
           await adminClient
             .from("availability")
             .update({
@@ -413,6 +426,7 @@ export async function POST(req: NextRequest) {
               availability_id: availabilityId,
               amount_cents: 0,
               momentum_session_credit: true,
+              auto_approve: Boolean(tutorMeta.auto_approve),
             },
           });
 
@@ -425,16 +439,57 @@ export async function POST(req: NextRequest) {
 
           return NextResponse.json({ url: successUrl.toString() });
         } catch (bookErr) {
-          if (!consumed.alreadyRedeemed) {
-            await restoreMomentumSessionCredit({
-              userId: user.id,
-              availabilityId,
-            });
+          const redemptionKey = momentumCreditRedemptionKey(user.id, availabilityId);
+          const { data: existingRequestAfterFail } = await adminClient
+            .from("session_requests")
+            .select("id")
+            .eq("student_id", user.id)
+            .eq("availability_id", availabilityId)
+            .in("status", ["pending", "approved"])
+            .maybeSingle();
+
+          const { data: linkedRedemption } = await adminClient
+            .from("momentum_session_credit_redemptions")
+            .select("id, session_request_id")
+            .eq("idempotency_key", redemptionKey)
+            .maybeSingle();
+
+          const bookingAlreadyLanded = Boolean(
+            existingRequestAfterFail || linkedRedemption?.session_request_id,
+          );
+
+          if (bookingAlreadyLanded) {
+            const successUrl = new URL("/student", appOrigin);
+            successUrl.searchParams.set("booking", "success");
+            successUrl.searchParams.set("reason", "approved");
+            successUrl.searchParams.set("credit", "1");
+            successUrl.searchParams.set("sessionsTab", "upcoming");
+            successUrl.hash = "sessions-history";
+            return NextResponse.json({ url: successUrl.toString() });
           }
+
+          await restoreMomentumSessionCredit({
+            userId: user.id,
+            availabilityId,
+          });
           await clearPendingLock({ lockedBy: user.id });
           const msg = bookErr instanceof Error ? bookErr.message : "Booking failed";
+          captureUnexpectedError("stripe-checkout-credit-booking", bookErr, {
+            availabilityId,
+            userId: user.id,
+          });
           return NextResponse.json({ error: msg }, { status: 409 });
         }
+      }
+
+      if (!consumed.ok && consumed.reason === "race_lost") {
+        return NextResponse.json(
+          {
+            error:
+              "Your included credit was just used or is updating. Refresh and try again.",
+          },
+          { status: 409 },
+        );
       }
     }
 

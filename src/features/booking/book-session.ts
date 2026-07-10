@@ -205,7 +205,15 @@ export async function bookSessionAsUser(
         throw new Error("You already have a pending request for this availability");
       }
       if (requestError.code === "23503") {
-        throw new Error("Invalid availability or tutor");
+        // Common when a credit redemption still RESTRICTs deleting the slot during auto-approve.
+        // Migration 153 sets redemption.availability_id ON DELETE SET NULL.
+        const detail = (requestError as { details?: string; hint?: string; message?: string }).message ?? "";
+        if (/availability|momentum_session_credit_redemption/i.test(detail)) {
+          throw new Error(
+            "Could not finish credit booking for this slot. Refresh and try again, or book without the credit.",
+          );
+        }
+        throw new Error("This Guide or slot is no longer bookable. Pick another time.");
       }
       throw new Error(`Failed to create session request: ${requestError.message}`);
     }
