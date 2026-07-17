@@ -487,15 +487,6 @@ export function QuestPracticeWorkspace({
             verdict={verdict}
             masteryHighlight={highlight}
             packSkillNodeIds={doneResult.packSkillNodeIds ?? []}
-            highlightTransition={
-              highlight && !highlight.unchanged
-                ? {
-                    nodeId: highlight.nodeId,
-                    fromState: highlight.fromState,
-                    toState: highlight.toState,
-                  }
-                : undefined
-            }
             correct={doneResult.correct}
             total={doneResult.total}
             xpAwarded={doneResult.xpAwarded}

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   applyQuestPostPackStepToVerdict,
   buildQuestPostPackChoices,
+  buildQuestPostPackCtas,
   buildQuestPostPackStep,
   parseQuestPromptParam,
   pickPostPackFocusNode,
+  shortenPostPackCtaLabel,
   SOLID_PRACTICE_PERCENT,
 } from "@/features/quest/quest-post-step-pure";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
@@ -124,5 +126,38 @@ describe("quest-post-step-pure", () => {
     expect(choices?.otherTopic?.nodeName).toBe("Related Rates");
     expect(choices?.sameTopic.href).toContain("Chain%20Rule");
     expect(choices?.otherTopic?.href).toContain("Related%20Rates");
+  });
+
+  it("shortens CTA labels for buttons", () => {
+    expect(shortenPostPackCtaLabel("Practice Chain Rule until green (70%+)")).toBe(
+      "Practice Chain Rule",
+    );
+    expect(shortenPostPackCtaLabel("Quest Limits to lock rank")).toBe("Quest Limits");
+  });
+
+  it("builds at most three post-pack CTAs with a clear primary", () => {
+    const data = gridWith([
+      { id: "a", nodeName: "u substitution basics", state: "verified", accuracyPercent: 100 },
+      { id: "b", nodeName: "Introducing limits", state: "none", displayOrder: 2 },
+    ]);
+    const verdict = applyQuestPostPackStepToVerdict(
+      {
+        changed: "Done.",
+        reason: "",
+        nextAction: { label: "Practice something", href: "/student/quest" },
+      },
+      data,
+      ["a"],
+    );
+    const ctas = buildQuestPostPackCtas({
+      verdict,
+      grid: data,
+      packNodeIds: ["a"],
+    });
+    expect(ctas).toHaveLength(3);
+    expect(ctas[0]?.kind).toBe("primary");
+    expect(ctas[0]?.key).toBe("next");
+    expect(ctas.map((c) => c.key)).toContain("home");
+    expect(ctas.every((c) => c.label.length > 0)).toBe(true);
   });
 });

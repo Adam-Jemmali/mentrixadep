@@ -249,6 +249,74 @@ export type QuestPostPackChoices = {
   otherTopic: QuestPostPackChoice | null;
 };
 
+export type QuestPostPackCtaKind = "primary" | "secondary" | "ghost";
+
+export type QuestPostPackCta = {
+  key: "next" | "same" | "pack" | "home";
+  label: string;
+  href?: string;
+  kind: QuestPostPackCtaKind;
+};
+
+/** Short button labels — node name only when the action verb is clear from context. */
+export function shortenPostPackCtaLabel(label: string): string {
+  const trimmed = label.trim();
+  const untilGreen = trimmed.match(/^Practice (.+) until green(?:\s*\(70%\+\))?$/i);
+  if (untilGreen?.[1]) return `Practice ${untilGreen[1]}`;
+  const questLock = trimmed.match(/^Quest (.+) to lock rank$/i);
+  if (questLock?.[1]) return `Quest ${questLock[1]}`;
+  const practiceAgain = trimmed.match(/^Practice (.+) again$/i);
+  if (practiceAgain?.[1]) return `Practice ${practiceAgain[1]}`;
+  return trimmed;
+}
+
+/**
+ * At most three post-pack moves: recommended next, optional same-topic or new pack, Home.
+ */
+export function buildQuestPostPackCtas(input: {
+  verdict: Verdict;
+  grid: MasteryGridData;
+  packNodeIds: string[];
+  highlight?: QuestMasteryHighlight | null;
+}): QuestPostPackCta[] {
+  const { verdict, grid, packNodeIds, highlight } = input;
+  const choices = buildQuestPostPackChoices(grid, packNodeIds, highlight);
+  const primaryHref = verdict.nextAction.href;
+  const ctas: QuestPostPackCta[] = [
+    {
+      key: "next",
+      label: shortenPostPackCtaLabel(verdict.nextAction.label),
+      href: primaryHref,
+      kind: "primary",
+    },
+  ];
+
+  const same = choices?.sameTopic;
+  if (same && same.href !== primaryHref) {
+    ctas.push({
+      key: "same",
+      label: shortenPostPackCtaLabel(same.label),
+      href: same.href,
+      kind: "secondary",
+    });
+  } else {
+    ctas.push({
+      key: "pack",
+      label: "New pack",
+      kind: "secondary",
+    });
+  }
+
+  ctas.push({
+    key: "home",
+    label: "Home",
+    href: "/student",
+    kind: "ghost",
+  });
+
+  return ctas.slice(0, 3);
+}
+
 function choiceForNode(node: MasteryGridNode, kind: "same" | "other"): QuestPostPackChoice {
   const name = node.nodeName;
   if (node.state === "proficient") {
