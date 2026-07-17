@@ -14,7 +14,7 @@ describe("calculateRetention", () => {
       calculateRetention({
         baseStrength: 24,
         hoursElapsed: 0,
-        biometricFriction: 1,
+        cognitiveFriction: 1,
       })
     ).toBe(1);
   });
@@ -23,12 +23,12 @@ describe("calculateRetention", () => {
     const early = calculateRetention({
       baseStrength: 24,
       hoursElapsed: 12,
-      biometricFriction: 1,
+      cognitiveFriction: 1,
     });
     const late = calculateRetention({
       baseStrength: 24,
       hoursElapsed: 48,
-      biometricFriction: 1,
+      cognitiveFriction: 1,
     });
     expect(early).toBeGreaterThan(late);
   });
@@ -37,12 +37,12 @@ describe("calculateRetention", () => {
     const low = calculateRetention({
       baseStrength: 24,
       hoursElapsed: 24,
-      biometricFriction: 0.01,
+      cognitiveFriction: 0.01,
     });
     const clamped = calculateRetention({
       baseStrength: 24,
       hoursElapsed: 24,
-      biometricFriction: 0.1,
+      cognitiveFriction: 0.1,
     });
     expect(low).toBe(clamped);
   });

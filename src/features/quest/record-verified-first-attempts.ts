@@ -1,6 +1,14 @@
+import { completeDueInterventionRetests } from "@/features/intervention-retests/complete-intervention-retests";
 import { publishVerifiedAttemptLiveBoardEvent } from "@/features/live-board/write-live-board-events";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import {
+  vfaAccuracyPct,
+  vfaGradingKey,
+  vfaIsCorrectFromAccuracy,
+  type VfaAttemptFormat,
+} from "@/features/quest/vfa-free-response-pure";
+import { updateVfaStreakAfterSuccessfulInsert } from "@/features/vfa-streak/update-vfa-streak";
 import { z } from "zod";
 
 const uuidSchema = z.string().uuid();
@@ -39,11 +47,22 @@ export async function recordVerifiedFirstAttemptForNode(
 
   const admin = createAdminClient();
 
+  const accuracyPct = isCorrect ? 1 : 0;
+
   const { error } = await admin.from("verified_first_attempts").insert({
     user_id: parsedUserId.data,
     skill_node_id: parsedNodeId.data,
     item_id: parsedItemId.data,
     is_correct: isCorrect,
+    accuracy_pct: accuracyPct,
+    attempt_format: "mcq",
+  });
+
+  // Close due intervention retests on this attempt (first or practice).
+  void completeDueInterventionRetests({
+    userId: parsedUserId.data,
+    skillNodeId: parsedNodeId.data,
+    postAccuracy: accuracyPct,
   });
 
   if (!error) {
@@ -52,6 +71,7 @@ export async function recordVerifiedFirstAttemptForNode(
       skillNodeId: parsedNodeId.data,
       isCorrect,
     });
+    void updateVfaStreakAfterSuccessfulInsert(parsedUserId.data);
     return { recorded: true, alreadyExists: false };
   }
 
@@ -128,4 +148,90 @@ export async function recordVerifiedFirstAttemptsForQuest(
   results: boolean[]
 ): Promise<number> {
   return ensureVerifiedFirstAttemptsFromSession(userId, questId, subject, questions, results);
+}
+
+export type VerifiedFirstGradingInput = {
+  userId: string;
+  itemId: string;
+  skillNodeId: string;
+  partKey?: string | null;
+  attemptFormat: VfaAttemptFormat;
+  isCorrect: boolean;
+  partialCreditFraction?: number | null;
+};
+
+/**
+ * Record VFA on the first grading call for (user, item, part).
+ * Fires before the student sees the result. Retries skip via grading key.
+ */
+export async function recordVerifiedFirstAttemptFromGrading(
+  input: VerifiedFirstGradingInput,
+): Promise<VerifiedFirstAttemptRecordResult> {
+  const parsedUserId = uuidSchema.safeParse(input.userId);
+  const parsedItemId = uuidSchema.safeParse(input.itemId);
+  const parsedNodeId = uuidSchema.safeParse(input.skillNodeId);
+  if (!parsedUserId.success || !parsedItemId.success || !parsedNodeId.success) {
+    return { recorded: false, alreadyExists: false };
+  }
+
+  const partKey = vfaGradingKey(input.partKey);
+  const admin = createAdminClient();
+  const accuracyPct = vfaAccuracyPct({
+    correct: input.isCorrect,
+    partialCreditFraction: input.partialCreditFraction,
+  });
+
+  const closeRetests = () =>
+    completeDueInterventionRetests({
+      userId: parsedUserId.data,
+      skillNodeId: parsedNodeId.data,
+      postAccuracy: accuracyPct,
+    });
+
+  const { error: keyError } = await admin.from("verified_first_grading_keys").insert({
+    user_id: parsedUserId.data,
+    item_id: parsedItemId.data,
+    part_key: partKey,
+  });
+
+  if (keyError) {
+    if (isVerifiedFirstAttemptConflict(keyError)) {
+      // Practice retry after first grading — still closes due retests.
+      void closeRetests();
+      return { recorded: false, alreadyExists: true };
+    }
+    console.error("verified_first_grading_keys insert failed", keyError.message);
+    return { recorded: false, alreadyExists: false };
+  }
+
+  const isCorrect = vfaIsCorrectFromAccuracy(accuracyPct);
+
+  const { error } = await admin.from("verified_first_attempts").insert({
+    user_id: parsedUserId.data,
+    skill_node_id: parsedNodeId.data,
+    item_id: parsedItemId.data,
+    is_correct: isCorrect,
+    accuracy_pct: accuracyPct,
+    part_key: partKey || null,
+    attempt_format: input.attemptFormat,
+  });
+
+  void closeRetests();
+
+  if (!error) {
+    void publishVerifiedAttemptLiveBoardEvent({
+      userId: parsedUserId.data,
+      skillNodeId: parsedNodeId.data,
+      isCorrect,
+    });
+    void updateVfaStreakAfterSuccessfulInsert(parsedUserId.data);
+    return { recorded: true, alreadyExists: false };
+  }
+
+  if (isVerifiedFirstAttemptConflict(error)) {
+    return { recorded: false, alreadyExists: true };
+  }
+
+  console.error("verified_first_attempts insert failed", error.message);
+  return { recorded: false, alreadyExists: false };
 }

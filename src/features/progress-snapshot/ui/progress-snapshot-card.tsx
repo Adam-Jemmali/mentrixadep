@@ -7,6 +7,8 @@ import { RankBadge } from "@/features/xp/components/rank-badge";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { ProgressSnapshotRow } from "@/features/progress-snapshot/types";
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import {
   formatStudentBreakthroughPrice,
   getStudentSessionCheckoutCents,
@@ -25,9 +27,11 @@ function signed(n: number): string {
 
 export function ProgressSnapshotCard({
   snapshot,
+  weeklyVerdict = null,
   momentumSubscriber = false,
 }: {
   snapshot: ProgressSnapshotRow;
+  weeklyVerdict?: Verdict | null;
   momentumSubscriber?: boolean;
 }) {
   const [visible, setVisible] = useState(true);
@@ -77,6 +81,13 @@ export function ProgressSnapshotCard({
         ×
       </button>
       <p className={mentrixStudent.sectionEyebrowOnLight}>Your week in {data.subject}</p>
+
+      {weeklyVerdict ? (
+        <div className="mt-4">
+          <VerdictPanel verdict={weeklyVerdict} tone="light" showNextAction={false} />
+        </div>
+      ) : null}
+
       <div className="mt-4 grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
         <div className="flex items-center gap-3">
           <RankBadge rank={data.rankChange.previous} size="md" />
@@ -125,11 +136,14 @@ export function ProgressSnapshotCard({
         ) : null}
       </div>
       <Button asChild className="mt-4 w-full sm:w-auto">
-        <Link href={data.bookingCtaUrl} onClick={onCtaClick}>
-          Book {data.recommendedGuide.displayName} — {sessionPriceLabel}
-          {momentumSubscriber ? " (member rate)" : ` (pay as you go is ${formatStudentBreakthroughPrice()})`}
+        <Link href={weeklyVerdict?.nextAction.href ?? data.bookingCtaUrl} onClick={onCtaClick}>
+          {weeklyVerdict?.nextAction.label ??
+            `Book ${data.recommendedGuide.displayName} — ${sessionPriceLabel}${
+              momentumSubscriber ? " (member rate)" : ` (pay as you go is ${formatStudentBreakthroughPrice()})`
+            }`}
         </Link>
       </Button>
     </div>
   );
 }
+

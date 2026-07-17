@@ -470,6 +470,7 @@ export async function sendContactFeedbackInbound(params: {
 export interface ProgressSnapshotEmailProps {
   snapshot: ProgressSnapshotData;
   weeklyVerdict?: Verdict | null;
+  truthReport?: import("@/features/progress-snapshot/weekly-truth-report-pure").WeeklyTruthReport | null;
 }
 
 /** progress_snapshot — Monday weekly conversion email */

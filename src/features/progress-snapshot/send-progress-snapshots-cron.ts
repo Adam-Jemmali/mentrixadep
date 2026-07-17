@@ -9,6 +9,7 @@ import {
 import { subjectLineRankPhrase } from "@/features/progress-snapshot/calculate-pure";
 import { getVerdict } from "@/features/guidance/verdict-engine";
 import type { ProgressSnapshotData } from "@/features/progress-snapshot/types";
+import { generateWeeklyTruthReport } from "@/features/progress-snapshot/weekly-truth-report";
 
 const MS_7D = 7 * 24 * 60 * 60 * 1000;
 
@@ -90,6 +91,12 @@ export async function runSendProgressSnapshotsCron() {
         weeklyVerdict = null;
       }
 
+      const truthReport = await generateWeeklyTruthReport(studentId, {
+        now,
+        snapshot: snapshotData,
+        nextActionLabel: weeklyVerdict?.nextAction.label ?? null,
+      });
+
       jobs.push({
         jobType: "email.send",
         idempotencyKey: `progress_snapshot:${studentId}:${weekStart}`,
@@ -101,6 +108,7 @@ export async function runSendProgressSnapshotsCron() {
             subject,
             snapshot: snapshotData,
             weeklyVerdict,
+            truthReport,
           },
         },
         priority: 2,

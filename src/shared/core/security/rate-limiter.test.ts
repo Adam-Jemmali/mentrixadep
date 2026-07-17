@@ -16,6 +16,11 @@ describe("rate-limiter", () => {
     expect(API_ROUTE_LIMITS["stripe.checkout"].maxRequests).toBe(5);
     expect(API_ROUTE_LIMITS["guest.practice"].maxRequests).toBe(3);
     expect(API_ROUTE_LIMITS["guest.diagnostic"].maxRequests).toBe(12);
+    expect(API_ROUTE_LIMITS["public.arena_feed"]).toEqual({
+      maxRequests: 60,
+      windowMs: 60_000,
+      scope: "ip",
+    });
     expect(API_ROUTE_LIMITS["ai.quest"].maxRequests).toBe(20);
     expect(API_ROUTE_LIMITS["ai.duel"].maxRequests).toBe(20);
   });

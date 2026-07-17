@@ -45,6 +45,8 @@ interface CreateAvailabilityCardProps {
   apCalcVerified: boolean;
   defaultTimezone: string;
   sessionDefaultDurationMinutes: number;
+  /** Prefill course when opened from demand signal. */
+  defaultCourse?: string | null;
   className?: string;
   enableAnimations?: boolean;
   onSlotsCreated?: () => void;
@@ -73,11 +75,15 @@ export function CreateAvailabilityCard({
   apCalcVerified,
   defaultTimezone,
   sessionDefaultDurationMinutes,
+  defaultCourse = null,
   className,
   enableAnimations = true,
   onSlotsCreated,
 }: CreateAvailabilityCardProps) {
-  const skill = AP_CALC_AB_SUBJECT;
+  const skill =
+    typeof defaultCourse === "string" && defaultCourse.trim()
+      ? defaultCourse.trim()
+      : AP_CALC_AB_SUBJECT;
   const [weekdays, setWeekdays] = useState<Set<number>>(new Set());
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState(() => addMinutesToHHmm("09:00", sessionDefaultDurationMinutes) ?? "10:00");

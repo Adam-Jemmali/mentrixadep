@@ -35,6 +35,8 @@ import type { GuideImpactEntry, GuideImpactNodeEntry } from "@/features/guide-im
 import { subjectsMatch } from "@/features/guide-impact/impact-score-pure";
 import { GuideBookingSlotPicker } from "@/features/booking/ui/guide-booking-slot-picker";
 import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badge";
+import { GuideTeachingPortfolioSection } from "@/features/guide-portfolio/ui/guide-teaching-portfolio-section";
+import type { GuidePortfolioCard } from "@/features/guide-portfolio/guide-portfolio-pure";
 import type { GuideBreakthrough } from "@/features/guide-rank/reads";
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +76,10 @@ interface Profile {
   avgImpactScore?: number | null;
   responseRatePercent?: number | null;
   breakthroughs?: GuideBreakthrough[];
+  teachingPortfolio?: {
+    cards: GuidePortfolioCard[];
+    hasMore: boolean;
+  } | null;
   privateSettings?: UserSettings;
 }
 
@@ -588,6 +594,14 @@ export function TutorProfileClient({
                 </ul>
               )}
             </section>
+
+            {profile.teachingPortfolio ? (
+              <GuideTeachingPortfolioSection
+                cards={profile.teachingPortfolio.cards}
+                hasMore={profile.teachingPortfolio.hasMore}
+                guideId={profile.id}
+              />
+            ) : null}
 
             <section className="rounded-[2.5rem] border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-600/[0.03]">
               <h2 className="mb-6 text-[11px] font-black uppercase tracking-[0.25em] text-indigo-950">

@@ -19,23 +19,58 @@ const node: SkillNodeRow = {
 
 describe("generate item candidates pure", () => {
   it("plans generation only when approved plus pending are below three", () => {
-    expect(countQuestionsToGenerate({ approved: 1, pending: 0, has_step_sequence: false })).toBe(2);
-    expect(countQuestionsToGenerate({ approved: 2, pending: 1, has_step_sequence: false })).toBe(0);
-    expect(countQuestionsToGenerate({ approved: 3, pending: 0, has_step_sequence: true })).toBe(0);
+    expect(
+      countQuestionsToGenerate({
+        approved: 1,
+        pending: 0,
+        has_step_sequence: false,
+        free_response_count: 0,
+      }),
+    ).toBe(2);
+    expect(
+      countQuestionsToGenerate({
+        approved: 2,
+        pending: 1,
+        has_step_sequence: false,
+        free_response_count: 1,
+      }),
+    ).toBe(0);
+    expect(
+      countQuestionsToGenerate({
+        approved: 3,
+        pending: 0,
+        has_step_sequence: true,
+        free_response_count: 1,
+      }),
+    ).toBe(0);
   });
 
-  it("flags step_sequence generation when the node has none", () => {
+  it("flags step_sequence first when only one slot remains", () => {
     const plan = planNodeGeneration(node, {
       approved: 2,
       pending: 0,
       has_step_sequence: false,
+      free_response_count: 0,
     });
 
     expect(plan).toEqual({
       node,
       questions_to_generate: 1,
       include_step_sequence: true,
+      include_free_response: false,
     });
+  });
+
+  it("includes free_response when coverage is missing and slots allow", () => {
+    const plan = planNodeGeneration(node, {
+      approved: 1,
+      pending: 0,
+      has_step_sequence: true,
+      free_response_count: 0,
+    });
+
+    expect(plan?.include_free_response).toBe(true);
+    expect(plan?.questions_to_generate).toBe(2);
   });
 
   it("builds a per-node prompt with exact node fields and misconception guidance", () => {
@@ -43,6 +78,7 @@ describe("generate item candidates pure", () => {
       node,
       questions_to_generate: 1,
       include_step_sequence: true,
+      include_free_response: false,
     });
 
     expect(prompt).toContain("Skill node name (exact): Power rule");
@@ -53,16 +89,27 @@ describe("generate item candidates pure", () => {
     expect(prompt).toContain("human review");
   });
 
-  it("detects approved step-trace coverage from item rows", () => {
+  it("detects approved step-trace and free-response coverage from item rows", () => {
     const coverage = getNodeCoverage("node-1", [
-      { skill_node_id: "node-1", status: "approved", step_sequence: null },
-      { skill_node_id: "node-1", status: "approved", step_sequence: [{ step_number: 1 }] },
-      { skill_node_id: "node-1", status: "pending_review", step_sequence: null },
+      { skill_node_id: "node-1", status: "approved", step_sequence: null, item_format: "mcq" },
+      {
+        skill_node_id: "node-1",
+        status: "approved",
+        step_sequence: [{ step_number: 1 }],
+        item_format: "mcq",
+      },
+      {
+        skill_node_id: "node-1",
+        status: "pending_review",
+        step_sequence: null,
+        item_format: "free_response",
+      },
     ]);
 
     expect(coverage.approved).toBe(2);
     expect(coverage.pending).toBe(1);
     expect(coverage.has_step_sequence).toBe(true);
+    expect(coverage.free_response_count).toBe(1);
     expect(MIN_APPROVED_PER_NODE).toBe(3);
   });
 

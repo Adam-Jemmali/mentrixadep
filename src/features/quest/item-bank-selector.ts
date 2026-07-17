@@ -1,14 +1,28 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import type { PracticeQuestionMcq } from "@/features/quest/practice-quest-types";
+import type {
+  PracticeQuestion,
+  PracticeQuestionMcq,
+  PracticeQuestionMultiPart,
+} from "@/features/quest/practice-quest-types";
 import {
   parsePartialCreditRules,
   parseSolutionSteps,
 } from "@/features/quest/components/step-feedback-pure";
 import {
+  isMultiPartItemFormat,
+  parseMultiPartParts,
+} from "@/features/quest/multi-part-pure";
+import {
   AP_CALC_AB_SUBJECT,
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
 import { getPendingPostSessionTargetNodeIds } from "@/features/breakthrough-events/post-session-retest";
+import {
+  DEFAULT_CHALLENGE_DIFFICULTY,
+  preferItemsNearChallengeDifficulty,
+} from "@/features/quest/challenge-difficulty-pure";
+import { loadChallengeDifficultyByNodeIds } from "@/features/quest/challenge-difficulty";
+import { enrichQuestStimulus, parseQuestStimulus } from "@/features/quest/quest-stimulus-pure";
 
 type SkillNodeRow = {
   id: string;
@@ -30,12 +44,15 @@ type ItemBankRow = {
   solution_steps?: unknown;
   answer_expression?: string | null;
   partial_credit_rules?: unknown;
+  difficulty_rating?: number | null;
+  item_format?: string | null;
+  stimulus?: unknown;
 };
 
 const ITEM_BANK_BASE_SELECT =
-  "id, skill_node_id, prompt, options, correct_answer, explanation";
+  "id, skill_node_id, prompt, options, correct_answer, explanation, difficulty_rating";
 const ITEM_BANK_EXTENDED_SELECT =
-  `${ITEM_BANK_BASE_SELECT}, solution_steps, answer_expression, partial_credit_rules`;
+  `${ITEM_BANK_BASE_SELECT}, solution_steps, answer_expression, partial_credit_rules, item_format, stimulus`;
 
 export function computePracticePackQuestionCount(count: number): number {
   return Math.min(10, Math.max(5, Math.floor(count)));
@@ -197,7 +214,36 @@ function pickWeightedNodeIds(nodes: SkillNodeRow[], limit: number): string[] {
   return picked;
 }
 
-export function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): PracticeQuestionMcq | null {
+export function itemToPracticeQuestion(
+  item: ItemBankRow,
+  node: SkillNodeRow,
+): PracticeQuestion | null {
+  const enriched = enrichQuestStimulus({
+    prompt: item.prompt,
+    stimulus: parseQuestStimulus(item.stimulus),
+  });
+  const stimulus = enriched.stimulus;
+  const prompt = enriched.prompt;
+
+  if (isMultiPartItemFormat(item.item_format)) {
+    const parts = parseMultiPartParts(item.solution_steps);
+    if (parts.length < 2) return null;
+    const multi: PracticeQuestionMultiPart = {
+      id: item.id,
+      kind: "multi_part",
+      prompt,
+      parts,
+      explanation: item.explanation,
+      skillNodeId: item.skill_node_id,
+      topicTag: node.unit_name,
+      subtopicTag: node.node_name,
+      unitNumber: node.unit_number,
+      examStakes: node.exam_stakes?.trim() || undefined,
+      stimulus: stimulus.length > 0 ? stimulus : undefined,
+    };
+    return multi;
+  }
+
   const options = parseOptions(item.options);
   if (options.length !== 4) return null;
 
@@ -208,10 +254,10 @@ export function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): P
   }
   if (correctIndex < 0) return null;
 
-  return {
+  const mcq: PracticeQuestionMcq = {
     id: item.id,
     kind: "mcq",
-    prompt: item.prompt,
+    prompt,
     options,
     correctIndex,
     explanation: item.explanation,
@@ -224,7 +270,9 @@ export function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): P
     answerExpression: item.answer_expression?.trim() || undefined,
     partialCreditRules: parsePartialCreditRules(item.partial_credit_rules),
     correctAnswer: item.correct_answer,
+    stimulus: stimulus.length > 0 ? stimulus : undefined,
   };
+  return mcq;
 }
 
 async function loadApprovedItemBankRows(
@@ -256,7 +304,7 @@ export async function selectItemBankQuestions(
   subject: string,
   count: number,
   options?: { focusSkillNodeId?: string },
-): Promise<PracticeQuestionMcq[]> {
+): Promise<PracticeQuestion[]> {
   if (!isApCalculusAbSubject(subject)) return [];
 
   const targetCount = computePracticePackQuestionCount(count);
@@ -288,6 +336,8 @@ export async function selectItemBankQuestions(
   const items = await loadApprovedItemBankRows(admin, nodeIds);
   if (!items.length) return [];
 
+  const challengeByNode = await loadChallengeDifficultyByNodeIds(userId, nodeIds);
+
   const itemsByNode = new Map<string, ItemBankRow[]>();
   const usableCountByNode = new Map<string, number>();
 
@@ -311,14 +361,20 @@ export async function selectItemBankQuestions(
 
   if (neededNodeIds.length < targetCount) return [];
 
-  const selected: PracticeQuestionMcq[] = [];
+  const selected: PracticeQuestion[] = [];
   const usedItemIds = new Set<string>();
 
   for (const nodeId of neededNodeIds) {
     const node = nodeById.get(nodeId);
     if (!node) continue;
 
-    const pool = shuffle(itemsByNode.get(nodeId) ?? []);
+    const studentRating = challengeByNode.get(nodeId);
+    const nodePool = (itemsByNode.get(nodeId) ?? []).map((row) => ({
+      ...row,
+      difficultyRating: row.difficulty_rating ?? DEFAULT_CHALLENGE_DIFFICULTY,
+    }));
+    const preferred = preferItemsNearChallengeDifficulty(nodePool, studentRating);
+    const pool = shuffle(preferred);
     const item = pool.find((row) => !usedItemIds.has(row.id));
     if (!item) continue;
 

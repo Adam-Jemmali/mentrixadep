@@ -8,10 +8,16 @@ import {
 import {
   ARENA_FEED_VISIBLE_LIMIT,
   ARENA_PAGE_COPY,
+  buildDivisionWarResultCardCopy,
+  divisionWarAverageAccuracy,
+  encodeDivisionWarLoserMeta,
+  formatDivisionWarAccuracyLine,
+  formatDivisionWarLoserNote,
   formatDivisionWarScoreLine,
   formatLiveBoardEventDescription,
   formatLiveBoardTimeAgo,
   isDivisionWarLiveBoardEvent,
+  parseDivisionWarLoserMeta,
 } from "@/features/live-board/live-board-messages-pure";
 
 describe("live board event helpers", () => {
@@ -36,6 +42,31 @@ describe("live board event helpers", () => {
     expect(formatDivisionWarScoreLine("Limits Legion", 842, "Chain Rule Crew", 710)).toBe(
       "Limits Legion 842 · Chain Rule Crew 710",
     );
+  });
+
+  it("encodes and parses war result card averages", () => {
+    expect(divisionWarAverageAccuracy(730, 10)).toBe(73);
+    expect(encodeDivisionWarLoserMeta("Chain Rule Crew", 68)).toBe("Chain Rule Crew|68");
+    expect(parseDivisionWarLoserMeta("Chain Rule Crew|68")).toEqual({
+      loserName: "Chain Rule Crew",
+      loserAccuracyPct: 68,
+    });
+    expect(formatDivisionWarAccuracyLine(73)).toBe("73 percent average");
+    expect(formatDivisionWarLoserNote("Chain Rule Crew", 68)).toBe(
+      "Chain Rule Crew pushed hard this week. 68 percent average accuracy.",
+    );
+
+    const copy = buildDivisionWarResultCardCopy({
+      node_name: "Limits Legion",
+      unit_name: "Chain Rule Crew|68",
+      accuracy_pct: 73,
+      display_name: "Limits Legion defeated Chain Rule Crew",
+    });
+    expect(copy.winnerName).toBe("Limits Legion");
+    expect(copy.loserName).toBe("Chain Rule Crew");
+    expect(copy.winnerAccuracyPct).toBe(73);
+    expect(copy.loserAccuracyPct).toBe(68);
+    expect(copy.weekLabel).toBe("This week in AP Calculus AB");
   });
 });
 

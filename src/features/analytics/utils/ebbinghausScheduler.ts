@@ -1,7 +1,8 @@
 export type RetentionMetrics = {
   baseStrength: number;
   hoursElapsed: number;
-  biometricFriction: number;
+  /** Review friction multiplier in [0.1, 1]. Not biometric. */
+  cognitiveFriction: number;
 };
 
 export const DEFAULT_COGNITIVE_FRICTION = 1.0;
@@ -20,7 +21,7 @@ export function calculateMemoryStrengthBase(correctCountOnNode: number): number 
 }
 
 export function calculateRetention(metrics: RetentionMetrics): number {
-  const effectiveFriction = clampFriction(metrics.biometricFriction);
+  const effectiveFriction = clampFriction(metrics.cognitiveFriction);
   const effectiveStrength = Math.max(1.0, metrics.baseStrength);
   const retentionDenominator = effectiveStrength * effectiveFriction;
   return parseFloat(

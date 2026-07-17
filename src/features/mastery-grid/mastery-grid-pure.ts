@@ -76,7 +76,7 @@ export function buildMasteryGridNextAction(units: MasteryGridData["units"]): str
     return a.displayOrder - b.displayOrder;
   })[0]!;
 
-    return `Practice ${weakest.nodeName} — ${weakest.accuracyPercent ?? 0}% now.`;
+    return `Practice ${weakest.nodeName}`;
 }
 
 export function flattenMasteryNodes(grid: MasteryGridData): MasteryGridNode[] {

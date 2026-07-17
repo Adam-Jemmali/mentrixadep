@@ -39,9 +39,9 @@ export function buildEarningsForecastLine(params: {
   const openCount = countOpenSlotsForCourse(course, openSlots);
 
   if (demand <= openCount) {
-    return "Your availability is meeting current demand.";
+    return "Your availability is meeting current demand";
   }
 
   const gap = demand - openCount;
-  return `Opening ${gap} more hours on ${course} could fill based on current student demand.`;
+  return `Opening ${gap} more hours on ${course} could fill based on current student demand`;
 }

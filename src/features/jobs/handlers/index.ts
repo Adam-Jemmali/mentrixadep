@@ -1,3 +1,4 @@
+import { handleShareArtifactImageJob } from "@/features/jobs/handlers/share-artifact-image";
 import type { BackgroundJobRow } from "@/features/jobs/types";
 import { handleAnalyticsJob } from "@/features/jobs/handlers/analytics";
 import { handleBriefJob } from "@/features/jobs/handlers/brief";
@@ -30,6 +31,11 @@ export async function runJobHandler(job: BackgroundJobRow): Promise<void> {
       break;
     case "booking.fulfill":
       throw new Error("booking.fulfill handler not yet wired");
+    case "image.share_artifact":
+      await handleShareArtifactImageJob(
+        payload as Parameters<typeof handleShareArtifactImageJob>[0],
+      );
+      break;
     default:
       throw new Error(`Unknown job type: ${job.job_type}`);
   }

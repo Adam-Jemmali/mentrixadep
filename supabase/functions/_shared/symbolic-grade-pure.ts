@@ -121,6 +121,18 @@ function numericEquivalence(
   return true;
 }
 
+/** True when mathjs can parse the expression (used by authoring / approve gates). */
+export function expressionParses(expression: string): boolean {
+  const normalized = normalizeGradingExpression(expression);
+  if (!normalized) return false;
+  try {
+    getMath().parse(normalized);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function gradeExpressions(request: SymbolicGradeRequest): SymbolicGradeResult {
   const math = getMath();
   const student = normalizeGradingExpression(request.student_expression);

@@ -67,13 +67,27 @@ const publicRoutes = new Set([
   "/try",
   /** Public live verified first attempt board */
   "/arena",
+  /** Embeddable arena widget docs */
+  "/embed/arena-widget",
+  /** Iframe arena feed widget */
+  "/widget/arena",
+  "/api/public/arena-feed",
   /** Shareable Rank Card OG image */
   "/api/og/rank-card",
   "/api/og/breakthrough",
+  "/api/og/before-after",
 ]);
 
 /** Public tutor profile pages: /tutor/[tutorId] (and nested public paths under /tutor/). */
-const publicPrefixes = ["/tutor/", "/rank/", "/breakthrough/"];
+const publicPrefixes = [
+  "/tutor/",
+  "/rank/",
+  "/breakthrough/",
+  "/share/",
+  "/widget/",
+  "/embed/",
+  "/api/public/",
+];
 
 const authRoutesForRateLimit = ["/auth/signin", "/auth/signup"];
 
@@ -191,6 +205,10 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
     pathname === "/auth/signin" ||
     pathname === "/auth/signup" ||
     pathname === "/auth/session-sync";
+  const allowFramedWidgetPaths =
+    pathname != null &&
+    (pathname === "/widget/arena" || pathname.startsWith("/widget/"));
+  const allowFramed = allowFramedAuthEntryPaths || allowFramedWidgetPaths;
   /**
    * Google Identity Services (FedCM / Sign in with Google) uses cross-origin messaging.
    * Sending COOP on auth routes has triggered postMessage failures in Chrome alongside GIS.
@@ -204,10 +222,10 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
       res.headers.set(key, "unsafe-none");
       return;
     }
-    if (allowFramedAuthEntryPaths && key === "X-Frame-Options") return;
+    if (allowFramed && key === "X-Frame-Options") return;
     if (isDev && key === "Content-Security-Policy") return;
 
-    if (allowFramedAuthEntryPaths && key === "Content-Security-Policy") {
+    if (allowFramed && key === "Content-Security-Policy") {
       res.headers.set(
         key,
         value.replace("frame-ancestors 'none'", "frame-ancestors *"),

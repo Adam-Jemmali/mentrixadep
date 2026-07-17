@@ -89,10 +89,10 @@ export function StudentGoalCaptureCard({ subject = AP_CALC_AB_SUBJECT }: Props) 
         <div>
           <p className={mentrixStudent.sectionEyebrowOnLight}>Your goal</p>
           <h2 className={`mt-1 text-base font-bold ${mentrixStudent.textOnLight}`}>
-            What are you working toward?
+            Set one goal
           </h2>
           <p className={`mt-1 text-sm ${mentrixStudent.textMutedOnLight}`}>
-            One choice shapes every recommendation from here.
+            Shapes your next practice move.
           </p>
         </div>
         <button
@@ -112,7 +112,7 @@ export function StudentGoalCaptureCard({ subject = AP_CALC_AB_SUBJECT }: Props) 
             className="min-h-11 flex-1 border-violet-200 text-sm"
             onClick={() => setStep("exam_date")}
           >
-            An exam on a specific date
+            Exam on a specific date
           </Button>
           <Button
             type="button"
@@ -120,7 +120,7 @@ export function StudentGoalCaptureCard({ subject = AP_CALC_AB_SUBJECT }: Props) 
             className="min-h-11 flex-1 border-violet-200 text-sm"
             onClick={() => setStep("percentile_target")}
           >
-            Reach a top % target
+            Reach a specific percentile
           </Button>
           <Button
             type="button"

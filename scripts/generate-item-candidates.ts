@@ -33,6 +33,11 @@ import {
   type NodeGenerationPlan,
   type SkillNodeRow,
 } from "./lib/generate-item-candidates-pure";
+import {
+  buildFreeResponseGenerationPrompt,
+  validateFreeResponseCandidate,
+  type FreeResponseCandidate,
+} from "./lib/free-response-candidate-pure";
 
 const MODEL = "gemini-2.5-flash";
 const GENERATION_TIMEOUT_MS = 90_000;
@@ -56,6 +61,36 @@ const questionSchema = z.object({
 
 const responseSchema = z.object({
   questions: z.array(questionSchema).min(1).max(3),
+});
+
+const freeResponseSchema = z.object({
+  prompt: z.string().min(10),
+  answer_expression: z.string().min(1),
+  answer_alternatives: z.array(z.string().min(1)).max(6).default([]),
+  explanation: z.string().min(20),
+  difficulty_rating: z.number().min(500).max(2000).default(1000),
+  solution_steps: z
+    .array(
+      z.object({
+        step_number: z.number().int().positive(),
+        description: z.string().min(2),
+        expression: z.string().min(1),
+        misconception_if_skipped: z.string().default(""),
+        is_critical: z.boolean(),
+      }),
+    )
+    .min(2)
+    .max(8),
+  partial_credit_rules: z
+    .array(
+      z.object({
+        expression_pattern: z.string().min(1),
+        credit_fraction: z.union([z.literal(0.25), z.literal(0.5), z.literal(0.75)]),
+        label: z.string().min(1),
+      }),
+    )
+    .max(4)
+    .default([]),
 });
 
 type GeneratedQuestion = ItemBankQuestionInput & {
@@ -87,12 +122,13 @@ function sleep(ms: number): Promise<void> {
 function validateQuestionBatch(
   plan: NodeGenerationPlan,
   questions: GeneratedQuestion[],
+  mcqCount: number,
 ): string | null {
-  if (questions.length !== plan.questions_to_generate) {
-    return `expected ${plan.questions_to_generate} question(s), got ${questions.length}`;
+  if (questions.length !== mcqCount) {
+    return `expected ${mcqCount} question(s), got ${questions.length}`;
   }
 
-  if (plan.include_step_sequence) {
+  if (plan.include_step_sequence && mcqCount > 0) {
     const withStepTrace = questions.filter((question) => question.step_sequence !== undefined);
     if (withStepTrace.length === 0) {
       return "first question must include step_sequence for this node";
@@ -111,10 +147,18 @@ function validateQuestionBatch(
   return null;
 }
 
-async function generateForNode(
+async function generateMcqForNode(
   apiKey: string,
   plan: NodeGenerationPlan,
+  mcqCount: number,
 ): Promise<GeneratedQuestion[]> {
+  if (mcqCount <= 0) return [];
+
+  const mcqPlan: NodeGenerationPlan = {
+    ...plan,
+    questions_to_generate: mcqCount,
+  };
+
   const client = new GoogleGenAI({ apiKey });
   let lastError = "Unknown generation error";
 
@@ -126,9 +170,9 @@ async function generateForNode(
 
       const requestPromise = client.models.generateContent({
         model: MODEL,
-        contents: `Generate ${plan.questions_to_generate} AP Calculus AB MCQ candidate(s) for ${plan.node.node_name}.`,
+        contents: `Generate ${mcqCount} AP Calculus AB MCQ candidate(s) for ${plan.node.node_name}.`,
         config: {
-          systemInstruction: buildNodeGenerationPrompt(plan),
+          systemInstruction: buildNodeGenerationPrompt(mcqPlan),
           responseMimeType: "application/json",
         },
       });
@@ -160,10 +204,66 @@ async function generateForNode(
         });
       }
 
-      const batchIssue = validateQuestionBatch(plan, questions);
+      const batchIssue = validateQuestionBatch(mcqPlan, questions, mcqCount);
       if (batchIssue) throw new Error(batchIssue);
 
       return questions;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      if (attempt < 3) await sleep(1500 * attempt);
+    }
+  }
+
+  throw new Error(lastError);
+}
+
+async function generateFreeResponseForNode(
+  apiKey: string,
+  plan: NodeGenerationPlan,
+): Promise<FreeResponseCandidate> {
+  const client = new GoogleGenAI({ apiKey });
+  let lastError = "Unknown free-response generation error";
+  const systemInstruction = buildFreeResponseGenerationPrompt({
+    nodeName: plan.node.node_name,
+    description: plan.node.description?.trim() || "No description provided.",
+    misconceptions: plan.node.common_misconceptions ?? [],
+  });
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Gemini request timed out")), GENERATION_TIMEOUT_MS);
+      });
+
+      const requestPromise = client.models.generateContent({
+        model: MODEL,
+        contents: `Generate one AP Calculus AB free_response candidate for ${plan.node.node_name}.`,
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+        },
+      });
+
+      const result = await Promise.race([requestPromise, timeoutPromise]);
+      const raw = extractGeminiResponseText(result);
+      if (!raw) throw new Error("Empty Gemini response");
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(stripMarkdownJson(raw));
+      } catch {
+        throw new Error("Gemini returned invalid JSON");
+      }
+
+      const validated = freeResponseSchema.safeParse(parsed);
+      if (!validated.success) {
+        throw new Error(`Free-response schema invalid: ${validated.error.message}`);
+      }
+
+      const candidate = validated.data as FreeResponseCandidate;
+      const issue = validateFreeResponseCandidate(candidate);
+      if (issue) throw new Error(issue);
+      return candidate;
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
       if (attempt < 3) await sleep(1500 * attempt);
@@ -217,7 +317,7 @@ async function main(): Promise<void> {
 
   const { data: items, error: itemsError } = await supabase
     .from("item_bank")
-    .select("skill_node_id, status, step_sequence")
+    .select("skill_node_id, status, step_sequence, item_format")
     .in("skill_node_id", nodeIds);
 
   if (itemsError) {
@@ -256,32 +356,69 @@ async function main(): Promise<void> {
 
     try {
       if (dryRun) {
+        const mcqCount = plan.include_free_response
+          ? Math.max(0, plan.questions_to_generate - 1)
+          : plan.questions_to_generate;
         console.log(
-          `[dry-run] ${plan.node.node_name}: would generate ${plan.questions_to_generate} pending item(s)${plan.include_step_sequence ? " with step_sequence" : ""}`,
+          `[dry-run] ${plan.node.node_name}: would generate ${mcqCount} MCQ + ${plan.include_free_response ? 1 : 0} free_response pending item(s)${plan.include_step_sequence ? " with step_sequence" : ""}`,
         );
         continue;
       }
 
-      const generated = await generateForNode(apiKey, plan);
-      const rows = generated.map((question) => ({
-        skill_node_id: plan.node.id,
-        question_type: "mcq",
-        prompt: question.prompt,
-        options: question.options,
-        correct_answer: question.correct_answer,
-        explanation: question.explanation,
-        distractor_tags: question.distractor_tags,
-        difficulty_rating: 1000,
-        status: "pending_review" as const,
-        step_sequence: question.step_sequence ?? null,
-      }));
+      const mcqCount = plan.include_free_response
+        ? Math.max(0, plan.questions_to_generate - 1)
+        : plan.questions_to_generate;
+
+      const rows: Record<string, unknown>[] = [];
+
+      if (mcqCount > 0) {
+        const generated = await generateMcqForNode(apiKey, plan, mcqCount);
+        for (const question of generated) {
+          rows.push({
+            skill_node_id: plan.node.id,
+            question_type: "mcq",
+            item_format: "mcq",
+            prompt: question.prompt,
+            options: question.options,
+            correct_answer: question.correct_answer,
+            explanation: question.explanation,
+            distractor_tags: question.distractor_tags,
+            difficulty_rating: 1000,
+            status: "pending_review",
+            step_sequence: question.step_sequence ?? null,
+          });
+        }
+      }
+
+      if (plan.include_free_response) {
+        const frq = await generateFreeResponseForNode(apiKey, plan);
+        rows.push({
+          skill_node_id: plan.node.id,
+          question_type: "free_response",
+          item_format: "free_response",
+          prompt: frq.prompt,
+          options: null,
+          correct_answer: frq.answer_expression,
+          answer_expression: frq.answer_expression,
+          answer_alternatives: frq.answer_alternatives,
+          explanation: frq.explanation,
+          distractor_tags: {},
+          difficulty_rating: frq.difficulty_rating,
+          status: "pending_review",
+          solution_steps: frq.solution_steps,
+          partial_credit_rules: frq.partial_credit_rules,
+          step_sequence: null,
+        });
+      }
+
+      if (rows.length === 0) continue;
 
       const { error: insertError } = await supabase.from("item_bank").insert(rows);
       if (insertError) throw new Error(insertError.message);
 
       totalInserted += rows.length;
       console.log(
-        `[done] ${plan.node.node_name}: generated ${rows.length} pending item(s)${plan.include_step_sequence ? " (includes step_sequence)" : ""}`,
+        `[done] ${plan.node.node_name}: generated ${rows.length} pending item(s)${plan.include_free_response ? " (includes free_response)" : ""}${plan.include_step_sequence ? " (includes step_sequence)" : ""}`,
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

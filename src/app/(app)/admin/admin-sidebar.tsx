@@ -9,13 +9,17 @@ import {
   ShieldCheck,
   ChevronRight,
   ArrowLeftRight,
+  Library,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/shared/core/utils";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/admin/item-review", label: "Item review", icon: Library },
   { href: "/admin/reconciliation", label: "Reconciliation", icon: ArrowLeftRight },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

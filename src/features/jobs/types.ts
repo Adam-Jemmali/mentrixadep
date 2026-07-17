@@ -5,7 +5,8 @@ export type BackgroundJobType =
   | "ai.transcription"
   | "payout.ledger"
   | "analytics.track"
-  | "booking.fulfill";
+  | "booking.fulfill"
+  | "image.share_artifact";
 
 export type BackgroundJobStatus = "queued" | "retry" | "processing" | "completed" | "failed";
 

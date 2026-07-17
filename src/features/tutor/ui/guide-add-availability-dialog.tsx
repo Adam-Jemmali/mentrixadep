@@ -35,6 +35,7 @@ type GuideAddAvailabilityDialogProps = {
   apCalcVerified: boolean;
   defaultTimezone: string;
   sessionDefaultDurationMinutes: number;
+  defaultCourse?: string | null;
   onSlotsCreated: () => void;
 };
 
@@ -45,6 +46,7 @@ export function GuideAddAvailabilityDialog({
   apCalcVerified,
   defaultTimezone,
   sessionDefaultDurationMinutes,
+  defaultCourse = null,
   onSlotsCreated,
 }: GuideAddAvailabilityDialogProps) {
   return (
@@ -65,6 +67,7 @@ export function GuideAddAvailabilityDialog({
                 apCalcVerified={apCalcVerified}
                 defaultTimezone={defaultTimezone}
                 sessionDefaultDurationMinutes={sessionDefaultDurationMinutes}
+                defaultCourse={defaultCourse}
                 enableAnimations={false}
                 className="max-w-none min-h-0 rounded-none border-0 shadow-none"
                 onSlotsCreated={onSlotsCreated}

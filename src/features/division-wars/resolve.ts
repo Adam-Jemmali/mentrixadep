@@ -10,6 +10,7 @@ import { XP } from "@/features/xp/xp-constants";
 import { notifyDivisionWarMembers } from "@/features/division-wars/war-notifications";
 import { processDivisionWarMatchmaking } from "@/features/division-wars/matchmaking";
 import { publishDivisionWarResultLiveBoardEvent } from "@/features/live-board/write-live-board-events";
+import { divisionWarAverageAccuracy } from "@/features/live-board/live-board-messages-pure";
 
 const BADGE_DAYS = 7;
 
@@ -58,15 +59,23 @@ async function resolveSingleWar(
 ): Promise<{ resolved: boolean; xpGranted: number }> {
   const { data: contribs } = await admin
     .from("division_war_contributions")
-    .select("division_id, total_accuracy_points")
+    .select("division_id, total_accuracy_points, quests_completed")
     .eq("war_id", war.id);
 
   let pointsA = 0;
   let pointsB = 0;
+  let questsA = 0;
+  let questsB = 0;
   for (const row of contribs ?? []) {
     const pts = Number(row.total_accuracy_points ?? 0);
-    if (row.division_id === war.division_a_id) pointsA += pts;
-    else if (row.division_id === war.division_b_id) pointsB += pts;
+    const quests = Number(row.quests_completed ?? 0);
+    if (row.division_id === war.division_a_id) {
+      pointsA += pts;
+      questsA += quests;
+    } else if (row.division_id === war.division_b_id) {
+      pointsB += pts;
+      questsB += quests;
+    }
   }
 
   let winnerId: string | null = null;
@@ -142,14 +151,20 @@ async function resolveSingleWar(
 
   const representativeUserId = activeContribs?.[0]?.student_id;
   if (representativeUserId) {
-    const winnerPoints = winnerId === war.division_a_id ? pointsA : pointsB;
-    const loserPoints = winnerId === war.division_a_id ? pointsB : pointsA;
+    const winnerAccuracyPct =
+      winnerId === war.division_a_id
+        ? divisionWarAverageAccuracy(pointsA, questsA)
+        : divisionWarAverageAccuracy(pointsB, questsB);
+    const loserAccuracyPct =
+      winnerId === war.division_a_id
+        ? divisionWarAverageAccuracy(pointsB, questsB)
+        : divisionWarAverageAccuracy(pointsA, questsA);
     void publishDivisionWarResultLiveBoardEvent({
       representativeUserId,
       winnerDivisionName: winnerName,
       loserDivisionName: loserName,
-      winnerPoints,
-      loserPoints,
+      winnerAccuracyPct,
+      loserAccuracyPct,
     });
   }
 

@@ -34,7 +34,7 @@ const rows = [
 describe("formatDemandRowLine", () => {
   it("formats the weekly weak-student row copy", () => {
     expect(formatDemandRowLine("Chain rule", 12)).toBe(
-      "Chain rule is weak for 12 students this week",
+      "Chain rule weak for 12 students",
     );
   });
 });
@@ -80,10 +80,12 @@ describe("demand signal verdict helpers", () => {
       limit: 1,
     });
     expect(buildDemandSignalVerdict(signals)).toBe(
-      "Chain rule needs you most this week.",
+      "Chain rule needs you most.",
     );
     expect(buildDemandSignalNextAction(signals)).toBe(
-      "Open AP Calculus AB slot.",
+      "Open AP Calculus AB slots.",
     );
+    expect(buildDemandSignalVerdict([])).toBe("No weak nodes.");
+    expect(buildDemandSignalNextAction([])).toBe("Verify Calculus AB first.");
   });
 });

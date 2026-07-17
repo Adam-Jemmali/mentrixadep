@@ -9,11 +9,13 @@ import type {
   PartialCreditRule,
   SolutionStep,
 } from "@/features/quest/components/step-feedback-pure";
+import type { MultiPartPart, MultiPartPartResult } from "@/features/quest/multi-part-pure";
+import type { QuestStimulus } from "@/features/quest/quest-stimulus-pure";
 
 export type PracticeDifficulty = "beginner" | "intermediate" | "advanced";
 export type PracticePackType = "mcq" | "short_answer" | "problem_solving";
 
-export type PracticeQuestionKind = "mcq" | "short_answer" | "problem_solving";
+export type PracticeQuestionKind = "mcq" | "short_answer" | "problem_solving" | "multi_part";
 
 export interface PracticeQuestionMcq {
   id: string;
@@ -33,6 +35,8 @@ export interface PracticeQuestionMcq {
   answerExpression?: string;
   partialCreditRules?: PartialCreditRule[];
   correctAnswer?: string;
+  /** Structured tables / function graphs shown above the prompt. */
+  stimulus?: QuestStimulus[];
 }
 
 export interface PracticeQuestionWritten {
@@ -41,9 +45,28 @@ export interface PracticeQuestionWritten {
   prompt: string;
   referenceAnswer: string;
   explanation: string;
+  stimulus?: QuestStimulus[];
 }
 
-export type PracticeQuestion = PracticeQuestionMcq | PracticeQuestionWritten;
+export interface PracticeQuestionMultiPart {
+  id: string;
+  kind: "multi_part";
+  /** Shared AP exam stem / scenario. */
+  prompt: string;
+  parts: MultiPartPart[];
+  explanation: string;
+  skillNodeId?: string;
+  topicTag?: string;
+  subtopicTag?: string;
+  unitNumber?: number;
+  examStakes?: string;
+  stimulus?: QuestStimulus[];
+}
+
+export type PracticeQuestion =
+  | PracticeQuestionMcq
+  | PracticeQuestionWritten
+  | PracticeQuestionMultiPart;
 
 export interface PracticePackMetadata {
   questKind: "practice_pack";
@@ -74,6 +97,13 @@ export interface PracticeSessionAnswer {
   correct: boolean;
   userResponse?: string;
   feedback?: string;
+  partsCorrect?: number;
+  partsTotal?: number;
+  multiPart?: {
+    finished: boolean;
+    activePartIndex: number;
+    parts: MultiPartPartResult[];
+  };
 }
 
 export interface PracticeSessionState {

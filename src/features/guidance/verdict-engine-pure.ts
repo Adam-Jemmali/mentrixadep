@@ -91,6 +91,14 @@ export function practiceNodeHref(nodeName: string): string {
   return `/student/quest?prompt=${encodeURIComponent(`Practice ${nodeName}`)}`;
 }
 
+/** Short CTA label for rank_delta / verify flows. */
+export function briefVerifyLabel(nodeName: string): string {
+  const name = nodeName.trim();
+  if (!name) return "Verify next";
+  if (name.length <= 16) return `Verify ${name}`;
+  return "Verify next";
+}
+
 export function guideBookingHref(guideId: string, subject = AP_CALC_AB_SUBJECT): string {
   return `/student?subject=${encodeURIComponent(subject)}&guide=${guideId}#browse-guides`;
 }
@@ -320,11 +328,11 @@ export function buildRankDeltaVerdict(
   const nextUnverified = drivingNodes.find((node) => !node.isCorrect);
   const nextAction = nextUnverified?.nodeName
     ? {
-        label: `Verify ${nextUnverified.nodeName}`,
+        label: briefVerifyLabel(nextUnverified.nodeName),
         href: practiceNodeHref(nextUnverified.nodeName),
       }
     : {
-        label: "Verify next node",
+        label: "Verify next",
         href: "/student/quest",
       };
 

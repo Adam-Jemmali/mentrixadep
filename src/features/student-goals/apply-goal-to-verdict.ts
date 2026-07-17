@@ -32,7 +32,7 @@ async function countVerifiedNodesAbove70(userId: string): Promise<{
   const [{ data: vfaRows }, { data: rollingRows }] = await Promise.all([
     admin
       .from("verified_first_attempts")
-      .select("skill_node_id, is_correct")
+      .select("skill_node_id, is_correct, accuracy_pct")
       .eq("user_id", userId)
       .in("skill_node_id", nodeIds),
     admin
@@ -45,7 +45,15 @@ async function countVerifiedNodesAbove70(userId: string): Promise<{
 
   const above70 = new Set<string>();
   for (const row of vfaRows ?? []) {
-    if (row.is_correct) above70.add(String(row.skill_node_id));
+    const accuracy =
+      row.accuracy_pct != null
+        ? Number(row.accuracy_pct) * 100
+        : row.is_correct
+          ? 100
+          : 0;
+    if (accuracy >= VERIFIED_NODE_SUCCESS_THRESHOLD) {
+      above70.add(String(row.skill_node_id));
+    }
   }
   for (const row of rollingRows ?? []) {
     above70.add(String(row.skill_node_id));

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUserSettings } from "@/features/settings/user-settings";
 import { getGuideBreakthroughs } from "@/features/guide-rank/reads";
 import { averageImpactScore } from "@/features/guide-rank/calculate-pure";
+import { loadGuidePortfolioForPublic } from "@/features/guide-portfolio/reads";
 import { normalizeTeachingDefaultDurationMinutes } from "@/features/tutor/teaching-defaults";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 
@@ -186,6 +187,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
   }
 
   const breakthroughs = await getGuideBreakthroughs(tutorId, 5);
+  const teachingPortfolio = await loadGuidePortfolioForPublic(tutorId);
 
   return {
     id: tutorId,
@@ -207,6 +209,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     avgImpactScore,
     responseRatePercent,
     breakthroughs,
+    teachingPortfolio,
   };
 }
 

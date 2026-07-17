@@ -45,7 +45,7 @@ describe("buildEarningsForecastLine", () => {
       demandRows: [{ ...demandRows[0]!, weakStudentCount: 2 }],
       openSlots: [{ course: "AP CALCULUS AB" }, { course: "AP CALCULUS AB" }],
     });
-    expect(line).toBe("Your availability is meeting current demand.");
+    expect(line).toBe("Your availability is meeting current demand");
   });
 
   it("suggests more hours when demand exceeds slots", () => {
@@ -56,7 +56,7 @@ describe("buildEarningsForecastLine", () => {
       openSlots: [{ course: "AP CALCULUS AB" }],
     });
     expect(line).toBe(
-      "Opening 7 more hours on AP CALCULUS AB could fill based on current student demand.",
+      "Opening 7 more hours on AP CALCULUS AB could fill based on current student demand",
     );
   });
 

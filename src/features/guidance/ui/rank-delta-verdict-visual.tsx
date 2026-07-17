@@ -5,7 +5,6 @@ import { cn } from "@/shared/core/utils";
 import type { RankDeltaMeta, VerdictNextAction } from "@/features/guidance/verdict-engine-pure";
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { peerBeatCount, peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 function DeltaBadge({ delta }: { delta: number }) {
@@ -194,12 +193,8 @@ export function RankDeltaVerdictVisual({
       {showNextAction ? (
         <Link
           href={nextAction.href}
-          className={cn(
-            tone === "dark" ? mentrixStudent.pillPrimary : mentrixStudent.hubBtnSolid,
-            "inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em]",
-          )}
+          className="inline-flex items-center gap-2 rounded-md bg-[#7C3AED] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#6D28D9]"
         >
-          <MentrixaVocabIcon name="quest" size={16} surface="dark" title="Quest" />
           {nextAction.label}
         </Link>
       ) : null}

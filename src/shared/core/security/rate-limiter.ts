@@ -10,6 +10,8 @@ export const API_ROUTE_LIMITS = {
   /** New try diagnostic starts only — resume checks and page loads do not use this bucket. */
   "guest.diagnostic": { maxRequests: 12, windowMs: 60 * 60 * 1000, scope: "ip" as const },
   "guest.classic": { maxRequests: 10, windowMs: 60 * 60 * 1000, scope: "ip" as const },
+  /** Public arena / guide embed feed JSON. */
+  "public.arena_feed": { maxRequests: 60, windowMs: 60 * 1000, scope: "ip" as const },
   "ai.quest": { maxRequests: 20, windowMs: 60 * 60 * 1000, scope: "user" as const },
   "ai.duel": { maxRequests: 20, windowMs: 60 * 60 * 1000, scope: "user" as const },
   "quest.adaptive": { maxRequests: 20, windowMs: 60 * 60 * 1000, scope: "user" as const },

@@ -1,35 +1,38 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { acceptSkillDuel, declineSkillDuel } from "@/features/duels/duel-gameplay";
+import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
-import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { safeRouterRefresh } from "@/shared/core/safe-router-refresh";
+import { acceptSkillDuel, declineSkillDuel } from "@/features/duels/duel-gameplay";
+import {
+  acceptDuelXpWagerStake,
+  rejectDuelXpWager,
+  type DuelXpWagerRow,
+} from "@/features/duels/duel-wager";
 import { cn } from "@/shared/core/utils";
 
-/** Shown to the challenged learner while the duel is pending. */
-export function DuelInviteeActions({ duelId }: { duelId: string }) {
+type Props = {
+  duelId: string;
+  wager: DuelXpWagerRow | null;
+};
+
+/** Opponent: accept duel; if stake pending, choose stake or skip stake. */
+export function DuelInviteeActions({ duelId, wager }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState<"acc" | "dec" | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function accept() {
-    setLoading("acc");
-    setError(null);
-    const r = await acceptSkillDuel(duelId);
-    setLoading(null);
-    if (!r.success) {
-      setError(r.error);
-      return;
-    }
-    safeRouterRefresh(router);
-  }
+  const pendingStake = wager?.status === "pending" ? wager : null;
 
-  async function decline() {
-    setLoading("dec");
+  async function run(
+    label: string,
+    fn: () => Promise<{ success: true } | { success: false; error: string }>,
+  ) {
+    setLoading(label);
     setError(null);
-    const r = await declineSkillDuel(duelId);
+    const r = await fn();
     setLoading(null);
     if (!r.success) {
       setError(r.error);
@@ -41,32 +44,87 @@ export function DuelInviteeActions({ duelId }: { duelId: string }) {
   return (
     <div className={cn(mentrixStudent.hubNotebook, "space-y-4 px-5 py-5 sm:px-6 sm:py-6")}>
       <div>
-        <p className="mx-hub-ink-title text-base">You were challenged to a skill duel</p>
+        <p className="mx-hub-ink-title text-base">You were challenged</p>
         <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
-          If you accept, the quiz is generated and you both answer the same questions. Highest score
-          wins.
+          Same questions. Highest score wins.
         </p>
+        {pendingStake ? (
+          <p className="mx-hub-ink-title mt-3 text-sm">
+            Stake{" "}
+            <span className="font-mono tabular-nums">{pendingStake.challengerWager}</span> XP
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {error ? <span className="w-full text-sm font-semibold text-[#B45309]">{error}</span> : null}
-        <Button
-          type="button"
-          size="sm"
-          disabled={loading !== null}
-          onClick={() => void accept()}
-          className={cn(mentrixStudent.pillPrimary, "text-[11px] font-black uppercase tracking-[0.14em]")}
-        >
-          {loading === "acc" ? "Accepting…" : "Accept and start quiz"}
-        </Button>
+        {error ? (
+          <span className="w-full text-sm font-semibold text-[#B45309]">{error}</span>
+        ) : null}
+        {pendingStake ? (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              disabled={loading !== null}
+              onClick={() =>
+                void run("stake", async () => {
+                  const w = await acceptDuelXpWagerStake(duelId);
+                  if (!w.success) return w;
+                  return acceptSkillDuel(duelId);
+                })
+              }
+              className={cn(
+                mentrixStudent.pillPrimary,
+                "text-[11px] font-black uppercase tracking-[0.14em]",
+              )}
+            >
+              {loading === "stake" ? "…" : "Accept stake"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={loading !== null}
+              onClick={() =>
+                void run("skip", async () => {
+                  const w = await rejectDuelXpWager(duelId);
+                  if (!w.success) return w;
+                  return acceptSkillDuel(duelId);
+                })
+              }
+              className={cn(
+                mentrixStudent.hubGhostLink,
+                "text-[11px] font-black uppercase tracking-[0.14em]",
+              )}
+            >
+              {loading === "skip" ? "…" : "Accept without stake"}
+            </Button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            disabled={loading !== null}
+            onClick={() => void run("acc", () => acceptSkillDuel(duelId))}
+            className={cn(
+              mentrixStudent.pillPrimary,
+              "text-[11px] font-black uppercase tracking-[0.14em]",
+            )}
+          >
+            {loading === "acc" ? "…" : "Accept"}
+          </Button>
+        )}
         <Button
           type="button"
           size="sm"
           variant="ghost"
           disabled={loading !== null}
-          onClick={() => void decline()}
-          className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
+          onClick={() => void run("dec", () => declineSkillDuel(duelId))}
+          className={cn(
+            mentrixStudent.hubGhostLink,
+            "text-[11px] font-black uppercase tracking-[0.14em]",
+          )}
         >
-          {loading === "dec" ? "Declining…" : "Decline"}
+          {loading === "dec" ? "…" : "Decline"}
         </Button>
       </div>
     </div>

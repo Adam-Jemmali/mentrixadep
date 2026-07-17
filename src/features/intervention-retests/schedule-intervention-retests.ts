@@ -181,6 +181,21 @@ export async function scheduleDuelLossRetest(params: {
   skillNodeId: string;
   completedAt: string;
 }): Promise<number> {
+  return scheduleDuelLossRetests({
+    duelId: params.duelId,
+    studentId: params.studentId,
+    skillNodeIds: [params.skillNodeId],
+    completedAt: params.completedAt,
+  });
+}
+
+/** Schedule 72h retests for every node missed in a duel loss. */
+export async function scheduleDuelLossRetests(params: {
+  duelId: string;
+  studentId: string;
+  skillNodeIds: string[];
+  completedAt: string;
+}): Promise<number> {
   const scheduledFor = await resolveScheduledFor(
     params.studentId,
     params.completedAt,
@@ -191,7 +206,7 @@ export async function scheduleDuelLossRetest(params: {
     sourceType: "duel_loss",
     sourceId: params.duelId,
     userId: params.studentId,
-    skillNodeIds: [params.skillNodeId],
+    skillNodeIds: params.skillNodeIds,
     scheduledAt: scheduledFor,
   });
 }

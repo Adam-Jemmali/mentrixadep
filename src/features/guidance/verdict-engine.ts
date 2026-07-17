@@ -1,3 +1,11 @@
+/**
+ * Verdict Engine — single guidance layer for measured surfaces (P#020).
+ *
+ * Contract: every call returns { changed, reason, nextAction, comparison? }.
+ * Never a bare metric. comparison is snapshot-only (sample ≥ 10) or omitted.
+ * Hot reads use student_node_rolling_stats and guide_node_impact_rolling only.
+ * No Gemini. No live peer joins on the hot path.
+ */
 import { z } from "zod";
 import {
   buildBreakthroughVerdict,
@@ -12,7 +20,7 @@ import {
   type RankDrivingNode,
   type Verdict,
 } from "@/features/guidance/verdict-engine-pure";
-import { loadComparisonContext } from "@/features/comparison/load-comparison-context";
+import { getComparisonContext } from "@/features/comparison/load-comparison-context";
 import type { ComparisonActorKind } from "@/features/comparison/comparison-context-pure";
 import { applyActiveGoalToVerdict } from "@/features/student-goals/apply-goal-to-verdict";
 import { formatPeerStandingShort } from "@/features/xp/rank-statistics-pure";
@@ -156,7 +164,7 @@ async function withComparison(
   actorKind: ComparisonActorKind,
 ): Promise<Verdict> {
   if (!skillNodeId) return verdict;
-  const comparison = await loadComparisonContext(actorId, skillNodeId, actorKind);
+  const comparison = await getComparisonContext(actorId, skillNodeId, actorKind);
   return comparison ? { ...verdict, comparison } : verdict;
 }
 

@@ -265,7 +265,7 @@ export function RankPassportArticle({
               <div className="h-px bg-[#E0E7FF]" />
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#475569]">
-                  Rank movement
+                  What changed
                 </p>
                 <VerdictPanel
                   verdict={data.rankDeltaVerdict}

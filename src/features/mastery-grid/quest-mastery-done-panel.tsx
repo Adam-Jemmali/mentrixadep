@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import { buildQuestPostPackCtas } from "@/features/quest/quest-post-step-pure";
 import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
@@ -57,9 +58,9 @@ export function QuestMasteryDonePanel({
         </p>
       </header>
 
-      <p className="mt-8 text-center text-lg font-bold leading-snug text-[#0B1220] sm:text-xl">
-        {verdict.changed}
-      </p>
+      <div className="mt-8">
+        <VerdictPanel verdict={verdict} tone="light" showNextAction={false} />
+      </div>
 
       <div className="mt-8 flex flex-col gap-2.5">
         {ctas.map((cta) => {

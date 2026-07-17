@@ -698,7 +698,15 @@ export async function generatePracticeQuestPack(
       }
     }
     if (questions.length < 5) return { error: true, message: "Could not generate enough valid questions. Try again." };
-    const locked = questions.every((q) => isSubjectLockedText(subject, [q.prompt, q.explanation, q.kind === "mcq" ? q.options.join(" ") : q.referenceAnswer].join(" ")));
+    const locked = questions.every((q) => {
+      const answerText =
+        q.kind === "mcq"
+          ? q.options.join(" ")
+          : q.kind === "multi_part"
+            ? q.parts.map((part) => part.prompt).join(" ")
+            : q.referenceAnswer;
+      return isSubjectLockedText(subject, [q.prompt, q.explanation, answerText].join(" "));
+    });
     if (!locked) return { error: true, message: "Generated pack did not stay within the selected subject." };
     return { questions: questions.slice(0, n) };
   } catch (err) {

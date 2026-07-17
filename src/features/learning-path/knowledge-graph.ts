@@ -18,6 +18,7 @@ import {
   type NextStepRecommendation,
   type AdaptiveContext,
 } from "@/features/learning-path/knowledge-graph-lib";
+import { completeDueInterventionRetests } from "@/features/intervention-retests/complete-intervention-retests";
 import {
   AP_CALC_AB_SUBJECT,
   isApCalculusAbSubject,
@@ -84,6 +85,9 @@ async function upsertApCalcSkillNode(
     ? (existing.first_attempt_correct as boolean | null | undefined) ?? null
     : update.correct;
 
+  const nextAttempts = currentAttempts + 1;
+  const nextCorrect = currentCorrect + (update.correct ? 1 : 0);
+
   await admin.from("student_knowledge_nodes").upsert(
     {
       user_id: userId,
@@ -92,14 +96,21 @@ async function upsertApCalcSkillNode(
       subtopic,
       skill_node_id: skillNodeId,
       mastery_score: newScore,
-      attempts: currentAttempts + 1,
-      correct: currentCorrect + (update.correct ? 1 : 0),
+      attempts: nextAttempts,
+      correct: nextCorrect,
       correct_streak: newStreak,
       first_attempt_correct: firstAttemptCorrect,
       last_seen_at: now,
     },
     { onConflict: "user_id,skill_node_id" }
   );
+
+  const postAccuracy = nextAttempts > 0 ? (nextCorrect * 100) / nextAttempts : 0;
+  void completeDueInterventionRetests({
+    userId,
+    skillNodeId,
+    postAccuracy,
+  });
 
   await admin.from("quest_topic_tags").upsert(
     {

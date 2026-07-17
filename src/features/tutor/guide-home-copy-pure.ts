@@ -127,10 +127,9 @@ export const GUIDE_PAYOUTS = {
 } as const;
 
 export const GUIDE_DEMAND = {
-  eyebrow: "Demand",
   title: "Where students need you",
-  noSlots: "You have no open slots here.",
-  addSlot: "Add availability",
+  noSlots: "No open slots.",
+  addSlot: "Add slots",
 } as const;
 
 export const GUIDE_WEEKLY_IMPACT = {
@@ -140,19 +139,21 @@ export const GUIDE_WEEKLY_IMPACT = {
 } as const;
 
 export function guideDemandRowLine(nodeName: string, count: number): string {
-  return `${nodeName} is weak for ${count} student${count === 1 ? "" : "s"} this week`;
+  const n = Math.max(0, Math.round(count));
+  const noun = n === 1 ? "student" : "students";
+  return `${nodeName} weak for ${n} ${noun}`;
 }
 
 export function guideDemandVerdict(nodeName: string): string {
-  return `${nodeName} needs you most this week.`;
+  return `${nodeName} needs you most.`;
 }
 
-export const GUIDE_DEMAND_EMPTY_VERDICT = "No demand signal yet.";
-export const GUIDE_DEMAND_EMPTY_ACTION = "Verify AP CALCULUS AB proficiency first.";
+export const GUIDE_DEMAND_EMPTY_VERDICT = "No weak nodes.";
+export const GUIDE_DEMAND_EMPTY_ACTION = "Verify Calculus AB first.";
 export function guideDemandOpenSlotAction(subject: string): string {
-  return `Open ${subject} slot.`;
+  return `Open ${subject} slots.`;
 }
-export const GUIDE_DEMAND_COVERED_ACTION = "Slots cover this week's demand.";
+export const GUIDE_DEMAND_COVERED_ACTION = "Slots cover demand.";
 
 export const GUIDE_NOTIFICATIONS = {
   title: "Notifications",

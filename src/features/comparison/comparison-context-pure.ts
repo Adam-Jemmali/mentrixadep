@@ -36,7 +36,7 @@ export function buildComparisonSentence(
 ): string {
   const value = Math.round(Math.max(0, Math.min(100, betterThanPercent)));
   if (actorKind === "guide") {
-    return `Better than ${value}% of Guides teaching this node.`;
+    return `Better than ${value} percent of Guides teaching this node.`;
   }
-  return `Better than ${value}% of everyone verified on this node.`;
+  return `Better than ${value} percent of everyone verified on this node.`;
 }

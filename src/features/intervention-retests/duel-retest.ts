@@ -4,11 +4,15 @@ export type DuelQuestionWithNode = SkillDuelQuestion & {
   skillNodeId?: string;
 };
 
-export function resolveFirstMissedSkillNodeId(
+/** Unique skill nodes the loser answered incorrectly (72h retest each). */
+export function resolveMissedSkillNodeIds(
   questions: DuelQuestionWithNode[],
   answers: number[] | null,
-): string | null {
-  if (!answers || answers.length !== questions.length) return null;
+): string[] {
+  if (!answers || answers.length !== questions.length) return [];
+
+  const missed: string[] = [];
+  const seen = new Set<string>();
 
   for (let i = 0; i < questions.length; i += 1) {
     const question = questions[i];
@@ -17,8 +21,17 @@ export function resolveFirstMissedSkillNodeId(
     if (answer === question.correctIndex) continue;
 
     const skillNodeId = question.skillNodeId?.trim();
-    if (skillNodeId) return skillNodeId;
+    if (!skillNodeId || seen.has(skillNodeId)) continue;
+    seen.add(skillNodeId);
+    missed.push(skillNodeId);
   }
 
-  return null;
+  return missed;
+}
+
+export function resolveFirstMissedSkillNodeId(
+  questions: DuelQuestionWithNode[],
+  answers: number[] | null,
+): string | null {
+  return resolveMissedSkillNodeIds(questions, answers)[0] ?? null;
 }

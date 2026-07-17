@@ -607,6 +607,7 @@ export function isCsrfExemptPath(pathname: string): boolean {
   if (pathname === "/api/health") return true;
   // Public unauthenticated endpoints — no session involved, admin service-role client used server-side
   if (pathname.startsWith("/api/waitlist/")) return true;
+  if (pathname.startsWith("/api/public/")) return true;
   return false;
 }
 

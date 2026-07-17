@@ -11,10 +11,9 @@ import {
   getRateLimitId,
 } from "@/shared/core/security";
 import type { SkillDuelQuestion } from "@/shared/types/database";
-import { resolveFirstMissedSkillNodeId } from "@/features/intervention-retests/duel-retest";
-import { scheduleDuelLossRetest } from "@/features/intervention-retests/schedule-intervention-retests";
-
-
+import { resolveMissedSkillNodeIds } from "@/features/intervention-retests/duel-retest";
+import { scheduleDuelLossRetests } from "@/features/intervention-retests/schedule-intervention-retests";
+import { settleDuelXpWager } from "@/features/duels/duel-wager";
 import { applyXpAward } from "@/features/xp/xp-awards";
 import { XP } from "@/features/xp/xp-constants";
 import { applyDuelMetaRewards } from "@/features/duels/duel-reward";
@@ -288,6 +287,12 @@ export async function declineSkillDuel(
       return { success: false, error: error.message };
     }
 
+    await admin
+      .from("duel_xp_wagers")
+      .update({ status: "rejected" })
+      .eq("duel_id", id.id)
+      .eq("status", "pending");
+
     revalidatePath("/student/duel");
     revalidatePath(`/student/duel/${id.id}`);
     return { success: true };
@@ -345,6 +350,12 @@ export async function withdrawPendingSkillDuel(
     if (error) {
       return { success: false, error: error.message };
     }
+
+    await admin
+      .from("duel_xp_wagers")
+      .update({ status: "rejected" })
+      .eq("duel_id", id.id)
+      .eq("status", "pending");
 
     revalidatePath("/student/duel");
     revalidatePath(`/student/duel/${id.id}`);
@@ -524,12 +535,12 @@ async function applyDuelCompletionRewards(
   }
 
   const scheduleLossRetest = (loserId: string, loserAnswers: number[] | null) => {
-    const skillNodeId = resolveFirstMissedSkillNodeId(questionsWithNodes, loserAnswers);
-    if (!skillNodeId) return;
-    void scheduleDuelLossRetest({
+    const skillNodeIds = resolveMissedSkillNodeIds(questionsWithNodes, loserAnswers);
+    if (skillNodeIds.length === 0) return;
+    void scheduleDuelLossRetests({
       duelId,
       studentId: loserId,
-      skillNodeId,
+      skillNodeIds,
       completedAt,
     });
   };
@@ -538,6 +549,21 @@ async function applyDuelCompletionRewards(
     scheduleLossRetest(row.student_id, sa);
   } else if (winner === "student" && !isAi && row.opponent_student_id) {
     scheduleLossRetest(row.opponent_student_id, oa);
+  }
+
+  if (!isAi && row.opponent_student_id) {
+    const winnerUserId =
+      winner === "student"
+        ? row.student_id
+        : winner === "opponent"
+          ? row.opponent_student_id
+          : null;
+    await settleDuelXpWager({
+      duelId,
+      winnerUserId,
+      isTie: winner === "tie",
+      divisionKey: div,
+    });
   }
 }
 

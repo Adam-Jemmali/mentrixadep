@@ -40,10 +40,10 @@ describe("computeBetterThanPercent", () => {
 describe("buildComparisonSentence", () => {
   it("formats student and guide copy", () => {
     expect(buildComparisonSentence(64, "student")).toBe(
-      "Better than 64% of everyone verified on this node.",
+      "Better than 64 percent of everyone verified on this node.",
     );
     expect(buildComparisonSentence(64, "guide")).toBe(
-      "Better than 64% of Guides teaching this node.",
+      "Better than 64 percent of Guides teaching this node.",
     );
   });
 });

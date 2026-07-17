@@ -8,7 +8,7 @@ import {
   resolveLiveBoardDisplayName,
   verifiedAttemptAccuracyPct,
 } from "@/features/live-board/live-board-events-pure";
-import { formatDivisionWarScoreLine } from "@/features/live-board/live-board-messages-pure";
+import { encodeDivisionWarLoserMeta } from "@/features/live-board/live-board-messages-pure";
 import type { LiveBoardEventType } from "@/features/live-board/types";
 import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
@@ -235,8 +235,8 @@ export async function publishDivisionWarResultLiveBoardEvent(params: {
   representativeUserId: string;
   winnerDivisionName: string;
   loserDivisionName: string;
-  winnerPoints: number;
-  loserPoints: number;
+  winnerAccuracyPct: number;
+  loserAccuracyPct: number;
 }): Promise<void> {
   try {
     const admin = createAdminClient();
@@ -244,11 +244,9 @@ export async function publishDivisionWarResultLiveBoardEvent(params: {
       params.winnerDivisionName,
       params.loserDivisionName,
     );
-    const scoreLine = formatDivisionWarScoreLine(
-      params.winnerDivisionName,
-      params.winnerPoints,
+    const loserMeta = encodeDivisionWarLoserMeta(
       params.loserDivisionName,
-      params.loserPoints,
+      params.loserAccuracyPct,
     );
 
     await insertLiveBoardEvent(admin, {
@@ -256,8 +254,8 @@ export async function publishDivisionWarResultLiveBoardEvent(params: {
       user_id: params.representativeUserId,
       display_name: headline,
       node_name: params.winnerDivisionName.trim() || "Division",
-      unit_name: scoreLine,
-      accuracy_pct: params.winnerPoints,
+      unit_name: loserMeta,
+      accuracy_pct: Math.round(params.winnerAccuracyPct),
       is_first_attempt: false,
     });
   } catch (err) {

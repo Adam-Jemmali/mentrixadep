@@ -12,35 +12,27 @@ export function VerdictPanel({
   verdict: Verdict;
   tone?: "dark" | "light";
   className?: string;
+  /** Owner-only on public surfaces. Visitors see changed + reason only. */
   showNextAction?: boolean;
 }) {
   const changedClass =
     tone === "dark"
-      ? "text-base font-semibold leading-relaxed text-white sm:text-lg"
-      : "text-base font-semibold leading-relaxed text-[#0B1220] sm:text-lg";
+      ? "text-base font-semibold leading-snug text-white sm:text-lg"
+      : "text-base font-semibold leading-snug text-[#0B1220] sm:text-lg";
   const reasonClass =
     tone === "dark"
-      ? "text-sm leading-relaxed text-slate-300"
-      : "text-sm leading-relaxed text-[#475569]";
+      ? "text-sm leading-snug text-slate-300"
+      : "text-sm leading-snug text-[#475569]";
   const actionClass =
     tone === "dark"
-      ? "inline-flex text-sm font-medium text-indigo-300 underline-offset-2 hover:text-indigo-200 hover:underline"
-      : "inline-flex text-sm font-medium text-indigo-700 underline-offset-2 hover:text-indigo-900 hover:underline";
+      ? "inline-flex text-sm font-semibold text-indigo-300 underline-offset-2 hover:text-indigo-200 hover:underline"
+      : "inline-flex rounded-md bg-[#7C3AED] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#6D28D9]";
 
   if (verdict.rankDelta) {
-    const srText = [verdict.changed, verdict.reason, verdict.nextAction.label]
-      .filter(Boolean)
-      .join(" ");
-
     return (
-      <div className={cn(className)}>
-        <p className="sr-only">{srText}</p>
-        {!showNextAction ? (
-          <div className="mb-3 space-y-2">
-            <p className={changedClass}>{verdict.changed}</p>
-            {verdict.reason ? <p className={reasonClass}>{verdict.reason}</p> : null}
-          </div>
-        ) : null}
+      <div className={cn("space-y-3", className)}>
+        <p className={changedClass}>{verdict.changed}</p>
+        {verdict.reason ? <p className={reasonClass}>{verdict.reason}</p> : null}
         <RankDeltaVerdictVisual
           meta={verdict.rankDelta}
           nextAction={verdict.nextAction}
@@ -50,7 +42,7 @@ export function VerdictPanel({
         {verdict.comparison ? (
           <p
             className={cn(
-              "mt-3 text-xs leading-relaxed",
+              "text-xs leading-snug",
               tone === "dark" ? "text-slate-400" : "text-[#64748B]",
             )}
           >
@@ -74,8 +66,8 @@ export function VerdictPanel({
         <p
           className={
             tone === "dark"
-              ? "text-xs leading-relaxed text-slate-400"
-              : "text-xs leading-relaxed text-slate-500"
+              ? "text-xs leading-snug text-slate-400"
+              : "text-xs leading-snug text-[#64748B]"
           }
         >
           {verdict.comparison}

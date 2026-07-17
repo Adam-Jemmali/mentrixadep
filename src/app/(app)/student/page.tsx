@@ -22,7 +22,9 @@ import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { RANK_LADDER_CHIP_SIZE } from "@/features/xp/rank-display-tokens";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { StreakCountDisplay, XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
+import { VfaProofStreakDisplay } from "@/features/vfa-streak/ui/vfa-proof-streak";
+import { loadVfaStreakHomeDisplay } from "@/features/vfa-streak/load-vfa-streak";
 
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -35,11 +37,11 @@ import {
   DeferredStudentStudyPackageNotifier,
   DeferredTopRivalCard,
 } from "./student-dashboard-deferred";
+import { ProgressSnapshotHubSlot } from "@/features/progress-snapshot/ui/progress-snapshot-hub-slot";
 import {
   firstNameFromDisplayName,
   getLocalHour,
   greetingForHour,
-  isStreakAtRisk18h,
 } from "@/features/student-profile/student-dashboard-helpers";
 import { getUpcomingSessionBriefs } from "@/features/pre-session-brief/brief";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
@@ -64,6 +66,10 @@ import { StudentHubDoNextCard } from "@/features/student-profile/ui/student-hub-
 import { getGuideRematchBadgesForStudent } from "@/features/matchmaker/load-guide-rematch-badges";
 import { getActivePackSprintState } from "@/features/entitlements/session-credits";
 import { PackSprintSuccessPanel } from "@/features/entitlements/ui/pack-sprint-success-panel";
+import { loadStudentShareNotifications } from "@/features/share-artifacts/student-share-notifications";
+import { StudentShareNotifyStrip } from "@/features/share-artifacts/ui/student-share-notify-strip";
+import { loadGuidePortfolioOptInNotices } from "@/features/guide-portfolio/actions";
+import { GuidePortfolioOptInStrip } from "@/features/guide-portfolio/ui/guide-portfolio-opt-in-strip";
 import { daysUntilDate } from "@/features/goal-dashboard/goal-dashboard-pure";
 
 interface StudentPageProps {
@@ -83,7 +89,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, movementReceipt] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, movementReceipt, vfaStreakDisplay, shareNotices, portfolioNotices] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -96,6 +102,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       getStudentEntitlements(user.id),
       getStudentSubscription(user.id),
       loadActiveMovementReceiptForViewer().catch(() => null),
+      loadVfaStreakHomeDisplay(user.id).catch(() => ({ kind: "none" as const })),
+      loadStudentShareNotifications(1).catch(() => []),
+      loadGuidePortfolioOptInNotices(1).catch(() => []),
     ]);
   const momentumSubscriber = entitlements.momentumActive;
   const archiveSubscriber = entitlements.momentumActive;
@@ -129,8 +138,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const greeting = greetingForHour(hour, firstName);
   const totalXp = userXp?.total_xp ?? 0;
   const streak = userXp?.streak_days ?? 0;
-  const lastActivityAt = (userXp?.last_activity_at as string | null | undefined) ?? null;
-  const streakAtRisk = isStreakAtRisk18h(streak, lastActivityAt);
 
   const accountRank = getAccountRankFromTotalXp(totalXp);
   const rankNextAction = formatVerifiedRankNextAction(verifiedRankStats);
@@ -183,9 +190,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
               <StudentHeroQuickActions className="sm:pt-1" />
             </div>
 
-            <div
-              className={`flex flex-wrap items-center gap-x-5 gap-y-3${streakAtRisk && streak > 0 ? " pb-12" : ""}`}
-            >
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
               <RankBadge
                 rank={accountRank}
                 size={RANK_LADDER_CHIP_SIZE}
@@ -200,17 +205,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 {normalizeRankTitle(accountRank.title)}
               </p>
               <XpCountDisplay xp={totalXp} size={22} showLabel accent="indigo" surface="light" />
-              {streak > 0 ? (
-                <StreakCountDisplay
-                  days={streak}
-                  size={22}
-                  atRisk={streakAtRisk}
-                  showRiskPopup
-                  userId={user.id}
-                  accent="violet"
-                  surface="light"
-                />
-              ) : null}
+              <VfaProofStreakDisplay display={vfaStreakDisplay} />
               {momentumSubscriber ? <MomentumMembershipMemberChip /> : null}
             </div>
 
@@ -238,9 +233,27 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           </div>
         )}
 
+        <div className="mt-4">
+          <Suspense fallback={null}>
+            <ProgressSnapshotHubSlot momentumSubscriber={momentumSubscriber} />
+          </Suspense>
+        </div>
+
         {!activeGoal ? (
           <div className="mt-4">
             <DeferredStudentGoalCaptureCard subject={AP_CALC_AB_SUBJECT} />
+          </div>
+        ) : null}
+
+        {shareNotices.length > 0 ? (
+          <div className="mt-4">
+            <StudentShareNotifyStrip items={shareNotices} />
+          </div>
+        ) : null}
+
+        {portfolioNotices.length > 0 ? (
+          <div className="mt-4">
+            <GuidePortfolioOptInStrip items={portfolioNotices} />
           </div>
         ) : null}
 

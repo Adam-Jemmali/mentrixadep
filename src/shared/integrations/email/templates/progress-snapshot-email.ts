@@ -2,11 +2,13 @@ import { escapeHtml, APP_URL, EMAIL_ASSET_ORIGIN } from "../shared";
 import { ctaButton } from "../templates";
 import type { ProgressSnapshotData } from "@/features/progress-snapshot/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+import type { WeeklyTruthReport } from "@/features/progress-snapshot/weekly-truth-report-pure";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 
 export type ProgressSnapshotEmailTemplateProps = {
   snapshot: ProgressSnapshotData;
   weeklyVerdict?: Verdict | null;
+  truthReport?: WeeklyTruthReport | null;
 };
 
 function rankBadgeImg(title: string): string {
@@ -19,6 +21,18 @@ function signedDelta(n: number): string {
   if (n > 0) return `+${n}`;
   if (n < 0) return `${n}`;
   return "0";
+}
+
+function truthReportBlock(report: WeeklyTruthReport): string {
+  const lines = [report.moved, report.cause, report.stuck, report.nextAction];
+  return `<div style="margin:0 0 20px;">
+      ${lines
+        .map((line, i) => {
+          const isLead = i === 0 || i === lines.length - 1;
+          return `<p style="margin:0 0 ${i === lines.length - 1 ? "0" : "10px"};color:${isLead ? "#f5f5f5" : "#a3a3a3"};font-size:${i === 0 ? "15px" : "14px"};line-height:1.55;${i === lines.length - 1 ? "font-weight:600;" : ""}">${escapeHtml(line)}</p>`;
+        })
+        .join("")}
+    </div>`;
 }
 
 function verdictBlock(verdict: Verdict): string {
@@ -64,8 +78,14 @@ export function progressSnapshotEmailBody(props: ProgressSnapshotEmailTemplatePr
         ? `down from #${s.divisionRank.previous}`
         : `held at #${s.divisionRank.current}`;
 
+  const opener = props.truthReport
+    ? truthReportBlock(props.truthReport)
+    : verdict
+      ? verdictBlock(verdict)
+      : "";
+
   return `<p style="color:#b4b4b4;font-size:15px;line-height:1.65;margin:0 0 16px;">Hi <strong style="color:#eee;">${escapeHtml(hi)}</strong>,</p>
-    ${verdict ? verdictBlock(verdict) : ""}
+    ${opener}
     <p style="color:#737373;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 8px;">Supporting detail</p>
     <p style="color:#737373;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 8px;">Your week in ${escapeHtml(s.subject)}</p>
     <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px;border-collapse:collapse;">

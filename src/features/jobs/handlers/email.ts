@@ -56,9 +56,18 @@ export async function handleEmailJob(payload: EmailJobPayload): Promise<void> {
       const parsed = progressSnapshotDataSchema.safeParse(snapshotRaw);
       if (!parsed.success) throw new Error("progress_snapshot: invalid snapshot data");
       const weeklyVerdictParsed = verdictEmailSchema.safeParse(data.weeklyVerdict);
+      const truthReportParsed = z
+        .object({
+          moved: z.string(),
+          cause: z.string(),
+          stuck: z.string(),
+          nextAction: z.string(),
+        })
+        .safeParse(data.truthReport);
       await sendProgressSnapshotEmail(to, {
         snapshot: parsed.data,
         weeklyVerdict: weeklyVerdictParsed.success ? weeklyVerdictParsed.data : null,
+        truthReport: truthReportParsed.success ? truthReportParsed.data : null,
       });
       if (snapshotId) {
         const admin = createAdminClient();

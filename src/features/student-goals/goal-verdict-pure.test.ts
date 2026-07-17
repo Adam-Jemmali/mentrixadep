@@ -56,8 +56,7 @@ describe("applyGoalToVerdict", () => {
       },
       now,
     );
-    expect(next.nextAction.label).toContain("Exam in");
-    expect(next.nextAction.label).toContain("Chain Rule");
+    expect(next.nextAction.label).toBe("Verify Chain Rule");
   });
 
   it("states percentile gap explicitly", () => {
@@ -73,8 +72,9 @@ describe("applyGoalToVerdict", () => {
       totalSubjectNodes: 20,
       highestImpactNode: { skillNodeId: "n2", nodeName: "Limits" },
     });
-    expect(next.nextAction.label).toContain("Need");
-    expect(next.nextAction.label).toContain("70%");
+    expect(next.nextAction.label).toBe(
+      "Need 12 more verified nodes above 70 percent",
+    );
   });
 });
 

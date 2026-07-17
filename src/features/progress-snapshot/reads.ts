@@ -2,6 +2,8 @@
 
 import { requireRole } from "@/shared/core/auth";
 import { createClient } from "@/shared/integrations/supabase/server";
+import { getVerdict } from "@/features/guidance/verdict-engine";
+import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import {
   progressSnapshotDataSchema,
   type ProgressSnapshotRow,
@@ -9,8 +11,12 @@ import {
 
 const SNAPSHOT_VISIBLE_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Latest weekly snapshot still within the 7-day display window. */
-export async function getActiveProgressSnapshot(): Promise<ProgressSnapshotRow | null> {
+export type ActiveProgressSnapshot = ProgressSnapshotRow & {
+  weeklyVerdict: Verdict | null;
+};
+
+/** Latest weekly snapshot still within the 7-day display window, with Verdict Engine copy. */
+export async function getActiveProgressSnapshot(): Promise<ActiveProgressSnapshot | null> {
   const user = await requireRole(["student", "admin"]);
   const supabase = await createClient();
   const cutoff = new Date(Date.now() - SNAPSHOT_VISIBLE_MS).toISOString();
@@ -29,6 +35,17 @@ export async function getActiveProgressSnapshot(): Promise<ProgressSnapshotRow |
   const parsed = progressSnapshotDataSchema.safeParse(data.snapshot_data);
   if (!parsed.success) return null;
 
+  let weeklyVerdict: Verdict | null = null;
+  try {
+    weeklyVerdict = await getVerdict({
+      type: "weekly_snapshot",
+      userId: user.id,
+      context: { snapshot: parsed.data },
+    });
+  } catch {
+    weeklyVerdict = null;
+  }
+
   return {
     id: data.id,
     student_id: data.student_id,
@@ -36,5 +53,6 @@ export async function getActiveProgressSnapshot(): Promise<ProgressSnapshotRow |
     generated_at: data.generated_at,
     email_sent_at: data.email_sent_at,
     clicked_at: data.clicked_at,
+    weeklyVerdict,
   };
 }

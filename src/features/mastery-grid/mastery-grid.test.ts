@@ -91,7 +91,7 @@ describe("buildMasteryGridNextAction", () => {
         ],
       },
     ]);
-    expect(line).toBe("Practice Chain rule — 40% now.");
+    expect(line).toBe("Practice Chain rule");
   });
 });
 

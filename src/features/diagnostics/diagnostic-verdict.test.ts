@@ -64,7 +64,7 @@ describe("getDiagnosticVerdict", () => {
     expect(verdict?.headline).toContain("strong AP Calculus AB student");
     expect(verdict?.subheadline).toBe("Power rule is genuinely solid for you.");
     expect(verdict?.comparisonSentence).toBe(
-      "Better than 30% of everyone verified on this node.",
+      "Better than 30 percent of everyone verified on this node.",
     );
     expect(verdict?.scoreFootnote).toBe("2 of 2 steps correct on first answer");
     expect(verdict?.ctaLabel).toBe("Save this and start fixing it");

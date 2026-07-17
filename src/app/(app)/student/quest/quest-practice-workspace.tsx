@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import { QuestStimulusBlock } from "@/features/quest/components/quest-stimulus-block";
 import { warmKatex } from "@/features/quest/ui/normalize-math-text";
 import {
   createPracticeQuest,
@@ -12,9 +13,11 @@ import {
   getPracticeQuestionPublic,
   submitPracticeMcq,
   submitPracticeWritten,
+  submitPracticeMultiPart,
   finalizePracticeQuest,
   type PracticeQuestionPublic,
 } from "@/features/quest/practice-quest";
+import { MultiPartQuestion } from "@/features/quest/components/multi-part-question";
 import { emitXpAward } from "@/features/xp/xp-events";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
@@ -347,7 +350,7 @@ export function QuestPracticeWorkspace({
   };
 
   const onWrittenSubmit = async () => {
-    if (!questId || !question || question.kind === "mcq" || !written.trim()) return;
+    if (!questId || !question || question.kind === "mcq" || question.kind === "multi_part" || !written.trim()) return;
     setBusy(true);
     const r = await submitPracticeWritten(questId, qIndex, written);
     setBusy(false);
@@ -383,6 +386,39 @@ export function QuestPracticeWorkspace({
     setCorrectCelebration(null);
     setMcqResult(null);
     setMcqPicked(null);
+    const next = qIndex + 1;
+    setQIndex(next);
+    await loadQuestion(questId, next);
+  };
+
+  const onMultiPartSubmit = async (input: {
+    partIndex: number;
+    selectedIndex?: number;
+    freeResponse?: string;
+  }) => {
+    if (!questId || !question || question.kind !== "multi_part") return;
+    setBusy(true);
+    setErr(null);
+    const r = await submitPracticeMultiPart(questId, qIndex, input.partIndex, {
+      selectedIndex: input.selectedIndex,
+      freeResponse: input.freeResponse,
+    });
+    setBusy(false);
+    if ("error" in r) {
+      setErr(r.error);
+      return;
+    }
+    await loadQuestion(questId, qIndex);
+    if (r.finishedQuestion) {
+      setLockedQuestionIndices((prev) => new Set(prev).add(qIndex));
+    }
+    if (r.finishedPack && questId) {
+      await finishRun(questId);
+    }
+  };
+
+  const multiPartContinue = async () => {
+    if (!questId) return;
     const next = qIndex + 1;
     setQIndex(next);
     await loadQuestion(questId, next);
@@ -584,12 +620,35 @@ export function QuestPracticeWorkspace({
             )}
 
             {question.kind === "mcq" ? (
-              <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
-            ) : question.kind === "problem_solving" ? (
-              <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
-            ) : (
-              <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
+              <>
+                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
+                <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
+              </>
+            ) : question.kind === "multi_part" ? null : (
+              <>
+                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
+                <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
+              </>
             )}
+
+            {question.kind === "multi_part" ? (
+              <MultiPartQuestion
+                stem={question.prompt}
+                stimulus={question.stimulus}
+                parts={question.parts}
+                partsCorrect={question.partsCorrect}
+                partsTotal={question.partsTotal}
+                xpEarned={question.xpEarned}
+                finished={question.finished}
+                busy={busy}
+                onSubmitPart={onMultiPartSubmit}
+                onContinue={
+                  question.finished && !busy
+                    ? () => void multiPartContinue()
+                    : undefined
+                }
+              />
+            ) : null}
 
             {question.kind === "mcq" && (
               <div className="grid gap-2 sm:grid-cols-2">
@@ -624,7 +683,7 @@ export function QuestPracticeWorkspace({
               </div>
             )}
 
-            {question.kind !== "mcq" && (
+            {question.kind !== "mcq" && question.kind !== "multi_part" && (
               <div className="space-y-3">
                 <textarea
                   className={`${mentrixStudent.hubFieldInput} min-h-[120px]`}

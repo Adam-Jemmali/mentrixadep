@@ -14,9 +14,11 @@ export async function fetchDuelResultVerdict(input: {
   rounds: DuelRoundStat[];
 }): Promise<Verdict> {
   const user = await requireRole(["student", "admin"]);
+  const focusSkillNodeId = input.rounds.find((round) => round.skillNodeId)?.skillNodeId;
   return getVerdict({
     type: "duel_result",
     userId: user.id,
+    skillNodeId: focusSkillNodeId,
     context: {
       rounds: input.rounds,
       yourScore: input.yourScore,

@@ -126,7 +126,21 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
             achievement_type?: string;
             to_level?: number | null;
             title?: string | null;
+            meta?: { subtitle?: string } | null;
           };
+
+          if (n.achievement_type === "vfa_streak_milestone" && n.title) {
+            setModalState({
+              payload: { toLevel: n.to_level ?? 1, title: n.title },
+              headline: n.title,
+              subtitle:
+                typeof n.meta?.subtitle === "string"
+                  ? n.meta.subtitle
+                  : "Consecutive days with a new verified first attempt.",
+            });
+            return;
+          }
+
           const isRankUp =
             n.achievement_type === "rank_up" || n.achievement_type === "level_up";
           if (!isRankUp || n.to_level == null || !n.title) return;

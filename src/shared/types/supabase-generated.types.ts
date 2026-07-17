@@ -905,6 +905,74 @@ export type Database = {
           },
         ]
       }
+      duel_xp_wagers: {
+        Row: {
+          challenger_id: string
+          challenger_wager: number
+          created_at: string
+          duel_id: string
+          id: string
+          opponent_id: string
+          opponent_wager: number
+          settled_at: string | null
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          challenger_id: string
+          challenger_wager: number
+          created_at?: string
+          duel_id: string
+          id?: string
+          opponent_id: string
+          opponent_wager: number
+          settled_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          challenger_id?: string
+          challenger_wager?: number
+          created_at?: string
+          duel_id?: string
+          id?: string
+          opponent_id?: string
+          opponent_wager?: number
+          settled_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duel_xp_wagers_challenger_id_fkey"
+            columns: ["challenger_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duel_xp_wagers_duel_id_fkey"
+            columns: ["duel_id"]
+            isOneToOne: true
+            referencedRelation: "skill_duels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duel_xp_wagers_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duel_xp_wagers_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback_submissions: {
         Row: {
           created_at: string
@@ -1145,6 +1213,84 @@ export type Database = {
           },
         ]
       }
+      guide_teaching_portfolio: {
+        Row: {
+          added_at: string
+          after_accuracy: number | null
+          before_accuracy: number | null
+          guide_id: string
+          id: string
+          node_name: string
+          session_id: string | null
+          share_artifact_id: string | null
+          skill_node_id: string | null
+          student_id: string
+          student_opted_in: boolean
+        }
+        Insert: {
+          added_at?: string
+          after_accuracy?: number | null
+          before_accuracy?: number | null
+          guide_id: string
+          id?: string
+          node_name: string
+          session_id?: string | null
+          share_artifact_id?: string | null
+          skill_node_id?: string | null
+          student_id: string
+          student_opted_in?: boolean
+        }
+        Update: {
+          added_at?: string
+          after_accuracy?: number | null
+          before_accuracy?: number | null
+          guide_id?: string
+          id?: string
+          node_name?: string
+          session_id?: string | null
+          share_artifact_id?: string | null
+          skill_node_id?: string | null
+          student_id?: string
+          student_opted_in?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_teaching_portfolio_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_teaching_portfolio_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_teaching_portfolio_share_artifact_id_fkey"
+            columns: ["share_artifact_id"]
+            isOneToOne: true
+            referencedRelation: "share_artifacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_teaching_portfolio_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_teaching_portfolio_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guide_node_impact_rolling: {
         Row: {
           guide_id: string
@@ -1334,6 +1480,7 @@ export type Database = {
           solution_steps: Json | null
           status: string
           step_sequence: Json | null
+          stimulus: Json | null
         }
         Insert: {
           answer_alternatives?: string[] | null
@@ -1356,6 +1503,7 @@ export type Database = {
           solution_steps?: Json | null
           status?: string
           step_sequence?: Json | null
+          stimulus?: Json | null
         }
         Update: {
           answer_alternatives?: string[] | null
@@ -1378,6 +1526,7 @@ export type Database = {
           solution_steps?: Json | null
           status?: string
           step_sequence?: Json | null
+          stimulus?: Json | null
         }
         Relationships: [
           {
@@ -1442,6 +1591,48 @@ export type Database = {
           },
           {
             foreignKeyName: "live_board_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mastery_decay_alerts: {
+        Row: {
+          alert_sent_at: string | null
+          current_state: string
+          hours_until_decay: number
+          skill_node_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_sent_at?: string | null
+          current_state: string
+          hours_until_decay: number
+          skill_node_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_sent_at?: string | null
+          current_state?: string
+          hours_until_decay?: number
+          skill_node_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mastery_decay_alerts_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mastery_decay_alerts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -2713,6 +2904,76 @@ export type Database = {
           },
         ]
       }
+      share_artifacts: {
+        Row: {
+          after_value: number | null
+          artifact_type: string
+          before_value: number | null
+          created_at: string
+          guide_id: string | null
+          guide_name: string | null
+          id: string
+          image_url: string | null
+          intervention_retest_id: string | null
+          node_name: string | null
+          rank_tier: string | null
+          share_token: string
+          user_id: string
+        }
+        Insert: {
+          after_value?: number | null
+          artifact_type: string
+          before_value?: number | null
+          created_at?: string
+          guide_id?: string | null
+          guide_name?: string | null
+          id?: string
+          image_url?: string | null
+          intervention_retest_id?: string | null
+          node_name?: string | null
+          rank_tier?: string | null
+          share_token?: string
+          user_id: string
+        }
+        Update: {
+          after_value?: number | null
+          artifact_type?: string
+          before_value?: number | null
+          created_at?: string
+          guide_id?: string | null
+          guide_name?: string | null
+          id?: string
+          image_url?: string | null
+          intervention_retest_id?: string | null
+          node_name?: string | null
+          rank_tier?: string | null
+          share_token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_artifacts_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_artifacts_intervention_retest_id_fkey"
+            columns: ["intervention_retest_id"]
+            isOneToOne: true
+            referencedRelation: "intervention_retests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_artifacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_duels: {
         Row: {
           challenger_hidden_at: string | null
@@ -3137,7 +3398,36 @@ export type Database = {
           subject?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [        ]
+      }
+      subject_demand_snapshot: {
+        Row: {
+          computed_at: string
+          skill_node_id: string
+          students_weak_count: number
+          subject: string
+        }
+        Insert: {
+          computed_at?: string
+          skill_node_id: string
+          students_weak_count?: number
+          subject: string
+        }
+        Update: {
+          computed_at?: string
+          skill_node_id?: string
+          students_weak_count?: number
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_demand_snapshot_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_status_mismatches: {
         Row: {
@@ -3633,6 +3923,9 @@ export type Database = {
           timezone: string
           updated_at: string
           user_id: string
+          vfa_streak_days: number
+          vfa_streak_last_date: string | null
+          vfa_streak_longest: number
         }
         Insert: {
           avatar_url?: string | null
@@ -3654,6 +3947,9 @@ export type Database = {
           timezone?: string
           updated_at?: string
           user_id: string
+          vfa_streak_days?: number
+          vfa_streak_last_date?: string | null
+          vfa_streak_longest?: number
         }
         Update: {
           avatar_url?: string | null
@@ -3675,6 +3971,9 @@ export type Database = {
           timezone?: string
           updated_at?: string
           user_id?: string
+          vfa_streak_days?: number
+          vfa_streak_last_date?: string | null
+          vfa_streak_longest?: number
         }
         Relationships: [
           {
@@ -3950,28 +4249,73 @@ export type Database = {
           },
         ]
       }
+      verified_first_grading_keys: {
+        Row: {
+          graded_at: string
+          item_id: string
+          part_key: string
+          user_id: string
+        }
+        Insert: {
+          graded_at?: string
+          item_id: string
+          part_key?: string
+          user_id: string
+        }
+        Update: {
+          graded_at?: string
+          item_id?: string
+          part_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verified_first_grading_keys_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "item_bank"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verified_first_grading_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       verified_first_attempts: {
         Row: {
+          accuracy_pct: number
           attempted_at: string | null
+          attempt_format: string
           id: string
           is_correct: boolean
           item_id: string
+          part_key: string | null
           skill_node_id: string
           user_id: string
         }
         Insert: {
+          accuracy_pct?: number
           attempted_at?: string | null
+          attempt_format?: string
           id?: string
           is_correct: boolean
           item_id: string
+          part_key?: string | null
           skill_node_id: string
           user_id: string
         }
         Update: {
+          accuracy_pct?: number
           attempted_at?: string | null
+          attempt_format?: string
           id?: string
           is_correct?: boolean
           item_id?: string
+          part_key?: string | null
           skill_node_id?: string
           user_id?: string
         }
@@ -4284,6 +4628,21 @@ export type Database = {
         }
         Returns: string
       }
+      get_share_artifact_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          after_value: number
+          artifact_type: string
+          before_value: number
+          created_at: string
+          guide_name: string
+          id: string
+          image_url: string
+          node_name: string
+          rank_card_username: string
+          share_token: string
+        }[]
+      }
       get_guide_breakthroughs: {
         Args: { p_guide_id: string; p_limit?: number }
         Returns: {
@@ -4354,6 +4713,7 @@ export type Database = {
       sync_all_guide_ranks: { Args: never; Returns: undefined }
       sync_guide_impact_percentile_snapshot: { Args: never; Returns: number }
       sync_guide_impact_scores: { Args: never; Returns: undefined }
+      sync_subject_demand_snapshot: { Args: never; Returns: number }
       sync_node_percentile_snapshot: { Args: never; Returns: number }
       sync_peer_comparison_snapshots: { Args: never; Returns: Json }
       utc_week_monday: { Args: { p_ts?: string }; Returns: string }

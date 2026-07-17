@@ -41,17 +41,14 @@ export function estimateNodesNeededForPercentileTarget(
 }
 
 export function buildPercentileGapNextActionLabel(nodesNeeded: number): string {
-  if (nodesNeeded <= 0) {
-    return "On pace · verify next node";
-  }
+  if (nodesNeeded <= 0) return "Verify next node";
   const noun = nodesNeeded === 1 ? "node" : "nodes";
-  return `Need ${nodesNeeded} more verified ${noun} above 70%`;
+  return `Need ${nodesNeeded} more verified ${noun} above 70 percent`;
 }
 
-export function buildExamUrgentNextAction(nodeName: string, daysLeft: number): VerdictNextAction {
-  const dayLabel = daysLeft === 1 ? "1 day" : `${daysLeft} days`;
+export function buildExamUrgentNextAction(nodeName: string, _daysLeft: number): VerdictNextAction {
   return {
-    label: `Exam in ${dayLabel}: verify ${nodeName} first`,
+    label: `Verify ${nodeName}`,
     href: practiceNodeHref(nodeName),
   };
 }
@@ -82,12 +79,11 @@ export function applyGoalToVerdict(
       ctx.verifiedNodesAbove70,
       ctx.totalSubjectNodes,
     );
-    const gapLabel = buildPercentileGapNextActionLabel(nodesNeeded);
     const impact = ctx.highestImpactNode;
     return {
       ...verdict,
       nextAction: {
-        label: gapLabel,
+        label: buildPercentileGapNextActionLabel(nodesNeeded),
         href: impact?.nodeName
           ? practiceNodeHref(impact.nodeName)
           : verdict.nextAction.href,
@@ -101,7 +97,7 @@ export function applyGoalToVerdict(
       return {
         ...verdict,
         nextAction: {
-          label: `Keep climbing: verify ${impact.nodeName} next`,
+          label: `Verify ${impact.nodeName}`,
           href: practiceNodeHref(impact.nodeName),
         },
       };

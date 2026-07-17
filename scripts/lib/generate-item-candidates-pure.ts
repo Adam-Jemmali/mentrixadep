@@ -18,26 +18,39 @@ export type NodeCoverage = {
   approved: number;
   pending: number;
   has_step_sequence: boolean;
+  free_response_count: number;
 };
 
 export type NodeGenerationPlan = {
   node: SkillNodeRow;
   questions_to_generate: number;
   include_step_sequence: boolean;
+  include_free_response: boolean;
 };
 
 export function getNodeCoverage(
   nodeId: string,
-  items: Array<{ skill_node_id: string; status: string; step_sequence: unknown | null }>,
+  items: Array<{
+    skill_node_id: string;
+    status: string;
+    step_sequence: unknown | null;
+    item_format?: string | null;
+  }>,
 ): NodeCoverage {
   let approved = 0;
   let pending = 0;
   let has_step_sequence = false;
+  let free_response_count = 0;
 
   for (const item of items) {
     if (item.skill_node_id !== nodeId) continue;
     if (item.step_sequence !== null && item.step_sequence !== undefined) {
       has_step_sequence = true;
+    }
+    if (item.item_format === "free_response" || item.item_format === "multi_part") {
+      if (item.status === "approved" || item.status === "pending_review") {
+        free_response_count += 1;
+      }
     }
     if (item.status === "approved") {
       approved += 1;
@@ -46,7 +59,7 @@ export function getNodeCoverage(
     }
   }
 
-  return { approved, pending, has_step_sequence };
+  return { approved, pending, has_step_sequence, free_response_count };
 }
 
 export function countQuestionsToGenerate(coverage: NodeCoverage): number {
@@ -65,6 +78,10 @@ export function planNodeGeneration(
     node,
     questions_to_generate,
     include_step_sequence: !coverage.has_step_sequence,
+    // Prefer guest step-trace MCQ when only one slot remains.
+    include_free_response:
+      coverage.free_response_count === 0 &&
+      (questions_to_generate >= 2 || coverage.has_step_sequence),
   };
 }
 

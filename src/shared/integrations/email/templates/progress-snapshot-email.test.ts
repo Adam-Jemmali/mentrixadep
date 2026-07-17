@@ -43,6 +43,45 @@ describe("progressSnapshotEmailBody", () => {
     expect(html).toContain("Supporting detail");
   });
 
+  it("renders truth report before supporting metrics", () => {
+    const html = progressSnapshotEmailBody({
+      snapshot: baseSnapshot,
+      truthReport: {
+        moved: "Your accuracy on Chain Rule moved from 41 to 78 percent this week.",
+        cause: "This followed a session with Jordan.",
+        stuck: "No persistent blocks this week.",
+        nextAction: "Verify Limits",
+      },
+    });
+    const movedIdx = html.indexOf("Your accuracy on Chain Rule");
+    const detailIdx = html.indexOf("Supporting detail");
+    expect(movedIdx).toBeGreaterThan(-1);
+    expect(detailIdx).toBeGreaterThan(movedIdx);
+    expect(html).toContain("This followed a session with Jordan.");
+    expect(html).toContain("No persistent blocks this week.");
+    expect(html).toContain("Verify Limits");
+    expect(html).toContain("72% (+5% vs last week)");
+  });
+
+  it("prefers truth report over weeklyVerdict opener", () => {
+    const html = progressSnapshotEmailBody({
+      snapshot: baseSnapshot,
+      truthReport: {
+        moved: "Your accuracy held steady.",
+        cause: "Consistent practice drove this.",
+        stuck: "No persistent blocks this week.",
+        nextAction: "Run a verified pack",
+      },
+      weeklyVerdict: {
+        changed: "You verified 2 new skills this week.",
+        reason: "Both were first answers above 70%.",
+        nextAction: { label: "Keep your streak", href: "/student/quest" },
+      },
+    });
+    expect(html).toContain("Your accuracy held steady.");
+    expect(html).not.toContain("You verified 2 new skills this week.");
+  });
+
   it("renders verdict block when weeklyVerdict is provided", () => {
     const html = progressSnapshotEmailBody({
       snapshot: baseSnapshot,

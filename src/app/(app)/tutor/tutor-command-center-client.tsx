@@ -39,6 +39,7 @@ import { GuideStickyNote } from "@/features/tutor/ui/guide-sticky-note";
 import { GUIDE_SECTION_STICKY_VARIANT, landingStickyVariantForIndex } from "@/features/tutor/guide-sticky-variants";
 import { guideApCalcVerified } from "@/features/tutor/guide-ap-calc-pure";
 import { GUIDE_HOME } from "@/features/tutor/guide-home-copy-pure";
+import { VerdictPanel } from "@/features/guidance/verdict-panel";
 
 const TutorImpactTrendChart = dynamic(
   () => import("./tutor-impact-trend-chart").then((m) => m.TutorImpactTrendChart),
@@ -71,6 +72,7 @@ export function TutorCommandCenterClient({
 }) {
 
   const [addOpen, setAddOpen] = useState(false);
+  const [availabilityCourse, setAvailabilityCourse] = useState<string | null>(null);
   const [requestsOpen, setRequestsOpen] = useState(false);
   const [earningsOpen, setEarningsOpen] = useState(false);
   const [slotsCreatedNotice, setSlotsCreatedNotice] = useState(false);
@@ -170,13 +172,26 @@ export function TutorCommandCenterClient({
 
       <GuideAddAvailabilityDialog
         open={addOpen}
-        onOpenChange={setAddOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) setAvailabilityCourse(null);
+        }}
         apCalcVerified={apCalcVerified}
         defaultTimezone={data.tutorTimezone}
         sessionDefaultDurationMinutes={data.sessionDefaultDurationMinutes}
+        defaultCourse={availabilityCourse}
         onSlotsCreated={() => {
           setAddOpen(false);
+          setAvailabilityCourse(null);
           setSlotsCreatedNotice(true);
+        }}
+      />
+
+      <GuideDemandSignalCard
+        signals={data.demandSignals}
+        onOpenAvailability={(subject) => {
+          setAvailabilityCourse(subject);
+          setAddOpen(true);
         }}
       />
 
@@ -247,12 +262,22 @@ export function TutorCommandCenterClient({
         </div>
       )}
 
-      <GuideDemandSignalCard
-        signals={data.demandSignals}
-        onOpenAvailability={() => setAddOpen(true)}
-      />
-
       <GuideWeeklyImpactPanel nodes={data.weeklyNodeImpacts} />
+
+      <section className="mb-8">
+        <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.impact}>
+          <h2 className={`mb-3 text-sm font-bold ${mentrixStudent.textOnLight}`}>
+            {GUIDE_HOME.impactScoreTitle}
+          </h2>
+          {data.impactVerdict ? (
+            <VerdictPanel verdict={data.impactVerdict} tone="light" />
+          ) : (
+            <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>
+              Impact Score updates after verified first-attempt movement on nodes you teach.
+            </p>
+          )}
+        </GuideStickyNote>
+      </section>
 
       {data.upcomingSessions.length > 0 ? (
         <PreSessionContextSection

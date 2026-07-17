@@ -1,5 +1,6 @@
 import { subjectsLooselyMatch } from "@/features/pre-session-brief/context-pure";
 import { utcStartOfWeekMonday } from "@/features/tutor/tutor-internal";
+import { formatSubjectDemandRowLine } from "@/features/demand-signal/subject-demand-snapshot-pure";
 
 export type SkillNodeWeeklyDemandRow = {
   skillNodeId: string;
@@ -23,7 +24,7 @@ export function formatUtcWeekStartMonday(d: Date): string {
 }
 
 export function formatDemandRowLine(nodeName: string, weakStudentCount: number): string {
-  return `${nodeName} is weak for ${weakStudentCount} student${weakStudentCount === 1 ? "" : "s"} this week`;
+  return formatSubjectDemandRowLine(nodeName, weakStudentCount);
 }
 
 export function courseHasOpenAvailability(
@@ -67,18 +68,18 @@ export function buildGuideDemandSignals(params: {
 
 export function buildDemandSignalVerdict(signals: GuideDemandSignal[]): string {
   if (signals.length === 0) {
-    return "No demand signal yet.";
+    return "No weak nodes.";
   }
-  return `${signals[0]!.nodeName} needs you most this week.`;
+  return `${signals[0]!.nodeName} needs you most.`;
 }
 
 export function buildDemandSignalNextAction(signals: GuideDemandSignal[]): string {
   if (signals.length === 0) {
-    return "Verify AP CALCULUS AB proficiency first.";
+    return "Verify Calculus AB first.";
   }
   const needsSlot = signals.find((signal) => !signal.hasOpenAvailability);
   if (needsSlot) {
-    return `Open ${needsSlot.subject} slot.`;
+    return `Open ${needsSlot.subject} slots.`;
   }
-  return "Slots cover this week's demand.";
+  return "Slots cover demand.";
 }

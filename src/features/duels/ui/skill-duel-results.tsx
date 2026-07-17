@@ -20,9 +20,13 @@ type QuestionPublic = {
   prompt: string;
   choices: string[];
   type?: "mcq" | "tf" | "flashcard";
+  skillNodeId?: string;
 };
 
-type FullQuestion = QuestionPublic & { correctIndex: number };
+type FullQuestion = QuestionPublic & {
+  correctIndex: number;
+  skillNodeId?: string;
+};
 
 type Props = {
   divisionKey: string;
@@ -163,18 +167,23 @@ export function SkillDuelResults({
       total,
       youWon,
       tie,
-      rounds: rounds.map((round) => ({
-        nodeName: stripGuestTryPromptDecorators(round.question.prompt).slice(0, 80),
-        correctIndex: round.correctIndex ?? -1,
-        myAnswer: round.myPick ?? -1,
-      })),
+      rounds: rounds.map((round, index) => {
+        const full = fullQuestions?.[index];
+        const skillNodeId = full?.skillNodeId ?? round.question.skillNodeId;
+        return {
+          skillNodeId,
+          nodeName: stripGuestTryPromptDecorators(round.question.prompt).slice(0, 80),
+          correctIndex: round.correctIndex ?? -1,
+          myAnswer: round.myPick ?? -1,
+        };
+      }),
     }).then((next) => {
       if (!cancelled) setVerdict(next);
     });
     return () => {
       cancelled = true;
     };
-  }, [rounds, theirScore, tie, total, youWon, yourScore]);
+  }, [fullQuestions, rounds, theirScore, tie, total, youWon, yourScore]);
 
   const filteredRounds = useMemo(() => {
     if (filter === "all") return rounds;

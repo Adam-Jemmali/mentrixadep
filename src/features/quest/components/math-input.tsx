@@ -160,10 +160,10 @@ export function MathInput({
 
     if (!result.equivalent) {
       setRetryNote(result.verdict);
-      return;
+    } else {
+      setRetryNote(null);
     }
 
-    setRetryNote(null);
     onGraded?.(result);
   };
 

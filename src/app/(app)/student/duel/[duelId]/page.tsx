@@ -3,6 +3,8 @@ import { requireRole } from "@/shared/core/auth";
 import { getDuelForUser } from "@/features/duels/duel-reads";
 import { DuelPlayClient } from "./duel-play-client";
 import { DuelInviteeActions } from "./duel-invitee-actions";
+import { DuelWagerProposeCard } from "@/features/duels/ui/duel-wager-propose-card";
+import { loadDuelXpWager } from "@/features/duels/duel-wager";
 import { BackButton } from "@/shared/ui/back-button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
@@ -27,6 +29,8 @@ export default async function DuelDetailPage({ params }: Props) {
   const duel = await getDuelForUser(duelId);
   if ("error" in duel) notFound();
 
+  const wager = await loadDuelXpWager(duel.id).catch(() => null);
+
   const side =
     user.id === duel.student_id
       ? "challenger"
@@ -38,6 +42,17 @@ export default async function DuelDetailPage({ params }: Props) {
     duel.status === "pending" &&
     duel.opponent_student_id != null &&
     user.id === duel.opponent_student_id;
+
+  const showWagerPropose =
+    duel.status === "pending" &&
+    user.id === duel.student_id &&
+    !duel.is_ai_opponent &&
+    wager == null;
+
+  const showWagerPendingNote =
+    duel.status === "pending" &&
+    user.id === duel.student_id &&
+    wager?.status === "pending";
 
   return (
     <div className={cn(mentrixStudent.pageBgArena, "min-h-[calc(100dvh-4.75rem)]")}>
@@ -67,7 +82,18 @@ export default async function DuelDetailPage({ params }: Props) {
         </header>
 
         <div className="space-y-6">
-          {showInviteeActions && <DuelInviteeActions duelId={duel.id} />}
+          {showWagerPropose ? <DuelWagerProposeCard duelId={duel.id} /> : null}
+          {showWagerPendingNote ? (
+            <section className={cn(mentrixStudent.hubNotebook, "space-y-1 px-5 py-4")}>
+              <p className="mx-hub-ink-title text-sm">
+                Stake set: {wager.challengerWager} XP
+              </p>
+              <p className="mx-hub-ink-muted text-sm leading-relaxed">
+                Waiting on opponent.
+              </p>
+            </section>
+          ) : null}
+          {showInviteeActions ? <DuelInviteeActions duelId={duel.id} wager={wager} /> : null}
           <DuelPlayClient duel={duel} side={side} viewerUserId={user.id} />
         </div>
       </main>

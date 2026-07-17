@@ -25,6 +25,7 @@ import { selectItemBankQuestions, computePracticePackQuestionCount } from "@/fea
 import {
   hasStepFeedbackTrace,
   matchPartialCredit,
+  normalizeExpressionText,
   resolveCorrectAnswerExpression,
   type StepFeedbackPartial,
   type SolutionStep,
@@ -45,6 +46,7 @@ import {
 import {
   ensureVerifiedFirstAttemptsFromSession,
   recordVerifiedFirstAttemptForNode,
+  recordVerifiedFirstAttemptFromGrading,
 } from "@/features/quest/record-verified-first-attempts";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { getVerdict } from "@/features/guidance/verdict-engine";
@@ -63,9 +65,19 @@ import type {
   PracticePackType,
   PracticeQuestion,
   PracticeQuestionMcq,
+  PracticeQuestionMultiPart,
   PracticeSessionAnswer,
   PracticeSessionState,
 } from "@/features/quest/practice-quest-types";
+import {
+  applyMultiPartAttempt,
+  computeMultiPartXp,
+  countMultiPartCorrect,
+  multiPartCarryForwardLabel,
+  multiPartUiState,
+} from "@/features/quest/multi-part-pure";
+import { gradeStudentExpression } from "@/features/free-response/grade-student-expression";
+import { studentNotationToGradingExpression } from "@/features/quest/components/math-input-pure";
 
 const PRACTICE_PACKS_DAILY = 10;
 const DEFAULT_TIME_SEC = 15 * 60;
@@ -268,6 +280,8 @@ export async function createPracticeQuest(
   }
 }
 
+import { enrichQuestStimulus, type QuestStimulus } from "@/features/quest/quest-stimulus-pure";
+
 /** Safe payload for one question (no answers). */
 export type PracticeQuestionPublic =
   | {
@@ -279,6 +293,7 @@ export type PracticeQuestionPublic =
       options: string[];
       subtopicTag?: string;
       examStakes?: string;
+      stimulus?: QuestStimulus[];
     }
   | {
       index: number;
@@ -288,6 +303,34 @@ export type PracticeQuestionPublic =
       prompt: string;
       subtopicTag?: string;
       examStakes?: string;
+      stimulus?: QuestStimulus[];
+    }
+  | {
+      index: number;
+      total: number;
+      kind: "multi_part";
+      id: string;
+      prompt: string;
+      subtopicTag?: string;
+      examStakes?: string;
+      stimulus?: QuestStimulus[];
+      activePartIndex: number;
+      finished: boolean;
+      partsCorrect: number;
+      partsTotal: number;
+      xpEarned: number;
+      parts: Array<{
+        partKey: string;
+        prompt: string;
+        itemFormat: "mcq" | "free_response";
+        options?: string[];
+        state: "locked" | "active" | "done";
+        correct?: boolean;
+        carriedForward?: boolean;
+        studentAnswer?: string;
+        revealedAnswer?: string;
+        carryForwardNote?: string;
+      }>;
     };
 
 async function loadPackForUser(
@@ -325,16 +368,69 @@ export async function getPracticeQuestionPublic(
   if (!q) return { error: "Question not found." };
 
   const total = qs.length;
+  const enriched = enrichQuestStimulus({
+    prompt: q.prompt,
+    stimulus: "stimulus" in q ? q.stimulus : undefined,
+  });
+  const prompt = enriched.prompt;
+  const stimulus = enriched.stimulus.length > 0 ? enriched.stimulus : undefined;
+
   if (q.kind === "mcq") {
     return {
       index,
       total,
       kind: "mcq",
       id: q.id,
-      prompt: q.prompt,
+      prompt,
       options: q.options,
       subtopicTag: q.subtopicTag,
       examStakes: q.examStakes,
+      stimulus,
+    };
+  }
+  if (q.kind === "multi_part") {
+    const prior = meta.session?.answers.find((a) => a.index === index);
+    const progress = prior?.multiPart;
+    const activePartIndex = progress?.finished
+      ? q.parts.length
+      : (progress?.activePartIndex ?? 0);
+    const finishedParts = progress?.parts.length ?? 0;
+    const partsCorrect = countMultiPartCorrect(progress?.parts ?? []);
+    const xpEarned = computeMultiPartXp(partsCorrect, q.parts.length, XP.QUEST_COMPLETE);
+    return {
+      index,
+      total,
+      kind: "multi_part",
+      id: q.id,
+      prompt,
+      subtopicTag: q.subtopicTag,
+      examStakes: q.examStakes,
+      stimulus,
+      activePartIndex: Math.min(activePartIndex, q.parts.length - 1),
+      finished: Boolean(progress?.finished),
+      partsCorrect,
+      partsTotal: q.parts.length,
+      xpEarned,
+      parts: q.parts.map((part, partIndex) => {
+        const result = progress?.parts[partIndex];
+        const state = progress?.finished
+          ? "done"
+          : multiPartUiState(partIndex, activePartIndex, finishedParts);
+        return {
+          partKey: part.partKey,
+          prompt: part.prompt,
+          itemFormat: part.itemFormat,
+          options: part.itemFormat === "mcq" ? part.options : undefined,
+          state,
+          correct: result?.correct,
+          carriedForward: result?.carriedForward,
+          studentAnswer: result?.studentAnswer,
+          revealedAnswer: result?.revealedAnswer,
+          carryForwardNote: result?.carriedForward
+            ? multiPartCarryForwardLabel(part.partKey)
+            : undefined,
+        };
+      }),
     };
   }
   return {
@@ -342,9 +438,10 @@ export async function getPracticeQuestionPublic(
     total,
     kind: q.kind,
     id: q.id,
-    prompt: q.prompt,
+    prompt,
     subtopicTag: "subtopicTag" in q && typeof q.subtopicTag === "string" ? q.subtopicTag : undefined,
     examStakes: "examStakes" in q && typeof q.examStakes === "string" ? q.examStakes : undefined,
+    stimulus,
   };
 }
 
@@ -562,6 +659,200 @@ export async function submitPracticeWritten(
   };
 }
 
+const submitMultiPartSchema = z.object({
+  questId: z.string().uuid(),
+  questionIndex: z.number().int().min(0).max(20),
+  partIndex: z.number().int().min(0).max(20),
+  selectedIndex: z.number().int().min(0).max(3).optional(),
+  freeResponse: z.string().trim().min(1).max(4000).optional(),
+});
+
+async function gradeMultiPartFreeResponsePart(input: {
+  userId: string;
+  itemId: string;
+  studentAnswer: string;
+  correctExpression: string;
+}): Promise<boolean> {
+  try {
+    const result = await gradeStudentExpression({
+      userId: input.userId,
+      itemId: input.itemId,
+      studentExpression: studentNotationToGradingExpression(input.studentAnswer),
+      correctExpression: studentNotationToGradingExpression(input.correctExpression),
+    });
+    return result.equivalent;
+  } catch {
+    return (
+      normalizeExpressionText(input.studentAnswer) ===
+      normalizeExpressionText(input.correctExpression)
+    );
+  }
+}
+
+export async function submitPracticeMultiPart(
+  questId: string,
+  questionIndex: number,
+  partIndex: number,
+  payload: { selectedIndex?: number; freeResponse?: string },
+): Promise<
+  | {
+      finishedQuestion: boolean;
+      finishedPack: boolean;
+      partsCorrect: number;
+      partsTotal: number;
+      xpEarned: number;
+      xpLine: string;
+      part: {
+        partKey: string;
+        correct: boolean;
+        carriedForward: boolean;
+        retriesLeft: number;
+        studentAnswer?: string;
+        revealedAnswer?: string;
+        carryForwardNote?: string;
+      };
+      nextPartIndex: number | null;
+    }
+  | { error: string }
+> {
+  const user = await requireRole(["student", "admin"]);
+  const parsed = submitMultiPartSchema.safeParse({
+    questId,
+    questionIndex,
+    partIndex,
+    selectedIndex: payload.selectedIndex,
+    freeResponse: payload.freeResponse,
+  });
+  if (!parsed.success) return { error: "Invalid multi-part submission." };
+
+  const loaded = await loadPackForUser(questId, user.id);
+  if (!loaded.ok) return { error: loaded.error };
+  const { meta } = loaded;
+  const q = meta.questions[questionIndex];
+  if (!q || q.kind !== "multi_part") return { error: "Invalid question." };
+  const multi = q as PracticeQuestionMultiPart;
+  const part = multi.parts[partIndex];
+  if (!part) return { error: "Invalid part." };
+
+  const prior = meta.session?.answers.find((a) => a.index === questionIndex);
+  if (prior?.multiPart?.finished) {
+    return { error: "This answer is locked. First answers only." };
+  }
+
+  const activePartIndex = prior?.multiPart?.activePartIndex ?? 0;
+  if (partIndex !== activePartIndex) {
+    return { error: "Complete the active part first." };
+  }
+
+  const priorPart = prior?.multiPart?.parts[partIndex] ?? null;
+  if (priorPart && (priorPart.correct || priorPart.carriedForward)) {
+    return { error: "This part is already complete." };
+  }
+
+  let correct = false;
+  let studentAnswer = "";
+
+  if (part.itemFormat === "mcq") {
+    if (payload.selectedIndex == null) return { error: "Pick an option." };
+    studentAnswer = part.options?.[payload.selectedIndex] ?? "";
+    correct = payload.selectedIndex === part.correctIndex;
+  } else {
+    const freeResponse = payload.freeResponse?.trim() ?? "";
+    if (!freeResponse) return { error: "Enter an answer." };
+    studentAnswer = freeResponse;
+    const correctExpression = part.answerExpression || part.correctAnswer || "";
+    correct = await gradeMultiPartFreeResponsePart({
+      userId: user.id,
+      itemId: multi.id,
+      studentAnswer: freeResponse,
+      correctExpression,
+    });
+  }
+
+  const applied = applyMultiPartAttempt({
+    part,
+    prior: priorPart,
+    correct,
+    studentAnswer,
+  });
+
+  const partSkillNodeId = part.skillNodeId ?? multi.skillNodeId;
+  if (isApCalculusAbSubject(meta.subject || meta.course) && partSkillNodeId) {
+    await recordVerifiedFirstAttemptFromGrading({
+      userId: user.id,
+      itemId: multi.id,
+      skillNodeId: partSkillNodeId,
+      partKey: part.partKey,
+      attemptFormat: part.itemFormat === "free_response" ? "multi_part_part" : "mcq",
+      isCorrect: correct,
+    });
+  }
+
+  const nextParts = [...(prior?.multiPart?.parts ?? [])];
+  nextParts[partIndex] = applied.result;
+  const finishedQuestion =
+    applied.unlockNext && partIndex + 1 >= multi.parts.length;
+  const nextActive = applied.unlockNext
+    ? Math.min(partIndex + 1, multi.parts.length)
+    : partIndex;
+  const partsCorrect = countMultiPartCorrect(nextParts.filter(Boolean));
+  const partsTotal = multi.parts.length;
+  const xpEarned = computeMultiPartXp(partsCorrect, partsTotal, XP.QUEST_COMPLETE);
+  const questionCorrect = finishedQuestion && partsCorrect === partsTotal;
+
+  const ans: PracticeSessionAnswer = {
+    questionId: multi.id,
+    index: questionIndex,
+    correct: questionCorrect,
+    partsCorrect,
+    partsTotal,
+    multiPart: {
+      finished: finishedQuestion,
+      activePartIndex: finishedQuestion ? multi.parts.length : nextActive,
+      parts: nextParts,
+    },
+  };
+
+  await patchPackMetadata(questId, (m) => {
+    const session = m.session ?? {
+      startedAt: new Date().toISOString(),
+      currentIndex: 0,
+      answers: [],
+    };
+    const answers = [...session.answers.filter((a) => a.index !== questionIndex), ans];
+    const nextIndex = finishedQuestion ? questionIndex + 1 : questionIndex;
+    return {
+      ...m,
+      session: {
+        ...session,
+        answers,
+        currentIndex: Math.max(session.currentIndex, nextIndex),
+      },
+    };
+  });
+
+  return {
+    finishedQuestion,
+    finishedPack: finishedQuestion && questionIndex + 1 >= meta.questions.length,
+    partsCorrect,
+    partsTotal,
+    xpEarned,
+    xpLine: `+${xpEarned} XP · ${partsCorrect}/${partsTotal} parts`,
+    part: {
+      partKey: applied.result.partKey,
+      correct: applied.result.correct,
+      carriedForward: applied.result.carriedForward,
+      retriesLeft: applied.retriesLeft,
+      studentAnswer: applied.result.studentAnswer,
+      revealedAnswer: applied.result.revealedAnswer,
+      carryForwardNote: applied.result.carriedForward
+        ? multiPartCarryForwardLabel(applied.result.partKey)
+        : undefined,
+    },
+    nextPartIndex: finishedQuestion ? null : applied.unlockNext ? partIndex + 1 : partIndex,
+  };
+}
+
 export async function finalizePracticeQuest(
   questId: string,
   options?: { timedOut?: boolean },
@@ -639,12 +930,23 @@ export async function finalizePracticeQuest(
     const answers = meta.session?.answers ?? [];
     const byIndex = new Map(answers.map((a) => [a.index, a]));
     let correct = 0;
+    let creditSum = 0;
     for (let i = 0; i < qs.length; i++) {
-      if (byIndex.get(i)?.correct) correct += 1;
+      const answer = byIndex.get(i);
+      const q = qs[i]!;
+      if (!answer) continue;
+      if (q.kind === "multi_part" && answer.partsTotal && answer.partsTotal > 0) {
+        const fraction = (answer.partsCorrect ?? 0) / answer.partsTotal;
+        creditSum += fraction;
+        if (fraction >= 1) correct += 1;
+      } else if (answer.correct) {
+        creditSum += 1;
+        correct += 1;
+      }
     }
 
     const total = qs.length;
-    const perfect = correct === total;
+    const perfect = creditSum >= total && total > 0;
     const divisionKey =
       (await getDivisionKeyForCourse(meta.course)) ?? AP_CALC_AB_DIVISION_KEY;
 
@@ -674,15 +976,18 @@ export async function finalizePracticeQuest(
 
     let xpAwarded = 0;
     let perfectBonus = 0;
+    const scaledQuestXp = Math.round(
+      XP.QUEST_COMPLETE * (total > 0 ? creditSum / total : 0),
+    );
 
     const xp1 = await applyXpAward(
       user.id,
-      XP.QUEST_COMPLETE,
+      scaledQuestXp,
       `quest_complete:${questId}`,
       divisionKey,
     );
     if (xp1.awarded) {
-      xpAwarded = XP.QUEST_COMPLETE;
+      xpAwarded = scaledQuestXp;
       void recordDivisionWarQuestContribution({
         studentId: user.id,
         divisionKey,
