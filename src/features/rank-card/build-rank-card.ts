@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Rank card subject assembly — internal server-only.
+ * Not a server action module; import from trusted server code only.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getAccountLevelFromTotalXp } from "@/features/xp/levels";

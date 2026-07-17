@@ -7,6 +7,7 @@ import {
   ARENA_PAGE_COPY,
   formatLiveBoardEventDescription,
   formatLiveBoardTimeAgo,
+  isDivisionWarLiveBoardEvent,
 } from "@/features/live-board/live-board-messages-pure";
 import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader-profile";
 import type { LiveBoardEventRow } from "@/features/live-board/types";
@@ -18,21 +19,33 @@ import { easeOutExpo } from "@/features/marketing/landing/v2/motion/landing-moti
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { cn } from "@/shared/core/utils";
 
+const VERIFIED_GOLD = "#D4A017";
 const FEED_LIMIT = 50;
 const ROW_ENTER_MS = 0.2;
+
+type FeedRowMotion = {
+  layout?: boolean;
+  initial: { opacity: number; y: number };
+  animate: { opacity: number; y: number };
+  exit: { opacity: number; y: number };
+  transition: { duration: number; ease?: typeof easeOutExpo };
+};
 
 type Props = {
   initialEvents: LiveBoardEventRow[];
   leaders: ArenaLeaderProfile[];
 };
 
+const LIVE_BOARD_EVENT_TYPES = new Set<LiveBoardEventRow["event_type"]>([
+  "verified_attempt",
+  "rank_advance",
+  "breakthrough",
+  "division_war_result",
+]);
+
 function parseRealtimeRow(record: Record<string, unknown>): LiveBoardEventRow | null {
   const eventType = String(record.event_type ?? "");
-  if (
-    eventType !== "verified_attempt" &&
-    eventType !== "rank_advance" &&
-    eventType !== "breakthrough"
-  ) {
+  if (!LIVE_BOARD_EVENT_TYPES.has(eventType as LiveBoardEventRow["event_type"])) {
     return null;
   }
 
@@ -59,6 +72,59 @@ function parseRealtimeRow(record: Record<string, unknown>): LiveBoardEventRow | 
     is_first_attempt: Boolean(record.is_first_attempt),
     occurred_at: String(record.occurred_at ?? new Date().toISOString()),
   };
+}
+
+function DivisionWarFeedCard({
+  event,
+  nowMs,
+  motionProps,
+}: {
+  event: LiveBoardEventRow;
+  nowMs: number;
+  motionProps: FeedRowMotion;
+}) {
+  return (
+    <motion.li
+      layout={motionProps.layout}
+      initial={motionProps.initial}
+      animate={motionProps.animate}
+      exit={motionProps.exit}
+      transition={motionProps.transition}
+      className="px-4 py-4"
+    >
+      <div
+        className="rounded-xl border px-4 py-4 text-center shadow-sm"
+        style={{
+          borderColor: `${VERIFIED_GOLD}99`,
+          background: "linear-gradient(90deg, #FFFBEB 0%, #F5F3FF 100%)",
+        }}
+      >
+        <p
+          className="text-[10px] font-bold uppercase tracking-[0.2em]"
+          style={{ color: VERIFIED_GOLD }}
+        >
+          {ARENA_PAGE_COPY.divisionWarEyebrow}
+        </p>
+        <p className="mt-2 text-base font-bold text-[#0B1220] sm:text-lg">
+          {event.display_name}
+        </p>
+        {event.unit_name ? (
+          <p
+            className="mt-1 text-sm font-semibold tabular-nums"
+            style={{ color: VERIFIED_GOLD }}
+          >
+            {event.unit_name}
+          </p>
+        ) : null}
+        <time
+          className="mt-2 block text-xs text-[#64748B]"
+          dateTime={event.occurred_at}
+        >
+          {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}
+        </time>
+      </div>
+    </motion.li>
+  );
 }
 
 export function LiveBoardFeed({ initialEvents, leaders }: Props) {
@@ -119,7 +185,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
   }, [avatarByUserId]);
 
   const rowMotion = useMemo(
-    () =>
+    (): Omit<FeedRowMotion, "layout"> =>
       reducedMotion
         ? {
             initial: { opacity: 1, y: 0 },
@@ -151,6 +217,17 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           <ul className="divide-y divide-[#E0E7FF]">
             <AnimatePresence initial={false}>
               {events.map((event) => {
+                if (isDivisionWarLiveBoardEvent(event.event_type)) {
+                  return (
+                    <DivisionWarFeedCard
+                      key={event.id}
+                      event={event}
+                      nowMs={nowMs}
+                      motionProps={{ ...rowMotion, layout: !reducedMotion }}
+                    />
+                  );
+                }
+
                 const avatarUrl = event.avatar_url ?? avatarByUserId.get(event.user_id) ?? null;
 
                 return (
@@ -166,12 +243,11 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
                       size="sm"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-[#0B1220]">{event.display_name}</p>
-                      <p className={cn(mentrixHubSurfaces.inkBody, "mt-0.5 leading-relaxed")}>
+                      <p className={cn(mentrixHubSurfaces.inkBody, "text-sm leading-snug text-[#0B1220]")}>
                         {formatLiveBoardEventDescription(event)}
                       </p>
                       <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-xs")}>
-                        {event.unit_name} · {event.node_name}
+                        {event.unit_name}
                       </p>
                     </div>
                     <time

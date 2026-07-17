@@ -5,10 +5,15 @@ import {
 } from "@/features/jobs/claim";
 import { runJobHandler } from "@/features/jobs/handlers";
 import type { ProcessJobsResult } from "@/features/jobs/types";
+import { purgeStaleLiveBoardEvents } from "@/features/live-board/purge-stale-live-board-events";
 import * as Sentry from "@sentry/nextjs";
 
 export async function processBackgroundJobs(limit = 10): Promise<ProcessJobsResult> {
   const workerTag = `worker-${process.pid}-${Date.now()}`;
+
+  // Maintenance: 48h retention purge runs on the existing cron, no separate job.
+  await purgeStaleLiveBoardEvents();
+
   const jobs = await claimBackgroundJobs(limit, workerTag);
 
   let completed = 0;

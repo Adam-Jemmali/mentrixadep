@@ -1,16 +1,16 @@
 import type { LiveBoardEventRow } from "@/features/live-board/types";
 
 export const ARENA_PAGE_COPY = {
-  title: "AP Calculus AB — Live Rank Arena",
-  subtitle:
-    "Real faces. Real account ranks. Gold Top % is verified peer standing from first attempts only.",
+  title: "AP Calculus AB Live Rank Arena",
+  subtitle: "Every score here is a first attempt. No retries. Updated as it happens.",
   cta: "Take this test and see where you rank",
   ctaHref: "/try",
   feedEyebrow: "Live feed",
-  leadersTitle: "Who is ahead right now",
+  leadersTitle: "Top 10 by verified accuracy",
   leadersSubtitle:
-    "Same sticky-note cards as the student hub. Account rank from XP. Gold Top % is verified peer standing.",
+    "AP Calculus AB first-attempt standing from the rank cache. No live aggregation on this page.",
   emptyFeed: "No live events yet. Lock your first skill to appear here.",
+  divisionWarEyebrow: "Division War",
 } as const;
 
 export function liveBoardEventTypeLabel(
@@ -18,11 +18,13 @@ export function liveBoardEventTypeLabel(
 ): string {
   switch (eventType) {
     case "verified_attempt":
-      return "First try locked";
+      return "First try";
     case "rank_advance":
       return "Rank up";
     case "breakthrough":
       return "Breakthrough";
+    case "division_war_result":
+      return "Division War";
     default:
       return "Update";
   }
@@ -44,36 +46,53 @@ export function formatLiveBoardTimeAgo(
 
   const minutes = Math.floor(delta / MS_MINUTE);
   if (minutes < 60) {
-    return minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
+    return minutes === 1 ? "1m ago" : `${minutes}m ago`;
   }
 
   const hours = Math.floor(delta / MS_HOUR);
   if (hours < 24) {
-    return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+    return hours === 1 ? "1h ago" : `${hours}h ago`;
   }
 
   const days = Math.floor(delta / MS_DAY);
-  return days === 1 ? "1 day ago" : `${days} days ago`;
+  return days === 1 ? "1d ago" : `${days}d ago`;
 }
 
 function formatAccuracyPct(value: number | null): string {
   if (value == null || Number.isNaN(value)) return "0";
-  const rounded = Math.round(value);
-  return String(rounded);
+  return String(Math.round(value));
 }
 
 export function formatLiveBoardEventDescription(event: Pick<
   LiveBoardEventRow,
-  "event_type" | "node_name" | "accuracy_pct" | "new_rank_tier"
+  "event_type" | "node_name" | "accuracy_pct" | "new_rank_tier" | "display_name"
 >): string {
+  const name = event.display_name.trim() || "A Mentrixer";
   switch (event.event_type) {
     case "verified_attempt":
-      return `scored ${formatAccuracyPct(event.accuracy_pct)} percent on ${event.node_name} for the first time`;
+      return `${name} scored ${formatAccuracyPct(event.accuracy_pct)}% on ${event.node_name} · first try`;
     case "rank_advance":
-      return `advanced to ${event.new_rank_tier?.trim() || "a new rank"}`;
+      return `${name} advanced to ${event.new_rank_tier?.trim() || "a new rank"}`;
     case "breakthrough":
-      return `broke through ${event.node_name}`;
+      return `${name} broke through ${event.node_name}`;
+    case "division_war_result":
+      return event.display_name.trim();
     default:
       return event.node_name;
   }
+}
+
+export function formatDivisionWarScoreLine(
+  winnerName: string,
+  winnerPoints: number,
+  loserName: string,
+  loserPoints: number,
+): string {
+  return `${winnerName.trim()} ${winnerPoints} · ${loserName.trim()} ${loserPoints}`;
+}
+
+export function isDivisionWarLiveBoardEvent(
+  eventType: LiveBoardEventRow["event_type"],
+): boolean {
+  return eventType === "division_war_result";
 }

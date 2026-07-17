@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   applyQuestPostPackStepToVerdict,
+  buildQuestPostPackChoices,
   buildQuestPostPackStep,
+  parseQuestPromptParam,
   pickPostPackFocusNode,
   SOLID_PRACTICE_PERCENT,
 } from "@/features/quest/quest-post-step-pure";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
+import { defaultMasteryNodeStats } from "@/features/mastery-grid/mastery-grid-pure";
 
 function gridWith(
   nodes: Array<{
@@ -27,6 +30,7 @@ function gridWith(
           nodeName: node.nodeName,
           nodeSlug: node.nodeName.toLowerCase().replace(/\s+/g, "-"),
           displayOrder: node.displayOrder ?? index + 1,
+          ...defaultMasteryNodeStats(),
           state: node.state,
           accuracyPercent: node.accuracyPercent ?? null,
         })),
@@ -43,8 +47,11 @@ describe("quest-post-step-pure", () => {
       nodeName: "Chain Rule",
       nodeSlug: "chain-rule",
       displayOrder: 1,
+      ...defaultMasteryNodeStats(),
       state: "weak",
       accuracyPercent: 55,
+      practiceAttempts: 4,
+      practiceCorrect: 2,
     });
     expect(step.phase).toBe("practice_to_green");
     expect(step.nextAction.label).toContain("until green");
@@ -57,8 +64,11 @@ describe("quest-post-step-pure", () => {
       nodeName: "Limits",
       nodeSlug: "limits",
       displayOrder: 1,
+      ...defaultMasteryNodeStats(),
       state: "proficient",
       accuracyPercent: 78,
+      practiceAttempts: 6,
+      practiceCorrect: 5,
     });
     expect(step.phase).toBe("quest_to_verify");
     expect(step.nextAction.label).toContain("Quest Limits");
@@ -97,5 +107,22 @@ describe("quest-post-step-pure", () => {
       ["a"],
     );
     expect(enriched.nextAction.label).toContain("Retest");
+  });
+
+  it("parses quest prompt params into node names", () => {
+    expect(parseQuestPromptParam("Practice Chain Rule")).toBe("Chain Rule");
+    expect(parseQuestPromptParam("Quest Limits")).toBe("Limits");
+  });
+
+  it("offers same-topic and different-topic choices after a pack", () => {
+    const data = gridWith([
+      { id: "a", nodeName: "Chain Rule", state: "weak", accuracyPercent: 55, displayOrder: 1 },
+      { id: "b", nodeName: "Related Rates", state: "none", displayOrder: 2 },
+    ]);
+    const choices = buildQuestPostPackChoices(data, ["a"]);
+    expect(choices?.sameTopic.nodeName).toBe("Chain Rule");
+    expect(choices?.otherTopic?.nodeName).toBe("Related Rates");
+    expect(choices?.sameTopic.href).toContain("Chain%20Rule");
+    expect(choices?.otherTopic?.href).toContain("Related%20Rates");
   });
 });

@@ -1,6 +1,7 @@
 /**
  * Internal XP award pipeline — server-only imports.
  * Not a server action module; never import from client components.
+ * applyXpAward is not invokable via crafted server action RPC.
  */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
@@ -10,6 +11,8 @@ import { XP } from "@/features/xp/xp-constants";
 import { countReferralRewardsThisMonth } from "@/features/referrals/referral-monthly-cap";
 import { MAX_REFERRAL_REWARDS_PER_MONTH } from "@/features/referrals/referral-constants";
 import { trackEvent } from "@/shared/integrations/analytics";
+import { recordSecurityEvent } from "@/shared/core/security/security-events";
+import { publishRankAdvanceLiveBoardEvent } from "@/features/live-board/write-live-board-events";
 
 export type ApplyXpAwardResult = {
   awarded: boolean;
@@ -29,6 +32,15 @@ export async function applyXpAward(
 ): Promise<ApplyXpAwardResult> {
   if (amount === 0) {
     return { awarded: false, skipped: true, totalXp: 0, streakDays: 0 };
+  }
+
+  if (amount < 0) {
+    await recordSecurityEvent({
+      event_type: "xp_decrease_blocked",
+      user_id: userId,
+      metadata: { amount, award_key: awardKey, reason: "negative_amount" },
+    });
+    throw new Error("XP amount must be non-negative.");
   }
 
   const admin = createAdminClient();
@@ -65,6 +77,20 @@ export async function applyXpAward(
   const oldTotal = existing?.total_xp ?? 0;
   const oldLevel = getAccountLevelFromTotalXp(oldTotal);
   const newTotal = oldTotal + amount;
+
+  if (newTotal < oldTotal) {
+    await recordSecurityEvent({
+      event_type: "xp_decrease_blocked",
+      user_id: userId,
+      metadata: {
+        old_total_xp: oldTotal,
+        attempted_total_xp: newTotal,
+        amount,
+        award_key: awardKey,
+      },
+    });
+    throw new Error("XP total cannot decrease.");
+  }
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const lastDate = (existing?.last_activity_date as string | null) ?? null;
@@ -162,6 +188,10 @@ export async function applyXpAward(
     void trackEvent("rank_up", {
       userId,
       properties: { fromLevel: oldLevel.level, toLevel: newLevel.level, title: newLevel.title },
+    });
+    void publishRankAdvanceLiveBoardEvent({
+      userId,
+      newRankTier: newLevel.title,
     });
   }
 

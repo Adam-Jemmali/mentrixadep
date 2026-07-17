@@ -89,4 +89,6 @@ export interface PracticePackResult {
   masteryGrid?: MasteryGridData;
   masteryHighlight?: QuestMasteryHighlight;
   questVerdict?: import("@/features/guidance/verdict-engine-pure").Verdict;
+  /** Skill node ids covered in this pack — drives post-quest skill tree focus. */
+  packSkillNodeIds?: string[];
 }

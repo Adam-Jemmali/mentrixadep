@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  addBreakthroughPackDeferDelay,
+  BREAKTHROUGH_PACK_DEFER_MS,
   buildBreakthroughPackUnavailableMessage,
+  isBreakthroughQueueRowAvailable,
   itemBankRowToBreakthroughQuestion,
   mapBreakthroughItemBankRows,
 } from "@/features/breakthrough-events/breakthrough-item-bank-pure";
@@ -47,8 +50,20 @@ describe("breakthrough item bank pack", () => {
 
   it("builds the unavailable copy without live generation", () => {
     expect(buildBreakthroughPackUnavailableMessage("Chain Rule")).toBe(
-      "Your breakthrough on Chain Rule is confirmed. Your follow-up practice is being prepared. Check back tomorrow.",
+      "Your breakthrough on Chain Rule is confirmed. Your follow-up practice is being prepared.",
     );
+  });
+
+  it("defers breakthrough pack assignment for 48 hours", () => {
+    const base = new Date("2026-07-11T12:00:00.000Z");
+    const deferred = addBreakthroughPackDeferDelay(base);
+    expect(deferred.getTime() - base.getTime()).toBe(BREAKTHROUGH_PACK_DEFER_MS);
+  });
+
+  it("treats future available_at as not yet due", () => {
+    const now = Date.parse("2026-07-11T12:00:00.000Z");
+    expect(isBreakthroughQueueRowAvailable("2026-07-12T12:00:00.000Z", now)).toBe(false);
+    expect(isBreakthroughQueueRowAvailable("2026-07-10T12:00:00.000Z", now)).toBe(true);
   });
 });
 

@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Guide breakthrough email notifications — internal server-only.
+ * Not a server action module; import from trusted server code only.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { queueEmailJob } from "@/features/jobs/queue-helpers";

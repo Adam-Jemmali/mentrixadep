@@ -87,6 +87,11 @@ export function createApplyXpAdminMock() {
           upsert: async () => ({ error: null }),
         };
       }
+      if (table === "security_events") {
+        return {
+          insert: async () => ({ error: null }),
+        };
+      }
       throw new Error(`Unexpected table in applyXp mock: ${table}`);
     },
   };

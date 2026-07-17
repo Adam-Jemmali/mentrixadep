@@ -13,7 +13,8 @@ function parseLiveBoardEvent(row: Record<string, unknown>): LiveBoardEventRow | 
   if (
     eventType !== "verified_attempt" &&
     eventType !== "rank_advance" &&
-    eventType !== "breakthrough"
+    eventType !== "breakthrough" &&
+    eventType !== "division_war_result"
   ) {
     return null;
   }
@@ -112,7 +113,7 @@ export async function loadArenaLeaders(limit = 10) {
       .select("user_id, accuracy_percent, verified_count, percentile")
       .gte("verified_count", MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE)
       .not("percentile", "is", null)
-      .order("percentile", { ascending: false })
+      .order("accuracy_percent", { ascending: false })
       .limit(limit);
 
     if (error || !cacheRows?.length) {

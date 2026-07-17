@@ -2,6 +2,7 @@ import type { PracticeQuestionMcq } from "@/features/quest/practice-quest-types"
 
 export const BREAKTHROUGH_PACK_TARGET_COUNT = 5;
 export const BREAKTHROUGH_PACK_MIN_COUNT = 3;
+export const BREAKTHROUGH_PACK_DEFER_MS = 48 * 60 * 60 * 1000;
 
 export type BreakthroughItemBankRow = {
   id: string;
@@ -23,7 +24,21 @@ export type BreakthroughSkillNodeRow = {
 
 export function buildBreakthroughPackUnavailableMessage(nodeName: string): string {
   const label = nodeName.trim() || "this skill";
-  return `Your breakthrough on ${label} is confirmed. Your follow-up practice is being prepared. Check back tomorrow.`;
+  return `Your breakthrough on ${label} is confirmed. Your follow-up practice is being prepared.`;
+}
+
+export function addBreakthroughPackDeferDelay(base: Date): Date {
+  return new Date(base.getTime() + BREAKTHROUGH_PACK_DEFER_MS);
+}
+
+export function isBreakthroughQueueRowAvailable(
+  availableAt: string | null | undefined,
+  nowMs = Date.now(),
+): boolean {
+  if (!availableAt) return true;
+  const availableMs = new Date(availableAt).getTime();
+  if (!Number.isFinite(availableMs)) return true;
+  return availableMs <= nowMs;
 }
 
 function parseOptions(value: unknown): string[] {

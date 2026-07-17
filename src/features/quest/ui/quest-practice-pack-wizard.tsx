@@ -31,6 +31,7 @@ type QuestPracticePackWizardProps = {
   showVerifiedDisclosure?: boolean;
   heading?: string;
   subtitle?: string | null;
+  focusNodeName?: string | null;
 };
 
 export function QuestPracticePackWizard({
@@ -43,7 +44,16 @@ export function QuestPracticePackWizard({
   showVerifiedDisclosure = true,
   heading = "Verified practice pack",
   subtitle = null,
+  focusNodeName = null,
 }: QuestPracticePackWizardProps) {
+  const resolvedSubtitle =
+    subtitle ??
+    (focusNodeName
+      ? `This pack stays on ${focusNodeName}. Same topic, fresh items from the bank.`
+      : null);
+  const resolvedStartLabel = focusNodeName
+    ? `Start pack on ${focusNodeName}`
+    : startLabel;
   return (
     <div className="relative w-full">
       {busy ? (
@@ -67,8 +77,8 @@ export function QuestPracticePackWizard({
           <MentrixaVocabIcon name="verified" size={VOCAB_HEADING_ICON_SIZE} gold surface="light" title="Verified" />
           <span>{heading}</span>
         </h1>
-        {subtitle ? (
-          <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>{subtitle}</p>
+        {resolvedSubtitle ? (
+          <p className={`mt-2 text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>{resolvedSubtitle}</p>
         ) : null}
 
         {showVerifiedDisclosure ? (
@@ -112,7 +122,7 @@ export function QuestPracticePackWizard({
           ) : null}
 
           <Button className="w-full" variant="workbenchPrimary" disabled={busy} onClick={onStart}>
-            {busy ? "Loading pack…" : startLabel}
+            {busy ? "Loading pack…" : resolvedStartLabel}
           </Button>
         </div>
       </StudentStickyNote>

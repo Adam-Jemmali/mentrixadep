@@ -515,6 +515,7 @@ export interface BreakthroughQuestQueueRow {
   sort_order: number;
   quest_id: string | null;
   completed_at: string | null;
+  available_at: string;
   created_at: string;
 }
 
@@ -906,11 +907,12 @@ export interface Database {
         Row: BreakthroughQuestQueueRow;
         Insert: Omit<
           BreakthroughQuestQueueRow,
-          "id" | "created_at" | "quest_id" | "completed_at"
+          "id" | "created_at" | "quest_id" | "completed_at" | "available_at"
         > & {
           id?: string;
           quest_id?: string | null;
           completed_at?: string | null;
+          available_at?: string;
           created_at?: string;
         };
         Update: Partial<BreakthroughQuestQueueRow>;

@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Guide weekly node impact reads — internal server-only (command center).
+ * Not a server action module; import from trusted server code only.
+ */
 
 import { createClient } from "@/shared/integrations/supabase/server";
 import { loadGuideImpactNodeStats } from "@/features/guidance/verdict-materialized-reads";

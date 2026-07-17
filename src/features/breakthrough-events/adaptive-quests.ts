@@ -10,6 +10,11 @@ import { getAccountLevelFromTotalXp } from "@/features/xp/levels";
 import type { PracticePackMetadata, PracticeQuestion } from "@/features/quest/practice-quest-types";
 import { createClient } from "@/shared/integrations/supabase/server";
 import { selectBreakthroughPack } from "@/features/breakthrough-events/breakthrough-item-bank";
+import {
+  addBreakthroughPackDeferDelay,
+  buildBreakthroughPackUnavailableMessage,
+  isBreakthroughQueueRowAvailable,
+} from "@/features/breakthrough-events/breakthrough-item-bank-pure";
 import { resolveApCalcAbSkillNodeForConcept } from "@/features/breakthrough-events/resolve-skill-node";
 import { getStudentEntitlements } from "@/features/entitlements/entitlements";
 import {
@@ -83,19 +88,42 @@ export async function createNextBreakthroughQuest(
   const user = await requireRole(["student", "admin"]);
   const admin = createAdminClient();
 
-  const { data: queueRow } = await admin
+  const { data: queueRows } = await admin
     .from("breakthrough_quest_queue")
-    .select("id, subject, topic, target_subtopic, sort_order, quest_id")
+    .select("id, subject, topic, target_subtopic, sort_order, quest_id, available_at")
     .eq("breakthrough_event_id", eventId)
     .eq("student_id", user.id)
     .is("completed_at", null)
     .is("quest_id", null)
-    .order("sort_order", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("sort_order", { ascending: true });
+
+  const queueRow = (queueRows ?? []).find((row) =>
+    isBreakthroughQueueRowAvailable(row.available_at),
+  );
+  const deferredRow = (queueRows ?? []).find(
+    (row) => !isBreakthroughQueueRowAvailable(row.available_at),
+  );
 
   if (!queueRow) {
+    if (deferredRow) {
+      return {
+        success: false,
+        error: buildBreakthroughPackUnavailableMessage(deferredRow.target_subtopic),
+      };
+    }
     return { success: false, error: "No breakthrough practice queued." };
+  }
+
+  async function deferBreakthroughPack(queueId: string, label: string) {
+    const availableAt = addBreakthroughPackDeferDelay(new Date()).toISOString();
+    await admin
+      .from("breakthrough_quest_queue")
+      .update({ available_at: availableAt })
+      .eq("id", queueId);
+    return {
+      success: false as const,
+      error: buildBreakthroughPackUnavailableMessage(label),
+    };
   }
 
   const skillNode = await resolveApCalcAbSkillNodeForConcept(
@@ -103,15 +131,15 @@ export async function createNextBreakthroughQuest(
     queueRow.target_subtopic,
   );
   if (!skillNode) {
-    return {
-      success: false,
-      error: `Your breakthrough on ${queueRow.target_subtopic} is confirmed. Your follow-up practice is being prepared. Check back tomorrow.`,
-    };
+    return deferBreakthroughPack(queueRow.id, queueRow.target_subtopic);
   }
 
   const pack = await selectBreakthroughPack(user.id, skillNode.id);
   if ("error" in pack) {
-    return { success: false, error: pack.error };
+    return deferBreakthroughPack(
+      queueRow.id,
+      skillNode.node_name || queueRow.target_subtopic,
+    );
   }
 
   const { data: xpRow } = await admin

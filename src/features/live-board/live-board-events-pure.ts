@@ -1,6 +1,6 @@
-import { rankLevelFromPercentile } from "@/features/xp/calibrated-rank";
+import type { LiveBoardEventType } from "@/features/live-board/types";
 
-export type LiveBoardEventType = "verified_attempt" | "rank_advance" | "breakthrough";
+export type { LiveBoardEventType };
 
 /** Single verified attempt score for the live board (0 or 100). */
 export function verifiedAttemptAccuracyPct(isCorrect: boolean): number {
@@ -25,11 +25,12 @@ export function resolveLiveBoardDisplayName(
   return `${first}${suffix}`;
 }
 
-export function detectVerifiedRankTierAdvance(
-  priorPercentile: number | null | undefined,
-  newPercentile: number | null | undefined,
-): { advanced: boolean; newLevel: number } {
-  const priorLevel = rankLevelFromPercentile(priorPercentile ?? 0);
-  const newLevel = rankLevelFromPercentile(newPercentile ?? 0);
-  return { advanced: newLevel > priorLevel, newLevel };
+/** Division war headline for the Arena full-width card. */
+export function formatDivisionWarResultHeadline(
+  winnerName: string,
+  loserName: string,
+): string {
+  const winner = winnerName.trim() || "Division";
+  const loser = loserName.trim() || "Division";
+  return `${winner} defeated ${loser}`;
 }

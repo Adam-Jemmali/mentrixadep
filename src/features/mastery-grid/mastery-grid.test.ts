@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMasteryGridNextAction,
+  defaultMasteryNodeStats,
   groupSkillNodesIntoUnits,
   pickQuestMasteryHighlight,
   resolveMasteryNodeState,
@@ -53,6 +54,7 @@ describe("buildMasteryGridNextAction", () => {
             nodeName: "Introducing limits",
             nodeSlug: "intro-limits",
             displayOrder: 1,
+            ...defaultMasteryNodeStats(),
             state: "none",
             accuracyPercent: null,
           },
@@ -73,6 +75,7 @@ describe("buildMasteryGridNextAction", () => {
             nodeName: "Chain rule",
             nodeSlug: "chain",
             displayOrder: 2,
+            ...defaultMasteryNodeStats(),
             state: "weak",
             accuracyPercent: 40,
           },
@@ -81,6 +84,7 @@ describe("buildMasteryGridNextAction", () => {
             nodeName: "Product rule",
             nodeSlug: "product",
             displayOrder: 1,
+            ...defaultMasteryNodeStats(),
             state: "proficient",
             accuracyPercent: 80,
           },
@@ -112,7 +116,7 @@ describe("groupSkillNodesIntoUnits", () => {
           display_order: 1,
         },
       ],
-      () => ({ state: "none", accuracyPercent: null })
+      () => ({ ...defaultMasteryNodeStats(), state: "none", accuracyPercent: null })
     );
     expect(units).toHaveLength(2);
     expect(units[0]?.unitNumber).toBe(1);
@@ -129,6 +133,7 @@ describe("pickQuestMasteryHighlight", () => {
         unitNumber: 1,
         unitName: "Limits",
         nodes: nodes.map((node, index) => ({
+          ...defaultMasteryNodeStats(),
           ...node,
           nodeSlug: node.id,
           displayOrder: index + 1,
@@ -180,6 +185,7 @@ describe("splitMasteryGridByPinned", () => {
             nodeName: "Intro",
             nodeSlug: "intro",
             displayOrder: 1,
+            ...defaultMasteryNodeStats(),
             state: "none" as const,
             accuracyPercent: null,
           },
@@ -188,6 +194,7 @@ describe("splitMasteryGridByPinned", () => {
             nodeName: "Continuity",
             nodeSlug: "continuity",
             displayOrder: 2,
+            ...defaultMasteryNodeStats(),
             state: "weak" as const,
             accuracyPercent: 40,
           },
@@ -202,8 +209,11 @@ describe("splitMasteryGridByPinned", () => {
             nodeName: "Chain rule",
             nodeSlug: "chain",
             displayOrder: 1,
+            ...defaultMasteryNodeStats(),
             state: "verified" as const,
             accuracyPercent: 100,
+            hasVerifiedAttempt: true,
+            verifiedCorrect: true,
           },
         ],
       },

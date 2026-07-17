@@ -3,7 +3,11 @@ import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader
 /** Leaderboard row — same rank source as student hub (XP account rank). */
 export type ArenaLeaderRow = ArenaLeaderProfile;
 
-export type LiveBoardEventType = "verified_attempt" | "rank_advance" | "breakthrough";
+export type LiveBoardEventType =
+  | "verified_attempt"
+  | "rank_advance"
+  | "breakthrough"
+  | "division_war_result";
 
 export type LiveBoardEventRow = {
   id: string;

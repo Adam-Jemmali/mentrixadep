@@ -4,20 +4,49 @@ import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
-import type { MasteryGridData, MasteryNodeState } from "@/features/mastery-grid/types";
+import type { MasteryGridData, MasteryNodeState, QuestMasteryHighlight } from "@/features/mastery-grid/types";
 import { RankDeltaVerdictVisual } from "@/features/guidance/ui/rank-delta-verdict-visual";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import {
+  buildQuestPostPackChoices,
   inferQuestPostPackPhaseFromNextAction,
   questPostPackPhaseLabel,
   SOLID_PRACTICE_PERCENT,
 } from "@/features/quest/quest-post-step-pure";
 import { cn } from "@/shared/core/utils";
 
+function PostPackChoiceCard({
+  eyebrow,
+  choice,
+  primary = false,
+}: {
+  eyebrow: string;
+  choice: { label: string; hint: string; href: string; nodeName: string };
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={choice.href}
+      className={cn(
+        "block rounded-xl border-2 p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]",
+        primary
+          ? "border-[#7C3AED]/50 bg-[#7C3AED]/10 hover:border-[#7C3AED]/70"
+          : "border-[#334155] bg-[#0f172a]/60 hover:border-[#6366F1]/50",
+      )}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6366F1]">{eyebrow}</p>
+      <p className="mt-2 text-base font-semibold leading-snug text-white">{choice.label}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{choice.hint}</p>
+    </Link>
+  );
+}
+
 export function QuestMasteryDonePanel({
   grid,
   verdict,
   highlightTransition,
+  masteryHighlight,
+  packSkillNodeIds = [],
   correct,
   total,
   xpAwarded,
@@ -32,6 +61,8 @@ export function QuestMasteryDonePanel({
     fromState: MasteryNodeState;
     toState: MasteryNodeState;
   };
+  masteryHighlight?: QuestMasteryHighlight | null;
+  packSkillNodeIds?: string[];
   correct: number;
   total: number;
   xpAwarded: number;
@@ -49,25 +80,61 @@ export function QuestMasteryDonePanel({
   const phase = inferQuestPostPackPhaseFromNextAction(verdict.nextAction.label);
   const practiceFirst = phase === "practice_to_green";
   const lockRankNext = phase === "quest_to_verify";
+  const choices = buildQuestPostPackChoices(grid, packSkillNodeIds, masteryHighlight);
+
+  const recommendedNodeId = choices?.otherTopic
+    ? grid.units
+        .flatMap((unit) => unit.nodes)
+        .find((node) => node.nodeName === choices.otherTopic?.nodeName)?.id
+    : undefined;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 pb-12 sm:px-6 sm:py-10">
       <header className="mb-6">
         <p className={mentrixStudent.sectionEyebrow}>Pack complete</p>
         <h2 className={`mt-2 ${mentrixStudent.cardTitle} sm:text-2xl`}>
-          Your mastery map updated
+          Pick your next move on the skill tree
         </h2>
         <p className={`mt-2 max-w-xl text-sm leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
-          Green means solid in practice at {SOLID_PRACTICE_PERCENT}%+. Gold locks rank on your first answer only.
+          Focus shows what you just worked. Rerun that topic or shift to another square.
         </p>
       </header>
+
+      {choices ? (
+        <section className="mb-6 grid gap-3 sm:grid-cols-2" aria-label="Quest next moves">
+          <PostPackChoiceCard eyebrow="Same topic" choice={choices.sameTopic} primary />
+          {choices.otherTopic ? (
+            <PostPackChoiceCard eyebrow="Different topic" choice={choices.otherTopic} />
+          ) : (
+            <div className="rounded-xl border border-[#334155] bg-[#0f172a]/40 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6366F1]">
+                Different topic
+              </p>
+              <p className="mt-2 text-sm text-slate-400">
+                No other open square right now. Run another pack on the same skill or open the full grid.
+              </p>
+              <Button className="mt-3" variant="outline" asChild>
+                <Link href="/student/mastery">Open mastery grid</Link>
+              </Button>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <MasteryGrid
         data={grid}
         hideNextAction
         showLegend
         highlightTransition={highlightTransition}
+        pinnedNodeIds={packSkillNodeIds.length > 0 ? packSkillNodeIds : undefined}
+        recommendedNodeId={recommendedNodeId}
+        remainderCollapsed={packSkillNodeIds.length > 0}
       />
+
+      <p className="mt-3 text-xs text-slate-500">
+        Solid indigo ring: this pack. Dashed violet ring: suggested next topic.
+        Green at {SOLID_PRACTICE_PERCENT}%+ means practice-owned. Gold means rank locked.
+      </p>
 
       <section
         className={cn(
@@ -82,7 +149,7 @@ export function QuestMasteryDonePanel({
       >
         <div className="flex flex-wrap items-center gap-2">
           <p className={mentrixStudent.sectionEyebrow} id="quest-next-step-heading">
-            Your next step
+            Verdict
           </p>
           <span
             className={cn(
@@ -98,28 +165,11 @@ export function QuestMasteryDonePanel({
           </span>
         </div>
 
-        {practiceFirst ? (
-          <div className="mt-3 flex items-center gap-2 text-xs text-emerald-200/90">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-950/40 px-2 py-1">
-              <span className="h-3 w-3 rounded-sm bg-amber-300/90" aria-hidden />
-              Now
-            </span>
-            <span aria-hidden>→</span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-400/40 bg-emerald-900/30 px-2 py-1 font-semibold text-emerald-100">
-              <span className="h-3 w-3 rounded-sm bg-emerald-400/90" aria-hidden />
-              Solid green ({SOLID_PRACTICE_PERCENT}%+)
-            </span>
-          </div>
-        ) : null}
-
         <h3 className="mt-4 text-lg font-semibold leading-snug text-white sm:text-xl">
           {verdict.changed}
         </h3>
         {verdict.reason ? (
           <p className="mt-2 text-sm leading-relaxed text-slate-300">{verdict.reason}</p>
-        ) : null}
-        {verdict.comparison ? (
-          <p className="mt-3 text-sm leading-relaxed text-slate-400">{verdict.comparison}</p>
         ) : null}
 
         {verdict.rankDelta ? (
@@ -134,22 +184,14 @@ export function QuestMasteryDonePanel({
       </p>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        {!verdict.rankDelta ? (
-          <Button className="min-h-11 flex-1" variant="workbenchPrimary" asChild>
-            <Link href={verdict.nextAction.href}>{verdict.nextAction.label}</Link>
-          </Button>
-        ) : null}
-        {practiceFirst ? (
-          <Button className="min-h-11 flex-1" variant={verdict.rankDelta ? "workbenchPrimary" : "outline"} asChild>
-            <Link href="/student/mastery">View mastery grid</Link>
-          </Button>
-        ) : (
-          <Button className="min-h-11 flex-1" variant={verdict.rankDelta ? "workbenchPrimary" : "outline"} onClick={onNewPack}>
-            New verified pack
-          </Button>
-        )}
+        <Button className="min-h-11 flex-1" variant="outline" onClick={onNewPack}>
+          New mixed pack
+        </Button>
         <Button className="min-h-11 flex-1" variant="outline" asChild>
-          <Link href="/student">Back to home</Link>
+          <Link href="/student/mastery">Full skill tree</Link>
+        </Button>
+        <Button className="min-h-11 flex-1" variant="ghost" asChild>
+          <Link href="/student">Home</Link>
         </Button>
       </div>
     </div>

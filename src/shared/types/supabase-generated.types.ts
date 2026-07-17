@@ -377,6 +377,7 @@ export type Database = {
       }
       breakthrough_quest_queue: {
         Row: {
+          available_at: string
           breakthrough_event_id: string
           completed_at: string | null
           created_at: string
@@ -389,6 +390,7 @@ export type Database = {
           topic: string
         }
         Insert: {
+          available_at?: string
           breakthrough_event_id: string
           completed_at?: string | null
           created_at?: string
@@ -401,6 +403,7 @@ export type Database = {
           topic: string
         }
         Update: {
+          available_at?: string
           breakthrough_event_id?: string
           completed_at?: string | null
           created_at?: string
@@ -932,6 +935,63 @@ export type Database = {
         }
         Relationships: []
       }
+      free_response_attempts: {
+        Row: {
+          attempt_number: number
+          attempted_at: string
+          grading_result: Json | null
+          id: string
+          is_correct: boolean | null
+          item_id: string
+          normalized_expression: string | null
+          partial_credit_fraction: number
+          raw_input: string
+          time_taken_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          attempt_number?: number
+          attempted_at?: string
+          grading_result?: Json | null
+          id?: string
+          is_correct?: boolean | null
+          item_id: string
+          normalized_expression?: string | null
+          partial_credit_fraction?: number
+          raw_input: string
+          time_taken_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          attempt_number?: number
+          attempted_at?: string
+          grading_result?: Json | null
+          id?: string
+          is_correct?: boolean | null
+          item_id?: string
+          normalized_expression?: string | null
+          partial_credit_fraction?: number
+          raw_input?: string
+          time_taken_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_response_attempts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "item_bank"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "free_response_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guide_impact_history: {
         Row: {
           guide_id: string
@@ -1254,50 +1314,68 @@ export type Database = {
       }
       item_bank: {
         Row: {
+          answer_alternatives: string[] | null
+          answer_expression: string | null
           correct_answer: string
           created_at: string | null
           difficulty_rating: number | null
           distractor_tags: Json | null
           explanation: string
+          grading_variables: Json | null
           id: string
+          item_format: string
           options: Json | null
+          partial_credit_rules: Json | null
           prompt: string
           question_type: string
           reviewed_at: string | null
           reviewed_by: string | null
           skill_node_id: string
+          solution_steps: Json | null
           status: string
           step_sequence: Json | null
         }
         Insert: {
+          answer_alternatives?: string[] | null
+          answer_expression?: string | null
           correct_answer: string
           created_at?: string | null
           difficulty_rating?: number | null
           distractor_tags?: Json | null
           explanation: string
+          grading_variables?: Json | null
           id?: string
+          item_format?: string
           options?: Json | null
+          partial_credit_rules?: Json | null
           prompt: string
           question_type?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           skill_node_id: string
+          solution_steps?: Json | null
           status?: string
           step_sequence?: Json | null
         }
         Update: {
+          answer_alternatives?: string[] | null
+          answer_expression?: string | null
           correct_answer?: string
           created_at?: string | null
           difficulty_rating?: number | null
           distractor_tags?: Json | null
           explanation?: string
+          grading_variables?: Json | null
           id?: string
+          item_format?: string
           options?: Json | null
+          partial_credit_rules?: Json | null
           prompt?: string
           question_type?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           skill_node_id?: string
+          solution_steps?: Json | null
           status?: string
           step_sequence?: Json | null
         }
@@ -1455,7 +1533,7 @@ export type Database = {
       }
       momentum_session_credit_redemptions: {
         Row: {
-          availability_id: string
+          availability_id: string | null
           credit_id: string | null
           id: string
           idempotency_key: string
@@ -1465,7 +1543,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          availability_id: string
+          availability_id?: string | null
           credit_id?: string | null
           id?: string
           idempotency_key: string
@@ -1475,7 +1553,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          availability_id?: string
+          availability_id?: string | null
           credit_id?: string | null
           id?: string
           idempotency_key?: string
@@ -2425,7 +2503,7 @@ export type Database = {
       }
       session_requests: {
         Row: {
-          availability_id: string
+          availability_id: string | null
           created_at: string
           id: string
           status: string
@@ -2438,7 +2516,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          availability_id: string
+          availability_id?: string | null
           created_at?: string
           id?: string
           status?: string
@@ -2451,7 +2529,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          availability_id?: string
+          availability_id?: string | null
           created_at?: string
           id?: string
           status?: string
@@ -3102,6 +3180,27 @@ export type Database = {
           },
         ]
       }
+      symbolic_grading_cache: {
+        Row: {
+          computed_at: string
+          correct_expr_hash: string
+          result: boolean
+          student_expr_hash: string
+        }
+        Insert: {
+          computed_at?: string
+          correct_expr_hash: string
+          result: boolean
+          student_expr_hash: string
+        }
+        Update: {
+          computed_at?: string
+          correct_expr_hash?: string
+          result?: boolean
+          student_expr_hash?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           key: string
@@ -3712,6 +3811,7 @@ export type Database = {
           guide_rank_updated_at: string | null
           id: string
           is_blacklisted: boolean
+          last_vfa_at: string | null
           referral_code: string
           referral_flagged: boolean
           referral_last_ip_hash: string | null
@@ -3739,6 +3839,7 @@ export type Database = {
           guide_rank_updated_at?: string | null
           id: string
           is_blacklisted?: boolean
+          last_vfa_at?: string | null
           referral_code: string
           referral_flagged?: boolean
           referral_last_ip_hash?: string | null
@@ -3766,6 +3867,7 @@ export type Database = {
           guide_rank_updated_at?: string | null
           id?: string
           is_blacklisted?: boolean
+          last_vfa_at?: string | null
           referral_code?: string
           referral_flagged?: boolean
           referral_last_ip_hash?: string | null
@@ -4223,6 +4325,10 @@ export type Database = {
       is_approved_tutor: { Args: { user_id: string }; Returns: boolean }
       is_auto_approve_registrations: { Args: never; Returns: boolean }
       refresh_ap_calc_verified_rank_cache: { Args: never; Returns: undefined }
+      refresh_ap_calc_verified_rank_cache_recent: {
+        Args: { p_window?: string }
+        Returns: number
+      }
       refresh_division_leaderboard_mv: { Args: never; Returns: undefined }
       refresh_guide_impact_mv: { Args: never; Returns: undefined }
       registration_request_by_identity_email: {

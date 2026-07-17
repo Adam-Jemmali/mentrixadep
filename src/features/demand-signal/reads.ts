@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Weekly demand reads — internal server-only (guide command center).
+ * Not a server action module; import from trusted server code only.
+ */
 
 import { createClient } from "@/shared/integrations/supabase/server";
 import {

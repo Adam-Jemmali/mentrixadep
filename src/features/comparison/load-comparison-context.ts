@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Peer comparison context loader — internal server-only (verdict engine).
+ * Not a server action module; import from trusted server code only.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import type { ComparisonActorKind } from "@/features/comparison/comparison-context-pure";

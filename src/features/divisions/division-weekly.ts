@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Division weekly bonus awards — internal server-only (cron worker).
+ * Not a server action module; import from trusted server code only.
+ */
 
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getPreviousUtcWeekMondayString } from "@/features/divisions/division-week";

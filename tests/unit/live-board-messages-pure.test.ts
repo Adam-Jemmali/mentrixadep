@@ -15,8 +15,9 @@ describe("live board messages", () => {
         node_name: "Chain Rule",
         accuracy_pct: 100,
         new_rank_tier: null,
+        display_name: "A4821",
       }),
-    ).toBe("scored 100 percent on Chain Rule for the first time");
+    ).toBe("A4821 scored 100% on Chain Rule · first try");
   });
 
   it("formats rank advance and breakthrough copy", () => {
@@ -26,8 +27,9 @@ describe("live board messages", () => {
         node_name: "Chain Rule",
         accuracy_pct: null,
         new_rank_tier: "Scholar",
+        display_name: "A4821",
       }),
-    ).toBe("advanced to Scholar");
+    ).toBe("A4821 advanced to Scholar");
 
     expect(
       formatLiveBoardEventDescription({
@@ -35,14 +37,15 @@ describe("live board messages", () => {
         node_name: "Related Rates",
         accuracy_pct: 82,
         new_rank_tier: null,
+        display_name: "A4821",
       }),
-    ).toBe("broke through Related Rates");
+    ).toBe("A4821 broke through Related Rates");
   });
 
   it("formats relative time ago", () => {
     expect(
       formatLiveBoardTimeAgo("2026-07-07T17:58:00.000Z", now),
-    ).toBe("2 minutes ago");
+    ).toBe("2m ago");
     expect(formatLiveBoardTimeAgo("2026-07-07T17:59:50.000Z", now)).toBe("just now");
   });
 

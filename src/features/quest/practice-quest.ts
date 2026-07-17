@@ -151,6 +151,8 @@ export interface CreatePracticeQuestInput {
   /** 5–10; default random */
   questionCount?: number;
   timeLimitSec?: number;
+  /** When set, pack pulls items from this skill node only (same-topic rerun). */
+  focusNodeName?: string;
 }
 
 export async function createPracticeQuest(
@@ -182,7 +184,22 @@ export async function createPracticeQuest(
     const timeLimitSec = Math.min(60 * 60, Math.max(5 * 60, input.timeLimitSec ?? DEFAULT_TIME_SEC));
     const requiredCount = computePracticePackQuestionCount(qc);
 
-    const bankQuestions = await selectItemBankQuestions(user.id, AP_CALC_AB_SUBJECT, qc);
+    let focusSkillNodeId: string | undefined;
+    const focusNodeName = input.focusNodeName?.trim();
+    if (focusNodeName) {
+      const admin = createAdminClient();
+      const { data: focusNode } = await admin
+        .from("skill_nodes")
+        .select("id")
+        .eq("subject", AP_CALC_AB_SUBJECT)
+        .eq("node_name", focusNodeName)
+        .maybeSingle();
+      focusSkillNodeId = focusNode?.id as string | undefined;
+    }
+
+    const bankQuestions = await selectItemBankQuestions(user.id, AP_CALC_AB_SUBJECT, qc, {
+      focusSkillNodeId,
+    });
     if (bankQuestions.length < requiredCount) {
       return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
     }
@@ -766,6 +783,7 @@ export async function finalizePracticeQuest(
         }
         result.masteryGrid = masteryGrid;
         result.masteryHighlight = masteryHighlight;
+        result.packSkillNodeIds = packNodeOrder;
         await patchPackMetadata(questId, (m) => ({
           ...m,
           result,

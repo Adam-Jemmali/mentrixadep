@@ -1,4 +1,7 @@
-"use server";
+/**
+ * Guide earnings forecast line — internal server-only (command center).
+ * Not a server action module; import from trusted server code only.
+ */
 
 import { loadGuideImpactNodeStats } from "@/features/guidance/verdict-materialized-reads";
 import { loadLatestWeeklyDemandRows } from "@/features/demand-signal/reads";

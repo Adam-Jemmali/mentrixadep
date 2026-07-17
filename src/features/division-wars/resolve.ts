@@ -9,6 +9,7 @@ import { applyXpAward } from "@/features/xp/xp-awards";
 import { XP } from "@/features/xp/xp-constants";
 import { notifyDivisionWarMembers } from "@/features/division-wars/war-notifications";
 import { processDivisionWarMatchmaking } from "@/features/division-wars/matchmaking";
+import { publishDivisionWarResultLiveBoardEvent } from "@/features/live-board/write-live-board-events";
 
 const BADGE_DAYS = 7;
 
@@ -131,9 +132,26 @@ async function resolveSingleWar(
   ]);
 
   const winnerName = winnerDiv?.name ?? "Your division";
+  const loserName =
+    winnerId === war.division_a_id
+      ? (divB?.name ?? "Division B")
+      : (divA?.name ?? "Division A");
   const uniqueParticipants = Array.from(
     new Set((allContribUsers ?? []).map((r) => r.student_id)),
   );
+
+  const representativeUserId = activeContribs?.[0]?.student_id;
+  if (representativeUserId) {
+    const winnerPoints = winnerId === war.division_a_id ? pointsA : pointsB;
+    const loserPoints = winnerId === war.division_a_id ? pointsB : pointsA;
+    void publishDivisionWarResultLiveBoardEvent({
+      representativeUserId,
+      winnerDivisionName: winnerName,
+      loserDivisionName: loserName,
+      winnerPoints,
+      loserPoints,
+    });
+  }
 
   await notifyDivisionWarMembers(uniqueParticipants, {
     title: "Division War results",

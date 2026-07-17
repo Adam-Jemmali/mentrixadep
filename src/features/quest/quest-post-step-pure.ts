@@ -208,3 +208,94 @@ export function questPostPackPhaseLabel(phase: QuestPostPackPhase): string {
       return "Stay solid";
   }
 }
+
+export function parseQuestPromptParam(prompt: string): string | null {
+  const trimmed = prompt.trim();
+  if (!trimmed) return null;
+  const stripped = trimmed
+    .replace(/^practice\s+/i, "")
+    .replace(/^quest\s+/i, "")
+    .replace(/^retest\s+/i, "")
+    .trim();
+  return stripped || null;
+}
+
+export function pickAlternateQuestNode(
+  grid: MasteryGridData,
+  excludeNodeIds: string[],
+): MasteryGridNode | null {
+  const exclude = new Set(excludeNodeIds);
+  const nodes = flattenMasteryNodes(grid).filter((node) => !exclude.has(node.id));
+  const open = nodes.filter((node) => node.state === "none" || node.state === "weak");
+  if (open.length > 0) {
+    return [...open].sort((a, b) => a.displayOrder - b.displayOrder)[0] ?? null;
+  }
+  const green = nodes.filter((node) => node.state === "proficient");
+  if (green.length > 0) {
+    return [...green].sort((a, b) => a.displayOrder - b.displayOrder)[0] ?? null;
+  }
+  return nodes.find((node) => node.state === "verified") ?? null;
+}
+
+export type QuestPostPackChoice = {
+  nodeName: string;
+  label: string;
+  href: string;
+  hint: string;
+};
+
+export type QuestPostPackChoices = {
+  sameTopic: QuestPostPackChoice;
+  otherTopic: QuestPostPackChoice | null;
+};
+
+function choiceForNode(node: MasteryGridNode, kind: "same" | "other"): QuestPostPackChoice {
+  const name = node.nodeName;
+  if (node.state === "proficient") {
+    return {
+      nodeName: name,
+      label: `Quest ${name}`,
+      href: questPromptHref(name),
+      hint:
+        kind === "same"
+          ? "Same topic. Lock rank on your first verified try."
+          : "Different topic. This square is green and ready to verify.",
+    };
+  }
+  if (node.state === "verified") {
+    return {
+      nodeName: name,
+      label: `Practice ${name} again`,
+      href: practiceNodeHref(name),
+      hint:
+        kind === "same"
+          ? "Same topic. Keep verified skills sharp in practice."
+          : "Different topic. Stay fluent on a verified skill.",
+    };
+  }
+  return {
+    nodeName: name,
+    label: `Practice ${name} until green`,
+    href: practiceNodeHref(name),
+    hint:
+      kind === "same"
+        ? "Same topic. More reps until the square turns solid green."
+        : "Different topic. Open or weak squares are where rank still moves.",
+  };
+}
+
+export function buildQuestPostPackChoices(
+  grid: MasteryGridData,
+  packNodeIds: string[],
+  highlight?: QuestMasteryHighlight | null,
+): QuestPostPackChoices | null {
+  const focus = pickPostPackFocusNode(grid, packNodeIds, highlight);
+  if (!focus) return null;
+
+  const sameTopic = choiceForNode(focus, "same");
+  const alternate = pickAlternateQuestNode(grid, packNodeIds.length > 0 ? packNodeIds : [focus.id]);
+  const otherTopic =
+    alternate && alternate.id !== focus.id ? choiceForNode(alternate, "other") : null;
+
+  return { sameTopic, otherTopic };
+}

@@ -2,6 +2,23 @@ import type { MasteryGridData, MasteryGridNode, MasteryNodeState, MasteryPackNod
 
 export const VERIFIED_GOLD = "#D4A017";
 
+export function defaultMasteryNodeStats(): Pick<
+  MasteryGridNode,
+  | "practiceAttempts"
+  | "practiceCorrect"
+  | "hasVerifiedAttempt"
+  | "verifiedCorrect"
+  | "peerBetterThanPercent"
+> {
+  return {
+    practiceAttempts: 0,
+    practiceCorrect: 0,
+    hasVerifiedAttempt: false,
+    verifiedCorrect: null,
+    peerBetterThanPercent: null,
+  };
+}
+
 export const MASTERY_STATE_LABEL: Record<MasteryNodeState, string> = {
   none: "not started",
   weak: "under seventy percent",
@@ -174,7 +191,16 @@ export function groupSkillNodesIntoUnits<
   },
 >(
   nodes: T[],
-  resolveNode: (node: T) => Pick<MasteryGridNode, "state" | "accuracyPercent">
+  resolveNode: (node: T) => Pick<
+    MasteryGridNode,
+    | "state"
+    | "accuracyPercent"
+    | "practiceAttempts"
+    | "practiceCorrect"
+    | "hasVerifiedAttempt"
+    | "verifiedCorrect"
+    | "peerBetterThanPercent"
+  >,
 ): MasteryGridData["units"] {
   const byUnit = new Map<number, MasteryGridData["units"][number]>();
 
@@ -192,8 +218,8 @@ export function groupSkillNodesIntoUnits<
       nodeName: row.node_name,
       nodeSlug: row.node_slug,
       displayOrder: row.display_order,
-      state: resolved.state,
-      accuracyPercent: resolved.accuracyPercent,
+      ...defaultMasteryNodeStats(),
+      ...resolved,
     });
     byUnit.set(row.unit_number, unit);
   }

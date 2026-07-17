@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
 import { warmKatex } from "@/features/quest/ui/normalize-math-text";
@@ -26,8 +26,9 @@ import type { BreakthroughCelebration } from "@/features/breakthrough-events/typ
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
-import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/load-mastery-grid";
+import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/get-mastery-grid-action";
 import { QuestMasteryDonePanel } from "@/features/mastery-grid/quest-mastery-done-panel";
+import { parseQuestPromptParam } from "@/features/quest/quest-post-step-pure";
 import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import {
@@ -60,6 +61,11 @@ export function QuestPracticeWorkspace({
   onboardingMode?: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const focusNodeName = useMemo(
+    () => parseQuestPromptParam(searchParams.get("prompt") ?? ""),
+    [searchParams],
+  );
   const tier = useUiPerfTier();
   const [phase, setPhase] = useState<Phase>("wizard");
   const [difficulty, setDifficulty] = useState<PracticeDifficulty>("intermediate");
@@ -99,6 +105,7 @@ export function QuestPracticeWorkspace({
     masteryGrid?: MasteryGridData;
     masteryHighlight?: QuestMasteryHighlight;
     questVerdict?: Verdict;
+    packSkillNodeIds?: string[];
   } | null>(null);
   const [lockedQuestionIndices, setLockedQuestionIndices] = useState<Set<number>>(new Set());
   const [breakthroughCelebration, setBreakthroughCelebration] =
@@ -205,6 +212,7 @@ export function QuestPracticeWorkspace({
       difficulty: onboardingMode ? "intermediate" : difficulty,
       packType: "mcq",
       questionCount: onboardingMode ? 5 : undefined,
+      focusNodeName: focusNodeName ?? undefined,
     });
     setBusy(false);
     if (!res.success) {
@@ -437,6 +445,7 @@ export function QuestPracticeWorkspace({
         difficulty={difficulty}
         onDifficultyChange={setDifficulty}
         onStart={() => void beginPack()}
+        focusNodeName={focusNodeName}
       />
     );
   }
@@ -457,6 +466,8 @@ export function QuestPracticeWorkspace({
           <QuestMasteryDonePanel
             grid={grid}
             verdict={verdict}
+            masteryHighlight={highlight}
+            packSkillNodeIds={doneResult.packSkillNodeIds ?? []}
             highlightTransition={
               highlight && !highlight.unchanged
                 ? {

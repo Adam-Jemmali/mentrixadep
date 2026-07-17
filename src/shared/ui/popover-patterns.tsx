@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Info } from "lucide-react";
 import { Popover } from "@/shared/ui/hero-popover";
@@ -7,7 +8,22 @@ import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 import { BookingPriceBreakdown } from "@/features/booking/booking-price-breakdown";
 import { splitSessionPriceCents } from "@/features/booking/booking-pricing";
-import type { MasteryNodeState } from "@/features/mastery-grid/types";
+import type { MasteryGridNode } from "@/features/mastery-grid/types";
+import {
+  buildMasteryNodeDetailRows,
+  buildMasteryNodeDetailVerdict,
+  masteryNodeActionHref,
+  masteryNodeActionLabel,
+  masteryNodeShortStateLabel,
+} from "@/features/mastery-grid/mastery-node-detail-pure";
+import {
+  masteryNodeDetailStateLabel,
+  priceBreakdownPopoverMessage,
+  rankBreakdownPopoverMessage,
+  rankBreakdownPopoverRows,
+  type MentrixaPopoverMessage,
+} from "@/shared/ui/popover-messages-pure";
+import type { VerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-rank";
 import {
   MentrixaBrandMark,
   type MentrixaBrandKind,
@@ -17,15 +33,6 @@ import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { SkillConceptIcon } from "@/features/quest/ui/skill-concept-icon";
 import { VisualPercentBar } from "@/shared/ui/visual-metric-patterns";
 import { RANK_PROOFS_LABEL } from "@/features/xp/rank-proofs-labels";
-import {
-  masteryNodeDetailPopoverMessage,
-  masteryNodeDetailStateLabel,
-  priceBreakdownPopoverMessage,
-  rankBreakdownPopoverMessage,
-  rankBreakdownPopoverRows,
-  type MentrixaPopoverMessage,
-} from "@/shared/ui/popover-messages-pure";
-import type { VerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-rank";
 
 export type MentrixaPopoverTone = "light" | "dark" | "workbench";
 
@@ -229,40 +236,45 @@ export function PriceBreakdownPopover({
 }
 
 export function MasteryNodeDetailPopover({
-  nodeName,
-  nodeSlug,
+  node,
+  globalTopPercent,
+  globalVerifiedCount,
   unitNumber,
-  state,
-  accuracyPercent,
   children,
   tone = "dark",
   placement = "top",
   className,
 }: {
-  nodeName: string;
-  nodeSlug?: string;
+  node: MasteryGridNode;
+  globalTopPercent?: number | null;
+  globalVerifiedCount?: number;
   unitNumber?: number;
-  state: MasteryNodeState;
-  accuracyPercent: number | null;
   children: ReactNode;
   tone?: MentrixaPopoverTone;
   placement?: "top" | "bottom" | "left" | "right";
   className?: string;
 }) {
-  const message = masteryNodeDetailPopoverMessage(nodeName, state, accuracyPercent);
+  const { nodeName, nodeSlug, state, accuracyPercent } = node;
+  const rows = buildMasteryNodeDetailRows(node, globalTopPercent, globalVerifiedCount);
+  const verdict = buildMasteryNodeDetailVerdict(node);
+  const actionHref = masteryNodeActionHref(node);
+  const actionLabel = masteryNodeActionLabel(node);
+  const meterValue =
+    state === "verified" ? 100 : Math.min(100, Math.max(0, accuracyPercent ?? 0));
 
   const headerIcon: VocabIconName = state === "verified" ? "verified" : "practice-pack";
   const surface = tone === "dark" ? "dark" : "light";
 
   return (
-    <MentrixaPopoverFromMessage
-      message={message}
+    <MentrixaPopover
+      trigger={<span className="block min-w-0 w-full cursor-pointer">{children}</span>}
+      title={nodeName}
+      verdict={verdict}
       tone={tone}
       vocabIcon={headerIcon}
       vocabIconGold={state === "verified"}
       placement={placement}
       className={className}
-      trigger={<span className="block min-w-0 w-full cursor-pointer">{children}</span>}
     >
       <div className="flex items-center gap-3">
         <SkillConceptIcon
@@ -282,25 +294,49 @@ export function MasteryNodeDetailPopover({
             title={masteryNodeDetailStateLabel(state)}
           />
           <span className="text-[10px] font-black uppercase tracking-[0.12em]">
-            {masteryNodeDetailStateLabel(state).split(" ")[0]}
+            {masteryNodeShortStateLabel(state)}
           </span>
         </div>
       </div>
-      {accuracyPercent != null ? (
-        <VisualPercentBar
-          className="mt-3"
-          value={accuracyPercent}
-          icon={state === "verified" ? "verified" : "practice-pack"}
-          label="Accuracy"
-          gold={state === "verified"}
-          surface={surface}
-        />
-      ) : (
-        <div className="mt-3 inline-flex items-center gap-2 opacity-80">
-          <MentrixaVocabIcon name="focus-ring" size={20} surface={surface} title="Open" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.12em]">Open</span>
-        </div>
-      )}
-    </MentrixaPopoverFromMessage>
+
+      <VisualPercentBar
+        className="mt-3"
+        value={meterValue}
+        icon={state === "verified" ? "verified" : "practice-pack"}
+        label={state === "verified" ? "First answer" : "Practice"}
+        gold={state === "verified"}
+        surface={surface}
+      />
+
+      <dl
+        className={cn(
+          "mt-3 space-y-2 border-t pt-3",
+          tone === "dark" ? "border-white/10" : "border-slate-200",
+        )}
+      >
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-start justify-between gap-3 text-xs">
+            <dt className="opacity-80">{row.label}</dt>
+            <dd
+              className={cn(
+                "max-w-[11rem] text-right font-mono font-semibold tabular-nums leading-snug",
+                row.gold && "text-[#D4A017]",
+              )}
+            >
+              {row.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <Button
+        asChild
+        size="sm"
+        variant={state === "proficient" ? "workbenchPrimary" : "outline"}
+        className="mt-4 w-full"
+      >
+        <Link href={actionHref}>{actionLabel}</Link>
+      </Button>
+    </MentrixaPopover>
   );
 }

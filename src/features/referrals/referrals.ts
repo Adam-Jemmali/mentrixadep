@@ -3,8 +3,8 @@
 import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import { getCurrentUser } from "@/shared/core/auth";
 import { applyXpAward } from "@/features/xp/xp-awards";
 import { XP } from "@/features/xp/xp-constants";
 import { REFERRAL_COOKIE_NAME } from "@/features/referrals/referral-constants";
@@ -23,8 +23,7 @@ function hashIp(ip: string): string {
 
 /** Public site URL for /auth/signup?ref= */
 export async function getReferralInviteUrl(): Promise<string | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireRole(["student"]);
   const admin = createAdminClient();
   const { data } = await admin.from("users").select("referral_code").eq("id", user.id).maybeSingle();
   const code = data?.referral_code;
@@ -54,8 +53,7 @@ export type ReferralDashboardData = {
  * Idempotent when already attributed.
  */
 export async function finalizeReferralAttribution(): Promise<{ ok: boolean }> {
-  const user = await getCurrentUser();
-  if (!user) return { ok: false };
+  const user = await requireRole(["student"]);
   const admin = createAdminClient();
 
   const { data: row } = await admin
@@ -137,8 +135,7 @@ async function getClientIpHash(): Promise<string | null> {
 }
 
 export async function getReferralDashboardData(): Promise<ReferralDashboardData | null> {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "student") return null;
+  const user = await requireRole(["student"]);
 
   const admin = createAdminClient();
   const [{ data: me }, inviteUrl] = await Promise.all([

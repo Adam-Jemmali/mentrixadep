@@ -168,7 +168,8 @@ function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): Practice
 export async function selectItemBankQuestions(
   userId: string,
   subject: string,
-  count: number
+  count: number,
+  options?: { focusSkillNodeId?: string },
 ): Promise<PracticeQuestionMcq[]> {
   if (!isApCalculusAbSubject(subject)) return [];
 
@@ -213,7 +214,9 @@ export async function selectItemBankQuestions(
     itemsByNode.set(row.skill_node_id, list);
   }
 
-  const neededNodeIds = pickNeededNodeIds(prioritizedNodeIds, targetCount);
+  const neededNodeIds = options?.focusSkillNodeId
+    ? Array.from({ length: targetCount }, () => options.focusSkillNodeId!)
+    : pickNeededNodeIds(prioritizedNodeIds, targetCount);
   if (
     neededNodeIds.length < targetCount ||
     !hasApprovedCoverageForNodes(neededNodeIds, itemsByNode)

@@ -1,5 +1,6 @@
 "use server";
 
+import { requireRole } from "@/shared/core/auth";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
@@ -13,6 +14,11 @@ export async function getGuideRematchBadgesForStudent(
   userId: string,
   guideIds: string[],
 ): Promise<Record<string, GuideRematchBadge>> {
+  const user = await requireRole(["student", "admin"]);
+  if (user.role !== "admin" && user.id !== userId) {
+    throw new Error("Forbidden");
+  }
+
   if (guideIds.length === 0) return {};
 
   const admin = createAdminClient();

@@ -8,12 +8,7 @@ import type {
   PracticePackType,
   PracticeQuestion,
 } from "@/features/quest/practice-quest-types";
-import {
-  normalizeGuestTryPack,
-  type GuestTryQuestion,
-} from "@/features/quest/guest-try-types";
-import type { AdaptiveContext } from "@/features/learning-path/knowledge-graph-lib";
-
+import type { GuestTryQuestion } from "@/features/quest/guest-try-types";
 import {
   type AiErrorResult,
   sanitizeForPrompt,
@@ -28,8 +23,6 @@ import {
   reportAiFailure,
   subjectFidelityPromptBlock,
   isSubjectLockedText,
-  isStrictSubjectLockedGuestQuestion,
-  isGeneralMixedGuestSubject,
 } from "./shared";
 import {
   AP_CALC_AB_UNAVAILABLE_MESSAGE,
@@ -39,16 +32,6 @@ import {
 // ============================================
 // TYPES
 // ============================================
-
-export interface AdaptiveQuestPackInput {
-  subject: string;
-  packType: PracticePackType;
-  accountLevelTitle: string;
-  questionCount: number;
-  adaptiveContext: AdaptiveContext;
-  /** Subtopics from the last 3 quests — avoid repeating */
-  recentSubtopics: string[];
-}
 
 // ============================================
 // PRACTICE-INTERNAL CONSTANTS
@@ -494,21 +477,6 @@ function buildGeographySvg(_seed: number, prompt: string = ""): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f8fafc"/><circle cx="256" cy="256" r="172" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="4"/><path d="M158 182 C198 132 248 150 274 194 C292 226 332 222 352 252 C364 274 356 304 328 320 C290 342 242 340 218 308 C184 262 132 232 158 182 Z" fill="#86efac" stroke="#15803d" stroke-width="3"/><line x1="84" y1="256" x2="428" y2="256" stroke="#60a5fa" stroke-width="2" opacity="0.8"/><text x="256" y="470" font-size="16" fill="#334155" text-anchor="middle">World Map</text></svg>`;
 }
 
-function subjectVisualPlaybook(subject: string): string {
-  const d = classifyVisualDomain(subject, subject);
-  switch (d) {
-    case "math": return `Math visuals: each option image prompt MUST name the specific function type and its behavior.`;
-    case "economics": return `Economics visuals: each optionImagePrompt MUST say "demand curve shifts right" OR "demand curve shifts left" OR "supply curve shifts right" OR "supply curve shifts left" OR "fixed curves unchanged equilibrium".`;
-    case "biology": return `Biology visuals: cell/organelle diagrams, DNA/replication visuals, membrane transport sketches, ecology/food-web style figures.`;
-    case "history": return `History visuals: portraits tied to named people, event scenes, timeline snippets, map-based historical context.`;
-    case "physics": return `Physics visuals: for circuit options use "series circuit" vs "parallel circuit". For motion graphs use velocity-time or displacement-time variants. For waves use constructive vs destructive.`;
-    case "chemistry": return `Chemistry visuals: molecular structures, reaction coordinate diagrams, periodic trends, lab apparatus diagrams.`;
-    case "computer_science": return `Computer science visuals: trees/graphs, flowcharts, array state snapshots, algorithm trace diagrams.`;
-    case "geography": return `Geography visuals: maps, terrain/topographic patterns, climate charts, latitude-longitude references.`;
-    default: return `Use clean exam-style visuals that directly represent the option content.`;
-  }
-}
-
 function appendSvgUniqueMarker(svg: string, seed: number): string {
   return svg.replace("</svg>", `<metadata>uid-${seed.toString(36)}</metadata></svg>`);
 }
@@ -757,167 +725,5 @@ export async function gradePracticeWrittenAnswer(
     return { pass: Boolean(parsed.pass), feedback: typeof parsed.feedback === "string" ? parsed.feedback.slice(0, 800) : "" };
   } catch (err) {
     return handleAiError(err, "gradePracticeWrittenAnswer", params.prompt.slice(0, 200));
-  }
-}
-
-export async function generateAdaptiveQuestPack(
-  params: AdaptiveQuestPackInput,
-  userId: string
-): Promise<{ questions: PracticeQuestion[] } | AiErrorResult> {
-  try {
-    await enforceAiRateLimit(userId, "quest.ai.adaptive");
-    const daily = await incrementDailyLimit(userId, "quest_gen");
-    if (!daily.allowed) return { error: true, message: "Daily quest limit reached (10/day). Come back tomorrow!" };
-
-    const n = Math.min(10, Math.max(5, Math.floor(params.questionCount)));
-    const subject = sanitizeForPrompt(params.subject).slice(0, 120);
-    const pack = params.packType;
-    const level = sanitizeForPrompt(params.accountLevelTitle).slice(0, 80);
-    const ctx = params.adaptiveContext;
-
-    const weakList = ctx.weakSubtopics.slice(0, 5).map((w) => `  - ${w.subtopic} (${w.topic}): ${w.mastery}/100 mastery — PRIORITY`).join("\n");
-    const recentWinList = ctx.recentWins.slice(0, 3).map((w) => `  - ${w.subtopic} (${w.topic}): ${w.mastery}/100 — reinforce with harder variant`).join("\n");
-    const masteredList = ctx.masteredSubtopics.slice(0, 5).map((m) => `  - ${m.subtopic} (${m.topic})`).join("\n");
-    const avoidList = params.recentSubtopics.slice(0, 9).map((s) => `  - ${s}`).join("\n");
-
-    const knowledgeSummary = [
-      weakList ? `WEAKEST SUBTOPICS (target these first):\n${weakList}` : "No weak subtopics on record yet — generate foundational questions.",
-      recentWinList ? `RECENT WINS (reinforce with harder variants):\n${recentWinList}` : "",
-      masteredList ? `ALREADY MASTERED (do not test these):\n${masteredList}` : "",
-      avoidList ? `DO NOT REPEAT (from last 3 quests):\n${avoidList}` : "",
-    ].filter(Boolean).join("\n\n");
-
-    const systemPrompt = `You are an adaptive learning engine for Mentrixa. Generate a personalised practice pack based on knowledge graph.\n\nSubject: ${subject}\nPack type: ${pack}\nLearner level: ${level}\n\nSTUDENT KNOWLEDGE GRAPH:\n${knowledgeSummary}\n\nADAPTIVE RULES:\n1. Prioritise WEAKEST subtopics.\n2. For RECENT WIN subtopics include 1-2 questions at increased difficulty.\n3. NEVER generate on MASTERED subtopics unless fewer than ${n} other subtopics.\n4. NEVER repeat DO NOT REPEAT subtopics.\n5. Include subtopicTag and topicTag on each question.\n\n${subjectFidelityPromptBlock(subject)}\n\nReturn ONLY valid JSON:\n{ "questions": [ ... exactly ${n} items ... ] }\n\nEach item must match pack type "${pack}":\n${PACK_TYPE_INSTRUCTIONS[pack]}\n\nShared rules:\n- id: string, unique per item\n- kind: must match pack type\n- prompt: clear question text\nDo not include markdown fences.`;
-    const userContent = `Subject: ${subject}\nPack type: ${pack}\nQuestion count: ${n}\nGenerate ${n} adaptive questions.`;
-    const raw = await generateJsonRetryOnTimeout(systemPrompt, userContent, PRACTICE_PACK_TIMEOUT_MS);
-
-    if (containsPii(raw)) return { error: true, message: "AI response contained unexpected content. Please try again." };
-    const parsedResult = parseModelJson<{ questions?: unknown[] }>(raw);
-    if (!parsedResult.ok) return { error: true, message: "Failed to parse adaptive quest pack JSON." };
-
-    const rawList = Array.isArray(parsedResult.value.questions) ? parsedResult.value.questions : [];
-    const questions: PracticeQuestion[] = [];
-    for (let i = 0; i < rawList.length && questions.length < n; i++) {
-      const o = rawList[i];
-      if (!o || typeof o !== "object") continue;
-      const row = o as Record<string, unknown>;
-      const id = typeof row.id === "string" ? row.id : `q${i}`;
-      const kind = normalizePracticeKind(row.kind, pack);
-      if (pack === "mcq" && (kind === "mcq" || kind === "")) {
-        const mcq = readMcqFields(row);
-        if (mcq) questions.push({ id, kind: "mcq", prompt: mcq.prompt.slice(0, 4000), options: mcq.options, correctIndex: mcq.correctIndex, explanation: mcq.explanation.slice(0, 2000) } as PracticeQuestion);
-      } else if (pack === "short_answer" && kind === "short_answer") {
-        const prompt = typeof row.prompt === "string" ? row.prompt : "";
-        const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
-        const explanation = typeof row.explanation === "string" ? row.explanation : "";
-        if (prompt.length < 4 || ref.length < 2) continue;
-        questions.push({ id, kind: "short_answer", prompt: prompt.slice(0, 4000), referenceAnswer: ref.slice(0, 4000), explanation: explanation.slice(0, 2000) } as PracticeQuestion);
-      } else if (pack === "problem_solving" && kind === "problem_solving") {
-        const prompt = typeof row.prompt === "string" ? row.prompt : "";
-        const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
-        const explanation = typeof row.explanation === "string" ? row.explanation : "";
-        if (prompt.length < 4 || ref.length < 2) continue;
-        questions.push({ id, kind: "problem_solving", prompt: prompt.slice(0, 6000), referenceAnswer: ref.slice(0, 4000), explanation: explanation.slice(0, 2000) } as PracticeQuestion);
-      }
-    }
-    if (questions.length < 3) return { error: true, message: "Could not generate enough adaptive questions. Try again." };
-    const locked = questions.every((q) => { const parts = [q.prompt, q.explanation]; if (q.kind === "mcq") parts.push(q.options.join(" ")); else parts.push(q.referenceAnswer); return isSubjectLockedText(subject, parts.join(" ")); });
-    if (!locked) return { error: true, message: "Adaptive pack drifted off the selected subject. Try again." };
-    return { questions: questions.slice(0, n) };
-  } catch (err) {
-    return handleAiError(err, "generateAdaptiveQuestPack", params.subject.slice(0, 100));
-  }
-}
-
-export async function generatePracticeQuestPackGuest(
-  params: { subject: string; difficulty: PracticeDifficulty; packType: PracticePackType; questionCount: number }
-): Promise<{ questions: PracticeQuestion[] } | AiErrorResult> {
-  try {
-    const n = Math.min(10, Math.max(5, Math.floor(params.questionCount)));
-    const subject = sanitizeForPrompt(params.subject).slice(0, 120);
-    const diff = params.difficulty;
-    const pack = params.packType;
-    const level = "guest learner";
-    const mixedGeneral = isGeneralMixedGuestSubject(subject);
-
-    const systemPrompt = `You write practice questions for learners. Return ONLY valid JSON:\n{ "questions": [ ... exactly ${n} items ... ] }\n\nEach item must match pack type "${pack}":\n${PACK_TYPE_INSTRUCTIONS[pack]}\n\nShared rules:\n- id: string, unique per item\n- kind: must match pack type (${pack === "mcq" ? '"mcq"' : pack === "short_answer" ? '"short_answer"' : '"problem_solving"'})\n- prompt: clear question text\n- difficulty: subject=${subject}, learner tier=${diff}, account level label=${level}\n\n${mixedGeneral ? "MIXED-SUBJECT MODE: Rotate across disciplines." : `SUBJECT-FOCUSED MODE ("${subject}"): Every question must test real ${subject} content.`}\n\nDo not include markdown fences or commentary.`;
-    const userContent = mixedGeneral
-      ? `Subject: General (mixed STEM preview)\nDifficulty tier: ${diff}\nPack type: ${pack}\nLearner level: ${level}\nGenerate ${n} questions.`
-      : `Subject: ${subject}\nDifficulty tier: ${diff}\nPack type: ${pack}\nLearner level: ${level}\nGenerate ${n} questions.`;
-
-    const raw = await generateJsonRetryOnTimeout(systemPrompt, userContent, PRACTICE_PACK_TIMEOUT_MS);
-    if (containsPii(raw)) return { error: true, message: "AI response contained unexpected content. Please try again." };
-    const parsedResult = parseModelJson<{ questions?: unknown[] }>(raw);
-    if (!parsedResult.ok) return { error: true, message: "Failed to parse practice pack JSON." };
-
-    const rawList = Array.isArray(parsedResult.value.questions) ? parsedResult.value.questions : [];
-    const questions: PracticeQuestion[] = [];
-    for (let i = 0; i < rawList.length && questions.length < n; i++) {
-      const o = rawList[i];
-      if (!o || typeof o !== "object") continue;
-      const row = o as Record<string, unknown>;
-      const id = typeof row.id === "string" ? row.id : `q${i}`;
-      const kind = normalizePracticeKind(row.kind, pack);
-      if (pack === "mcq" && (kind === "mcq" || kind === "")) {
-        const mcq = readMcqFields(row);
-        if (mcq) questions.push({ id, kind: "mcq", prompt: mcq.prompt.slice(0, 4000), options: mcq.options, correctIndex: mcq.correctIndex, explanation: mcq.explanation.slice(0, 2000) });
-      } else if (pack === "short_answer" && kind === "short_answer") {
-        const prompt = typeof row.prompt === "string" ? row.prompt : "";
-        const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
-        const explanation = typeof row.explanation === "string" ? row.explanation : "";
-        if (prompt.length < 4 || ref.length < 2) continue;
-        questions.push({ id, kind: "short_answer", prompt: prompt.slice(0, 4000), referenceAnswer: ref.slice(0, 4000), explanation: explanation.slice(0, 2000) });
-      } else if (pack === "problem_solving" && kind === "problem_solving") {
-        const prompt = typeof row.prompt === "string" ? row.prompt : "";
-        const ref = typeof row.referenceAnswer === "string" ? row.referenceAnswer : "";
-        const explanation = typeof row.explanation === "string" ? row.explanation : "";
-        if (prompt.length < 4 || ref.length < 2) continue;
-        questions.push({ id, kind: "problem_solving", prompt: prompt.slice(0, 6000), referenceAnswer: ref.slice(0, 4000), explanation: explanation.slice(0, 2000) });
-      }
-    }
-    if (questions.length < 5) return { error: true, message: "Could not generate enough valid questions. Try again." };
-    return { questions: questions.slice(0, n) };
-  } catch (err) {
-    return handleAiError(err, "generatePracticeQuestPackGuest", params.subject.slice(0, 100));
-  }
-}
-
-export async function generateGuestTryQuestPack(params: {
-  subject: string;
-  difficulty: PracticeDifficulty;
-  questionCount: number;
-}): Promise<{ questions: GuestTryQuestion[] } | AiErrorResult> {
-  try {
-    const n = Math.min(10, Math.max(8, Math.floor(params.questionCount)));
-    const subject = sanitizeForPrompt(params.subject).slice(0, 120);
-    const diff = params.difficulty;
-    const mixedGeneral = isGeneralMixedGuestSubject(subject);
-
-    const kindSchedule = `Emit exactly ${n} objects. Match the logged-in student Practice Pack skill assessment:\n- q0: "mcq" (AP/college prep; hard distractors)\n- q1: "problem_solving"\n- q2: "problem_solving"\n- q3: "short_answer"\n- q4: "image_mcq"\n- q5: "problem_solving"\n- q6: "mcq"\n- q7: "drag_rank"\n- q8: "short_answer" or "problem_solving"\n- q9: "mcq" or "problem_solving"\n${n > 10 ? `- q10 … q${n - 1}: alternate "problem_solving" and "mcq"` : ""}\nMinimum 3 "problem_solving" items. Do NOT emit "true_false" (max 0).`;
-
-    const problemSolvingRules = `For kind "problem_solving": include referenceAnswer with acceptable final results (use | for alternates). Each prompt MUST require 2+ reasoning steps. No trivia. LaTeX allowed: \\( ... \\) or $ ... $. These items verify multi step skill.`;
-
-    const dragRankRules = `For kind "drag_rank": include rankItems (array of 3–6 unique strings) in the CORRECT order (easiest→hardest, earliest→latest, or steps in sequence). No correctIndex. Example: rankItems ["Wanderer","Seeker","Scholar","Contender"].`;
-
-    const imageMcqRules = `For kind "image_mcq": exactly 4 options AND 4 optionImagePrompts. Each optionImagePrompt MUST describe a DISTINCT visual — never reuse the same diagram type for distractors. Wrong options should look plausible but clearly different (e.g. H2O vs CO2 vs NH3 vs CH4 Lewis structures, not four identical molecules).`;
-
-    const systemPrompt = `You write Practice Pack questions in the same format students prove in Quest (Tab 1). Return ONLY valid JSON:\n{ "questions": [ ... exactly ${n} objects ... ] }\n\nShared fields for every item:\n- id: string "q0" … "q${n - 1}"\n- kind: one of mcq | short_answer | problem_solving | image_mcq | drag_rank\n- prompt: question text\n- explanation: 1–3 sentences\n\n${kindSchedule}\n\n${problemSolvingRules}\n\n${dragRankRules}\n\n${imageMcqRules}\n\ndifficulty calibration: tier="${diff}" = AP/college prep exam rigor. No middle school recall. Multi step reasoning required. Distractors must be plausible.\n\n${mixedGeneral ? "MIXED MODE: Rotate across disciplines." : `SUBJECT MODE ("${subject}"): Every item must stay strictly within ${subject}.`}\n\n${mixedGeneral ? "" : `Visual playbook for "${subject}":\n- ${subjectVisualPlaybook(subject)}`}\n\nDo not wrap JSON in markdown.`;
-    const userContent = mixedGeneral
-      ? `Subject: General (mixed STEM preview)\nDifficulty: ${diff}\nGenerate ${n} items.`
-      : `Subject: ${subject}\nDifficulty: ${diff}\nGenerate ${n} items.`;
-
-    const raw = await generateJsonRetryOnTimeout(systemPrompt, userContent, PRACTICE_PACK_TIMEOUT_MS);
-    if (containsPii(raw)) return { error: true, message: "AI response contained unexpected content. Please try again." };
-    const parsedResult = parseModelJson<{ questions?: unknown[] }>(raw);
-    if (!parsedResult.ok) return { error: true, message: "Failed to parse Try Quest JSON." };
-
-    const rawList = Array.isArray(parsedResult.value.questions) ? parsedResult.value.questions : [];
-    const questions = normalizeGuestTryPack(rawList, n);
-    if (questions.length < n) return { error: true, message: "Try Quest pack incomplete." };
-    const subjectLocked = questions.every((q) => isStrictSubjectLockedGuestQuestion(subject, q));
-    if (!subjectLocked) return { error: true, message: "Try Quest generation drifted outside the selected subject." };
-    return { questions };
-  } catch (err) {
-    return handleAiError(err, "generateGuestTryQuestPack", params.subject.slice(0, 100));
   }
 }

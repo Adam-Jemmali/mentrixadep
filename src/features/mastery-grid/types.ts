@@ -9,6 +9,18 @@ export type MasteryGridNode = {
   displayOrder: number;
   state: MasteryNodeState;
   accuracyPercent: number | null;
+  practiceAttempts: number;
+  practiceCorrect: number;
+  hasVerifiedAttempt: boolean;
+  verifiedCorrect: boolean | null;
+  /** Better-than % among verified Mentrixers on this node (snapshot). */
+  peerBetterThanPercent: number | null;
+};
+
+export type MasteryGridGlobalRank = {
+  accuracyPercent: number;
+  verifiedCount: number;
+  topPercent: number | null;
 };
 
 export type MasteryGridUnit = {
@@ -20,6 +32,7 @@ export type MasteryGridUnit = {
 export type MasteryGridData = {
   subject: string;
   units: MasteryGridUnit[];
+  globalRank?: MasteryGridGlobalRank;
   /** @deprecated Use verdict — kept for tests and legacy callers */
   nextActionLine: string;
   verdict?: Verdict;

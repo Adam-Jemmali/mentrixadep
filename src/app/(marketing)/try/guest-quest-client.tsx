@@ -23,7 +23,7 @@ import {
   stripGuestTryPromptDecorators,
   type GuestTryQuestion,
 } from "@/features/quest/guest-try-types";
-import { isApCalculusAbSubject, GUEST_NON_AP_CALC_SUBJECT_MESSAGE, AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { isApCalculusAbSubject, AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { buildApCalcGuestDiagnosticVerdict } from "@/features/quest/guest-try-results";
 import { shuffleGuestTryPack } from "@/features/quest/guest-try-shuffle";
 import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
@@ -470,7 +470,7 @@ export function GuestQuestClient({
       const j = await res.json();
       if (!j.success) {
         if (j.code === "subject_unavailable") {
-          setErr(j.error || GUEST_NON_AP_CALC_SUBJECT_MESSAGE);
+          setErr(null);
         } else {
           setErr(j.error || "Could not load demo practice pack.");
         }
@@ -745,7 +745,10 @@ export function GuestQuestClient({
             {guestSubjectUnavailable ? (
               <div className="rounded-xl border border-violet-200 bg-violet-50/90 px-4 py-4 text-left shadow-sm">
                 <p className="text-sm leading-relaxed text-slate-800">
-                  {GUEST_NON_AP_CALC_SUBJECT_MESSAGE}
+                  AP Calculus AB is available for verified practice.
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                  More subjects are being added.
                 </p>
                 <Button
                   className="mt-4 w-full h-11 text-base font-semibold"
@@ -754,7 +757,7 @@ export function GuestQuestClient({
                     switchToApCalcSubject();
                   }}
                 >
-                  Try AP Calculus AB now
+                  Try AP Calculus AB
                 </Button>
               </div>
             ) : (

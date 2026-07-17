@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defaultMasteryNodeStats } from "@/features/mastery-grid/mastery-grid-pure";
 import {
   landingFaqCategories,
   landingFaqSectionHeading,
@@ -23,8 +24,26 @@ describe("accordion messages", () => {
 
   it("summarizes skill tree unit verification counts", () => {
     const meta = skillTreeUnitTriggerMeta([
-      { id: "a", nodeName: "Limits", nodeSlug: "limits", displayOrder: 1, state: "verified", accuracyPercent: 100 },
-      { id: "b", nodeName: "Derivatives", nodeSlug: "derivatives", displayOrder: 2, state: "none", accuracyPercent: null },
+      {
+        id: "a",
+        nodeName: "Limits",
+        nodeSlug: "limits",
+        displayOrder: 1,
+        ...defaultMasteryNodeStats(),
+        state: "verified",
+        accuracyPercent: 100,
+        hasVerifiedAttempt: true,
+        verifiedCorrect: true,
+      },
+      {
+        id: "b",
+        nodeName: "Derivatives",
+        nodeSlug: "derivatives",
+        displayOrder: 2,
+        ...defaultMasteryNodeStats(),
+        state: "none",
+        accuracyPercent: null,
+      },
     ]);
     expect(meta).toBe("1/2");
   });
@@ -34,7 +53,15 @@ describe("accordion messages", () => {
       unitNumber: 1,
       unitName: "Limits and Continuity",
       nodes: [
-        { id: "a", nodeName: "Limits", nodeSlug: "limits", displayOrder: 1, state: "none", accuracyPercent: null },
+        {
+          id: "a",
+          nodeName: "Limits",
+          nodeSlug: "limits",
+          displayOrder: 1,
+          ...defaultMasteryNodeStats(),
+          state: "none",
+          accuracyPercent: null,
+        },
       ],
     });
     expect(footer.verdict).toMatch(/locked first answer/i);

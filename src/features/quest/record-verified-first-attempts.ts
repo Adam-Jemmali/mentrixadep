@@ -1,4 +1,4 @@
-import { publishVerifiedAttemptLiveBoardEvents } from "@/features/live-board/write-live-board-events";
+import { publishVerifiedAttemptLiveBoardEvent } from "@/features/live-board/write-live-board-events";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { z } from "zod";
@@ -39,15 +39,6 @@ export async function recordVerifiedFirstAttemptForNode(
 
   const admin = createAdminClient();
 
-  const { data: priorRankCache } = await admin
-    .from("ap_calc_verified_rank_cache")
-    .select("percentile")
-    .eq("user_id", parsedUserId.data)
-    .maybeSingle();
-
-  const priorPercentile =
-    priorRankCache?.percentile == null ? null : Number(priorRankCache.percentile);
-
   const { error } = await admin.from("verified_first_attempts").insert({
     user_id: parsedUserId.data,
     skill_node_id: parsedNodeId.data,
@@ -56,11 +47,10 @@ export async function recordVerifiedFirstAttemptForNode(
   });
 
   if (!error) {
-    void publishVerifiedAttemptLiveBoardEvents({
+    void publishVerifiedAttemptLiveBoardEvent({
       userId: parsedUserId.data,
       skillNodeId: parsedNodeId.data,
       isCorrect,
-      priorPercentile: Number.isFinite(priorPercentile) ? priorPercentile : null,
     });
     return { recorded: true, alreadyExists: false };
   }

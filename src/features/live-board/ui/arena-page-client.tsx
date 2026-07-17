@@ -24,7 +24,7 @@ export function ArenaPageClient({ initialEvents, leaders }: Props) {
   }, [router]);
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-3xl flex-col px-4 pb-16 pt-20 sm:px-6 lg:pt-24">
+    <div className="mx-auto flex min-h-[100dvh] max-w-3xl flex-col px-4 pb-16 pt-16 sm:px-6 lg:pt-20">
       <motion.header
         variants={staggerContainer}
         initial="hidden"

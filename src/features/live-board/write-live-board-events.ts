@@ -1,14 +1,15 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
 import { resolveApCalcAbSkillNodeForConcept } from "@/features/breakthrough-events/resolve-skill-node";
-import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { normalizeRankTitle } from "@/features/xp/rank-icons";
 import { normalizeArenaAvatarUrl } from "@/features/live-board/live-board-avatar-pure";
 import {
-  detectVerifiedRankTierAdvance,
+  formatDivisionWarResultHeadline,
   resolveLiveBoardDisplayName,
   verifiedAttemptAccuracyPct,
-  type LiveBoardEventType,
 } from "@/features/live-board/live-board-events-pure";
+import { formatDivisionWarScoreLine } from "@/features/live-board/live-board-messages-pure";
+import type { LiveBoardEventType } from "@/features/live-board/types";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -68,6 +69,22 @@ async function loadSkillNodeLabels(
   };
 }
 
+async function loadMostRecentVerifiedSkillNode(
+  admin: AdminClient,
+  userId: string,
+): Promise<SkillNodeLabels | null> {
+  const { data } = await admin
+    .from("verified_first_attempts")
+    .select("skill_node_id")
+    .eq("user_id", userId)
+    .order("attempted_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data?.skill_node_id) return null;
+  return loadSkillNodeLabels(admin, String(data.skill_node_id));
+}
+
 async function insertLiveBoardEvent(
   admin: AdminClient,
   row: LiveBoardInsert,
@@ -82,32 +99,11 @@ async function insertLiveBoardEvent(
   }
 }
 
-async function loadVerifiedRankSnapshot(
-  admin: AdminClient,
-  userId: string,
-): Promise<{ accuracyPercent: number | null; percentile: number | null }> {
-  const { data } = await admin
-    .from("ap_calc_verified_rank_cache")
-    .select("accuracy_percent, percentile")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const accuracyPercent =
-    data?.accuracy_percent == null ? null : Number(data.accuracy_percent);
-  const percentile = data?.percentile == null ? null : Number(data.percentile);
-
-  return {
-    accuracyPercent: Number.isFinite(accuracyPercent) ? accuracyPercent : null,
-    percentile: Number.isFinite(percentile) ? percentile : null,
-  };
-}
-
 /** After a new verified first attempt row is committed. Best-effort; never throws. */
-export async function publishVerifiedAttemptLiveBoardEvents(params: {
+export async function publishVerifiedAttemptLiveBoardEvent(params: {
   userId: string;
   skillNodeId: string;
   isCorrect: boolean;
-  priorPercentile?: number | null;
 }): Promise<void> {
   try {
     const admin = createAdminClient();
@@ -129,32 +125,43 @@ export async function publishVerifiedAttemptLiveBoardEvents(params: {
       accuracy_pct: verifiedAttemptAccuracyPct(params.isCorrect),
       is_first_attempt: true,
     });
-
-    const newSnapshot = await loadVerifiedRankSnapshot(admin, params.userId);
-
-    const { advanced, newLevel } = detectVerifiedRankTierAdvance(
-      params.priorPercentile,
-      newSnapshot.percentile,
+  } catch (err) {
+    console.error(
+      "publishVerifiedAttemptLiveBoardEvent failed",
+      err instanceof Error ? err.message : String(err),
     );
+  }
+}
 
-    if (!advanced) return;
+/** After applyXpAward detects an account rank tier advance. Best-effort; never throws. */
+export async function publishRankAdvanceLiveBoardEvent(params: {
+  userId: string;
+  newRankTier: string;
+}): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const [persona, nodeLabels] = await Promise.all([
+      loadLiveBoardPersona(admin, params.userId),
+      loadMostRecentVerifiedSkillNode(admin, params.userId),
+    ]);
 
-    const tierName = normalizeRankTitle(getAccountRankByLevel(newLevel).title);
+    const tierName = normalizeRankTitle(params.newRankTier.trim());
+    if (!tierName) return;
 
     await insertLiveBoardEvent(admin, {
       event_type: "rank_advance",
       user_id: params.userId,
       display_name: persona.displayName,
       avatar_url: persona.avatarUrl,
-      skill_node_id: nodeLabels.id,
-      node_name: nodeLabels.node_name,
-      unit_name: nodeLabels.unit_name,
+      skill_node_id: nodeLabels?.id ?? null,
+      node_name: nodeLabels?.node_name ?? "Latest skill",
+      unit_name: nodeLabels?.unit_name ?? "AP Calculus AB",
       new_rank_tier: tierName,
       is_first_attempt: false,
     });
   } catch (err) {
     console.error(
-      "publishVerifiedAttemptLiveBoardEvents failed",
+      "publishRankAdvanceLiveBoardEvent failed",
       err instanceof Error ? err.message : String(err),
     );
   }
@@ -201,6 +208,44 @@ export async function publishBreakthroughLiveBoardEvent(params: {
   } catch (err) {
     console.error(
       "publishBreakthroughLiveBoardEvent failed",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+}
+
+/** After division-war-resolve cron picks a winner. Best-effort; never throws. */
+export async function publishDivisionWarResultLiveBoardEvent(params: {
+  representativeUserId: string;
+  winnerDivisionName: string;
+  loserDivisionName: string;
+  winnerPoints: number;
+  loserPoints: number;
+}): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const headline = formatDivisionWarResultHeadline(
+      params.winnerDivisionName,
+      params.loserDivisionName,
+    );
+    const scoreLine = formatDivisionWarScoreLine(
+      params.winnerDivisionName,
+      params.winnerPoints,
+      params.loserDivisionName,
+      params.loserPoints,
+    );
+
+    await insertLiveBoardEvent(admin, {
+      event_type: "division_war_result",
+      user_id: params.representativeUserId,
+      display_name: headline,
+      node_name: params.winnerDivisionName.trim() || "Division",
+      unit_name: scoreLine,
+      accuracy_pct: params.winnerPoints,
+      is_first_attempt: false,
+    });
+  } catch (err) {
+    console.error(
+      "publishDivisionWarResultLiveBoardEvent failed",
       err instanceof Error ? err.message : String(err),
     );
   }

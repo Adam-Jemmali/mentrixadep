@@ -4,12 +4,20 @@ import { XP } from "@/features/xp/xp-constants";
 
 const mockAdmin = createApplyXpAdminMock();
 
+const { recordSecurityEvent } = vi.hoisted(() => ({
+  recordSecurityEvent: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/shared/integrations/supabase/admin", () => ({
   createAdminClient: () => mockAdmin,
 }));
 
 vi.mock("@/shared/integrations/analytics", () => ({
   trackEvent: vi.fn(async () => undefined),
+}));
+
+vi.mock("@/shared/core/security/security-events", () => ({
+  recordSecurityEvent,
 }));
 
 vi.mock("@/features/divisions/division-week", () => ({
@@ -31,6 +39,7 @@ describe("applyXpAward (mocked Supabase)", () => {
 
   beforeEach(() => {
     mockAdmin.reset();
+    recordSecurityEvent.mockClear();
   });
 
   it("awards session-sized XP on first grant and updates total", async () => {
@@ -73,5 +82,19 @@ describe("applyXpAward (mocked Supabase)", () => {
     const r = await applyXpAward(userId, 10, "boundary:test", null);
     expect(r.totalXp).toBe(205);
     expect(r.levelUp).toEqual({ fromLevel: 1, toLevel: 2, title: "SEEKER" });
+  });
+
+  it("rejects negative XP amounts and logs a security event", async () => {
+    await expect(applyXpAward(userId, -10, "negative:test", null)).rejects.toThrow(
+      "XP amount must be non-negative.",
+    );
+    expect(recordSecurityEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_type: "xp_decrease_blocked",
+        user_id: userId,
+        metadata: expect.objectContaining({ amount: -10, award_key: "negative:test" }),
+      }),
+    );
+    expect(mockAdmin.getUserXp()).toBeNull();
   });
 });

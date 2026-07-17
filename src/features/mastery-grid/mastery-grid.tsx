@@ -77,24 +77,25 @@ function squareStyle(state: MasteryNodeState): CSSProperties | undefined {
 }
 
 function MasterySquare({
-  nodeName,
-  nodeSlug,
+  node,
   unitNumber,
-  state,
-  accuracyPercent,
   animateFrom,
   isHighlight,
   isPinned,
+  isRecommended,
+  globalTopPercent,
+  globalVerifiedCount,
 }: {
-  nodeName: string;
-  nodeSlug: string;
+  node: MasteryGridNode;
   unitNumber?: number;
-  state: MasteryNodeState;
-  accuracyPercent: number | null;
   animateFrom?: MasteryNodeState;
   isHighlight?: boolean;
   isPinned?: boolean;
+  isRecommended?: boolean;
+  globalTopPercent?: number | null;
+  globalVerifiedCount?: number;
 }) {
+  const { nodeName, state } = node;
   const shouldAnimate = animateFrom != null && animateFrom !== state;
   const [displayState, setDisplayState] = useState(shouldAnimate ? animateFrom : state);
   const [showVerifiedGlyph, setShowVerifiedGlyph] = useState(
@@ -126,11 +127,10 @@ function MasterySquare({
 
   return (
     <MasteryNodeDetailPopover
-      nodeName={nodeName}
-      nodeSlug={nodeSlug}
+      node={node}
+      globalTopPercent={globalTopPercent}
+      globalVerifiedCount={globalVerifiedCount}
       unitNumber={unitNumber}
-      state={displayState}
-      accuracyPercent={accuracyPercent}
       tone="light"
       placement="top"
     >
@@ -141,7 +141,8 @@ function MasterySquare({
         STATE_SQUARE_CLASS[displayState],
         shouldAnimate && "transition-colors duration-[400ms] ease-out",
         isHighlight && shouldAnimate && "z-10 ring-2 ring-indigo-400/80 ring-offset-1 ring-offset-[#FAFAF8]",
-        isPinned && "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#FAFAF8]"
+        isPinned && "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#FAFAF8]",
+        isRecommended && "ring-2 ring-dashed ring-[#7C3AED]/70 ring-offset-1 ring-offset-[#FAFAF8]"
       )}
       style={squareStyle(displayState)}
     >
@@ -178,6 +179,9 @@ function MasteryUnitGrid({
   compact,
   highlightTransition,
   pinnedNodeIds,
+  recommendedNodeId,
+  globalTopPercent,
+  globalVerifiedCount,
 }: {
   nodes: MasteryGridNode[];
   unitNumber?: number;
@@ -188,6 +192,9 @@ function MasteryUnitGrid({
     toState: MasteryNodeState;
   };
   pinnedNodeIds?: Set<string>;
+  recommendedNodeId?: string;
+  globalTopPercent?: number | null;
+  globalVerifiedCount?: number;
 }) {
   return (
     <div
@@ -201,16 +208,16 @@ function MasteryUnitGrid({
       {nodes.map((node) => (
         <MasterySquare
           key={node.id}
-          nodeName={node.nodeName}
-          nodeSlug={node.nodeSlug}
+          node={node}
           unitNumber={unitNumber}
-          state={node.state}
-          accuracyPercent={node.accuracyPercent}
           animateFrom={
             highlightTransition?.nodeId === node.id ? highlightTransition.fromState : undefined
           }
           isHighlight={highlightTransition?.nodeId === node.id}
           isPinned={pinnedNodeIds?.has(node.id)}
+          isRecommended={recommendedNodeId === node.id}
+          globalTopPercent={globalTopPercent}
+          globalVerifiedCount={globalVerifiedCount}
         />
       ))}
     </div>
@@ -222,6 +229,9 @@ function MasteryGridUnits({
   compact,
   highlightTransition,
   pinnedNodeIds,
+  recommendedNodeId,
+  globalTopPercent,
+  globalVerifiedCount,
   collapsible = true,
 }: {
   units: MasteryGridData["units"];
@@ -232,6 +242,9 @@ function MasteryGridUnits({
     toState: MasteryNodeState;
   };
   pinnedNodeIds?: Set<string>;
+  recommendedNodeId?: string;
+  globalTopPercent?: number | null;
+  globalVerifiedCount?: number;
   collapsible?: boolean;
 }) {
   if (!collapsible) {
@@ -251,6 +264,9 @@ function MasteryGridUnits({
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={pinnedNodeIds}
+              recommendedNodeId={recommendedNodeId}
+              globalTopPercent={globalTopPercent}
+              globalVerifiedCount={globalVerifiedCount}
             />
           </div>
         ))}
@@ -290,6 +306,9 @@ function MasteryGridUnits({
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={pinnedNodeIds}
+              recommendedNodeId={recommendedNodeId}
+              globalTopPercent={globalTopPercent}
+              globalVerifiedCount={globalVerifiedCount}
             />
           </MentrixaAccordionItem>
         );
@@ -307,6 +326,7 @@ export function MasteryGrid({
   readOnly = false,
   highlightTransition,
   pinnedNodeIds,
+  recommendedNodeId,
   remainderCollapsed = false,
   collapsibleUnits = true,
 }: {
@@ -322,6 +342,7 @@ export function MasteryGrid({
     toState: MasteryNodeState;
   };
   pinnedNodeIds?: string[];
+  recommendedNodeId?: string;
   remainderCollapsed?: boolean;
   collapsibleUnits?: boolean;
 }) {
@@ -375,6 +396,9 @@ export function MasteryGrid({
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={new Set(pinnedNodeIds)}
+              recommendedNodeId={recommendedNodeId}
+              globalTopPercent={data.globalRank?.topPercent}
+              globalVerifiedCount={data.globalRank?.verifiedCount}
             />
             <div className="mt-3 space-y-2">
               {pinSplit!.pinnedNodes.map((node) => {
@@ -404,6 +428,9 @@ export function MasteryGrid({
             compact={compact}
             highlightTransition={highlightTransition}
             collapsible={collapsibleUnits}
+            recommendedNodeId={recommendedNodeId}
+            globalTopPercent={data.globalRank?.topPercent}
+            globalVerifiedCount={data.globalRank?.verifiedCount}
           />
         ) : null}
 
