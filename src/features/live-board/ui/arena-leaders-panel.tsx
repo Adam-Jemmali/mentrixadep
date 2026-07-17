@@ -58,7 +58,8 @@ function ArenaLeaderCard({ leader, position }: { leader: ArenaLeaderProfile; pos
               <MentrixaVocabIcon name="profile" size={14} surface="light" title="Mentrixer" />
             )}
             <p className="truncate text-sm font-bold text-[#0B1220]">{leader.displayName}</p>
-            {leader.username ? (
+            {leader.username &&
+            leader.username.toLowerCase() !== leader.displayName.trim().toLowerCase() ? (
               <p className="truncate text-[11px] font-semibold text-[#6366F1]">@{leader.username}</p>
             ) : null}
           </div>

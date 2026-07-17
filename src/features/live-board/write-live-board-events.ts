@@ -10,6 +10,7 @@ import {
 } from "@/features/live-board/live-board-events-pure";
 import { formatDivisionWarScoreLine } from "@/features/live-board/live-board-messages-pure";
 import type { LiveBoardEventType } from "@/features/live-board/types";
+import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -35,28 +36,32 @@ type LiveBoardInsert = {
 async function loadLiveBoardPersona(
   admin: AdminClient,
   userId: string,
-): Promise<{ displayName: string; avatarUrl: string | null }> {
-  const [{ data: settings }, { data: user }] = await Promise.all([
+): Promise<{ displayName: string; avatarUrl: string | null; email: string | null; username: string | null } | null> {
+  const [{ data: settings }, authResult] = await Promise.all([
     admin
       .from("user_settings")
       .select("display_name, avatar_url, rank_card_username")
       .eq("user_id", userId)
       .maybeSingle(),
-    admin.from("users").select("email").eq("id", userId).maybeSingle(),
+    admin.auth.admin.getUserById(userId).catch(() => null),
   ]);
 
+  const email = authResult?.data.user?.email?.trim().toLowerCase() ?? null;
   const username =
     typeof settings?.rank_card_username === "string" && settings.rank_card_username.trim()
       ? settings.rank_card_username.trim()
       : null;
+  const displayNameRaw = (settings?.display_name as string | null) ?? null;
+
+  if (isE2ESyntheticAccount({ email, displayName: displayNameRaw, username })) {
+    return null;
+  }
 
   return {
-    displayName: resolveLiveBoardDisplayName(
-      settings?.display_name,
-      user?.email ?? null,
-      username,
-    ),
+    displayName: resolveLiveBoardDisplayName(displayNameRaw, email, username),
     avatarUrl: normalizeArenaAvatarUrl(settings?.avatar_url as string | null | undefined),
+    email,
+    username,
   };
 }
 
@@ -122,7 +127,7 @@ export async function publishVerifiedAttemptLiveBoardEvent(params: {
       loadSkillNodeLabels(admin, params.skillNodeId),
     ]);
 
-    if (!nodeLabels) return;
+    if (!persona || !nodeLabels) return;
 
     await insertLiveBoardEvent(admin, {
       event_type: "verified_attempt",
@@ -156,7 +161,7 @@ export async function publishRankAdvanceLiveBoardEvent(params: {
     ]);
 
     const tierName = normalizeRankTitle(params.newRankTier.trim());
-    if (!tierName) return;
+    if (!persona || !tierName) return;
 
     await insertLiveBoardEvent(admin, {
       event_type: "rank_advance",
@@ -192,6 +197,8 @@ export async function publishBreakthroughLiveBoardEvent(params: {
       loadLiveBoardPersona(admin, params.studentId),
       resolveApCalcAbSkillNodeForConcept(admin, params.concept),
     ]);
+
+    if (!persona) return;
 
     let nodeName = params.concept.trim();
     let unitName = params.subject.trim();

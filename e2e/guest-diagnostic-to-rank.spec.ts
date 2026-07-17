@@ -3,6 +3,7 @@ import {
   assertVerifiedFirstAttemptsOnePerNode,
   completeOnboardingPracticePack,
   completeStudentSignupActivate,
+  deleteE2EChainUser,
   dismissStudentOnboardingTour,
   expectRankPassportVerdictPanel,
   findUserIdByEmail,
@@ -27,7 +28,9 @@ test.describe("Guest diagnostic → signup → first quest → rank passport", (
   test("full product identity chain from /try through verified rank card", async ({ page }) => {
     const email = uniqueChainEmail();
     const password = uniqueChainPassword();
+    let userId: string | null = null;
 
+    try {
     const problem = await solveGuestStepTraceDiagnostic(page);
     const nodeName = problem.nodeName?.trim();
     expect(nodeName).toBeTruthy();
@@ -50,7 +53,7 @@ test.describe("Guest diagnostic → signup → first quest → rank passport", (
     await expect(page.getByText(/five first answers from the AP Calculus AB item bank/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /choose a subject/i })).toHaveCount(0);
 
-    const userId = await findUserIdByEmail(email);
+    userId = await findUserIdByEmail(email);
     expect(userId).toBeTruthy();
 
     await completeOnboardingPracticePack(page, userId!);
@@ -74,5 +77,8 @@ test.describe("Guest diagnostic → signup → first quest → rank passport", (
     await expect(page.getByLabel(/AP Calculus AB mastery grid/i)).toBeVisible({ timeout: 45_000 });
 
     await expectRankPassportVerdictPanel(page);
+    } finally {
+      await deleteE2EChainUser(userId ?? email);
+    }
   });
 });

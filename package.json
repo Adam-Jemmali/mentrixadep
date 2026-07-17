@@ -27,6 +27,7 @@
     "types:generate": "node scripts/generate-types.mjs",
     "skill-tree:seed": "npx tsx scripts/seed-ap-calc-ab-skill-tree.ts",
     "skill-tree:verify": "npx tsx scripts/verify-ap-calc-skill-tree.ts",
+    "purge:e2e-users": "npx tsx scripts/purge-e2e-synthetic-users.ts",
     "item-bank:generate": "npx tsx scripts/generate-item-bank-candidates.ts",
     "item-bank:generate-candidates": "npx tsx scripts/generate-item-candidates.ts",
     "item-bank:auto-verify": "npx tsx scripts/auto-verify-item-bank.ts",

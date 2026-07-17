@@ -69,6 +69,25 @@ export function uniqueChainPassword(): string {
   return `E2eChain!${Date.now().toString(36)}`;
 }
 
+/** Remove a chain user after the test so Arena never accumulates CI accounts. */
+export async function deleteE2EChainUser(userIdOrEmail: string): Promise<void> {
+  const admin = createE2EAdminClient();
+  const userId = userIdOrEmail.includes("@")
+    ? await findUserIdByEmail(userIdOrEmail)
+    : userIdOrEmail;
+  if (!userId) return;
+
+  await Promise.allSettled([
+    admin.from("live_board_events").delete().eq("user_id", userId),
+    admin.from("ap_calc_verified_rank_cache").delete().eq("user_id", userId),
+    admin.from("verified_first_attempts").delete().eq("user_id", userId),
+    admin.from("user_settings").delete().eq("user_id", userId),
+    admin.from("users").delete().eq("id", userId),
+  ]);
+
+  await admin.auth.admin.deleteUser(userId, false).catch(() => undefined);
+}
+
 export async function findUserIdByEmail(email: string): Promise<string | null> {
   const admin = createE2EAdminClient();
   const normalized = email.trim().toLowerCase();

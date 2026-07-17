@@ -20,6 +20,7 @@ import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfa
 import { easeOutExpo } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 import { cn } from "@/shared/core/utils";
 
 const VERIFIED_GOLD = "#D4A017";
@@ -159,6 +160,15 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
         (payload: { new: Record<string, unknown> }) => {
           const row = parseRealtimeRow(payload.new as Record<string, unknown>);
           if (!row) return;
+          if (
+            row.event_type !== "division_war_result" &&
+            isE2ESyntheticAccount({
+              displayName: row.display_name,
+              username: row.display_name,
+            })
+          ) {
+            return;
+          }
           if (row.avatar_url) {
             avatarByUserId.set(row.user_id, row.avatar_url);
           }
