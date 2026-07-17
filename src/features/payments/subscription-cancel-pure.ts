@@ -28,7 +28,7 @@ export function resolveMomentumCancelEligibility(params: {
     return {
       canCancel: false,
       canResume: false,
-      reason: "Comp Momentum membership has no Stripe billing to cancel.",
+      reason: " Momentum membership has no Stripe billing to cancel.",
     };
   }
 

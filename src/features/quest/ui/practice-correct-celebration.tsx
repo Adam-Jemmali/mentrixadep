@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import { StepFeedback } from "@/features/quest/components/step-feedback";
+import type { SolutionStep } from "@/features/quest/components/step-feedback-pure";
 import { fireCorrectAnswerConfetti } from "@/features/quest/ui/practice-correct-confetti";
 
 const LOGO_SRC = "/mentrixalogo/logo.webp";
@@ -55,12 +57,16 @@ function LogoParticleBurst({ lite }: { lite?: boolean }) {
 export function PracticeCorrectCelebration({
   open,
   explanation,
+  solutionSteps,
+  correctAnswer,
   onNext,
   nextLabel = "Next question",
   lite = false,
 }: {
   open: boolean;
   explanation: string;
+  solutionSteps?: SolutionStep[];
+  correctAnswer?: string;
   onNext: () => void;
   nextLabel?: string;
   lite?: boolean;
@@ -172,7 +178,17 @@ export function PracticeCorrectCelebration({
                 transition={{ delay: 0.22, duration: 0.35 }}
                 className="mt-4 max-h-[min(42vh,20rem)] overflow-x-auto overflow-y-auto rounded-2xl border border-emerald-300/35 bg-slate-950/55 px-4 py-3 text-left text-sm leading-relaxed text-white [&_.katex]:text-white [&_span]:text-white"
               >
-                <PromptWithMath text={explanation} variant="dark" />
+                {solutionSteps && solutionSteps.length > 0 ? (
+                  <StepFeedback
+                    outcome="correct"
+                    studentAnswer={correctAnswer}
+                    correctAnswer={correctAnswer}
+                    solutionSteps={solutionSteps}
+                    surface="dark"
+                  />
+                ) : (
+                  <PromptWithMath text={explanation} variant="dark" />
+                )}
               </motion.div>
 
               <motion.div

@@ -92,11 +92,7 @@ export function StepTraceDiagnosticResults({
         animate="show"
         className="relative z-10 mx-auto w-full max-w-3xl px-4 py-10 pb-24 sm:py-14"
       >
-        <motion.p variants={rise} className="mb-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/70">
-          AP Calculus AB diagnostic
-          <span className="mx-2 text-white/15">·</span>
-          Step trace verdict
-        </motion.p>
+        
 
         <motion.div variants={rise} className="space-y-4">
           <h2

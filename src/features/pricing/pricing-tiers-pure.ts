@@ -43,8 +43,7 @@ export const PRICING_SECTION_VERDICT =
 export const PRICING_SECTION_NEXT_ACTION = "Pick your path.";
 
 /** One-line Momentum value prop for landing and subscribe surfaces. */
-export const MOMENTUM_PACKAGE_SUMMARY =
-  "One included session per month, member session rate, weekly Movement Receipt, Guide memory across calls, and Loop SLA credit restore.";
+
 
 /** Shared fun layer for Arena and Momentum — one real league rival. */
 export { BEAT_LINE_CATEGORY, BEAT_LINE_SUMMARY } from "@/features/divisions/beat-line-pure";

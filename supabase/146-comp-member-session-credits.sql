@@ -1,4 +1,4 @@
--- Allow comp Momentum members to receive monthly included session credits.
+-- Allow  Momentum members to receive monthly included session credits.
 -- Run after 145-duel-forfeit.sql
 
 ALTER TABLE public.momentum_session_credits

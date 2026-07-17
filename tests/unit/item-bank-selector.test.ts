@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPackNodePickOrder,
   computePracticePackQuestionCount,
   hasApprovedCoverageForNodes,
   pickNeededNodeIds,
@@ -25,6 +26,29 @@ describe("item bank selector coverage guards", () => {
     ]);
     expect(hasApprovedCoverageForNodes(["n1"], itemsByNode as never)).toBe(true);
     expect(hasApprovedCoverageForNodes(["n1", "n2"], itemsByNode as never)).toBe(false);
+  });
+
+  it("focus packs lead with the focus node then fill from the bank", () => {
+    const usableCountByNode = new Map([
+      ["focus", 2],
+      ["unit-sibling", 2],
+      ["other", 5],
+    ]);
+    const order = buildPackNodePickOrder({
+      focusSkillNodeId: "focus",
+      prioritizedNodeIds: ["other", "unit-sibling"],
+      skillNodes: [
+        { id: "focus", unit_number: 1 },
+        { id: "unit-sibling", unit_number: 1 },
+        { id: "other", unit_number: 2 },
+      ],
+      usableCountByNode,
+      targetCount: 5,
+    });
+    expect(order.slice(0, 2)).toEqual(["focus", "focus"]);
+    expect(order).toContain("unit-sibling");
+    expect(order).toHaveLength(5);
+    expect(order.filter((id) => id === "focus")).toHaveLength(2);
   });
 });
 

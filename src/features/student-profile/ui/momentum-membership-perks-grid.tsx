@@ -7,7 +7,6 @@ import {
   MOMENTUM_MEMBERSHIP_ONLY_BADGE,
 } from "@/features/payments/momentum-membership-perks-pure";
 import {
-  MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW,
   MOMENTUM_MEMBERSHIP_UNLOCK_COPY,
 } from "@/features/payments/momentum-membership-pure";
 import { tierComparisonFeatureIcon } from "@/features/pricing/tier-comparison-feature-icon-pure";
@@ -29,7 +28,7 @@ export function MomentumMembershipPerksGrid({
   return (
     <div className={className}>
       <p className={cn("text-[10px] font-black uppercase tracking-[0.2em]", mentrixHubSurfaces.inkMuted)}>
-        {momentumActive ? MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW : MOMENTUM_MEMBERSHIP_ONLY_BADGE}
+        {momentumActive ? " " : MOMENTUM_MEMBERSHIP_ONLY_BADGE}
       </p>
       <p className={cn("mt-1 text-sm font-semibold", mentrixHubSurfaces.inkBody)}>
         {momentumActive

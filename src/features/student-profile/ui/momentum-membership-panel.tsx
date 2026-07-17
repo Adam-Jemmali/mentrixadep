@@ -9,7 +9,6 @@ import { momentumPerkVocabIcon } from "@/features/pricing/momentum-perk-icon-pur
 import { cn } from "@/shared/core/utils";
 import {
   buildPricingTiers,
-  MOMENTUM_PACKAGE_SUMMARY,
   subscriptionPriceLabel,
   type SubscriptionBillingInterval,
 } from "@/features/pricing/pricing-tiers-pure";
@@ -148,9 +147,7 @@ export function MomentumMembershipPanel({
 
       {momentumTier && isSubscribe ? (
         <>
-          <p className={cn("mt-5 text-sm font-semibold", mentrixHubSurfaces.inkBody)}>
-            {MOMENTUM_PACKAGE_SUMMARY}
-          </p>
+          
           <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-[#6366F1]">
             What&apos;s included
           </p>

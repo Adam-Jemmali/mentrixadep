@@ -1,6 +1,10 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import type { PracticeQuestionMcq } from "@/features/quest/practice-quest-types";
 import {
+  parsePartialCreditRules,
+  parseSolutionSteps,
+} from "@/features/quest/components/step-feedback-pure";
+import {
   AP_CALC_AB_SUBJECT,
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
@@ -23,7 +27,15 @@ type ItemBankRow = {
   options: unknown;
   correct_answer: string;
   explanation: string;
+  solution_steps?: unknown;
+  answer_expression?: string | null;
+  partial_credit_rules?: unknown;
 };
+
+const ITEM_BANK_BASE_SELECT =
+  "id, skill_node_id, prompt, options, correct_answer, explanation";
+const ITEM_BANK_EXTENDED_SELECT =
+  `${ITEM_BANK_BASE_SELECT}, solution_steps, answer_expression, partial_credit_rules`;
 
 export function computePracticePackQuestionCount(count: number): number {
   return Math.min(10, Math.max(5, Math.floor(count)));
@@ -43,6 +55,52 @@ export function hasApprovedCoverageForNodes(
   itemsByNode: ReadonlyMap<string, ItemBankRow[]>
 ): boolean {
   return neededNodeIds.every((nodeId) => (itemsByNode.get(nodeId)?.length ?? 0) > 0);
+}
+
+/**
+ * Focus packs lead with the focused node, then same-unit nodes, then priority.
+ * Never requires targetCount unique items from a single node.
+ */
+export function buildPackNodePickOrder(args: {
+  focusSkillNodeId?: string;
+  prioritizedNodeIds: string[];
+  skillNodes: Array<{ id: string; unit_number: number }>;
+  usableCountByNode: ReadonlyMap<string, number>;
+  targetCount: number;
+}): string[] {
+  const { focusSkillNodeId, prioritizedNodeIds, skillNodes, usableCountByNode, targetCount } = args;
+  const order: string[] = [];
+
+  const pushNodeSlots = (nodeId: string, slots: number) => {
+    const usable = usableCountByNode.get(nodeId) ?? 0;
+    const remainingForNode = Math.max(0, usable - order.filter((id) => id === nodeId).length);
+    const toAdd = Math.min(slots, remainingForNode, targetCount - order.length);
+    for (let i = 0; i < toAdd; i++) order.push(nodeId);
+  };
+
+  if (focusSkillNodeId) {
+    pushNodeSlots(focusSkillNodeId, targetCount);
+    const focusUnit = skillNodes.find((node) => node.id === focusSkillNodeId)?.unit_number;
+    if (focusUnit != null) {
+      for (const node of skillNodes) {
+        if (order.length >= targetCount) break;
+        if (node.id === focusSkillNodeId || node.unit_number !== focusUnit) continue;
+        pushNodeSlots(node.id, targetCount - order.length);
+      }
+    }
+  }
+
+  for (const nodeId of prioritizedNodeIds) {
+    if (order.length >= targetCount) break;
+    pushNodeSlots(nodeId, 1);
+  }
+
+  for (const node of skillNodes) {
+    if (order.length >= targetCount) break;
+    pushNodeSlots(node.id, targetCount - order.length);
+  }
+
+  return order;
 }
 
 function parseOptions(value: unknown): string[] {
@@ -139,7 +197,7 @@ function pickWeightedNodeIds(nodes: SkillNodeRow[], limit: number): string[] {
   return picked;
 }
 
-function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): PracticeQuestionMcq | null {
+export function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): PracticeQuestionMcq | null {
   const options = parseOptions(item.options);
   if (options.length !== 4) return null;
 
@@ -162,7 +220,35 @@ function itemToPracticeQuestion(item: ItemBankRow, node: SkillNodeRow): Practice
     subtopicTag: node.node_name,
     unitNumber: node.unit_number,
     examStakes: node.exam_stakes?.trim() || undefined,
+    solutionSteps: parseSolutionSteps(item.solution_steps),
+    answerExpression: item.answer_expression?.trim() || undefined,
+    partialCreditRules: parsePartialCreditRules(item.partial_credit_rules),
+    correctAnswer: item.correct_answer,
   };
+}
+
+async function loadApprovedItemBankRows(
+  admin: ReturnType<typeof createAdminClient>,
+  nodeIds: string[],
+): Promise<ItemBankRow[]> {
+  const extended = await admin
+    .from("item_bank")
+    .select(ITEM_BANK_EXTENDED_SELECT)
+    .eq("status", "approved")
+    .in("skill_node_id", nodeIds);
+
+  if (!extended.error && extended.data?.length) {
+    return extended.data as ItemBankRow[];
+  }
+
+  const base = await admin
+    .from("item_bank")
+    .select(ITEM_BANK_BASE_SELECT)
+    .eq("status", "approved")
+    .in("skill_node_id", nodeIds);
+
+  if (base.error || !base.data?.length) return [];
+  return base.data as ItemBankRow[];
 }
 
 export async function selectItemBankQuestions(
@@ -199,47 +285,49 @@ export async function selectItemBankQuestions(
       : basePrioritized;
 
   const nodeIds = skillNodes.map((node) => node.id);
-  const { data: items, error: itemsError } = await admin
-    .from("item_bank")
-    .select("id, skill_node_id, prompt, options, correct_answer, explanation")
-    .eq("status", "approved")
-    .in("skill_node_id", nodeIds);
-
-  if (itemsError || !items?.length) return [];
+  const items = await loadApprovedItemBankRows(admin, nodeIds);
+  if (!items.length) return [];
 
   const itemsByNode = new Map<string, ItemBankRow[]>();
-  for (const row of items as ItemBankRow[]) {
+  const usableCountByNode = new Map<string, number>();
+
+  for (const row of items) {
+    const node = nodeById.get(row.skill_node_id);
+    if (!node) continue;
+    if (!itemToPracticeQuestion(row, node)) continue;
     const list = itemsByNode.get(row.skill_node_id) ?? [];
     list.push(row);
     itemsByNode.set(row.skill_node_id, list);
+    usableCountByNode.set(row.skill_node_id, list.length);
   }
 
-  const neededNodeIds = options?.focusSkillNodeId
-    ? Array.from({ length: targetCount }, () => options.focusSkillNodeId!)
-    : pickNeededNodeIds(prioritizedNodeIds, targetCount);
-  if (
-    neededNodeIds.length < targetCount ||
-    !hasApprovedCoverageForNodes(neededNodeIds, itemsByNode)
-  ) {
-    return [];
-  }
+  const neededNodeIds = buildPackNodePickOrder({
+    focusSkillNodeId: options?.focusSkillNodeId,
+    prioritizedNodeIds,
+    skillNodes,
+    usableCountByNode,
+    targetCount,
+  });
+
+  if (neededNodeIds.length < targetCount) return [];
 
   const selected: PracticeQuestionMcq[] = [];
   const usedItemIds = new Set<string>();
 
   for (const nodeId of neededNodeIds) {
+    const node = nodeById.get(nodeId);
+    if (!node) continue;
+
     const pool = shuffle(itemsByNode.get(nodeId) ?? []);
     const item = pool.find((row) => !usedItemIds.has(row.id));
-    if (!item) return [];
-
-    const node = nodeById.get(nodeId);
-    if (!node) return [];
+    if (!item) continue;
 
     const question = itemToPracticeQuestion(item, node);
-    if (!question) return [];
+    if (!question) continue;
 
     usedItemIds.add(item.id);
     selected.push(question);
+    if (selected.length >= targetCount) break;
   }
 
   if (selected.length < targetCount) return [];

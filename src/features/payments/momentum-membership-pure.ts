@@ -13,7 +13,7 @@ import { momentumCompRenewalLabel } from "@/features/entitlements/momentum-comp-
 
 export const MOMENTUM_MEMBERSHIP_MEMBER_LABEL = "Momentum membership member";
 
-export const MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW = "Momentum membership feature";
+
 
 export const MOMENTUM_MEMBERSHIP_INCLUDED_COPY = "Included with Momentum membership.";
 

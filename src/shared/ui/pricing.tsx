@@ -6,7 +6,7 @@ import { VerticalCutReveal } from "@/shared/ui/vertical-cut-reveal";
 import {
   LANDING_PRICING,
 } from "@/features/marketing/landing/landing-copy-pure";
-import { MOMENTUM_PACKAGE_SUMMARY, BEAT_LINE_SUMMARY } from "@/features/pricing/pricing-tiers-pure";
+import { BEAT_LINE_SUMMARY } from "@/features/pricing/pricing-tiers-pure";
 import { TierComparisonTable } from "@/features/pricing/ui/tier-comparison-table";
 import { PricingTierVisualGrid } from "@/features/pricing/ui/pricing-tier-visual";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
@@ -106,7 +106,7 @@ export default function PricingSection() {
       >
         <LandingStickyCard rotate={false} className="mx-auto mt-6 max-w-3xl rotate-[-0.1deg] px-5 py-4 text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">Momentum</p>
-          <p className={`mt-2 text-sm font-semibold ${landingHub.inkMuted}`}>{MOMENTUM_PACKAGE_SUMMARY}</p>
+         
         </LandingStickyCard>
       </TimelineContent>
 

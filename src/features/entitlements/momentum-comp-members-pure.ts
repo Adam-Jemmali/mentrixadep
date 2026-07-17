@@ -47,5 +47,5 @@ export function resolveMomentumActive(input: {
 }
 
 export function momentumCompRenewalLabel(compMember: boolean): string | null {
-  return compMember ? "Comp Momentum membership active." : null;
+  return compMember ? "" : null;
 }

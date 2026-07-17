@@ -40,7 +40,6 @@ export function QuestPracticePackWizard({
   difficulty,
   onDifficultyChange,
   onStart,
-  startLabel = "Start verified pack",
   showVerifiedDisclosure = true,
   heading = "Verified practice pack",
   subtitle = null,
@@ -49,11 +48,9 @@ export function QuestPracticePackWizard({
   const resolvedSubtitle =
     subtitle ??
     (focusNodeName
-      ? `This pack stays on ${focusNodeName}. Same topic, fresh items from the bank.`
+      ? `This pack leads with ${focusNodeName}, then fills from the verified AP Calculus AB bank.`
       : null);
-  const resolvedStartLabel = focusNodeName
-    ? `Start pack on ${focusNodeName}`
-    : startLabel;
+  const resolvedStartLabel = `Start ${practiceDifficultyLabel(difficulty)} pack`;
   return (
     <div className="relative w-full">
       {busy ? (

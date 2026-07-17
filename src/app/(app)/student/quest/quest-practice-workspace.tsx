@@ -25,6 +25,8 @@ import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adap
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { PracticeCorrectCelebration } from "@/features/quest/ui/practice-correct-celebration";
+import { StepFeedback } from "@/features/quest/components/step-feedback";
+import type { SolutionStep, StepFeedbackPartial } from "@/features/quest/components/step-feedback-pure";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/get-mastery-grid-action";
 import { QuestMasteryDonePanel } from "@/features/mastery-grid/quest-mastery-done-panel";
@@ -83,12 +85,19 @@ export function QuestPracticeWorkspace({
     explanation: string;
     correctIndex: number;
     canContinue: boolean;
+    studentAnswer: string;
+    correctAnswer: string;
+    solutionSteps: SolutionStep[];
+    partialCredit: StepFeedbackPartial | null;
+    hasStepTrace: boolean;
   } | null>(null);
   const [writtenFeedback, setWrittenFeedback] = useState<string | null>(null);
   const [writtenAwaitingContinue, setWrittenAwaitingContinue] = useState(false);
   const [correctCelebration, setCorrectCelebration] = useState<{
     explanation: string;
     mode: "mcq" | "written";
+    solutionSteps?: SolutionStep[];
+    correctAnswer?: string;
   } | null>(null);
   const [doneResult, setDoneResult] = useState<{
     correct: number;
@@ -317,10 +326,20 @@ export function QuestPracticeWorkspace({
       explanation: r.explanation,
       correctIndex: r.correctIndex,
       canContinue: !r.finished,
+      studentAnswer: r.studentAnswer,
+      correctAnswer: r.correctAnswer,
+      solutionSteps: r.solutionSteps,
+      partialCredit: r.partialCredit,
+      hasStepTrace: r.hasStepTrace,
     });
     setLockedQuestionIndices((prev) => new Set(prev).add(qIndex));
     if (r.correct && !r.finished) {
-      setCorrectCelebration({ explanation: r.explanation, mode: "mcq" });
+      setCorrectCelebration({
+        explanation: r.explanation,
+        mode: "mcq",
+        solutionSteps: r.hasStepTrace ? r.solutionSteps : undefined,
+        correctAnswer: r.correctAnswer,
+      });
     }
     if (r.finished && questId) {
       await finishRun(questId);
@@ -653,20 +672,40 @@ export function QuestPracticeWorkspace({
               </div>
             )}
 
-            {question.kind === "mcq" && mcqResult && !mcqResult.correct && (
-              <PracticeWrongAnswerAlert
-                explanation={mcqResult.explanation}
-                onContinue={mcqResult.canContinue && !busy ? () => void mcqNext() : undefined}
-                busy={busy}
-                className="mx-hub-notebook mx-hub-ruled-lines mx-hub-paper mx-surface-light"
-              />
-            )}
+            {question.kind === "mcq" && mcqResult && !mcqResult.correct ? (
+              mcqResult.hasStepTrace ? (
+                <StepFeedback
+                  outcome={mcqResult.partialCredit ? "partial" : "incorrect"}
+                  studentAnswer={mcqResult.studentAnswer}
+                  correctAnswer={mcqResult.correctAnswer}
+                  solutionSteps={mcqResult.solutionSteps}
+                  partialCredit={mcqResult.partialCredit}
+                  onContinue={
+                    mcqResult.canContinue && !busy ? () => void mcqNext() : undefined
+                  }
+                  busy={busy}
+                  surface="light"
+                  className="mx-hub-notebook mx-hub-ruled-lines mx-hub-paper mx-surface-light rounded-2xl border border-[#E0E7FF] p-4"
+                />
+              ) : (
+                <PracticeWrongAnswerAlert
+                  explanation={mcqResult.explanation}
+                  onContinue={
+                    mcqResult.canContinue && !busy ? () => void mcqNext() : undefined
+                  }
+                  busy={busy}
+                  className="mx-hub-notebook mx-hub-ruled-lines mx-hub-paper mx-surface-light"
+                />
+              )
+            ) : null}
           </motion.div>
         </AnimatePresence>
 
         <PracticeCorrectCelebration
           open={correctCelebration != null}
           explanation={correctCelebration?.explanation ?? ""}
+          solutionSteps={correctCelebration?.solutionSteps}
+          correctAnswer={correctCelebration?.correctAnswer}
           lite={tier === "lite"}
           onNext={() => {
             if (correctCelebration?.mode === "mcq") void mcqNext();

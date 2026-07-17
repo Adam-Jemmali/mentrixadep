@@ -5,6 +5,10 @@ import type {
   MasteryPackNodeSnapshot,
   QuestMasteryHighlight,
 } from "@/features/mastery-grid/types";
+import type {
+  PartialCreditRule,
+  SolutionStep,
+} from "@/features/quest/components/step-feedback-pure";
 
 export type PracticeDifficulty = "beginner" | "intermediate" | "advanced";
 export type PracticePackType = "mcq" | "short_answer" | "problem_solving";
@@ -25,6 +29,10 @@ export interface PracticeQuestionMcq {
   unitNumber?: number;
   /** From skill_nodes.exam_stakes — shown as Exam stakes tooltip in quest UI. */
   examStakes?: string;
+  solutionSteps?: SolutionStep[];
+  answerExpression?: string;
+  partialCreditRules?: PartialCreditRule[];
+  correctAnswer?: string;
 }
 
 export interface PracticeQuestionWritten {

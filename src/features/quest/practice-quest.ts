@@ -22,6 +22,13 @@ import {
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
 import { selectItemBankQuestions, computePracticePackQuestionCount } from "@/features/quest/item-bank-selector";
+import {
+  hasStepFeedbackTrace,
+  matchPartialCredit,
+  resolveCorrectAnswerExpression,
+  type StepFeedbackPartial,
+  type SolutionStep,
+} from "@/features/quest/components/step-feedback-pure";
 import { applyXpAward } from "@/features/xp/xp-awards";
 
 import { getDivisionKeyForCourse } from "@/features/divisions/leaderboard";
@@ -151,7 +158,7 @@ export interface CreatePracticeQuestInput {
   /** 5–10; default random */
   questionCount?: number;
   timeLimitSec?: number;
-  /** When set, pack pulls items from this skill node only (same-topic rerun). */
+  /** When set, pack leads with this skill node, then fills from the verified bank. */
   focusNodeName?: string;
 }
 
@@ -409,6 +416,11 @@ export async function submitPracticeMcq(
       explanation: string;
       finished: boolean;
       correctIndex: number;
+      studentAnswer: string;
+      correctAnswer: string;
+      solutionSteps: SolutionStep[];
+      partialCredit: StepFeedbackPartial | null;
+      hasStepTrace: boolean;
     }
   | { error: string }
 > {
@@ -459,11 +471,28 @@ export async function submitPracticeMcq(
     };
   });
   const finished = questionIndex + 1 >= meta.questions.length;
+  const solutionSteps = mcq.solutionSteps ?? [];
+  const studentAnswer = mcq.options[selectedIndex] ?? "";
+  const correctAnswer = resolveCorrectAnswerExpression(
+    mcq.options[mcq.correctIndex] ?? mcq.correctAnswer ?? "",
+    mcq.answerExpression,
+    solutionSteps,
+  );
+  const partialCredit =
+    !correct && mcq.partialCreditRules?.length
+      ? matchPartialCredit(studentAnswer, mcq.partialCreditRules, correctAnswer)
+      : null;
+
   return {
     correct,
     explanation: mcq.explanation,
     finished,
     correctIndex: mcq.correctIndex,
+    studentAnswer,
+    correctAnswer,
+    solutionSteps,
+    partialCredit,
+    hasStepTrace: hasStepFeedbackTrace(solutionSteps),
   };
 }
 

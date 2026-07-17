@@ -3,7 +3,6 @@ import {
   buildPricingTiers,
   buildTierComparisonRows,
   FREE_TIER_PAYWALL_COMMITMENT,
-  MOMENTUM_PACKAGE_SUMMARY,
   PRICING_SECTION_HEADLINE,
 } from "@/features/pricing/pricing-tiers-pure";
 import { BREAKTHROUGH_SESSION_PRICE_CENTS } from "@/features/booking/booking-pricing";
@@ -49,8 +48,7 @@ describe("pricing tiers copy", () => {
     expect(momentum?.receipts.some((line) => line.includes("Trajectory certificate"))).toBe(false);
     expect(momentum?.buttonLink).toBe("/student/subscribe");
     expect(momentum?.popularBadge).toBe("Only subscription");
-    expect(MOMENTUM_PACKAGE_SUMMARY).toContain("Movement Receipt");
-    expect(MOMENTUM_PACKAGE_SUMMARY).not.toContain("Playbook");
+ 
   });
 
   it("marks five momentum-exclusive rows in the comparison matrix", () => {

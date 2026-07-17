@@ -10,7 +10,7 @@ export function buildSessionCreditsHubVerdict(input: {
   if (input.totalRemaining <= 0) {
     return {
       verdict: "No included session credits are available right now.",
-      nextAction: "Book at the member rate or buy a Quarter Sprint Pack before your exam window closes.",
+      nextAction: "",
     };
   }
 

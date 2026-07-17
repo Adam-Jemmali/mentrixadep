@@ -54,7 +54,7 @@ describe("resolveMomentumActive", () => {
 
 describe("momentumCompRenewalLabel", () => {
   it("returns comp copy for comp members", () => {
-    expect(momentumCompRenewalLabel(true)).toBe("Comp Momentum membership active.");
+    expect(momentumCompRenewalLabel(true)).toBe("");
     expect(momentumCompRenewalLabel(false)).toBeNull();
   });
 });
