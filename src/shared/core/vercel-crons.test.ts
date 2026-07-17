@@ -136,6 +136,13 @@ describe("vercel cron config", () => {
     const rankCache = crons.find((c) => c.path === "/api/cron/refresh-rank-cache");
     expect(rankCache, "refresh-rank-cache must run via GitHub Actions, not vercel.json").toBeUndefined();
   });
+
+  it("does not schedule check-mastery-decay on Vercel (GitHub Actions daily)", () => {
+    const cfg = readVercelConfig();
+    const crons = cfg.crons ?? [];
+    const decay = crons.find((c) => c.path === "/api/cron/check-mastery-decay");
+    expect(decay, "check-mastery-decay must run via GitHub Actions, not vercel.json").toBeUndefined();
+  });
 });
 
 describe("github background job cron", () => {
@@ -156,6 +163,16 @@ describe("github background job cron", () => {
     const script = readFileSync(pingScript, "utf8");
     expect(raw).toMatch(/cron:\s*["']\*\/5 \* \* \* \*["']/);
     expect(raw).toContain("github-cron-ping.sh /api/cron/refresh-rank-cache");
+    expect(script).toContain("openssl dgst -sha256 -hmac");
+  });
+
+  it("runs check-mastery-decay daily via shared ping script", () => {
+    const workflowPath = join(process.cwd(), ".github/workflows/cron-check-mastery-decay.yml");
+    const pingScript = join(process.cwd(), "scripts/github-cron-ping.sh");
+    const raw = readFileSync(workflowPath, "utf8");
+    const script = readFileSync(pingScript, "utf8");
+    expect(raw).toMatch(/cron:\s*["']0 7 \* \* \*["']/);
+    expect(raw).toContain("github-cron-ping.sh /api/cron/check-mastery-decay");
     expect(script).toContain("openssl dgst -sha256 -hmac");
   });
 });

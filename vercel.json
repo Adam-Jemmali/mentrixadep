@@ -97,7 +97,7 @@
     },
     {
       "path": "/api/cron/sync-peer-comparison",
-      "schedule": "0 * * * *"
+      "schedule": "0 4 * * 1"
     },
     {
       "path": "/api/cron/capture-mastery-grid-snapshots",
@@ -162,10 +162,6 @@
     {
       "path": "/api/cron/momentum-monthly-digest",
       "schedule": "0 9 1 * *"
-    },
-    {
-      "path": "/api/cron/check-mastery-decay",
-      "schedule": "0 7 * * *"
     }
   ]
 }

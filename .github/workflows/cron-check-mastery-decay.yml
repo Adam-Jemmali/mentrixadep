@@ -1,0 +1,25 @@
+# Mastery decay alerts need a daily run. Vercel Hobby forbids sub-daily
+# schedules and this repo keeps vercel.json weekly/monthly only, so decay
+# runs via GitHub Actions (same pattern as background jobs / rank cache).
+#
+# Required repository secret: CRON_SECRET (must match Vercel/production CRON_SECRET exactly)
+# Optional variable: PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
+
+name: Cron Check Mastery Decay
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-mastery-decay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger /api/cron/check-mastery-decay
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
+        run: bash scripts/github-cron-ping.sh /api/cron/check-mastery-decay
