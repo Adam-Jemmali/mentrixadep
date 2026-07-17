@@ -6,7 +6,7 @@ describe("VerdictPanel public passport behavior", () => {
     const verdict = buildRankDeltaVerdict(
       { accuracyPercent: 71, percentile: 99, verifiedCount: 7 },
       { accuracyPercent: 67, percentile: 95 },
-      [{ nodeName: "One sided limits", isCorrect: true, skillNodeId: "a", attemptedAt: "" }],
+      [{ nodeName: "One sided limits", isCorrect: true, skillNodeId: "a" }],
     );
     expect(verdict.changed).toContain("67→71");
     expect(verdict.reason).toContain("One sided limits");

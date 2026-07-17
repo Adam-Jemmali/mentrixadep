@@ -8,8 +8,6 @@ describe("pickStudentHubDoNext", () => {
         verdict: "You are 2 verified nodes behind Alex.",
         ctaLabel: "Close the gap",
         ctaHref: "/student/quest",
-        rivalName: "Alex",
-        gapNodes: 2,
       },
     });
     expect(next?.verdict).toContain("Alex");

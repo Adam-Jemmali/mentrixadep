@@ -32,16 +32,6 @@ describe("buildArenaLeaderProfile", () => {
       arenaLeaderAvatarInitial({
         displayName: "Mentrixer",
         username: "vacina5883",
-        userId: "x",
-        avatarUrl: null,
-        accountRankTier: "Wanderer",
-        accountRankLevel: 1,
-        accuracyPercent: 67,
-        verifiedCount: 6,
-        percentile: 50,
-        topPercent: 50,
-        accuracyLine: "",
-        peerStandingLine: "",
       }),
     ).toBe("V");
   });
