@@ -135,7 +135,7 @@ describe("quest-post-step-pure", () => {
     expect(shortenPostPackCtaLabel("Quest Limits to lock rank")).toBe("Quest Limits");
   });
 
-  it("builds at most three post-pack CTAs with a clear primary", () => {
+  it("builds exactly three post-pack CTAs with skill tree access", () => {
     const data = gridWith([
       { id: "a", nodeName: "u substitution basics", state: "verified", accuracyPercent: 100 },
       { id: "b", nodeName: "Introducing limits", state: "none", displayOrder: 2 },
@@ -149,14 +149,11 @@ describe("quest-post-step-pure", () => {
       data,
       ["a"],
     );
-    const ctas = buildQuestPostPackCtas({
-      verdict,
-      grid: data,
-      packNodeIds: ["a"],
-    });
+    const ctas = buildQuestPostPackCtas(verdict);
     expect(ctas).toHaveLength(3);
     expect(ctas[0]?.kind).toBe("primary");
     expect(ctas[0]?.key).toBe("next");
+    expect(ctas.map((c) => c.key)).toContain("tree");
     expect(ctas.map((c) => c.key)).toContain("home");
     expect(ctas.every((c) => c.label.length > 0)).toBe(true);
   });

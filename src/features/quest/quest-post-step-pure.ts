@@ -252,9 +252,9 @@ export type QuestPostPackChoices = {
 export type QuestPostPackCtaKind = "primary" | "secondary" | "ghost";
 
 export type QuestPostPackCta = {
-  key: "next" | "same" | "pack" | "home";
+  key: "next" | "tree" | "home";
   label: string;
-  href?: string;
+  href: string;
   kind: QuestPostPackCtaKind;
 };
 
@@ -270,51 +270,28 @@ export function shortenPostPackCtaLabel(label: string): string {
   return trimmed;
 }
 
-/**
- * At most three post-pack moves: recommended next, optional same-topic or new pack, Home.
- */
-export function buildQuestPostPackCtas(input: {
-  verdict: Verdict;
-  grid: MasteryGridData;
-  packNodeIds: string[];
-  highlight?: QuestMasteryHighlight | null;
-}): QuestPostPackCta[] {
-  const { verdict, grid, packNodeIds, highlight } = input;
-  const choices = buildQuestPostPackChoices(grid, packNodeIds, highlight);
-  const primaryHref = verdict.nextAction.href;
-  const ctas: QuestPostPackCta[] = [
+/** Exactly three post-pack moves: recommendation, skill tree, Home. */
+export function buildQuestPostPackCtas(verdict: Verdict): QuestPostPackCta[] {
+  return [
     {
       key: "next",
       label: shortenPostPackCtaLabel(verdict.nextAction.label),
-      href: primaryHref,
+      href: verdict.nextAction.href,
       kind: "primary",
     },
+    {
+      key: "tree",
+      label: "Skill tree",
+      href: "/student/mastery",
+      kind: "secondary",
+    },
+    {
+      key: "home",
+      label: "Home",
+      href: "/student",
+      kind: "ghost",
+    },
   ];
-
-  const same = choices?.sameTopic;
-  if (same && same.href !== primaryHref) {
-    ctas.push({
-      key: "same",
-      label: shortenPostPackCtaLabel(same.label),
-      href: same.href,
-      kind: "secondary",
-    });
-  } else {
-    ctas.push({
-      key: "pack",
-      label: "New pack",
-      kind: "secondary",
-    });
-  }
-
-  ctas.push({
-    key: "home",
-    label: "Home",
-    href: "/student",
-    kind: "ghost",
-  });
-
-  return ctas.slice(0, 3);
 }
 
 function choiceForNode(node: MasteryGridNode, kind: "same" | "other"): QuestPostPackChoice {

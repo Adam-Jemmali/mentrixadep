@@ -6,6 +6,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import { buildQuestPostPackCtas } from "@/features/quest/quest-post-step-pure";
+import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
 
 export function QuestMasteryDonePanel({
   grid,
@@ -16,8 +17,6 @@ export function QuestMasteryDonePanel({
   total,
   xpAwarded,
   perfectBonus,
-  streakDays,
-  onNewPack,
 }: {
   grid: MasteryGridData;
   verdict: Verdict;
@@ -27,54 +26,43 @@ export function QuestMasteryDonePanel({
   total: number;
   xpAwarded: number;
   perfectBonus: number;
-  streakDays?: number;
-  onNewPack: () => void;
 }) {
   const xpTotal = xpAwarded + perfectBonus;
-  const metaParts: string[] = [`${correct}/${total}`];
-  if (xpTotal > 0) metaParts.push(`+${xpTotal} XP`);
-  if (streakDays != null && streakDays > 0) {
-    metaParts.push(`${streakDays}d streak`);
-  }
+  const questAccuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const percentile = verdict.rankDelta?.percentile?.current;
+  const workedNodeName =
+    masteryHighlight?.nodeName ??
+    grid.units
+      .flatMap((unit) => unit.nodes)
+      .find((node) => packSkillNodeIds.includes(node.id))?.nodeName ??
+    "AP Calculus AB";
 
-  const ctas = buildQuestPostPackCtas({
-    verdict,
-    grid,
-    packNodeIds: packSkillNodeIds,
-    highlight: masteryHighlight,
-  });
+  const metaParts: string[] = [`${questAccuracy}% quest accuracy`];
+  if (percentile != null) {
+    metaParts.push(`Top ${peerTopPercent(percentile)}% verified`);
+  }
+  if (xpTotal > 0) metaParts.push(`+${xpTotal} XP`);
+
+  const ctas = buildQuestPostPackCtas(verdict);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10 sm:py-14">
       <header className="text-center">
         <p className={mentrixStudent.sectionEyebrow}>Pack complete</p>
-        <p className="mt-2 font-mono text-xs tabular-nums text-[#94A3B8]">
+        <p className="mt-3 text-sm font-semibold text-[#0B1220]">
+          Worked on: {workedNodeName}
+        </p>
+        <p className="mt-1.5 font-mono text-xs tabular-nums text-[#475569]">
           {metaParts.join(" · ")}
         </p>
       </header>
 
-      <p className="mt-8 text-center text-lg font-semibold leading-snug text-white sm:text-xl">
+      <p className="mt-8 text-center text-lg font-bold leading-snug text-[#0B1220] sm:text-xl">
         {verdict.changed}
       </p>
 
       <div className="mt-8 flex flex-col gap-2.5">
         {ctas.map((cta) => {
-          if (cta.key === "pack") {
-            return (
-              <Button
-                key={cta.key}
-                type="button"
-                className="min-h-11 w-full"
-                variant="outline"
-                onClick={onNewPack}
-              >
-                {cta.label}
-              </Button>
-            );
-          }
-
-          if (!cta.href) return null;
-
           if (cta.kind === "primary") {
             return (
               <Button

@@ -491,16 +491,6 @@ export function QuestPracticeWorkspace({
             total={doneResult.total}
             xpAwarded={doneResult.xpAwarded}
             perfectBonus={doneResult.perfectBonus}
-            streakDays={doneResult.streakDays}
-            onNewPack={() => {
-              setPhase("wizard");
-              setQuestId(null);
-              setDoneResult(null);
-              setFallbackMasteryGrid(null);
-              setBreakthroughCelebration(null);
-              setLockedQuestionIndices(new Set());
-              setErr(null);
-            }}
           />
         ) : (
           <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
