@@ -1,4 +1,5 @@
 import type { LiveBoardEventRow } from "@/features/live-board/types";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export const ARENA_PAGE_COPY = {
   title: "AP Calculus AB Live Rank Arena",
@@ -7,11 +8,13 @@ export const ARENA_PAGE_COPY = {
   ctaHref: "/try",
   feedEyebrow: "Live feed",
   leadersTitle: "Top 10 by verified accuracy",
-  leadersSubtitle:
-    "AP Calculus AB first-attempt standing from the rank cache. No live aggregation on this page.",
+  leadersSubtitle: "AP Calculus AB first-attempt standing from the rank.",
   emptyFeed: "No live events yet. Lock your first skill to appear here.",
   divisionWarEyebrow: "Division War",
 } as const;
+
+/** Visible rows in the compact Arena feed viewport. */
+export const ARENA_FEED_VISIBLE_LIMIT = 12;
 
 export function liveBoardEventTypeLabel(
   eventType: LiveBoardEventRow["event_type"],
@@ -27,6 +30,23 @@ export function liveBoardEventTypeLabel(
       return "Division War";
     default:
       return "Update";
+  }
+}
+
+export function liveBoardEventVocabIcon(
+  eventType: LiveBoardEventRow["event_type"],
+): VocabIconName {
+  switch (eventType) {
+    case "verified_attempt":
+      return "verified";
+    case "rank_advance":
+      return "rank-proof";
+    case "breakthrough":
+      return "breakthrough";
+    case "division_war_result":
+      return "leaderboard";
+    default:
+      return "practice-pack";
   }
 }
 
@@ -58,11 +78,6 @@ export function formatLiveBoardTimeAgo(
   return days === 1 ? "1d ago" : `${days}d ago`;
 }
 
-function formatAccuracyPct(value: number | null): string {
-  if (value == null || Number.isNaN(value)) return "0";
-  return String(Math.round(value));
-}
-
 export function formatLiveBoardEventDescription(event: Pick<
   LiveBoardEventRow,
   "event_type" | "node_name" | "accuracy_pct" | "new_rank_tier" | "display_name"
@@ -70,9 +85,11 @@ export function formatLiveBoardEventDescription(event: Pick<
   const name = event.display_name.trim() || "A Mentrixer";
   switch (event.event_type) {
     case "verified_attempt":
-      return `${name} scored ${formatAccuracyPct(event.accuracy_pct)}% on ${event.node_name} · first try`;
+      if (event.accuracy_pct === 100) return `${name} locked ${event.node_name}`;
+      if (event.accuracy_pct === 0) return `${name} missed ${event.node_name}`;
+      return `${name} · ${event.node_name}`;
     case "rank_advance":
-      return `${name} advanced to ${event.new_rank_tier?.trim() || "a new rank"}`;
+      return `${name} → ${event.new_rank_tier?.trim() || "new rank"}`;
     case "breakthrough":
       return `${name} broke through ${event.node_name}`;
     case "division_war_result":

@@ -23,15 +23,14 @@ describe("live board retention", () => {
   });
 });
 
-describe("live board display name privacy", () => {
+describe("live board display names", () => {
   it("uses display_name when set", () => {
-    expect(resolveLiveBoardDisplayName("Ada L.", "ada@example.com", 1234)).toBe("Ada L.");
+    expect(resolveLiveBoardDisplayName("Ada L.", "ada@example.com", "ada")).toBe("Ada L.");
   });
 
-  it("falls back to first email letter plus 4-digit suffix, never the email", () => {
-    const alias = resolveLiveBoardDisplayName(null, "ada@example.com", 4821);
-    expect(alias).toBe("A4821");
-    expect(alias).not.toContain("@");
-    expect(alias).not.toContain("ada");
+  it("falls back to username then email local-part, never invents aliases", () => {
+    expect(resolveLiveBoardDisplayName(null, "ada@example.com", "ada")).toBe("ada");
+    expect(resolveLiveBoardDisplayName(null, "ada@example.com")).toBe("ada");
+    expect(resolveLiveBoardDisplayName(null, null)).toBe("Mentrixer");
   });
 });

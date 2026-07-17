@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDivisionWarResultHeadline,
+  isInventedLiveBoardAlias,
   resolveLiveBoardDisplayName,
   verifiedAttemptAccuracyPct,
 } from "@/features/live-board/live-board-events-pure";
 import {
+  ARENA_FEED_VISIBLE_LIMIT,
   ARENA_PAGE_COPY,
   formatDivisionWarScoreLine,
   formatLiveBoardEventDescription,
@@ -18,9 +20,13 @@ describe("live board event helpers", () => {
     expect(verifiedAttemptAccuracyPct(false)).toBe(0);
   });
 
-  it("builds anonymized display names without email", () => {
-    expect(resolveLiveBoardDisplayName("Ada", "ada@example.com", 4821)).toBe("Ada");
-    expect(resolveLiveBoardDisplayName(null, "ada@example.com", 4821)).toBe("A4821");
+  it("uses real profile fields and never invents digit aliases", () => {
+    expect(resolveLiveBoardDisplayName("Ada", "ada@example.com", "ada")).toBe("Ada");
+    expect(resolveLiveBoardDisplayName(null, "ada@example.com", "ada")).toBe("ada");
+    expect(resolveLiveBoardDisplayName(null, "ada@example.com")).toBe("ada");
+    expect(resolveLiveBoardDisplayName(null, null, null)).toBe("Mentrixer");
+    expect(isInventedLiveBoardAlias("A4821")).toBe(true);
+    expect(isInventedLiveBoardAlias("Trapdime")).toBe(false);
   });
 
   it("formats division war headlines and score lines", () => {
@@ -38,20 +44,31 @@ describe("arena page copy", () => {
     expect(ARENA_PAGE_COPY.title).toBe("AP Calculus AB Live Rank Arena");
     expect(ARENA_PAGE_COPY.subtitle).toContain("first attempt");
     expect(ARENA_PAGE_COPY.ctaHref).toBe("/try");
+    expect(ARENA_FEED_VISIBLE_LIMIT).toBe(12);
   });
 });
 
 describe("live board feed copy", () => {
-  it("renders brief per-event sentences with display names", () => {
+  it("renders concise per-event lines with real outcomes", () => {
     expect(
       formatLiveBoardEventDescription({
         event_type: "verified_attempt",
         node_name: "Chain Rule",
         accuracy_pct: 100,
         new_rank_tier: null,
-        display_name: "A4821",
+        display_name: "Trapdime",
       }),
-    ).toBe("A4821 scored 100% on Chain Rule · first try");
+    ).toBe("Trapdime locked Chain Rule");
+
+    expect(
+      formatLiveBoardEventDescription({
+        event_type: "verified_attempt",
+        node_name: "Chain Rule",
+        accuracy_pct: 0,
+        new_rank_tier: null,
+        display_name: "Trapdime",
+      }),
+    ).toBe("Trapdime missed Chain Rule");
 
     expect(
       formatLiveBoardEventDescription({
@@ -59,9 +76,9 @@ describe("live board feed copy", () => {
         node_name: "Chain Rule",
         accuracy_pct: null,
         new_rank_tier: "SEEKER",
-        display_name: "A4821",
+        display_name: "Trapdime",
       }),
-    ).toBe("A4821 advanced to SEEKER");
+    ).toBe("Trapdime → SEEKER");
 
     expect(
       formatLiveBoardEventDescription({
@@ -69,9 +86,9 @@ describe("live board feed copy", () => {
         node_name: "Chain Rule",
         accuracy_pct: 78,
         new_rank_tier: null,
-        display_name: "A4821",
+        display_name: "Trapdime",
       }),
-    ).toBe("A4821 broke through Chain Rule");
+    ).toBe("Trapdime broke through Chain Rule");
   });
 
   it("uses the headline for division war cards", () => {

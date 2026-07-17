@@ -37,14 +37,24 @@ async function loadLiveBoardPersona(
   userId: string,
 ): Promise<{ displayName: string; avatarUrl: string | null }> {
   const [{ data: settings }, { data: user }] = await Promise.all([
-    admin.from("user_settings").select("display_name, avatar_url").eq("user_id", userId).maybeSingle(),
+    admin
+      .from("user_settings")
+      .select("display_name, avatar_url, rank_card_username")
+      .eq("user_id", userId)
+      .maybeSingle(),
     admin.from("users").select("email").eq("id", userId).maybeSingle(),
   ]);
+
+  const username =
+    typeof settings?.rank_card_username === "string" && settings.rank_card_username.trim()
+      ? settings.rank_card_username.trim()
+      : null;
 
   return {
     displayName: resolveLiveBoardDisplayName(
       settings?.display_name,
       user?.email ?? null,
+      username,
     ),
     avatarUrl: normalizeArenaAvatarUrl(settings?.avatar_url as string | null | undefined),
   };

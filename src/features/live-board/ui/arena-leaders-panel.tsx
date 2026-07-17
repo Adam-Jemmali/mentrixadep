@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ARENA_PAGE_COPY } from "@/features/live-board/live-board-messages-pure";
 import {
@@ -6,12 +7,13 @@ import {
 } from "@/features/live-board/load-arena-leader-profile";
 import { ArenaPersonAvatar } from "@/features/live-board/ui/arena-person-avatar";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
 const VERIFIED_GOLD = "#D4A017";
+const ICON_VERSION = "1";
 
 type Props = {
   leaders: ArenaLeaderProfile[];
@@ -21,78 +23,80 @@ function ArenaLeaderCard({ leader, position }: { leader: ArenaLeaderProfile; pos
   const passportHref = leader.username ? `/rank/${leader.username}` : null;
   const rankVisual = getAccountRankByLevel(leader.accountRankLevel);
   const isTopTier = rankVisual.key === "mentrixer";
+  const rankTitle = normalizeRankTitle(leader.accountRankTier);
 
   const card = (
-    <article className={cn(mentrixStudent.hubSticky, "rotate-0 overflow-hidden p-0")}>
-      <div className="grid sm:grid-cols-[minmax(0,7.5rem)_1fr]">
-        <aside className="border-b border-[#E0E7FF] p-4 sm:border-b-0 sm:border-r sm:p-5">
-          <p className="text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6366F1]">
-            #{position}
-          </p>
-          <div className="mx-auto mt-3 flex max-w-[120px] flex-col items-center text-center">
-            <ArenaPersonAvatar
-              displayName={leader.displayName}
-              avatarUrl={leader.avatarUrl}
-              avatarInitial={arenaLeaderAvatarInitial(leader)}
-              size="lg"
-            />
-            <div className="mt-3">
+    <article
+      className={cn(
+        mentrixStudent.hubSticky,
+        "rotate-0 overflow-hidden px-3 py-3 sm:px-4 sm:py-3.5",
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <p className="w-7 shrink-0 text-center text-xs font-bold tabular-nums text-[#6366F1]">
+          #{position}
+        </p>
+
+        <ArenaPersonAvatar
+          displayName={leader.displayName}
+          avatarUrl={leader.avatarUrl}
+          avatarInitial={arenaLeaderAvatarInitial(leader)}
+          size="md"
+        />
+
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            {isTopTier ? (
+              <Image
+                src={`/icons/mentrixer.svg?v=${ICON_VERSION}`}
+                alt=""
+                width={16}
+                height={16}
+                className="shrink-0"
+              />
+            ) : (
+              <MentrixaVocabIcon name="profile" size={14} surface="light" title="Mentrixer" />
+            )}
+            <p className="truncate text-sm font-bold text-[#0B1220]">{leader.displayName}</p>
+            {leader.username ? (
+              <p className="truncate text-[11px] font-semibold text-[#6366F1]">@{leader.username}</p>
+            ) : null}
+          </div>
+
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="inline-flex items-center gap-1">
               <RankBadge
                 rank={{ level: leader.accountRankLevel, title: leader.accountRankTier }}
                 size="sm"
                 active
                 surface="light"
-                showLabel
-                labelTone="light"
+                showLabel={false}
               />
-            </div>
-            <p
-              className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
-              style={{ color: isTopTier ? VERIFIED_GOLD : rankVisual.labelOnLight }}
-            >
-              {normalizeRankTitle(leader.accountRankTier)}
-            </p>
-          </div>
-        </aside>
+              <span
+                className="text-[10px] font-semibold uppercase tracking-[0.1em]"
+                style={{ color: isTopTier ? VERIFIED_GOLD : rankVisual.labelOnLight }}
+              >
+                {rankTitle}
+              </span>
+            </span>
 
-        <div className="space-y-3 p-4 sm:p-5">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#475569]">
-              Mentrixer
-            </p>
-            <p className="mt-1 text-lg font-bold text-[#0B1220]">{leader.displayName}</p>
-            {leader.username ? (
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6366F1]">
-                @{leader.username}
-              </p>
-            ) : null}
-          </div>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums text-[#0B1220]">
+              <MentrixaVocabIcon name="verified" size={14} gold surface="light" title="Accuracy" />
+              {Math.round(leader.accuracyPercent)}%
+            </span>
 
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#475569]">
-              First-attempt accuracy
-            </p>
-            <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-sm leading-relaxed")}>
-              {leader.accuracyLine}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#475569]">
-              Peer standing
-            </p>
-            <p
-              className="mt-1 font-serif text-3xl font-bold tabular-nums"
+            <span
+              className="inline-flex items-center gap-1 text-xs font-bold tabular-nums"
               style={{ color: VERIFIED_GOLD }}
             >
+              <MentrixaVocabIcon name="rank-proof" size={14} gold surface="light" title="Top percent" />
               Top {leader.topPercent}%
-            </p>
-            <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-sm leading-relaxed")}>
-              {leader.peerStandingLine}
-            </p>
-            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#475569]">
-              {leader.verifiedCount} verified skills
-            </p>
+            </span>
+
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums text-[#64748B]">
+              <MentrixaVocabIcon name="practice-pack" size={14} surface="light" title="Verified skills" />
+              {leader.verifiedCount}
+            </span>
           </div>
         </div>
       </div>
@@ -113,20 +117,21 @@ function ArenaLeaderCard({ leader, position }: { leader: ArenaLeaderProfile; pos
 
 export function ArenaLeadersPanel({ leaders }: Props) {
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-        {ARENA_PAGE_COPY.leadersTitle}
-      </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-        {ARENA_PAGE_COPY.leadersSubtitle}
-      </p>
+    <section className="mt-8">
+      <div className="flex items-center gap-2">
+        <MentrixaVocabIcon name="leaderboard" size={18} surface="dark" title="Top 10" />
+        <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+          {ARENA_PAGE_COPY.leadersTitle}
+        </h2>
+      </div>
+      <p className="mt-1.5 max-w-2xl text-sm text-slate-400">{ARENA_PAGE_COPY.leadersSubtitle}</p>
 
       {leaders.length === 0 ? (
-        <p className="mt-6 text-sm text-slate-500">
+        <p className="mt-5 text-sm text-slate-500">
           Leaderboard fills once five verified skills are locked across the cohort.
         </p>
       ) : (
-        <ol className="mt-6 space-y-4">
+        <ol className="mt-4 space-y-2">
           {leaders.map((leader, index) => (
             <li key={leader.userId}>
               <ArenaLeaderCard leader={leader} position={index + 1} />

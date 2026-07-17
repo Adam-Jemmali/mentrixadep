@@ -41,10 +41,13 @@ export type ArenaLeaderProfile = {
 function resolveDisplayName(
   settingsDisplayName: string | null | undefined,
   email: string | null | undefined,
+  username?: string | null,
 ): string {
   const trimmed =
     typeof settingsDisplayName === "string" ? settingsDisplayName.trim() : "";
   if (trimmed) return trimmed.slice(0, 100);
+  const handle = typeof username === "string" ? username.trim() : "";
+  if (handle) return handle.slice(0, 100);
   const prefix = (email?.split("@")[0] ?? "").trim();
   if (prefix) return prefix.slice(0, 100);
   return "Mentrixer";
@@ -75,7 +78,7 @@ export function buildArenaLeaderProfile(
   input: ArenaLeaderProfileInput,
   avatarUrl: string | null,
 ): ArenaLeaderProfile {
-  const displayName = resolveDisplayName(input.displayName, input.email);
+  const displayName = resolveDisplayName(input.displayName, input.email, input.username);
   const xpRank = rankFromTotalXp(input.totalXp);
   const accountRank = getAccountRankByLevel(xpRank.level);
   const topPercent = peerTopPercent(input.percentile);

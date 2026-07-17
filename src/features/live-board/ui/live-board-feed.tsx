@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/shared/integrations/supabase/client";
 import {
+  ARENA_FEED_VISIBLE_LIMIT,
   ARENA_PAGE_COPY,
   formatLiveBoardEventDescription,
   formatLiveBoardTimeAgo,
   isDivisionWarLiveBoardEvent,
+  liveBoardEventVocabIcon,
 } from "@/features/live-board/live-board-messages-pure";
 import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader-profile";
 import type { LiveBoardEventRow } from "@/features/live-board/types";
@@ -17,10 +19,10 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { easeOutExpo } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
 const VERIFIED_GOLD = "#D4A017";
-const FEED_LIMIT = 50;
 const ROW_ENTER_MS = 0.2;
 
 type FeedRowMotion = {
@@ -90,36 +92,25 @@ function DivisionWarFeedCard({
       animate={motionProps.animate}
       exit={motionProps.exit}
       transition={motionProps.transition}
-      className="px-4 py-4"
+      className="px-3 py-2.5"
     >
       <div
-        className="rounded-xl border px-4 py-4 text-center shadow-sm"
+        className="flex items-center gap-2 rounded-lg border px-3 py-2"
         style={{
           borderColor: `${VERIFIED_GOLD}99`,
           background: "linear-gradient(90deg, #FFFBEB 0%, #F5F3FF 100%)",
         }}
       >
-        <p
-          className="text-[10px] font-bold uppercase tracking-[0.2em]"
-          style={{ color: VERIFIED_GOLD }}
-        >
-          {ARENA_PAGE_COPY.divisionWarEyebrow}
-        </p>
-        <p className="mt-2 text-base font-bold text-[#0B1220] sm:text-lg">
-          {event.display_name}
-        </p>
-        {event.unit_name ? (
-          <p
-            className="mt-1 text-sm font-semibold tabular-nums"
-            style={{ color: VERIFIED_GOLD }}
-          >
-            {event.unit_name}
-          </p>
-        ) : null}
-        <time
-          className="mt-2 block text-xs text-[#64748B]"
-          dateTime={event.occurred_at}
-        >
+        <MentrixaVocabIcon name="leaderboard" size={18} gold surface="light" title="Division War" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-[#0B1220]">{event.display_name}</p>
+          {event.unit_name ? (
+            <p className="truncate text-[11px] font-semibold tabular-nums" style={{ color: VERIFIED_GOLD }}>
+              {event.unit_name}
+            </p>
+          ) : null}
+        </div>
+        <time className="shrink-0 text-[11px] text-[#64748B]" dateTime={event.occurred_at}>
           {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}
         </time>
       </div>
@@ -129,7 +120,7 @@ function DivisionWarFeedCard({
 
 export function LiveBoardFeed({ initialEvents, leaders }: Props) {
   const reducedMotion = usePrefersReducedMotion();
-  const [events, setEvents] = useState(initialEvents);
+  const [events, setEvents] = useState(() => initialEvents.slice(0, ARENA_FEED_VISIBLE_LIMIT));
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const avatarByUserId = useMemo(() => {
@@ -146,7 +137,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
   }, [initialEvents, leaders]);
 
   useEffect(() => {
-    setEvents(initialEvents);
+    setEvents(initialEvents.slice(0, ARENA_FEED_VISIBLE_LIMIT));
   }, [initialEvents]);
 
   useEffect(() => {
@@ -173,7 +164,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           }
           setEvents((current) => {
             if (current.some((event) => event.id === row.id)) return current;
-            return [row, ...current].slice(0, FEED_LIMIT);
+            return [row, ...current].slice(0, ARENA_FEED_VISIBLE_LIMIT);
           });
         },
       )
@@ -204,13 +195,21 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
 
   return (
     <section aria-label="Live verified first attempt feed" className="mt-8">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6366F1]">
-        {ARENA_PAGE_COPY.feedEyebrow}
-      </p>
+      <div className="flex items-center gap-2">
+        <MentrixaVocabIcon name="verified" size={16} gold surface="dark" title="Live feed" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6366F1]">
+          {ARENA_PAGE_COPY.feedEyebrow}
+        </p>
+      </div>
 
-      <div className={cn(mentrixStudent.hubSticky, "mt-3 rotate-0 overflow-hidden")}>
+      <div
+        className={cn(
+          mentrixStudent.hubSticky,
+          "mt-3 max-h-[18rem] rotate-0 overflow-y-auto overscroll-contain sm:max-h-[20rem]",
+        )}
+      >
         {events.length === 0 ? (
-          <p className={cn(mentrixHubSurfaces.inkMuted, "px-4 py-8 text-center text-sm")}>
+          <p className={cn(mentrixHubSurfaces.inkMuted, "px-4 py-6 text-center text-sm")}>
             {ARENA_PAGE_COPY.emptyFeed}
           </p>
         ) : (
@@ -229,29 +228,39 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
                 }
 
                 const avatarUrl = event.avatar_url ?? avatarByUserId.get(event.user_id) ?? null;
+                const icon = liveBoardEventVocabIcon(event.event_type);
+                const goldIcon =
+                  event.event_type === "verified_attempt" && event.accuracy_pct === 100;
 
                 return (
                   <motion.li
                     key={event.id}
                     layout={!reducedMotion}
                     {...rowMotion}
-                    className="flex items-start gap-3 px-4 py-3.5"
+                    className="flex items-center gap-2.5 px-3 py-2"
                   >
                     <ArenaPersonAvatar
                       displayName={event.display_name}
                       avatarUrl={avatarUrl}
                       size="sm"
                     />
-                    <div className="min-w-0 flex-1">
-                      <p className={cn(mentrixHubSurfaces.inkBody, "text-sm leading-snug text-[#0B1220]")}>
-                        {formatLiveBoardEventDescription(event)}
-                      </p>
-                      <p className={cn(mentrixHubSurfaces.inkMuted, "mt-1 text-xs")}>
-                        {event.unit_name}
-                      </p>
-                    </div>
+                    <MentrixaVocabIcon
+                      name={icon}
+                      size={16}
+                      gold={goldIcon}
+                      surface="light"
+                      title={event.event_type}
+                    />
+                    <p
+                      className={cn(
+                        mentrixHubSurfaces.inkBody,
+                        "min-w-0 flex-1 truncate text-sm leading-snug text-[#0B1220]",
+                      )}
+                    >
+                      {formatLiveBoardEventDescription(event)}
+                    </p>
                     <time
-                      className="shrink-0 pt-1 text-xs text-[#64748B]"
+                      className="shrink-0 text-[11px] tabular-nums text-[#64748B]"
                       dateTime={event.occurred_at}
                     >
                       {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}

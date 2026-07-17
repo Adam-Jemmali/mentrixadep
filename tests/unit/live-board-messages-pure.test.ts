@@ -15,9 +15,9 @@ describe("live board messages", () => {
         node_name: "Chain Rule",
         accuracy_pct: 100,
         new_rank_tier: null,
-        display_name: "A4821",
+        display_name: "Trapdime",
       }),
-    ).toBe("A4821 scored 100% on Chain Rule · first try");
+    ).toBe("Trapdime locked Chain Rule");
   });
 
   it("formats rank advance and breakthrough copy", () => {
@@ -27,9 +27,9 @@ describe("live board messages", () => {
         node_name: "Chain Rule",
         accuracy_pct: null,
         new_rank_tier: "Scholar",
-        display_name: "A4821",
+        display_name: "Trapdime",
       }),
-    ).toBe("A4821 advanced to Scholar");
+    ).toBe("Trapdime → Scholar");
 
     expect(
       formatLiveBoardEventDescription({
@@ -37,9 +37,9 @@ describe("live board messages", () => {
         node_name: "Related Rates",
         accuracy_pct: 82,
         new_rank_tier: null,
-        display_name: "A4821",
+        display_name: "Trapdime",
       }),
-    ).toBe("A4821 broke through Related Rates");
+    ).toBe("Trapdime broke through Related Rates");
   });
 
   it("formats relative time ago", () => {

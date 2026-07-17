@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default async function ArenaPage() {
   const [initialEvents, leaders] = await Promise.all([
-    loadLiveBoardEvents(50),
+    loadLiveBoardEvents(),
     loadArenaLeaders(10),
   ]);
 

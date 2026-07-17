@@ -2,11 +2,15 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import type { LiveBoardEventRow, LiveBoardEventType } from "@/features/live-board/types";
 import { normalizeArenaAvatarUrl } from "@/features/live-board/live-board-avatar-pure";
 import {
+  resolveLiveBoardDisplayName,
+} from "@/features/live-board/live-board-events-pure";
+import {
   enrichArenaLeaderProfiles,
   resolveAvatarFromAuthMetadata,
   type ArenaLeaderProfileInput,
 } from "@/features/live-board/load-arena-leader-profile";
 import { MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE } from "@/features/xp/calibrated-rank";
+import { ARENA_FEED_VISIBLE_LIMIT } from "@/features/live-board/live-board-messages-pure";
 
 function parseLiveBoardEvent(row: Record<string, unknown>): LiveBoardEventRow | null {
   const eventType = String(row.event_type ?? "");
@@ -49,7 +53,54 @@ function parseLiveBoardEvent(row: Record<string, unknown>): LiveBoardEventRow | 
   };
 }
 
-export async function loadLiveBoardEvents(limit = 50): Promise<LiveBoardEventRow[]> {
+async function rehydrateLiveBoardDisplayNames(
+  admin: ReturnType<typeof createAdminClient>,
+  events: LiveBoardEventRow[],
+): Promise<LiveBoardEventRow[]> {
+  const userIds = [
+    ...new Set(
+      events
+        .filter((event) => event.event_type !== "division_war_result")
+        .map((event) => event.user_id)
+        .filter(Boolean),
+    ),
+  ];
+
+  if (userIds.length === 0) return events;
+
+  const { data: settingsRows } = await admin
+    .from("user_settings")
+    .select("user_id, display_name, rank_card_username")
+    .in("user_id", userIds);
+
+  const nameByUser = new Map<string, string>();
+  for (const row of settingsRows ?? []) {
+    const userId = String(row.user_id);
+    const username =
+      typeof row.rank_card_username === "string" && row.rank_card_username.trim()
+        ? row.rank_card_username.trim()
+        : null;
+    const resolved = resolveLiveBoardDisplayName(
+      (row.display_name as string | null) ?? null,
+      null,
+      username,
+    );
+    if (resolved !== "Mentrixer") {
+      nameByUser.set(userId, resolved);
+    }
+  }
+
+  return events.map((event) => {
+    if (event.event_type === "division_war_result") return event;
+    const liveName = nameByUser.get(event.user_id);
+    if (!liveName) return event;
+    return { ...event, display_name: liveName };
+  });
+}
+
+export async function loadLiveBoardEvents(
+  limit = ARENA_FEED_VISIBLE_LIMIT,
+): Promise<LiveBoardEventRow[]> {
   try {
     const admin = createAdminClient();
     const { data, error } = await admin
@@ -69,7 +120,9 @@ export async function loadLiveBoardEvents(limit = 50): Promise<LiveBoardEventRow
       .map((row) => parseLiveBoardEvent(row as Record<string, unknown>))
       .filter((row): row is LiveBoardEventRow => row != null);
 
-    const missingAvatarUserIds = parsed
+    const withNames = await rehydrateLiveBoardDisplayNames(admin, parsed);
+
+    const missingAvatarUserIds = withNames
       .filter((row) => !row.avatar_url)
       .map((row) => row.user_id);
 
@@ -78,11 +131,11 @@ export async function loadLiveBoardEvents(limit = 50): Promise<LiveBoardEventRow
       await Promise.all(
         missingAvatarUserIds.map(async (userId) => {
           try {
-            const { data } = await admin.auth.admin.getUserById(userId);
+            const { data: authData } = await admin.auth.admin.getUserById(userId);
             avatarsByUser.set(
               userId,
               resolveAvatarFromAuthMetadata(
-                data.user?.user_metadata as Record<string, unknown> | undefined,
+                authData.user?.user_metadata as Record<string, unknown> | undefined,
               ),
             );
           } catch {
@@ -92,7 +145,7 @@ export async function loadLiveBoardEvents(limit = 50): Promise<LiveBoardEventRow
       );
     }
 
-    return parsed.map((row) => ({
+    return withNames.map((row) => ({
       ...row,
       avatar_url: row.avatar_url ?? avatarsByUser.get(row.user_id) ?? null,
     }));
@@ -114,6 +167,7 @@ export async function loadArenaLeaders(limit = 10) {
       .gte("verified_count", MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE)
       .not("percentile", "is", null)
       .order("accuracy_percent", { ascending: false })
+      .order("percentile", { ascending: false })
       .limit(limit);
 
     if (error || !cacheRows?.length) {
