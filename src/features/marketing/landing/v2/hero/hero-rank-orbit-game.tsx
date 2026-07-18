@@ -4,13 +4,9 @@ import {
   useCallback,
   useEffect,
   useState,
+  type CSSProperties,
 } from "react";
 import Image from "next/image";
-import NumberFlow from "@number-flow/react";
-import {
-  motion,
-  AnimatePresence,
-} from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import {
   ACCOUNT_RANK_VISUALS,
@@ -18,18 +14,17 @@ import {
   type AccountRankKey,
   type AccountRankVisual,
 } from "@/features/xp/rank-icons";
-import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_HERO_GAME } from "@/features/marketing/landing/landing-copy-pure";
 
 const ICON_VERSION = "20260410";
-/** Orbit ring radius — fits compact sticky-note stage without clipping slots. */
-const RADIUS = 96;
+const RADIUS = 92;
 const GAME_SECONDS = 40;
 const COACH_START = LANDING_HERO_GAME.coachStart;
-const ORBIT_SPIN_SECONDS = 18;
+/** Slower orbit = smoother paint on weak GPUs and easier reading. */
+const ORBIT_SPIN_SECONDS = 28;
 
 const STABLE_TRAY_ORDER: AccountRankKey[] = [
   "rival",
@@ -58,27 +53,78 @@ function rankByKey(key: AccountRankKey): AccountRankVisual {
   return ACCOUNT_RANK_VISUALS.find((r) => r.key === key)!;
 }
 
-function roundOrbitPx(value: number) {
-  return Math.round(value * 1000) / 1000;
-}
-
-function slotPosition(index: number) {
+function slotStyle(index: number): CSSProperties {
   const angle = (index / ACCOUNT_RANK_VISUALS.length) * 360 - 90;
   const rad = (angle * Math.PI) / 180;
   return {
-    x: roundOrbitPx(Math.cos(rad) * RADIUS),
-    y: roundOrbitPx(Math.sin(rad) * RADIUS),
+    transform: `translate(calc(-50% + ${Math.round(Math.cos(rad) * RADIUS)}px), calc(-50% + ${Math.round(Math.sin(rad) * RADIUS)}px))`,
   };
+}
+
+function orbitDurationStyle(seconds: number): CSSProperties {
+  return { ["--lp-orbit-duration" as string]: `${seconds}s` };
 }
 
 type CoachTone = "coach" | "success" | "error" | "neutral";
 type CoachState = { message: string; tone: CoachTone };
 
-export function HeroRankOrbitGame() {
-  const { canLoop, cinematic, mounted, reduced } = useLandingMotion();
-  const loop = canLoop && !reduced;
+function StickyRankChip({
+  rank,
+  selected,
+  emptyLabel,
+  onClick,
+  disabled,
+  shaking,
+}: {
+  rank?: AccountRankVisual;
+  selected?: boolean;
+  emptyLabel?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  shaking?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "lp-sticky-rank-chip flex flex-col items-center justify-center gap-0.5 rounded-lg border border-[#A5B4FC] bg-[#EEF2FF] p-1 shadow-[1px_2px_0_rgba(11,18,32,0.12)] outline-none transition-[transform,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#6366F1]",
+        selected && "border-[#7C3AED] ring-2 ring-[#C4B5FD]",
+        shaking && "lp-sticky-rank-chip--shake",
+        disabled && "cursor-default opacity-70",
+        !disabled && "cursor-pointer hover:-translate-y-0.5 active:translate-y-0",
+      )}
+      aria-pressed={selected}
+      aria-label={rank ? normalizeRankTitle(rank.title) : emptyLabel}
+    >
+      {rank ? (
+        <Image
+          src={`${rank.iconSrc}?v=${ICON_VERSION}`}
+          alt=""
+          width={28}
+          height={28}
+          className="object-contain"
+          draggable={false}
+        />
+      ) : (
+        <span className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-[#A5B4FC] text-[11px] font-bold text-[#6366F1]">
+          {emptyLabel}
+        </span>
+      )}
+      <span className="max-w-[3rem] truncate text-[8px] font-bold uppercase tracking-wide text-[#475569]">
+        {rank ? normalizeRankTitle(rank.title).slice(0, 6) : "slot"}
+      </span>
+    </button>
+  );
+}
 
-  const [xp] = useState(0);
+/**
+ * Rank orbit game — paper sticky-note UI + CSS orbit (no neon, no NumberFlow, no trail of framer loops).
+ */
+export function HeroRankOrbitGame() {
+  const { mounted, reduced } = useLandingMotion();
+
   const [tray, setTray] = useState<AccountRankKey[]>(STABLE_TRAY_ORDER);
   const [placed, setPlaced] = useState<Partial<Record<number, AccountRankKey>>>({});
   const [selectedKey, setSelectedKey] = useState<AccountRankKey | null>(null);
@@ -93,9 +139,7 @@ export function HeroRankOrbitGame() {
 
   const placedCount = Object.keys(placed).length;
   const gameLocked = completed || timedOut;
-  /** Orbit spins for everyone after mount — core game challenge, not decorative fluff. */
-  const orbitSpins = mounted && !completed && !timedOut;
-  const orbitDuration = completed ? 52 : timedOut ? 38 : secondsLeft <= 8 ? 12 : ORBIT_SPIN_SECONDS;
+  const orbitSpins = mounted && !completed && !timedOut && !reduced;
 
   useEffect(() => {
     setTray(shuffleKeys(ACCOUNT_RANK_VISUALS.map((r) => r.key)));
@@ -103,7 +147,6 @@ export function HeroRankOrbitGame() {
 
   useEffect(() => {
     if (gameLocked) return;
-
     const id = window.setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
@@ -114,7 +157,6 @@ export function HeroRankOrbitGame() {
         return prev - 1;
       });
     }, 1000);
-
     return () => window.clearInterval(id);
   }, [gameLocked]);
 
@@ -133,7 +175,6 @@ export function HeroRankOrbitGame() {
   const tryPlace = useCallback(
     (key: AccountRankKey, slotIndex: number) => {
       if (gameLocked) return false;
-
       const expected = slotForKey(key);
       if (slotIndex !== expected) {
         setShakeSlot(slotIndex);
@@ -141,10 +182,9 @@ export function HeroRankOrbitGame() {
           message: `${normalizeRankTitle(rankByKey(key).title)}. ${LANDING_HERO_GAME.wrongSlot}`,
           tone: "error",
         });
-        window.setTimeout(() => setShakeSlot(null), 520);
+        window.setTimeout(() => setShakeSlot(null), 420);
         return false;
       }
-
       setPlaced((prev) => ({ ...prev, [slotIndex]: key }));
       setTray((prev) => prev.filter((k) => k !== key));
       setCoach({
@@ -164,8 +204,7 @@ export function HeroRankOrbitGame() {
         return;
       }
       if (placed[slotIndex]) return;
-      const ok = tryPlace(selectedKey, slotIndex);
-      if (ok) setSelectedKey(null);
+      if (tryPlace(selectedKey, slotIndex)) setSelectedKey(null);
     },
     [gameLocked, placed, selectedKey, tryPlace],
   );
@@ -194,241 +233,112 @@ export function HeroRankOrbitGame() {
     setTimedOut(false);
     setSecondsLeft(GAME_SECONDS);
     setSelectedKey(null);
-    setCoach({
-      message: COACH_START,
-      tone: "coach",
-    });
+    setCoach({ message: COACH_START, tone: "coach" });
   }, []);
-
-  const orbitRotate = orbitSpins ? { rotate: 360 } : undefined;
-  const orbitTransition = orbitSpins
-    ? { duration: orbitDuration, repeat: Infinity, ease: "linear" as const, repeatType: "loop" as const }
-    : undefined;
-  const orbitCounterRotate = orbitSpins ? { rotate: -360 } : undefined;
 
   return (
     <div className="relative mx-auto w-full">
-      <LandingSpeechBubble
-        message={coach.message}
-        tone={coach.tone}
-        label=""
-        className="mb-2 text-[13px]"
-      />
+      <LandingSpeechBubble message={coach.message} tone={coach.tone} label="" className="mb-2 text-[13px]" speed={12} />
 
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className={`text-[9px] font-bold uppercase tracking-[0.16em] ${landingHub.eyebrow}`}>
           {LANDING_HERO_GAME.placed(placedCount, ACCOUNT_RANK_VISUALS.length)}
         </p>
-
         {!gameLocked ? (
-          <motion.div
+          <div
             className={cn(
-              "flex items-center gap-1.5 rounded-full border px-3 py-1 tabular-nums",
+              "rounded-md border px-2.5 py-1 tabular-nums",
               secondsLeft <= 8
-                ? "border-rose-400/50 bg-rose-950/50 text-rose-200"
-                : "border-indigo-400/30 bg-indigo-950/50 text-indigo-100",
+                ? "border-rose-300 bg-rose-50 text-rose-700"
+                : "border-[#C4B5FD] bg-[#EEF2FF] text-[#4F46E5]",
             )}
-            animate={secondsLeft <= 8 ? { scale: [1, 1.06, 1] } : undefined}
-            transition={{ duration: 0.6, repeat: secondsLeft <= 8 ? Infinity : 0 }}
             role="timer"
             aria-live="polite"
             aria-label={`${secondsLeft} seconds remaining`}
           >
-            <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{LANDING_HERO_GAME.timeLabel}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{LANDING_HERO_GAME.timeLabel}</span>{" "}
             <span className="text-sm font-black">{secondsLeft}s</span>
-          </motion.div>
-        ) : null}
-
-        {gameLocked ? (
-          <motion.button
+          </div>
+        ) : (
+          <button
             type="button"
             onClick={resetGame}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
             className={cn("cursor-pointer rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-wide", landingHub.btnSecondary)}
           >
             {LANDING_HERO_GAME.playAgain}
-          </motion.button>
-        ) : null}
+          </button>
+        )}
       </div>
 
-      <div className={cn("relative rounded-xl p-2 sm:p-2.5", landingHub.gamePanel)}>
-        <div className="lp-hero-stage-glow pointer-events-none absolute inset-0" aria-hidden />
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.88, y: 24 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-          className="relative flex h-[min(220px,48vw)] min-h-[200px] items-center justify-center sm:h-[240px]"
+      {/* Paper board — sticky-note surface for the orbit */}
+      <div className="lp-paper-game-board relative rounded-xl border border-[#C4B5FD] bg-[#F8FAFC] p-2 sm:p-2.5">
+        <div
+          className={cn(
+            "relative mx-auto flex h-[min(220px,48vw)] min-h-[200px] w-full max-w-[22rem] items-center justify-center sm:h-[236px]",
+            orbitSpins && "lp-orbit-spin",
+          )}
+          style={orbitSpins ? orbitDurationStyle(ORBIT_SPIN_SECONDS) : undefined}
         >
-          <div className="lp-hero-pedestal absolute bottom-[6%] left-1/2 h-10 w-[68%] -translate-x-1/2" aria-hidden />
+          <div className="pointer-events-none absolute inset-[12%] rounded-full border border-dashed border-[#A5B4FC]/80" aria-hidden />
 
-          <motion.div
-            className="absolute inset-[4%] rounded-full border border-white/[0.08]"
-            style={{ boxShadow: "inset 0 0 100px rgba(99,102,241,0.2)" }}
-            animate={orbitRotate}
-            transition={orbitTransition}
-          />
-          <motion.div
-            className="absolute inset-[10%] rounded-full border border-dashed border-indigo-400/25"
-            animate={orbitRotate}
-            transition={orbitTransition}
-          />
-
-          {loop ? (
-            <motion.div
-              className="absolute inset-[2%] rounded-full opacity-60"
-              style={{
-                background:
-                  "conic-gradient(from 0deg, transparent, rgba(99,102,241,0.35) 50deg, transparent 100deg)",
-              }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          <div className="relative z-10 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-[#6366F1] bg-white shadow-[2px_3px_0_rgba(11,18,32,0.12)]">
+            <Image
+              src={`/icons/mentrixer.svg?v=${ICON_VERSION}`}
+              alt=""
+              width={22}
+              height={22}
+              className="object-contain"
+              draggable={false}
             />
-          ) : null}
+            <span className="text-[7px] font-bold uppercase tracking-wide text-[#6366F1]">{LANDING_HERO_GAME.xpLabel}</span>
+          </div>
 
-          <motion.div
-            className="relative z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border border-indigo-300/40 bg-slate-950/90 shadow-[0_0_40px_rgba(99,102,241,0.3)]"
-          >
-            <span className="relative mb-0.5 block size-5">
-              <Image
-                src={`/icons/mentrixer.svg?v=${ICON_VERSION}`}
-                alt=""
-                fill
-                className="object-contain brightness-125 contrast-110 drop-shadow-[0_0_14px_rgba(167,139,250,0.75)]"
-                sizes="28px"
-              />
-            </span>
-            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-indigo-300">{LANDING_HERO_GAME.xpLabel}</span>
-            <span className="text-base font-black tabular-nums text-white">
-              {cinematic ? (
-                <NumberFlow value={xp} transformTiming={{ duration: 700, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }} />
-              ) : (
-                xp.toLocaleString()
-              )}
-            </span>
-          </motion.div>
-
-          {mounted ? (
-          <motion.div
-            className="absolute inset-0 will-change-transform [transform:translateZ(0)]"
-            animate={orbitRotate}
-            transition={orbitTransition}
-          >
-            {ACCOUNT_RANK_VISUALS.map((rank, i) => {
-              const { x, y } = slotPosition(i);
-              const filledKey = placed[i];
-              const filledRank = filledKey ? rankByKey(filledKey) : null;
-              const isShake = shakeSlot === i;
-
-              return (
-                <motion.div
-                  key={rank.key}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                  style={{ x, y }}
-                >
-                  <motion.div
-                    animate={orbitCounterRotate}
-                    transition={orbitTransition}
-                    className="flex flex-col items-center gap-1"
+          {mounted
+            ? ACCOUNT_RANK_VISUALS.map((rank, i) => {
+                const filledKey = placed[i];
+                const filledRank = filledKey ? rankByKey(filledKey) : null;
+                return (
+                  <div
+                    key={rank.key}
+                    className="absolute left-1/2 top-1/2 z-20"
+                    style={slotStyle(i)}
                   >
-                    <motion.button
-                      type="button"
-                      onClick={() => handleSlotClick(i)}
-                      animate={isShake ? { x: [0, -8, 8, -6, 6, 0] } : { scale: filledRank ? 1 : selectedKey && !filledRank ? 1.04 : 1 }}
-                      transition={isShake ? { duration: 0.45 } : { duration: 0.2 }}
-                      className={cn(
-                        "relative flex min-h-[2.5rem] min-w-[2.5rem] cursor-pointer flex-col items-center justify-center rounded-xl p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 sm:min-h-[2.75rem] sm:min-w-[2.75rem]",
-                        !filledRank && "lp-orbit-slot",
-                        selectedKey && !filledRank && "ring-2 ring-cyan-400/70",
-                      )}
-                      aria-label={
-                        filledRank
-                          ? `${normalizeRankTitle(filledRank.title)} placed`
-                          : `Slot for ${normalizeRankTitle(rank.title)}`
-                      }
+                    <div
+                      className={cn(orbitSpins && "lp-orbit-counter-spin")}
+                      style={orbitSpins ? orbitDurationStyle(ORBIT_SPIN_SECONDS) : undefined}
                     >
-                      {filledRank ? (
-                        <RankBadge
-                          rank={filledRank}
-                          size="sm"
-                          active
-                          surface="onDark"
-                          showGlow={filledRank.key === "mentrixer" || filledRank.key === "apex"}
-                          priority
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-slate-900/90 text-xs font-bold text-slate-200 sm:h-10 sm:w-10">
-                          {i + 1}
-                        </div>
-                      )}
-                    </motion.button>
-                    <span className="max-w-[3.25rem] truncate text-[8px] font-bold uppercase tracking-wide text-slate-200">
-                      {filledRank ? normalizeRankTitle(filledRank.title) : rank.title.slice(0, 3)}
-                    </span>
-                  </motion.div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-          ) : null}
+                      <StickyRankChip
+                        rank={filledRank ?? undefined}
+                        emptyLabel={String(i + 1)}
+                        selected={Boolean(selectedKey && !filledRank)}
+                        shaking={shakeSlot === i}
+                        onClick={() => handleSlotClick(i)}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            : null}
+        </div>
 
-          <AnimatePresence>
-            {completed ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="pointer-events-none absolute inset-0 flex items-center justify-center"
-              >
-                <motion.div
-                  className="h-32 w-32 rounded-full border-2 border-amber-400/40"
-                  animate={{ scale: [1, 1.35, 1.5], opacity: [0.6, 0.25, 0] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-                />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </motion.div>
-
-        <div className="lp-rank-tray relative z-20 -mt-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="relative z-20 mt-2 flex gap-1.5 overflow-x-auto px-0.5 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tray.map((key) => {
             const rank = rankByKey(key);
-            const isSelected = selectedKey === key;
-
             return (
-              <motion.button
+              <StickyRankChip
                 key={key}
-                type="button"
+                rank={rank}
+                selected={selectedKey === key}
                 disabled={gameLocked}
-                whileHover={gameLocked ? undefined : { scale: 1.06, y: -2 }}
-                whileTap={gameLocked ? undefined : { scale: 0.96 }}
                 onClick={() => handleTrayClick(key)}
-                className={cn(
-                  "shrink-0 cursor-pointer select-none rounded-xl p-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-60",
-                  isSelected && "ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-950",
-                )}
-                aria-pressed={isSelected}
-                aria-label={`Select ${normalizeRankTitle(rank.title)}`}
-              >
-                <RankBadge
-                  rank={rank}
-                  size="sm"
-                  active
-                  surface="onDark"
-                  showGlow={rank.key === "mentrixer" || rank.key === "apex"}
-                />
-              </motion.button>
+              />
             );
           })}
         </div>
       </div>
 
       <p className={`mt-1.5 text-center ${landingHub.hint}`}>
-        {gameLocked
-          ? completed
-            ? LANDING_HERO_GAME.doneHint
-            : ""
-          : LANDING_HERO_GAME.spinningHint}
+        {gameLocked ? (completed ? LANDING_HERO_GAME.doneHint : "") : LANDING_HERO_GAME.spinningHint}
       </p>
     </div>
   );

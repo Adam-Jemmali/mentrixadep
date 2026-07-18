@@ -2271,19 +2271,74 @@ html.lp-landing-logo-cursor-active * {
 }
 
 .lp-orbit-slot {
-  box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.12);
-  animation: lp-orbit-slot-pulse 2.6s ease-in-out infinite;
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes lp-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes lp-orbit-counter-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+.lp-orbit-spin {
+  animation: lp-orbit-spin var(--lp-orbit-duration, 28s) linear infinite;
+  will-change: transform;
+}
+.lp-orbit-counter-spin {
+  animation: lp-orbit-counter-spin var(--lp-orbit-duration, 28s) linear infinite;
+  will-change: transform;
+}
+
+.lp-paper-game-board {
+  background: #f8fafc;
+}
+
+.lp-sticky-rank-chip {
+  min-width: 2.6rem;
+  min-height: 2.6rem;
+}
+@keyframes lp-sticky-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+.lp-sticky-rank-chip--shake {
+  animation: lp-sticky-shake 0.35s ease-in-out;
+}
+
+.lp-falling-chip--sliced > span {
+  opacity: 0;
+  transform: scale(1.12);
+  transition: opacity 0.12s ease-out, transform 0.12s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-orbit-spin,
+  .lp-orbit-counter-spin,
+  .lp-sticky-rank-chip--shake {
+    animation: none !important;
+  }
 }
 
 @keyframes lp-orbit-slot-pulse {
   0%,
   100% {
-    box-shadow: inset 0 0 16px rgba(99, 102, 241, 0.1);
-    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: none;
   }
   50% {
-    box-shadow: inset 0 0 28px rgba(129, 140, 248, 0.35);
-    border-color: rgba(165, 180, 252, 0.35);
+    box-shadow: none;
   }
 }
 

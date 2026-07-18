@@ -157,15 +157,15 @@ export function DualPathReactionGame({ sides }: Props) {
           {mounted ? (
             <FallingRoleSliceArena
               key={arenaKey}
-              className={cn("lp-path-arena w-full touch-manipulation", landingHub.gamePanel)}
+              className="lp-path-arena w-full touch-manipulation"
               height={PATH_ARENA_HEIGHT}
               minHeight={PATH_ARENA_HEIGHT}
               hudInset={52}
               gameSeconds={14}
-              iconSize={lowEnd ? 36 : 40}
-              fallSpeed={lowEnd ? 160 : 200}
-              spawnMs={lowEnd ? 650 : 450}
-              maxVisible={lowEnd ? 6 : 8}
+              iconSize={lowEnd ? 34 : 38}
+              fallSpeed={lowEnd ? 150 : 180}
+              spawnMs={lowEnd ? 700 : 520}
+              maxVisible={lowEnd ? 5 : 7}
               autoStart={false}
               autoStartDelay={300}
               viewportAutoStart
@@ -176,7 +176,7 @@ export function DualPathReactionGame({ sides }: Props) {
             />
           ) : (
             <div
-              className={cn("lp-path-arena w-full", landingHub.gamePanel)}
+              className="lp-path-arena lp-paper-game-board w-full rounded-xl border border-[#C4B5FD]"
               style={{ height: PATH_ARENA_HEIGHT }}
               aria-hidden
             />
