@@ -23,7 +23,7 @@ import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_GUIDE } from "@/features/marketing/landing/landing-copy-pure";
 import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 function GuideRoleIcon({ className = "" }: { className?: string }) {
   return (

@@ -7,7 +7,7 @@ import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-moti
 import { cn } from "@/shared/core/utils";
 import { easeOutExpo, springBouncy } from "@/features/marketing/landing/v2/motion/landing-motion";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 export type CoachRevealData = {
   sliceCount: number;

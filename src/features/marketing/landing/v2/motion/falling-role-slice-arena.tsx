@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/shared/core/utils";
+import {
+  RANK_ICON_ON_LIGHT_FILTER,
+  RANK_ICON_VERSION,
+} from "@/features/xp/rank-icon-contrast";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = RANK_ICON_VERSION;
 
 export type SliceRole = "Mentrixer" | "Guide";
 
@@ -51,7 +55,8 @@ function RoleImg({ role, size }: { role: SliceRole; size: number }) {
       width={size}
       height={size}
       draggable={false}
-      className="pointer-events-none size-full select-none object-contain"
+      className="pointer-events-none mx-rank-icon-on-light size-full select-none object-contain"
+      style={{ filter: RANK_ICON_ON_LIGHT_FILTER }}
       aria-hidden
     />
   );
@@ -342,8 +347,8 @@ export function FallingRoleSliceArena({
                 >
                   <span
                     className={cn(
-                      "flex size-full items-center justify-center rounded-lg border border-[#A5B4FC] bg-[#EEF2FF] p-1 shadow-[1px_2px_0_rgba(11,18,32,0.12)]",
-                      icon.role === "Guide" && "border-[#C4B5FD] bg-[#F5F3FF]",
+                      "flex size-full items-center justify-center rounded-lg border-2 border-[#4338CA] bg-white p-1 shadow-[1px_2px_0_rgba(11,18,32,0.16)]",
+                      icon.role === "Guide" && "border-[#6D28D9]",
                     )}
                   >
                     <RoleImg role={icon.role} size={iconSize} />

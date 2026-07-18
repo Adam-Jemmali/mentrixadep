@@ -10,7 +10,7 @@ import {
   type CoachRevealData,
 } from "@/features/marketing/landing/v2/hero/hero-waitlist-coach-reveal";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 type WaitlistRole = "student" | "tutor";
 

@@ -1,36 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="210 25 260 260" role="img" aria-label="Wanderer rank">
-<g transform="translate(340,155)" fill="none" stroke="#64748B">
+<g transform="translate(340,155)" fill="none" stroke="#1E293B">
 
   <!-- Frame: single outer ring + single inner ring -->
-  <circle r="96" stroke-width="2" stroke-opacity="0.35"/>
-  <circle r="72" stroke-width="1.5" stroke-opacity="0.2"/>
+  <circle r="96" stroke-width="3.25" stroke-opacity="0.95"/>
+  <circle r="72" stroke-width="2.75" stroke-opacity="0.8"/>
 
   <!-- Cardinal ticks N E S W -->
-  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="96" y1="0" x2="82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="0" y1="96" x2="0" y2="82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="96" y1="0" x2="82" y2="0" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="0" y1="96" x2="0" y2="82" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
 
   <!-- Ordinal ticks NE SE SW NW -->
-  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="68" y1="68" x2="61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
+  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
+  <line x1="68" y1="68" x2="61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
+  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
+  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
 
   <!-- Compass rose: four directional petals -->
-  <polygon points="0,-58 -10,-10 0,-22 10,-10" fill="#64748B" fill-opacity="0.9" stroke="none"/>
-  <polygon points="0,58 -8,10 0,22 8,10" fill="#64748B" fill-opacity="0.28" stroke="none"/>
-  <polygon points="58,0 10,-8 22,0 10,8" fill="#64748B" fill-opacity="0.28" stroke="none"/>
-  <polygon points="-58,0 -10,-8 -22,0 -10,8" fill="#64748B" fill-opacity="0.28" stroke="none"/>
+  <polygon points="0,-58 -10,-10 0,-22 10,-10" fill="#1E293B" fill-opacity="0.9" stroke="none"/>
+  <polygon points="0,58 -8,10 0,22 8,10" fill="#1E293B" fill-opacity="0.92" stroke="none"/>
+  <polygon points="58,0 10,-8 22,0 10,8" fill="#1E293B" fill-opacity="0.92" stroke="none"/>
+  <polygon points="-58,0 -10,-8 -22,0 -10,8" fill="#1E293B" fill-opacity="0.92" stroke="none"/>
 
   <!-- Center hub -->
-  <circle r="5" fill="#64748B" fill-opacity="0.9" stroke="none"/>
-  <circle r="2.5" stroke-width="1.5" stroke-opacity="0.4"/>
+  <circle r="5" fill="#1E293B" fill-opacity="0.9" stroke="none"/>
+  <circle r="2.5" stroke-width="2.75" stroke-opacity="0.9"/>
 
   <!-- Unsteady forward arrow (rotated 6deg off-center) -->
   <g transform="rotate(6)">
-    <line x1="3" y1="0" x2="3" y2="-118" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.85"/>
-    <polygon points="3,-118 -5,-100 11,-100" fill="#64748B" fill-opacity="0.85" stroke="none"/>
+    <line x1="3" y1="0" x2="3" y2="-118" stroke-width="3.5" stroke-linecap="round" stroke-opacity="0.85"/>
+    <polygon points="3,-118 -5,-100 11,-100" fill="#1E293B" fill-opacity="1" stroke="none"/>
   </g>
 
 </g>

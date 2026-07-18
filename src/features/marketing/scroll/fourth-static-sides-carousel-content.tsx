@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import { BubbleText } from "@/shared/ui/bubble-text";
 import { Typewriter } from "@/shared/ui/typewriter";
 import { useLowEndMode } from "@/features/marketing/landing-perf";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 const SIDES = [
   {

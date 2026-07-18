@@ -742,7 +742,7 @@ export const LANDING_HERO_GAME: LandingHeroGameCopy = {
 
   spinningHint: "Tap tier, then slot.",
 
-  doneHint: "Demo only. Mentrixer feed inside.",
+  doneHint: "Well played!",
 
   playAgain: "Again",
 

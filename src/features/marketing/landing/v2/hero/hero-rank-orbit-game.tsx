@@ -18,8 +18,12 @@ import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/land
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_HERO_GAME } from "@/features/marketing/landing/landing-copy-pure";
+import {
+  RANK_ICON_ON_LIGHT_FILTER,
+  RANK_ICON_VERSION,
+} from "@/features/xp/rank-icon-contrast";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = RANK_ICON_VERSION;
 const RADIUS = 92;
 const GAME_SECONDS = 40;
 const COACH_START = LANDING_HERO_GAME.coachStart;
@@ -89,8 +93,8 @@ function StickyRankChip({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "lp-sticky-rank-chip flex flex-col items-center justify-center gap-0.5 rounded-lg border border-[#A5B4FC] bg-[#EEF2FF] p-1 shadow-[1px_2px_0_rgba(11,18,32,0.12)] outline-none transition-[transform,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#6366F1]",
-        selected && "border-[#7C3AED] ring-2 ring-[#C4B5FD]",
+        "lp-sticky-rank-chip flex flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-[#6366F1] bg-white p-1 shadow-[1px_2px_0_rgba(11,18,32,0.16)] outline-none transition-[transform,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#6366F1]",
+        selected && "border-[#7C3AED] ring-2 ring-[#A78BFA]",
         shaking && "lp-sticky-rank-chip--shake",
         disabled && "cursor-default opacity-70",
         !disabled && "cursor-pointer hover:-translate-y-0.5 active:translate-y-0",
@@ -104,15 +108,16 @@ function StickyRankChip({
           alt=""
           width={28}
           height={28}
-          className="object-contain"
+          className="mx-rank-icon-on-light object-contain"
+          style={{ filter: RANK_ICON_ON_LIGHT_FILTER }}
           draggable={false}
         />
       ) : (
-        <span className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-[#A5B4FC] text-[11px] font-bold text-[#6366F1]">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md border-2 border-dashed border-[#6366F1] text-[11px] font-bold text-[#4338CA]">
           {emptyLabel}
         </span>
       )}
-      <span className="max-w-[3rem] truncate text-[8px] font-bold uppercase tracking-wide text-[#475569]">
+      <span className="max-w-[3rem] truncate text-[8px] font-bold uppercase tracking-wide text-[#0B1220]">
         {rank ? normalizeRankTitle(rank.title).slice(0, 6) : "slot"}
       </span>
     </button>
@@ -287,7 +292,8 @@ export function HeroRankOrbitGame() {
               alt=""
               width={22}
               height={22}
-              className="object-contain"
+              className="mx-rank-icon-on-light object-contain"
+              style={{ filter: RANK_ICON_ON_LIGHT_FILTER }}
               draggable={false}
             />
             <span className="text-[7px] font-bold uppercase tracking-wide text-[#6366F1]">{LANDING_HERO_GAME.xpLabel}</span>

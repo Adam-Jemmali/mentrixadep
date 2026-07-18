@@ -11,8 +11,12 @@ import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/land
 import { FallingRoleSliceArena, type SliceRole } from "@/features/marketing/landing/v2/motion/falling-role-slice-arena";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
+import {
+  RANK_ICON_ON_LIGHT_FILTER,
+  RANK_ICON_VERSION,
+} from "@/features/xp/rank-icon-contrast";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = RANK_ICON_VERSION;
 const PATH_ARENA_HEIGHT = 240;
 
 export type DualPathSide = {
@@ -45,7 +49,8 @@ function RoleIcon({
       width={size}
       height={size}
       draggable={false}
-      className={cn("pointer-events-none select-none object-contain", className)}
+      className={cn("pointer-events-none mx-rank-icon-on-light select-none object-contain", className)}
+      style={{ filter: RANK_ICON_ON_LIGHT_FILTER }}
       aria-hidden
     />
   );

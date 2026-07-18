@@ -3,37 +3,37 @@
 
   <!-- Frame -->
   <circle r="96" stroke-width="2.5" stroke-opacity="0.42"/>
-  <circle r="76" stroke-width="1.5" stroke-opacity="0.25"/>
+  <circle r="76" stroke-width="2.75" stroke-opacity="0.85"/>
 
   <!-- Cardinal ticks -->
-  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="96" y1="0" x2="82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="0" y1="96" x2="0" y2="82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="96" y1="0" x2="82" y2="0" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="0" y1="96" x2="0" y2="82" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
 
   <!-- Ordinal ticks -->
-  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="68" y1="68" x2="61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
+  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
+  <line x1="68" y1="68" x2="61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
+  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
+  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="0.85"/>
 
   <!-- Calibrated dial arc -->
   <path d="M-42,18 A42,42 0 0,1 42,18" stroke-width="3" stroke-linecap="round" stroke-opacity="0.85"/>
 
   <!-- Tick marks on dial -->
-  <line x1="-38" y1="18" x2="-32" y2="18" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="-28" y1="-8" x2="-24" y2="-2" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="0" y1="-24" x2="0" y2="-18" stroke-width="2" stroke-linecap="round" stroke-opacity="0.65"/>
-  <line x1="28" y1="-8" x2="24" y2="-2" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="38" y1="18" x2="32" y2="18" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="-38" y1="18" x2="-32" y2="18" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="-28" y1="-8" x2="-24" y2="-2" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="0" y1="-24" x2="0" y2="-18" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.97"/>
+  <line x1="28" y1="-8" x2="24" y2="-2" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="38" y1="18" x2="32" y2="18" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
 
   <!-- Needle at calibrated position (~80%) -->
   <line x1="0" y1="18" x2="22" y2="-14" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9"/>
-  <circle cx="0" cy="18" r="5" stroke-width="2" stroke-opacity="0.7"/>
-  <circle cx="0" cy="18" r="2" fill="#4F46E5" fill-opacity="0.85" stroke="none"/>
+  <circle cx="0" cy="18" r="5" stroke-width="3.25" stroke-opacity="0.98"/>
+  <circle cx="0" cy="18" r="2" fill="#4F46E5" fill-opacity="1" stroke="none"/>
 
   <!-- Calibration mark at needle tip -->
-  <polygon points="22,-14 26,-8 18,-8" fill="#4F46E5" fill-opacity="0.7" stroke="none"/>
+  <polygon points="22,-14 26,-8 18,-8" fill="#4F46E5" fill-opacity="0.98" stroke="none"/>
 
 </g>
 </svg>

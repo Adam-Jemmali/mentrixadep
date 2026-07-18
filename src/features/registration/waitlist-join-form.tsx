@@ -6,7 +6,7 @@ import { cn } from "@/shared/core/utils";
 import type { WaitlistRole } from "@/features/registration/waitlist-role";
 import { submitOnboardingRequest } from "@/features/registration/onboarding-request-client";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 export function WaitlistJoinForm({
   initialEmail = "",

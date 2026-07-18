@@ -13,7 +13,7 @@ import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-secti
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_FOOTER } from "@/features/marketing/landing/landing-copy-pure";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 function RoleIcon({ role, className = "" }: { role: "mentrixer" | "guide"; className?: string }) {
   return (

@@ -15,7 +15,7 @@ import { ContactSocialLinks } from "@/features/marketing/contact-ui/contact-soci
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
 import { markLandingSection, useLandingPerfMetrics, useLowEndMode } from "@/features/marketing/landing-perf";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 function useInViewOnce<T extends HTMLElement>(rootMargin = "0px 0px -12% 0px") {
   const ref = useRef<T>(null);

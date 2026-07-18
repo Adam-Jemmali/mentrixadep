@@ -13,7 +13,7 @@ import ParticleAnimation from "@/shared/ui/particle-animation";
 import { useLowEndMode, useSectionScrollProgress } from "@/features/marketing/landing-perf";
 import { submitOnboardingRequest } from "@/features/registration/onboarding-request-client";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 const ArrowRight = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

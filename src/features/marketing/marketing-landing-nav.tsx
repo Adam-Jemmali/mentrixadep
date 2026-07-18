@@ -8,7 +8,7 @@ import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_NAV } from "@/features/marketing/landing/landing-copy-pure";
 import { cn } from "@/shared/core/utils";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 const RoleIcon = memo(function RoleIcon({
   role,

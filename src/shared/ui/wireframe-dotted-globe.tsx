@@ -6,7 +6,7 @@ import type { Feature, FeatureCollection } from "geojson";
 import { cn } from "@/shared/core/utils";
 import { GLOBE_LAND_GEOJSON } from "@/features/marketing/globe-land-data";
 
-const ICON_VERSION = "20260410";
+const ICON_VERSION = "20260718";
 
 export type GlobeMarkerRole = "mentrixer" | "guide";
 

@@ -2,20 +2,20 @@
 <g transform="translate(340,155)" fill="none" stroke="#2563EB">
 
   <!-- Frame: outer ring + inner ring -->
-  <circle r="96" stroke-width="2.5" stroke-opacity="0.85"/>
-  <circle r="78" stroke-width="1.5" stroke-opacity="0.65"/>
+  <circle r="96" stroke-width="3.5" stroke-opacity="1"/>
+  <circle r="78" stroke-width="2.75" stroke-opacity="0.95"/>
 
   <!-- Cardinal ticks -->
-  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="2" stroke-linecap="round"/>
-  <line x1="96" y1="0" x2="82" y2="0" stroke-width="2" stroke-linecap="round"/>
-  <line x1="0" y1="96" x2="0" y2="82" stroke-width="2" stroke-linecap="round"/>
-  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="3.25" stroke-linecap="round"/>
+  <line x1="96" y1="0" x2="82" y2="0" stroke-width="3.25" stroke-linecap="round"/>
+  <line x1="0" y1="96" x2="0" y2="82" stroke-width="3.25" stroke-linecap="round"/>
+  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="3.25" stroke-linecap="round"/>
 
   <!-- Ordinal ticks -->
-  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.8"/>
-  <line x1="68" y1="68" x2="61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.8"/>
-  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.8"/>
-  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.8"/>
+  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
+  <line x1="68" y1="68" x2="61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
+  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
+  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
 
   <!-- Cardinal dot ornaments -->
   <circle cx="0" cy="-96" r="3" fill="#2563EB" stroke="none"/>
@@ -24,7 +24,7 @@
   <circle cx="-96" cy="0" r="3" fill="#2563EB" stroke="none"/>
 
   <!-- Shield -->
-  <path d="M0,-52 L34,-38 L34,-8 C34,22 0,46 0,46 C0,46 -34,22 -34,-8 L-34,-38Z" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M0,-52 L34,-38 L34,-8 C34,22 0,46 0,46 C0,46 -34,22 -34,-8 L-34,-38Z" stroke-width="3.5" stroke-linejoin="round"/>
 
   <!-- Battle slash (diagonal scar across the shield) -->
   <line x1="-18" y1="-24" x2="18" y2="16" stroke-width="3" stroke-linecap="round"/>

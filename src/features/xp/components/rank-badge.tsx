@@ -10,6 +10,10 @@ import {
   type AccountRankVisual,
 } from "@/features/xp/rank-icons";
 import { RANK_BADGE_SIZE_PX } from "@/features/xp/rank-display-tokens";
+import {
+  RANK_ICON_ON_LIGHT_FILTER,
+  RANK_ICON_VERSION,
+} from "@/features/xp/rank-icon-contrast";
 
 /** Account level row used by rank badge UI. */
 export type AccountLevel = Pick<AccountLevelInfo, "level" | "title">;
@@ -70,7 +74,9 @@ export function RankBadge({
   const px = RANK_BADGE_SIZE_PX[size];
   const isMentrixer = visual.key === "mentrixer";
   const isApex = visual.key === "apex";
-  const iconFilter = onDark ? ON_DARK_ICON_FILTER[visual.key] : undefined;
+  const iconFilter = onDark
+    ? ON_DARK_ICON_FILTER[visual.key]
+    : RANK_ICON_ON_LIGHT_FILTER;
   const glow = active || shouldPulse(visual.key, animate);
 
   return (
@@ -80,11 +86,12 @@ export function RankBadge({
           "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2",
           onDark
             ? "bg-gradient-to-b from-slate-800/98 to-slate-950/98 ring-1 ring-white/10"
-            : "bg-white/95 ring-1 ring-black/[0.04]",
+            : "bg-white ring-1 ring-slate-900/10",
           isMentrixer && onDark && "ring-amber-300/35",
-          isMentrixer && !onDark && "ring-[#D4A017]/35",
-          locked && (onDark ? "opacity-70 saturate-[0.65]" : "opacity-45 grayscale"),
-          !locked && !active && "opacity-95",
+          isMentrixer && !onDark && "ring-[#D4A017]/55",
+          locked && (onDark ? "opacity-70 saturate-[0.65]" : "opacity-55 grayscale"),
+          !locked && onDark && !active && "opacity-95",
+          !locked && !onDark && "opacity-100",
         )}
         style={{
           width: px,
@@ -94,15 +101,16 @@ export function RankBadge({
               ? `${visual.color}99`
               : `${visual.color}55`
             : active
-              ? `${visual.color}88`
-              : `${visual.color}44`,
+              ? `${visual.color}`
+              : `${visual.color}cc`,
+          borderWidth: onDark ? 2 : 2.5,
           boxShadow: onDark
             ? glow
               ? `0 0 ${Math.round(px * 0.55)}px ${visual.colorMuted}, 0 8px 24px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14)`
               : `0 0 ${Math.round(px * 0.28)}px ${visual.colorMuted}, inset 0 1px 0 rgba(255,255,255,0.1)`
             : glow
-              ? `0 0 ${Math.round(px * 0.42)}px ${visual.colorMuted}, 0 4px 14px rgba(15,23,42,0.08)`
-              : `0 0 ${Math.round(px * 0.2)}px ${visual.colorMuted}`,
+              ? `0 0 ${Math.round(px * 0.28)}px ${visual.colorMuted}, 0 2px 0 rgba(11,18,32,0.14)`
+              : `0 2px 0 rgba(11,18,32,0.12)`,
         }}
         animate={
           shouldPulse(visual.key, animate)
@@ -135,13 +143,14 @@ export function RankBadge({
           />
         ) : null}
         <img
-          src={visual.iconSrc}
+          src={`${visual.iconSrc}?v=${RANK_ICON_VERSION}`}
           alt=""
           aria-hidden
           className={cn(
             "relative z-[1] object-contain",
             "h-[72%] w-[72%]",
             onDark && "drop-shadow-[0_0_10px_rgba(255,255,255,0.22)]",
+            !onDark && "mx-rank-icon-on-light",
           )}
           style={iconFilter ? { filter: iconFilter } : undefined}
         />

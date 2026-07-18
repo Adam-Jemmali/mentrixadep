@@ -1,30 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="210 25 260 260" role="img" aria-label="Seeker rank">
-<g transform="translate(340,155)" fill="none" stroke="#94A3B8">
+<g transform="translate(340,155)" fill="none" stroke="#334155">
 
   <!-- Frame: outer ring + inner ring (same as Wanderer) -->
-  <circle r="96" stroke-width="2" stroke-opacity="0.38"/>
-  <circle r="72" stroke-width="1.5" stroke-opacity="0.22"/>
+  <circle r="96" stroke-width="3.25" stroke-opacity="0.95"/>
+  <circle r="72" stroke-width="2.75" stroke-opacity="0.95"/>
 
   <!-- Cardinal ticks -->
-  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="96" y1="0" x2="82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="0" y1="96" x2="0" y2="82" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
-  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5"/>
+  <line x1="0" y1="-96" x2="0" y2="-82" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="96" y1="0" x2="82" y2="0" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="0" y1="96" x2="0" y2="82" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
+  <line x1="-96" y1="0" x2="-82" y2="0" stroke-width="3.25" stroke-linecap="round" stroke-opacity="0.95"/>
 
   <!-- Ordinal ticks -->
-  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="68" y1="68" x2="61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
-  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.3"/>
+  <line x1="68" y1="-68" x2="61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
+  <line x1="68" y1="68" x2="61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
+  <line x1="-68" y1="68" x2="-61" y2="61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
+  <line x1="-68" y1="-68" x2="-61" y2="-61" stroke-width="2.75" stroke-linecap="round" stroke-opacity="1"/>
 
   <!-- Magnifying glass: lens -->
-  <circle cx="-6" cy="-8" r="36" stroke-width="2.5" stroke-opacity="0.85"/>
+  <circle cx="-6" cy="-8" r="36" stroke-width="4" stroke-opacity="1"/>
 
   <!-- Handle -->
-  <line x1="19" y1="17" x2="44" y2="42" stroke-width="3" stroke-linecap="round" stroke-opacity="0.7"/>
+  <line x1="19" y1="17" x2="44" y2="42" stroke-width="3" stroke-linecap="round" stroke-opacity="0.98"/>
 
   <!-- Spark inside lens (filled 4-point star) -->
-  <polygon points="-6,-28 -1.5,-13 14,-8 -1.5,-3 -6,12 -10.5,-3 -26,-8 -10.5,-13" fill="#94A3B8" fill-opacity="0.9" stroke="none"/>
+  <polygon points="-6,-28 -1.5,-13 14,-8 -1.5,-3 -6,12 -10.5,-3 -26,-8 -10.5,-13" fill="#334155" fill-opacity="1" stroke="none"/>
 
 </g>
 </svg>

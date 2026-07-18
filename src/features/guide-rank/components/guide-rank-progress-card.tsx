@@ -2,6 +2,7 @@ import { GuideRankBadge } from "@/features/guide-rank/components/guide-rank-badg
 import type { GuideRankProgress } from "@/features/guide-rank/calculate-pure";
 import { cn } from "@/shared/core/utils";
 import { GUIDE_RANK } from "@/features/tutor/guide-home-copy-pure";
+import { RANK_ICON_VERSION } from "@/features/xp/rank-icon-contrast";
 
 export function GuideRankProgressCard({ progress }: { progress: GuideRankProgress }) {
   const isElite = progress.current.key === "elite";
@@ -28,7 +29,7 @@ export function GuideRankProgressCard({ progress }: { progress: GuideRankProgres
               />
             ) : null}
             <img
-              src={progress.current.iconSrc}
+              src={`${progress.current.iconSrc}?v=${RANK_ICON_VERSION}`}
               alt=""
               aria-hidden
               className="relative z-[1] h-[72%] w-[72%] object-contain"
