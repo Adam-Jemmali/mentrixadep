@@ -4,6 +4,7 @@ import {
   filterMasteryNodesByQuery,
   defaultMasteryNodeStats,
   pickDefaultMasteryUnitNumber,
+  pickPrimaryWeakestMasteryNode,
   pickWeakestMasteryNodes,
   summarizeMasteryGrid,
 } from "@/features/mastery-grid/mastery-grid-pure";
@@ -88,6 +89,13 @@ describe("pickWeakestMasteryNodes", () => {
   it("returns lowest accuracy attempted nodes", () => {
     const weakest = pickWeakestMasteryNodes(sampleGrid(), 2);
     expect(weakest.map((node) => node.id)).toEqual(["b", "d"]);
+  });
+});
+
+describe("pickPrimaryWeakestMasteryNode", () => {
+  it("returns the single lowest-accuracy attempted node", () => {
+    const weakest = pickPrimaryWeakestMasteryNode(sampleGrid());
+    expect(weakest?.id).toBe("b");
   });
 });
 

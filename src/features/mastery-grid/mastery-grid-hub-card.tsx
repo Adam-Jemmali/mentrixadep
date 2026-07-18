@@ -73,7 +73,7 @@ export function MasteryGridHubCard({
 
       {weakest.length > 0 ? (
         <div className={compact ? "mt-3 space-y-2" : "mt-4 space-y-2"}>
-          <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#4F46E5]">
+          <p className="inline-flex items-center gap-2 rounded-md bg-amber-300 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-amber-950">
             <MentrixaVocabIcon name="focus-ring" size={compact ? 16 : 20} surface="light" title="Weakest" />
             Weakest
           </p>

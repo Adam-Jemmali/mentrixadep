@@ -61,8 +61,7 @@ function unitOneFirstNode(units: MasteryGridData["units"]): MasteryGridNode | nu
 }
 
 export function buildMasteryGridNextAction(units: MasteryGridData["units"]): string {
-  const nodes = units.flatMap((unit) => unit.nodes);
-  const attempted = nodes.filter((node) => node.state !== "none");
+  const attempted = units.flatMap((unit) => unit.nodes).filter((node) => node.state !== "none");
 
   if (attempted.length === 0) {
     const first = unitOneFirstNode(units);
@@ -76,7 +75,7 @@ export function buildMasteryGridNextAction(units: MasteryGridData["units"]): str
     return a.displayOrder - b.displayOrder;
   })[0]!;
 
-    return `Practice ${weakest.nodeName}`;
+  return `Practice ${weakest.nodeName}`;
 }
 
 export function flattenMasteryNodes(grid: MasteryGridData): MasteryGridNode[] {
@@ -314,6 +313,13 @@ export function pickWeakestMasteryNodes(
       return a.displayOrder - b.displayOrder;
     })
     .slice(0, limit);
+}
+
+/** Single source of truth for hub Weakest: lowest accuracy among attempted nodes. */
+export function pickPrimaryWeakestMasteryNode(
+  data: MasteryGridData,
+): MasteryGridNode | null {
+  return pickWeakestMasteryNodes(data, 1)[0] ?? null;
 }
 
 /** Prefer the unit with the most weak nodes; otherwise the first unit. */

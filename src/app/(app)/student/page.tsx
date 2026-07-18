@@ -52,6 +52,7 @@ import {
 import { getGuideRanksMap } from "@/features/guide-rank/reads";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
+import { pickPrimaryWeakestMasteryNode } from "@/features/mastery-grid/mastery-grid-pure";
 import { loadActiveStudentGoalForViewer } from "@/features/student-goals/load-student-goal";
 import { getStudentEntitlements } from "@/features/entitlements/entitlements";
 import { getStudentSubscription } from "@/features/payments/student-subscription";
@@ -179,6 +180,14 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const daysUntilExam =
     activeGoal?.targetDate != null ? daysUntilDate(activeGoal.targetDate) : null;
 
+  const liveWeakestNode = masteryGrid ? pickPrimaryWeakestMasteryNode(masteryGrid) : null;
+  const liveWeakest = liveWeakestNode
+    ? {
+        label: liveWeakestNode.nodeName,
+        accuracyPercent: liveWeakestNode.accuracyPercent ?? 0,
+      }
+    : null;
+
   return (
     <div className={mentrixStudent.pageBgHub}>
       <StudentHubRealtimeRefresh userId={user.id} />
@@ -235,7 +244,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
         <div className="mt-4">
           <Suspense fallback={null}>
-            <ProgressSnapshotHubSlot momentumSubscriber={momentumSubscriber} />
+            <ProgressSnapshotHubSlot
+              momentumSubscriber={momentumSubscriber}
+              liveWeakest={liveWeakest}
+            />
           </Suspense>
         </div>
 

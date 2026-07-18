@@ -82,6 +82,7 @@ const publicRoutes = new Set([
 const publicPrefixes = [
   "/tutor/",
   "/rank/",
+  "/wrapped/",
   "/breakthrough/",
   "/share/",
   "/widget/",

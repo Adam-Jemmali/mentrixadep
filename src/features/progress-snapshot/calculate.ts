@@ -163,12 +163,10 @@ async function getWeakestConcept(
 ): Promise<{ label: string; accuracyPercent: number }> {
   const { data: nodes } = await admin
     .from("student_knowledge_nodes")
-    .select("subject, topic, subtopic, mastery_score, attempts, correct, last_seen_at")
+    .select("skill_node_id, subject, topic, subtopic, mastery_score, attempts, correct, last_seen_at")
     .eq("user_id", userId)
     .gte("last_seen_at", sinceIso)
-    .gt("attempts", 0)
-    .order("mastery_score", { ascending: true })
-    .limit(20);
+    .gt("attempts", 0);
 
   const subjectLower = subject.toLowerCase();
   const filtered = (nodes ?? []).filter((n) => {
@@ -176,17 +174,42 @@ async function getWeakestConcept(
     return !subjectLower || subj.includes(subjectLower) || subjectLower.includes(subj);
   });
 
-  const pick = filtered[0] ?? nodes?.[0];
+  const ranked = [...(filtered.length > 0 ? filtered : nodes ?? [])]
+    .map((n) => {
+      const attempts = Number(n.attempts ?? 0);
+      const correct = Number(n.correct ?? 0);
+      return {
+        skillNodeId: n.skill_node_id ? String(n.skill_node_id) : null,
+        topic: String(n.topic ?? ""),
+        subtopic: String(n.subtopic ?? ""),
+        accuracyPercent: computeAccuracyPercent(correct, attempts),
+        attempts,
+      };
+    })
+    .sort((a, b) => {
+      if (a.accuracyPercent !== b.accuracyPercent) return a.accuracyPercent - b.accuracyPercent;
+      return b.attempts - a.attempts;
+    });
+
+  const pick = ranked[0];
   if (!pick) {
     return { label: `${subject} fundamentals`, accuracyPercent: 0 };
   }
 
-  const attempts = Number(pick.attempts ?? 0);
-  const correct = Number(pick.correct ?? 0);
-  const label = [pick.topic, pick.subtopic].filter(Boolean).join(" · ") || `${subject} practice`;
+  let label = [pick.topic, pick.subtopic].filter(Boolean).join(" · ");
+  if (pick.skillNodeId) {
+    const { data: skill } = await admin
+      .from("skill_nodes")
+      .select("node_name")
+      .eq("id", pick.skillNodeId)
+      .maybeSingle();
+    if (skill?.node_name) label = String(skill.node_name);
+  }
+  if (!label.trim()) label = `${subject} practice`;
+
   return {
-    label: String(label),
-    accuracyPercent: computeAccuracyPercent(correct, attempts),
+    label,
+    accuracyPercent: pick.accuracyPercent,
   };
 }
 

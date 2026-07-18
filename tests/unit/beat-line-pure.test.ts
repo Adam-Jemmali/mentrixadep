@@ -15,6 +15,9 @@ describe("buildBeatLineView", () => {
     });
     expect(view?.verdict).toContain("Beat Line");
     expect(view?.ctaHref).toBe("/student/duel");
+    expect(view?.categoryIcon).toBe("duels");
+    expect(view?.ctaIcon).toBe("duels");
+    expect(view?.lines.every((line) => Boolean(line.icon))).toBe(true);
   });
 
   it("frames rival chase with a single verdict", () => {
@@ -29,6 +32,9 @@ describe("buildBeatLineView", () => {
     });
     expect(view?.verdict).toContain("Jordan");
     expect(view?.ctaLabel).toContain("Beat Jordan");
+    expect(view?.categoryIcon).toBe("duels");
+    expect(view?.ctaIcon).toBe("quest");
+    expect(view?.lines.every((line) => Boolean(line.icon))).toBe(true);
   });
 
   it("exports a marketing summary", () => {

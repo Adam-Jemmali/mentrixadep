@@ -143,6 +143,13 @@ describe("vercel cron config", () => {
     const decay = crons.find((c) => c.path === "/api/cron/check-mastery-decay");
     expect(decay, "check-mastery-decay must run via GitHub Actions, not vercel.json").toBeUndefined();
   });
+
+  it("schedules generate-wrapped once yearly on Dec 15 UTC", () => {
+    const cfg = readVercelConfig();
+    const cron = (cfg.crons ?? []).find((c) => c.path === "/api/cron/generate-wrapped");
+    expect(cron).toBeTruthy();
+    expect(cron!.schedule).toBe("0 0 15 12 *");
+  });
 });
 
 describe("github background job cron", () => {

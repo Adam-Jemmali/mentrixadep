@@ -38,11 +38,15 @@ function StatRow({
   children: ReactNode;
   tone?: "violet" | "amber";
 }) {
+  const labelClass =
+    tone === "amber"
+      ? "inline-flex rounded-md bg-amber-300 px-1.5 py-0.5 text-[11px] font-black uppercase tracking-wide text-amber-950"
+      : "text-[11px] font-semibold uppercase tracking-wide text-zinc-500";
   return (
     <div className="flex items-start gap-3">
       <HubVocabIcon name={icon} title={label} tone={tone} size={28} />
       <div className="min-w-0 pt-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
+        <p className={labelClass}>{label}</p>
         <div className="mt-0.5 text-sm font-medium text-zinc-800">{children}</div>
       </div>
     </div>
@@ -53,10 +57,12 @@ export function ProgressSnapshotCard({
   snapshot,
   weeklyVerdict = null,
   momentumSubscriber = false,
+  liveWeakest = null,
 }: {
   snapshot: ProgressSnapshotRow;
   weeklyVerdict?: Verdict | null;
   momentumSubscriber?: boolean;
+  liveWeakest?: { label: string; accuracyPercent: number } | null;
 }) {
   const [visible, setVisible] = useState(true);
   const data = snapshot.snapshot_data;
@@ -93,6 +99,9 @@ export function ProgressSnapshotCard({
   const curRank = normalizeRankTitle(data.rankChange.current.title);
   const nextRank = normalizeRankTitle(data.predictedNextRank.title);
   const paceDays = data.predictedNextRank.daysAtCurrentPace;
+
+  const weakLabel = liveWeakest?.label ?? data.weakestConcept.label;
+  const weakAccuracy = liveWeakest?.accuracyPercent ?? data.weakestConcept.accuracyPercent;
 
   const sessionPriceLabel = formatUsdFromCents(
     getStudentSessionCheckoutCents({ momentumSubscriber }),
@@ -132,11 +141,11 @@ export function ProgressSnapshotCard({
           <StatRow icon="rank-proof" label="This week">
             {weeklyVerdict.changed}
           </StatRow>
-          {weeklyVerdict.reason ? (
-            <StatRow icon="focus-ring" label="Weak spot" tone="amber">
-              {weeklyVerdict.reason}
-            </StatRow>
-          ) : null}
+          <StatRow icon="focus-ring" label="Weakest" tone="amber">
+            {liveWeakest
+              ? `Weakest: ${weakLabel} at ${weakAccuracy}%.`
+              : weeklyVerdict.reason || `Weakest: ${weakLabel} at ${weakAccuracy}%.`}
+          </StatRow>
         </div>
       ) : null}
 
@@ -162,16 +171,16 @@ export function ProgressSnapshotCard({
         </StatRow>
       </div>
 
-      <div className="mt-5 rounded-xl border border-amber-200/80 bg-amber-50/70 px-4 py-3">
+      <div className="mt-5 rounded-xl border border-amber-300 bg-amber-100/80 px-4 py-3">
         <div className="flex items-start gap-3">
-          <HubVocabIcon name="focus-ring" title="Weak spot" tone="amber" size={28} />
+          <HubVocabIcon name="focus-ring" title="Weakest" tone="amber" size={28} />
           <div className="min-w-0 text-sm text-amber-950">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800/80">
-              Weak spot
+            <p className="inline-flex items-center rounded-md bg-amber-300 px-2 py-0.5 text-[11px] font-black uppercase tracking-wide text-amber-950">
+              Weakest
             </p>
-            <p className="mt-0.5 font-semibold">{data.weakestConcept.label}</p>
+            <p className="mt-1.5 font-semibold">{weakLabel}</p>
             <p className="mt-1 text-amber-900/90">
-              {data.weakestConcept.accuracyPercent}% accuracy. Guide session → {nextRank}
+              {weakAccuracy}% accuracy. Guide session → {nextRank}
               {paceDays != null ? `. ~${paceDays} days at current pace` : ""}.
             </p>
             {data.recommendedGuide.impactScore > 0 ? (

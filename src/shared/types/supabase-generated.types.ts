@@ -4448,6 +4448,47 @@ export type Database = {
           },
         ]
       }
+      wrapped_reports: {
+        Row: {
+          generated_at: string
+          id: string
+          image_url: string | null
+          report_data: Json
+          report_year: number
+          role: string
+          share_token: string
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          image_url?: string | null
+          report_data: Json
+          report_year: number
+          role: string
+          share_token?: string
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          image_url?: string | null
+          report_data?: Json
+          report_year?: number
+          role?: string
+          share_token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wrapped_reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       xp_award_ledger: {
         Row: {
           award_key: string

@@ -99,8 +99,18 @@ export function TopRivalCard({ rivalData, className }: Props) {
           </div>
 
           <div className={cn("relative flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6", mentrixStudent.hubBookPage)}>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">{BEAT_LINE_CATEGORY}</p>
-            <p className="text-sm font-bold text-[#0B1220]">{beatLine.verdict}</p>
+            <div className="flex items-center gap-2">
+              <MentrixaVocabIcon name={beatLine.categoryIcon} size={22} surface="light" title="Beat Line" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">{BEAT_LINE_CATEGORY}</p>
+            </div>
+            <div className="space-y-2">
+              {beatLine.lines.map((line) => (
+                <p key={line.text} className="flex items-start gap-2 text-sm font-bold text-[#0B1220]">
+                  <MentrixaVocabIcon name={line.icon} size={20} surface="light" title={line.text} />
+                  <span>{line.text}</span>
+                </p>
+              ))}
+            </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
               <div className="flex flex-col items-center gap-1.5">
@@ -142,7 +152,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
                 )}
               >
                 <MentrixaVocabIcon
-                  name={beatLine.ctaHref.includes("duel") ? "duels" : "quest"}
+                  name={beatLine.ctaIcon}
                   size={22}
                   surface="dark"
                 />
