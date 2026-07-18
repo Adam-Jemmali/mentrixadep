@@ -104,7 +104,7 @@ export function buildTierComparisonRows(): TierComparisonRow[] {
       momentumExclusive: true,
     },
     {
-      feature: `Member rate (${memberRate} vs ${formatStudentBreakthroughPrice()})`,
+      feature: `Member rate · ${memberRate} vs ${formatStudentBreakthroughPrice()}`,
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
@@ -118,14 +118,14 @@ export function buildTierComparisonRows(): TierComparisonRow[] {
       momentumExclusive: true,
     },
     {
-      feature: "Guide memory + brief archive",
+      feature: "Guide memory and brief archive",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",
       momentumExclusive: true,
     },
     {
-      feature: "Loop SLA credit restore",
+      feature: "Loop credit restore",
       arena: "no",
       breakthrough: "no",
       momentum: "yes",

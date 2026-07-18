@@ -34,18 +34,18 @@ const PERK_META: PerkMeta[] = [
   {
     id: "weekly-movement-receipt",
     match: (f) => f === "Weekly Movement Receipt",
-    memberValue: "Weekly email with what changed on your grid, retest status, and credits.",
+    memberValue: "Weekly email covering grid changes, retest status, and credits.",
     href: "/student/receipts",
   },
   {
     id: "guide-memory-brief-archive",
-    match: (f) => f === "Guide memory + brief archive",
-    memberValue: "Your Guide picks up where you left off. Past pre-session briefs stay on file.",
+    match: (f) => f.startsWith("Guide memory"),
+    memberValue: "Your Guide picks up where you left off. Past briefs stay on file.",
     href: "/student/briefs",
   },
   {
     id: "loop-sla-credit",
-    match: (f) => f === "Loop SLA credit restore",
+    match: (f) => f.startsWith("Loop SLA") || f.startsWith("Loop credit"),
     memberValue: "Included session credit restored if a loop does not improve within 7 days.",
     href: "/student/subscribe",
   },

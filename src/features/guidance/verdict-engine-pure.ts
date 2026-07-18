@@ -480,18 +480,28 @@ export function buildBreakthroughVerdict(
 }
 
 export function buildWeeklySnapshotVerdict(data: ProgressSnapshotData): Verdict {
-  const rankDir = data.rankChange.direction;
-  const rankArrow = rankDir === "up" ? "up" : rankDir === "down" ? "down" : "flat";
+  const prev = data.rankChange.previous.title;
+  const cur = data.rankChange.current.title;
+  const rankMove =
+    data.rankChange.direction === "up"
+      ? `${prev} up to ${cur}`
+      : data.rankChange.direction === "down"
+        ? `${prev} down to ${cur}`
+        : `${prev} held`;
 
-  const changed = `This week quest accuracy hit ${data.accuracyThisWeek}% (${signedDelta(data.accuracyDelta)} vs last week), rank moved ${rankArrow} from ${data.rankChange.previous.title} to ${data.rankChange.current.title}, and duels were ${data.duelsWon} won / ${data.duelsLost} lost.`;
+  const delta = data.accuracyDelta;
+  const accuracyMove =
+    delta > 0 ? `up ${delta}` : delta < 0 ? `down ${Math.abs(delta)}` : "flat";
 
-  const reason = `${data.weakestConcept.label} is still your weakest spot at ${data.weakestConcept.accuracyPercent}% accuracy.`;
+  const changed = `Quest ${data.accuracyThisWeek}% ${accuracyMove} vs last week. Rank ${rankMove}. Duels ${data.duelsWon} won, ${data.duelsLost} lost.`;
+
+  const reason = `Weakest: ${data.weakestConcept.label} at ${data.weakestConcept.accuracyPercent}%.`;
 
   const guide = data.recommendedGuide;
   const label =
     guide.impactScore > 0
-      ? `Book ${guide.displayName} (${Math.round(guide.impactScore)} Impact on ${guide.impactSubject})`
-      : `Book a Guide for ${data.weakestConcept.label}`;
+      ? `Book ${guide.displayName}`
+      : `Book Guide on ${data.weakestConcept.label}`;
 
   return {
     changed,

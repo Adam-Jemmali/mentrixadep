@@ -17,12 +17,6 @@ function rankBadgeImg(title: string): string {
   return `${EMAIL_ASSET_ORIGIN}/icons/${file}`;
 }
 
-function signedDelta(n: number): string {
-  if (n > 0) return `+${n}`;
-  if (n < 0) return `${n}`;
-  return "0";
-}
-
 function truthReportBlock(report: WeeklyTruthReport): string {
   const lines = [report.moved, report.cause, report.stuck, report.nextAction];
   return `<div style="margin:0 0 20px;">
@@ -51,11 +45,11 @@ export function progressSnapshotEmailSubject(props: ProgressSnapshotEmailTemplat
   const direction = props.snapshot.rankChange.direction;
   const subjectRank =
     direction === "up"
-      ? "your rank moved up this week"
+      ? "rank up this week"
       : direction === "down"
-        ? "your rank moved down this week"
-        : "your weekly progress snapshot";
-  return `${hi} — ${subjectRank}`;
+        ? "rank down this week"
+        : "weekly progress snapshot";
+  return `${hi} · ${subjectRank}`;
 }
 
 export function progressSnapshotEmailTitle(props: ProgressSnapshotEmailTemplateProps): string {
@@ -73,10 +67,17 @@ export function progressSnapshotEmailBody(props: ProgressSnapshotEmailTemplatePr
   const divDelta = s.divisionRank.delta;
   const divPhrase =
     divDelta > 0
-      ? `up from #${s.divisionRank.previous}`
+      ? `#${s.divisionRank.current} · up from #${s.divisionRank.previous}`
       : divDelta < 0
-        ? `down from #${s.divisionRank.previous}`
-        : `held at #${s.divisionRank.current}`;
+        ? `#${s.divisionRank.current} · down from #${s.divisionRank.previous}`
+        : `#${s.divisionRank.current}`;
+
+  const accuracyDelta =
+    s.accuracyDelta > 0
+      ? `up ${s.accuracyDelta}% vs last week`
+      : s.accuracyDelta < 0
+        ? `down ${Math.abs(s.accuracyDelta)}% vs last week`
+        : `flat vs last week`;
 
   const opener = props.truthReport
     ? truthReportBlock(props.truthReport)
@@ -100,17 +101,17 @@ export function progressSnapshotEmailBody(props: ProgressSnapshotEmailTemplatePr
       </tr>
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #222;color:#888;font-size:13px;">Quest accuracy</td>
-        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.accuracyThisWeek}% (${signedDelta(s.accuracyDelta)}% vs last week)</td>
+        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.accuracyThisWeek}% · ${accuracyDelta}</td>
       </tr>
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #222;color:#888;font-size:13px;">Duels</td>
-        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.duelsWon} won, ${s.duelsLost} lost</td>
+        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.duelsWon} won · ${s.duelsLost} lost</td>
       </tr>
       <tr>
         <td style="padding:12px 0;color:#888;font-size:13px;">Division rank</td>
-        <td style="padding:12px 0;color:#f5f5f5;font-size:14px;">#${s.divisionRank.current} (${divPhrase})</td>
+        <td style="padding:12px 0;color:#f5f5f5;font-size:14px;">${divPhrase}</td>
       </tr>
     </table>
-    ${ctaButton(s.bookingCtaUrl, `Book ${s.recommendedGuide.displayName} — $39`)}
+    ${ctaButton(s.bookingCtaUrl, `Book ${s.recommendedGuide.displayName} · $39`)}
     <p style="margin:20px 0 0;color:#525252;font-size:12px;line-height:1.55;text-align:center;">Free to compete. You only pay when you book.</p>`;
 }

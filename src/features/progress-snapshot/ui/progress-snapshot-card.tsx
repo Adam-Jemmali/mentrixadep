@@ -1,14 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import {
+  ArrowRight,
+  CalendarDays,
+  Crosshair,
+  Hash,
+  Swords,
+  Target,
+  TrendingUp,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { RankBadge } from "@/features/xp/components/rank-badge";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import type { ProgressSnapshotRow } from "@/features/progress-snapshot/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
-import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import {
   formatStudentBreakthroughPrice,
   getStudentSessionCheckoutCents,
@@ -19,10 +29,52 @@ function dismissKey(snapshotId: string) {
   return `mentrixa:progress-snapshot:dismissed:${snapshotId}`;
 }
 
-function signed(n: number): string {
-  if (n > 0) return `+${n}`;
-  if (n < 0) return `${n}`;
-  return "0";
+function accuracyDeltaLabel(n: number): string {
+  if (n > 0) return `up ${n}% vs last week`;
+  if (n < 0) return `down ${Math.abs(n)}% vs last week`;
+  return "flat vs last week";
+}
+
+function HubIconChip({
+  icon: Icon,
+  tone = "violet",
+}: {
+  icon: LucideIcon;
+  tone?: "violet" | "amber";
+}) {
+  const chip =
+    tone === "amber"
+      ? "bg-amber-500 text-white"
+      : "bg-[#7C3AED] text-white";
+  return (
+    <span
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm ${chip}`}
+    >
+      <Icon className="h-4.5 w-4.5 h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
+    </span>
+  );
+}
+
+function StatRow({
+  icon,
+  label,
+  children,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  children: ReactNode;
+  tone?: "violet" | "amber";
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <HubIconChip icon={icon} tone={tone} />
+      <div className="min-w-0 pt-0.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
+        <div className="mt-0.5 text-sm font-medium text-zinc-800">{children}</div>
+      </div>
+    </div>
+  );
 }
 
 export function ProgressSnapshotCard({
@@ -65,10 +117,27 @@ export function ProgressSnapshotCard({
 
   const rankDirection = data.rankChange.direction;
   const divDelta = data.divisionRank.delta;
+  const prevRank = normalizeRankTitle(data.rankChange.previous.title);
+  const curRank = normalizeRankTitle(data.rankChange.current.title);
+  const nextRank = normalizeRankTitle(data.predictedNextRank.title);
+  const paceDays = data.predictedNextRank.daysAtCurrentPace;
 
   const sessionPriceLabel = formatUsdFromCents(
     getStudentSessionCheckoutCents({ momentumSubscriber }),
   );
+
+  const ctaLabel =
+    weeklyVerdict?.nextAction.label ??
+    `Book ${data.recommendedGuide.displayName} · ${sessionPriceLabel}${
+      momentumSubscriber ? " member" : ` · pay as you go ${formatStudentBreakthroughPrice()}`
+    }`;
+
+  const divisionLine =
+    divDelta > 0
+      ? `#${data.divisionRank.current} · up from #${data.divisionRank.previous}`
+      : divDelta < 0
+        ? `#${data.divisionRank.current} · down from #${data.divisionRank.previous}`
+        : `#${data.divisionRank.current}`;
 
   return (
     <div className={`${mentrixStudent.card} relative overflow-hidden p-5 sm:p-6`}>
@@ -80,70 +149,75 @@ export function ProgressSnapshotCard({
       >
         ×
       </button>
-      <p className={mentrixStudent.sectionEyebrowOnLight}>Your week in {data.subject}</p>
+
+      <div className="flex items-center gap-2">
+        <HubIconChip icon={CalendarDays} />
+        <p className={mentrixStudent.sectionEyebrowOnLight}>Your week in {data.subject}</p>
+      </div>
 
       {weeklyVerdict ? (
-        <div className="mt-4">
-          <VerdictPanel verdict={weeklyVerdict} tone="light" showNextAction={false} />
+        <div className="mt-4 space-y-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
+          <StatRow icon={TrendingUp} label="This week">
+            {weeklyVerdict.changed}
+          </StatRow>
+          {weeklyVerdict.reason ? (
+            <StatRow icon={Crosshair} label="Weak spot" tone="amber">
+              {weeklyVerdict.reason}
+            </StatRow>
+          ) : null}
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
-        <div className="flex items-center gap-3">
-          <RankBadge rank={data.rankChange.previous} size="md" />
-          <span className="text-lg text-zinc-400" aria-hidden>
-            →
-          </span>
-          <RankBadge rank={data.rankChange.current} size="md" animate={rankDirection === "up"} />
-        </div>
-        <div className="min-w-0 space-y-1 text-sm text-zinc-700">
-          <p>
-            Rank:{" "}
-            <strong>{normalizeRankTitle(data.rankChange.previous.title)}</strong>
-            {" → "}
-            <strong>{normalizeRankTitle(data.rankChange.current.title)}</strong>
-            {rankDirection === "up" ? " ↑" : rankDirection === "down" ? " ↓" : ""}
-          </p>
-          <p>
-            Quest accuracy: <strong>{data.accuracyThisWeek}%</strong> ({signed(data.accuracyDelta)}% vs last week)
-          </p>
-          <p>
-            Duels: <strong>{data.duelsWon}</strong> won, <strong>{data.duelsLost}</strong> lost
-          </p>
-          <p>
-            Division rank: <strong>#{data.divisionRank.current}</strong>
-            {divDelta !== 0
-              ? ` (${divDelta > 0 ? "up" : "down"} from #${data.divisionRank.previous})`
-              : ""}
-          </p>
+      <div className="mt-5 flex items-center gap-3">
+        <RankBadge rank={data.rankChange.previous} size="md" />
+        <ArrowRight className="h-4 w-4 text-[#7C3AED]" aria-hidden />
+        <RankBadge rank={data.rankChange.current} size="md" animate={rankDirection === "up"} />
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <StatRow icon={TrendingUp} label="Rank">
+          {prevRank} <span className="text-zinc-400">→</span> {curRank}
+          {rankDirection === "up" ? " ↑" : rankDirection === "down" ? " ↓" : ""}
+        </StatRow>
+        <StatRow icon={Target} label="Quest accuracy">
+          {data.accuracyThisWeek}% · {accuracyDeltaLabel(data.accuracyDelta)}
+        </StatRow>
+        <StatRow icon={Swords} label="Duels">
+          {data.duelsWon} won · {data.duelsLost} lost
+        </StatRow>
+        <StatRow icon={Hash} label="Division rank">
+          {divisionLine}
+        </StatRow>
+      </div>
+
+      <div className="mt-5 rounded-xl border border-amber-200/80 bg-amber-50/70 px-4 py-3">
+        <div className="flex items-start gap-3">
+          <HubIconChip icon={Crosshair} tone="amber" />
+          <div className="min-w-0 text-sm text-amber-950">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800/80">
+              Weak spot
+            </p>
+            <p className="mt-0.5 font-semibold">{data.weakestConcept.label}</p>
+            <p className="mt-1 text-amber-900/90">
+              {data.weakestConcept.accuracyPercent}% accuracy. Guide session → {nextRank}
+              {paceDays != null ? `. ~${paceDays} days at current pace` : ""}.
+            </p>
+            {data.recommendedGuide.impactScore > 0 ? (
+              <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-emerald-900">
+                <UserRound className="h-4 w-4 shrink-0" aria-hidden />
+                {data.recommendedGuide.displayName} · {Math.round(data.recommendedGuide.impactScore)}{" "}
+                Impact on {data.recommendedGuide.impactSubject}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
-      <div className="mt-5 rounded-xl border border-amber-200/80 bg-amber-50/70 px-4 py-3 text-sm text-amber-950">
-        <p className="font-semibold">Weak spot: {data.weakestConcept.label}</p>
-        <p className="mt-1 text-amber-900/90">
-          {data.weakestConcept.accuracyPercent}% accuracy — one Guide session on this is the fastest path to{" "}
-          {normalizeRankTitle(data.predictedNextRank.title)}
-          {data.predictedNextRank.daysAtCurrentPace != null
-            ? ` (about ${data.predictedNextRank.daysAtCurrentPace} days at your current pace)`
-            : ""}
-          .
-        </p>
-        {data.recommendedGuide.impactScore > 0 ? (
-          <p className="mt-2 text-sm font-medium text-emerald-900">
-            {data.recommendedGuide.displayName} has a {Math.round(data.recommendedGuide.impactScore)} Impact Score
-            in {data.recommendedGuide.impactSubject}.
-          </p>
-        ) : null}
-      </div>
+
       <Button asChild className="mt-4 w-full sm:w-auto">
         <Link href={weeklyVerdict?.nextAction.href ?? data.bookingCtaUrl} onClick={onCtaClick}>
-          {weeklyVerdict?.nextAction.label ??
-            `Book ${data.recommendedGuide.displayName} — ${sessionPriceLabel}${
-              momentumSubscriber ? " (member rate)" : ` (pay as you go is ${formatStudentBreakthroughPrice()})`
-            }`}
+          {ctaLabel}
         </Link>
       </Button>
     </div>
   );
 }
-
