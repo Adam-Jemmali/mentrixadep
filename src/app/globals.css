@@ -1684,17 +1684,17 @@ main:has(.lp-root) > div {
   }
 }
 .lp-hero-line {
-  animation: lpHeroLine 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  opacity: 0;
+  animation: none;
+  opacity: 1;
 }
 .lp-hero-line-delay-1 {
-  animation-delay: 0.12s;
+  animation-delay: 0s;
 }
 .lp-hero-line-delay-2 {
-  animation-delay: 0.28s;
+  animation-delay: 0s;
 }
 .lp-hero-line-delay-3 {
-  animation-delay: 0.44s;
+  animation-delay: 0s;
 }
 
 @keyframes lpFloatSlow {
@@ -1721,7 +1721,24 @@ main:has(.lp-root) > div {
   }
 }
 .lp-cta-pulse {
-  animation: lpPulseRing 2.8s ease-in-out infinite;
+  animation: none;
+}
+
+.lp-scroll-cue {
+  animation: none;
+}
+
+.lp-shimmer-btn__sheen::before {
+  content: none;
+  display: none;
+}
+
+/* Landing page — Mentrixa logo custom cursor removed (perf) */
+html.lp-landing-logo-cursor-active,
+html.lp-landing-logo-cursor-active *,
+.lp-landing-logo-cursor-zone,
+.lp-landing-logo-cursor-zone * {
+  cursor: auto;
 }
 
 @keyframes lpHeroStageIn {
@@ -1735,7 +1752,7 @@ main:has(.lp-root) > div {
   }
 }
 .lp-hero-stage {
-  animation: lpHeroStageIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+  animation: none;
 }
 
 @keyframes lpScrollCueBob {
@@ -1748,7 +1765,7 @@ main:has(.lp-root) > div {
   }
 }
 .lp-scroll-cue {
-  animation: lpScrollCueBob 2.2s ease-in-out infinite;
+  animation: none;
 }
 
 @keyframes lpShimmerSheen {
@@ -1760,11 +1777,8 @@ main:has(.lp-root) > div {
   }
 }
 .lp-shimmer-btn__sheen::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-  animation: lpShimmerSheen 2.8s ease-in-out 1.2s infinite;
+  content: none;
+  display: none;
 }
 
 .lp-section-reveal {
@@ -1803,8 +1817,8 @@ main:has(.lp-root) > div {
   perspective: none;
 }
 .mx-logo-mark-inner {
-  transform-style: preserve-3d;
-  animation: mxMarkFloat 5.5s ease-in-out infinite;
+  transform-style: flat;
+  animation: none;
 }
 @keyframes mxMarkFloat {
   0%,
@@ -2137,45 +2151,8 @@ main:has(.lp-root) > div {
   background: rgba(148, 163, 184, 0.4);
 }
 
-/* ═══ Landing hero — premium $25k chrome ═══ */
-/* Landing page — Mentrixa logo custom cursor (class toggled on <html> by MentrixaCursor) */
-html.lp-landing-logo-cursor-active,
-html.lp-landing-logo-cursor-active * {
-  cursor: none !important;
-}
-
-/* Touch-only devices — keep native cursor */
-@media (hover: none) and (pointer: coarse) {
-  html.lp-landing-logo-cursor-active,
-  html.lp-landing-logo-cursor-active * {
-    cursor: auto !important;
-  }
-}
-
-/* Legacy zone class — still supported where nested */
-.lp-landing-logo-cursor-zone,
-.lp-landing-logo-cursor-zone * {
-  cursor: none !important;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .lp-landing-logo-cursor-zone,
-  .lp-landing-logo-cursor-zone * {
-    cursor: auto !important;
-  }
-}
-
-.lp-hero-logo-cursor-zone,
-.lp-hero-logo-cursor-zone * {
-  cursor: none !important;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .lp-hero-logo-cursor-zone,
-  .lp-hero-logo-cursor-zone * {
-    cursor: auto !important;
-  }
-}
+/* ═══ Landing hero chrome ═══ */
+/* Logo cursor trail removed — keep native cursor everywhere */
 
 .lp-hero-premium {
   isolation: isolate;

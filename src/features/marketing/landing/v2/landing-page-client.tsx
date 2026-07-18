@@ -9,7 +9,6 @@ import {
   DeferredGuideSection,
   DeferredLandingFooterBlock,
   DeferredLandingFaqSection,
-  DeferredLandingScrollProgress,
   DeferredLandingStoryBridge,
   DeferredOutcomesSection,
   DeferredPricingSection,
@@ -79,7 +78,6 @@ export function LandingPageClient() {
 
   return (
     <div className={landingHub.pageRoot}>
-      <DeferredLandingScrollProgress />
       <HeroClimbSection />
 
       <DeferredSocialProofStrip />

@@ -5,13 +5,13 @@ import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-moti
 import { useMounted } from "@/features/marketing/landing/v2/motion/use-mounted";
 import { springSnappy, springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
 
-/** Central gate: cinematic = full motion; reduced/low-end = static or minimal. */
+/** Central gate: landing stays static by default (low-end / no-GPU). Opt into loops only when clearly capable. */
 export function useLandingMotion() {
   const mounted = useMounted();
   const reducedMotion = usePrefersReducedMotion();
   const lowEnd = useLowEndMode();
   const reduced = reducedMotion === true;
-  /** SSR + first paint must stay static to avoid hydration mismatches. */
+  /** No continuous loops on marketing — entry fades only when mounted and not reduced/low-end. */
   const cinematic = mounted && !reduced && !lowEnd;
 
   return {
@@ -19,10 +19,10 @@ export function useLandingMotion() {
     reduced,
     lowEnd,
     cinematic,
-    /** Safe to run scroll-linked or infinite loops */
-    canLoop: cinematic,
+    /** Infinite / scroll-linked loops off — biggest lag source on weak GPUs. */
+    canLoop: false,
     spring: cinematic ? springSnappy : springSoft,
-    hoverScale: cinematic ? 1.03 : 1,
-    hoverLift: cinematic ? -8 : -2,
+    hoverScale: cinematic ? 1.02 : 1,
+    hoverLift: cinematic ? -4 : 0,
   };
 }

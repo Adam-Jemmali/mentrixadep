@@ -1,30 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HeroHeadline } from "@/features/marketing/landing/v2/sections/hero-headline";
 import { LandingShimmerButton } from "@/features/marketing/landing/v2/motion/landing-shimmer-button";
 import { HeroScrollCue } from "@/features/marketing/landing/v2/hero/hero-scroll-cue";
+import { HeroRankStage } from "@/features/marketing/landing/v2/hero/hero-rank-stage";
 import { LANDING_HERO } from "@/features/marketing/landing/landing-copy-pure";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LandingStickyGameNote } from "@/features/marketing/landing/ui/landing-sticky-note";
-import { Skeleton } from "@/shared/ui/skeleton";
-
-const HeroRankStage = dynamic(
-  () => import("@/features/marketing/landing/v2/hero/hero-rank-stage").then((m) => m.HeroRankStage),
-  {
-    ssr: false,
-    loading: () => (
-      <Skeleton
-        tone="light"
-        className="mx-auto h-[min(380px,72vw)] w-full max-w-[28rem] rounded-lg border border-[#C4B5FD]"
-        aria-hidden
-      />
-    ),
-  },
-);
 
 export function HeroClimbSection() {
   const router = useRouter();
@@ -55,7 +40,7 @@ export function HeroClimbSection() {
             </p>
 
             <div className="lp-hero-line lp-hero-line-delay-2 mt-9 flex justify-center lg:justify-start">
-              <LandingShimmerButton href="/try" variant="primary" className="lp-cta-pulse">
+              <LandingShimmerButton href="/try" variant="primary">
                 {LANDING_HERO.cta}
               </LandingShimmerButton>
             </div>
