@@ -16,6 +16,7 @@ import {
   sumArenaDivisionXp,
 } from "@/features/divisions/ap-calc-ab-division";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
 export async function getDivisionKeyForCourse(
   course: string
@@ -378,17 +379,20 @@ async function buildDivisionLeaderboard(
     resolveLeaderboardTotalXp(adminClient, userIds),
   ]);
 
-  return divXpList.map((r, i) => ({
-    rank: i + 1,
-    userId: r.user_id,
-    displayName: displayNames[r.user_id] ?? "Anonymous",
-    avatarUrl: avatarUrls[r.user_id] ?? null,
-    divisionXp: r.xp,
-    totalXp: totalXpByUser[r.user_id] ?? 0,
-    streakDays: r.streak_days,
-    level: getDivisionTierFromXp(r.xp),
-    isCurrentUser: r.user_id === currentUserId,
-  }));
+  return divXpList
+    .map((r, i) => ({
+      rank: i + 1,
+      userId: r.user_id,
+      displayName: displayNames[r.user_id] ?? "Anonymous",
+      avatarUrl: avatarUrls[r.user_id] ?? null,
+      divisionXp: r.xp,
+      totalXp: totalXpByUser[r.user_id] ?? 0,
+      streakDays: r.streak_days,
+      level: getDivisionTierFromXp(r.xp),
+      isCurrentUser: r.user_id === currentUserId,
+    }))
+    .filter((entry) => !isE2ESyntheticAccount({ displayName: entry.displayName }))
+    .map((entry, i) => ({ ...entry, rank: i + 1 }));
 }
 
 /** Top learners in a division (all-time division XP). Display name from Settings, then auth metadata / email. */

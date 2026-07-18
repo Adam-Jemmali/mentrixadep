@@ -3,6 +3,7 @@ import {
   isE2ESyntheticAccount,
   isE2ESyntheticEmail,
   isE2ESyntheticLabel,
+  isProductionMentrixaHost,
 } from "@/shared/core/e2e-synthetic-account-pure";
 
 describe("e2e synthetic account detection", () => {
@@ -11,7 +12,8 @@ describe("e2e synthetic account detection", () => {
       isE2ESyntheticEmail("e2e.guest-chain.1783482184461.8p3w5w@example.com"),
     ).toBe(true);
     expect(isE2ESyntheticEmail("e2e.chain.1783485371027@example.com")).toBe(true);
-    expect(isE2ESyntheticEmail("student.e2e@example.com")).toBe(false);
+    expect(isE2ESyntheticEmail("student.e2e@example.com")).toBe(true);
+    expect(isE2ESyntheticEmail("tutor.e2e@example.com")).toBe(true);
     expect(isE2ESyntheticEmail("trapdime@gmail.com")).toBe(false);
   });
 
@@ -43,5 +45,12 @@ describe("e2e synthetic account detection", () => {
         username: "trapdime",
       }),
     ).toBe(false);
+  });
+
+  it("detects production Mentrixa hosts", () => {
+    expect(isProductionMentrixaHost("https://mentrixa.one")).toBe(true);
+    expect(isProductionMentrixaHost("https://www.mentrixa.one")).toBe(true);
+    expect(isProductionMentrixaHost("http://127.0.0.1:3000")).toBe(false);
+    expect(isProductionMentrixaHost("https://xyz.supabase.co")).toBe(false);
   });
 });

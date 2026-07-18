@@ -6,6 +6,7 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { addDaysIso } from "@/features/booking/booking-pricing";
 import { isMissingAvailabilityColumnsError } from "@/features/booking/booking-internal";
 import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
+import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
 export async function getTutorAvailability(course?: string) {
   await requireRole(["student", "admin"]);
@@ -144,7 +145,14 @@ async function loadTutorAvailability(course?: string) {
           : undefined,
       };
     })
-    .filter((avail) => avail.tutor !== undefined);
+    .filter((avail) => avail.tutor !== undefined)
+    .filter((avail) => {
+      const tutor = avail.tutor!;
+      return !isE2ESyntheticAccount({
+        email: tutor.email,
+        displayName: tutor.display_name,
+      });
+    });
 
   return result;
 }
@@ -295,7 +303,14 @@ export async function getTutorAvailabilityKeysetPage(opts: {
           : undefined,
       };
     })
-    .filter((avail) => avail.tutor !== undefined);
+    .filter((avail) => avail.tutor !== undefined)
+    .filter((avail) => {
+      const tutor = avail.tutor!;
+      return !isE2ESyntheticAccount({
+        email: tutor.email,
+        displayName: tutor.display_name,
+      });
+    });
 
   return { rows: result, nextCursor };
 }

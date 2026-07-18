@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { isProductionMentrixaHost } from "../../src/shared/core/e2e-synthetic-account-pure";
 
 /** Monday=0 … Sunday=6 in `timezone` (IANA), for matching CreateAvailabilityCard weekday buttons. */
 export function monday0TomorrowInTimeZone(timeZone: string): number {
@@ -86,6 +87,12 @@ export async function completeStripeTestCardCheckout(page: Page): Promise<void> 
 }
 
 export function isBookingVideoE2EConfigured(): boolean {
+  if (
+    isProductionMentrixaHost(process.env.PLAYWRIGHT_BASE_URL) ||
+    isProductionMentrixaHost(process.env.NEXT_PUBLIC_APP_URL)
+  ) {
+    return false;
+  }
   const sk = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
   return Boolean(
     process.env.E2E_TUTOR_EMAIL?.trim() &&

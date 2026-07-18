@@ -1,5 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  isProductionMentrixaHost,
+} from "../../src/shared/core/e2e-synthetic-account-pure";
 
 type StepTraceProblemCapture = {
   nodeName?: string;
@@ -48,6 +51,13 @@ export function isGuestDiagnosticChainConfigured(): boolean {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (!url || !serviceKey || !anon) return false;
   if (serviceKey.includes("placeholder") || serviceKey === "ci-supabase-service-role-placeholder") {
+    return false;
+  }
+  // Never provision synthetic Mentrixers against production Mentrixa.
+  if (
+    isProductionMentrixaHost(process.env.PLAYWRIGHT_BASE_URL) ||
+    isProductionMentrixaHost(process.env.NEXT_PUBLIC_APP_URL)
+  ) {
     return false;
   }
   return true;
@@ -148,7 +158,7 @@ export async function provisionRankUsernameForE2E(userId: string, _email: string
     .update({ approved: true, status: "approved", role: "student" })
     .eq("id", userId);
 
-  const displaySeed = `mentrixer-${userId.replace(/-/g, "").slice(0, 10)}`;
+  const displaySeed = `e2e-chain-${userId.replace(/-/g, "").slice(0, 10)}`;
   const base = suggestRankCardUsername(displaySeed);
   const candidates = [
     base,
@@ -170,6 +180,7 @@ export async function provisionRankUsernameForE2E(userId: string, _email: string
         user_id: userId,
         rank_card_username: candidate,
         rank_card_public: true,
+        display_name: `e2e-chain-${Date.now().toString(36)}`,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },

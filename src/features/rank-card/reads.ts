@@ -14,6 +14,8 @@ import { buildPassportVerdict } from "@/features/rank-card/rank-passport-pure";
 import {
   getApCalcVerifiedRankStats,
 } from "@/features/xp/calibrated-rank";
+import { getCurrentUser } from "@/shared/core/auth";
+import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
 type LoadOptions = {
   referrer?: string | null;
@@ -51,11 +53,24 @@ export async function getRankCardByUsername(
   if (!userRow || userRow.role !== "student" || !userRow.approved) return null;
 
   const { data: authUser } = await admin.auth.admin.getUserById(studentId);
-  const emailPrefix = authUser?.user?.email?.split("@")[0] ?? "mentrixer";
+  const email = authUser?.user?.email ?? null;
+  const emailPrefix = email?.split("@")[0] ?? "mentrixer";
   const displayName =
     (typeof settings.display_name === "string" && settings.display_name.trim()
       ? settings.display_name.trim()
       : emailPrefix) || "Mentrixer";
+
+  // CI/E2E synthetics stay invisible to the public; owner may still open their own passport.
+  if (
+    isE2ESyntheticAccount({
+      email,
+      displayName,
+      username: settings.rank_card_username,
+    })
+  ) {
+    const viewer = await getCurrentUser();
+    if (!viewer || viewer.id !== studentId) return null;
+  }
 
   const { data: xpRow } = await admin
     .from("user_xp")

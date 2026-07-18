@@ -2,6 +2,7 @@ import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
 import { buildPassportVerdict, passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
 import { supabaseRestSelect } from "@/shared/integrations/supabase/rest-fetch";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
+import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
 export type OgRankCardData =
   | { status: "not_found" }
@@ -41,6 +42,7 @@ type RankCacheRow = {
 export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCardData> {
   const username = rawUsername.trim().toLowerCase();
   if (!username) return { status: "not_found" };
+  if (isE2ESyntheticAccount({ username })) return { status: "not_found" };
 
   const settingsRows = await supabaseRestSelect<SettingsRow>(
     "user_settings",
@@ -96,6 +98,10 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
     (typeof settings.display_name === "string" && settings.display_name.trim()
       ? settings.display_name.trim()
       : username) || "Mentrixer";
+
+  if (isE2ESyntheticAccount({ displayName, username })) {
+    return { status: "not_found" };
+  }
 
   return {
     status: "ok",

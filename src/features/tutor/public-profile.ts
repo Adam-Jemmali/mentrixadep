@@ -8,6 +8,7 @@ import { averageImpactScore } from "@/features/guide-rank/calculate-pure";
 import { loadGuidePortfolioForPublic } from "@/features/guide-portfolio/reads";
 import { normalizeTeachingDefaultDurationMinutes } from "@/features/tutor/teaching-defaults";
 import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
+import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
 async function fetchTutorPublicProfileUncached(tutorId: string) {
   const adminClient = createAdminClient();
@@ -37,6 +38,22 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
   const name = authUser?.user?.user_metadata?.full_name
     ?? authUser?.user?.user_metadata?.name
     ?? email.split("@")[0];
+
+  const { data: settingsRow } = await adminClient
+    .from("user_settings")
+    .select("display_name")
+    .eq("user_id", tutorId)
+    .maybeSingle();
+  if (
+    isE2ESyntheticAccount({
+      email,
+      displayName:
+        (typeof settingsRow?.display_name === "string" && settingsRow.display_name.trim()) ||
+        (typeof name === "string" ? name : null),
+    })
+  ) {
+    return null;
+  }
 
   const windowEnd = new Date();
   windowEnd.setDate(windowEnd.getDate() + 14);
