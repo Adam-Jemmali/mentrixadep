@@ -50,9 +50,21 @@ describe("quest-interaction-formats-pure", () => {
     const pool = [
       { id: "1", item_format: "mcq" },
       { id: "2", item_format: "free_response" },
+      { id: "3", item_format: "mcq" },
+      { id: "4", item_format: "drag_order" },
     ];
-    const ordered = preferConstructionMix(pool, 0, 0);
-    expect(ordered[0]?.item_format).toBe("free_response");
+    const ordered = preferConstructionMix(pool, 0, 0, () => 0.1);
+    expect(ordered.slice(0, 2).every((r) => r.item_format !== "mcq")).toBe(true);
+    expect(ordered.slice(2).every((r) => r.item_format === "mcq")).toBe(true);
+  });
+
+  it("falls back to mcq when construction pool is empty", () => {
+    const pool = [
+      { id: "1", item_format: "mcq" },
+      { id: "2", item_format: "mcq" },
+    ];
+    const ordered = preferConstructionMix(pool, 0, 0, () => 0.1);
+    expect(ordered.every((r) => r.item_format === "mcq")).toBe(true);
   });
 });
 

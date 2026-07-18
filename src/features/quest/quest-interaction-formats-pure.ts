@@ -303,18 +303,23 @@ export function isConstructionItemFormat(format: string | null | undefined): boo
   return (CONSTRUCTION_ITEM_FORMATS as readonly string[]).includes(f);
 }
 
-/** Prefer construction formats until ~30% of the pack is non-MCQ when inventory allows. */
+/** Prefer construction formats first; MCQ only when the construction pool is empty.
+ * Shuffles within each group so construction stays ahead of MCQ.
+ */
 export function preferConstructionMix<T extends { item_format?: string | null }>(
   pool: T[],
-  constructionCount: number,
-  packSizeSoFar: number,
+  _constructionCount: number,
+  _packSizeSoFar: number,
+  rng = Math.random,
 ): T[] {
-  const targetShare = 0.3;
-  const needConstruction =
-    packSizeSoFar === 0 ? true : constructionCount / Math.max(1, packSizeSoFar) < targetShare;
-  if (!needConstruction) return pool;
-  const construction = pool.filter((row) => isConstructionItemFormat(row.item_format));
-  if (construction.length === 0) return pool;
-  const mcq = pool.filter((row) => !isConstructionItemFormat(row.item_format));
+  const construction = shufflePreservingCopy(
+    pool.filter((row) => isConstructionItemFormat(row.item_format)),
+    rng,
+  );
+  if (construction.length === 0) return shufflePreservingCopy(pool, rng);
+  const mcq = shufflePreservingCopy(
+    pool.filter((row) => !isConstructionItemFormat(row.item_format)),
+    rng,
+  );
   return [...construction, ...mcq];
 }

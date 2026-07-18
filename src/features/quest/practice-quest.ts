@@ -241,7 +241,12 @@ export async function createPracticeQuest(
     }
     const questions = shufflePracticePackMcqOptions(bankQuestions);
     const hasConstruction = questions.some((q) => q.kind !== "mcq");
-    const packType: PracticePackType = hasConstruction ? "mixed" : "mcq";
+    const allConstruction = questions.length > 0 && questions.every((q) => q.kind !== "mcq");
+    const packType: PracticePackType = allConstruction
+      ? "problem_solving"
+      : hasConstruction
+        ? "mixed"
+        : "mcq";
 
     const meta: PracticePackMetadata = {
       questKind: "practice_pack",

@@ -127,6 +127,18 @@ describe("quest-stimulus-pure", () => {
     }
   });
 
+  it("graphs a bare power of x named in the stem", () => {
+    const enriched = enrichQuestStimulus({
+      prompt: "Consider x^3 on the interval [-2, 2]. Construct the derivative.",
+    });
+    const graph = enriched.stimulus.find((s) => s.kind === "function_graph");
+    expect(graph?.kind).toBe("function_graph");
+    if (graph?.kind === "function_graph") {
+      expect(graph.curves?.[0]?.expression).toMatch(/x\^3/);
+      expect(graph.curves?.[0]?.color).toBe("#2D70B3");
+    }
+  });
+
   it("normalizes LaTeX exponents so the question function can plot", () => {
     expect(normalizeGraphExpression("3x^{4}-2x^{3}+5x-1$, what is")).toBe("3x^4-2x^3+5x-1");
     expect(normalizeGraphExpression("3x^4 - 2x^3 + 5x - 1")).toBe("3x^4-2x^3+5x-1");

@@ -101,7 +101,15 @@ export function buildConstructionTemplatesForNode(nodeName: string): Constructio
       answer_expression: null,
       explanation: "Product rule construction order is fixed; Mentrixa grades the permutation.",
       solution_steps: [],
-      stimulus: null,
+      stimulus: [
+        {
+          kind: "function_graph",
+          title: "Product rule reminder",
+          alt: "Graph of an example product u(x)v(x) = x(x^2)",
+          domain: [-2, 2],
+          curves: [{ expression: "x^3", color: "#2D70B3", label: "uv = x^3" }],
+        },
+      ],
       authoring_meta: { ...DOCTRINE, skill_verb: "justify" },
       difficulty_rating: 950,
     },

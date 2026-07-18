@@ -25,8 +25,6 @@ import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { XpCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import { VfaProofStreakDisplay } from "@/features/vfa-streak/ui/vfa-proof-streak";
 import { loadVfaStreakHomeDisplay } from "@/features/vfa-streak/load-vfa-streak";
-import { loadVerifiedAttemptProofCards } from "@/features/quest/load-verified-attempt-proof";
-import { VerifiedAttemptProofRail } from "@/features/quest/components/verified-attempt-card";
 import { getWeekRangeUTC } from "@/shared/core/time-format";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
@@ -91,7 +89,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const user = await requireRole(["student", "admin"]);
   const now = new Date();
 
-  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, movementReceipt, vfaStreakDisplay, shareNotices, portfolioNotices, verifiedProof] =
+  const [snapshot, sessionsBundle, sessionBriefs, availability, rivalData, verifiedRankStats, masteryGrid, activeGoal, entitlements, subscription, movementReceipt, vfaStreakDisplay, shareNotices, portfolioNotices] =
     await Promise.all([
       getStudentHubSnapshot(),
       getStudentSessionsHubBundle(),
@@ -107,11 +105,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       loadVfaStreakHomeDisplay(user.id).catch(() => ({ kind: "none" as const })),
       loadStudentShareNotifications(1).catch(() => []),
       loadGuidePortfolioOptInNotices(1).catch(() => []),
-      loadVerifiedAttemptProofCards(6).catch(() => ({
-        cards: [],
-        constructionMixLabel: "No verified attempts yet.",
-        constructionShare: 0,
-      })),
     ]);
   const momentumSubscriber = entitlements.momentumActive;
   const archiveSubscriber = entitlements.momentumActive;
@@ -232,13 +225,6 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             ) : null}
           </div>
         </StudentStickyNote>
-
-        <div className="mt-4">
-          <VerifiedAttemptProofRail
-            cards={verifiedProof.cards}
-            mixLabel={verifiedProof.constructionMixLabel}
-          />
-        </div>
 
         {momentumSubscriber ? (
           <div className="mt-4">

@@ -421,15 +421,30 @@ export function normalizeGraphExpression(raw: string): string | null {
 /** Pull a simple y=f(x) / f(x)=... expression for graphing. */
 export function detectCurveExpressionFromPrompt(prompt: string): string | null {
   const patterns = [
-    /\bf\s*\(\s*x\s*\)\s*=\s*([^\n]+)/i,
-    /\by\s*=\s*([^\n]+)/i,
-    /\bg\s*\(\s*x\s*\)\s*=\s*([^\n]+)/i,
+    /\bf\s*\(\s*x\s*\)\s*=\s*([^\n,$]+)/i,
+    /\by\s*=\s*([^\n,$]+)/i,
+    /\bg\s*\(\s*x\s*\)\s*=\s*([^\n,$]+)/i,
   ];
   for (const pattern of patterns) {
     const match = prompt.match(pattern);
     if (!match?.[1]) continue;
     const expression = normalizeGraphExpression(match[1]);
     if (expression) return expression;
+  }
+
+  // Bare power/polynomial of x named in the stem (e.g. "consider x^3" or "graph x^2 - 1").
+  const barePatterns = [
+    /\b(?:function|graph|consider|sketch|plot|of)\s+([0-9.]*x(?:\s*\^\s*\{?\d+\}?)?(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*(?:\s*[+\-]\s*[0-9.]+)?)/i,
+    /\$\s*([0-9.]*x(?:\s*\^\s*\{?\d+\}?)(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*)\s*\$/i,
+    /\b([0-9.]*x\s*\^\s*\{?\d+\}?(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*(?:\s*[+\-]\s*[0-9.]+)?)\b/i,
+  ];
+  for (const pattern of barePatterns) {
+    const match = prompt.match(pattern);
+    if (!match?.[1]) continue;
+    const expression = normalizeGraphExpression(match[1]);
+    if (expression && /x/i.test(expression) && /[\^+\-*/]/.test(expression)) {
+      return expression;
+    }
   }
   return null;
 }

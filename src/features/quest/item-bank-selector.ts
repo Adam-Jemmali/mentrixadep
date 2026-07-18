@@ -145,15 +145,6 @@ function parseOptions(value: unknown): string[] {
   return value.filter((entry): entry is string => typeof entry === "string");
 }
 
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j]!, copy[i]!];
-  }
-  return copy;
-}
-
 type KnowledgePriorityRow = {
   skill_node_id: string | null;
   next_review_at: string | null;
@@ -467,8 +458,7 @@ export async function selectItemBankQuestions(
       constructionCount,
       selected.length,
     );
-    const pool = shuffle(preferredMix);
-    const item = pool.find((row) => !usedItemIds.has(row.id));
+    const item = preferredMix.find((row) => !usedItemIds.has(row.id));
     if (!item) continue;
 
     const question = itemToPracticeQuestion(item, node);

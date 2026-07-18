@@ -71,7 +71,7 @@ async function main(): Promise<void> {
       .select("id, node_name")
       .eq("subject", SUBJECT)
       .order("display_order")
-      .limit(12);
+      .limit(200);
 
     if (nodesError || !nodes?.length) {
       console.error("No skill nodes to seed:", nodesError?.message);
