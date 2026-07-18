@@ -2,17 +2,6 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CalendarDays,
-  Crosshair,
-  Hash,
-  Swords,
-  Target,
-  TrendingUp,
-  UserRound,
-  type LucideIcon,
-} from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { RankBadge } from "@/features/xp/components/rank-badge";
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
@@ -24,6 +13,9 @@ import {
   getStudentSessionCheckoutCents,
 } from "@/features/booking/booking-pricing";
 import { formatUsdFromCents } from "@/features/duels/duel-reward";
+import { HubVocabIcon } from "@/features/student-profile/ui/hub-vocab-icon";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 function dismissKey(snapshotId: string) {
   return `mentrixa:progress-snapshot:dismissed:${snapshotId}`;
@@ -35,40 +27,20 @@ function accuracyDeltaLabel(n: number): string {
   return "flat vs last week";
 }
 
-function HubIconChip({
-  icon: Icon,
-  tone = "violet",
-}: {
-  icon: LucideIcon;
-  tone?: "violet" | "amber";
-}) {
-  const chip =
-    tone === "amber"
-      ? "bg-amber-500 text-white"
-      : "bg-[#7C3AED] text-white";
-  return (
-    <span
-      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm ${chip}`}
-    >
-      <Icon className="h-4.5 w-4.5 h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
-    </span>
-  );
-}
-
 function StatRow({
   icon,
   label,
   children,
   tone,
 }: {
-  icon: LucideIcon;
+  icon: VocabIconName;
   label: string;
   children: ReactNode;
   tone?: "violet" | "amber";
 }) {
   return (
     <div className="flex items-start gap-3">
-      <HubIconChip icon={icon} tone={tone} />
+      <HubVocabIcon name={icon} title={label} tone={tone} size={28} />
       <div className="min-w-0 pt-0.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
         <div className="mt-0.5 text-sm font-medium text-zinc-800">{children}</div>
@@ -151,17 +123,17 @@ export function ProgressSnapshotCard({
       </button>
 
       <div className="flex items-center gap-2">
-        <HubIconChip icon={CalendarDays} />
+        <HubVocabIcon name="day" title="Your week" size={28} />
         <p className={mentrixStudent.sectionEyebrowOnLight}>Your week in {data.subject}</p>
       </div>
 
       {weeklyVerdict ? (
         <div className="mt-4 space-y-3 rounded-xl border border-violet-100 bg-violet-50/60 p-3">
-          <StatRow icon={TrendingUp} label="This week">
+          <StatRow icon="rank-proof" label="This week">
             {weeklyVerdict.changed}
           </StatRow>
           {weeklyVerdict.reason ? (
-            <StatRow icon={Crosshair} label="Weak spot" tone="amber">
+            <StatRow icon="focus-ring" label="Weak spot" tone="amber">
               {weeklyVerdict.reason}
             </StatRow>
           ) : null}
@@ -170,29 +142,29 @@ export function ProgressSnapshotCard({
 
       <div className="mt-5 flex items-center gap-3">
         <RankBadge rank={data.rankChange.previous} size="md" />
-        <ArrowRight className="h-4 w-4 text-[#7C3AED]" aria-hidden />
+        <MentrixaVocabIcon name="verified" size={20} surface="light" title="to" />
         <RankBadge rank={data.rankChange.current} size="md" animate={rankDirection === "up"} />
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <StatRow icon={TrendingUp} label="Rank">
+        <StatRow icon="passport" label="Rank">
           {prevRank} <span className="text-zinc-400">→</span> {curRank}
           {rankDirection === "up" ? " ↑" : rankDirection === "down" ? " ↓" : ""}
         </StatRow>
-        <StatRow icon={Target} label="Quest accuracy">
+        <StatRow icon="quest" label="Quest accuracy">
           {data.accuracyThisWeek}% · {accuracyDeltaLabel(data.accuracyDelta)}
         </StatRow>
-        <StatRow icon={Swords} label="Duels">
+        <StatRow icon="duels" label="Duels">
           {data.duelsWon} won · {data.duelsLost} lost
         </StatRow>
-        <StatRow icon={Hash} label="Division rank">
+        <StatRow icon="league" label="Division rank">
           {divisionLine}
         </StatRow>
       </div>
 
       <div className="mt-5 rounded-xl border border-amber-200/80 bg-amber-50/70 px-4 py-3">
         <div className="flex items-start gap-3">
-          <HubIconChip icon={Crosshair} tone="amber" />
+          <HubVocabIcon name="focus-ring" title="Weak spot" tone="amber" size={28} />
           <div className="min-w-0 text-sm text-amber-950">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800/80">
               Weak spot
@@ -204,7 +176,7 @@ export function ProgressSnapshotCard({
             </p>
             {data.recommendedGuide.impactScore > 0 ? (
               <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-emerald-900">
-                <UserRound className="h-4 w-4 shrink-0" aria-hidden />
+                <MentrixaVocabIcon name="impact-score" size={20} surface="light" title="Impact" />
                 {data.recommendedGuide.displayName} · {Math.round(data.recommendedGuide.impactScore)}{" "}
                 Impact on {data.recommendedGuide.impactSubject}
               </p>

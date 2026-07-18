@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarCheck, Settings2, Ticket } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
@@ -10,6 +9,8 @@ import { momentumCompRenewalLabel } from "@/features/entitlements/momentum-comp-
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
 import { MomentumMembershipMemberChip } from "@/features/student-profile/ui/momentum-membership-member-chip";
 import { MomentumMembershipPerksGrid } from "@/features/student-profile/ui/momentum-membership-perks-grid";
+import { HubVocabIcon } from "@/features/student-profile/ui/hub-vocab-icon";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
 type MomentumActiveHubCardProps = {
@@ -31,14 +32,6 @@ function formatCreditExpiry(periodMonth: string | null): string | null {
   } catch {
     return null;
   }
-}
-
-function HubIconChip({ icon: Icon }: { icon: typeof Ticket }) {
-  return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED] text-white shadow-sm">
-      <Icon className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
-    </span>
-  );
 }
 
 export function MomentumActiveHubCard({
@@ -63,7 +56,7 @@ export function MomentumActiveHubCard({
             <MomentumMembershipMemberChip />
           </div>
           <div className="mt-3 flex items-start gap-3">
-            <HubIconChip icon={Ticket} />
+            <HubVocabIcon name="session" title="Session credit" size={28} />
             <p className={cn("text-sm", mentrixHubSurfaces.inkBody)}>
               {sessionCreditsRemaining > 0
                 ? `You have ${sessionCreditsRemaining} included session credit${sessionCreditsRemaining === 1 ? "" : "s"} this month${creditExpiry ? `. Book before ${creditExpiry}.` : "."}`
@@ -72,7 +65,7 @@ export function MomentumActiveHubCard({
           </div>
           {renewal ? (
             <div className="mt-2 flex items-start gap-3">
-              <HubIconChip icon={CalendarCheck} />
+              <HubVocabIcon name="day" title="Renewal" size={28} />
               <p className={cn("text-xs", mentrixHubSurfaces.inkMuted)}>{renewal}</p>
             </div>
           ) : null}
@@ -84,7 +77,7 @@ export function MomentumActiveHubCard({
           </Button>
           <Button asChild variant="outline" className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]">
             <Link href="/student/subscribe" className="inline-flex items-center gap-2">
-              <Settings2 className="h-4 w-4" aria-hidden />
+              <MentrixaVocabIcon name="settings" size={18} surface="light" title="Manage" />
               Manage Momentum membership
             </Link>
           </Button>

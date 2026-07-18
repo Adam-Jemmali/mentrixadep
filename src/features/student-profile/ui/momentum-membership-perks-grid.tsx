@@ -2,42 +2,27 @@
 
 import Link from "next/link";
 import {
-  BadgeDollarSign,
-  BookOpen,
-  CalendarCheck,
-  Lock,
-  Mail,
-  RefreshCw,
-  type LucideIcon,
-} from "lucide-react";
-import {
   buildMomentumMembershipExclusivePerks,
   MOMENTUM_MEMBERSHIP_ONLY_BADGE,
 } from "@/features/payments/momentum-membership-perks-pure";
 import { MOMENTUM_MEMBERSHIP_UNLOCK_COPY } from "@/features/payments/momentum-membership-pure";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
+import { HubVocabIcon } from "@/features/student-profile/ui/hub-vocab-icon";
 import { cn } from "@/shared/core/utils";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 type MomentumMembershipPerksGridProps = {
   momentumActive: boolean;
   className?: string;
 };
 
-const PERK_ICONS: Record<string, LucideIcon> = {
-  "monthly-session-credit": CalendarCheck,
-  "member-rate": BadgeDollarSign,
-  "weekly-movement-receipt": Mail,
-  "guide-memory-brief-archive": BookOpen,
-  "loop-sla-credit": RefreshCw,
+const PERK_ICONS: Record<string, VocabIconName> = {
+  "monthly-session-credit": "session",
+  "member-rate": "tier-momentum",
+  "weekly-movement-receipt": "receipt",
+  "guide-memory-brief-archive": "brief",
+  "loop-sla-credit": "loop-report",
 };
-
-function HubIconChip({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED] text-white shadow-sm">
-      <Icon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-    </span>
-  );
-}
 
 export function MomentumMembershipPerksGrid({
   momentumActive,
@@ -59,10 +44,10 @@ export function MomentumMembershipPerksGrid({
       </p>
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">
         {perks.map((perk) => {
-          const Icon = PERK_ICONS[perk.id] ?? CalendarCheck;
+          const icon = PERK_ICONS[perk.id] ?? "session";
           const inner = (
             <>
-              <HubIconChip icon={Icon} />
+              <HubVocabIcon name={icon} title={perk.feature} size={28} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-zinc-900">{perk.feature}</p>
@@ -81,7 +66,7 @@ export function MomentumMembershipPerksGrid({
                 </p>
               </div>
               {!momentumActive ? (
-                <Lock className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
+                <HubVocabIcon name="status-pending" title="Locked" size={18} className="opacity-80" />
               ) : null}
             </>
           );
