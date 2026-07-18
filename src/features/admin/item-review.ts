@@ -14,7 +14,15 @@ import {
   validateFreeResponseForApprove,
   type ItemReviewQueueFilter,
 } from "@/features/admin/item-review-pure";
+import { validateStemQualityForApprove } from "@/features/quest/quest-authoring-doctrine-pure";
 import { parseQuestStimulus, type QuestStimulus } from "@/features/quest/quest-stimulus-pure";
+import {
+  isConstructionItemFormat,
+  parseClozeBlanks,
+  parseDragOrderedItems,
+  parseGraphFeatureTargets,
+} from "@/features/quest/quest-interaction-formats-pure";
+import { validateConstructionGroundTruth } from "@/features/quest/construction-auto-approve-pure";
 
 const uuidSchema = z.string().uuid();
 const filterSchema = z.enum(["pending_review", "approved", "rejected", "all"]);
@@ -187,18 +195,78 @@ export async function approveItemBankItem(
     return { ok: false, error: "Only pending items can be approved." };
   }
 
-  const blocked = validateFreeResponseForApprove({
-    itemFormat: detail.itemFormat,
-    answerExpression: detail.answerExpression,
-    solutionSteps: detail.solutionSteps,
-    difficultyRating: detail.difficultyRating,
-    expressionParses,
-  });
+  const admin = createAdminClient();
+  const { data: rawRow } = await admin
+    .from("item_bank")
+    .select("solution_steps, options, stimulus, authoring_meta, distractor_tags")
+    .eq("id", parsed.data)
+    .maybeSingle();
+
+  const blocked = [
+    ...validateFreeResponseForApprove({
+      itemFormat: detail.itemFormat,
+      answerExpression: detail.answerExpression,
+      solutionSteps: detail.solutionSteps,
+      difficultyRating: detail.difficultyRating,
+      expressionParses,
+    }),
+    ...validateStemQualityForApprove({
+      prompt: detail.prompt,
+      itemFormat: detail.itemFormat,
+      distractorTags:
+        rawRow?.distractor_tags && typeof rawRow.distractor_tags === "object"
+          ? (rawRow.distractor_tags as Record<string, string>)
+          : null,
+      stimulus: rawRow?.stimulus ?? detail.stimulus,
+      authoringMeta: rawRow?.authoring_meta,
+      doctrineRequired: false,
+    }),
+  ];
+
+  if (detail.itemFormat === "complete_expression") {
+    const blanks = parseClozeBlanks(rawRow?.solution_steps);
+    if (blanks.length < 1) {
+      blocked.push("complete_expression needs blank expressions in solution_steps.");
+    }
+  }
+  if (detail.itemFormat === "drag_order") {
+    if (parseDragOrderedItems(rawRow?.options ?? detail.options).length < 2) {
+      blocked.push("drag_order needs ≥2 ordered options.");
+    }
+  }
+  if (detail.itemFormat === "graph_feature") {
+    const targets = parseGraphFeatureTargets(rawRow?.solution_steps);
+    const sketchExpr = (detail.answerExpression ?? "").trim();
+    if (targets.length < 1 && !sketchExpr) {
+      blocked.push(
+        "graph_feature needs authored targets and/or a parseable answer_expression for sketch grading.",
+      );
+    }
+    const stimulus = parseQuestStimulus(rawRow?.stimulus ?? detail.stimulus);
+    if (!stimulus.some((s) => s.kind === "function_graph")) {
+      blocked.push("graph_feature needs a function_graph stimulus.");
+    }
+  }
+
+  if (isConstructionItemFormat(detail.itemFormat) || detail.itemFormat === "multi_part") {
+    const gate = validateConstructionGroundTruth({
+      itemFormat: detail.itemFormat,
+      prompt: detail.prompt,
+      options: rawRow?.options ?? detail.options,
+      correctAnswer: detail.correctAnswer,
+      answerExpression: detail.answerExpression,
+      solutionSteps: rawRow?.solution_steps ?? detail.solutionSteps,
+      stimulus: rawRow?.stimulus ?? detail.stimulus,
+      authoringMeta: rawRow?.authoring_meta,
+      explanation: detail.explanation,
+    });
+    if (!gate.ok) blocked.push(...gate.reasons);
+  }
+
   if (blocked.length > 0) {
     return { ok: false, error: blocked[0]! };
   }
 
-  const admin = createAdminClient();
   const { error } = await admin
     .from("item_bank")
     .update({

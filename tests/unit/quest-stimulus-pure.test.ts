@@ -3,6 +3,7 @@ import {
   enrichQuestStimulus,
   hasQuestStimulus,
   inferGraphDomain,
+  normalizeGraphExpression,
   parseQuestStimulus,
   riemannBarCenters,
   sampleCurvePoints,
@@ -122,6 +123,25 @@ describe("quest-stimulus-pure", () => {
     expect(graph?.kind).toBe("function_graph");
     if (graph?.kind === "function_graph") {
       expect(graph.curves?.[0]?.expression).toBe("x^2+1");
+      expect(graph.curves?.[0]?.color).toBe("#2D70B3");
+    }
+  });
+
+  it("normalizes LaTeX exponents so the question function can plot", () => {
+    expect(normalizeGraphExpression("3x^{4}-2x^{3}+5x-1$, what is")).toBe("3x^4-2x^3+5x-1");
+    expect(normalizeGraphExpression("3x^4 - 2x^3 + 5x - 1")).toBe("3x^4-2x^3+5x-1");
+  });
+
+  it("draws f(x) from derivative prompts that use LaTeX in the stem", () => {
+    const enriched = enrichQuestStimulus({
+      prompt:
+        "If $f(x) = 3x^{4} - 2x^{3} + 5x - 1$, what is the second derivative, $f''(x)$?",
+    });
+    const graph = enriched.stimulus.find((s) => s.kind === "function_graph");
+    expect(graph?.kind).toBe("function_graph");
+    if (graph?.kind === "function_graph") {
+      expect(graph.curves?.[0]?.expression).toBe("3x^4-2x^3+5x-1");
+      expect(graph.curves?.[0]?.color).toBe("#2D70B3");
     }
   });
 });

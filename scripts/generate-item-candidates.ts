@@ -408,6 +408,16 @@ async function main(): Promise<void> {
           solution_steps: frq.solution_steps,
           partial_credit_rules: frq.partial_credit_rules,
           step_sequence: null,
+          authoring_meta: frq.authoring_meta ?? {
+            skill_verb: "construct",
+            transfer_tag: "AP Calculus AB exam transfer",
+            proof_artifact: "First-attempt construction under VFA rules.",
+            misconception_kit: plan.node.common_misconceptions?.slice(0, 3) ?? [
+              "forgot_chain_rule",
+              "dropped_constant",
+              "power_rule_off_by_one",
+            ],
+          },
         });
       }
 

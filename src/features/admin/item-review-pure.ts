@@ -16,6 +16,12 @@ export function itemFormatLabel(format: ItemReviewFormat): string {
       return "Multi-part";
     case "step_trace":
       return "Step trace";
+    case "complete_expression":
+      return "Complete expression";
+    case "drag_order":
+      return "Drag order";
+    case "graph_feature":
+      return "Graph feature";
     default:
       return String(format || "Item");
   }

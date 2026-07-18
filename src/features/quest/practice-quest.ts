@@ -79,6 +79,22 @@ import {
 } from "@/features/quest/multi-part-pure";
 import { gradeStudentExpression } from "@/features/free-response/grade-student-expression";
 import { studentNotationToGradingExpression } from "@/features/quest/components/math-input-pure";
+import {
+  gradeClozeAccuracy,
+  gradeDragOrder,
+  gradeGraphFeatureSelections,
+  gradeGraphSketchControlPolyline,
+  shufflePreservingCopy,
+  type GraphFeatureSelection,
+  type GraphSketchSample,
+} from "@/features/quest/quest-interaction-formats-pure";
+import type {
+  PracticeQuestionCompleteExpression,
+  PracticeQuestionDragOrder,
+  PracticeQuestionFreeResponse,
+  PracticeQuestionGraphFeature,
+} from "@/features/quest/practice-quest-types";
+import type { VfaAttemptFormat } from "@/features/quest/vfa-free-response-pure";
 
 const PRACTICE_PACKS_DAILY = 10;
 const DEFAULT_TIME_SEC = 15 * 60;
@@ -224,12 +240,14 @@ export async function createPracticeQuest(
       return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
     }
     const questions = shufflePracticePackMcqOptions(bankQuestions);
+    const hasConstruction = questions.some((q) => q.kind !== "mcq");
+    const packType: PracticePackType = hasConstruction ? "mixed" : "mcq";
 
     const meta: PracticePackMetadata = {
       questKind: "practice_pack",
       subject: AP_CALC_AB_SUBJECT,
       difficulty: input.difficulty,
-      packType: "mcq",
+      packType,
       accountLevelTitle: "Mentrixer",
       questionCount: questions.length,
       timeLimitSec,
@@ -239,7 +257,7 @@ export async function createPracticeQuest(
     };
 
     const supabase = await createClient();
-    const title = `Practice: ${AP_CALC_AB_SUBJECT} — ${input.difficulty} (mcq)`;
+    const title = `Practice: ${AP_CALC_AB_SUBJECT} — ${input.difficulty} (${packType})`;
     const { data: quest, error: insErr } = await supabase
       .from("quests")
       .insert({
@@ -302,6 +320,54 @@ export type PracticeQuestionPublic =
       kind: "short_answer" | "problem_solving";
       id: string;
       prompt: string;
+      subtopicTag?: string;
+      examStakes?: string;
+      stimulus?: QuestStimulus[];
+    }
+  | {
+      index: number;
+      total: number;
+      kind: "free_response";
+      id: string;
+      prompt: string;
+      subtopicTag?: string;
+      examStakes?: string;
+      stimulus?: QuestStimulus[];
+    }
+  | {
+      index: number;
+      total: number;
+      kind: "complete_expression";
+      id: string;
+      prompt: string;
+      blankKeys: string[];
+      subtopicTag?: string;
+      examStakes?: string;
+      stimulus?: QuestStimulus[];
+    }
+  | {
+      index: number;
+      total: number;
+      kind: "drag_order";
+      id: string;
+      prompt: string;
+      /** Shuffled for display — correct order stays server-side. */
+      items: string[];
+      subtopicTag?: string;
+      examStakes?: string;
+      stimulus?: QuestStimulus[];
+    }
+  | {
+      index: number;
+      total: number;
+      kind: "graph_feature";
+      id: string;
+      prompt: string;
+      maxSelections: number;
+      targetKinds: Array<"point" | "interval">;
+      /** True when student must sketch a curve vs authored expression. */
+      sketchMode: boolean;
+      sketchDomain: [number, number];
       subtopicTag?: string;
       examStakes?: string;
       stimulus?: QuestStimulus[];
@@ -432,6 +498,60 @@ export async function getPracticeQuestionPublic(
             : undefined,
         };
       }),
+    };
+  }
+  if (q.kind === "free_response") {
+    return {
+      index,
+      total,
+      kind: "free_response",
+      id: q.id,
+      prompt,
+      subtopicTag: q.subtopicTag,
+      examStakes: q.examStakes,
+      stimulus,
+    };
+  }
+  if (q.kind === "complete_expression") {
+    return {
+      index,
+      total,
+      kind: "complete_expression",
+      id: q.id,
+      prompt,
+      blankKeys: q.blanks.map((b) => b.key),
+      subtopicTag: q.subtopicTag,
+      examStakes: q.examStakes,
+      stimulus,
+    };
+  }
+  if (q.kind === "drag_order") {
+    return {
+      index,
+      total,
+      kind: "drag_order",
+      id: q.id,
+      prompt,
+      items: shufflePreservingCopy(q.orderedItems),
+      subtopicTag: q.subtopicTag,
+      examStakes: q.examStakes,
+      stimulus,
+    };
+  }
+  if (q.kind === "graph_feature") {
+    return {
+      index,
+      total,
+      kind: "graph_feature",
+      id: q.id,
+      prompt,
+      maxSelections: q.maxSelections ?? Math.max(q.targets.length, 8),
+      targetKinds: q.targets.map((t) => t.kind),
+      sketchMode: Boolean(q.answerExpression),
+      sketchDomain: q.sketchDomain ?? [-2, 2],
+      subtopicTag: q.subtopicTag,
+      examStakes: q.examStakes,
+      stimulus,
     };
   }
   return {
@@ -660,15 +780,7 @@ export async function submitPracticeWritten(
   };
 }
 
-const submitMultiPartSchema = z.object({
-  questId: z.string().uuid(),
-  questionIndex: z.number().int().min(0).max(20),
-  partIndex: z.number().int().min(0).max(20),
-  selectedIndex: z.number().int().min(0).max(3).optional(),
-  freeResponse: z.string().trim().min(1).max(4000).optional(),
-});
-
-async function gradeMultiPartFreeResponsePart(input: {
+async function gradeExpressionEquivalent(input: {
   userId: string;
   itemId: string;
   studentAnswer: string;
@@ -688,6 +800,298 @@ async function gradeMultiPartFreeResponsePart(input: {
       normalizeExpressionText(input.correctExpression)
     );
   }
+}
+
+async function lockPracticeAnswer(
+  questId: string,
+  questionIndex: number,
+  ans: PracticeSessionAnswer,
+): Promise<void> {
+  await patchPackMetadata(questId, (m) => {
+    const session = m.session ?? {
+      startedAt: new Date().toISOString(),
+      currentIndex: 0,
+      answers: [],
+    };
+    const answers = [...session.answers.filter((a) => a.index !== questionIndex), ans];
+    const nextIndex = questionIndex + 1;
+    return {
+      ...m,
+      session: {
+        ...session,
+        answers,
+        currentIndex: Math.max(session.currentIndex, nextIndex),
+      },
+    };
+  });
+}
+
+async function recordConstructionVfa(input: {
+  userId: string;
+  skillNodeId?: string;
+  itemId: string;
+  attemptFormat: VfaAttemptFormat;
+  correct: boolean;
+  accuracyPct?: number;
+}): Promise<void> {
+  if (!input.skillNodeId) return;
+  await recordVerifiedFirstAttemptFromGrading({
+    userId: input.userId,
+    itemId: input.itemId,
+    skillNodeId: input.skillNodeId,
+    attemptFormat: input.attemptFormat,
+    isCorrect: input.correct,
+    partialCreditFraction:
+      input.accuracyPct != null && input.accuracyPct > 0 && input.accuracyPct < 1
+        ? input.accuracyPct
+        : null,
+  });
+}
+
+export async function submitPracticeFreeResponse(
+  questId: string,
+  questionIndex: number,
+  userAnswer: string,
+): Promise<
+  | { correct: boolean; explanation: string; finished: boolean; feedback: string }
+  | { error: string }
+> {
+  const user = await requireRole(["student", "admin"]);
+  const loaded = await loadPackForUser(questId, user.id);
+  if (!loaded.ok) return { error: loaded.error };
+  const { meta } = loaded;
+  const q = meta.questions[questionIndex] as PracticeQuestionFreeResponse | undefined;
+  if (!q || q.kind !== "free_response") return { error: "Invalid question." };
+
+  const priorAnswer = meta.session?.answers.find((a) => a.index === questionIndex);
+  if (priorAnswer) return { error: "This answer is locked. First answers only." };
+
+  const answer = userAnswer.trim().slice(0, 4000);
+  if (!answer) return { error: "Enter an expression." };
+
+  const correct = await gradeExpressionEquivalent({
+    userId: user.id,
+    itemId: q.id,
+    studentAnswer: answer,
+    correctExpression: q.answerExpression,
+  });
+
+  if (isApCalculusAbSubject(meta.subject || meta.course)) {
+    await recordConstructionVfa({
+      userId: user.id,
+      skillNodeId: q.skillNodeId,
+      itemId: q.id,
+      attemptFormat: "free_response",
+      correct,
+    });
+  }
+
+  await lockPracticeAnswer(questId, questionIndex, {
+    questionId: q.id,
+    index: questionIndex,
+    correct,
+    userResponse: answer,
+    feedback: correct ? "Equivalent construction." : "Not equivalent to the verified answer.",
+  });
+
+  return {
+    correct,
+    explanation: q.explanation,
+    finished: questionIndex + 1 >= meta.questions.length,
+    feedback: correct ? "Equivalent construction." : "Not equivalent to the verified answer.",
+  };
+}
+
+export async function submitPracticeCompleteExpression(
+  questId: string,
+  questionIndex: number,
+  blankAnswers: Record<string, string>,
+): Promise<
+  | { correct: boolean; accuracyPct: number; explanation: string; finished: boolean }
+  | { error: string }
+> {
+  const user = await requireRole(["student", "admin"]);
+  const loaded = await loadPackForUser(questId, user.id);
+  if (!loaded.ok) return { error: loaded.error };
+  const { meta } = loaded;
+  const q = meta.questions[questionIndex] as PracticeQuestionCompleteExpression | undefined;
+  if (!q || q.kind !== "complete_expression") return { error: "Invalid question." };
+
+  const priorAnswer = meta.session?.answers.find((a) => a.index === questionIndex);
+  if (priorAnswer) return { error: "This answer is locked. First answers only." };
+
+  const equivalentByKey: Record<string, boolean> = {};
+  for (const blank of q.blanks) {
+    const student = String(blankAnswers[blank.key] ?? "").trim();
+    equivalentByKey[blank.key] = student
+      ? await gradeExpressionEquivalent({
+          userId: user.id,
+          itemId: q.id,
+          studentAnswer: student,
+          correctExpression: blank.answerExpression,
+        })
+      : false;
+  }
+
+  const accuracyPct = gradeClozeAccuracy(q.blanks, equivalentByKey);
+  const correct = accuracyPct >= 1;
+
+  if (isApCalculusAbSubject(meta.subject || meta.course)) {
+    await recordConstructionVfa({
+      userId: user.id,
+      skillNodeId: q.skillNodeId,
+      itemId: q.id,
+      attemptFormat: "complete_expression",
+      correct,
+      accuracyPct,
+    });
+  }
+
+  await lockPracticeAnswer(questId, questionIndex, {
+    questionId: q.id,
+    index: questionIndex,
+    correct,
+    userResponse: JSON.stringify(blankAnswers).slice(0, 4000),
+    feedback: `Blank accuracy ${(accuracyPct * 100).toFixed(0)}%.`,
+  });
+
+  return {
+    correct,
+    accuracyPct,
+    explanation: q.explanation,
+    finished: questionIndex + 1 >= meta.questions.length,
+  };
+}
+
+export async function submitPracticeDragOrder(
+  questId: string,
+  questionIndex: number,
+  orderedItems: string[],
+): Promise<
+  | { correct: boolean; accuracyPct: number; explanation: string; finished: boolean }
+  | { error: string }
+> {
+  const user = await requireRole(["student", "admin"]);
+  const loaded = await loadPackForUser(questId, user.id);
+  if (!loaded.ok) return { error: loaded.error };
+  const { meta } = loaded;
+  const q = meta.questions[questionIndex] as PracticeQuestionDragOrder | undefined;
+  if (!q || q.kind !== "drag_order") return { error: "Invalid question." };
+
+  const priorAnswer = meta.session?.answers.find((a) => a.index === questionIndex);
+  if (priorAnswer) return { error: "This answer is locked. First answers only." };
+
+  const graded = gradeDragOrder(q.orderedItems, orderedItems);
+  if (isApCalculusAbSubject(meta.subject || meta.course)) {
+    await recordConstructionVfa({
+      userId: user.id,
+      skillNodeId: q.skillNodeId,
+      itemId: q.id,
+      attemptFormat: "drag_order",
+      correct: graded.correct,
+      accuracyPct: graded.accuracyPct,
+    });
+  }
+
+  await lockPracticeAnswer(questId, questionIndex, {
+    questionId: q.id,
+    index: questionIndex,
+    correct: graded.correct,
+    userResponse: orderedItems.join(" → ").slice(0, 4000),
+  });
+
+  return {
+    correct: graded.correct,
+    accuracyPct: graded.accuracyPct,
+    explanation: q.explanation,
+    finished: questionIndex + 1 >= meta.questions.length,
+  };
+}
+
+export async function submitPracticeGraphFeature(
+  questId: string,
+  questionIndex: number,
+  payload: {
+    selections?: GraphFeatureSelection[];
+    sketchControls?: GraphSketchSample[];
+  },
+): Promise<
+  | { correct: boolean; accuracyPct: number; explanation: string; finished: boolean }
+  | { error: string }
+> {
+  const user = await requireRole(["student", "admin"]);
+  const loaded = await loadPackForUser(questId, user.id);
+  if (!loaded.ok) return { error: loaded.error };
+  const { meta } = loaded;
+  const q = meta.questions[questionIndex] as PracticeQuestionGraphFeature | undefined;
+  if (!q || q.kind !== "graph_feature") return { error: "Invalid question." };
+
+  const priorAnswer = meta.session?.answers.find((a) => a.index === questionIndex);
+  if (priorAnswer) return { error: "This answer is locked. First answers only." };
+
+  let graded: { correct: boolean; accuracyPct: number };
+
+  if (q.answerExpression && (payload.sketchControls?.length ?? 0) > 0) {
+    const domain = q.sketchDomain ?? [-2, 2];
+    const { create, all } = await import("mathjs");
+    type FactoryMap = Parameters<typeof create>[0];
+    const math = create(all as FactoryMap, {});
+    const expr = studentNotationToGradingExpression(q.answerExpression);
+    graded = gradeGraphSketchControlPolyline(payload.sketchControls!, domain, (x) => {
+      try {
+        const value = math.evaluate(expr.replace(/\*\*/g, "^"), { x });
+        return typeof value === "number" && Number.isFinite(value) ? value : null;
+      } catch {
+        return null;
+      }
+    });
+  } else if (q.targets.length > 0) {
+    graded = gradeGraphFeatureSelections(q.targets, payload.selections ?? []);
+  } else {
+    return { error: "This graph item has no machine-gradeable ground truth." };
+  }
+
+  if (isApCalculusAbSubject(meta.subject || meta.course)) {
+    await recordConstructionVfa({
+      userId: user.id,
+      skillNodeId: q.skillNodeId,
+      itemId: q.id,
+      attemptFormat: "graph_feature",
+      correct: graded.correct,
+      accuracyPct: graded.accuracyPct,
+    });
+  }
+
+  await lockPracticeAnswer(questId, questionIndex, {
+    questionId: q.id,
+    index: questionIndex,
+    correct: graded.correct,
+    userResponse: JSON.stringify(payload).slice(0, 4000),
+  });
+
+  return {
+    correct: graded.correct,
+    accuracyPct: graded.accuracyPct,
+    explanation: q.explanation,
+    finished: questionIndex + 1 >= meta.questions.length,
+  };
+}
+
+const submitMultiPartSchema = z.object({
+  questId: z.string().uuid(),
+  questionIndex: z.number().int().min(0).max(20),
+  partIndex: z.number().int().min(0).max(20),
+  selectedIndex: z.number().int().min(0).max(3).optional(),
+  freeResponse: z.string().trim().min(1).max(4000).optional(),
+});
+
+async function gradeMultiPartFreeResponsePart(input: {
+  userId: string;
+  itemId: string;
+  studentAnswer: string;
+  correctExpression: string;
+}): Promise<boolean> {
+  return gradeExpressionEquivalent(input);
 }
 
 export async function submitPracticeMultiPart(

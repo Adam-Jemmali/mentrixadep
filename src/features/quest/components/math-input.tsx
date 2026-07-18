@@ -15,16 +15,22 @@ type KatexModule = typeof import("katex");
 
 type Props = {
   itemId: string;
-  correctExpression: string;
+  /** Required for grade mode; omitted for compose (server grades). */
+  correctExpression?: string;
   variables?: GradingVariables;
   placeholder?: string;
   disabled?: boolean;
+  /** grade = admin preview with answer; compose = student pack (no answer on client). */
+  mode?: "grade" | "compose";
+  surface?: "dark" | "light";
+  submitLabel?: string;
   onGraded?: (result: {
     equivalent: boolean;
     method: "symbolic" | "numeric";
     verdict: string;
     nextAction: string;
   }) => void;
+  onComposeSubmit?: (value: string) => void | Promise<void>;
 };
 
 type PreviewState =
@@ -86,7 +92,11 @@ export function MathInput({
   variables,
   placeholder = "Type your answer: 3x^2 + 2x",
   disabled = false,
+  mode = "grade",
+  surface = "dark",
+  submitLabel,
   onGraded,
+  onComposeSubmit,
 }: Props) {
   const [value, setValue] = useState("");
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -95,6 +105,7 @@ export function MathInput({
   const [retryNote, setRetryNote] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const isLight = surface === "light";
 
   useEffect(() => {
     void warmKatex().then((mod) => setKatex(mod.default));
@@ -114,7 +125,8 @@ export function MathInput({
     !disabled &&
     !submitting &&
     value.trim().length > 0 &&
-    preview.status === "ok";
+    preview.status === "ok" &&
+    (mode === "compose" || Boolean(correctExpression));
 
   const insertAtCursor = useCallback((snippet: string) => {
     const el = inputRef.current;
@@ -139,10 +151,20 @@ export function MathInput({
     setRetryNote(null);
     const started = Date.now();
 
+    if (mode === "compose") {
+      await onComposeSubmit?.(value.trim());
+      const elapsed = Date.now() - started;
+      if (elapsed < 400) {
+        await new Promise((resolve) => window.setTimeout(resolve, 400 - elapsed));
+      }
+      setSubmitting(false);
+      return;
+    }
+
     const result = await gradeExpression({
       itemId,
       studentExpression: value.trim(),
-      correctExpression,
+      correctExpression: correctExpression ?? "",
       variables,
     });
 
@@ -172,13 +194,23 @@ export function MathInput({
       {retryNote ? (
         <p
           role="status"
-          className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+          className={cn(
+            "rounded-lg border px-3 py-2 text-sm",
+            isLight
+              ? "border-amber-300 bg-amber-50 text-amber-950"
+              : "border-amber-500/35 bg-amber-500/10 text-amber-100",
+          )}
         >
           {retryNote}
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-[#1e293b] bg-[#0B1220] shadow-[inset_0_1px_0_rgba(148,163,184,0.08)]">
+      <div
+        className={cn(
+          "overflow-hidden rounded-xl border shadow-[inset_0_1px_0_rgba(148,163,184,0.08)]",
+          isLight ? "border-slate-200 bg-white" : "border-[#1e293b] bg-[#0B1220]",
+        )}
+      >
         <textarea
           ref={inputRef}
           value={value}
@@ -188,21 +220,39 @@ export function MathInput({
           spellCheck={false}
           autoComplete="off"
           rows={4}
-          className="w-full resize-y border-0 bg-transparent px-4 py-3 font-mono text-base leading-relaxed text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-0"
+          className={cn(
+            "w-full resize-y border-0 bg-transparent px-4 py-3 font-mono text-base leading-relaxed focus:outline-none focus:ring-0",
+            isLight
+              ? "text-slate-900 placeholder:text-slate-400"
+              : "text-slate-100 placeholder:text-slate-500",
+          )}
         />
 
-        <div className="border-t border-[#1e293b] bg-[#090f1d] px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6366F1]">
+        <div
+          className={cn(
+            "border-t px-4 py-3",
+            isLight ? "border-slate-100 bg-slate-50" : "border-[#1e293b] bg-[#090f1d]",
+          )}
+        >
+          <p
+            className={cn(
+              "text-[10px] font-semibold uppercase tracking-[0.16em]",
+              isLight ? "text-[#6366F1]" : "text-[#6366F1]",
+            )}
+          >
             Live preview
           </p>
           <div
             className={cn(
-              "mx-hub-math-prose mt-2 min-h-[2.75rem] text-slate-100 [&_.katex]:text-inherit",
-              preview.status === "error" && "text-amber-200/90",
+              "mx-hub-math-prose mt-2 min-h-[2.75rem] [&_.katex]:text-inherit",
+              isLight ? "text-slate-900" : "text-slate-100",
+              preview.status === "error" && (isLight ? "text-amber-800" : "text-amber-200/90"),
             )}
           >
             {preview.status === "empty" ? (
-              <span className="text-sm text-slate-500">Your formatted math appears here.</span>
+              <span className={cn("text-sm", isLight ? "text-slate-500" : "text-slate-500")}>
+                Your formatted math appears here.
+              </span>
             ) : null}
             {preview.status === "error" ? (
               <span className="text-sm">{preview.message}</span>
@@ -214,11 +264,19 @@ export function MathInput({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[#334155] bg-[#0f172a]">
+      <div
+        className={cn(
+          "overflow-hidden rounded-xl border",
+          isLight ? "border-slate-200 bg-white" : "border-[#334155] bg-[#0f172a]",
+        )}
+      >
         <button
           type="button"
           onClick={() => setKeyboardOpen((open) => !open)}
-          className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-semibold text-slate-200"
+          className={cn(
+            "flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-semibold",
+            isLight ? "text-slate-800" : "text-slate-200",
+          )}
         >
           <span className="inline-flex items-center gap-2">
             <Keyboard className="size-4 text-[#6366F1]" aria-hidden />
@@ -231,7 +289,12 @@ export function MathInput({
         </button>
 
         {keyboardOpen ? (
-          <div className="space-y-3 border-t border-[#334155] px-3 py-3">
+          <div
+            className={cn(
+              "space-y-3 border-t px-3 py-3",
+              isLight ? "border-slate-200" : "border-[#334155]",
+            )}
+          >
             <div className="flex flex-wrap gap-2">
               {GREEK_KEYS.map((key) => (
                 <Button
@@ -239,7 +302,11 @@ export function MathInput({
                   type="button"
                   size="sm"
                   variant="secondary"
-                  className="min-w-9 bg-[#1e293b] text-slate-100 hover:bg-[#334155]"
+                  className={
+                    isLight
+                      ? "min-w-9"
+                      : "min-w-9 bg-[#1e293b] text-slate-100 hover:bg-[#334155]"
+                  }
                   onClick={() => insertAtCursor(key.value)}
                 >
                   {key.label}
@@ -249,7 +316,7 @@ export function MathInput({
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="bg-[#1e293b] text-slate-100 hover:bg-[#334155]"
+                className={isLight ? undefined : "bg-[#1e293b] text-slate-100 hover:bg-[#334155]"}
                 onClick={() => insertAtCursor("∫ ")}
                 aria-label="Insert integral"
               >
@@ -259,7 +326,7 @@ export function MathInput({
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="bg-[#1e293b] text-slate-100 hover:bg-[#334155]"
+                className={isLight ? undefined : "bg-[#1e293b] text-slate-100 hover:bg-[#334155]"}
                 onClick={() => insertAtCursor("d/dx")}
                 aria-label="Insert derivative"
               >
@@ -269,7 +336,7 @@ export function MathInput({
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="bg-[#1e293b] text-slate-100 hover:bg-[#334155]"
+                className={isLight ? undefined : "bg-[#1e293b] text-slate-100 hover:bg-[#334155]"}
                 onClick={() => insertAtCursor("()/()")}
               >
                 Fraction
@@ -278,7 +345,7 @@ export function MathInput({
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="bg-[#1e293b] text-slate-100 hover:bg-[#334155]"
+                className={isLight ? undefined : "bg-[#1e293b] text-slate-100 hover:bg-[#334155]"}
                 onClick={() => insertAtCursor("^")}
               >
                 x^n
@@ -287,13 +354,13 @@ export function MathInput({
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="bg-[#1e293b] text-slate-100 hover:bg-[#334155]"
+                className={isLight ? undefined : "bg-[#1e293b] text-slate-100 hover:bg-[#334155]"}
                 onClick={() => insertAtCursor("sqrt()")}
               >
                 sqrt
               </Button>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className={cn("text-xs", isLight ? "text-slate-500" : "text-slate-400")}>
               Use ^ exponents, optional *, / fractions, sqrt(), sin(), ln(), e^x.
             </p>
           </div>
@@ -312,7 +379,7 @@ export function MathInput({
             Checking construction…
           </>
         ) : (
-          "Submit answer"
+          submitLabel ?? "Submit answer"
         )}
       </Button>
     </div>

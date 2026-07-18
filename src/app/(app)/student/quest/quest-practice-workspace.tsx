@@ -13,11 +13,19 @@ import {
   getPracticeQuestionPublic,
   submitPracticeMcq,
   submitPracticeWritten,
+  submitPracticeFreeResponse,
+  submitPracticeCompleteExpression,
+  submitPracticeDragOrder,
+  submitPracticeGraphFeature,
   submitPracticeMultiPart,
   finalizePracticeQuest,
   type PracticeQuestionPublic,
 } from "@/features/quest/practice-quest";
 import { MultiPartQuestion } from "@/features/quest/components/multi-part-question";
+import { MathInput } from "@/features/quest/components/math-input";
+import { CompleteExpressionQuestion } from "@/features/quest/components/complete-expression-question";
+import { DragOrderQuestion } from "@/features/quest/components/drag-order-question";
+import { GraphFeatureQuestion } from "@/features/quest/components/graph-feature-question";
 import { emitXpAward } from "@/features/xp/xp-events";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
@@ -350,7 +358,14 @@ export function QuestPracticeWorkspace({
   };
 
   const onWrittenSubmit = async () => {
-    if (!questId || !question || question.kind === "mcq" || question.kind === "multi_part" || !written.trim()) return;
+    if (
+      !questId ||
+      !question ||
+      (question.kind !== "short_answer" && question.kind !== "problem_solving") ||
+      !written.trim()
+    ) {
+      return;
+    }
     setBusy(true);
     const r = await submitPracticeWritten(questId, qIndex, written);
     setBusy(false);
@@ -370,6 +385,83 @@ export function QuestPracticeWorkspace({
     } else {
       setWrittenAwaitingContinue(true);
     }
+  };
+
+  const afterConstruction = async (
+    r: { correct: boolean; explanation: string; finished: boolean; feedback?: string },
+  ) => {
+    setLockedQuestionIndices((prev) => new Set(prev).add(qIndex));
+    setWrittenFeedback(r.feedback ?? r.explanation);
+    if (r.finished && questId) {
+      await finishRun(questId);
+      return;
+    }
+    if (r.correct) {
+      setCorrectCelebration({ explanation: r.explanation, mode: "written" });
+    }
+    setWrittenAwaitingContinue(true);
+  };
+
+  const onFreeResponseSubmit = async (value: string) => {
+    if (!questId || !question || question.kind !== "free_response") return;
+    setBusy(true);
+    const r = await submitPracticeFreeResponse(questId, qIndex, value);
+    setBusy(false);
+    if ("error" in r) {
+      setErr(r.error);
+      return;
+    }
+    await afterConstruction(r);
+  };
+
+  const onClozeSubmit = async (answers: Record<string, string>) => {
+    if (!questId || !question || question.kind !== "complete_expression") return;
+    setBusy(true);
+    const r = await submitPracticeCompleteExpression(questId, qIndex, answers);
+    setBusy(false);
+    if ("error" in r) {
+      setErr(r.error);
+      return;
+    }
+    await afterConstruction({
+      ...r,
+      feedback: `Blank accuracy ${(r.accuracyPct * 100).toFixed(0)}%.`,
+    });
+  };
+
+  const onDragOrderSubmit = async (ordered: string[]) => {
+    if (!questId || !question || question.kind !== "drag_order") return;
+    setBusy(true);
+    const r = await submitPracticeDragOrder(questId, qIndex, ordered);
+    setBusy(false);
+    if ("error" in r) {
+      setErr(r.error);
+      return;
+    }
+    await afterConstruction({
+      ...r,
+      feedback: r.correct ? "Correct order." : `Order accuracy ${(r.accuracyPct * 100).toFixed(0)}%.`,
+    });
+  };
+
+  const onGraphFeatureSubmit = async (payload: {
+    selections?: import("@/features/quest/quest-interaction-formats-pure").GraphFeatureSelection[];
+    sketchControls?: import("@/features/quest/quest-interaction-formats-pure").GraphSketchSample[];
+  }) => {
+    if (!questId || !question || question.kind !== "graph_feature") return;
+    setBusy(true);
+    const r = await submitPracticeGraphFeature(questId, qIndex, payload);
+    setBusy(false);
+    if ("error" in r) {
+      setErr(r.error);
+      return;
+    }
+    await afterConstruction({
+      ...r,
+      feedback: r.correct
+        ? "Graph answer locked against verified ground truth."
+        : `Feature accuracy ${(r.accuracyPct * 100).toFixed(0)}%.`,
+    });
   };
 
   const writtenContinue = async () => {
@@ -624,7 +716,10 @@ export function QuestPracticeWorkspace({
                 <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
                 <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
               </>
-            ) : question.kind === "multi_part" ? null : (
+            ) : question.kind === "multi_part" ||
+              question.kind === "complete_expression" ||
+              question.kind === "drag_order" ||
+              question.kind === "graph_feature" ? null : (
               <>
                 <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
                 <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
@@ -683,7 +778,58 @@ export function QuestPracticeWorkspace({
               </div>
             )}
 
-            {question.kind !== "mcq" && question.kind !== "multi_part" && (
+            {question.kind === "free_response" && !writtenAwaitingContinue ? (
+              <MathInput
+                itemId={question.id}
+                mode="compose"
+                surface="light"
+                disabled={busy}
+                onComposeSubmit={onFreeResponseSubmit}
+              />
+            ) : null}
+
+            {question.kind === "complete_expression" && !writtenAwaitingContinue ? (
+              <>
+                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
+                <CompleteExpressionQuestion
+                  itemId={question.id}
+                  prompt={question.prompt}
+                  blankKeys={question.blankKeys}
+                  busy={busy}
+                  disabled={busy}
+                  onSubmit={onClozeSubmit}
+                />
+              </>
+            ) : null}
+
+            {question.kind === "drag_order" && !writtenAwaitingContinue ? (
+              <>
+                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
+                <DragOrderQuestion
+                  prompt={question.prompt}
+                  items={question.items}
+                  busy={busy}
+                  disabled={busy}
+                  onSubmit={onDragOrderSubmit}
+                />
+              </>
+            ) : null}
+
+            {question.kind === "graph_feature" && !writtenAwaitingContinue ? (
+              <GraphFeatureQuestion
+                prompt={question.prompt}
+                stimulus={question.stimulus}
+                maxSelections={question.maxSelections}
+                targetKinds={question.targetKinds}
+                sketchMode={question.sketchMode}
+                sketchDomain={question.sketchDomain}
+                busy={busy}
+                disabled={busy}
+                onSubmit={onGraphFeatureSubmit}
+              />
+            ) : null}
+
+            {(question.kind === "short_answer" || question.kind === "problem_solving") && (
               <div className="space-y-3">
                 <textarea
                   className={`${mentrixStudent.hubFieldInput} min-h-[120px]`}
@@ -692,16 +838,7 @@ export function QuestPracticeWorkspace({
                   onChange={(e) => setWritten(e.target.value)}
                   disabled={busy || writtenAwaitingContinue}
                 />
-                {writtenFeedback && !correctCelebration && (
-                  <p className={`text-sm whitespace-pre-wrap ${mentrixStudent.textMutedOnLight}`}>
-                    {writtenFeedback}
-                  </p>
-                )}
-                {writtenAwaitingContinue && !correctCelebration ? (
-                  <Button type="button" onClick={() => void writtenContinue()}>
-                    Next question
-                  </Button>
-                ) : !writtenAwaitingContinue ? (
+                {!writtenAwaitingContinue ? (
                   <Button
                     disabled={busy || !written.trim()}
                     onClick={() => void onWrittenSubmit()}
@@ -712,6 +849,17 @@ export function QuestPracticeWorkspace({
               </div>
             )}
 
+            {writtenFeedback && !correctCelebration && writtenAwaitingContinue ? (
+              <p className={`text-sm whitespace-pre-wrap ${mentrixStudent.textMutedOnLight}`}>
+                {writtenFeedback}
+              </p>
+            ) : null}
+
+            {writtenAwaitingContinue && !correctCelebration ? (
+              <Button type="button" onClick={() => void writtenContinue()}>
+                Next question
+              </Button>
+            ) : null}
             {question.kind === "mcq" && mcqResult && !mcqResult.correct ? (
               mcqResult.hasStepTrace ? (
                 <StepFeedback

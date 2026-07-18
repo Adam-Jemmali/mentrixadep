@@ -22,11 +22,17 @@ export type FreeResponseCandidate = {
     credit_fraction: number;
     label: string;
   }>;
+  authoring_meta?: {
+    skill_verb: string;
+    transfer_tag: string;
+    proof_artifact: string;
+    misconception_kit: string[];
+  };
 };
 
 export function validateFreeResponseCandidate(candidate: FreeResponseCandidate): string | null {
-  if (!candidate.prompt.trim() || candidate.prompt.trim().length < 10) {
-    return "prompt too short";
+  if (!candidate.prompt.trim() || candidate.prompt.trim().length < 28) {
+    return "prompt too short for exceptional stem bar";
   }
   if (!candidate.answer_expression.trim()) {
     return "answer_expression required";
@@ -59,6 +65,14 @@ export function validateFreeResponseCandidate(candidate: FreeResponseCandidate):
     }
   }
 
+  const meta = candidate.authoring_meta;
+  if (!meta?.skill_verb?.trim() || !meta.transfer_tag?.trim() || !meta.proof_artifact?.trim()) {
+    return "authoring_meta needs skill_verb, transfer_tag, proof_artifact";
+  }
+  if (!Array.isArray(meta.misconception_kit) || meta.misconception_kit.length < 3) {
+    return "authoring_meta.misconception_kit needs ≥3 traps";
+  }
+
   return null;
 }
 
@@ -81,7 +95,9 @@ Known misconceptions:
 ${misconceptionLines}
 
 Requirements:
+- Exceptional stem: every word earns its place (constraint, unit, trap). Min ~28 characters of substance.
 - Constructed answer, not multiple choice
+- If the stem names f(x)=..., the prompt must make that function graphable (human review will attach stimulus)
 - answer_expression must be SymPy/mathjs parseable (use * for multiply, ** or ^ for powers)
 - Include 2 to 4 answer_alternatives that are equivalent notations
 - solution_steps: 2 to 5 ordered steps with description, expression, misconception_if_skipped, is_critical
@@ -89,6 +105,7 @@ Requirements:
 - partial_credit_rules: 0 to 2 rules with credit_fraction in {0.25, 0.5, 0.75}
 - difficulty_rating integer between 500 and 2000 (default 1000)
 - explanation: 2 to 3 sentences
+- authoring_meta: skill_verb (compute|interpret|construct|justify|model), transfer_tag, proof_artifact, misconception_kit (≥3 tags)
 
 Return ONLY valid JSON:
 {
@@ -97,6 +114,12 @@ Return ONLY valid JSON:
   "answer_alternatives": ["3x^2", "3*x^2"],
   "explanation": "...",
   "difficulty_rating": 1000,
+  "authoring_meta": {
+    "skill_verb": "compute",
+    "transfer_tag": "related rates / net change intuition",
+    "proof_artifact": "Can construct the derivative of a polynomial under VFA.",
+    "misconception_kit": ["forgot_chain_rule", "dropped_constant", "power_rule_off_by_one"]
+  },
   "solution_steps": [
     {
       "step_number": 1,

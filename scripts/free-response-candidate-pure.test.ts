@@ -7,11 +7,18 @@ import {
 describe("free-response-candidate-pure", () => {
   it("accepts a parseable candidate with a critical step", () => {
     const issue = validateFreeResponseCandidate({
-      prompt: "Differentiate f(x) = x^3 with respect to x.",
+      prompt:
+        "Given f(x) = x^3 on a related-rates wire, differentiate with respect to x and state f'(x).",
       answer_expression: "3*x^2",
       answer_alternatives: ["3x^2"],
       explanation: "Apply the power rule. Multiply by the exponent and reduce the power by one.",
       difficulty_rating: 1000,
+      authoring_meta: {
+        skill_verb: "compute",
+        transfer_tag: "related rates intuition",
+        proof_artifact: "Can construct the power-rule derivative under VFA.",
+        misconception_kit: ["forgot_coefficient", "drops_power", "chain_rule_extra"],
+      },
       solution_steps: [
         {
           step_number: 1,
@@ -37,11 +44,18 @@ describe("free-response-candidate-pure", () => {
 
   it("rejects unparseable answer expressions", () => {
     const issue = validateFreeResponseCandidate({
-      prompt: "Differentiate f(x) = x^3 with respect to x.",
+      prompt:
+        "Given f(x) = x^3 on a related-rates wire, differentiate with respect to x and state f'(x).",
       answer_expression: "(((broken",
       answer_alternatives: [],
       explanation: "Apply the power rule. Multiply by the exponent and reduce the power by one.",
       difficulty_rating: 1000,
+      authoring_meta: {
+        skill_verb: "compute",
+        transfer_tag: "related rates intuition",
+        proof_artifact: "Can construct the power-rule derivative under VFA.",
+        misconception_kit: ["forgot_coefficient", "drops_power", "chain_rule_extra"],
+      },
       solution_steps: [
         {
           step_number: 1,
@@ -72,5 +86,6 @@ describe("free-response-candidate-pure", () => {
     expect(prompt).toContain("free_response");
     expect(prompt).toContain("Power rule");
     expect(prompt).toContain("is_critical");
+    expect(prompt).toContain("authoring_meta");
   });
 });

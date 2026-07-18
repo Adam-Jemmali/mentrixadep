@@ -5,6 +5,8 @@ import { create, all, type FactoryFunctionMap } from "mathjs";
 import {
   inferGraphDomain,
   inferGraphRange,
+  normalizeGraphExpression,
+  QUEST_GRAPH_CURVE_BLUE,
   riemannBarCenters,
   sampleCurvePoints,
   type QuestStimulusFunctionGraph,
@@ -13,11 +15,12 @@ import { cn } from "@/shared/core/utils";
 
 const math = create(all as FactoryFunctionMap, {});
 
-const CURVE_COLORS = ["#7C3AED", "#6366F1", "#22D3EE"];
+const CURVE_COLORS = [QUEST_GRAPH_CURVE_BLUE, "#6366F1", "#7C3AED"];
 
 function evaluateExpression(expression: string, x: number): number | null {
   try {
-    const value = math.evaluate(expression.replace(/\*\*/g, "^"), { x });
+    const normalized = normalizeGraphExpression(expression) ?? expression.replace(/\*\*/g, "^");
+    const value = math.evaluate(normalized, { x });
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   } catch {
     return null;
@@ -40,11 +43,15 @@ export function QuestFunctionGraph({
 
   const plot = useMemo(() => {
     const domain = inferGraphDomain(graph);
-    const curveSamples = (graph.curves ?? []).map((curve, index) => ({
-      ...curve,
-      color: curve.color || CURVE_COLORS[index % CURVE_COLORS.length]!,
-      points: sampleCurvePoints(curve.expression, domain, 80, evaluateExpression),
-    }));
+    const curveSamples = (graph.curves ?? []).map((curve, index) => {
+      const expression = normalizeGraphExpression(curve.expression) ?? curve.expression;
+      return {
+        ...curve,
+        expression,
+        color: curve.color || CURVE_COLORS[index % CURVE_COLORS.length]!,
+        points: sampleCurvePoints(expression, domain, 160, evaluateExpression),
+      };
+    });
 
     const riemannBars =
       graph.riemann != null
@@ -192,8 +199,8 @@ export function QuestFunctionGraph({
                 y={top}
                 width={Math.max(1, x2 - x1)}
                 height={Math.max(1, h)}
-                fill="rgba(124,58,237,0.22)"
-                stroke="#7C3AED"
+                fill="rgba(45,112,179,0.18)"
+                stroke={QUEST_GRAPH_CURVE_BLUE}
                 strokeWidth={1.25}
               />
             );
@@ -201,20 +208,38 @@ export function QuestFunctionGraph({
 
           {plot.curveSamples.map((curve, index) => {
             if (curve.points.length < 2) return null;
-            const d = curve.points
-              .map((p, i) => `${i === 0 ? "M" : "L"} ${plot.xScale(p.x)} ${plot.yScale(p.y)}`)
-              .join(" ");
-            return (
-              <path
-                key={`curve-${index}`}
-                d={d}
-                fill="none"
-                stroke={curve.color}
-                strokeWidth={2.5}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            );
+            // Break asymptotes / huge jumps so paths don't draw vertical walls.
+            const segments: Array<Array<{ x: number; y: number }>> = [];
+            let current: Array<{ x: number; y: number }> = [];
+            const ySpan = Math.max(1, plot.range[1] - plot.range[0]);
+            for (let i = 0; i < curve.points.length; i++) {
+              const p = curve.points[i]!;
+              const prev = current[current.length - 1];
+              if (prev && Math.abs(p.y - prev.y) > ySpan * 1.75) {
+                if (current.length >= 2) segments.push(current);
+                current = [p];
+              } else {
+                current.push(p);
+              }
+            }
+            if (current.length >= 2) segments.push(current);
+
+            return segments.map((segment, segIndex) => {
+              const d = segment
+                .map((p, i) => `${i === 0 ? "M" : "L"} ${plot.xScale(p.x)} ${plot.yScale(p.y)}`)
+                .join(" ");
+              return (
+                <path
+                  key={`curve-${index}-${segIndex}`}
+                  d={d}
+                  fill="none"
+                  stroke={curve.color}
+                  strokeWidth={2.75}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              );
+            });
           })}
 
           {(graph.points ?? []).map((point, index) => (

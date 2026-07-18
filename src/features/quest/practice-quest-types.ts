@@ -13,9 +13,17 @@ import type { MultiPartPart, MultiPartPartResult } from "@/features/quest/multi-
 import type { QuestStimulus } from "@/features/quest/quest-stimulus-pure";
 
 export type PracticeDifficulty = "beginner" | "intermediate" | "advanced";
-export type PracticePackType = "mcq" | "short_answer" | "problem_solving";
+export type PracticePackType = "mcq" | "short_answer" | "problem_solving" | "mixed";
 
-export type PracticeQuestionKind = "mcq" | "short_answer" | "problem_solving" | "multi_part";
+export type PracticeQuestionKind =
+  | "mcq"
+  | "short_answer"
+  | "problem_solving"
+  | "multi_part"
+  | "free_response"
+  | "complete_expression"
+  | "drag_order"
+  | "graph_feature";
 
 export interface PracticeQuestionMcq {
   id: string;
@@ -48,6 +56,70 @@ export interface PracticeQuestionWritten {
   stimulus?: QuestStimulus[];
 }
 
+export interface PracticeQuestionFreeResponse {
+  id: string;
+  kind: "free_response";
+  prompt: string;
+  answerExpression: string;
+  explanation: string;
+  skillNodeId?: string;
+  topicTag?: string;
+  subtopicTag?: string;
+  unitNumber?: number;
+  examStakes?: string;
+  solutionSteps?: SolutionStep[];
+  partialCreditRules?: PartialCreditRule[];
+  stimulus?: QuestStimulus[];
+}
+
+export interface PracticeQuestionCompleteExpression {
+  id: string;
+  kind: "complete_expression";
+  prompt: string;
+  blanks: Array<{ key: string; answerExpression: string; weight: number }>;
+  explanation: string;
+  skillNodeId?: string;
+  topicTag?: string;
+  subtopicTag?: string;
+  unitNumber?: number;
+  examStakes?: string;
+  stimulus?: QuestStimulus[];
+}
+
+export interface PracticeQuestionDragOrder {
+  id: string;
+  kind: "drag_order";
+  prompt: string;
+  /** Correct order (server). Client receives a shuffled copy via public payload. */
+  orderedItems: string[];
+  explanation: string;
+  skillNodeId?: string;
+  topicTag?: string;
+  subtopicTag?: string;
+  unitNumber?: number;
+  examStakes?: string;
+  stimulus?: QuestStimulus[];
+}
+
+export interface PracticeQuestionGraphFeature {
+  id: string;
+  kind: "graph_feature";
+  prompt: string;
+  targets: import("@/features/quest/quest-interaction-formats-pure").GraphFeatureTarget[];
+  /** When set, Mentrixer must sketch a curve; graded vs this expression. */
+  answerExpression?: string;
+  explanation: string;
+  skillNodeId?: string;
+  topicTag?: string;
+  subtopicTag?: string;
+  unitNumber?: number;
+  examStakes?: string;
+  stimulus?: QuestStimulus[];
+  maxSelections?: number;
+  /** Domain used for sketch polyline grading. */
+  sketchDomain?: [number, number];
+}
+
 export interface PracticeQuestionMultiPart {
   id: string;
   kind: "multi_part";
@@ -66,7 +138,11 @@ export interface PracticeQuestionMultiPart {
 export type PracticeQuestion =
   | PracticeQuestionMcq
   | PracticeQuestionWritten
-  | PracticeQuestionMultiPart;
+  | PracticeQuestionMultiPart
+  | PracticeQuestionFreeResponse
+  | PracticeQuestionCompleteExpression
+  | PracticeQuestionDragOrder
+  | PracticeQuestionGraphFeature;
 
 export interface PracticePackMetadata {
   questKind: "practice_pack";

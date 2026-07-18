@@ -43,6 +43,7 @@ const PACK_TYPE_INSTRUCTIONS: Record<PracticePackType, string> = {
   mcq: `Every question must be kind "mcq" with exactly 4 options (strings), correctIndex 0-3, and a short explanation.`,
   short_answer: `Every question must be kind "short_answer" with referenceAnswer (model answer for grading) and explanation.`,
   problem_solving: `Every question must be kind "problem_solving" with referenceAnswer and explanation. Match the stated subject: biology/chemistry/physics/economics/history/CS prompts should use plain text and authentic domain tasks (mechanisms, interpretation, computation in units appropriate to that field)—do not substitute unrelated algebra drills. For mathematics (and numeric STEM where formulas are central), LaTeX is allowed where helpful: inline \\( ... \\) or block $$ ... $$. In JSON strings each backslash must be doubled (e.g. write "\\\\(" not "(" with a single backslash).`,
+  mixed: `Mix construction and recognition. Prefer mcq plus free_response / complete_expression style stems. Never invent live student content outside reviewed bank use.`,
 };
 
 // ============================================
@@ -704,7 +705,15 @@ export async function generatePracticeQuestPack(
           ? q.options.join(" ")
           : q.kind === "multi_part"
             ? q.parts.map((part) => part.prompt).join(" ")
-            : q.referenceAnswer;
+            : q.kind === "short_answer" || q.kind === "problem_solving"
+              ? q.referenceAnswer
+              : q.kind === "free_response"
+                ? q.answerExpression
+                : q.kind === "complete_expression"
+                  ? q.blanks.map((b) => b.answerExpression).join(" ")
+                  : q.kind === "drag_order"
+                    ? q.orderedItems.join(" ")
+                    : q.prompt;
       return isSubjectLockedText(subject, [q.prompt, q.explanation, answerText].join(" "));
     });
     if (!locked) return { error: true, message: "Generated pack did not stay within the selected subject." };

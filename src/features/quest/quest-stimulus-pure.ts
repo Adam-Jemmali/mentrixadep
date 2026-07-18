@@ -149,7 +149,15 @@ function parseGraph(raw: Record<string, unknown>): QuestStimulusFunctionGraph | 
     }
   }
 
-  if (curves.length === 0 && points.length === 0 && !riemann) return null;
+  if (curves.length === 0 && points.length === 0 && !riemann) {
+    // Empty axes are valid for sketch/construct answers when explicitly marked.
+    const sketch =
+      raw.sketch === true ||
+      raw.allowEmpty === true ||
+      raw.allow_empty === true ||
+      asString(raw.mode).toLowerCase() === "sketch";
+    if (!sketch) return null;
+  }
 
   return {
     kind: "function_graph",
@@ -262,11 +270,23 @@ export function inferGraphRange(
     ...(graph.riemann?.heights ?? []),
   ].filter((y) => Number.isFinite(y));
   if (ys.length === 0) return [-1, 1];
-  const min = Math.min(...ys, 0);
-  const max = Math.max(...ys, 0);
+
+  // Trim extreme tails so a quartic on [-3,3] doesn't crush the interesting middle.
+  const sorted = [...ys].sort((a, b) => a - b);
+  const loIdx = Math.max(0, Math.floor((sorted.length - 1) * 0.08));
+  const hiIdx = Math.min(sorted.length - 1, Math.ceil((sorted.length - 1) * 0.92));
+  let min = Math.min(sorted[loIdx]!, 0);
+  let max = Math.max(sorted[hiIdx]!, 0);
   if (min === max) return [min - 1, max + 1];
   const pad = (max - min) * 0.12;
-  return [min - pad, max + pad];
+  min -= pad;
+  max += pad;
+  // Keep a readable window when the poly still blows up at the edge samples.
+  if (max - min > 40) {
+    const mid = (min + max) / 2;
+    return [mid - 20, mid + 20];
+  }
+  return [min, max];
 }
 
 function parseNumericCell(value: string): number | null {
@@ -357,24 +377,59 @@ export function riemannHeightsFromPoints(
   return { from, to, heights };
 }
 
+/** Desmos-style primary curve stroke on light paper. */
+export const QUEST_GRAPH_CURVE_BLUE = "#2D70B3";
+
+/**
+ * Turn prompt / LaTeX snippets into a mathjs-evaluable f(x) expression.
+ * Fixes empty graphs where `x^{4}` or `$...$` was captured but never plotable.
+ */
+export function normalizeGraphExpression(raw: string): string | null {
+  let s = raw.trim();
+  if (!s) return null;
+
+  // Cut prose / markdown glued after an equation (commas, dollars, "what is…").
+  const cut = s.search(
+    /[,;?]|\$(?!\{)|\*\*|\\text|\\mathrm|\bwhat\b|\bfind\b|\bwhich\b|\.\s+[A-Za-z]/i,
+  );
+  if (cut > 0) s = s.slice(0, cut);
+
+  s = s
+    .replace(/\$/g, "")
+    .replace(/\\\(|\\\)/g, "")
+    .replace(/\\left|\\right/gi, "")
+    .replace(/\\cdot/gi, "*")
+    .replace(/\\times/gi, "*")
+    .replace(/\\div/gi, "/")
+    .replace(/\u00b7|\u22c5/g, "*")
+    .replace(/\u2212/g, "-")
+    .replace(/\^\{([^{}]+)\}/g, "^$1")
+    .replace(/_\{([^{}]+)\}/g, "")
+    .replace(/\{([^{}]+)\}/g, "$1")
+    .replace(/\s+/g, "")
+    .replace(/X/g, "x");
+
+  // Keep only a math prefix (stops soft garbage like trailing words).
+  const mathPrefix = s.match(/^[0-9x+\-*/^().]+/i);
+  s = (mathPrefix?.[0] ?? "").replace(/[.,;:]+$/g, "").trim();
+  if (s.length < 1 || s.length > 80) return null;
+  if (!/[0-9x]/i.test(s)) return null;
+  if (!/x/i.test(s) && !/[+\-*/^()]/.test(s)) return null;
+  return s;
+}
+
 /** Pull a simple y=f(x) / f(x)=... expression for graphing. */
 export function detectCurveExpressionFromPrompt(prompt: string): string | null {
   const patterns = [
-    /\bf\s*\(\s*x\s*\)\s*=\s*([^\n.]+)/i,
-    /\by\s*=\s*([^\n.]+)/i,
-    /\bg\s*\(\s*x\s*\)\s*=\s*([^\n.]+)/i,
+    /\bf\s*\(\s*x\s*\)\s*=\s*([^\n]+)/i,
+    /\by\s*=\s*([^\n]+)/i,
+    /\bg\s*\(\s*x\s*\)\s*=\s*([^\n]+)/i,
   ];
   for (const pattern of patterns) {
     const match = prompt.match(pattern);
     if (!match?.[1]) continue;
-    const expression = match[1]
-      .trim()
-      .replace(/\s+/g, "")
-      .replace(/·/g, "*")
-      .replace(/\u2212/g, "-");
-    if (expression.length < 1 || expression.length > 80) continue;
-    if (!/[0-9xX]/.test(expression)) continue;
-    return expression.replace(/X/g, "x");
+    const expression = normalizeGraphExpression(match[1]);
+    if (expression) return expression;
   }
   return null;
 }
@@ -472,6 +527,16 @@ export function enrichQuestStimulus(input: {
   const riemannHint = detectRiemannFromPrompt(input.prompt);
   const curve = detectCurveExpressionFromPrompt(input.prompt);
 
+  const makePromptCurveGraph = (expression: string): QuestStimulusFunctionGraph => ({
+    kind: "function_graph",
+    title: "Function graph",
+    alt: `Graph of y = ${expression}`,
+    xLabel: "x",
+    yLabel: "y",
+    domain: [-2, 2],
+    curves: [{ expression, color: QUEST_GRAPH_CURVE_BLUE, label: "f(x)" }],
+  });
+
   if (!hasGraph) {
     if (points.length >= 2 && (promptWantsGraph(input.prompt) || riemannHint || points.length >= 3)) {
       const xLabel = table?.headers[0]?.trim() || "x";
@@ -503,36 +568,62 @@ export function enrichQuestStimulus(input: {
 
       stimulus.push(graph);
     } else if (curve) {
-      stimulus.push({
-        kind: "function_graph",
-        title: "Function graph",
-        alt: `Graph of ${curve}`,
-        xLabel: "x",
-        yLabel: "y",
-        domain: [-3, 3],
-        curves: [{ expression: curve, color: "#7C3AED" }],
-      });
+      stimulus.push(makePromptCurveGraph(curve));
     }
-  } else if (riemannHint) {
-    // Fill missing Riemann bars on an existing graph that has points but no riemann.
+  } else {
     const graphIndex = stimulus.findIndex((s) => s.kind === "function_graph");
     const graph = stimulus[graphIndex];
-    if (graph && graph.kind === "function_graph" && !graph.riemann) {
-      const graphPoints = graph.points ?? points;
-      const bars = riemannHeightsFromPoints(graphPoints, riemannHint.method, riemannHint.n);
-      if (bars) {
-        stimulus[graphIndex] = {
-          ...graph,
-          riemann: {
-            method: riemannHint.method,
-            from: bars.from,
-            to: bars.to,
-            n: riemannHint.n,
-            heights: bars.heights,
-          },
-          domain: graph.domain ?? [bars.from, bars.to],
+    if (graph && graph.kind === "function_graph") {
+      const normalizedCurves = (graph.curves ?? [])
+        .map((c) => {
+          const expression = normalizeGraphExpression(c.expression) ?? c.expression.trim();
+          if (!expression) return null;
+          return {
+            ...c,
+            expression,
+            color: c.color || QUEST_GRAPH_CURVE_BLUE,
+          };
+        })
+        .filter((c): c is NonNullable<typeof c> => c != null);
+
+      let next: QuestStimulusFunctionGraph = {
+        ...graph,
+        curves: normalizedCurves.length > 0 ? normalizedCurves : undefined,
+      };
+
+      // Empty axes (or unusable curve text) → draw f(x) from the prompt in Desmos blue.
+      if ((next.curves?.length ?? 0) === 0 && curve && (next.points?.length ?? 0) === 0 && !next.riemann) {
+        const drawn = makePromptCurveGraph(curve);
+        next = {
+          ...next,
+          title: next.title ?? drawn.title,
+          alt: next.alt || drawn.alt,
+          xLabel: next.xLabel ?? drawn.xLabel,
+          yLabel: next.yLabel ?? drawn.yLabel,
+          domain: next.domain ?? drawn.domain,
+          curves: drawn.curves,
         };
       }
+
+      if (riemannHint && !next.riemann) {
+        const graphPoints = next.points ?? points;
+        const bars = riemannHeightsFromPoints(graphPoints, riemannHint.method, riemannHint.n);
+        if (bars) {
+          next = {
+            ...next,
+            riemann: {
+              method: riemannHint.method,
+              from: bars.from,
+              to: bars.to,
+              n: riemannHint.n,
+              heights: bars.heights,
+            },
+            domain: next.domain ?? [bars.from, bars.to],
+          };
+        }
+      }
+
+      stimulus[graphIndex] = next;
     }
   }
 

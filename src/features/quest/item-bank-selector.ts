@@ -1,6 +1,10 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import type {
   PracticeQuestion,
+  PracticeQuestionCompleteExpression,
+  PracticeQuestionDragOrder,
+  PracticeQuestionFreeResponse,
+  PracticeQuestionGraphFeature,
   PracticeQuestionMcq,
   PracticeQuestionMultiPart,
 } from "@/features/quest/practice-quest-types";
@@ -23,6 +27,12 @@ import {
 } from "@/features/quest/challenge-difficulty-pure";
 import { loadChallengeDifficultyByNodeIds } from "@/features/quest/challenge-difficulty";
 import { enrichQuestStimulus, parseQuestStimulus } from "@/features/quest/quest-stimulus-pure";
+import {
+  parseClozeBlanks,
+  parseDragOrderedItems,
+  parseGraphFeatureTargets,
+  preferConstructionMix,
+} from "@/features/quest/quest-interaction-formats-pure";
 
 type SkillNodeRow = {
   id: string;
@@ -53,6 +63,16 @@ const ITEM_BANK_BASE_SELECT =
   "id, skill_node_id, prompt, options, correct_answer, explanation, difficulty_rating";
 const ITEM_BANK_EXTENDED_SELECT =
   `${ITEM_BANK_BASE_SELECT}, solution_steps, answer_expression, partial_credit_rules, item_format, stimulus`;
+
+function sharedMeta(item: ItemBankRow, node: SkillNodeRow) {
+  return {
+    skillNodeId: item.skill_node_id,
+    topicTag: node.unit_name,
+    subtopicTag: node.node_name,
+    unitNumber: node.unit_number,
+    examStakes: node.exam_stakes?.trim() || undefined,
+  };
+}
 
 export function computePracticePackQuestionCount(count: number): number {
   return Math.min(10, Math.max(5, Math.floor(count)));
@@ -224,6 +244,9 @@ export function itemToPracticeQuestion(
   });
   const stimulus = enriched.stimulus;
   const prompt = enriched.prompt;
+  const format = String(item.item_format ?? "mcq").toLowerCase();
+  const meta = sharedMeta(item, node);
+  const stimulusOpt = stimulus.length > 0 ? stimulus : undefined;
 
   if (isMultiPartItemFormat(item.item_format)) {
     const parts = parseMultiPartParts(item.solution_steps);
@@ -234,14 +257,82 @@ export function itemToPracticeQuestion(
       prompt,
       parts,
       explanation: item.explanation,
-      skillNodeId: item.skill_node_id,
-      topicTag: node.unit_name,
-      subtopicTag: node.node_name,
-      unitNumber: node.unit_number,
-      examStakes: node.exam_stakes?.trim() || undefined,
-      stimulus: stimulus.length > 0 ? stimulus : undefined,
+      ...meta,
+      stimulus: stimulusOpt,
     };
     return multi;
+  }
+
+  if (format === "free_response") {
+    const answerExpression = item.answer_expression?.trim() || item.correct_answer?.trim() || "";
+    if (!answerExpression) return null;
+    const fr: PracticeQuestionFreeResponse = {
+      id: item.id,
+      kind: "free_response",
+      prompt,
+      answerExpression,
+      explanation: item.explanation,
+      ...meta,
+      solutionSteps: parseSolutionSteps(item.solution_steps),
+      partialCreditRules: parsePartialCreditRules(item.partial_credit_rules),
+      stimulus: stimulusOpt,
+    };
+    return fr;
+  }
+
+  if (format === "complete_expression") {
+    const blanks = parseClozeBlanks(item.solution_steps);
+    if (blanks.length < 1) return null;
+    const cloze: PracticeQuestionCompleteExpression = {
+      id: item.id,
+      kind: "complete_expression",
+      prompt,
+      blanks,
+      explanation: item.explanation,
+      ...meta,
+      stimulus: stimulusOpt,
+    };
+    return cloze;
+  }
+
+  if (format === "drag_order") {
+    const orderedItems = parseDragOrderedItems(item.options);
+    if (orderedItems.length < 2) return null;
+    const drag: PracticeQuestionDragOrder = {
+      id: item.id,
+      kind: "drag_order",
+      prompt,
+      orderedItems,
+      explanation: item.explanation,
+      ...meta,
+      stimulus: stimulusOpt,
+    };
+    return drag;
+  }
+
+  if (format === "graph_feature") {
+    const targets = parseGraphFeatureTargets(item.solution_steps);
+    const answerExpression = item.answer_expression?.trim() || undefined;
+    if (targets.length < 1 && !answerExpression) return null;
+    if (!stimulusOpt?.some((s) => s.kind === "function_graph")) return null;
+    const graphBlock = stimulusOpt.find((s) => s.kind === "function_graph");
+    const sketchDomain =
+      graphBlock && graphBlock.kind === "function_graph" && graphBlock.domain
+        ? graphBlock.domain
+        : ([-2, 2] as [number, number]);
+    const graphQ: PracticeQuestionGraphFeature = {
+      id: item.id,
+      kind: "graph_feature",
+      prompt,
+      targets,
+      answerExpression,
+      explanation: item.explanation,
+      ...meta,
+      stimulus: stimulusOpt,
+      maxSelections: Math.max(targets.length, answerExpression ? 8 : 1),
+      sketchDomain,
+    };
+    return graphQ;
   }
 
   const options = parseOptions(item.options);
@@ -261,16 +352,12 @@ export function itemToPracticeQuestion(
     options,
     correctIndex,
     explanation: item.explanation,
-    skillNodeId: item.skill_node_id,
-    topicTag: node.unit_name,
-    subtopicTag: node.node_name,
-    unitNumber: node.unit_number,
-    examStakes: node.exam_stakes?.trim() || undefined,
+    ...meta,
     solutionSteps: parseSolutionSteps(item.solution_steps),
     answerExpression: item.answer_expression?.trim() || undefined,
     partialCreditRules: parsePartialCreditRules(item.partial_credit_rules),
     correctAnswer: item.correct_answer,
-    stimulus: stimulus.length > 0 ? stimulus : undefined,
+    stimulus: stimulusOpt,
   };
   return mcq;
 }
@@ -363,6 +450,7 @@ export async function selectItemBankQuestions(
 
   const selected: PracticeQuestion[] = [];
   const usedItemIds = new Set<string>();
+  let constructionCount = 0;
 
   for (const nodeId of neededNodeIds) {
     const node = nodeById.get(nodeId);
@@ -373,8 +461,13 @@ export async function selectItemBankQuestions(
       ...row,
       difficultyRating: row.difficulty_rating ?? DEFAULT_CHALLENGE_DIFFICULTY,
     }));
-    const preferred = preferItemsNearChallengeDifficulty(nodePool, studentRating);
-    const pool = shuffle(preferred);
+    const preferredDifficulty = preferItemsNearChallengeDifficulty(nodePool, studentRating);
+    const preferredMix = preferConstructionMix(
+      preferredDifficulty,
+      constructionCount,
+      selected.length,
+    );
+    const pool = shuffle(preferredMix);
     const item = pool.find((row) => !usedItemIds.has(row.id));
     if (!item) continue;
 
@@ -383,6 +476,7 @@ export async function selectItemBankQuestions(
 
     usedItemIds.add(item.id);
     selected.push(question);
+    if (question.kind !== "mcq") constructionCount += 1;
     if (selected.length >= targetCount) break;
   }
 

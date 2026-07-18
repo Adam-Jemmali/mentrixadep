@@ -2,7 +2,13 @@
 
 export const FREE_RESPONSE_ROLLING_WEIGHT = 1.5;
 
-export type VfaAttemptFormat = "mcq" | "free_response" | "multi_part_part";
+export type VfaAttemptFormat =
+  | "mcq"
+  | "free_response"
+  | "multi_part_part"
+  | "complete_expression"
+  | "drag_order"
+  | "graph_feature";
 
 export function vfaAccuracyPct(input: {
   correct: boolean;
@@ -18,16 +24,24 @@ export function vfaIsCorrectFromAccuracy(accuracyPct: number): boolean {
   return accuracyPct >= 1;
 }
 
+const FR_FAMILY: ReadonlySet<VfaAttemptFormat> = new Set([
+  "free_response",
+  "multi_part_part",
+  "complete_expression",
+  "drag_order",
+  "graph_feature",
+]);
+
 export function vfaRollingPoints(accuracyPct: number, attemptFormat: VfaAttemptFormat): number {
   const base = Math.max(0, Math.min(1, accuracyPct)) * 100;
-  if (attemptFormat === "free_response" || attemptFormat === "multi_part_part") {
+  if (FR_FAMILY.has(attemptFormat)) {
     return base * FREE_RESPONSE_ROLLING_WEIGHT;
   }
   return base;
 }
 
 export function vfaRollingWeightIncrement(attemptFormat: VfaAttemptFormat): number {
-  if (attemptFormat === "free_response" || attemptFormat === "multi_part_part") {
+  if (FR_FAMILY.has(attemptFormat)) {
     return FREE_RESPONSE_ROLLING_WEIGHT;
   }
   return 1;
