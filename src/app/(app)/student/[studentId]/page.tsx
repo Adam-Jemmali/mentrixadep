@@ -4,6 +4,7 @@ import { getStudentProfile } from "@/features/student-profile/student-profile";
 import { getReferralDashboardData } from "@/features/referrals/referrals";
 import { getStudentSubscription } from "@/features/payments/student-subscription";
 import { getStudentEntitlements } from "@/features/entitlements/entitlements";
+import { loadOwnerCertification } from "@/features/certifications/load-certification";
 import { StudentProfileClient } from "./student-profile-client";
 
 interface Props {
@@ -31,6 +32,8 @@ export default async function StudentPublicProfilePage({ params }: Props) {
     data.viewer === "owner" ? await getStudentSubscription(data.studentId) : null;
   const entitlements =
     data.viewer === "owner" ? await getStudentEntitlements(data.studentId) : null;
+  const certification =
+    data.viewer === "owner" ? await loadOwnerCertification(data.studentId) : null;
 
   return (
     <StudentProfileClient
@@ -38,6 +41,7 @@ export default async function StudentPublicProfilePage({ params }: Props) {
       referral={referral}
       subscription={subscription}
       entitlements={entitlements}
+      certification={certification}
     />
   );
 }

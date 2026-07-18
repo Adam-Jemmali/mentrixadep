@@ -1,0 +1,24 @@
+# Certification revoke watch needs a daily run. Vercel Hobby keeps
+# vercel.json weekly/monthly only, so this runs via GitHub Actions.
+#
+# Required repository secret: CRON_SECRET
+# Optional variable: PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
+
+name: Cron Check Certification Revoke
+
+on:
+  schedule:
+    - cron: "30 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-certification-revoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger /api/cron/check-certification-revoke
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
+        run: bash scripts/github-cron-ping.sh /api/cron/check-certification-revoke

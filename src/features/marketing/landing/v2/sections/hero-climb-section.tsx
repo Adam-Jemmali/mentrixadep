@@ -4,10 +4,8 @@ import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { HeroHeadline } from "@/features/marketing/landing/v2/sections/hero-headline";
 import { LandingShimmerButton } from "@/features/marketing/landing/v2/motion/landing-shimmer-button";
-import { fadeUp, staggerContainer } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { HeroScrollCue } from "@/features/marketing/landing/v2/hero/hero-scroll-cue";
 import { LANDING_HERO } from "@/features/marketing/landing/landing-copy-pure";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
@@ -43,19 +41,10 @@ export function HeroClimbSection() {
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[88rem] flex-col justify-center px-4 pb-12 pt-24 sm:px-6 lg:px-10 lg:pb-16 lg:pt-28">
         <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-12 xl:gap-16">
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className={`${landingHub.notebookCard} lp-hero-notebook text-center lg:text-left`}
-          >
+          <div className={`${landingHub.notebookCard} lp-hero-notebook lp-hero-line text-center lg:text-left`}>
             <HeroHeadline className={landingHub.titleHero} />
 
-            <motion.p
-              variants={fadeUp}
-              custom={1}
-              className={`mt-4 text-center lg:text-left ${landingHub.bodySm}`}
-            >
+            <p className={`lp-hero-line lp-hero-line-delay-1 mt-4 text-center lg:text-left ${landingHub.bodySm}`}>
               {LANDING_HERO.arenaLine}{" "}
               <Link
                 href={LANDING_HERO.arenaHref}
@@ -63,37 +52,24 @@ export function HeroClimbSection() {
               >
                 {LANDING_HERO.arenaLink}
               </Link>
-            </motion.p>
+            </p>
 
-            <motion.div
-              variants={fadeUp}
-              custom={2}
-              className="mt-9 flex justify-center lg:justify-start"
-            >
+            <div className="lp-hero-line lp-hero-line-delay-2 mt-9 flex justify-center lg:justify-start">
               <LandingShimmerButton href="/try" variant="primary" className="lp-cta-pulse">
                 {LANDING_HERO.cta}
               </LandingShimmerButton>
-            </motion.div>
+            </div>
 
-            <motion.p
-              variants={fadeUp}
-              custom={3}
-              className={`mt-6 text-center lg:text-left ${landingHub.bodySm}`}
-            >
+            <p className={`lp-hero-line lp-hero-line-delay-3 mt-6 text-center lg:text-left ${landingHub.bodySm}`}>
               {LANDING_HERO.footnote}
-            </motion.p>
-          </motion.div>
+            </p>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 32 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
-            className="flex w-full items-center justify-center lg:justify-end"
-          >
+          <div className="lp-hero-stage flex w-full items-center justify-center lg:justify-end">
             <LandingStickyGameNote variant="pinned" className="rotate-[0.35deg]">
               <HeroRankStage />
             </LandingStickyGameNote>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

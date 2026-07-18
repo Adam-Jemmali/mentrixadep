@@ -9,6 +9,8 @@ import {
   type VfaAttemptFormat,
 } from "@/features/quest/vfa-free-response-pure";
 import { updateVfaStreakAfterSuccessfulInsert } from "@/features/vfa-streak/update-vfa-streak";
+import { loadVerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-rank";
+import { maybeIssueOrReinstateCertification } from "@/features/certifications/issue-certification";
 import { z } from "zod";
 
 const uuidSchema = z.string().uuid();
@@ -48,6 +50,7 @@ export async function recordVerifiedFirstAttemptForNode(
   const admin = createAdminClient();
 
   const accuracyPct = isCorrect ? 1 : 0;
+  const beforeStats = await loadVerifiedFirstAttemptRankStats(parsedUserId.data);
 
   const { error } = await admin.from("verified_first_attempts").insert({
     user_id: parsedUserId.data,
@@ -72,6 +75,15 @@ export async function recordVerifiedFirstAttemptForNode(
       isCorrect,
     });
     void updateVfaStreakAfterSuccessfulInsert(parsedUserId.data);
+    void maybeIssueOrReinstateCertification({
+      userId: parsedUserId.data,
+      previousPercentile: beforeStats.percentile,
+    }).catch((err) => {
+      console.error(
+        "[certification] after VFA",
+        err instanceof Error ? err.message : String(err),
+      );
+    });
     return { recorded: true, alreadyExists: false };
   }
 
@@ -176,6 +188,7 @@ export async function recordVerifiedFirstAttemptFromGrading(
 
   const partKey = vfaGradingKey(input.partKey);
   const admin = createAdminClient();
+  const beforeStats = await loadVerifiedFirstAttemptRankStats(parsedUserId.data);
   const accuracyPct = vfaAccuracyPct({
     correct: input.isCorrect,
     partialCreditFraction: input.partialCreditFraction,
@@ -225,6 +238,15 @@ export async function recordVerifiedFirstAttemptFromGrading(
       isCorrect,
     });
     void updateVfaStreakAfterSuccessfulInsert(parsedUserId.data);
+    void maybeIssueOrReinstateCertification({
+      userId: parsedUserId.data,
+      previousPercentile: beforeStats.percentile,
+    }).catch((err) => {
+      console.error(
+        "[certification] after grading VFA",
+        err instanceof Error ? err.message : String(err),
+      );
+    });
     return { recorded: true, alreadyExists: false };
   }
 

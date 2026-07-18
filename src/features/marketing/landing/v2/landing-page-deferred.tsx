@@ -6,6 +6,19 @@ function SectionFallback({ className = "min-h-[240px]" }: { className?: string }
   return <div className={className} aria-hidden />;
 }
 
+export const DeferredLandingScrollProgress = dynamic(
+  () =>
+    import("@/features/marketing/landing/v2/motion/landing-scroll-progress").then(
+      (m) => m.LandingScrollProgress,
+    ),
+  { ssr: false, loading: () => <div className="lp-scroll-progress" style={{ transform: "scaleX(0)" }} aria-hidden /> },
+);
+
+export const DeferredLandingStoryBridge = dynamic(
+  () => import("@/features/marketing/landing-story-bridge").then((m) => m.LandingStoryBridge),
+  { loading: () => <SectionFallback className="min-h-[22vh]" /> },
+);
+
 export const DeferredSocialProofStrip = dynamic(
   () => import("@/features/marketing/social-proof-strip").then((m) => m.SocialProofStrip),
   { loading: () => <SectionFallback className="min-h-[320px] border-y border-white/10" /> },

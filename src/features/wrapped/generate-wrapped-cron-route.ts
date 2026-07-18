@@ -7,6 +7,7 @@ async function runGenerateWrappedCron() {
     rows_scanned: result.scanned,
     rows_upserted: result.written,
     rows_skipped: result.skipped,
+    push_sent: result.pushed,
     ...result,
   };
 }

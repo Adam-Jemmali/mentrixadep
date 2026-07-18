@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { cacheKeys, redisSlidingWindowRateLimit } from "@/shared/core/redis";
+import { PERMISSIONS_POLICY } from "@/shared/core/security-headers-pure";
 
 // ============================================
 // VALIDATION SCHEMAS
@@ -633,6 +634,9 @@ export function enforceRateLimit(
 // SECURITY HEADERS
 // ============================================
 
+/**
+ * Static security headers (CSP is request-scoped via nonce — see buildContentSecurityPolicy).
+ */
 export const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
@@ -640,26 +644,8 @@ export const securityHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   // Keep popups/postMessage flows (OAuth, browser integrations) functional.
   "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
-  // Allow camera and microphone for same origin (required for video calling)
-  // identity-credentials-get: Google Identity Services / FedCM (Sign in with Google)
-  "Permissions-Policy":
-    "camera=(self), microphone=(self), geolocation=(), interest-cohort=(), payment=(), identity-credentials-get=(self)",
-  // Content Security Policy - strict but allows necessary resources
-  "Content-Security-Policy": [
-    "default-src 'self'",
-    "upgrade-insecure-requests",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://*.stripe.com",
-    "worker-src 'self' blob:",
-    "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://www.gstatic.com",
-    "img-src 'self' blob: data: https: https://*.googleusercontent.com https://*.stripe.com",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    "frame-src 'self' https://accounts.google.com https://js.stripe.com https://*.stripe.com",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://www.googleapis.com https://www.gstatic.com https://api.stripe.com https://*.stripe.com",
-    "media-src 'self' blob:",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join("; "),
+  // Camera/mic for Guide video; omit unrecognized features (securityheaders.com).
+  "Permissions-Policy": PERMISSIONS_POLICY,
   // Strict Transport Security (HSTS) - only in production
   ...(process.env.NODE_ENV === "production" && {
     "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",

@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion } from "framer-motion";
 import { HeroClimbSection } from "@/features/marketing/landing/v2/sections/hero-climb-section";
-import { LandingStoryBridge } from "@/features/marketing/landing-story-bridge";
-import { LandingScrollProgress } from "@/features/marketing/landing/v2/motion/landing-scroll-progress";
 import {
   DeferredDualPathSection,
   DeferredFeaturesBentoSection,
@@ -12,6 +9,8 @@ import {
   DeferredGuideSection,
   DeferredLandingFooterBlock,
   DeferredLandingFaqSection,
+  DeferredLandingScrollProgress,
+  DeferredLandingStoryBridge,
   DeferredOutcomesSection,
   DeferredPricingSection,
   DeferredRankLadderShowcase,
@@ -80,12 +79,12 @@ export function LandingPageClient() {
 
   return (
     <div className={landingHub.pageRoot}>
-      <LandingScrollProgress />
+      <DeferredLandingScrollProgress />
       <HeroClimbSection />
 
       <DeferredSocialProofStrip />
 
-      <LandingStoryBridge
+      <DeferredLandingStoryBridge
         chapter={LANDING_STORY_BRIDGES[0].chapter}
         title={LANDING_STORY_BRIDGES[0].title}
         subtitle={LANDING_STORY_BRIDGES[0].subtitle}
@@ -93,7 +92,7 @@ export function LandingPageClient() {
 
       <DeferredOutcomesSection />
 
-      <LandingStoryBridge
+      <DeferredLandingStoryBridge
         chapter={LANDING_STORY_BRIDGES[1].chapter}
         title={LANDING_STORY_BRIDGES[1].title}
         subtitle={LANDING_STORY_BRIDGES[1].subtitle}
@@ -105,7 +104,7 @@ export function LandingPageClient() {
 
       <DeferredWhyMentrixSection />
 
-      <LandingStoryBridge
+      <DeferredLandingStoryBridge
         chapter={LANDING_STORY_BRIDGES[2].chapter}
         title={LANDING_STORY_BRIDGES[2].title}
         subtitle={LANDING_STORY_BRIDGES[2].subtitle}
@@ -117,15 +116,9 @@ export function LandingPageClient() {
 
       <DeferredDualPathSection />
 
-      <motion.div
-        initial={{ opacity: 0, y: 48, scale: 0.96 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: true, margin: "-8%" }}
-        transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-        id="pricing"
-      >
+      <div id="pricing" className="lp-section-reveal">
         <DeferredPricingSection />
-      </motion.div>
+      </div>
 
       <DeferredLandingFaqSection />
 

@@ -43,6 +43,7 @@ import {
   formatVerifiedRankVerdict,
   loadVerifiedFirstAttemptRankStats,
 } from "@/features/xp/calibrated-rank";
+import { maybeIssueOrReinstateCertification } from "@/features/certifications/issue-certification";
 import {
   ensureVerifiedFirstAttemptsFromSession,
   recordVerifiedFirstAttemptForNode,
@@ -972,6 +973,15 @@ export async function finalizePracticeQuest(
       newVerifiedSkills = Math.max(0, verifiedAfter.verifiedCount - verifiedBefore.verifiedCount);
       rankVerdict = formatVerifiedRankVerdict(verifiedAfter) ?? undefined;
       rankNextAction = formatVerifiedRankNextAction(verifiedAfter);
+      void maybeIssueOrReinstateCertification({
+        userId: user.id,
+        previousPercentile: verifiedBefore.percentile,
+      }).catch((err) => {
+        console.error(
+          "[certification] maybeIssue",
+          err instanceof Error ? err.message : String(err),
+        );
+      });
     }
 
     let xpAwarded = 0;

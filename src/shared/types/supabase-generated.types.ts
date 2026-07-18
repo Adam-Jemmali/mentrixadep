@@ -1678,6 +1678,59 @@ export type Database = {
           },
         ]
       }
+      mentrixa_certifications: {
+        Row: {
+          accuracy_overall: number
+          below_threshold_since: string | null
+          id: string
+          issued_at: string
+          nodes_verified: number
+          revoke_reason: string | null
+          revoked_at: string | null
+          subject: string
+          total_nodes: number
+          user_id: string
+          verification_token: string
+          verified_percentile: number
+        }
+        Insert: {
+          accuracy_overall: number
+          below_threshold_since?: string | null
+          id?: string
+          issued_at?: string
+          nodes_verified: number
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          subject: string
+          total_nodes: number
+          user_id: string
+          verification_token?: string
+          verified_percentile: number
+        }
+        Update: {
+          accuracy_overall?: number
+          below_threshold_since?: string | null
+          id?: string
+          issued_at?: string
+          nodes_verified?: number
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          subject?: string
+          total_nodes?: number
+          user_id?: string
+          verification_token?: string
+          verified_percentile?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentrixa_certifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       momentum_pack_credits: {
         Row: {
           created_at: string
@@ -4452,7 +4505,7 @@ export type Database = {
         Row: {
           generated_at: string
           id: string
-          image_url: string | null
+          image_url: Json | null
           report_data: Json
           report_year: number
           role: string
@@ -4462,7 +4515,7 @@ export type Database = {
         Insert: {
           generated_at?: string
           id?: string
-          image_url?: string | null
+          image_url?: Json | null
           report_data: Json
           report_year: number
           role: string
@@ -4472,7 +4525,7 @@ export type Database = {
         Update: {
           generated_at?: string
           id?: string
-          image_url?: string | null
+          image_url?: Json | null
           report_data?: Json
           report_year?: number
           role?: string

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Playfair+Display:wght@700&display=swap");
+/* Caveat / Playfair load via next/font in app/layout.tsx — no blocking Google CSS @import. */
 
 /* Mobile-optimized navbar - disable expensive effects on small screens */
 @media (max-width: 768px) {
@@ -343,7 +343,7 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .mx-hub-paper {
-  font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
+  font-family: var(--font-caveat), "Caveat", "Segoe Print", "Comic Sans MS", cursive;
   font-size: 1.2rem;
   line-height: 1.35;
   color: #0b1220;
@@ -357,7 +357,7 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .mx-hub-paper :where([class*="font-mono"]) {
-  font-family: "Caveat", cursive;
+  font-family: var(--font-caveat), "Caveat", cursive;
   font-weight: 700;
 }
 
@@ -780,7 +780,7 @@ html:has(.mentrix-student-type-scope) body {
 
 .mx-hub-paper-table th,
 .mx-hub-paper-table td {
-  font-family: "Caveat", "Segoe Print", cursive;
+  font-family: var(--font-caveat), "Caveat", "Segoe Print", cursive;
   font-size: 1.1rem;
 }
 
@@ -790,7 +790,7 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .mx-hub-tab-trigger {
-  font-family: "Caveat", cursive;
+  font-family: var(--font-caveat), "Caveat", cursive;
   font-size: 1.1rem;
   font-weight: 700;
   color: #4f46e5;
@@ -821,7 +821,7 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .mx-hub-btn-hand {
-  font-family: "Caveat", cursive;
+  font-family: var(--font-caveat), "Caveat", cursive;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1388,7 +1388,7 @@ html[data-mentrixa-perf="lite"] .page-fade {
 }
 
 .lp-hand-title {
-  font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive !important;
+  font-family: var(--font-caveat), "Caveat", "Segoe Print", "Comic Sans MS", cursive !important;
   font-weight: 700 !important;
   letter-spacing: 0.01em !important;
   text-transform: none !important;
@@ -1401,7 +1401,7 @@ html[data-mentrixa-perf="lite"] .page-fade {
 }
 
 .lp-sticky-word {
-  font-family: "Caveat", "Segoe Print", cursive !important;
+  font-family: var(--font-caveat), "Caveat", "Segoe Print", cursive !important;
   font-size: 1.5rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.04em !important;
@@ -1413,7 +1413,7 @@ html[data-mentrixa-perf="lite"] .page-fade {
 /* Handwriting reserved for explicit title classes — student product + landing. */
 .mx-hand-title,
 .lp-hand-title {
-  font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive !important;
+  font-family: var(--font-caveat), "Caveat", "Segoe Print", "Comic Sans MS", cursive !important;
   font-weight: 700 !important;
   letter-spacing: 0.01em !important;
   text-transform: none !important;
@@ -1722,6 +1722,66 @@ main:has(.lp-root) > div {
 }
 .lp-cta-pulse {
   animation: lpPulseRing 2.8s ease-in-out infinite;
+}
+
+@keyframes lpHeroStageIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.lp-hero-stage {
+  animation: lpHeroStageIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+
+@keyframes lpScrollCueBob {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 6px);
+  }
+}
+.lp-scroll-cue {
+  animation: lpScrollCueBob 2.2s ease-in-out infinite;
+}
+
+@keyframes lpShimmerSheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+.lp-shimmer-btn__sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: lpShimmerSheen 2.8s ease-in-out 1.2s infinite;
+}
+
+.lp-section-reveal {
+  content-visibility: auto;
+  contain-intrinsic-size: 520px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-stage,
+  .lp-scroll-cue,
+  .lp-shimmer-btn__sheen::before {
+    animation: none !important;
+  }
+  .lp-hero-stage {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Low-end + mobile: disable expensive backdrop blur and extra effects on landing */

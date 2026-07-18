@@ -72,7 +72,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(self), microphone=(self), geolocation=(), interest-cohort=(), payment=(), identity-credentials-get=(self)"
+          "value": "camera=(self), microphone=(self), geolocation=(), interest-cohort=(), payment=()"
         }
       ]
     }

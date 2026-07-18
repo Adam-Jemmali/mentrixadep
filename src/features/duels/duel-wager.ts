@@ -11,6 +11,7 @@ import {
   isValidDuelWagerAmount,
   maxAffordableDuelWagerXp,
   maxDuelWagerXp,
+  DUEL_WAGER_CAP_FRACTION,
 } from "@/features/duels/duel-wager-pure";
 import { z } from "zod";
 
@@ -90,6 +91,15 @@ export async function loadDuelXpWager(duelId: string): Promise<DuelXpWagerRow | 
 const proposeSchema = z.object({
   duelId: z.string().uuid(),
   amount: z.number().int().positive(),
+  totalXp: z.number().int().nonnegative(),
+}).superRefine((val, ctx) => {
+  if (!isValidDuelWagerAmount(val.amount, val.totalXp)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["amount"],
+      message: `Stake exceeds the ${Math.round(DUEL_WAGER_CAP_FRACTION * 100)}% XP cap.`,
+    });
+  }
 });
 
 /** Challenger optional stake. Amount must pass server cap + floor. */
@@ -98,12 +108,23 @@ export async function proposeDuelXpWager(
   amount: number,
 ): Promise<{ success: true } | { success: false; error: string }> {
   const user = await requireRole(["student", "admin"]);
-  const parsed = proposeSchema.safeParse({ duelId, amount });
-  if (!parsed.success) return { success: false, error: "Invalid stake." };
-
   enforceRateLimit(getRateLimitId(user.id), RATE_LIMITS.duelCreate, "propose wager");
 
   const admin = createAdminClient();
+  const totalXp = await loadTotalXp(admin, user.id);
+  const parsed = proposeSchema.safeParse({ duelId, amount, totalXp });
+  if (!parsed.success) {
+    const zodCap = parsed.error.issues.some((i) =>
+      String(i.message).toLowerCase().includes("cap"),
+    );
+    return {
+      success: false,
+      error: zodCap
+        ? `Stake exceeds the ${Math.round(DUEL_WAGER_CAP_FRACTION * 100)}% XP cap.`
+        : "Invalid stake.",
+    };
+  }
+
   const { data: duel } = await admin
     .from("skill_duels")
     .select("id, student_id, opponent_student_id, status, is_ai_opponent")
@@ -121,14 +142,6 @@ export async function proposeDuelXpWager(
   }
   if (!duel.opponent_student_id) {
     return { success: false, error: "Opponent required." };
-  }
-
-  const totalXp = await loadTotalXp(admin, user.id);
-  if (!isValidDuelWagerAmount(parsed.data.amount, totalXp)) {
-    return {
-      success: false,
-      error: `Stake must be 1–${maxAffordableDuelWagerXp(totalXp)} XP.`,
-    };
   }
 
   const { error } = await admin.from("duel_xp_wagers").insert({

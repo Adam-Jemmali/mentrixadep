@@ -96,3 +96,17 @@ jobs:
         run: k6 run load-tests/smoke.js
         env:
           BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL || 'https://mentrixa.one' }}
+
+      # Smoke profile only — full 200 VU / 5m would thrash Vercel Hobby + GA minutes.
+      - name: k6 arena board (smoke)
+        run: k6 run -e PROFILE=smoke load-tests/arena-board.js
+        env:
+          BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL || 'https://mentrixa.one' }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: k6 symbolic grader (smoke)
+        run: k6 run -e PROFILE=smoke load-tests/symbolic-grader.js
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

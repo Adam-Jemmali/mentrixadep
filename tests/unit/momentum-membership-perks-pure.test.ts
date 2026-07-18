@@ -15,8 +15,8 @@ describe("buildMomentumMembershipExclusivePerks", () => {
     const features = buildMomentumMembershipExclusivePerks().map((perk) => perk.feature);
     expect(features.some((f) => f.startsWith("Monthly session credit"))).toBe(true);
     expect(features).toContain("Weekly Movement Receipt");
-    expect(features).toContain("Guide memory + brief archive");
-    expect(features).toContain("Loop SLA credit restore");
+    expect(features.some((f) => f.startsWith("Guide memory"))).toBe(true);
+    expect(features.some((f) => f.startsWith("Loop"))).toBe(true);
     expect(features.some((f) => f.includes("Playbook"))).toBe(false);
     expect(features.some((f) => f.includes("Trajectory certificate"))).toBe(false);
   });

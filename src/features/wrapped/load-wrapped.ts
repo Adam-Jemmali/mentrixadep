@@ -1,5 +1,8 @@
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
-import type { WrappedReportData } from "@/features/wrapped/wrapped-pure";
+import {
+  parseWrappedImageUrls,
+  type WrappedReportData,
+} from "@/features/wrapped/wrapped-pure";
 
 export type WrappedReportRow = {
   id: string;
@@ -9,10 +12,14 @@ export type WrappedReportRow = {
   reportData: WrappedReportData;
   shareToken: string;
   generatedAt: string;
-  imageUrl: string | null;
+  imageUrls: string[];
+  rankUsername: string | null;
 };
 
-function mapRow(row: Record<string, unknown>): WrappedReportRow | null {
+function mapRow(
+  row: Record<string, unknown>,
+  rankUsername: string | null = null,
+): WrappedReportRow | null {
   const role = row.role === "tutor" ? "tutor" : row.role === "student" ? "student" : null;
   if (!role) return null;
   const reportData = row.report_data as WrappedReportData | null;
@@ -25,8 +32,20 @@ function mapRow(row: Record<string, unknown>): WrappedReportRow | null {
     reportData,
     shareToken: String(row.share_token),
     generatedAt: String(row.generated_at),
-    imageUrl: typeof row.image_url === "string" ? row.image_url : null,
+    imageUrls: parseWrappedImageUrls(row.image_url),
+    rankUsername,
   };
+}
+
+async function loadRankUsername(userId: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("user_settings")
+    .select("rank_card_username")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const username = data?.rank_card_username;
+  return typeof username === "string" && username.trim() ? username.trim() : null;
 }
 
 export async function loadWrappedForOwner(
@@ -41,7 +60,8 @@ export async function loadWrappedForOwner(
     .eq("report_year", reportYear)
     .maybeSingle();
   if (!data) return null;
-  return mapRow(data as Record<string, unknown>);
+  const username = await loadRankUsername(userId);
+  return mapRow(data as Record<string, unknown>, username);
 }
 
 export async function loadWrappedByShareToken(
@@ -56,5 +76,6 @@ export async function loadWrappedByShareToken(
     .eq("share_token", token)
     .maybeSingle();
   if (!data) return null;
-  return mapRow(data as Record<string, unknown>);
+  const username = await loadRankUsername(String(data.user_id));
+  return mapRow(data as Record<string, unknown>, username);
 }

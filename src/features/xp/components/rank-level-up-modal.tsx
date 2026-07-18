@@ -106,7 +106,7 @@ export function RankLevelUpModal({
           />
           <h2
             id="rank-level-up-title"
-            className="mt-8 font-[family-name:var(--font-playfair,'Playfair_Display',serif)] text-[32px] font-bold leading-tight text-white"
+            className="mt-8 font-[family-name:var(--font-playfair),serif] text-[32px] font-bold leading-tight text-white"
           >
             {displayHeadline}
           </h2>

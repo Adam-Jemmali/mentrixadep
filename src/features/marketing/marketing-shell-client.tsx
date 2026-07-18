@@ -2,10 +2,14 @@
 
 import { useLayoutEffect, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 
 const MentrixaCursor = dynamic(
   () => import("@/shared/ui/tech-cursor").then((m) => m.MentrixaCursor),
+  { ssr: false, loading: () => null },
+);
+
+const CookieConsentBanner = dynamic(
+  () => import("@/components/cookie-consent-banner").then((m) => m.CookieConsentBanner),
   { ssr: false, loading: () => null },
 );
 

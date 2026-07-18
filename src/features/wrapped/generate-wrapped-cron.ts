@@ -6,16 +6,21 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import {
   buildGuideWrappedData,
   buildStudentWrappedData,
+  buildWrappedSlideUrls,
+  formatWrappedDateLabel,
   hasEnoughActivityDays,
   pickBestMonth,
   pickBestSessionDelta,
   pickBreakthroughNode,
   pickHardestNode,
   pickHighestImpactNode,
+  wrappedReadyPushCopy,
   xpAtYearStart,
   yearWindowUtc,
   type WrappedReportData,
 } from "@/features/wrapped/wrapped-pure";
+import { getSiteUrl } from "@/shared/core/site";
+import { sendWebPushToUser } from "@/shared/integrations/web-push/send-web-push";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -171,16 +176,44 @@ async function buildStudentReport(
       if (!lateAcc.has(id)) lateAcc.set(id, Number(acc));
     }
   }
-  const breakthroughRows: Array<{ nodeName: string; deltaPoints: number }> = [];
+  const breakthroughRows: Array<{
+    nodeName: string;
+    deltaPoints: number;
+    beforePct: number;
+    afterPct: number;
+    dateLabel: string | null;
+  }> = [];
   for (const [id, late] of lateAcc) {
     const early = earlyAcc.get(id);
     if (early == null) continue;
     breakthroughRows.push({
       nodeName: nameById.get(id) ?? "Node",
       deltaPoints: late - early,
+      beforePct: Math.round(early),
+      afterPct: Math.round(late),
+      dateLabel: null,
     });
   }
-  const breakthrough = pickBreakthroughNode(breakthroughRows);
+  let breakthrough = pickBreakthroughNode(breakthroughRows);
+
+  // Prefer a dated before/after share for the breakthrough node when present.
+  if (breakthrough) {
+    const match = (shareRows.data ?? []).find(
+      (row) => String(row.node_name ?? "") === breakthrough!.nodeName,
+    );
+    if (match?.created_at) {
+      breakthrough = {
+        ...breakthrough,
+        beforePct: Number.isFinite(Number(match.before_value))
+          ? Math.round(Number(match.before_value))
+          : breakthrough.beforePct,
+        afterPct: Number.isFinite(Number(match.after_value))
+          ? Math.round(Number(match.after_value))
+          : breakthrough.afterPct,
+        dateLabel: formatWrappedDateLabel(String(match.created_at)),
+      };
+    }
+  }
 
   const bestMonth = pickBestMonth(
     (vfaRows.data ?? [])
@@ -290,26 +323,48 @@ async function upsertWrapped(
   reportYear: number,
   role: "student" | "tutor",
   reportData: WrappedReportData,
-): Promise<void> {
-  const { error } = await admin.from("wrapped_reports").upsert(
-    {
-      user_id: userId,
-      report_year: reportYear,
-      role,
-      report_data: reportData,
-      generated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,report_year" },
-  );
+): Promise<string | null> {
+  const { data, error } = await admin
+    .from("wrapped_reports")
+    .upsert(
+      {
+        user_id: userId,
+        report_year: reportYear,
+        role,
+        report_data: reportData,
+        generated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,report_year" },
+    )
+    .select("share_token")
+    .maybeSingle();
+
   if (error) {
     console.error("[generate-wrapped] upsert", userId, error.message);
+    return null;
   }
+
+  const shareToken = typeof data?.share_token === "string" ? data.share_token : null;
+  if (!shareToken) return null;
+
+  const imageUrls = buildWrappedSlideUrls(getSiteUrl(), shareToken);
+  const { error: imageError } = await admin
+    .from("wrapped_reports")
+    .update({ image_url: imageUrls })
+    .eq("user_id", userId)
+    .eq("report_year", reportYear);
+
+  if (imageError) {
+    console.error("[generate-wrapped] image_url", userId, imageError.message);
+  }
+
+  return shareToken;
 }
 
 export async function runGenerateWrapped(params?: {
   reportYear?: number;
   now?: Date;
-}): Promise<{ scanned: number; written: number; skipped: number }> {
+}): Promise<{ scanned: number; written: number; skipped: number; pushed: number }> {
   const now = params?.now ?? new Date();
   const reportYear = params?.reportYear ?? now.getUTCFullYear();
   const { startIso, endIso } = yearWindowUtc(reportYear);
@@ -323,12 +378,15 @@ export async function runGenerateWrapped(params?: {
 
   if (error) {
     console.error("[generate-wrapped]", error.message);
-    return { scanned: 0, written: 0, skipped: 0 };
+    return { scanned: 0, written: 0, skipped: 0, pushed: 0 };
   }
 
   let written = 0;
   let skipped = 0;
+  let pushed = 0;
   const rows = users ?? [];
+  const site = getSiteUrl().replace(/\/$/, "");
+  const pushCopy = wrappedReadyPushCopy(reportYear);
 
   for (const user of rows) {
     const userId = String(user.id);
@@ -349,9 +407,20 @@ export async function runGenerateWrapped(params?: {
       continue;
     }
 
-    await upsertWrapped(admin, userId, reportYear, role, report);
+    const shareToken = await upsertWrapped(admin, userId, reportYear, role, report);
+    if (!shareToken) {
+      skipped += 1;
+      continue;
+    }
     written += 1;
+
+    const pushResult = await sendWebPushToUser(userId, {
+      title: pushCopy.title,
+      body: pushCopy.body,
+      url: `${site}/wrapped/${encodeURIComponent(shareToken)}`,
+    });
+    if (pushResult.sent > 0) pushed += 1;
   }
 
-  return { scanned: rows.length, written, skipped };
+  return { scanned: rows.length, written, skipped, pushed };
 }

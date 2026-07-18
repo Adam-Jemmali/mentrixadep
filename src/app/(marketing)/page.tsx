@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   },
 };
 
+/** SSR hero + nav immediately — no dynamic() loading shell (that caused first-paint lag). */
 export default async function Home() {
   return (
     <>

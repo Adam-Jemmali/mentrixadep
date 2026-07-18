@@ -52,6 +52,8 @@ import {
 import { MomentumMembershipPanel } from "@/features/student-profile/ui/momentum-membership-panel";
 import type { StudentSubscriptionRow } from "@/features/payments/student-subscription";
 import type { StudentEntitlements } from "@/features/entitlements/entitlements";
+import { CertificationSettingsPanel } from "@/features/certifications/ui/certification-settings-panel";
+import type { MentrixaCertificationView } from "@/features/certifications/load-certification";
 
 // ─── Shared Battle UI Components ─────────────────────────────────────────────
 
@@ -432,11 +434,13 @@ export function StudentProfileClient({
   referral,
   subscription = null,
   entitlements = null,
+  certification = null,
 }: {
   data: StudentProfileData;
   referral?: ReferralDashboardData | null;
   subscription?: StudentSubscriptionRow | null;
   entitlements?: StudentEntitlements | null;
+  certification?: MentrixaCertificationView | null;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -749,6 +753,7 @@ export function StudentProfileClient({
                           }}
                         />
                       ) : null}
+                      <CertificationSettingsPanel cert={certification} />
                       <AccountSecurityPanel />
                     </div>
                   ),

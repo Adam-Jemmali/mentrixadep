@@ -2,10 +2,18 @@ import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
 
 export const WRAPPED_MIN_ACTIVITY_DAYS = 30;
 
+export type WrappedBreakthroughNode = {
+  nodeName: string;
+  deltaPoints: number;
+  beforePct: number;
+  afterPct: number;
+  dateLabel: string | null;
+};
+
 export type StudentWrappedData = {
   kind: "student";
   hardest_node: { nodeName: string; attempts: number } | null;
-  breakthrough_node: { nodeName: string; deltaPoints: number } | null;
+  breakthrough_node: WrappedBreakthroughNode | null;
   best_month: { month: number; vfaCount: number } | null;
   rank_start: string;
   rank_end: string;
@@ -62,7 +70,13 @@ export function pickHardestNode(
 }
 
 export function pickBreakthroughNode(
-  rows: Array<{ nodeName: string; deltaPoints: number }>,
+  rows: Array<{
+    nodeName: string;
+    deltaPoints: number;
+    beforePct?: number;
+    afterPct?: number;
+    dateLabel?: string | null;
+  }>,
 ): StudentWrappedData["breakthrough_node"] {
   const positive = rows.filter((r) => r.deltaPoints > 0);
   if (positive.length === 0) return null;
@@ -71,7 +85,18 @@ export function pickBreakthroughNode(
     return a.nodeName.localeCompare(b.nodeName);
   });
   const top = sorted[0]!;
-  return { nodeName: top.nodeName, deltaPoints: Math.round(top.deltaPoints) };
+  const beforePct = Math.max(0, Math.round(top.beforePct ?? 0));
+  const afterPct = Math.max(
+    beforePct,
+    Math.round(top.afterPct ?? beforePct + top.deltaPoints),
+  );
+  return {
+    nodeName: top.nodeName,
+    deltaPoints: Math.round(top.deltaPoints),
+    beforePct,
+    afterPct,
+    dateLabel: top.dateLabel?.trim() || null,
+  };
 }
 
 export function pickBestMonth(
@@ -97,7 +122,9 @@ export function pickBestMonth(
 export function pickBestSessionDelta(
   rows: Array<{ nodeName: string; deltaPoints: number }>,
 ): StudentWrappedData["best_session_delta"] {
-  return pickBreakthroughNode(rows);
+  const node = pickBreakthroughNode(rows);
+  if (!node) return null;
+  return { nodeName: node.nodeName, deltaPoints: node.deltaPoints };
 }
 
 export function buildStudentWrappedData(input: {
@@ -212,7 +239,7 @@ export function studentWrappedStatLines(data: StudentWrappedData): WrappedStatLi
     lines.push({
       icon: "breakthrough",
       label: "Breakthrough",
-      value: `${data.breakthrough_node.nodeName} · +${data.breakthrough_node.deltaPoints}`,
+      value: `${data.breakthrough_node.nodeName} · ${data.breakthrough_node.beforePct}% → ${data.breakthrough_node.afterPct}%`,
     });
   }
   if (data.best_month) {
@@ -268,4 +295,184 @@ export function wrappedHeadline(role: "student" | "tutor", year: number): string
 
 export function wrappedSharePath(shareToken: string): string {
   return `/wrapped/${encodeURIComponent(shareToken)}`;
+}
+
+export const WRAPPED_SLIDE_COUNT = 5;
+
+export type WrappedSlideIndex = 1 | 2 | 3 | 4 | 5;
+
+export function parseWrappedSlideIndex(raw: string | null): WrappedSlideIndex | null {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1 || n > WRAPPED_SLIDE_COUNT) return null;
+  return n as WrappedSlideIndex;
+}
+
+export function buildWrappedSlideUrls(siteOrigin: string, shareToken: string): string[] {
+  const base = siteOrigin.replace(/\/$/, "");
+  const token = encodeURIComponent(shareToken);
+  return Array.from({ length: WRAPPED_SLIDE_COUNT }, (_, i) => {
+    const slide = i + 1;
+    return `${base}/api/og/wrapped?token=${token}&slide=${slide}`;
+  });
+}
+
+export function parseWrappedImageUrls(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+  }
+  if (typeof raw === "string" && raw.trim()) {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        return parseWrappedImageUrls(parsed);
+      } catch {
+        return [trimmed];
+      }
+    }
+    return [trimmed];
+  }
+  return [];
+}
+
+export type WrappedSlideCopy = {
+  slide: WrappedSlideIndex;
+  eyebrow: string;
+  eyebrowIcon: string;
+  title: string;
+  body: string;
+  footer: string | null;
+};
+
+export function formatWrappedDateLabel(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(d);
+}
+
+export function buildWrappedSlideCopy(input: {
+  reportYear: number;
+  data: WrappedReportData;
+  rankUsername: string | null;
+}): WrappedSlideCopy[] {
+  const nextYear = input.reportYear + 1;
+  const rankPath = input.rankUsername
+    ? `mentrixa.one/rank/${input.rankUsername}`
+    : "mentrixa.one";
+
+  if (input.data.kind === "guide") {
+    const impact = input.data.highest_impact_node;
+    const earnings = `$${Math.round(input.data.total_earnings_cents / 100)}`;
+    return [
+      {
+        slide: 1,
+        eyebrowIcon: "passport",
+        eyebrow: "Wrapped",
+        title: `This year on Mentrixa ${input.reportYear}`,
+        body: "Guide impact. Locked in.",
+        footer: null,
+      },
+      {
+        slide: 2,
+        eyebrowIcon: "session",
+        eyebrow: "Students",
+        title: `${input.data.students_helped} Mentrixers helped`,
+        body: "First-attempt movement only.",
+        footer: null,
+      },
+      {
+        slide: 3,
+        eyebrowIcon: "breakthrough",
+        eyebrow: "Breakthrough",
+        title: impact
+          ? `${impact.nodeName}: +${impact.avgDelta}`
+          : "Breakthroughs stacked",
+        body: `${input.data.total_breakthroughs} breakthroughs this year.`,
+        footer: null,
+      },
+      {
+        slide: 4,
+        eyebrowIcon: "impact-score",
+        eyebrow: "Impact",
+        title: earnings,
+        body: "Earnings from proven lift.",
+        footer: null,
+      },
+      {
+        slide: 5,
+        eyebrowIcon: "rank-proof",
+        eyebrow: "Next year",
+        title: `See you in ${nextYear}`,
+        body: "Your impact is waiting.",
+        footer: rankPath,
+      },
+    ];
+  }
+
+  const hardest = input.data.hardest_node;
+  const breakthrough = input.data.breakthrough_node;
+
+  return [
+    {
+      slide: 1,
+      eyebrowIcon: "passport",
+      eyebrow: "Wrapped",
+      title: `This year on Mentrixa ${input.reportYear}`,
+      body: "Verified first attempts only.",
+      footer: null,
+    },
+    {
+      slide: 2,
+      eyebrowIcon: "focus-ring",
+      eyebrow: "Hardest",
+      title: hardest
+        ? `${hardest.nodeName} took ${hardest.attempts} attempts.`
+        : "You kept showing up",
+      body: hardest
+        ? "Most Mentrixers give up on this one."
+        : "Every node you cracked counted.",
+      footer: null,
+    },
+    {
+      slide: 3,
+      eyebrowIcon: "breakthrough",
+      eyebrow: "Breakthrough",
+      title: breakthrough
+        ? `${breakthrough.nodeName}: ${breakthrough.beforePct}% to ${breakthrough.afterPct}%`
+        : "A real jump this year",
+      body: breakthrough?.dateLabel
+        ? `${breakthrough.dateLabel}. This is what it looks like to get it.`
+        : "This is what it looks like to get it.",
+      footer: null,
+    },
+    {
+      slide: 4,
+      eyebrowIcon: "verified",
+      eyebrow: "Rank",
+      title: `${input.data.rank_start} in January to ${input.data.rank_end} today.`,
+      body: `${input.data.total_nodes_verified} skills proven. No retakes.`,
+      footer: null,
+    },
+    {
+      slide: 5,
+      eyebrowIcon: "rank-proof",
+      eyebrow: "Next year",
+      title: `See you in ${nextYear}`,
+      body: "Your rank is waiting.",
+      footer: rankPath,
+    },
+  ];
+}
+
+export function wrappedReadyPushCopy(reportYear: number): { title: string; body: string } {
+  return {
+    title: `Your ${reportYear} Wrapped is ready`,
+    body: "Five slides. Your year. Locked.",
+  };
 }

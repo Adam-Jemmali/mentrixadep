@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
-import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 type Props = {
@@ -21,43 +19,28 @@ const variants = {
     "border border-[#A5B4FC] bg-white text-[#4F46E5] shadow-[2px_3px_0_rgba(11,18,32,0.08)] hover:border-[#6366F1] hover:bg-[#EDE9FE]",
 };
 
+/** CSS-only CTA — keeps framer-motion off the hero critical path. */
 export function LandingShimmerButton({
   href,
   children,
   variant = "primary",
   className,
 }: Props) {
-  const { cinematic, hoverLift } = useLandingMotion();
-
   return (
-    <motion.div
-      className="relative inline-flex w-full sm:w-auto"
-      whileHover={cinematic ? { y: hoverLift, scale: 1.02 } : undefined}
-      whileTap={cinematic ? { scale: 0.98 } : undefined}
-      transition={{ type: "spring", stiffness: 400, damping: 22 }}
-    >
-      {cinematic && variant === "primary" ? (
-        <motion.span
-          aria-hidden
-          className="pointer-events-none absolute -inset-px overflow-hidden rounded-xl"
-        >
-          <motion.span
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent"
-            animate={{ x: ["-120%", "220%"] }}
-            transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }}
-          />
-        </motion.span>
+    <div className="lp-shimmer-btn relative inline-flex w-full sm:w-auto">
+      {variant === "primary" ? (
+        <span aria-hidden className="lp-shimmer-btn__sheen pointer-events-none absolute -inset-px overflow-hidden rounded-xl" />
       ) : null}
       <Link
         href={href}
         className={cn(
-          "relative inline-flex w-full items-center justify-center gap-2 rounded-xl px-7 py-4 text-sm font-bold tracking-tight transition-colors sm:w-auto",
+          "relative inline-flex w-full items-center justify-center gap-2 rounded-xl px-7 py-4 text-sm font-bold tracking-tight transition-[transform,colors] duration-200 will-change-transform hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] sm:w-auto",
           variants[variant],
           className,
         )}
       >
         {children}
       </Link>
-    </motion.div>
+    </div>
   );
 }

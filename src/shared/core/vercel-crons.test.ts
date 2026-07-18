@@ -144,6 +144,16 @@ describe("vercel cron config", () => {
     expect(decay, "check-mastery-decay must run via GitHub Actions, not vercel.json").toBeUndefined();
   });
 
+  it("does not schedule check-certification-revoke on Vercel (GitHub Actions daily)", () => {
+    const cfg = readVercelConfig();
+    const crons = cfg.crons ?? [];
+    const cert = crons.find((c) => c.path === "/api/cron/check-certification-revoke");
+    expect(
+      cert,
+      "check-certification-revoke must run via GitHub Actions, not vercel.json",
+    ).toBeUndefined();
+  });
+
   it("schedules generate-wrapped once yearly on Dec 15 UTC", () => {
     const cfg = readVercelConfig();
     const cron = (cfg.crons ?? []).find((c) => c.path === "/api/cron/generate-wrapped");
@@ -180,6 +190,19 @@ describe("github background job cron", () => {
     const script = readFileSync(pingScript, "utf8");
     expect(raw).toMatch(/cron:\s*["']0 7 \* \* \*["']/);
     expect(raw).toContain("github-cron-ping.sh /api/cron/check-mastery-decay");
+    expect(script).toContain("openssl dgst -sha256 -hmac");
+  });
+
+  it("runs check-certification-revoke daily via shared ping script", () => {
+    const workflowPath = join(
+      process.cwd(),
+      ".github/workflows/cron-check-certification-revoke.yml",
+    );
+    const pingScript = join(process.cwd(), "scripts/github-cron-ping.sh");
+    const raw = readFileSync(workflowPath, "utf8");
+    const script = readFileSync(pingScript, "utf8");
+    expect(raw).toMatch(/cron:\s*["']30 7 \* \* \*["']/);
+    expect(raw).toContain("github-cron-ping.sh /api/cron/check-certification-revoke");
     expect(script).toContain("openssl dgst -sha256 -hmac");
   });
 });

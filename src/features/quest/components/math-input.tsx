@@ -106,7 +106,7 @@ export function MathInput({
     if (!katex) return;
     const timer = window.setTimeout(() => {
       setPreview(renderPreview(latex, katex));
-    }, 120);
+    }, 80);
     return () => window.clearTimeout(timer);
   }, [katex, latex]);
 

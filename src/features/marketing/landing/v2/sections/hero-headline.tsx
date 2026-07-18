@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
-import { HeroHeadlineAnimated } from "@/features/marketing/landing/v2/sections/hero-headline-animated";
 import { LANDING_HERO } from "@/features/marketing/landing/landing-copy-pure";
 
 type Props = {
@@ -21,14 +21,38 @@ function HeroHeadlineStatic({ className }: Props) {
   );
 }
 
+const HeroHeadlineAnimated = dynamic(
+  () =>
+    import("@/features/marketing/landing/v2/sections/hero-headline-animated").then(
+      (m) => m.HeroHeadlineAnimated,
+    ),
+  { ssr: false },
+);
+
 export function HeroHeadline({ className }: Props) {
   const reducedMotion = usePrefersReducedMotion();
   const [animReady, setAnimReady] = useState(false);
 
   useEffect(() => {
-    if (reducedMotion !== true) {
-      setAnimReady(true);
+    if (reducedMotion) return;
+    let cancelled = false;
+    const enable = () => {
+      if (!cancelled) setAnimReady(true);
+    };
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(enable, { timeout: 1200 });
+    } else {
+      timeoutId = setTimeout(enable, 200);
     }
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
   }, [reducedMotion]);
 
   if (!animReady) {

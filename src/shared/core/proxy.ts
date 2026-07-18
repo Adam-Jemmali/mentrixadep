@@ -11,6 +11,11 @@ import {
   redactUserIdForLogs,
   scrubLogValue,
 } from "@/shared/core/security";
+import {
+  buildContentSecurityPolicy,
+  createCspNonce,
+  isPublicCorsFeedPath,
+} from "@/shared/core/security-headers-pure";
 import { reportMiddlewareHttpError } from "@/shared/integrations/observability";
 import { getRoleHomePath } from "@/shared/core/role-home";
 import { REFERRAL_COOKIE_NAME, REFERRAL_COOKIE_MAX_AGE_SEC } from "@/features/referrals/referral-constants";
@@ -83,6 +88,7 @@ const publicPrefixes = [
   "/tutor/",
   "/rank/",
   "/wrapped/",
+  "/verify/",
   "/breakthrough/",
   "/share/",
   "/widget/",
@@ -197,9 +203,8 @@ function isCronApiPath(pathname: string): boolean {
   return pathname.startsWith("/api/cron/");
 }
 
-function applySecurityHeaders(res: NextResponse, pathname?: string): NextResponse {
-  const isDev = process.env.NODE_ENV === "development";
-  /** Email clients / in-app browsers load links in iframes; skip DENY + relax CSP frame-ancestors (avoids ERR_BLOCKED_BY_RESPONSE). */
+function allowFramedPath(pathname?: string): boolean {
+  if (!pathname) return false;
   const allowFramedAuthEntryPaths =
     pathname === "/auth/activate" ||
     pathname === "/auth/callback" ||
@@ -207,9 +212,17 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
     pathname === "/auth/signup" ||
     pathname === "/auth/session-sync";
   const allowFramedWidgetPaths =
-    pathname != null &&
-    (pathname === "/widget/arena" || pathname.startsWith("/widget/"));
-  const allowFramed = allowFramedAuthEntryPaths || allowFramedWidgetPaths;
+    pathname === "/widget/arena" || pathname.startsWith("/widget/");
+  return allowFramedAuthEntryPaths || allowFramedWidgetPaths;
+}
+
+function applySecurityHeaders(
+  res: NextResponse,
+  pathname: string | undefined,
+  nonce: string,
+): NextResponse {
+  const isDev = process.env.NODE_ENV === "development";
+  const allowFramed = allowFramedPath(pathname);
   /**
    * Google Identity Services (FedCM / Sign in with Google) uses cross-origin messaging.
    * Sending COOP on auth routes has triggered postMessage failures in Chrome alongside GIS.
@@ -224,26 +237,58 @@ function applySecurityHeaders(res: NextResponse, pathname?: string): NextRespons
       return;
     }
     if (allowFramed && key === "X-Frame-Options") return;
-    if (isDev && key === "Content-Security-Policy") return;
-
-    if (allowFramed && key === "Content-Security-Policy") {
-      res.headers.set(
-        key,
-        value.replace("frame-ancestors 'none'", "frame-ancestors *"),
-      );
-      return;
-    }
-
     res.headers.set(key, value);
   });
+
+  // Nonce CSP in production; skip enforcement in dev so HMR/React refresh keep working.
+  if (!isDev) {
+    res.headers.set(
+      "Content-Security-Policy",
+      buildContentSecurityPolicy({
+        nonce,
+        isDev: false,
+        frameAncestors: allowFramed ? "*" : "'none'",
+      }),
+    );
+  }
+
   res.headers.set("X-Permitted-Cross-Domain-Policies", "none");
+
+  // Document/HTML must not advertise wildcard CORS (securityheaders.com). Public feed APIs set their own.
+  if (!isPublicCorsFeedPath(pathname)) {
+    res.headers.delete("Access-Control-Allow-Origin");
+  }
+
   return res;
+}
+
+function attachCspNonce(request: NextRequest): { request: NextRequest; nonce: string } {
+  const nonce = createCspNonce();
+  const isDev = process.env.NODE_ENV === "development";
+  const pathname = request.nextUrl.pathname;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  if (!isDev) {
+    requestHeaders.set(
+      "Content-Security-Policy",
+      buildContentSecurityPolicy({
+        nonce,
+        isDev: false,
+        frameAncestors: allowFramedPath(pathname) ? "*" : "'none'",
+      }),
+    );
+  }
+  return {
+    nonce,
+    request: new NextRequest(request, { headers: requestHeaders }),
+  };
 }
 
 function finalizeResponse(
   response: NextResponse,
   request: NextRequest,
-  userId: string | null
+  userId: string | null,
+  nonce: string,
 ): NextResponse {
   const status = response.status;
   if (status >= 400) {
@@ -255,16 +300,19 @@ function finalizeResponse(
       userIdRedacted: redactUserIdForLogs(userId),
     });
   }
-  return applySecurityHeaders(response, request.nextUrl.pathname);
+  return applySecurityHeaders(response, request.nextUrl.pathname, nonce);
 }
 
 export async function proxy(request: NextRequest) {
+  const attached = attachCspNonce(request);
+  request = attached.request;
+  const { nonce } = attached;
   const { pathname, searchParams } = request.nextUrl;
   const method = request.method;
 
   // Cron + Stripe webhook authenticate in route handlers (CRON_SECRET / Stripe signature).
   if (pathname.startsWith("/api/cron/") || pathname.startsWith("/api/stripe/webhook")) {
-    return applySecurityHeaders(NextResponse.next({ request }), pathname);
+    return applySecurityHeaders(NextResponse.next({ request }), pathname, nonce);
   }
 
   // Supabase can fallback recovery links to SITE_URL (/). Normalize here server-side.
@@ -274,7 +322,7 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/forgot-password";
       url.search = "?error=expired";
-      return finalizeResponse(NextResponse.redirect(url), request, null);
+      return finalizeResponse(NextResponse.redirect(url), request, null, nonce);
     }
 
     const type = searchParams.get("type");
@@ -289,13 +337,13 @@ export async function proxy(request: NextRequest) {
         url.searchParams.set("token_hash", tokenHash);
         url.searchParams.set("type", "recovery");
       }
-      return finalizeResponse(NextResponse.redirect(url), request, null);
+      return finalizeResponse(NextResponse.redirect(url), request, null, nonce);
     }
   }
 
   if (method === "OPTIONS" && publicAuthPageOptions204.has(pathname)) {
     // Reply 204 early for all OPTIONS probes to avoid 405 Method Not Allowed on page routes.
-    return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname);
+    return applySecurityHeaders(new NextResponse(null, { status: 204 }), pathname, nonce);
   }
 
   // New users choose role on signup first; /auth/signin?signin=1 is for returning sign-in only.
@@ -316,7 +364,7 @@ export async function proxy(request: NextRequest) {
         const value = searchParams.get(key);
         if (value) url.searchParams.set(key, value);
       }
-      return finalizeResponse(NextResponse.redirect(url), request, null);
+      return finalizeResponse(NextResponse.redirect(url), request, null, nonce);
     }
   }
 
@@ -340,7 +388,7 @@ export async function proxy(request: NextRequest) {
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
       });
-      return finalizeResponse(res, request, null);
+      return finalizeResponse(res, request, null, nonce);
     }
   }
 
@@ -355,7 +403,8 @@ export async function proxy(request: NextRequest) {
           headers: { "Content-Type": "application/json" },
         }),
         request,
-        null
+        null,
+        nonce,
       );
     }
     const maxBytes = getMaxBodyBytesForPath(pathname);
@@ -371,7 +420,8 @@ export async function proxy(request: NextRequest) {
           }
         ),
         request,
-        null
+        null,
+        nonce,
       );
     }
   }
@@ -406,7 +456,8 @@ export async function proxy(request: NextRequest) {
           }
         ),
         request,
-        null
+        null,
+        nonce,
       );
     }
   }
@@ -425,7 +476,8 @@ export async function proxy(request: NextRequest) {
         headers: { "Content-Type": "application/json" },
       }),
       request,
-      null
+      null,
+      nonce,
     );
   }
 
@@ -436,24 +488,25 @@ export async function proxy(request: NextRequest) {
     const fallback = request.nextUrl.clone();
     fallback.pathname = "/auth/signin";
     fallback.searchParams.set("signin", "1");
-    return finalizeResponse(NextResponse.redirect(fallback), request, null);
+    return finalizeResponse(NextResponse.redirect(fallback), request, null, nonce);
   }
 
   try {
-    return await runSupabaseAuthGuard(request, supabaseUrl, supabaseAnon);
+    return await runSupabaseAuthGuard(request, supabaseUrl, supabaseAnon, nonce);
   } catch (err) {
     console.error("[middleware] auth guard failed:", err);
     const fallback = request.nextUrl.clone();
     fallback.pathname = "/auth/signin";
     fallback.searchParams.set("signin", "1");
-    return finalizeResponse(NextResponse.redirect(fallback), request, null);
+    return finalizeResponse(NextResponse.redirect(fallback), request, null, nonce);
   }
 }
 
 async function runSupabaseAuthGuard(
   request: NextRequest,
   supabaseUrl: string,
-  supabaseAnon: string
+  supabaseAnon: string,
+  nonce: string,
 ): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
@@ -548,7 +601,7 @@ async function runSupabaseAuthGuard(
       const url = request.nextUrl.clone();
       url.pathname = maintenanceRoute;
       url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
     }
   }
 
@@ -557,14 +610,14 @@ async function runSupabaseAuthGuard(
       const url = request.nextUrl.clone();
       url.pathname = "/";
       url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, null);
+      return finalizeResponse(NextResponse.redirect(url), request, null, nonce);
     }
     const userData = await getUserData();
     const role = userData?.role;
     const url = request.nextUrl.clone();
     url.pathname = role ? getRoleHomePath(role) : "/auth/select-role";
     url.search = "";
-    return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
   }
 
   if (!user && !publicOk) {
@@ -573,7 +626,7 @@ async function runSupabaseAuthGuard(
     if (!url.searchParams.has("signin")) {
       url.searchParams.set("signin", "1");
     }
-    return finalizeResponse(NextResponse.redirect(url), request, null);
+    return finalizeResponse(NextResponse.redirect(url), request, null, nonce);
   }
 
   if (user && authRoutes.includes(pathname)) {
@@ -587,7 +640,7 @@ async function runSupabaseAuthGuard(
       const url = request.nextUrl.clone();
       url.pathname = "/suspended";
       url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
     }
 
     if (accessStatus !== "approved") {
@@ -600,19 +653,19 @@ async function runSupabaseAuthGuard(
         const url = request.nextUrl.clone();
         url.pathname = "/auth/session-sync";
         url.search = "";
-        return finalizeResponse(NextResponse.redirect(url), request, user.id);
+        return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
       }
       // Not approved and not in onboarding: let the auth page render as-is.
       // Redirecting to /auth/signin?error=... would loop because /auth/signin
       // is itself an authRoute and would trigger this block again infinitely.
-      return finalizeResponse(supabaseResponse, request, user.id);
+      return finalizeResponse(supabaseResponse, request, user.id, nonce);
     }
 
     const url = request.nextUrl.clone();
     url.pathname = getRoleHomePath(role!);
     // Do not carry ?error=* or other auth query params onto /student or /tutor.
     url.search = "";
-    return finalizeResponse(NextResponse.redirect(url), request, user.id);
+    return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
   }
 
   if (user && !publicOk) {
@@ -625,22 +678,22 @@ async function runSupabaseAuthGuard(
     // No role yet (new account awaiting role selection) — let them pick a role
     if (!role) {
       if (pathname === "/auth/select-role") {
-        return finalizeResponse(supabaseResponse, request, user.id);
+        return finalizeResponse(supabaseResponse, request, user.id, nonce);
       }
       const url = request.nextUrl.clone();
       url.pathname = "/auth/select-role";
       url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
     }
 
     if (accessStatus === "suspended") {
       if (pathname === "/suspended") {
-        return finalizeResponse(supabaseResponse, request, user.id);
+        return finalizeResponse(supabaseResponse, request, user.id, nonce);
       }
       const url = request.nextUrl.clone();
       url.pathname = "/suspended";
       url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
     }
 
     if (accessStatus !== "approved") {
@@ -653,28 +706,28 @@ async function runSupabaseAuthGuard(
         const url = request.nextUrl.clone();
         url.pathname = "/auth/session-sync";
         url.search = "";
-        return finalizeResponse(NextResponse.redirect(url), request, user.id);
+        return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
       }
       const url = request.nextUrl.clone();
       url.pathname = "/auth/signin";
       url.search = "";
       url.searchParams.set("signin", "1");
       url.searchParams.set("error", "approval_required");
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
     }
 
     if (!checkRouteAccess(pathname, role)) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       url.search = "";
-      return finalizeResponse(NextResponse.redirect(url), request, user.id);
+      return finalizeResponse(NextResponse.redirect(url), request, user.id, nonce);
     }
 
     supabaseResponse.headers.set("x-user-role", role);
     supabaseResponse.headers.set("x-user-id", user.id);
   }
 
-  return finalizeResponse(supabaseResponse, request, user?.id ?? null);
+  return finalizeResponse(supabaseResponse, request, user?.id ?? null, nonce);
 }
 
 export const config = {

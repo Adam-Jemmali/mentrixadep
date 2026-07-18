@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
+import { Caveat, Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import { OrganizationJsonLd } from "@/components/organization-json-ld";
 import { DevServiceWorkerGuard } from "@/components/dev-service-worker-guard";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/shared/core/site";
@@ -16,6 +17,23 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
   display: "swap",
+});
+
+/** Hand titles on landing / student hub — self-hosted, swap, no render-blocking CSS. */
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-caveat",
+  display: "swap",
+});
+
+/** Rank reveal only — defer preload so it stays off the landing critical path. */
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-playfair",
+  display: "swap",
+  preload: false,
 });
 
 export const viewport: Viewport = {
@@ -79,14 +97,17 @@ export const metadata: Metadata = {
 };
 
 /** Html/body only — no client app shell here (see `app/(app)/layout.tsx` and `app/(marketing)/layout.tsx`). */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${geistMono.variable}`}
+      className={`${geist.variable} ${geistMono.variable} ${caveat.variable} ${playfair.variable}`}
       suppressHydrationWarning
+      data-font-geist="1"
     >
       <head>
         <meta name="google-site-verification" content="7qMsPjvmHXjq4yWwD5z0HMpqJuyTBlhpDONtfRfh9dk" />
@@ -96,6 +117,22 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon-mentrixa.ico?v=20260417" type="image/x-icon" />
         <link rel="manifest" href="/manifest.json" />
         <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  if (!document.fonts || !document.fonts.load) return;
+                  document.fonts.load("1em Geist").then(function () {
+                    document.documentElement.dataset.geistFonts = "ready";
+                  }).catch(function () {});
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+        <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               function isExtensionNoListenerNoise(value) {
