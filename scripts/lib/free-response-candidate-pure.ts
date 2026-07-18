@@ -26,7 +26,7 @@ export type FreeResponseCandidate = {
     skill_verb: string;
     transfer_tag: string;
     proof_artifact: string;
-    misconception_kit: string[];
+    misconception_kit: readonly string[];
   };
 };
 
