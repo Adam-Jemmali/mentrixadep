@@ -3,14 +3,18 @@
 import { useLayoutEffect, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 
+const MentrixaCursor = dynamic(
+  () => import("@/shared/ui/tech-cursor").then((m) => m.MentrixaCursor),
+  { ssr: false, loading: () => null },
+);
+
 const CookieConsentBanner = dynamic(
   () => import("@/components/cookie-consent-banner").then((m) => m.CookieConsentBanner),
   { ssr: false, loading: () => null },
 );
 
 /**
- * Minimal client boundary for `/` only — no Supabase, nav, dialogs, PWA, or logo cursor trail.
- * Keeps Next dev webpack from pulling the full app shell into the landing chunk graph.
+ * Minimal client boundary for `/` — single Mentrixa logo cursor (no trail), no app shell.
  */
 export function MarketingShellClient({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
@@ -22,6 +26,7 @@ export function MarketingShellClient({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <MentrixaCursor />
       <CookieConsentBanner />
       <main className="relative min-h-screen bg-[#0B1220] text-slate-100">
         <div className="relative z-10">{children}</div>

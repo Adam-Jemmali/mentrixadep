@@ -1733,12 +1733,17 @@ main:has(.lp-root) > div {
   display: none;
 }
 
-/* Landing page — Mentrixa logo custom cursor removed (perf) */
+/* Landing — single Mentrixa logo cursor (no trail) */
 html.lp-landing-logo-cursor-active,
-html.lp-landing-logo-cursor-active *,
-.lp-landing-logo-cursor-zone,
-.lp-landing-logo-cursor-zone * {
-  cursor: auto;
+html.lp-landing-logo-cursor-active * {
+  cursor: none !important;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  html.lp-landing-logo-cursor-active,
+  html.lp-landing-logo-cursor-active * {
+    cursor: auto !important;
+  }
 }
 
 @keyframes lpHeroStageIn {

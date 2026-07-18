@@ -1,13 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { MentrixaCursor } from "@/shared/ui/tech-cursor";
 
 type Props = {
   children: ReactNode;
   className?: string;
 };
 
-/** Passthrough — logo cursor trail removed for performance. */
-export function LandingLogoCursor({ children }: Props) {
-  return children;
+export function LandingLogoCursor({ children, className }: Props) {
+  return <MentrixaCursor className={className}>{children}</MentrixaCursor>;
 }

@@ -106,7 +106,7 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
 const GAME_COACH = LANDING_DUAL_PATH.gameCoach;
 
 export function DualPathReactionGame({ sides }: Props) {
-  const { mounted } = useLandingMotion();
+  const { mounted, lowEnd } = useLandingMotion();
   const [phase, setPhase] = useState<"game" | "result">("game");
   const [arenaKey, setArenaKey] = useState(0);
   const [winner, setWinner] = useState<SliceRole | null>(null);
@@ -162,10 +162,10 @@ export function DualPathReactionGame({ sides }: Props) {
               minHeight={PATH_ARENA_HEIGHT}
               hudInset={52}
               gameSeconds={14}
-              iconSize={40}
-              fallSpeed={200}
-              spawnMs={400}
-              maxVisible={12}
+              iconSize={lowEnd ? 36 : 40}
+              fallSpeed={lowEnd ? 160 : 200}
+              spawnMs={lowEnd ? 650 : 450}
+              maxVisible={lowEnd ? 6 : 8}
               autoStart={false}
               autoStartDelay={300}
               viewportAutoStart

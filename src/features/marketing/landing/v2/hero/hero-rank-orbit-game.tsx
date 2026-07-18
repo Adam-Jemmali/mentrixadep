@@ -276,49 +276,19 @@ export function HeroRankOrbitGame() {
           />
 
           {loop ? (
-            <>
-              <motion.div
-                className="absolute inset-[2%] rounded-full opacity-80"
-                style={{
-                  background:
-                    "conic-gradient(from 0deg, transparent, rgba(99,102,241,0.45) 50deg, transparent 100deg, rgba(34,211,238,0.25) 180deg, transparent)",
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-              />
-              {[0, 120, 240].map((deg) => (
-                <motion.div
-                  key={deg}
-                  className="absolute left-1/2 top-1/2 h-px w-[42%] origin-left bg-gradient-to-r from-indigo-400/40 to-transparent"
-                  style={{ rotate: `${deg}deg` }}
-                  animate={{ opacity: [0.2, 0.55, 0.2] }}
-                  transition={{ duration: 3, repeat: Infinity, delay: deg / 120 }}
-                />
-              ))}
-            </>
+            <motion.div
+              className="absolute inset-[2%] rounded-full opacity-60"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, transparent, rgba(99,102,241,0.35) 50deg, transparent 100deg)",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            />
           ) : null}
 
           <motion.div
-            className="relative z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border border-indigo-300/40 bg-slate-950/90 shadow-[0_0_50px_rgba(99,102,241,0.4)]"
-            animate={
-              loop
-                ? {
-                    scale: completed ? [1, 1.08, 1] : [1, 1.05, 1],
-                    boxShadow: completed
-                      ? [
-                          "0 0 60px rgba(212,160,23,0.45)",
-                          "0 0 100px rgba(212,160,23,0.65)",
-                          "0 0 60px rgba(212,160,23,0.45)",
-                        ]
-                      : [
-                          "0 0 50px rgba(99,102,241,0.35)",
-                          "0 0 90px rgba(124,58,237,0.55)",
-                          "0 0 50px rgba(99,102,241,0.35)",
-                        ],
-                  }
-                : undefined
-            }
-            transition={{ duration: completed ? 2 : 3.2, repeat: Infinity, ease: "easeInOut" }}
+            className="relative z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border border-indigo-300/40 bg-slate-950/90 shadow-[0_0_40px_rgba(99,102,241,0.3)]"
           >
             <span className="relative mb-0.5 block size-5">
               <Image
