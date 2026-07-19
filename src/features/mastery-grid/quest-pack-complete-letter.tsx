@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type PointerEvent, type ReactNode } from "react";
+import { useState, type PointerEvent, type ReactNode } from "react";
 import Image from "next/image";
 import {
   animate,
@@ -13,13 +13,15 @@ import {
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { cn } from "@/shared/core/utils";
 
-/** Positive y = pushed down into the envelope (tucked). 0 = letter fully out. */
-const Y_TUCKED = 410;
+/** Positive y = tucked inside envelope. 0 = letter fully pulled out. */
+const Y_TUCKED = 520;
 const Y_OUT = 0;
+/** Must pull past this (from tucked) before snap opens. */
+const OPEN_THRESHOLD = Y_TUCKED * 0.42;
 
 /**
- * Closed Mentrixa envelope with a letter peeking out the top.
- * Drag up to pull the letter out; drag down to tuck it back in.
+ * Starts closed: only a letter peek shows.
+ * Drag the peek up to open the envelope; drag down to tuck it closed again.
  */
 export function QuestPackCompleteLetter({
   children,
@@ -32,66 +34,82 @@ export function QuestPackCompleteLetter({
   const y = useMotionValue(Y_TUCKED);
   const [isOut, setIsOut] = useState(false);
 
-  const flapOpen = useTransform(y, [Y_TUCKED, Y_OUT], [0, 1]);
-  const flapRotateX = useTransform(flapOpen, [0, 1], [0, -150]);
-  const hintOpacity = useTransform(y, [Y_TUCKED, Y_TUCKED - 50], [1, 0]);
+  const flapRotateX = useTransform(y, [Y_TUCKED, Y_OUT], [0, -155]);
+  const hintOpacity = useTransform(y, [Y_TUCKED, Y_TUCKED - 70], [1, 0]);
 
-  useEffect(() => {
-    if (!reduceMotion) return;
-    void animate(y, Y_OUT, { type: "spring", stiffness: 280, damping: 26 });
-    setIsOut(true);
-  }, [reduceMotion, y]);
+  function setOpen(open: boolean) {
+    const target = open ? Y_OUT : Y_TUCKED;
+    void animate(y, target, {
+      type: reduceMotion ? "tween" : "spring",
+      duration: reduceMotion ? 0.2 : undefined,
+      stiffness: 340,
+      damping: 30,
+    });
+    setIsOut(open);
+  }
 
   function snapLetter(_: unknown, info: PanInfo) {
-    const projected = y.get() + info.velocity.y * 0.18;
-    const open = projected < Y_TUCKED * 0.55;
-    const target = open ? Y_OUT : Y_TUCKED;
-    void animate(y, target, { type: "spring", stiffness: 340, damping: 30 });
-    setIsOut(open);
+    const projected = y.get() + info.velocity.y * 0.16;
+    // Only open when the user has clearly dragged upward far enough.
+    const open = projected <= OPEN_THRESHOLD;
+    setOpen(open);
   }
 
   return (
     <div
       className={cn(
-        "relative mx-auto w-full max-w-md px-3 pb-8 pt-4 sm:px-4 sm:pb-10",
+        "relative mx-auto w-full max-w-2xl px-3 pb-8 pt-4 sm:px-5 sm:pb-10",
         className,
       )}
     >
       <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-[#6366F1]">
-        {isOut ? "Drag down to tuck into envelope" : "Closed envelope · drag letter up"}
+        {isOut ? "Drag down to close the envelope" : "Envelope closed · drag the letter up to open"}
       </p>
 
-      <div className="relative mx-auto h-[min(84dvh,40rem)] w-full max-w-[22.5rem] overflow-hidden">
+      {reduceMotion ? (
+        <div className="mb-3 flex justify-center">
+          <button
+            type="button"
+            className="rounded-lg border border-[#6366F1] bg-[#EDE9FE] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#4F46E5] shadow-[1px_2px_0_#0B1220]"
+            onClick={() => setOpen(!isOut)}
+          >
+            {isOut ? "Close envelope" : "Open letter"}
+          </button>
+        </div>
+      ) : null}
+
+      <div className="relative mx-auto h-[min(88dvh,44rem)] w-full max-w-[40rem] overflow-hidden">
         {/* Envelope back */}
         <div
-          className="absolute inset-x-0 bottom-0 z-[1] h-[13rem] rounded-b-[1.2rem] border-2 border-[#6366F1] bg-gradient-to-b from-[#A5B4FC] to-[#818CF8] shadow-[4px_7px_0_#0B1220]"
+          className="absolute inset-x-0 bottom-0 z-[1] h-[13.5rem] rounded-b-[1.2rem] border-2 border-[#6366F1] bg-gradient-to-b from-[#A5B4FC] to-[#818CF8] shadow-[4px_7px_0_#0B1220]"
           aria-hidden
         />
 
-        {/* Letter — starts tucked (y=300); drag toward y=0 to pull out */}
+        {/* Letter — always mounts tucked; drag up to open */}
         <motion.div
-          drag="y"
+          drag={reduceMotion ? false : "y"}
           dragConstraints={{ top: Y_OUT, bottom: Y_TUCKED }}
-          dragElastic={0.05}
+          dragElastic={0.04}
           dragMomentum={false}
           onDragEnd={snapLetter}
+          initial={false}
           style={{
             y,
             backgroundImage:
               "linear-gradient(180deg, #F5F3FF 0%, #FFFBF5 14%, #FFFBF5 100%)",
           }}
-          whileDrag={{ cursor: "grabbing" }}
+          whileDrag={reduceMotion ? undefined : { cursor: "grabbing" }}
           className={cn(
-            "absolute inset-x-[0.7rem] z-[5] flex cursor-grab touch-none flex-col active:cursor-grabbing",
-            // Rests on the envelope mouth; tucking pushes it down behind the pocket
-            "bottom-[9.25rem] h-[min(32rem,68dvh)]",
+            "absolute inset-x-3 z-[5] flex flex-col sm:inset-x-4",
+            reduceMotion ? "cursor-default" : "cursor-grab touch-none active:cursor-grabbing",
+            "bottom-[9.5rem] h-[min(34rem,72dvh)]",
             "overflow-hidden rounded-[2px] border-2 border-[#A5B4FC]",
             "shadow-[0_14px_32px_rgba(79,70,229,0.24)]",
             "mx-hub-ruled-lines",
           )}
-          aria-label="Mentrixa letter. Drag up to pull out of the envelope, down to tuck."
+          aria-label="Mentrixa letter. Drag up to open the envelope, down to close."
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-[#C4B5FD]/80 bg-[#FFFBF5] px-3 py-2.5">
+          <div className="flex shrink-0 items-center justify-between border-b border-[#C4B5FD]/80 bg-[#FFFBF5] px-4 py-2.5 sm:px-5">
             <div className="flex items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-md border border-[#6366F1] bg-[#7C3AED] shadow-[1px_1px_0_#0B1220]">
                 <Image
@@ -113,15 +131,15 @@ export function QuestPackCompleteLetter({
             </span>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
             {children}
           </div>
         </motion.div>
 
-        {/* Front of envelope: closed flap + pocket (pocket blocks letter body while tucked) */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[13rem]" aria-hidden>
+        {/* Closed flap + pocket — letter body stays sealed until dragged up */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[13.5rem]" aria-hidden>
           <div
-            className="absolute inset-x-0 bottom-[9.35rem] h-[3.7rem]"
+            className="absolute inset-x-0 bottom-[9.55rem] h-[4rem]"
             style={{ perspective: 900 }}
           >
             <motion.div className="h-full w-full origin-bottom" style={{ rotateX: flapRotateX }}>
@@ -132,8 +150,7 @@ export function QuestPackCompleteLetter({
             </motion.div>
           </div>
 
-          {/* Pocket face — blocks CTAs until the letter is pulled high enough */}
-          <div className="pointer-events-auto absolute inset-x-0 bottom-0 h-[9.5rem] overflow-hidden rounded-b-[1.15rem] border-2 border-t-[#7C3AED]/40 border-[#6366F1] bg-gradient-to-b from-[#DDD6FE] via-[#C4B5FD] to-[#A78BFA]">
+          <div className="pointer-events-auto absolute inset-x-0 bottom-0 h-[9.75rem] overflow-hidden rounded-b-[1.15rem] border-2 border-t-[#7C3AED]/40 border-[#6366F1] bg-gradient-to-b from-[#DDD6FE] via-[#C4B5FD] to-[#A78BFA]">
             <div className="absolute inset-x-5 top-0 h-px bg-white/60" />
             <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1">
               <span className="flex size-12 items-center justify-center rounded-full border-2 border-[#7C3AED] bg-white shadow-[2px_2px_0_#0B1220]">
@@ -153,14 +170,16 @@ export function QuestPackCompleteLetter({
           </div>
         </div>
 
-        <motion.div
-          className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2"
-          style={{ bottom: "13.15rem", opacity: hintOpacity }}
-        >
-          <span className="whitespace-nowrap rounded-full border border-[#6366F1] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#7C3AED] shadow-[1px_2px_0_#0B1220]">
-            Drag letter up
-          </span>
-        </motion.div>
+        {!isOut ? (
+          <motion.div
+            className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2"
+            style={{ bottom: "13.65rem", opacity: hintOpacity }}
+          >
+            <span className="whitespace-nowrap rounded-full border border-[#6366F1] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#7C3AED] shadow-[1px_2px_0_#0B1220]">
+              Drag letter up
+            </span>
+          </motion.div>
+        ) : null}
       </div>
     </div>
   );

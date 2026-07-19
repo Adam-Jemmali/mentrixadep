@@ -238,6 +238,8 @@ export async function createAiDuelFromQueue(
         reward_amount_cents: 0,
         match_source: "ai_queue",
         is_ai_opponent: true,
+        student_ready_at: new Date().toISOString(),
+        opponent_ready_at: new Date().toISOString(),
       })
       .select("id")
       .single();
@@ -246,7 +248,13 @@ export async function createAiDuelFromQueue(
       return { success: false, error: insErr?.message ?? "Could not create duel." };
     }
 
+    const activated = await activateSkillDuelSession(inserted.id);
+    if (!activated.success) {
+      return { success: false, error: activated.error };
+    }
+
     revalidatePath("/student/duel");
+    revalidatePath(`/student/duel/${inserted.id}`);
     return { success: true, duelId: inserted.id };
   } catch (e) {
     return {

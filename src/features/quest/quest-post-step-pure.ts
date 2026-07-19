@@ -188,7 +188,7 @@ export function buildQuestPostPackStep(node: MasteryGridNode): QuestPostPackStep
       href: "/student/quest",
     },
     valueLine:
-      "Duels pull from your solid nodes. Open squares are where rank still moves.",
+      "",
   };
 }
 

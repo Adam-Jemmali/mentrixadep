@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { joinDuelQueue, leaveDuelQueue, pollDuelQueue, acceptQueueMatch, declineQueueMatch, getQueueMatchAcceptance } from "@/features/duels/duel-queue";
+import { joinDuelQueue, leaveDuelQueue, pollDuelQueue, instantStartQueueMatch } from "@/features/duels/duel-queue";
 import { createAiDuelFromQueue } from "@/features/duels/duel-gameplay";
 import { getDuelMatchupPreview } from "@/features/duels/duel-reads";
 import { DUEL_AI_QUEUE_WAIT_MS } from "@/features/duels/duel-constants";
@@ -12,7 +12,6 @@ import { Button } from "@/shared/ui/button";
 import { Info } from "lucide-react";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
-import { DuelMatchAcceptScreen } from "@/features/duels/ui/duel-match-accept-screen";
 import { getDivisionTheme } from "@/features/divisions/division-ui";
 import {
   AP_CALC_AB_DIVISION_NAME,
@@ -70,7 +69,7 @@ type MatchIntro = {
   };
 };
 
-type MatchPhase = "accept" | "merge";
+type MatchPhase = "merge";
 
 function formatCountdown(totalSeconds: number): string {
   const safe = Math.max(0, totalSeconds);
@@ -131,10 +130,6 @@ export function DuelHub({
   const [queueError, setQueueError] = useState<string | null>(null);
   const [matchIntro, setMatchIntro] = useState<MatchIntro | null>(null);
   const [matchPhase, setMatchPhase] = useState<MatchPhase | null>(null);
-  const [acceptBusy, setAcceptBusy] = useState(false);
-  const [acceptError, setAcceptError] = useState<string | null>(null);
-  const [meAccepted, setMeAccepted] = useState(false);
-  const [opponentAccepted, setOpponentAccepted] = useState(false);
 
   const matchIntroRef = useRef<MatchIntro | null>(null);
   matchIntroRef.current = matchIntro;
@@ -193,7 +188,7 @@ export function DuelHub({
     if (!matchIntro || matchPhase !== "merge") return;
     const timer = window.setTimeout(() => {
       router.push(`/student/duel/${matchIntro.duelId}`);
-    }, 1200);
+    }, 400);
     return () => window.clearTimeout(timer);
   }, [matchIntro, matchPhase, router]);
 
@@ -206,99 +201,6 @@ export function DuelHub({
     playMentrixaRankUpOnce();
   }, []);
 
-  const handleAcceptMatch = useCallback(async () => {
-    if (!matchIntro || acceptBusy) return;
-    setAcceptBusy(true);
-    setAcceptError(null);
-    try {
-      const r = await acceptQueueMatch(matchIntro.duelId);
-      if (!r.success) {
-        setAcceptError(r.error);
-        return;
-      }
-      setMeAccepted(r.state.meAccepted);
-      setOpponentAccepted(r.state.opponentAccepted);
-      if (r.state.bothAccepted || r.state.status === "active") {
-        setMatchPhase("merge");
-      }
-    } catch {
-      setAcceptError("Could not accept the match. Try again.");
-    } finally {
-      setAcceptBusy(false);
-    }
-  }, [matchIntro, acceptBusy]);
-
-  const handleDeclineMatch = useCallback(async () => {
-    if (!matchIntro || acceptBusy) return;
-    setAcceptBusy(true);
-    setAcceptError(null);
-    try {
-      const r = await declineQueueMatch(matchIntro.duelId);
-      if (!r.success) {
-        setAcceptError(r.error);
-        return;
-      }
-      setMatchIntro(null);
-      setMatchPhase(null);
-      setMeAccepted(false);
-      setOpponentAccepted(false);
-      setQueuePhase("idle");
-      setQueueStartedAtMs(null);
-      setQueueError("You declined this match.");
-    } catch {
-      setAcceptError("Could not decline the match.");
-    } finally {
-      setAcceptBusy(false);
-    }
-  }, [matchIntro, acceptBusy]);
-
-  useEffect(() => {
-    if (!matchIntro || matchPhase !== "accept") return;
-
-    let cancelled = false;
-    const sync = async () => {
-      try {
-        const resp = await getQueueMatchAcceptance(matchIntro.duelId);
-        if (cancelled || !resp.success) return;
-
-        const s = resp.state;
-        setMeAccepted(s.meAccepted);
-        setOpponentAccepted(s.opponentAccepted);
-
-        if (s.terminal && s.status !== "active") {
-          setAcceptError(
-            s.status === "cancelled" || s.status === "declined"
-              ? "Match was declined. Returning to matchmaking."
-              : "This match is no longer available.",
-          );
-          window.setTimeout(() => {
-            if (cancelled) return;
-            setMatchIntro(null);
-            setMatchPhase(null);
-            setMeAccepted(false);
-            setOpponentAccepted(false);
-            setQueuePhase("idle");
-            setQueueStartedAtMs(null);
-          }, 2200);
-          return;
-        }
-
-        if (s.bothAccepted || s.status === "active") {
-          setMatchPhase("merge");
-        }
-      } catch {
-        /* poll again */
-      }
-    };
-
-    void sync();
-    const id = setInterval(() => void sync(), 1500);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [matchIntro, matchPhase]);
-
   const showMatchIntroAndNavigate = useCallback(async (duelId: string): Promise<boolean> => {
     if (transitioningRef.current) return false;
     transitioningRef.current = true;
@@ -309,6 +211,13 @@ export function DuelHub({
     };
 
     try {
+      // Instant start: both sides ready + questions loaded before arena opens.
+      const started = await instantStartQueueMatch(duelId);
+      if (!started.success) {
+        fallbackPush();
+        return true;
+      }
+
       const resp = await getDuelMatchupPreview(duelId);
       if (!resp.success) {
         fallbackPush();
@@ -336,10 +245,9 @@ export function DuelHub({
           isAi: preview.opponent.isAi,
         },
       });
-      setMatchPhase("accept");
-      setMeAccepted(false);
-      setOpponentAccepted(false);
-      setAcceptError(null);
+      setMatchPhase("merge");
+      setQueuePhase("idle");
+      setQueueStartedAtMs(null);
       return true;
     } catch {
       fallbackPush();
@@ -501,9 +409,6 @@ export function DuelHub({
     setQueuePhase("idle");
     setMatchIntro(null);
     setMatchPhase(null);
-    setMeAccepted(false);
-    setOpponentAccepted(false);
-    setAcceptError(null);
     safeRouterRefresh(router);
   }
 
@@ -681,32 +586,6 @@ export function DuelHub({
           </Button>
         </div>
       </div>
-    );
-  }
-
-  if (matchIntro && matchPhase === "accept") {
-    const acceptStatusLine =
-      meAccepted && opponentAccepted
-        ? "Starting duel…"
-        : meAccepted
-          ? "Waiting for opponent…"
-          : opponentAccepted
-            ? "Opponent is ready — accept to continue"
-            : "Waiting for both players to accept";
-
-    return (
-      <DuelMatchAcceptScreen
-        divisionLabel={matchIntro.divisionLabel}
-        me={matchIntro.me}
-        opponent={matchIntro.opponent}
-        meAccepted={meAccepted}
-        opponentAccepted={opponentAccepted}
-        acceptBusy={acceptBusy}
-        acceptError={acceptError}
-        onAccept={() => void handleAcceptMatch()}
-        onDecline={() => void handleDeclineMatch()}
-        statusLine={acceptStatusLine}
-      />
     );
   }
 

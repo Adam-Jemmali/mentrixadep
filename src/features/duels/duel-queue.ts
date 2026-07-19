@@ -32,6 +32,95 @@ async function tryActivateQueueMatchWhenReady(
   return activate.success;
 }
 
+/**
+ * Instant start: mark both sides ready and activate in one shot.
+ * Used for human queue matches and Sparring Quest — no mutual-accept wait.
+ */
+export async function instantStartQueueMatch(
+  duelId: string
+): Promise<
+  | { success: true; duelId: string; activated: boolean; status: string }
+  | { success: false; error: string }
+> {
+  try {
+    const user = await requireRole(["student", "admin"]);
+    if (user.role !== "student") {
+      return { success: false, error: "Only students can start a duel." };
+    }
+
+    const id = parseUUID(duelId);
+    if (!id.ok) return { success: false, error: "Invalid duel." };
+
+    const admin = createAdminClient();
+    const { data: duel, error: fetchErr } = await admin
+      .from("skill_duels")
+      .select(
+        "id, student_id, opponent_student_id, status, match_source, is_ai_opponent, student_ready_at, opponent_ready_at"
+      )
+      .eq("id", id.id)
+      .maybeSingle();
+
+    if (fetchErr || !duel) {
+      return { success: false, error: "Duel not found." };
+    }
+
+    const ms = duel.match_source as string | null;
+    if (!isQueueStyleMatchSource(ms)) {
+      return { success: false, error: "Not a queue match." };
+    }
+
+    const isAi = duel.is_ai_opponent === true;
+    const isParticipant =
+      user.id === duel.student_id ||
+      (!isAi && user.id === duel.opponent_student_id);
+    if (!isParticipant) {
+      return { success: false, error: "Not a participant." };
+    }
+
+    if (duel.status === "active" || duel.status === "completed") {
+      return { success: true, duelId: id.id, activated: true, status: duel.status };
+    }
+
+    if (duel.status !== "pending") {
+      return { success: false, error: "This match is no longer available." };
+    }
+
+    const now = new Date().toISOString();
+    await admin
+      .from("skill_duels")
+      .update({
+        student_ready_at: duel.student_ready_at ?? now,
+        opponent_ready_at: duel.opponent_ready_at ?? now,
+        updated_at: now,
+      })
+      .eq("id", id.id)
+      .eq("status", "pending");
+
+    const activated = await tryActivateQueueMatchWhenReady(admin, id.id);
+
+    const { data: after } = await admin
+      .from("skill_duels")
+      .select("status")
+      .eq("id", id.id)
+      .maybeSingle();
+
+    revalidatePath("/student/duel");
+    revalidatePath(`/student/duel/${id.id}`);
+
+    return {
+      success: true,
+      duelId: id.id,
+      activated: activated || after?.status === "active",
+      status: after?.status ?? (activated ? "active" : "pending"),
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to start duel.",
+    };
+  }
+}
+
 /** Normalize RPC row (array vs object; snake_case vs camelCase from PostgREST / clients). */
 function parseDuelQueueJoinRpc(rpcData: unknown): {
   matched: boolean;
@@ -120,7 +209,12 @@ export async function joinDuelQueue(
     const { matched, duelId } = parseDuelQueueJoinRpc(rpcData);
 
     if (matched && duelId) {
+      const started = await instantStartQueueMatch(duelId);
       revalidatePath("/student/duel");
+      if (!started.success) {
+        // Match exists; client can still open / retry activate.
+        return { success: true, state: "matched", duelId };
+      }
       return { success: true, state: "matched", duelId };
     }
 

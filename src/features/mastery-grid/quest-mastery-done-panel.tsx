@@ -164,7 +164,7 @@ export function QuestMasteryDonePanel({
               >
                 <Link
                   href={cta.href}
-                  className="inline-flex items-center justify-center gap-2"
+                  className="inline-flex w-full items-center justify-center gap-2 whitespace-normal px-3 text-center text-sm leading-snug"
                   {...interactive}
                 >
                   <IconChip
@@ -172,7 +172,7 @@ export function QuestMasteryDonePanel({
                     title={cta.label}
                     tone="whiteOnViolet"
                   />
-                  {cta.label}
+                  <span className="min-w-0 flex-1 text-balance">{cta.label}</span>
                 </Link>
               </Button>
             );
@@ -188,11 +188,11 @@ export function QuestMasteryDonePanel({
               >
                 <Link
                   href={cta.href}
-                  className="inline-flex items-center justify-center gap-2"
+                  className="inline-flex w-full items-center justify-center gap-2 whitespace-normal px-3 text-center text-sm leading-snug"
                   {...interactive}
                 >
                   <IconChip name="mastery-grid" title="Skill tree" tone="indigo" />
-                  {cta.label}
+                  <span className="min-w-0 flex-1 text-balance">{cta.label}</span>
                 </Link>
               </Button>
             );

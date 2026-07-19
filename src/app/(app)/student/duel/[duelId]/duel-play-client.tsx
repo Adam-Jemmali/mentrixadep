@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { submitSkillDuelAnswers, submitSkillDuelQuestionAnswer, withdrawPendingSkillDuel, hideSkillDuelFromList, forfeitSkillDuel } from "@/features/duels/duel-gameplay";
 import { duelForfeitResultCopy } from "@/features/duels/duel-forfeit-pure";
-import { acceptQueueMatch, declineQueueMatch, getQueueMatchAcceptance } from "@/features/duels/duel-queue";
+import { instantStartQueueMatch, declineQueueMatch } from "@/features/duels/duel-queue";
 import { type DuelPublicRow } from "@/features/duels/duel-reads";
 import { Button } from "@/shared/ui/button";
 import { createClient } from "@/shared/integrations/supabase/client";
@@ -63,8 +63,6 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
   const [listActionLoading, setListActionLoading] = useState(false);
   const [forfeitBusy, setForfeitBusy] = useState(false);
   const [acceptBusy, setAcceptBusy] = useState(false);
-  const [meAccepted, setMeAccepted] = useState(false);
-  const [opponentAccepted, setOpponentAccepted] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(DUEL_SECONDS_PER_QUESTION);
@@ -128,56 +126,29 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
     if (!queueStylePending) return;
 
     let cancelled = false;
-    const sync = async () => {
+    const start = async () => {
+      setAcceptBusy(true);
+      setAcceptError(null);
       try {
-        const resp = await getQueueMatchAcceptance(duel.id);
-        if (cancelled || !resp.success) return;
-        const s = resp.state;
-        setMeAccepted(s.meAccepted);
-        setOpponentAccepted(s.opponentAccepted);
-        if (s.bothAccepted || s.status === "active") {
-          safeRouterRefresh(router);
+        const r = await instantStartQueueMatch(duel.id);
+        if (cancelled) return;
+        if (!r.success) {
+          setAcceptError(r.error);
+          return;
         }
-        if (s.terminal && s.status !== "active") {
-          setAcceptError(
-            s.status === "cancelled" || s.status === "declined"
-              ? "This match was declined."
-              : "This match is no longer available.",
-          );
-        }
+        safeRouterRefresh(router);
       } catch {
-        /* retry on next tick */
+        if (!cancelled) setAcceptError("Could not start the duel.");
+      } finally {
+        if (!cancelled) setAcceptBusy(false);
       }
     };
 
-    void sync();
-    const id = setInterval(() => void sync(), 1500);
+    void start();
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
   }, [duel.id, queueStylePending, router]);
-
-  async function handleQueueAccept() {
-    setAcceptBusy(true);
-    setAcceptError(null);
-    try {
-      const r = await acceptQueueMatch(duel.id);
-      if (!r.success) {
-        setAcceptError(r.error);
-        return;
-      }
-      setMeAccepted(r.state.meAccepted);
-      setOpponentAccepted(r.state.opponentAccepted);
-      if (r.state.bothAccepted || r.state.status === "active") {
-        safeRouterRefresh(router);
-      }
-    } catch {
-      setAcceptError("Could not accept the match.");
-    } finally {
-      setAcceptBusy(false);
-    }
-  }
 
   async function handleQueueDecline() {
     setAcceptBusy(true);
@@ -190,7 +161,7 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
       }
       router.push("/student/duel");
     } catch {
-      setAcceptError("Could not decline the match.");
+      setAcceptError("Could not leave the match.");
     } finally {
       setAcceptBusy(false);
     }
@@ -424,42 +395,45 @@ export function DuelPlayClient({ duel, side, viewerUserId }: Props) {
           className={cn(mentrixStudent.hubNotebook, "space-y-4 px-5 py-6 text-center sm:px-6")}
         >
           <div>
-            <p className="mx-hub-ink-title text-base">Match found</p>
+            <p className="mx-hub-ink-title text-base">Starting duel</p>
             <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
-              Both sides must accept before questions begin
-              {duel.is_ai_opponent ? " (you and the sparring bot)." : "."}
+              Loading a competitive question pack
+              {duel.is_ai_opponent ? " against Sparring Quest." : " for both of you."}
             </p>
           </div>
           <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.18em]">
-            {meAccepted && opponentAccepted
-              ? "Starting duel…"
-              : meAccepted
-                ? "Waiting for opponent…"
-                : opponentAccepted
-                  ? "Opponent is ready — accept to continue"
-                  : "Waiting for both players to accept"}
+            {acceptBusy ? "Locking arena…" : acceptError ? "Could not start" : "Almost ready…"}
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button
-              type="button"
-              disabled={acceptBusy || meAccepted}
-              onClick={() => void handleQueueAccept()}
-              className={cn(mentrixStudent.pillPrimary, "text-[11px] font-black uppercase tracking-[0.14em]")}
-            >
-              {acceptBusy ? "…" : meAccepted ? "You accepted" : "Accept match"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={acceptBusy}
-              onClick={() => void handleQueueDecline()}
-              className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
-            >
-              Decline
-            </Button>
-          </div>
           {acceptError ? (
-            <p className="text-sm font-semibold text-[#B45309]">{acceptError}</p>
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-[#B45309]">{acceptError}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  type="button"
+                  disabled={acceptBusy}
+                  onClick={() => {
+                    setAcceptBusy(true);
+                    void instantStartQueueMatch(duel.id).then((r) => {
+                      setAcceptBusy(false);
+                      if (r.success) safeRouterRefresh(router);
+                      else setAcceptError(r.error);
+                    });
+                  }}
+                  className={cn(mentrixStudent.pillPrimary, "text-[11px] font-black uppercase tracking-[0.14em]")}
+                >
+                  Retry start
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={acceptBusy}
+                  onClick={() => void handleQueueDecline()}
+                  className={cn(mentrixStudent.hubGhostLink, "text-[11px] font-black uppercase tracking-[0.14em]")}
+                >
+                  Leave
+                </Button>
+              </div>
+            </div>
           ) : null}
         </motion.div>
       );

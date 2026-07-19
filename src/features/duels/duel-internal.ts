@@ -50,8 +50,55 @@ export async function loadApCalcAbSkillNodeIds(
   return data.map((row) => row.id);
 }
 
+async function loadApprovedDuelItemBankRows(
+  admin: ReturnType<typeof createAdminClient>,
+  nodeIds: string[],
+): Promise<DuelItemBankRow[]> {
+  const pageSize = 1000;
+  const out: DuelItemBankRow[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await admin
+      .from("item_bank")
+      .select("id, skill_node_id, prompt, options, correct_answer")
+      .eq("status", "approved")
+      .in("skill_node_id", nodeIds)
+      .range(from, from + pageSize - 1);
+    if (error || !data?.length) break;
+    out.push(...(data as DuelItemBankRow[]));
+    if (data.length < pageSize) break;
+  }
+  return out;
+}
+
+/** Recent item_bank_ids from both duelists so rematches do not recycle the same stems. */
+async function loadRecentDuelItemIds(
+  admin: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+  limitPerUser = 8,
+): Promise<Set<string>> {
+  const ids = new Set<string>();
+  const uniqueUsers = [...new Set(userIds.filter(Boolean))];
+  for (const userId of uniqueUsers) {
+    const { data } = await admin
+      .from("skill_duels")
+      .select("item_bank_ids")
+      .or(`student_id.eq.${userId},opponent_student_id.eq.${userId}`)
+      .in("status", ["active", "completed"])
+      .order("created_at", { ascending: false })
+      .limit(limitPerUser);
+    for (const row of data ?? []) {
+      const bankIds = row.item_bank_ids;
+      if (!Array.isArray(bankIds)) continue;
+      for (const id of bankIds) {
+        if (typeof id === "string" && id) ids.add(id);
+      }
+    }
+  }
+  return ids;
+}
+
 export async function selectDuelQuestions(
-  _duelId: string,
+  duelId: string,
   nodeIds: string[],
 ): Promise<
   { questions: SkillDuelQuestion[]; itemBankIds: string[] } | { error: string }
@@ -69,21 +116,30 @@ export async function selectDuelQuestions(
   }
   const unlockedNodeIds = new Set(candidateNodeIds);
 
-  const { data: items, error: itemsError } = await admin
-    .from("item_bank")
-    .select("id, skill_node_id, prompt, options, correct_answer")
-    .eq("status", "approved")
-    .in("skill_node_id", candidateNodeIds);
+  const { data: duelMeta } = await admin
+    .from("skill_duels")
+    .select("student_id, opponent_student_id")
+    .eq("id", duelId)
+    .maybeSingle();
 
-  if (itemsError || !items?.length) {
+  const recentIds = await loadRecentDuelItemIds(admin, [
+    duelMeta?.student_id ?? "",
+    duelMeta?.opponent_student_id ?? "",
+  ]);
+
+  const items = await loadApprovedDuelItemBankRows(admin, allNodeIds);
+  if (!items.length) {
     return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
   }
 
-  const unlockedItems = filterDuelRowsToUnlockedNodes(
-    items as DuelItemBankRow[],
-    unlockedNodeIds,
-  );
-  const picked = pickDuelItemBankRows(unlockedItems, unlockedNodeIds);
+  const unlockedItems = filterDuelRowsToUnlockedNodes(items, unlockedNodeIds);
+  let picked = pickDuelItemBankRows(unlockedItems, unlockedNodeIds, undefined, undefined, {
+    excludeIds: recentIds,
+  });
+  // If recent exclusion empties the pool, allow rematches of older stems.
+  if (!picked.length) {
+    picked = pickDuelItemBankRows(unlockedItems, unlockedNodeIds);
+  }
   if (!picked.length) {
     return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
   }
