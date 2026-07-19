@@ -61,6 +61,7 @@ import {
   assertNodeIdsUnlocked,
   loadNodeUnlockContext,
 } from "@/features/skill-tree/assert-node-unlocked";
+import { collectPracticeSkillNodeIds } from "@/features/quest/practice-skill-node-ids-pure";
 import { z } from "zod";
 import { trackEvent } from "@/shared/integrations/analytics";
 import type {
@@ -102,12 +103,6 @@ import type { VfaAttemptFormat } from "@/features/quest/vfa-free-response-pure";
 
 const PRACTICE_PACKS_DAILY = 10;
 const DEFAULT_TIME_SEC = 15 * 60;
-
-function practiceQuestionSkillNodeIds(questions: PracticeQuestion[]): string[] {
-  return questions
-    .map((question) => (question as PracticeQuestion & { skillNodeId?: string }).skillNodeId)
-    .filter((nodeId): nodeId is string => Boolean(nodeId));
-}
 
 const finalizePracticeOptionsSchema = z.object({
   timedOut: z.boolean().optional(),
@@ -263,7 +258,7 @@ export async function createPracticeQuest(
     }
     if (unlockContext) {
       assertNodeIdsUnlocked(
-        practiceQuestionSkillNodeIds(bankQuestions),
+        collectPracticeSkillNodeIds(bankQuestions),
         unlockContext.parents,
         unlockContext.solidIds,
       );
@@ -627,7 +622,7 @@ export async function startPracticeSession(questId: string): Promise<{ success: 
     const { meta } = loaded;
 
     if (user.role === "student" && isApCalculusAbSubject(meta.subject || meta.course)) {
-      const targetNodeIds = practiceQuestionSkillNodeIds(meta.questions);
+      const targetNodeIds = collectPracticeSkillNodeIds(meta.questions);
       const unlockContext = await loadNodeUnlockContext(user.id);
       assertNodeIdsUnlocked(
         targetNodeIds,
