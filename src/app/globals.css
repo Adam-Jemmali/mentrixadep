@@ -452,12 +452,20 @@ html:has(.mentrix-student-type-scope) body {
 
 .mx-hub-math-prose :where(.katex) {
   font-size: 1.05em;
+  max-width: 100%;
 }
 
 .mx-hub-math-prose :where(.katex-display) {
   margin: 0.75rem 0;
   overflow-x: auto;
   overflow-y: hidden;
+  max-width: 100%;
+  padding-bottom: 0.15rem;
+}
+
+/* Prevent integral / fraction stems from clipping inside option chips and sticky notes */
+.mx-hub-math-prose :where(.katex-html) {
+  max-width: 100%;
 }
 
 .mx-hub-certificate {

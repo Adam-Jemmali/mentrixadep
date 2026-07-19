@@ -132,6 +132,8 @@ export function QuestPracticeWorkspace({
     useState<BreakthroughCelebration | null>(null);
   const [fallbackMasteryGrid, setFallbackMasteryGrid] = useState<MasteryGridData | null>(null);
 
+  const [questionLoading, setQuestionLoading] = useState(false);
+
   useEffect(() => {
     if (phase === "run") void warmKatex();
   }, [phase]);
@@ -160,21 +162,41 @@ export function QuestPracticeWorkspace({
     }
   }, []);
 
+  const resetQuestionLocalState = useCallback(() => {
+    setMcqPicked(null);
+    setMcqResult(null);
+    setWritten("");
+    setWrittenFeedback(null);
+    setWrittenAwaitingContinue(false);
+    setCorrectCelebration(null);
+    setErr(null);
+  }, []);
+
   const loadQuestion = useCallback(
-    async (id: string, idx: number) => {
-      const q = await getPracticeQuestionPublic(id, idx);
-      if (q && "error" in q) {
-        setErr(q.error);
-        return;
+    async (id: string, idx: number): Promise<boolean> => {
+      setQuestionLoading(true);
+      try {
+        const q = await getPracticeQuestionPublic(id, idx);
+        if (q && "error" in q) {
+          setErr(q.error);
+          return false;
+        }
+        if (!q || typeof q !== "object" || !("kind" in q) || !("prompt" in q)) {
+          setErr("Question not found.");
+          return false;
+        }
+        setQuestion(q);
+        resetQuestionLocalState();
+        setQIndex(idx);
+        return true;
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : "Could not load the next question.");
+        return false;
+      } finally {
+        setQuestionLoading(false);
       }
-      setQuestion(q);
-      setMcqPicked(null);
-      setMcqResult(null);
-      setWritten("");
-      setWrittenFeedback(null);
-      setWrittenAwaitingContinue(false);
     },
-    [],
+    [resetQuestionLocalState],
   );
 
   const startQuestTimer = useCallback(
@@ -468,9 +490,9 @@ export function QuestPracticeWorkspace({
     if (!questId) return;
     setCorrectCelebration(null);
     setWrittenAwaitingContinue(false);
-    const next = qIndex + 1;
-    setQIndex(next);
-    await loadQuestion(questId, next);
+    setBusy(true);
+    await loadQuestion(questId, qIndex + 1);
+    setBusy(false);
   };
 
   const mcqNext = async () => {
@@ -478,9 +500,9 @@ export function QuestPracticeWorkspace({
     setCorrectCelebration(null);
     setMcqResult(null);
     setMcqPicked(null);
-    const next = qIndex + 1;
-    setQIndex(next);
-    await loadQuestion(questId, next);
+    setBusy(true);
+    await loadQuestion(questId, qIndex + 1);
+    setBusy(false);
   };
 
   const onMultiPartSubmit = async (input: {
@@ -511,23 +533,18 @@ export function QuestPracticeWorkspace({
 
   const multiPartContinue = async () => {
     if (!questId) return;
-    const next = qIndex + 1;
-    setQIndex(next);
-    await loadQuestion(questId, next);
+    setBusy(true);
+    await loadQuestion(questId, qIndex + 1);
+    setBusy(false);
   };
 
   const goPrevQuestion = async () => {
-    if (!questId || busy || qIndex <= 0) return;
+    if (!questId || busy || questionLoading || qIndex <= 0) return;
     const prev = qIndex - 1;
     if (lockedQuestionIndices.has(prev)) return;
-    setMcqResult(null);
-    setMcqPicked(null);
-    setCorrectCelebration(null);
-    setWrittenFeedback(null);
-    setWrittenAwaitingContinue(false);
-    setWritten("");
-    setQIndex(prev);
+    setBusy(true);
     await loadQuestion(questId, prev);
+    setBusy(false);
   };
 
   const goNextBySwipe = async () => {
@@ -644,7 +661,15 @@ export function QuestPracticeWorkspace({
     );
   }
 
-  if (phase === "run" && question) {
+  if (phase === "run") {
+    const total = question?.total ?? 0;
+    const showPromptOutside =
+      question != null &&
+      question.kind !== "complete_expression" &&
+      question.kind !== "drag_order" &&
+      question.kind !== "graph_feature" &&
+      question.kind !== "multi_part";
+
     return (
       <>
       <StudentStickyNote variant="taped" className="w-full touch-pan-y">
@@ -665,7 +690,7 @@ export function QuestPracticeWorkspace({
       >
         <div className="mb-4 flex items-center justify-between gap-4">
           <p className={`text-xs font-mono ${mentrixStudent.textMutedOnLight}`}>
-            Q{qIndex + 1}/{question.total}
+            Q{qIndex + 1}/{total || "…"}
           </p>
           <QuestTimerProgressCircle
             timeLeftSec={timeLeft}
@@ -677,19 +702,36 @@ export function QuestPracticeWorkspace({
             <OnboardingQuestProgressBar
               phase="run"
               questionIndex={qIndex}
-              questionTotal={question.total}
+              questionTotal={total || 1}
             />
           ) : (
-            <QuestSessionProgressBar value={((qIndex + 1) / question.total) * 100} />
+            <QuestSessionProgressBar
+              value={total > 0 ? ((qIndex + 1) / total) * 100 : 0}
+            />
           )}
         </div>
 
-        <AnimatePresence mode="wait">
+        {questionLoading || !question ? (
+          <div className="flex min-h-[12rem] flex-col items-center justify-center gap-3 py-10">
+            <div
+              className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent motion-reduce:animate-none"
+              aria-hidden
+            />
+            <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>
+              Loading next question…
+            </p>
+            {err ? (
+              <p className="text-sm font-medium text-red-600">{err}</p>
+            ) : null}
+          </div>
+        ) : (
+        <AnimatePresence mode="sync">
           <motion.div
-            key={qIndex}
+            key={question.id || qIndex}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
             className="space-y-6"
           >
             {(question.examStakes || question.subtopicTag) && (
@@ -711,20 +753,12 @@ export function QuestPracticeWorkspace({
               </div>
             )}
 
-            {question.kind === "mcq" ? (
+            {showPromptOutside ? (
               <>
                 <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
                 <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
               </>
-            ) : question.kind === "multi_part" ||
-              question.kind === "complete_expression" ||
-              question.kind === "drag_order" ||
-              question.kind === "graph_feature" ? null : (
-              <>
-                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
-                <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
-              </>
-            )}
+            ) : null}
 
             {question.kind === "multi_part" ? (
               <MultiPartQuestion
@@ -749,7 +783,7 @@ export function QuestPracticeWorkspace({
               <div className="grid gap-2 sm:grid-cols-2">
                 {question.options.map((opt, i) => {
                   const base =
-                    "rounded-xl border p-4 text-left text-sm transition-all";
+                    "rounded-xl border p-4 text-left text-sm transition-all overflow-x-auto max-w-full";
                   let cls = `${base} border-[#A5B4FC] bg-white text-[#0B1220] hover:border-[#6366F1] hover:bg-[#EDE9FE]`;
                   if (mcqResult) {
                     if (i === mcqResult.correctIndex) {
@@ -888,6 +922,7 @@ export function QuestPracticeWorkspace({
             ) : null}
           </motion.div>
         </AnimatePresence>
+        )}
 
         <PracticeCorrectCelebration
           open={correctCelebration != null}
@@ -901,7 +936,7 @@ export function QuestPracticeWorkspace({
           }}
         />
 
-        {err ? (
+        {err && question && !questionLoading ? (
           <div className="mt-4">
             {isPracticeLockedAttemptError(err) ? (
               <PracticeLockedAttemptAlert />
@@ -914,11 +949,11 @@ export function QuestPracticeWorkspace({
       </StudentStickyNote>
       <QuestPracticeToolsDrawer
         questionIndex={qIndex}
-        questionTotal={question.total}
+        questionTotal={total || 1}
         timeLeftSec={timeLeft}
         timeLimitSec={timeLimitSec}
-        subtopicTag={question.subtopicTag}
-        examStakes={question.examStakes}
+        subtopicTag={question?.subtopicTag}
+        examStakes={question?.examStakes}
       />
       </>
     );

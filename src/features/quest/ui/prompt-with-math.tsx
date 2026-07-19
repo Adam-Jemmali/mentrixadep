@@ -171,7 +171,7 @@ export function PromptWithMathInline({
     );
   }
 
-  return <span className={className}>{parts}</span>;
+  return <span className={cn("mx-hub-math-prose inline-block max-w-full overflow-x-auto align-middle [&_.katex]:text-inherit", className)}>{parts}</span>;
 }
 
 function PromptTextBlock({
@@ -236,7 +236,16 @@ function PromptTextBlock({
     );
   }
 
-  return <div className={cn(proseClass, "space-y-2 break-words")}>{parts}</div>;
+  return (
+    <div
+      className={cn(
+        proseClass,
+        "mx-hub-math-prose max-w-full space-y-2 break-words overflow-x-auto [&_.katex]:text-inherit [&_.katex-display]:overflow-x-auto",
+      )}
+    >
+      {parts}
+    </div>
+  );
 }
 
 /**
@@ -266,7 +275,7 @@ export function PromptWithMath({
   }, [needsMath, text]);
 
   return (
-    <div className="space-y-3">
+    <div className="mx-hub-math-prose max-w-full space-y-3 overflow-x-auto">
       {blocks.map((block, i) =>
         block.type === "table" ? (
           <QuestPromptTable

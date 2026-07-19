@@ -62,9 +62,55 @@ export function convertPlainMathExpression(expr: string): string {
   const englishIntegral = convertEnglishIntegralExpression(t);
   if (englishIntegral) return englishIntegral;
   t = t.replace(/\bpi\b/gi, "\\pi");
+  t = t.replace(/\binfty\b/gi, "\\infty");
+  t = t.replace(/\binfinity\b/gi, "\\infty");
   t = convertLimitNotation(t);
   t = convertBracketFractions(t);
+  t = convertApCalcFunctionCalls(t);
   t = normalizeCarets(t);
+  return t;
+}
+
+/** sin(x), e^(2x), ln(x), sqrt(x) → KaTeX commands. */
+export function convertApCalcFunctionCalls(expr: string): string {
+  let t = expr;
+  t = t.replace(/\bsqrt\s*\(([^()]*)\)/gi, (_, inner: string) => `\\sqrt{${inner.trim()}}`);
+  t = t.replace(/\babs\s*\(([^()]*)\)/gi, (_, inner: string) => `\\left|${inner.trim()}\\right|`);
+
+  const named = [
+    "arcsin",
+    "arccos",
+    "arctan",
+    "sinh",
+    "cosh",
+    "tanh",
+    "sin",
+    "cos",
+    "tan",
+    "sec",
+    "csc",
+    "cot",
+    "ln",
+    "log",
+    "exp",
+  ] as const;
+  for (const fn of named) {
+    const cmd = fn === "arcsin" || fn === "arccos" || fn === "arctan" ? fn : fn;
+    t = t.replace(
+      new RegExp(`\\b${fn}\\s*\\(([^)]*)\\)`, "gi"),
+      (_, inner: string) => `\\${cmd}\\left(${inner.trim()}\\right)`,
+    );
+  }
+
+  // Bare trig of a single token: sin x → \sin x (avoid eating words like "since")
+  t = t.replace(
+    /\b(sin|cos|tan|sec|csc|cot|ln|log)\s+([a-zA-Z]|\\?[a-zA-Z]+|\([^)]+\))/g,
+    (_, fn: string, arg: string) => `\\${fn} ${arg}`,
+  );
+
+  t = t.replace(/\be\^\(([^()]+)\)/gi, "e^{$1}");
+  t = t.replace(/\be\^([a-zA-Z0-9]+)/gi, "e^{$1}");
+  t = t.replace(/\bexp\s*\(([^)]*)\)/gi, (_, inner: string) => `e^{${inner.trim()}}`);
   return t;
 }
 
@@ -96,12 +142,25 @@ function wrapInlineLimitQuotients(s: string): string {
 
 function wrapFunctionEqualsInProse(s: string): string {
   return s.replace(
-    /\b([a-zA-Z])\(([^)]+)\)\s*=\s*([0-9x+\-−*/^()[\].\s]+?)(?=\s+(?:into|gives|the|and|or|where|when|which|that|for|with|option|answer|we|you|is|are|was|were|be|by|from|at|on|in|to|a|an)\b|[?.!,;]|$)/gi,
+    /\b([a-zA-Z])\(([^)]+)\)\s*=\s*([0-9a-zA-Z\\+\-−*/^()[\]\s.]+?)(?=\s+(?:into|gives|the|and|or|where|when|which|that|for|with|option|answer|we|you|is|are|was|were|be|by|from|at|on|in|to|a|an)\b|[?.!,;]|$)/gi,
     (full, name, args, rhs) => {
       const body = normalizeUnicodeMathChars(rhs.trim());
-      if (!/[\^+\-*/0-9]/.test(body)) return full;
+      if (!/[\^+\-*/0-9\\]|sin|cos|tan|ln|exp|e\^/i.test(body)) return full;
       return `$${convertPlainMathExpression(`${name}(${args}) = ${body}`)}$`;
     },
+  );
+}
+
+function wrapApCalcCallsInProse(s: string): string {
+  return s.replace(
+    /\b((?:arcsin|arccos|arctan|sinh|cosh|tanh|sin|cos|tan|sec|csc|cot|ln|log|exp|sqrt)\s*\([^)]+\))/gi,
+    (full) => {
+      if (full.includes("$")) return full;
+      return `$${convertPlainMathExpression(full)}$`;
+    },
+  ).replace(
+    /\be\^\([^)]+\)|\be\^[a-zA-Z0-9]+/gi,
+    (full) => `$${convertPlainMathExpression(full)}$`,
   );
 }
 
@@ -118,7 +177,9 @@ function looksLikeStandaloneMath(s: string): boolean {
   if (/\s+(?:into|gives|the|formula|option|answer|definition|derivative)\b/i.test(t)) return false;
   if (/^\s*lim\s*[\_(]?/i.test(t)) return true;
   if (/^(?:pi\s*\*\s*)?integral\s+from\s+/i.test(t)) return true;
-  if (/^[\w\s()+\-*/^[\].,=]+$/.test(t) && /\^/.test(t) && /[+\-*/]/.test(t)) return true;
+  if (/^(?:arcsin|arccos|arctan|sin|cos|tan|sec|csc|cot|ln|log|exp|sqrt)\s*\(/i.test(t)) return true;
+  if (/^e\^/i.test(t)) return true;
+  if (/^[\w\s()+\-*/^[\].,=\\]+$/.test(t) && /\^/.test(t) && /[+\-*/]/.test(t)) return true;
   return false;
 }
 
@@ -139,10 +200,10 @@ function inlineCodeToMath(inner: string): string {
 
 function wrapYEqualsInProse(s: string): string {
   return s.replace(
-    /\by\s*=\s*([0-9x+\-−*/^()[\]\s.]+?)(?=\s+(?:and|or|which|when|where|rotated|about|the|a|an|is|are|from|to|on|in|by)\b|[?.!,;]|$)/gi,
+    /\by\s*=\s*([0-9a-zA-Z\\+\-−*/^()[\]\s.]+?)(?=\s+(?:and|or|which|when|where|rotated|about|the|a|an|is|are|from|to|on|in|by)\b|[?.!,;]|$)/gi,
     (full, rhs) => {
       const body = normalizeUnicodeMathChars(String(rhs).trim());
-      if (!/[x0-9^]/.test(body)) return full;
+      if (!/[x0-9^]|sin|cos|tan|ln|e\^|exp|sqrt/i.test(body)) return full;
       return `$y = ${convertPlainMathExpression(body)}$`;
     },
   );
@@ -174,6 +235,7 @@ function transformPlainSegment(segment: string): string {
   s = wrapInlineLimitQuotients(s);
   s = wrapFunctionEqualsInProse(s);
   s = wrapYEqualsInProse(s);
+  s = wrapApCalcCallsInProse(s);
   s = wrapBracketDifferenceQuotient(s);
   s = wrapEnglishIntegralsInProse(s);
 

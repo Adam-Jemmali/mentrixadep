@@ -63,6 +63,18 @@ describe("formatQuestPromptText", () => {
     expect(out.startsWith("$")).toBe(true);
     expect(out.endsWith("$")).toBe(true);
   });
+
+  it("formats sin cos exp and ln as KaTeX", () => {
+    expect(formatQuestPromptText("sin(2x)")).toContain("\\sin");
+    expect(formatQuestPromptText("cos(x) + e^(3x)")).toContain("\\cos");
+    expect(formatQuestPromptText("cos(x) + e^(3x)")).toContain("e^{");
+    expect(formatQuestPromptText("ln(x)")).toContain("\\ln");
+    const stem = formatQuestPromptText(
+      "If f(x) = sin(x) + e^(2x), construct f'(x).",
+    );
+    expect(stem).toContain("\\sin");
+    expect(stem).toMatch(/e\^\{/);
+  });
 });
 
 describe("convertPlainMathExpression", () => {

@@ -8,7 +8,23 @@ export function studentNotationToLatex(input: string): string {
   text = text.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, "\\frac{$1}{$2}");
 
   text = text.replace(/\bsqrt\(([^()]*)\)/gi, (_, inner: string) => `\\sqrt{${inner.trim()}}`);
-  for (const fn of ["sin", "cos", "tan", "sec", "csc", "cot", "ln", "log"] as const) {
+  for (const fn of [
+    "arcsin",
+    "arccos",
+    "arctan",
+    "sinh",
+    "cosh",
+    "tanh",
+    "sin",
+    "cos",
+    "tan",
+    "sec",
+    "csc",
+    "cot",
+    "ln",
+    "log",
+    "exp",
+  ] as const) {
     text = text.replace(
       new RegExp(`\\b${fn}\\(([^)]*)\\)`, "gi"),
       `\\${fn}\\left($1\\right)`,
@@ -17,6 +33,7 @@ export function studentNotationToLatex(input: string): string {
 
   text = text.replace(/\be\^\(([^()]+)\)/gi, "e^{$1}");
   text = text.replace(/\be\^([a-zA-Z0-9]+)/gi, "e^{$1}");
+  text = text.replace(/\bexp\(([^)]*)\)/gi, "e^{$1}");
   text = text.replace(/\^(\([^)]+\))/g, "^{$1}");
   text = text.replace(/\^([a-zA-Z0-9]+)/g, "^{$1}");
 

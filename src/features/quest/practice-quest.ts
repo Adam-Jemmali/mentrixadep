@@ -440,12 +440,20 @@ export async function getPracticeQuestionPublic(
   if (!q) return { error: "Question not found." };
 
   const total = qs.length;
-  const enriched = enrichQuestStimulus({
-    prompt: q.prompt,
-    stimulus: "stimulus" in q ? q.stimulus : undefined,
-  });
-  const prompt = enriched.prompt;
-  const stimulus = enriched.stimulus.length > 0 ? enriched.stimulus : undefined;
+  let prompt = q.prompt;
+  let stimulus: QuestStimulus[] | undefined =
+    "stimulus" in q && Array.isArray(q.stimulus) ? (q.stimulus as QuestStimulus[]) : undefined;
+  try {
+    const enriched = enrichQuestStimulus({
+      prompt: q.prompt,
+      stimulus: "stimulus" in q ? q.stimulus : undefined,
+    });
+    prompt = enriched.prompt;
+    stimulus = enriched.stimulus.length > 0 ? enriched.stimulus : undefined;
+  } catch {
+    // Keep authored prompt/stimulus if enrichment fails — never blank the question.
+    prompt = q.prompt;
+  }
 
   if (q.kind === "mcq") {
     return {
