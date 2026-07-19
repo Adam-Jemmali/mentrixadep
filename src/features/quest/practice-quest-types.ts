@@ -4,6 +4,7 @@ import type {
   MasteryGridData,
   MasteryPackNodeSnapshot,
   QuestMasteryHighlight,
+  QuestOpenedHighlight,
 } from "@/features/mastery-grid/types";
 import type {
   PartialCreditRule,
@@ -202,6 +203,7 @@ export interface PracticePackResult {
   newVerifiedSkills?: number;
   masteryGrid?: MasteryGridData;
   masteryHighlight?: QuestMasteryHighlight;
+  openedHighlight?: QuestOpenedHighlight;
   questVerdict?: import("@/features/guidance/verdict-engine-pure").Verdict;
   /** Skill node ids covered in this pack — drives post-quest skill tree focus. */
   packSkillNodeIds?: string[];

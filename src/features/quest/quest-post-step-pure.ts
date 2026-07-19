@@ -1,7 +1,21 @@
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import { practiceNodeHref } from "@/features/guidance/verdict-engine-pure";
 import { flattenMasteryNodes } from "@/features/mastery-grid/mastery-grid-pure";
-import type { MasteryGridData, MasteryGridNode, MasteryNodeState, QuestMasteryHighlight } from "@/features/mastery-grid/types";
+import type {
+  MasteryGridData,
+  MasteryGridNode,
+  MasteryNodeState,
+  MasteryPackNodeSnapshot,
+  QuestMasteryHighlight,
+  QuestOpenedHighlight,
+} from "@/features/mastery-grid/types";
+import { skillTreeLabel } from "@/features/skill-tree/skill-tree-copy-pure";
+import { buildAdjacency } from "@/features/skill-tree/skill-tree-graph-pure";
+import {
+  buildSolidIds,
+  isNodeUnlocked,
+  isSolidState,
+} from "@/features/skill-tree/skill-tree-unlock-pure";
 
 /** Practice accuracy at or above this turns a node solid green on the grid. */
 export const SOLID_PRACTICE_PERCENT = 70;
@@ -27,6 +41,48 @@ const STATE_PRIORITY_FOR_FOCUS: Record<MasteryNodeState, number> = {
   proficient: 2,
   verified: 3,
 };
+
+type QuestOpenedNode = {
+  id: string;
+  nodeName: string;
+  state: MasteryNodeState;
+  prerequisites: string[];
+};
+
+export function pickQuestOpenedHighlight(
+  before: Record<string, MasteryPackNodeSnapshot>,
+  afterNodes: QuestOpenedNode[],
+  packNodeOrder: string[],
+): QuestOpenedHighlight | null {
+  const changedToSolid = new Set(
+    packNodeOrder.filter((nodeId) => {
+      const prior = before[nodeId];
+      const next = afterNodes.find((node) => node.id === nodeId);
+      return prior && next && !isSolidState(prior.state) && isSolidState(next.state);
+    }),
+  );
+  if (changedToSolid.size === 0) return null;
+
+  const { parents } = buildAdjacency(afterNodes);
+  const solidIds = buildSolidIds(afterNodes);
+  const opened = afterNodes.find((node) => {
+    const nodeParents = parents.get(node.id) ?? [];
+    return (
+      nodeParents.some((parentId) => changedToSolid.has(parentId)) &&
+      isNodeUnlocked(node.id, parents, solidIds)
+    );
+  });
+  if (!opened) return null;
+
+  const label = skillTreeLabel("opened");
+  return {
+    kind: "opened",
+    nodeId: opened.id,
+    nodeName: opened.nodeName,
+    icon: label.icon,
+    text: label.text,
+  };
+}
 
 function questPromptHref(nodeName: string): string {
   return `/student/quest?prompt=${encodeURIComponent(nodeName)}`;

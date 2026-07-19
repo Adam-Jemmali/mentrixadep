@@ -56,11 +56,15 @@ import {
   pickQuestMasteryHighlight,
   snapshotPackNodesFromGrid,
 } from "@/features/mastery-grid/mastery-grid-pure";
-import { applyQuestPostPackStepToVerdict } from "@/features/quest/quest-post-step-pure";
+import {
+  applyQuestPostPackStepToVerdict,
+  pickQuestOpenedHighlight,
+} from "@/features/quest/quest-post-step-pure";
 import {
   assertNodeIdsUnlocked,
   loadNodeUnlockContext,
 } from "@/features/skill-tree/assert-node-unlocked";
+import { loadSkillTree } from "@/features/skill-tree/load-skill-tree";
 import { collectPracticeSkillNodeIds } from "@/features/quest/practice-skill-node-ids-pure";
 import { z } from "zod";
 import { trackEvent } from "@/shared/integrations/analytics";
@@ -1559,14 +1563,18 @@ export async function finalizePracticeQuest(
 
     let masteryGrid: PracticePackResult["masteryGrid"];
     let masteryHighlight: PracticePackResult["masteryHighlight"];
+    let openedHighlight: PracticePackResult["openedHighlight"];
     if (isApCalculusAbSubject(meta.subject || meta.course) && meta.masteryBeforePack) {
       try {
         const packNodeOrder = qs
           .map((q) => (q as PracticeQuestionMcq).skillNodeId)
           .filter((id): id is string => Boolean(id));
-        masteryGrid = await loadMasteryGrid(user.id);
+        const skillTree = await loadSkillTree(user.id);
+        masteryGrid = skillTree.grid;
         masteryHighlight =
           pickQuestMasteryHighlight(meta.masteryBeforePack, masteryGrid, packNodeOrder) ?? undefined;
+        openedHighlight =
+          pickQuestOpenedHighlight(meta.masteryBeforePack, skillTree.nodes, packNodeOrder) ?? undefined;
         if (questVerdict && masteryGrid) {
           questVerdict = applyQuestPostPackStepToVerdict(
             questVerdict,
@@ -1578,6 +1586,7 @@ export async function finalizePracticeQuest(
         }
         result.masteryGrid = masteryGrid;
         result.masteryHighlight = masteryHighlight;
+        result.openedHighlight = openedHighlight;
         result.packSkillNodeIds = packNodeOrder;
         await patchPackMetadata(questId, (m) => ({
           ...m,

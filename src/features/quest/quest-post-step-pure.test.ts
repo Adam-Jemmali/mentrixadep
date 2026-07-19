@@ -5,12 +5,16 @@ import {
   buildQuestPostPackCtas,
   buildQuestPostPackStep,
   parseQuestPromptParam,
+  pickQuestOpenedHighlight,
   pickPostPackFocusNode,
   shortenPostPackCtaLabel,
   SOLID_PRACTICE_PERCENT,
 } from "@/features/quest/quest-post-step-pure";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
-import { defaultMasteryNodeStats } from "@/features/mastery-grid/mastery-grid-pure";
+import {
+  defaultMasteryNodeStats,
+  pickQuestMasteryHighlight,
+} from "@/features/mastery-grid/mastery-grid-pure";
 
 function gridWith(
   nodes: Array<{
@@ -74,6 +78,83 @@ describe("quest-post-step-pure", () => {
     });
     expect(step.phase).toBe("quest_to_verify");
     expect(step.nextAction.label).toContain("Quest Limits");
+  });
+
+  it("highlights a child opened when its parent becomes solid", () => {
+    const highlight = pickQuestOpenedHighlight(
+      {
+        parent: {
+          nodeName: "Limits from graphs",
+          state: "weak",
+          accuracyPercent: 60,
+        },
+      },
+      [
+        {
+          id: "parent",
+          nodeName: "Limits from graphs",
+          state: "proficient",
+          prerequisites: [],
+        },
+        {
+          id: "child",
+          nodeName: "Limits from tables",
+          state: "none",
+          prerequisites: ["parent"],
+        },
+      ],
+      ["parent"],
+    );
+
+    expect(highlight).toEqual({
+      kind: "opened",
+      nodeId: "child",
+      nodeName: "Limits from tables",
+      icon: "breakthrough",
+      text: "Opened",
+    });
+  });
+
+  it("does not replace the existing mastery highlight when a child opens", () => {
+    const before = {
+      parent: {
+        nodeName: "Limits from graphs",
+        state: "weak" as const,
+        accuracyPercent: 60,
+      },
+    };
+    const after = gridWith([
+      {
+        id: "parent",
+        nodeName: "Limits from graphs",
+        state: "proficient",
+        accuracyPercent: 75,
+      },
+      { id: "child", nodeName: "Limits from tables", state: "none" },
+    ]);
+
+    const masteryHighlight = pickQuestMasteryHighlight(before, after, ["parent"]);
+    const openedHighlight = pickQuestOpenedHighlight(
+      before,
+      [
+        {
+          id: "parent",
+          nodeName: "Limits from graphs",
+          state: "proficient",
+          prerequisites: [],
+        },
+        {
+          id: "child",
+          nodeName: "Limits from tables",
+          state: "none",
+          prerequisites: ["parent"],
+        },
+      ],
+      ["parent"],
+    );
+
+    expect(masteryHighlight?.toState).toBe("proficient");
+    expect(openedHighlight?.kind).toBe("opened");
   });
 
   it("overrides generic practice verdict with grid-aware next step", () => {
