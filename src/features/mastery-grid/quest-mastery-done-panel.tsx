@@ -97,7 +97,7 @@ export function QuestMasteryDonePanel({
       .find((node) => packSkillNodeIds.includes(node.id))?.nodeName ??
     "AP Calculus AB";
 
-  const ctas = buildQuestPostPackCtas(verdict);
+  const ctas = buildQuestPostPackCtas(verdict, openedHighlight?.nodeId);
   const interactive = letterInteractiveProps();
 
   return (

@@ -49,10 +49,12 @@ function DesktopFrontier({
   parents,
   focus,
   childNodes,
+  bloomNodeIds,
 }: {
   parents: SkillTreeNodeData[];
   focus: SkillTreeNodeData;
   childNodes: SkillTreeNodeData[];
+  bloomNodeIds?: ReadonlySet<string>;
 }) {
   const parentY = spread(parents.length, 80, 350);
   const childY = spread(childNodes.length, 80, 350);
@@ -87,12 +89,20 @@ function DesktopFrontier({
           className="absolute left-[2%] w-[27%] max-w-56 -translate-y-1/2"
           style={{ top: `${((parentY[index] ?? 215) / 430) * 100}%` }}
         >
-          <SkillTreeNode node={node} href={practiceNodeHref(node.nodeName)} />
+          <SkillTreeNode
+            node={node}
+            href={practiceNodeHref(node.nodeName)}
+            bloomOnMount={bloomNodeIds?.has(node.id)}
+          />
         </div>
       ))}
 
       <div className="absolute left-1/2 top-1/2 w-[30%] max-w-64 -translate-x-1/2 -translate-y-1/2">
-        <SkillTreeNode node={focus} isFocus />
+        <SkillTreeNode
+          node={focus}
+          isFocus
+          bloomOnMount={bloomNodeIds?.has(focus.id)}
+        />
         {focus.unlocked ? (
           <Link
             href={practiceNodeHref(focus.nodeName)}
@@ -113,6 +123,7 @@ function DesktopFrontier({
           <SkillTreeNode
             node={node}
             href={node.unlocked ? practiceNodeHref(node.nodeName) : undefined}
+            bloomOnMount={bloomNodeIds?.has(node.id)}
           />
         </div>
       ))}
@@ -124,10 +135,12 @@ function MobileFrontier({
   parents,
   focus,
   childNodes,
+  bloomNodeIds,
 }: {
   parents: SkillTreeNodeData[];
   focus: SkillTreeNodeData;
   childNodes: SkillTreeNodeData[];
+  bloomNodeIds?: ReadonlySet<string>;
 }) {
   const parentX = spread(parents.length, 55, 305);
   const childX = spread(childNodes.length, 55, 305);
@@ -163,12 +176,17 @@ function MobileFrontier({
             node={node}
             compact
             href={practiceNodeHref(node.nodeName)}
+            bloomOnMount={bloomNodeIds?.has(node.id)}
           />
         ))}
       </div>
 
       <div className="absolute left-1/2 top-[13.5rem] w-[min(17rem,88%)] -translate-x-1/2">
-        <SkillTreeNode node={focus} isFocus />
+        <SkillTreeNode
+          node={focus}
+          isFocus
+          bloomOnMount={bloomNodeIds?.has(focus.id)}
+        />
         {focus.unlocked ? (
           <Link
             href={practiceNodeHref(focus.nodeName)}
@@ -187,6 +205,7 @@ function MobileFrontier({
             node={node}
             compact
             href={node.unlocked ? practiceNodeHref(node.nodeName) : undefined}
+            bloomOnMount={bloomNodeIds?.has(node.id)}
           />
         ))}
       </div>
@@ -197,9 +216,11 @@ function MobileFrontier({
 export function SkillTreeCanvas({
   data,
   onOpenUnit,
+  bloomNodeIds,
 }: {
   data: SkillTreeData;
   onOpenUnit: (unitNumber: number) => void;
+  bloomNodeIds?: ReadonlySet<string>;
 }) {
   const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
   const focus = nodesById.get(data.frontier.focus.id);
@@ -243,8 +264,18 @@ export function SkillTreeCanvas({
         </div>
       </div>
 
-      <DesktopFrontier parents={parents} focus={focus} childNodes={children} />
-      <MobileFrontier parents={parents} focus={focus} childNodes={children} />
+      <DesktopFrontier
+        parents={parents}
+        focus={focus}
+        childNodes={children}
+        bloomNodeIds={bloomNodeIds}
+      />
+      <MobileFrontier
+        parents={parents}
+        focus={focus}
+        childNodes={children}
+        bloomNodeIds={bloomNodeIds}
+      />
     </section>
   );
 }

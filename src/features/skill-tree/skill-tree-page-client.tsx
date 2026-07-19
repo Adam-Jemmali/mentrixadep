@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { MasteryGridExplorer } from "@/features/mastery-grid/mastery-grid-explorer";
 import { MasteryGridHistoryPanel } from "@/features/mastery-grid/mastery-grid-history-panel";
 import type { GridSnapshotWeek } from "@/features/mastery-grid/grid-history-pure";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { SkillTreeCanvas } from "@/features/skill-tree/skill-tree-canvas";
 import { SkillTreeNode } from "@/features/skill-tree/skill-tree-node";
+import {
+  SKILL_TREE_UNLOCKED_BASELINE_KEY,
+  diffNewlyUnlockedIds,
+  parseUnlockedBaseline,
+  serializeUnlockedBaseline,
+} from "@/features/skill-tree/skill-tree-unlock-baseline-pure";
 import type { SkillTreeData } from "@/features/skill-tree/types";
 import { practiceNodeHref } from "@/features/guidance/verdict-engine-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -111,6 +118,7 @@ function UnitBranch({
               node={node}
               compact
               href={node.unlocked ? practiceNodeHref(node.nodeName) : undefined}
+              bloomOnMount={false}
             />
           ))}
         </div>
@@ -128,9 +136,18 @@ export function SkillTreePageClient({
   history: GridSnapshotWeek[];
   momentumActive: boolean;
 }) {
+  const searchParams = useSearchParams();
+  const openedFromPack = searchParams.get("opened");
   const [openUnitNumber, setOpenUnitNumber] = useState<number | null>(null);
+  const [bloomNodeIds, setBloomNodeIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const unitTriggerRef = useRef<HTMLElement | null>(null);
   const focus = data.nodes.find((node) => node.id === data.focusNodeId);
+  const unlockedNodeIds = useMemo(
+    () => new Set(data.nodes.filter((node) => node.unlocked).map((node) => node.id)),
+    [data.nodes],
+  );
   const nodeNameById = Object.fromEntries(
     data.nodes.map((node) => [node.id, node.nodeName]),
   );
@@ -140,6 +157,26 @@ export function SkillTreePageClient({
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setOpenUnitNumber(unitNumber);
   }, []);
+
+  useEffect(() => {
+    const currentIds = [...unlockedNodeIds];
+    const previous = parseUnlockedBaseline(
+      window.sessionStorage.getItem(SKILL_TREE_UNLOCKED_BASELINE_KEY),
+    );
+    const newly = diffNewlyUnlockedIds(previous, currentIds);
+    window.sessionStorage.setItem(
+      SKILL_TREE_UNLOCKED_BASELINE_KEY,
+      serializeUnlockedBaseline(currentIds),
+    );
+    const bloom = new Set<string>();
+    if (openedFromPack && unlockedNodeIds.has(openedFromPack)) {
+      bloom.add(openedFromPack);
+    }
+    if (previous.length > 0) {
+      for (const id of newly) bloom.add(id);
+    }
+    if (bloom.size > 0) setBloomNodeIds(bloom);
+  }, [unlockedNodeIds, openedFromPack]);
 
   return (
     <>
@@ -167,7 +204,11 @@ export function SkillTreePageClient({
         </div>
       </header>
 
-      <SkillTreeCanvas data={data} onOpenUnit={openUnit} />
+      <SkillTreeCanvas
+        data={data}
+        onOpenUnit={openUnit}
+        bloomNodeIds={bloomNodeIds}
+      />
 
       <MasteryGridHistoryPanel
         history={history}
@@ -186,6 +227,7 @@ export function SkillTreePageClient({
         <div className="border-t border-[#C4B5FD] p-3 sm:p-5">
           <MasteryGridExplorer
             data={data.grid}
+            unlockedNodeIds={unlockedNodeIds}
             subjects={[
               {
                 key: AP_CALC_AB_SUBJECT,

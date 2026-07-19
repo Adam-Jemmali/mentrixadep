@@ -61,9 +61,11 @@ type SubjectOption = {
 export function MasteryGridExplorer({
   data,
   subjects,
+  unlockedNodeIds,
 }: {
   data: MasteryGridData;
   subjects: SubjectOption[];
+  unlockedNodeIds?: ReadonlySet<string> | null;
 }) {
   const defaultUnit = pickDefaultMasteryUnitNumber(data);
   const [selectedUnit, setSelectedUnit] = useState<number | null>(defaultUnit);
@@ -243,7 +245,12 @@ export function MasteryGridExplorer({
         </StudentStickyNote>
       ) : filteredData ? (
         <StudentStickyNote variant="curl">
-          <MasteryGrid data={filteredData} showLegend collapsibleUnits={false} />
+          <MasteryGrid
+            data={filteredData}
+            showLegend
+            collapsibleUnits={false}
+            unlockedNodeIds={unlockedNodeIds}
+          />
         </StudentStickyNote>
       ) : null}
     </div>

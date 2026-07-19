@@ -33,14 +33,16 @@ export function SkillTreeNode({
   isFocus = false,
   href,
   compact = false,
+  bloomOnMount = false,
 }: {
   node: SkillTreeNodeData;
   isFocus?: boolean;
   href?: string;
   compact?: boolean;
+  bloomOnMount?: boolean;
 }) {
   const reducedMotion = useReducedMotion();
-  const previousUnlocked = useRef(node.unlocked);
+  const previousUnlocked = useRef(node.unlocked && !bloomOnMount);
   const [bloom, setBloom] = useState(false);
   const reviewDue =
     node.nextReviewAt != null && Date.parse(node.nextReviewAt) <= Date.now();
@@ -59,14 +61,21 @@ export function SkillTreeNode({
       return undefined;
     }
 
-    if (canStartUnlockBloom(wasUnlocked, node.unlocked, Boolean(reducedMotion))) {
+    const shouldBloom = canStartUnlockBloom(
+      wasUnlocked,
+      node.unlocked,
+      Boolean(reducedMotion),
+      bloomOnMount,
+    );
+
+    if (shouldBloom) {
       setBloom(true);
       const timeout = window.setTimeout(() => setBloom(false), 900);
       return () => window.clearTimeout(timeout);
     }
 
     return undefined;
-  }, [node.unlocked, reducedMotion]);
+  }, [node.unlocked, reducedMotion, bloomOnMount]);
 
   const content = (
     <>

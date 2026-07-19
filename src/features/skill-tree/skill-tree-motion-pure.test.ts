@@ -11,6 +11,11 @@ describe("skill tree motion", () => {
     expect(canStartUnlockBloom(true, true, false)).toBe(false);
   });
 
+  it("starts unlock bloom for an opened return highlight", () => {
+    expect(canStartUnlockBloom(true, true, false, true)).toBe(true);
+    expect(canStartUnlockBloom(true, true, true, true)).toBe(false);
+  });
+
   it("stops rendering an active bloom when reduced motion becomes true", () => {
     expect(canRenderUnlockBloom(true, false)).toBe(true);
     expect(canRenderUnlockBloom(true, true)).toBe(false);

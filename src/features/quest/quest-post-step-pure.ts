@@ -327,7 +327,15 @@ export function shortenPostPackCtaLabel(label: string): string {
 }
 
 /** Exactly three post-pack moves: recommendation, skill tree, Home. */
-export function buildQuestPostPackCtas(verdict: Verdict): QuestPostPackCta[] {
+export function buildQuestPostPackCtas(
+  verdict: Verdict,
+  openedNodeId?: string | null,
+): QuestPostPackCta[] {
+  const treeHref =
+    openedNodeId && openedNodeId.trim().length > 0
+      ? `/student/mastery?opened=${encodeURIComponent(openedNodeId.trim())}`
+      : "/student/mastery";
+
   return [
     {
       key: "next",
@@ -338,7 +346,7 @@ export function buildQuestPostPackCtas(verdict: Verdict): QuestPostPackCta[] {
     {
       key: "tree",
       label: "Skill tree",
-      href: "/student/mastery",
+      href: treeHref,
       kind: "secondary",
     },
     {

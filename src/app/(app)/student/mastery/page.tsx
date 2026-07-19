@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { requireRole } from "@/shared/core/auth";
 import { loadMasteryGridHistory } from "@/features/mastery-grid/grid-snapshot-cron";
 import { getStudentEntitlements } from "@/features/entitlements/entitlements";
@@ -17,7 +18,9 @@ export default async function StudentMasteryPage() {
     return (
       <div className={mentrixStudent.pageBgHub}>
         <main className={mentrixStudent.main}>
-          <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>Skill tree is unavailable right now. Try again in a moment.</p>
+          <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>
+            Skill tree is unavailable right now. Try again in a moment.
+          </p>
         </main>
       </div>
     );
@@ -26,11 +29,13 @@ export default async function StudentMasteryPage() {
   return (
     <div className={mentrixStudent.pageBgHub}>
       <main className={`${mentrixStudent.main} space-y-6`}>
-        <SkillTreePageClient
-          data={tree}
-          history={history}
-          momentumActive={entitlements.momentumActive}
-        />
+        <Suspense fallback={null}>
+          <SkillTreePageClient
+            data={tree}
+            history={history}
+            momentumActive={entitlements.momentumActive}
+          />
+        </Suspense>
       </main>
     </div>
   );

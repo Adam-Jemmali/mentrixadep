@@ -238,4 +238,18 @@ describe("quest-post-step-pure", () => {
     expect(ctas.map((c) => c.key)).toContain("home");
     expect(ctas.every((c) => c.label.length > 0)).toBe(true);
   });
+
+  it("carries an opened node into the skill tree return link", () => {
+    const verdict = {
+      changed: "A child opened.",
+      reason: "Its prerequisite is solid.",
+      nextAction: { label: "Practice next", href: "/student/quest" },
+    };
+
+    const ctas = buildQuestPostPackCtas(verdict, "child/node");
+
+    expect(ctas.find((cta) => cta.key === "tree")?.href).toBe(
+      "/student/mastery?opened=child%2Fnode",
+    );
+  });
 });

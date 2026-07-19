@@ -2,8 +2,11 @@ export function canStartUnlockBloom(
   wasUnlocked: boolean,
   isUnlocked: boolean,
   reducedMotion: boolean,
+  forceFromOpenedHighlight = false,
 ): boolean {
-  return !wasUnlocked && isUnlocked && !reducedMotion;
+  if (reducedMotion || !isUnlocked) return false;
+  if (forceFromOpenedHighlight) return true;
+  return !wasUnlocked;
 }
 
 export function canRenderUnlockBloom(

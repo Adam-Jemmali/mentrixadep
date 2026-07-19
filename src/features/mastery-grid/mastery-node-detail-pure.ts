@@ -27,6 +27,15 @@ export function masteryNodeShortStateLabel(state: MasteryNodeState): string {
   }
 }
 
+/** When unlockedNodeIds is omitted, All skills keeps legacy open behavior. */
+export function isMasteryNodePracticeLocked(
+  nodeId: string,
+  unlockedNodeIds?: ReadonlySet<string> | null,
+): boolean {
+  if (!unlockedNodeIds) return false;
+  return !unlockedNodeIds.has(nodeId);
+}
+
 export function masteryNodeActionHref(node: Pick<MasteryGridNode, "state" | "nodeName">): string {
   if (node.state === "proficient") {
     return `/student/quest?prompt=${encodeURIComponent(node.nodeName)}`;
