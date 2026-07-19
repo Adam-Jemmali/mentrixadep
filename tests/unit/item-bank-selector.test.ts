@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPackNodePickOrder,
   computePracticePackQuestionCount,
+  filterSkillNodesToAllowed,
   hasApprovedCoverageForNodes,
   pickNeededNodeIds,
 } from "@/features/quest/item-bank-selector";
@@ -49,6 +50,17 @@ describe("item bank selector coverage guards", () => {
     expect(order).toContain("unit-sibling");
     expect(order).toHaveLength(5);
     expect(order.filter((id) => id === "focus")).toHaveLength(2);
+  });
+
+  it("removes locked nodes from practice candidates", () => {
+    const nodes = [
+      { id: "open", unit_number: 1 },
+      { id: "locked", unit_number: 2 },
+    ];
+
+    expect(
+      filterSkillNodesToAllowed(nodes, new Set(["open"])).map((node) => node.id),
+    ).toEqual(["open"]);
   });
 });
 

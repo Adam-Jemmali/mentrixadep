@@ -48,6 +48,14 @@ type SkillNodeRow = {
   exam_stakes: string | null;
 };
 
+export function filterSkillNodesToAllowed<T extends { id: string }>(
+  nodes: T[],
+  allowedNodeIds?: ReadonlySet<string>,
+): T[] {
+  if (!allowedNodeIds) return nodes;
+  return nodes.filter((node) => allowedNodeIds.has(node.id));
+}
+
 type ItemBankRow = {
   id: string;
   skill_node_id: string;
@@ -472,7 +480,11 @@ export async function selectItemBankQuestions(
   userId: string,
   subject: string,
   count: number,
-  options?: { focusSkillNodeId?: string; difficulty?: PracticeDifficulty },
+  options?: {
+    focusSkillNodeId?: string;
+    difficulty?: PracticeDifficulty;
+    allowedSkillNodeIds?: ReadonlySet<string>;
+  },
 ): Promise<PracticeQuestion[]> {
   if (!isApCalculusAbSubject(subject)) return [];
 
@@ -487,7 +499,11 @@ export async function selectItemBankQuestions(
 
   if (nodesError || !nodes?.length) return [];
 
-  const skillNodes = nodes as SkillNodeRow[];
+  const skillNodes = filterSkillNodesToAllowed(
+    nodes as SkillNodeRow[],
+    options?.allowedSkillNodeIds,
+  );
+  if (!skillNodes.length) return [];
   const nodeById = new Map(skillNodes.map((node) => [node.id, node]));
 
   const validNodeIds = new Set(skillNodes.map((node) => node.id));

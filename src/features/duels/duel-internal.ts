@@ -4,6 +4,7 @@ import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import {
   DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE,
   duelRowsToQuestionPack,
+  filterDuelRowsToUnlockedNodes,
   pickDuelItemBankRows,
   type DuelItemBankRow,
 } from "@/features/duels/duel-item-bank-pure";
@@ -61,20 +62,28 @@ export async function selectDuelQuestions(
     return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
   }
 
-  const scopedNodeIds = nodeIds.length > 0 ? nodeIds : allNodeIds;
-  const primaryNodeIds = new Set(scopedNodeIds);
+  const requestedNodeIds = new Set(nodeIds);
+  const candidateNodeIds = allNodeIds.filter((nodeId) => requestedNodeIds.has(nodeId));
+  if (!candidateNodeIds.length) {
+    return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
+  }
+  const unlockedNodeIds = new Set(candidateNodeIds);
 
   const { data: items, error: itemsError } = await admin
     .from("item_bank")
     .select("id, skill_node_id, prompt, options, correct_answer")
     .eq("status", "approved")
-    .in("skill_node_id", allNodeIds);
+    .in("skill_node_id", candidateNodeIds);
 
   if (itemsError || !items?.length) {
     return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
   }
 
-  const picked = pickDuelItemBankRows(items as DuelItemBankRow[], primaryNodeIds);
+  const unlockedItems = filterDuelRowsToUnlockedNodes(
+    items as DuelItemBankRow[],
+    unlockedNodeIds,
+  );
+  const picked = pickDuelItemBankRows(unlockedItems, unlockedNodeIds);
   if (!picked.length) {
     return { error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
   }

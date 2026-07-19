@@ -20,7 +20,6 @@ import { applyDuelMetaRewards } from "@/features/duels/duel-reward";
 import {
   bothSidesReady,
   isQueueStyleMatchSource,
-  loadApCalcAbSkillNodeIds,
   randomAiOpponentAnswers,
   selectDuelQuestions,
   scoreAnswers,
@@ -31,6 +30,7 @@ import {
   padDuelAnswersForScoring,
 } from "@/features/duels/duel-forfeit-pure";
 import { DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE } from "@/features/duels/duel-item-bank-pure";
+import { loadNodeUnlockContext } from "@/features/skill-tree/assert-node-unlocked";
 
 export async function activateSkillDuelSession(
   duelId: string
@@ -93,7 +93,19 @@ export async function activateSkillDuelSession(
       };
     }
 
-    const nodeIds = await loadApCalcAbSkillNodeIds(admin);
+    const participantIds = [
+      duel.student_id,
+      ...(duel.is_ai_opponent || !duel.opponent_student_id
+        ? []
+        : [duel.opponent_student_id]),
+    ];
+    const unlockContexts = await Promise.all(
+      participantIds.map((participantId) => loadNodeUnlockContext(participantId)),
+    );
+    // Duel candidates stay inside the nodes unlocked for every human participant.
+    const nodeIds = [...(unlockContexts[0]?.unlockedIds ?? [])].filter((nodeId) =>
+      unlockContexts.every((context) => context.unlockedIds.has(nodeId)),
+    );
     if (!nodeIds.length) {
       return { success: false, error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
     }

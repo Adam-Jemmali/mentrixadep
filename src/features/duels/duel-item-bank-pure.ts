@@ -14,6 +14,13 @@ export type DuelItemBankRow = {
   correct_answer: string;
 };
 
+export function filterDuelRowsToUnlockedNodes(
+  rows: DuelItemBankRow[],
+  unlockedNodeIds: ReadonlySet<string>,
+): DuelItemBankRow[] {
+  return rows.filter((row) => unlockedNodeIds.has(row.skill_node_id));
+}
+
 export function parseItemBankOptions(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is string => typeof entry === "string");

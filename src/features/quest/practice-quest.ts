@@ -57,6 +57,10 @@ import {
   snapshotPackNodesFromGrid,
 } from "@/features/mastery-grid/mastery-grid-pure";
 import { applyQuestPostPackStepToVerdict } from "@/features/quest/quest-post-step-pure";
+import {
+  assertNodeIdsUnlocked,
+  loadNodeUnlockContext,
+} from "@/features/skill-tree/assert-node-unlocked";
 import { z } from "zod";
 import { trackEvent } from "@/shared/integrations/analytics";
 import type {
@@ -98,6 +102,12 @@ import type { VfaAttemptFormat } from "@/features/quest/vfa-free-response-pure";
 
 const PRACTICE_PACKS_DAILY = 10;
 const DEFAULT_TIME_SEC = 15 * 60;
+
+function practiceQuestionSkillNodeIds(questions: PracticeQuestion[]): string[] {
+  return questions
+    .map((question) => (question as PracticeQuestion & { skillNodeId?: string }).skillNodeId)
+    .filter((nodeId): nodeId is string => Boolean(nodeId));
+}
 
 const finalizePracticeOptionsSchema = z.object({
   timedOut: z.boolean().optional(),
@@ -233,12 +243,30 @@ export async function createPracticeQuest(
       focusSkillNodeId = focusNode?.id as string | undefined;
     }
 
+    const unlockContext =
+      user.role === "student" ? await loadNodeUnlockContext(user.id) : null;
+    if (focusSkillNodeId && unlockContext) {
+      assertNodeIdsUnlocked(
+        [focusSkillNodeId],
+        unlockContext.parents,
+        unlockContext.solidIds,
+      );
+    }
+
     const bankQuestions = await selectItemBankQuestions(user.id, AP_CALC_AB_SUBJECT, qc, {
       focusSkillNodeId,
       difficulty: input.difficulty,
+      allowedSkillNodeIds: unlockContext?.unlockedIds,
     });
     if (bankQuestions.length < requiredCount) {
       return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
+    }
+    if (unlockContext) {
+      assertNodeIdsUnlocked(
+        practiceQuestionSkillNodeIds(bankQuestions),
+        unlockContext.parents,
+        unlockContext.solidIds,
+      );
     }
     const questions = shufflePracticePackMcqOptions(bankQuestions);
     const hasConstruction = questions.some((q) => q.kind !== "mcq");
@@ -597,6 +625,16 @@ export async function startPracticeSession(questId: string): Promise<{ success: 
     const loaded = await loadPackForUser(questId, user.id);
     if (!loaded.ok) return { success: false, error: loaded.error };
     const { meta } = loaded;
+
+    if (user.role === "student" && isApCalculusAbSubject(meta.subject || meta.course)) {
+      const targetNodeIds = practiceQuestionSkillNodeIds(meta.questions);
+      const unlockContext = await loadNodeUnlockContext(user.id);
+      assertNodeIdsUnlocked(
+        targetNodeIds,
+        unlockContext.parents,
+        unlockContext.solidIds,
+      );
+    }
 
     let masteryBeforePack = meta.masteryBeforePack;
     if (
