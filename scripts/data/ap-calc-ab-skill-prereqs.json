@@ -1,0 +1,158 @@
+{
+  "definition-of-the-derivative-as-a-limit": [
+    "tangent-lines-and-secant-lines",
+    "choosing-a-limit-evaluation-strategy"
+  ],
+  "differentiability-and-continuity": [
+    "estimating-derivatives-from-graphs",
+    "continuity-at-a-point"
+  ],
+  "chain-rule-basics": [
+    "power-rule",
+    "interpreting-derivative-as-velocity"
+  ],
+  "chain-rule-with-composite-functions": [
+    "chain-rule-basics",
+    "sum-and-difference-rules",
+    "constant-multiple-rule"
+  ],
+  "implicit-differentiation-basics": [
+    "chain-rule-with-composite-functions",
+    "derivative-notation-f-prime-and-dy-dx"
+  ],
+  "implicit-differentiation-advanced": [
+    "implicit-differentiation-basics",
+    "chain-rule-with-composite-functions",
+    "sum-and-difference-rules"
+  ],
+  "logarithmic-differentiation-setup": [
+    "derivative-of-inverse-tan-x",
+    "derivative-of-ln-x",
+    "chain-rule-with-composite-functions"
+  ],
+  "selecting-a-differentiation-technique": [
+    "differentiating-general-exponential-a-to-the-x",
+    "chain-rule-with-composite-functions",
+    "implicit-differentiation-advanced",
+    "sum-and-difference-rules"
+  ],
+  "position-velocity-and-acceleration-context": [
+    "parametric-and-vector-derivatives-intro",
+    "interpreting-derivative-as-velocity",
+    "higher-order-derivatives"
+  ],
+  "related-rates-problem-setup": [
+    "position-velocity-and-acceleration-context",
+    "implicit-differentiation-basics"
+  ],
+  "local-linearization-concept": [
+    "related-rates-with-changing-angles",
+    "tangent-lines-and-secant-lines"
+  ],
+  "l-hopital-rule-indeterminate-zero-over-zero": [
+    "differentials-dy-and-dx",
+    "choosing-a-limit-evaluation-strategy",
+    "selecting-a-differentiation-technique"
+  ],
+  "mean-value-theorem": [
+    "error-in-linear-approximation",
+    "average-rate-of-change",
+    "differentiability-and-continuity"
+  ],
+  "extreme-value-theorem": [
+    "mean-value-theorem",
+    "continuity-on-an-interval"
+  ],
+  "critical-points-and-stationary-points": [
+    "extreme-value-theorem",
+    "selecting-a-differentiation-technique"
+  ],
+  "concavity-and-second-derivative": [
+    "absolute-extrema-on-closed-intervals",
+    "higher-order-derivatives"
+  ],
+  "optimization-problem-setup": [
+    "sketching-graphs-from-derivative-information",
+    "critical-points-and-stationary-points"
+  ],
+  "antiderivatives-definition": [
+    "global-vs-local-extrema",
+    "power-rule",
+    "sum-and-difference-rules"
+  ],
+  "basic-integration-rules": [
+    "indefinite-integrals-notation",
+    "power-rule",
+    "constant-multiple-rule"
+  ],
+  "definite-integral-as-limit-of-riemann-sums": [
+    "trapezoidal-sum-approximation",
+    "limits-involving-infinity"
+  ],
+  "fundamental-theorem-of-calculus-part-1": [
+    "definite-integral-as-limit-of-riemann-sums",
+    "continuity-on-an-interval",
+    "definition-of-the-derivative-as-a-limit"
+  ],
+  "fundamental-theorem-of-calculus-part-2": [
+    "fundamental-theorem-of-calculus-part-1",
+    "antiderivatives-definition"
+  ],
+  "evaluating-definite-integrals": [
+    "fundamental-theorem-of-calculus-part-2",
+    "basic-integration-rules"
+  ],
+  "accumulation-functions": [
+    "evaluating-definite-integrals",
+    "fundamental-theorem-of-calculus-part-1"
+  ],
+  "net-change-from-rate": [
+    "accumulation-functions",
+    "fundamental-theorem-of-calculus-part-2",
+    "rates-of-change-in-applied-contexts"
+  ],
+  "u-substitution-basics": [
+    "net-change-from-rate",
+    "chain-rule-basics",
+    "basic-integration-rules"
+  ],
+  "u-substitution-with-definite-integrals": [
+    "u-substitution-basics",
+    "evaluating-definite-integrals"
+  ],
+  "modeling-with-differential-equations": [
+    "properties-of-definite-integrals",
+    "rates-of-change-in-applied-contexts"
+  ],
+  "separable-differential-equations-setup": [
+    "reasoning-with-slope-fields",
+    "u-substitution-basics"
+  ],
+  "separable-differential-equations-solving": [
+    "separable-differential-equations-setup",
+    "basic-integration-rules"
+  ],
+  "average-value-of-a-function": [
+    "initial-value-problems",
+    "evaluating-definite-integrals"
+  ],
+  "area-between-curves-with-vertical-slices": [
+    "average-value-of-a-function",
+    "evaluating-definite-integrals"
+  ],
+  "displacement-from-velocity-integral": [
+    "volumes-with-known-cross-sections",
+    "net-change-from-rate",
+    "motion-along-a-line"
+  ],
+  "accumulation-in-applied-integration": [
+    "total-distance-traveled",
+    "accumulation-functions",
+    "interpreting-definite-integrals-in-context"
+  ],
+  "particle-motion-from-integrals": [
+    "accumulation-in-applied-integration",
+    "position-velocity-and-acceleration-context",
+    "net-change-from-rate"
+  ]
+}

@@ -85,6 +85,7 @@ function MasterySquare({
   isRecommended,
   globalTopPercent,
   globalVerifiedCount,
+  unlockedNodeIds,
 }: {
   node: MasteryGridNode;
   unitNumber?: number;
@@ -94,6 +95,7 @@ function MasterySquare({
   isRecommended?: boolean;
   globalTopPercent?: number | null;
   globalVerifiedCount?: number;
+  unlockedNodeIds?: ReadonlySet<string> | null;
 }) {
   const { nodeName, state } = node;
   const shouldAnimate = animateFrom != null && animateFrom !== state;
@@ -131,6 +133,7 @@ function MasterySquare({
       globalTopPercent={globalTopPercent}
       globalVerifiedCount={globalVerifiedCount}
       unitNumber={unitNumber}
+      unlockedNodeIds={unlockedNodeIds}
       tone="light"
       placement="top"
     >
@@ -182,6 +185,7 @@ function MasteryUnitGrid({
   recommendedNodeId,
   globalTopPercent,
   globalVerifiedCount,
+  unlockedNodeIds,
 }: {
   nodes: MasteryGridNode[];
   unitNumber?: number;
@@ -195,6 +199,7 @@ function MasteryUnitGrid({
   recommendedNodeId?: string;
   globalTopPercent?: number | null;
   globalVerifiedCount?: number;
+  unlockedNodeIds?: ReadonlySet<string> | null;
 }) {
   return (
     <div
@@ -218,6 +223,7 @@ function MasteryUnitGrid({
           isRecommended={recommendedNodeId === node.id}
           globalTopPercent={globalTopPercent}
           globalVerifiedCount={globalVerifiedCount}
+          unlockedNodeIds={unlockedNodeIds}
         />
       ))}
     </div>
@@ -232,6 +238,7 @@ function MasteryGridUnits({
   recommendedNodeId,
   globalTopPercent,
   globalVerifiedCount,
+  unlockedNodeIds,
   collapsible = true,
 }: {
   units: MasteryGridData["units"];
@@ -245,6 +252,7 @@ function MasteryGridUnits({
   recommendedNodeId?: string;
   globalTopPercent?: number | null;
   globalVerifiedCount?: number;
+  unlockedNodeIds?: ReadonlySet<string> | null;
   collapsible?: boolean;
 }) {
   if (!collapsible) {
@@ -267,6 +275,7 @@ function MasteryGridUnits({
               recommendedNodeId={recommendedNodeId}
               globalTopPercent={globalTopPercent}
               globalVerifiedCount={globalVerifiedCount}
+              unlockedNodeIds={unlockedNodeIds}
             />
           </div>
         ))}
@@ -309,6 +318,7 @@ function MasteryGridUnits({
               recommendedNodeId={recommendedNodeId}
               globalTopPercent={globalTopPercent}
               globalVerifiedCount={globalVerifiedCount}
+              unlockedNodeIds={unlockedNodeIds}
             />
           </MentrixaAccordionItem>
         );
@@ -329,6 +339,7 @@ export function MasteryGrid({
   recommendedNodeId,
   remainderCollapsed = false,
   collapsibleUnits = true,
+  unlockedNodeIds,
 }: {
   data: MasteryGridData;
   className?: string;
@@ -345,6 +356,7 @@ export function MasteryGrid({
   recommendedNodeId?: string;
   remainderCollapsed?: boolean;
   collapsibleUnits?: boolean;
+  unlockedNodeIds?: ReadonlySet<string> | null;
 }) {
   const [remainderExpanded, setRemainderExpanded] = useState(false);
 
@@ -399,6 +411,7 @@ export function MasteryGrid({
               recommendedNodeId={recommendedNodeId}
               globalTopPercent={data.globalRank?.topPercent}
               globalVerifiedCount={data.globalRank?.verifiedCount}
+              unlockedNodeIds={unlockedNodeIds}
             />
             <div className="mt-3 space-y-2">
               {pinSplit!.pinnedNodes.map((node) => {
@@ -431,6 +444,7 @@ export function MasteryGrid({
             recommendedNodeId={recommendedNodeId}
             globalTopPercent={data.globalRank?.topPercent}
             globalVerifiedCount={data.globalRank?.verifiedCount}
+            unlockedNodeIds={unlockedNodeIds}
           />
         ) : null}
 

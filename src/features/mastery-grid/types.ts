@@ -1,4 +1,5 @@
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
+import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export type MasteryNodeState = "none" | "weak" | "proficient" | "verified";
 
@@ -51,4 +52,12 @@ export type QuestMasteryHighlight = {
   toState: MasteryNodeState;
   unchanged: boolean;
   verdictLine: string;
+};
+
+export type QuestOpenedHighlight = {
+  kind: "opened";
+  nodeId: string;
+  nodeName: string;
+  icon: VocabIconName;
+  text: string;
 };

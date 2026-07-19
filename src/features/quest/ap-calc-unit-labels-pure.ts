@@ -10,6 +10,17 @@ export const AP_CALC_AB_UNIT_NAMES: Record<number, string> = {
   8: "Applications of Integration",
 };
 
+export const AP_CALC_AB_UNIT_SHORT_LABELS: Record<number, string> = {
+  1: "Limits and Continuity",
+  2: "Derivative Foundations",
+  3: "Composite Derivatives",
+  4: "Contextual Derivatives",
+  5: "Analytical Derivatives",
+  6: "Integration and Accumulation",
+  7: "Differential Equations",
+  8: "Integration Applications",
+};
+
 /** Full unit title for mastery grid and skill tree UI. */
 export function unitDisplayName(unitNumber: number, unitName?: string): string {
   const fromData = unitName?.trim();
@@ -17,9 +28,8 @@ export function unitDisplayName(unitNumber: number, unitName?: string): string {
   return AP_CALC_AB_UNIT_NAMES[unitNumber] ?? `Unit ${unitNumber}`;
 }
 
-/** @deprecated Use unitDisplayName — kept for imports migrating off short labels. */
 export function unitShortLabel(unitNumber: number): string {
-  return unitDisplayName(unitNumber);
+  return AP_CALC_AB_UNIT_SHORT_LABELS[unitNumber] ?? `Unit ${unitNumber}`;
 }
 
 export function nodeOneWordLabel(nodeName: string, nodeSlug?: string): string {

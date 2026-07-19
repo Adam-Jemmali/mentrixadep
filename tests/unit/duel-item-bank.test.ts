@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   duelRowsToQuestionPack,
+  filterDuelRowsToUnlockedNodes,
   itemBankRowToDuelQuestion,
   pickDuelItemBankRows,
 } from "@/features/duels/duel-item-bank-pure";
@@ -54,5 +55,17 @@ describe("duel item bank selection", () => {
   it("rejects packs below the duel minimum", () => {
     expect(pickDuelItemBankRows([sampleRow("a", "n")], new Set(["n"]), 10, 3)).toEqual([]);
     expect(duelRowsToQuestionPack([sampleRow("a", "n")])).toBeNull();
+  });
+
+  it("removes rows for locked nodes before duel selection", () => {
+    const rows = [
+      sampleRow("open-1", "open"),
+      sampleRow("locked-1", "locked"),
+      sampleRow("open-2", "open"),
+    ];
+
+    expect(
+      filterDuelRowsToUnlockedNodes(rows, new Set(["open"])).map((row) => row.id),
+    ).toEqual(["open-1", "open-2"]);
   });
 });

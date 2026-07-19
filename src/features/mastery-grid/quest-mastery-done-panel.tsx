@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
+import type {
+  MasteryGridData,
+  QuestMasteryHighlight,
+  QuestOpenedHighlight,
+} from "@/features/mastery-grid/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import { buildQuestPostPackCtas } from "@/features/quest/quest-post-step-pure";
@@ -66,6 +70,7 @@ export function QuestMasteryDonePanel({
   grid,
   verdict,
   masteryHighlight,
+  openedHighlight,
   packSkillNodeIds = [],
   correct,
   total,
@@ -75,6 +80,7 @@ export function QuestMasteryDonePanel({
   grid: MasteryGridData;
   verdict: Verdict;
   masteryHighlight?: QuestMasteryHighlight | null;
+  openedHighlight?: QuestOpenedHighlight | null;
   packSkillNodeIds?: string[];
   correct: number;
   total: number;
@@ -91,7 +97,7 @@ export function QuestMasteryDonePanel({
       .find((node) => packSkillNodeIds.includes(node.id))?.nodeName ??
     "AP Calculus AB";
 
-  const ctas = buildQuestPostPackCtas(verdict);
+  const ctas = buildQuestPostPackCtas(verdict, openedHighlight?.nodeId);
   const interactive = letterInteractiveProps();
 
   return (
@@ -128,6 +134,21 @@ export function QuestMasteryDonePanel({
       </header>
 
       <div className="mt-7 text-left">
+        {openedHighlight ? (
+          <div className="mb-3 flex items-center gap-3 rounded-lg border border-[#6366F1] bg-[#EEF2FF] px-3 py-2.5 text-[#0B1220]">
+            <IconChip
+              name={openedHighlight.icon}
+              title={openedHighlight.text}
+              tone="indigo"
+            />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#4F46E5]">
+                {openedHighlight.text}
+              </p>
+              <p className="text-sm font-semibold">{openedHighlight.nodeName}</p>
+            </div>
+          </div>
+        ) : null}
         <VerdictPanel verdict={verdict} tone="light" showNextAction={false} />
       </div>
 

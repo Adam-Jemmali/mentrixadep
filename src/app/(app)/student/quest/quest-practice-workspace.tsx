@@ -42,7 +42,11 @@ import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/get-mastery-grid-action";
 import { QuestMasteryDonePanel } from "@/features/mastery-grid/quest-mastery-done-panel";
 import { parseQuestPromptParam } from "@/features/quest/quest-post-step-pure";
-import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
+import type {
+  MasteryGridData,
+  QuestMasteryHighlight,
+  QuestOpenedHighlight,
+} from "@/features/mastery-grid/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import {
   OnboardingQuestProgressBar,
@@ -124,6 +128,7 @@ export function QuestPracticeWorkspace({
     streakDays?: number;
     masteryGrid?: MasteryGridData;
     masteryHighlight?: QuestMasteryHighlight;
+    openedHighlight?: QuestOpenedHighlight;
     questVerdict?: Verdict;
     packSkillNodeIds?: string[];
   } | null>(null);
@@ -631,6 +636,7 @@ export function QuestPracticeWorkspace({
             grid={grid}
             verdict={verdict}
             masteryHighlight={highlight}
+            openedHighlight={doneResult.openedHighlight}
             packSkillNodeIds={doneResult.packSkillNodeIds ?? []}
             correct={doneResult.correct}
             total={doneResult.total}

@@ -3,6 +3,7 @@ import {
   AP_CALC_AB_UNIT_NAMES,
   nodeOneWordLabel,
   unitDisplayName,
+  unitShortLabel,
 } from "@/features/quest/ap-calc-unit-labels-pure";
 
 describe("ap-calc unit labels", () => {
@@ -14,6 +15,15 @@ describe("ap-calc unit labels", () => {
 
   it("prefers live unit name from grid data when provided", () => {
     expect(unitDisplayName(1, "Limits and Continuity")).toBe("Limits and Continuity");
+  });
+
+  it("keeps every unit trunk label to four words or fewer", () => {
+    for (const unitNumber of Object.keys(AP_CALC_AB_UNIT_NAMES).map(Number)) {
+      expect(unitShortLabel(unitNumber).trim().split(/\s+/).length).toBeLessThanOrEqual(
+        4,
+      );
+    }
+    expect(unitShortLabel(6)).toBe("Integration and Accumulation");
   });
 
   it("maps chain rule nodes to Chain", () => {

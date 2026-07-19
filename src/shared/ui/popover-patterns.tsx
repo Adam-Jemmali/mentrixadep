@@ -12,6 +12,7 @@ import type { MasteryGridNode } from "@/features/mastery-grid/types";
 import {
   buildMasteryNodeDetailRows,
   buildMasteryNodeDetailVerdict,
+  isMasteryNodePracticeLocked,
   masteryNodeActionHref,
   masteryNodeActionLabel,
   masteryNodeShortStateLabel,
@@ -240,6 +241,7 @@ export function MasteryNodeDetailPopover({
   globalTopPercent,
   globalVerifiedCount,
   unitNumber,
+  unlockedNodeIds,
   children,
   tone = "dark",
   placement = "top",
@@ -249,6 +251,7 @@ export function MasteryNodeDetailPopover({
   globalTopPercent?: number | null;
   globalVerifiedCount?: number;
   unitNumber?: number;
+  unlockedNodeIds?: ReadonlySet<string> | null;
   children: ReactNode;
   tone?: MentrixaPopoverTone;
   placement?: "top" | "bottom" | "left" | "right";
@@ -256,13 +259,20 @@ export function MasteryNodeDetailPopover({
 }) {
   const { nodeName, nodeSlug, state, accuracyPercent } = node;
   const rows = buildMasteryNodeDetailRows(node, globalTopPercent, globalVerifiedCount);
-  const verdict = buildMasteryNodeDetailVerdict(node);
+  const locked = isMasteryNodePracticeLocked(node.id, unlockedNodeIds);
+  const verdict = locked
+    ? "Locked. Open prior skill."
+    : buildMasteryNodeDetailVerdict(node);
   const actionHref = masteryNodeActionHref(node);
   const actionLabel = masteryNodeActionLabel(node);
   const meterValue =
     state === "verified" ? 100 : Math.min(100, Math.max(0, accuracyPercent ?? 0));
 
-  const headerIcon: VocabIconName = state === "verified" ? "verified" : "practice-pack";
+  const headerIcon: VocabIconName = locked
+    ? "skills"
+    : state === "verified"
+      ? "verified"
+      : "practice-pack";
   const surface = tone === "dark" ? "dark" : "light";
 
   return (
@@ -272,7 +282,7 @@ export function MasteryNodeDetailPopover({
       verdict={verdict}
       tone={tone}
       vocabIcon={headerIcon}
-      vocabIconGold={state === "verified"}
+      vocabIconGold={!locked && state === "verified"}
       placement={placement}
       className={className}
     >
@@ -329,14 +339,29 @@ export function MasteryNodeDetailPopover({
         ))}
       </dl>
 
-      <Button
-        asChild
-        size="sm"
-        variant={state === "proficient" ? "workbenchPrimary" : "outline"}
-        className="mt-4 w-full"
-      >
-        <Link href={actionHref}>{actionLabel}</Link>
-      </Button>
+      {locked ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="mt-4 w-full cursor-not-allowed opacity-70"
+          disabled
+        >
+          <span className="inline-flex items-center gap-2">
+            <MentrixaVocabIcon name="skills" size={18} surface={surface} title="Locked" />
+            <span>Locked</span>
+          </span>
+        </Button>
+      ) : (
+        <Button
+          asChild
+          size="sm"
+          variant={state === "proficient" ? "workbenchPrimary" : "outline"}
+          className="mt-4 w-full"
+        >
+          <Link href={actionHref}>{actionLabel}</Link>
+        </Button>
+      )}
     </MentrixaPopover>
   );
 }
