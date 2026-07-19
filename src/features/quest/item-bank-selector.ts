@@ -32,7 +32,11 @@ import {
   parseDragOrderedItems,
   parseGraphFeatureTargets,
   preferConstructionMix,
+  pickDiversePackItem,
+  constructionItemFingerprint,
+  difficultyRatingBias,
 } from "@/features/quest/quest-interaction-formats-pure";
+import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
 
 type SkillNodeRow = {
   id: string;
@@ -57,12 +61,13 @@ type ItemBankRow = {
   difficulty_rating?: number | null;
   item_format?: string | null;
   stimulus?: unknown;
+  authoring_meta?: unknown;
 };
 
 const ITEM_BANK_BASE_SELECT =
   "id, skill_node_id, prompt, options, correct_answer, explanation, difficulty_rating";
 const ITEM_BANK_EXTENDED_SELECT =
-  `${ITEM_BANK_BASE_SELECT}, solution_steps, answer_expression, partial_credit_rules, item_format, stimulus`;
+  `${ITEM_BANK_BASE_SELECT}, solution_steps, answer_expression, partial_credit_rules, item_format, stimulus, authoring_meta`;
 
 function sharedMeta(item: ItemBankRow, node: SkillNodeRow) {
   return {
@@ -381,7 +386,7 @@ export async function selectItemBankQuestions(
   userId: string,
   subject: string,
   count: number,
-  options?: { focusSkillNodeId?: string },
+  options?: { focusSkillNodeId?: string; difficulty?: PracticeDifficulty },
 ): Promise<PracticeQuestion[]> {
   if (!isApCalculusAbSubject(subject)) return [];
 
@@ -415,6 +420,7 @@ export async function selectItemBankQuestions(
   if (!items.length) return [];
 
   const challengeByNode = await loadChallengeDifficultyByNodeIds(userId, nodeIds);
+  const ratingBias = difficultyRatingBias(options?.difficulty);
 
   const itemsByNode = new Map<string, ItemBankRow[]>();
   const usableCountByNode = new Map<string, number>();
@@ -441,6 +447,8 @@ export async function selectItemBankQuestions(
 
   const selected: PracticeQuestion[] = [];
   const usedItemIds = new Set<string>();
+  const usedFormats = new Set<string>();
+  const usedFingerprints = new Set<string>();
   let constructionCount = 0;
 
   for (const nodeId of neededNodeIds) {
@@ -448,23 +456,32 @@ export async function selectItemBankQuestions(
     if (!node) continue;
 
     const studentRating = challengeByNode.get(nodeId);
+    const effectiveRating =
+      studentRating == null ? DEFAULT_CHALLENGE_DIFFICULTY + ratingBias : studentRating + ratingBias;
     const nodePool = (itemsByNode.get(nodeId) ?? []).map((row) => ({
       ...row,
       difficultyRating: row.difficulty_rating ?? DEFAULT_CHALLENGE_DIFFICULTY,
     }));
-    const preferredDifficulty = preferItemsNearChallengeDifficulty(nodePool, studentRating);
+    const preferredDifficulty = preferItemsNearChallengeDifficulty(nodePool, effectiveRating);
     const preferredMix = preferConstructionMix(
       preferredDifficulty,
       constructionCount,
       selected.length,
     );
-    const item = preferredMix.find((row) => !usedItemIds.has(row.id));
+    const item = pickDiversePackItem(
+      preferredMix,
+      usedItemIds,
+      usedFormats,
+      usedFingerprints,
+    );
     if (!item) continue;
 
     const question = itemToPracticeQuestion(item, node);
     if (!question) continue;
 
     usedItemIds.add(item.id);
+    usedFormats.add(String(item.item_format ?? question.kind).toLowerCase());
+    usedFingerprints.add(constructionItemFingerprint(item));
     selected.push(question);
     if (question.kind !== "mcq") constructionCount += 1;
     if (selected.length >= targetCount) break;

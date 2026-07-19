@@ -5,6 +5,8 @@ import {
   gradeGraphFeatureSelections,
   parseClozeBlanks,
   preferConstructionMix,
+  pickDiversePackItem,
+  constructionItemFingerprint,
   shufflePreservingCopy,
 } from "@/features/quest/quest-interaction-formats-pure";
 import { validateStemQualityForApprove } from "@/features/quest/quest-authoring-doctrine-pure";
@@ -65,6 +67,26 @@ describe("quest-interaction-formats-pure", () => {
     ];
     const ordered = preferConstructionMix(pool, 0, 0, () => 0.1);
     expect(ordered.every((r) => r.item_format === "mcq")).toBe(true);
+  });
+
+  it("picks diverse formats across a pack", () => {
+    const pool = [
+      { id: "1", item_format: "free_response", prompt: "A", answer_expression: "1", authoring_meta: { template_key: "a" } },
+      { id: "2", item_format: "free_response", prompt: "B", answer_expression: "2", authoring_meta: { template_key: "b" } },
+      { id: "3", item_format: "drag_order", prompt: "C", answer_expression: null, authoring_meta: { template_key: "c" } },
+      { id: "4", item_format: "graph_feature", prompt: "D", answer_expression: "x", authoring_meta: { template_key: "d" } },
+    ];
+    const usedIds = new Set<string>();
+    const usedFormats = new Set<string>();
+    const usedFp = new Set<string>();
+    const first = pickDiversePackItem(pool, usedIds, usedFormats, usedFp, () => 0);
+    expect(first).toBeTruthy();
+    usedIds.add(first!.id);
+    usedFormats.add(String(first!.item_format));
+    usedFp.add(constructionItemFingerprint(first!));
+    const second = pickDiversePackItem(pool, usedIds, usedFormats, usedFp, () => 0);
+    expect(second).toBeTruthy();
+    expect(second!.item_format).not.toBe(first!.item_format);
   });
 });
 

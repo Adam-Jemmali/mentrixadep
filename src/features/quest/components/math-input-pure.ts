@@ -3,6 +3,18 @@ export function studentNotationToLatex(input: string): string {
   let text = input.trim();
   if (!text) return "";
 
+  // Unicode exponents / operators → ASCII LaTeX-friendly forms before KaTeX.
+  text = text
+    .replace(/²/g, "^2")
+    .replace(/³/g, "^3")
+    .replace(/¹/g, "^1")
+    .replace(/⁰/g, "^0")
+    .replace(/⁴/g, "^4")
+    .replace(/⁵/g, "^5")
+    .replace(/⁻/g, "-")
+    .replace(/·/g, "*")
+    .replace(/×/g, "*");
+
   text = text.replace(/∫/g, "\\int ");
   text = text.replace(/\bd\s*\/\s*d([a-zA-Z])/gi, "\\frac{d}{d$1}");
   text = text.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, "\\frac{$1}{$2}");
@@ -35,11 +47,11 @@ export function studentNotationToLatex(input: string): string {
   text = text.replace(/\be\^([a-zA-Z0-9]+)/gi, "e^{$1}");
   text = text.replace(/\bexp\(([^)]*)\)/gi, "e^{$1}");
   text = text.replace(/\^(\([^)]+\))/g, "^{$1}");
-  text = text.replace(/\^([a-zA-Z0-9]+)/g, "^{$1}");
+  // Brace bare exponents only (do not touch already-braced ^{...}).
+  text = text.replace(/\^(?!\{)([a-zA-Z0-9]+)/g, "^{$1}");
 
-  text = text.replace(/(\d)([a-zA-Z(])/g, "$1$2");
   text = text.replace(/\*\*/g, "^");
-  text = text.replace(/\*/g, " \\cdot ");
+  text = text.replace(/(?<![\\])\*(?![*])/g, " \\cdot ");
 
   return text.replace(/\s+/g, " ").trim();
 }

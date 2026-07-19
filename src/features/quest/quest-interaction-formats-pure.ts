@@ -323,3 +323,71 @@ export function preferConstructionMix<T extends { item_format?: string | null }>
   );
   return [...construction, ...mcq];
 }
+
+/** Fingerprint so packs avoid near-duplicate stems across nodes/runs. */
+export function constructionItemFingerprint(row: {
+  item_format?: string | null;
+  prompt?: string | null;
+  answer_expression?: string | null;
+  authoring_meta?: unknown;
+}): string {
+  const meta =
+    row.authoring_meta && typeof row.authoring_meta === "object"
+      ? (row.authoring_meta as Record<string, unknown>)
+      : null;
+  const key = typeof meta?.template_key === "string" ? meta.template_key.trim() : "";
+  if (key) return key;
+  const format = String(row.item_format ?? "").toLowerCase();
+  const answer = String(row.answer_expression ?? "").replace(/\s/g, "");
+  const stem = String(row.prompt ?? "")
+    .replace(/\$[^$]*\$/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 72)
+    .toLowerCase();
+  return `${format}|${answer}|${stem}`;
+}
+
+/**
+ * Prefer items whose format is not yet in the pack, then avoid duplicate fingerprints.
+ * Picks randomly among the top candidates so each Start Pack run differs.
+ */
+export function pickDiversePackItem<T extends {
+  id: string;
+  item_format?: string | null;
+  prompt?: string | null;
+  answer_expression?: string | null;
+  authoring_meta?: unknown;
+}>(
+  pool: T[],
+  usedItemIds: Set<string>,
+  usedFormats: Set<string>,
+  usedFingerprints: Set<string>,
+  rng = Math.random,
+): T | null {
+  const available = pool.filter((row) => !usedItemIds.has(row.id));
+  if (available.length === 0) return null;
+
+  const freshFingerprint = available.filter(
+    (row) => !usedFingerprints.has(constructionItemFingerprint(row)),
+  );
+  const base = freshFingerprint.length > 0 ? freshFingerprint : available;
+
+  const freshFormat = base.filter((row) => {
+    const f = String(row.item_format ?? "mcq").toLowerCase();
+    return !usedFormats.has(f);
+  });
+  const candidates = freshFormat.length > 0 ? freshFormat : base;
+  const window = Math.min(candidates.length, Math.max(3, Math.ceil(candidates.length * 0.4)));
+  const idx = Math.floor(rng() * window);
+  return candidates[idx] ?? candidates[0] ?? null;
+}
+
+/** Map wizard difficulty to a hidden rating bias (does not change allowed formats). */
+export function difficultyRatingBias(
+  difficulty: "beginner" | "intermediate" | "advanced" | string | undefined,
+): number {
+  if (difficulty === "beginner") return -180;
+  if (difficulty === "advanced") return 180;
+  return 0;
+}

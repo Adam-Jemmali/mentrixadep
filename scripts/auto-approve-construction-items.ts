@@ -68,7 +68,7 @@ async function main(): Promise<void> {
   if (seedTemplates) {
     const { data: nodes, error: nodesError } = await supabase
       .from("skill_nodes")
-      .select("id, node_name")
+      .select("id, node_name, unit_number")
       .eq("subject", SUBJECT)
       .order("display_order")
       .limit(200);
@@ -80,7 +80,7 @@ async function main(): Promise<void> {
 
     let inserted = 0;
     for (const node of nodes) {
-      const templates = buildConstructionTemplatesForNode(node.node_name);
+      const templates = buildConstructionTemplatesForNode(node.node_name, node.unit_number);
       const rows = templates.map((t) => ({
         skill_node_id: node.id,
         question_type: t.item_format,

@@ -90,7 +90,7 @@ describe("validateConstructionGroundTruth", () => {
   });
 
   it("every offline template passes auto-approve gates", () => {
-    const templates = buildConstructionTemplatesForNode("Derivatives");
+    const templates = buildConstructionTemplatesForNode("Derivatives", 2);
     expect(templates.length).toBeGreaterThanOrEqual(4);
     for (const t of templates) {
       expect(shouldAttemptConstructionAutoApprove(t.item_format)).toBe(true);
@@ -107,6 +107,16 @@ describe("validateConstructionGroundTruth", () => {
       });
       expect(gate, JSON.stringify(gate)).toEqual({ ok: true });
     }
+  });
+
+  it("varies template keys across units and nodes", () => {
+    const limits = buildConstructionTemplatesForNode("One sided limits", 1);
+    const integrals = buildConstructionTemplatesForNode("Basic integration rules", 6);
+    const keysA = new Set(limits.map((t) => t.authoring_meta.template_key));
+    const keysB = new Set(integrals.map((t) => t.authoring_meta.template_key));
+    const overlap = [...keysA].filter((k) => keysB.has(k));
+    expect(overlap.length).toBeLessThan(keysA.size);
+    expect(limits[0]?.answer_expression).not.toBe(integrals[0]?.answer_expression);
   });
 });
 

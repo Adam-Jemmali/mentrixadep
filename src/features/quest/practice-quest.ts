@@ -235,6 +235,7 @@ export async function createPracticeQuest(
 
     const bankQuestions = await selectItemBankQuestions(user.id, AP_CALC_AB_SUBJECT, qc, {
       focusSkillNodeId,
+      difficulty: input.difficulty,
     });
     if (bankQuestions.length < requiredCount) {
       return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
