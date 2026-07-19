@@ -9,7 +9,7 @@ import type {
   SkillTreeData,
   SkillTreeNode as SkillTreeNodeData,
 } from "@/features/skill-tree/types";
-import { unitDisplayName } from "@/features/quest/ap-calc-unit-labels-pure";
+import { unitShortLabel } from "@/features/quest/ap-calc-unit-labels-pure";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 function spread(count: number, start: number, end: number): number[] {
@@ -235,7 +235,7 @@ export function SkillTreeCanvas({
                   Unit {unit.unitNumber}
                 </span>
                 <span className="block truncate text-xs font-semibold">
-                  {unitDisplayName(unit.unitNumber, unit.unitName)}
+                  {unitShortLabel(unit.unitNumber)}
                 </span>
               </span>
             </button>

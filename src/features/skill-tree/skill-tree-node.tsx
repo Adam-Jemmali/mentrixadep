@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { skillTreeLabel } from "@/features/skill-tree/skill-tree-copy-pure";
+import {
+  canRenderUnlockBloom,
+  canStartUnlockBloom,
+} from "@/features/skill-tree/skill-tree-motion-pure";
 import type {
   SkillTreeLabelKind,
   SkillTreeNode as SkillTreeNodeData,
@@ -44,15 +48,23 @@ export function SkillTreeNode({
   const label = skillTreeLabel(kind);
   const verified = node.state === "verified";
   const interactive = node.unlocked && href != null;
+  const bloomActive = canRenderUnlockBloom(bloom, Boolean(reducedMotion));
 
   useEffect(() => {
-    if (!previousUnlocked.current && node.unlocked && !reducedMotion) {
+    const wasUnlocked = previousUnlocked.current;
+    previousUnlocked.current = node.unlocked;
+
+    if (reducedMotion) {
+      setBloom(false);
+      return undefined;
+    }
+
+    if (canStartUnlockBloom(wasUnlocked, node.unlocked, Boolean(reducedMotion))) {
       setBloom(true);
       const timeout = window.setTimeout(() => setBloom(false), 900);
-      previousUnlocked.current = node.unlocked;
       return () => window.clearTimeout(timeout);
     }
-    previousUnlocked.current = node.unlocked;
+
     return undefined;
   }, [node.unlocked, reducedMotion]);
 
@@ -111,23 +123,23 @@ export function SkillTreeNode({
       )}
       initial={false}
       animate={
-        bloom
+        bloomActive
           ? { scale: [1, 1.12, 1], opacity: [1, 1, 1] }
           : isFocus && !reducedMotion
             ? { scale: [1, 1.025, 1] }
             : { scale: 1 }
       }
       transition={
-        bloom
+        bloomActive
           ? { duration: 0.8, ease: "easeOut" }
           : isFocus && !reducedMotion
             ? { duration: 2.1, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
             : { duration: 0 }
       }
     >
-      {bloom ? (
+      {bloomActive ? (
         <motion.span
-          className="pointer-events-none absolute -inset-3 rounded-2xl border-2 border-cyan-300"
+          className="pointer-events-none absolute -inset-3 rounded-2xl border-2 border-[#6366F1]"
           initial={{ opacity: 0.85, scale: 0.84 }}
           animate={{ opacity: 0, scale: 1.15 }}
           transition={{ duration: 0.8 }}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MasteryGridExplorer } from "@/features/mastery-grid/mastery-grid-explorer";
 import { MasteryGridHistoryPanel } from "@/features/mastery-grid/mastery-grid-history-panel";
 import type { GridSnapshotWeek } from "@/features/mastery-grid/grid-history-pure";
@@ -20,11 +20,14 @@ function UnitBranch({
   data,
   unitNumber,
   onClose,
+  returnFocusTo,
 }: {
   data: SkillTreeData;
   unitNumber: number;
   onClose: () => void;
+  returnFocusTo: HTMLElement | null;
 }) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const unit = data.grid.units.find((entry) => entry.unitNumber === unitNumber);
   const nodes = useMemo(
     () =>
@@ -41,6 +44,11 @@ function UnitBranch({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    return () => returnFocusTo?.focus();
+  }, [returnFocusTo]);
 
   if (!unit) return null;
 
@@ -77,6 +85,7 @@ function UnitBranch({
             </p>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#6366F1] bg-[#312E81] px-3 text-sm font-bold text-white transition-colors hover:bg-[#3730A3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD]"
@@ -120,10 +129,17 @@ export function SkillTreePageClient({
   momentumActive: boolean;
 }) {
   const [openUnitNumber, setOpenUnitNumber] = useState<number | null>(null);
+  const unitTriggerRef = useRef<HTMLElement | null>(null);
   const focus = data.nodes.find((node) => node.id === data.focusNodeId);
   const nodeNameById = Object.fromEntries(
     data.nodes.map((node) => [node.id, node.nodeName]),
   );
+  const closeUnit = useCallback(() => setOpenUnitNumber(null), []);
+  const openUnit = useCallback((unitNumber: number) => {
+    unitTriggerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setOpenUnitNumber(unitNumber);
+  }, []);
 
   return (
     <>
@@ -151,7 +167,7 @@ export function SkillTreePageClient({
         </div>
       </header>
 
-      <SkillTreeCanvas data={data} onOpenUnit={setOpenUnitNumber} />
+      <SkillTreeCanvas data={data} onOpenUnit={openUnit} />
 
       <MasteryGridHistoryPanel
         history={history}
@@ -185,7 +201,8 @@ export function SkillTreePageClient({
         <UnitBranch
           data={data}
           unitNumber={openUnitNumber}
-          onClose={() => setOpenUnitNumber(null)}
+          onClose={closeUnit}
+          returnFocusTo={unitTriggerRef.current}
         />
       ) : null}
     </>
