@@ -52,6 +52,17 @@ describe("formatQuestPromptText", () => {
     expect(out).toContain("= \\infty");
     expect(out).toContain("directly expresses this condition.");
   });
+  it("formats plain-English washer integral MCQ options", () => {
+    const option =
+      "pi * integral from 0 to 1 of ((2 - x^2)^2 - (2 - x)^2) dx";
+    const out = formatQuestPromptText(option);
+    expect(out).toContain("\\pi");
+    expect(out).toContain("\\int_{0}^{1}");
+    expect(out).toContain("x^{2}");
+    expect(out).toContain("\\,dx");
+    expect(out.startsWith("$")).toBe(true);
+    expect(out.endsWith("$")).toBe(true);
+  });
 });
 
 describe("convertPlainMathExpression", () => {
@@ -59,6 +70,14 @@ describe("convertPlainMathExpression", () => {
     expect(convertPlainMathExpression("[(x+h)^3 - x] / h")).toBe(
       "\\frac{(x+h)^{3} - x}{h}",
     );
+  });
+
+  it("converts English integral options", () => {
+    expect(
+      convertPlainMathExpression(
+        "pi * integral from 0 to 1 of ((2 - x)^2 - (2 - x^2)^2) dx",
+      ),
+    ).toContain("\\pi \\int_{0}^{1}");
   });
 });
 

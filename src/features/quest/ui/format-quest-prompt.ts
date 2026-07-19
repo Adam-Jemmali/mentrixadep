@@ -40,9 +40,28 @@ function convertBracketFractions(expr: string): string {
   });
 }
 
+/** Plain English volume/integral options → LaTeX body (no outer $). */
+export function convertEnglishIntegralExpression(expr: string): string | null {
+  let t = normalizeUnicodeMathChars(expr.trim());
+  t = t.replace(/\u03c0/gi, "pi");
+  const match = t.match(
+    /^(?:pi\s*\*\s*)?integral\s+from\s+(\S+)\s+to\s+(\S+)\s+of\s+(.+?)\s*d([xtyu])\s*$/i,
+  );
+  if (!match) return null;
+  const lo = normalizeCarets(match[1]!.trim());
+  const hi = normalizeCarets(match[2]!.trim());
+  const mid = normalizeCarets(match[3]!.trim());
+  const v = match[4]!.toLowerCase();
+  const withPi = /^pi\s*\*/i.test(t);
+  return `${withPi ? "\\pi " : ""}\\int_{${lo}}^{${hi}} ${mid}\\,d${v}`;
+}
+
 /** Plain-text calculus/algebra → LaTeX body (no outer $). */
 export function convertPlainMathExpression(expr: string): string {
   let t = normalizeUnicodeMathChars(expr.trim());
+  const englishIntegral = convertEnglishIntegralExpression(t);
+  if (englishIntegral) return englishIntegral;
+  t = t.replace(/\bpi\b/gi, "\\pi");
   t = convertLimitNotation(t);
   t = convertBracketFractions(t);
   t = normalizeCarets(t);
@@ -95,9 +114,10 @@ function wrapBracketDifferenceQuotient(s: string): string {
 
 function looksLikeStandaloneMath(s: string): boolean {
   const t = s.trim();
-  if (!t || t.includes("$") || t.length > 120) return false;
+  if (!t || t.includes("$") || t.length > 220) return false;
   if (/\s+(?:into|gives|the|formula|option|answer|definition|derivative)\b/i.test(t)) return false;
   if (/^\s*lim\s*[\_(]?/i.test(t)) return true;
+  if (/^(?:pi\s*\*\s*)?integral\s+from\s+/i.test(t)) return true;
   if (/^[\w\s()+\-*/^[\].,=]+$/.test(t) && /\^/.test(t) && /[+\-*/]/.test(t)) return true;
   return false;
 }
@@ -117,6 +137,29 @@ function inlineCodeToMath(inner: string): string {
   return math;
 }
 
+function wrapYEqualsInProse(s: string): string {
+  return s.replace(
+    /\by\s*=\s*([0-9x+\-−*/^()[\]\s.]+?)(?=\s+(?:and|or|which|when|where|rotated|about|the|a|an|is|are|from|to|on|in|by)\b|[?.!,;]|$)/gi,
+    (full, rhs) => {
+      const body = normalizeUnicodeMathChars(String(rhs).trim());
+      if (!/[x0-9^]/.test(body)) return full;
+      return `$y = ${convertPlainMathExpression(body)}$`;
+    },
+  );
+}
+
+function wrapEnglishIntegralsInProse(s: string): string {
+  return s.replace(
+    /(?:^|[^\w$])((?:pi\s*\*\s*)?integral\s+from\s+\S+\s+to\s+\S+\s+of\s+.+?\s*d[xtyu])(?=$|[.?,;]|\s)/gi,
+    (full, body: string) => {
+      const latex = convertEnglishIntegralExpression(body.trim());
+      if (!latex) return full;
+      const prefix = full.slice(0, full.length - body.length);
+      return `${prefix}$${latex}$`;
+    },
+  );
+}
+
 function transformPlainSegment(segment: string): string {
   if (!segment.trim()) return segment;
 
@@ -130,7 +173,9 @@ function transformPlainSegment(segment: string): string {
   s = wrapInlineLimitEquations(s);
   s = wrapInlineLimitQuotients(s);
   s = wrapFunctionEqualsInProse(s);
+  s = wrapYEqualsInProse(s);
   s = wrapBracketDifferenceQuotient(s);
+  s = wrapEnglishIntegralsInProse(s);
 
   s = s.replace(/\blim_\(([^)]+?)\s*->\s*([^)]+?)\)/gi, (_, from: string, to: string) => {
     return `$\\lim_{${from.trim()} \\to ${to.trim()}}$`;

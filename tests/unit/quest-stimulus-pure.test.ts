@@ -156,4 +156,28 @@ describe("quest-stimulus-pure", () => {
       expect(graph.curves?.[0]?.color).toBe("#2D70B3");
     }
   });
+
+  it("draws both bounding curves, shaded region, and rotation axis", () => {
+    const enriched = enrichQuestStimulus({
+      prompt:
+        "The region R is bounded by the graphs of y = x^2 and y = x. Which integral gives the volume when R is rotated about the line y = 2?",
+      stimulus: [
+        {
+          kind: "function_graph",
+          alt: "Graph of y = x^2",
+          domain: [-2, 2],
+          curves: [{ expression: "x^2", color: "#2D70B3", label: "y = x^2" }],
+        },
+      ],
+    });
+    const graph = enriched.stimulus.find((s) => s.kind === "function_graph");
+    expect(graph?.kind).toBe("function_graph");
+    if (graph?.kind === "function_graph") {
+      const exprs = (graph.curves ?? []).map((c) => c.expression.replace(/\s/g, ""));
+      expect(exprs.some((e) => /x\^2/.test(e))).toBe(true);
+      expect(exprs.some((e) => e === "x")).toBe(true);
+      expect(graph.regions?.length).toBeGreaterThan(0);
+      expect(graph.guides?.some((g) => g.kind === "yEquals" && g.value === 2)).toBe(true);
+    }
+  });
 });

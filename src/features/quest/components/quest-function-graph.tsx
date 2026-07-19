@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, type MouseEvent } from "react";
 import { create, all, type FactoryFunctionMap } from "mathjs";
 import {
   inferGraphDomain,
@@ -27,19 +27,33 @@ function evaluateExpression(expression: string, x: number): number | null {
   }
 }
 
+export type QuestGraphOverlay = {
+  /** Live sketch control points / polyline preview. */
+  sketchControls?: Array<{ x: number; y: number }>;
+  /** Feature-mode vertical markers at selected x. */
+  featureXs?: number[];
+  /** Feature-mode interval highlights. */
+  intervals?: Array<{ xMin: number; xMax: number }>;
+  interactive?: boolean;
+  onPlotClick?: (point: { x: number; y: number }) => void;
+};
+
 export function QuestFunctionGraph({
   graph,
   variant = "light",
   className,
+  overlay,
 }: {
   graph: QuestStimulusFunctionGraph;
   variant?: "light" | "dark";
   className?: string;
+  overlay?: QuestGraphOverlay;
 }) {
   const isDark = variant === "dark";
   const width = 560;
   const height = 320;
   const pad = { top: 28, right: 24, bottom: 44, left: 48 };
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
   const plot = useMemo(() => {
     const domain = inferGraphDomain(graph);
@@ -65,9 +79,28 @@ export function QuestFunctionGraph({
           })
         : [];
 
+    const regionPolys = (graph.regions ?? []).map((region) => {
+      const samples = 48;
+      const top: Array<{ x: number; y: number }> = [];
+      const bottom: Array<{ x: number; y: number }> = [];
+      for (let i = 0; i <= samples; i++) {
+        const t = i / samples;
+        const x = region.from + (region.to - region.from) * t;
+        const yu = evaluateExpression(region.upper, x);
+        const yl = evaluateExpression(region.lower, x);
+        if (yu == null || yl == null) continue;
+        top.push({ x, y: Math.max(yu, yl) });
+        bottom.push({ x, y: Math.min(yu, yl) });
+      }
+      return { region, top, bottom };
+    });
+
     const plottedYs = [
       ...curveSamples.flatMap((c) => c.points.map((p) => p.y)),
       ...riemannBars.map((b) => b.height),
+      ...regionPolys.flatMap((r) => [...r.top, ...r.bottom].map((p) => p.y)),
+      ...(graph.guides ?? []).filter((g) => g.kind === "yEquals").map((g) => g.value),
+      ...(overlay?.sketchControls ?? []).map((p) => p.y),
     ];
     const range = inferGraphRange(graph, plottedYs);
 
@@ -76,8 +109,8 @@ export function QuestFunctionGraph({
     const yScale = (y: number) =>
       pad.top + ((range[1] - y) / (range[1] - range[0])) * (height - pad.top - pad.bottom);
 
-    return { domain, range, curveSamples, riemannBars, xScale, yScale };
-  }, [graph]);
+    return { domain, range, curveSamples, riemannBars, regionPolys, xScale, yScale };
+  }, [graph, overlay?.sketchControls]);
 
   const axisColor = isDark ? "#94A3B8" : "#64748B";
   const gridColor = isDark ? "rgba(148,163,184,0.18)" : "rgba(100,116,139,0.18)";
@@ -85,6 +118,40 @@ export function QuestFunctionGraph({
 
   const xTicks = 5;
   const yTicks = 4;
+
+  const handleSvgClick = (event: MouseEvent<SVGSVGElement>) => {
+    if (!overlay?.interactive || !overlay.onPlotClick || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const px = ((event.clientX - rect.left) / rect.width) * width;
+    const py = ((event.clientY - rect.top) / rect.height) * height;
+    if (
+      px < pad.left ||
+      px > width - pad.right ||
+      py < pad.top ||
+      py > height - pad.bottom
+    ) {
+      return;
+    }
+    const x =
+      plot.domain[0] +
+      ((px - pad.left) / (width - pad.left - pad.right)) * (plot.domain[1] - plot.domain[0]);
+    const y =
+      plot.range[1] -
+      ((py - pad.top) / (height - pad.top - pad.bottom)) * (plot.range[1] - plot.range[0]);
+    overlay.onPlotClick({
+      x: Math.round(x * 100) / 100,
+      y: Math.round(y * 100) / 100,
+    });
+  };
+
+  const sketch = overlay?.sketchControls ?? [];
+  const sketchPath =
+    sketch.length >= 2
+      ? [...sketch]
+          .sort((a, b) => a.x - b.x)
+          .map((p, i) => `${i === 0 ? "M" : "L"} ${plot.xScale(p.x)} ${plot.yScale(p.y)}`)
+          .join(" ")
+      : "";
 
   return (
     <div
@@ -106,10 +173,12 @@ export function QuestFunctionGraph({
       ) : null}
       <div className="px-2 py-2 sm:px-3">
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
           role="img"
           aria-label={graph.alt}
-          className="h-auto w-full"
+          className={cn("h-auto w-full", overlay?.interactive ? "cursor-crosshair" : null)}
+          onClick={handleSvgClick}
         >
           {Array.from({ length: xTicks + 1 }, (_, i) => {
             const t = i / xTicks;
@@ -185,6 +254,42 @@ export function QuestFunctionGraph({
             />
           ) : null}
 
+          {plot.regionPolys.map((entry, index) => {
+            if (entry.top.length < 2 || entry.bottom.length < 2) return null;
+            const path = [
+              ...entry.top.map(
+                (p, i) => `${i === 0 ? "M" : "L"} ${plot.xScale(p.x)} ${plot.yScale(p.y)}`,
+              ),
+              ...[...entry.bottom].reverse().map((p) => `L ${plot.xScale(p.x)} ${plot.yScale(p.y)}`),
+              "Z",
+            ].join(" ");
+            return (
+              <path
+                key={`region-${index}`}
+                d={path}
+                fill={entry.region.fill ?? "rgba(45,112,179,0.22)"}
+                stroke="none"
+              />
+            );
+          })}
+
+          {(overlay?.intervals ?? []).map((iv, index) => {
+            const x1 = plot.xScale(iv.xMin);
+            const x2 = plot.xScale(iv.xMax);
+            return (
+              <rect
+                key={`ov-int-${index}`}
+                x={Math.min(x1, x2)}
+                y={pad.top}
+                width={Math.max(2, Math.abs(x2 - x1))}
+                height={height - pad.top - pad.bottom}
+                fill="rgba(99,102,241,0.16)"
+                stroke="#6366F1"
+                strokeWidth={1}
+              />
+            );
+          })}
+
           {plot.riemannBars.map((bar, index) => {
             const x1 = plot.xScale(bar.xLeft);
             const x2 = plot.xScale(bar.xRight);
@@ -206,9 +311,62 @@ export function QuestFunctionGraph({
             );
           })}
 
+          {(graph.guides ?? []).map((guide, index) => {
+            if (guide.kind === "yEquals") {
+              const py = plot.yScale(guide.value);
+              return (
+                <g key={`guide-y-${index}`}>
+                  <line
+                    x1={pad.left}
+                    y1={py}
+                    x2={width - pad.right}
+                    y2={py}
+                    stroke={guide.color || "#D4A017"}
+                    strokeWidth={2}
+                    strokeDasharray="6 4"
+                  />
+                  {guide.label ? (
+                    <text
+                      x={width - pad.right - 4}
+                      y={py - 6}
+                      textAnchor="end"
+                      fill={guide.color || "#D4A017"}
+                      className="text-[10px] font-semibold"
+                    >
+                      {guide.label}
+                    </text>
+                  ) : null}
+                </g>
+              );
+            }
+            const px = plot.xScale(guide.value);
+            return (
+              <g key={`guide-x-${index}`}>
+                <line
+                  x1={px}
+                  y1={pad.top}
+                  x2={px}
+                  y2={height - pad.bottom}
+                  stroke={guide.color || "#D4A017"}
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                />
+                {guide.label ? (
+                  <text
+                    x={px + 4}
+                    y={pad.top + 12}
+                    fill={guide.color || "#D4A017"}
+                    className="text-[10px] font-semibold"
+                  >
+                    {guide.label}
+                  </text>
+                ) : null}
+              </g>
+            );
+          })}
+
           {plot.curveSamples.map((curve, index) => {
             if (curve.points.length < 2) return null;
-            // Break asymptotes / huge jumps so paths don't draw vertical walls.
             const segments: Array<Array<{ x: number; y: number }>> = [];
             let current: Array<{ x: number; y: number }> = [];
             const ySpan = Math.max(1, plot.range[1] - plot.range[0]);
@@ -263,6 +421,51 @@ export function QuestFunctionGraph({
                   {point.label}
                 </text>
               ) : null}
+            </g>
+          ))}
+
+          {(overlay?.featureXs ?? []).map((x, index) => (
+            <line
+              key={`fx-${index}`}
+              x1={plot.xScale(x)}
+              y1={pad.top}
+              x2={plot.xScale(x)}
+              y2={height - pad.bottom}
+              stroke="#7C3AED"
+              strokeWidth={2}
+              strokeDasharray="4 3"
+            />
+          ))}
+
+          {sketchPath ? (
+            <path
+              d={sketchPath}
+              fill="none"
+              stroke="#7C3AED"
+              strokeWidth={3}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          ) : null}
+          {sketch.map((p, index) => (
+            <g key={`sk-${index}`}>
+              <circle
+                cx={plot.xScale(p.x)}
+                cy={plot.yScale(p.y)}
+                r={5.5}
+                fill="#7C3AED"
+                stroke="#FFFFFF"
+                strokeWidth={2}
+              />
+              <text
+                x={plot.xScale(p.x)}
+                y={plot.yScale(p.y) - 12}
+                textAnchor="middle"
+                fill="#7C3AED"
+                className="text-[10px] font-semibold"
+              >
+                {index + 1}
+              </text>
             </g>
           ))}
 

@@ -30,6 +30,23 @@ export type QuestStimulusRiemann = {
   expression?: string;
 };
 
+export type QuestStimulusGuide = {
+  kind: "yEquals" | "xEquals";
+  value: number;
+  label?: string;
+  color?: string;
+};
+
+export type QuestStimulusRegion = {
+  /** Upper curve expression in x. */
+  upper: string;
+  /** Lower curve expression in x. */
+  lower: string;
+  from: number;
+  to: number;
+  fill?: string;
+};
+
 export type QuestStimulusFunctionGraph = {
   kind: "function_graph";
   title?: string;
@@ -41,6 +58,8 @@ export type QuestStimulusFunctionGraph = {
   curves?: QuestStimulusCurve[];
   points?: QuestStimulusPoint[];
   riemann?: QuestStimulusRiemann;
+  guides?: QuestStimulusGuide[];
+  regions?: QuestStimulusRegion[];
 };
 
 export type QuestStimulus = QuestStimulusTable | QuestStimulusFunctionGraph;
@@ -159,6 +178,47 @@ function parseGraph(raw: Record<string, unknown>): QuestStimulusFunctionGraph | 
     if (!sketch) return null;
   }
 
+  const guides: QuestStimulusGuide[] = [];
+  if (Array.isArray(raw.guides)) {
+    for (const entry of raw.guides) {
+      if (!isRecord(entry)) continue;
+      const kindRaw = asString(entry.kind).toLowerCase();
+      const kind =
+        kindRaw === "yequals" || kindRaw === "y_equals" || kindRaw === "y"
+          ? "yEquals"
+          : kindRaw === "xequals" || kindRaw === "x_equals" || kindRaw === "x"
+            ? "xEquals"
+            : null;
+      const value = asNumber(entry.value);
+      if (!kind || value == null) continue;
+      guides.push({
+        kind,
+        value,
+        label: asString(entry.label) || undefined,
+        color: asString(entry.color) || undefined,
+      });
+    }
+  }
+
+  const regions: QuestStimulusRegion[] = [];
+  if (Array.isArray(raw.regions)) {
+    for (const entry of raw.regions) {
+      if (!isRecord(entry)) continue;
+      const upper = asString(entry.upper);
+      const lower = asString(entry.lower);
+      const from = asNumber(entry.from);
+      const to = asNumber(entry.to);
+      if (!upper || !lower || from == null || to == null || from === to) continue;
+      regions.push({
+        upper,
+        lower,
+        from: Math.min(from, to),
+        to: Math.max(from, to),
+        fill: asString(entry.fill) || undefined,
+      });
+    }
+  }
+
   return {
     kind: "function_graph",
     title: asString(raw.title) || undefined,
@@ -170,6 +230,8 @@ function parseGraph(raw: Record<string, unknown>): QuestStimulusFunctionGraph | 
     curves: curves.length > 0 ? curves : undefined,
     points: points.length > 0 ? points : undefined,
     riemann,
+    guides: guides.length > 0 ? guides : undefined,
+    regions: regions.length > 0 ? regions : undefined,
   };
 }
 
@@ -420,33 +482,139 @@ export function normalizeGraphExpression(raw: string): string | null {
 
 /** Pull a simple y=f(x) / f(x)=... expression for graphing. */
 export function detectCurveExpressionFromPrompt(prompt: string): string | null {
-  const patterns = [
-    /\bf\s*\(\s*x\s*\)\s*=\s*([^\n,$]+)/i,
-    /\by\s*=\s*([^\n,$]+)/i,
-    /\bg\s*\(\s*x\s*\)\s*=\s*([^\n,$]+)/i,
-  ];
-  for (const pattern of patterns) {
-    const match = prompt.match(pattern);
-    if (!match?.[1]) continue;
-    const expression = normalizeGraphExpression(match[1]);
-    if (expression) return expression;
-  }
+  const all = detectAllCurveExpressionsFromPrompt(prompt);
+  return all[0] ?? null;
+}
 
-  // Bare power/polynomial of x named in the stem (e.g. "consider x^3" or "graph x^2 - 1").
-  const barePatterns = [
-    /\b(?:function|graph|consider|sketch|plot|of)\s+([0-9.]*x(?:\s*\^\s*\{?\d+\}?)?(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*(?:\s*[+\-]\s*[0-9.]+)?)/i,
-    /\$\s*([0-9.]*x(?:\s*\^\s*\{?\d+\}?)(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*)\s*\$/i,
-    /\b([0-9.]*x\s*\^\s*\{?\d+\}?(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*(?:\s*[+\-]\s*[0-9.]+)?)\b/i,
+/** Collect every plottable y= / f(x)= / bare power curve named in the stem. */
+export function detectAllCurveExpressionsFromPrompt(prompt: string): string[] {
+  const found: string[] = [];
+  const push = (raw: string) => {
+    const expression = normalizeGraphExpression(raw);
+    if (!expression || !/x/i.test(expression)) return;
+    if (found.some((e) => e.replace(/\s/g, "") === expression.replace(/\s/g, ""))) return;
+    found.push(expression);
+  };
+
+  const eqPatterns = [
+    /\by\s*=\s*([^\n,$]+?)(?=\s+and\b|\s+y\s*=|\s+rotated\b|\s+about\b|,|\.|\?|$)/gi,
+    /\bf\s*\(\s*x\s*\)\s*=\s*([^\n,$]+)/gi,
+    /\bg\s*\(\s*x\s*\)\s*=\s*([^\n,$]+)/gi,
   ];
-  for (const pattern of barePatterns) {
-    const match = prompt.match(pattern);
-    if (!match?.[1]) continue;
-    const expression = normalizeGraphExpression(match[1]);
-    if (expression && /x/i.test(expression) && /[\^+\-*/]/.test(expression)) {
-      return expression;
+  for (const pattern of eqPatterns) {
+    let match: RegExpExecArray | null;
+    const re = new RegExp(pattern.source, pattern.flags);
+    while ((match = re.exec(prompt)) !== null) {
+      push(match[1]!);
     }
   }
-  return null;
+
+  if (found.length === 0) {
+    const barePatterns = [
+      /\b(?:function|graph|consider|sketch|plot|of)\s+([0-9.]*x(?:\s*\^\s*\{?\d+\}?)?(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*(?:\s*[+\-]\s*[0-9.]+)?)/i,
+      /\$\s*([0-9.]*x(?:\s*\^\s*\{?\d+\}?)(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*)\s*\$/i,
+      /\b([0-9.]*x\s*\^\s*\{?\d+\}?(?:\s*[+\-]\s*[0-9.]*x?(?:\s*\^\s*\{?\d+\}?)?)*(?:\s*[+\-]\s*[0-9.]+)?)\b/i,
+    ];
+    for (const pattern of barePatterns) {
+      const match = prompt.match(pattern);
+      if (!match?.[1]) continue;
+      const expression = normalizeGraphExpression(match[1]);
+      if (expression && /x/i.test(expression) && /[\^+\-*/]/.test(expression)) {
+        push(expression);
+        break;
+      }
+    }
+  }
+
+  return found;
+}
+
+export function detectRotationGuidesFromPrompt(prompt: string): QuestStimulusGuide[] {
+  const guides: QuestStimulusGuide[] = [];
+  const yMatch = prompt.match(
+    /rotat(?:ed|ion|e)\s+(?:about|around)\s+(?:the\s+)?(?:horizontal\s+)?(?:line\s+)?y\s*=\s*(-?\d+(?:\.\d+)?)/i,
+  );
+  if (yMatch?.[1] != null) {
+    const value = Number(yMatch[1]);
+    if (Number.isFinite(value)) {
+      guides.push({ kind: "yEquals", value, label: `y = ${value}`, color: "#D4A017" });
+    }
+  }
+  const xMatch = prompt.match(
+    /rotat(?:ed|ion|e)\s+(?:about|around)\s+(?:the\s+)?(?:vertical\s+)?(?:line\s+)?x\s*=\s*(-?\d+(?:\.\d+)?)/i,
+  );
+  if (xMatch?.[1] != null) {
+    const value = Number(xMatch[1]);
+    if (Number.isFinite(value)) {
+      guides.push({ kind: "xEquals", value, label: `x = ${value}`, color: "#D4A017" });
+    }
+  }
+  return guides;
+}
+
+/**
+ * When the stem bounds a region by two curves, return a fillable region.
+ * Uses intersection sampling when limits are not explicit.
+ */
+export function detectBoundedRegionFromPrompt(
+  prompt: string,
+  evaluate?: (expression: string, x: number) => number | null,
+): QuestStimulusRegion | null {
+  const curves = detectAllCurveExpressionsFromPrompt(prompt);
+  if (curves.length < 2) return null;
+  if (!/\bbounded\b|\bregion\b|\bbetween\b/i.test(prompt)) return null;
+
+  let from = 0;
+  let to = 1;
+  const intervalMatch = prompt.match(
+    /(?:from|on|over|for)\s*(?:x\s*(?:in|=)?\s*)?\[?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]?/i,
+  );
+  if (intervalMatch) {
+    from = Number(intervalMatch[1]);
+    to = Number(intervalMatch[2]);
+  } else if (evaluate) {
+    const a = curves[0]!;
+    const b = curves[1]!;
+    let left: number | null = null;
+    let right: number | null = null;
+    for (let i = 0; i <= 200; i++) {
+      const x = -2 + (4 * i) / 200;
+      const ya = evaluate(a, x);
+      const yb = evaluate(b, x);
+      if (ya == null || yb == null) continue;
+      if (Math.abs(ya - yb) < 0.05) {
+        if (left == null) left = x;
+        right = x;
+      }
+    }
+    if (left != null && right != null && right > left + 0.05) {
+      from = left;
+      to = right;
+    }
+  }
+
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return null;
+
+  // Decide upper/lower at midpoint.
+  const mid = (from + to) / 2;
+  let upper = curves[0]!;
+  let lower = curves[1]!;
+  if (evaluate) {
+    const ya = evaluate(upper, mid);
+    const yb = evaluate(lower, mid);
+    if (ya != null && yb != null && yb > ya) {
+      upper = curves[1]!;
+      lower = curves[0]!;
+    }
+  }
+
+  return {
+    upper,
+    lower,
+    from,
+    to,
+    fill: "rgba(45,112,179,0.22)",
+  };
 }
 
 function promptWantsGraph(prompt: string): boolean {
@@ -458,10 +626,256 @@ function promptWantsGraph(prompt: string): boolean {
     text.includes("distance traveled") ||
     text.includes("area") ||
     text.includes("integral") ||
+    text.includes("volume") ||
+    text.includes("rotated") ||
+    text.includes("region") ||
+    text.includes("bounded") ||
     text.includes("table below") ||
     text.includes("in the table") ||
     text.includes("from the table")
   );
+}
+
+function tryEvalBasicExpression(expression: string, x: number): number | null {
+  const normalized = normalizeGraphExpression(expression) ?? expression.trim();
+  if (!normalized || !/^[0-9x+\-*/^().\s]+$/i.test(normalized)) return null;
+  try {
+    const js = normalized
+      .replace(/\^/g, "**")
+      .replace(/(\d)\s*x/gi, "$1*x")
+      .replace(/x\s*(\d)/gi, "x*$1");
+    // Constrained evaluator for polynomial/rational AP Calc stems only.
+    const value = Function("x", `"use strict"; return (${js});`)(x);
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function curveKey(expression: string): string {
+  return (normalizeGraphExpression(expression) ?? expression).replace(/\s/g, "").toLowerCase();
+}
+
+function mergePromptCurvesIntoGraph(
+  graph: QuestStimulusFunctionGraph,
+  prompt: string,
+): QuestStimulusFunctionGraph {
+  const promptCurves = detectAllCurveExpressionsFromPrompt(prompt);
+  const existing = [...(graph.curves ?? [])];
+  const seen = new Set(existing.map((c) => curveKey(c.expression)));
+  const colors = [QUEST_GRAPH_CURVE_BLUE, "#6366F1", "#7C3AED", "#0EA5E9"];
+  for (const expression of promptCurves) {
+    const key = curveKey(expression);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    existing.push({
+      expression,
+      color: colors[existing.length % colors.length],
+      label: `y = ${expression}`,
+    });
+  }
+
+  const guides = [...(graph.guides ?? [])];
+  for (const guide of detectRotationGuidesFromPrompt(prompt)) {
+    if (guides.some((g) => g.kind === guide.kind && g.value === guide.value)) continue;
+    guides.push(guide);
+  }
+
+  let regions = [...(graph.regions ?? [])];
+  if (regions.length === 0) {
+    const region = detectBoundedRegionFromPrompt(prompt, tryEvalBasicExpression);
+    if (region) regions = [region];
+  }
+
+  let domain = graph.domain;
+  if (regions[0] && !domain) {
+    const pad = Math.max(0.25, (regions[0].to - regions[0].from) * 0.25);
+    domain = [regions[0].from - pad, regions[0].to + pad];
+  }
+  if (guides.some((g) => g.kind === "yEquals") && regions[0] && domain) {
+    // Keep a little headroom above the rotation axis.
+    const yGuide = guides.find((g) => g.kind === "yEquals");
+    if (yGuide) {
+      const rangeTop = Math.max(yGuide.value + 0.5, ...(existing.length ? [2] : [2]));
+      return {
+        ...graph,
+        title: graph.title ?? (regions.length ? "Region and solid of revolution" : "Function graph"),
+        alt:
+          graph.alt ||
+          (regions.length
+            ? `Region between curves with rotation axis`
+            : `Graph of ${promptCurves.join(", ")}`),
+        domain,
+        range: graph.range ?? [
+          Math.min(-0.5, ...(guides.filter((g) => g.kind === "yEquals").map((g) => g.value - 1))),
+          rangeTop,
+        ],
+        curves: existing.length > 0 ? existing : graph.curves,
+        guides: guides.length > 0 ? guides : undefined,
+        regions: regions.length > 0 ? regions : undefined,
+      };
+    }
+  }
+
+  return {
+    ...graph,
+    title: graph.title ?? (regions.length ? "Bounded region" : graph.title),
+    alt:
+      graph.alt ||
+      (promptCurves.length > 1
+        ? `Graphs of ${promptCurves.map((e) => `y = ${e}`).join(" and ")}`
+        : graph.alt),
+    domain,
+    curves: existing.length > 0 ? existing : graph.curves,
+    guides: guides.length > 0 ? guides : undefined,
+    regions: regions.length > 0 ? regions : undefined,
+  };
+}
+
+/**
+ * Ensure quest items show tables/graphs when the prompt or stimulus has the data.
+ * Explicit stimulus wins; markdown tables are promoted; numeric tables get graphs.
+ * Prompt curves, bounded regions, and rotation axes are merged into the graph.
+ */
+export function enrichQuestStimulus(input: {
+  prompt: string;
+  stimulus?: QuestStimulus[] | null;
+}): { prompt: string; stimulus: QuestStimulus[] } {
+  const stimulus = [...parseQuestStimulus(input.stimulus)];
+  let prompt = input.prompt;
+
+  const hasTable = stimulus.some((s) => s.kind === "table");
+  const markdownTables = tablesFromPromptMarkdown(prompt);
+  if (!hasTable && markdownTables.length > 0) {
+    stimulus.push(...markdownTables);
+    prompt = stripMarkdownTablesFromPrompt(prompt);
+  }
+
+  const hasGraph = stimulus.some((s) => s.kind === "function_graph");
+  const table =
+    stimulus.find((s): s is QuestStimulusTable => s.kind === "table") ?? null;
+  const points = table ? numericPointsFromTable(table) : [];
+  const riemannHint = detectRiemannFromPrompt(input.prompt);
+  const promptCurves = detectAllCurveExpressionsFromPrompt(input.prompt);
+  const curve = promptCurves[0] ?? null;
+
+  const makePromptCurveGraph = (expressions: string[]): QuestStimulusFunctionGraph => {
+    const colors = [QUEST_GRAPH_CURVE_BLUE, "#6366F1", "#7C3AED", "#0EA5E9"];
+    const base: QuestStimulusFunctionGraph = {
+      kind: "function_graph",
+      title: expressions.length > 1 ? "Bounded region" : "Function graph",
+      alt:
+        expressions.length > 1
+          ? `Graphs of ${expressions.map((e) => `y = ${e}`).join(" and ")}`
+          : `Graph of y = ${expressions[0]}`,
+      xLabel: "x",
+      yLabel: "y",
+      domain: [-2, 2],
+      curves: expressions.map((expression, index) => ({
+        expression,
+        color: colors[index % colors.length],
+        label: `y = ${expression}`,
+      })),
+    };
+    return mergePromptCurvesIntoGraph(base, input.prompt);
+  };
+
+  if (!hasGraph) {
+    if (points.length >= 2 && (promptWantsGraph(input.prompt) || riemannHint || points.length >= 3)) {
+      const xLabel = table?.headers[0]?.trim() || "x";
+      const yLabel = table?.headers[1]?.trim() || "y";
+      let graph: QuestStimulusFunctionGraph = {
+        kind: "function_graph",
+        title: riemannHint ? `${riemannHint.method} Riemann sum` : "Data graph",
+        alt: riemannHint
+          ? `${yLabel} values with ${riemannHint.method} rectangles`
+          : `${yLabel} versus ${xLabel}`,
+        xLabel,
+        yLabel,
+        points,
+      };
+
+      if (riemannHint) {
+        const bars = riemannHeightsFromPoints(points, riemannHint.method, riemannHint.n);
+        if (bars) {
+          graph.riemann = {
+            method: riemannHint.method,
+            from: bars.from,
+            to: bars.to,
+            n: riemannHint.n,
+            heights: bars.heights,
+          };
+          graph.domain = [bars.from, bars.to];
+        }
+      }
+
+      graph = mergePromptCurvesIntoGraph(graph, input.prompt);
+      stimulus.push(graph);
+    } else if (promptCurves.length > 0 && (promptWantsGraph(input.prompt) || promptCurves.length > 0)) {
+      stimulus.push(makePromptCurveGraph(promptCurves));
+    }
+  } else {
+    const graphIndex = stimulus.findIndex((s) => s.kind === "function_graph");
+    const graph = stimulus[graphIndex];
+    if (graph && graph.kind === "function_graph") {
+      const normalizedCurves = (graph.curves ?? [])
+        .map((c) => {
+          const expression = normalizeGraphExpression(c.expression) ?? c.expression.trim();
+          if (!expression) return null;
+          return {
+            ...c,
+            expression,
+            color: c.color || QUEST_GRAPH_CURVE_BLUE,
+          };
+        })
+        .filter((c): c is NonNullable<typeof c> => c != null);
+
+      let next: QuestStimulusFunctionGraph = {
+        ...graph,
+        curves: normalizedCurves.length > 0 ? normalizedCurves : undefined,
+      };
+
+      // Empty axes (or unusable curve text) → draw f(x) from the prompt in Desmos blue.
+      if ((next.curves?.length ?? 0) === 0 && curve && (next.points?.length ?? 0) === 0 && !next.riemann) {
+        const drawn = makePromptCurveGraph(promptCurves.length > 0 ? promptCurves : [curve]);
+        next = {
+          ...next,
+          title: next.title ?? drawn.title,
+          alt: next.alt || drawn.alt,
+          xLabel: next.xLabel ?? drawn.xLabel,
+          yLabel: next.yLabel ?? drawn.yLabel,
+          domain: next.domain ?? drawn.domain,
+          curves: drawn.curves,
+          guides: drawn.guides,
+          regions: drawn.regions,
+        };
+      }
+
+      next = mergePromptCurvesIntoGraph(next, input.prompt);
+
+      if (riemannHint && !next.riemann) {
+        const graphPoints = next.points ?? points;
+        const bars = riemannHeightsFromPoints(graphPoints, riemannHint.method, riemannHint.n);
+        if (bars) {
+          next = {
+            ...next,
+            riemann: {
+              method: riemannHint.method,
+              from: bars.from,
+              to: bars.to,
+              n: riemannHint.n,
+              heights: bars.heights,
+            },
+            domain: next.domain ?? [bars.from, bars.to],
+          };
+        }
+      }
+
+      stimulus[graphIndex] = next;
+    }
+  }
+
+  return { prompt, stimulus };
 }
 
 function stripMarkdownTablesFromPrompt(prompt: string): string {
@@ -515,132 +929,4 @@ function tablesFromPromptMarkdown(prompt: string): QuestStimulusTable[] {
     }
   }
   return tables;
-}
-
-/**
- * Ensure quest items show tables/graphs when the prompt or stimulus has the data.
- * Explicit stimulus wins; markdown tables are promoted; numeric tables get graphs.
- */
-export function enrichQuestStimulus(input: {
-  prompt: string;
-  stimulus?: QuestStimulus[] | null;
-}): { prompt: string; stimulus: QuestStimulus[] } {
-  const stimulus = [...parseQuestStimulus(input.stimulus)];
-  let prompt = input.prompt;
-
-  const hasTable = stimulus.some((s) => s.kind === "table");
-  const markdownTables = tablesFromPromptMarkdown(prompt);
-  if (!hasTable && markdownTables.length > 0) {
-    stimulus.push(...markdownTables);
-    prompt = stripMarkdownTablesFromPrompt(prompt);
-  }
-
-  const hasGraph = stimulus.some((s) => s.kind === "function_graph");
-  const table =
-    stimulus.find((s): s is QuestStimulusTable => s.kind === "table") ?? null;
-  const points = table ? numericPointsFromTable(table) : [];
-  const riemannHint = detectRiemannFromPrompt(input.prompt);
-  const curve = detectCurveExpressionFromPrompt(input.prompt);
-
-  const makePromptCurveGraph = (expression: string): QuestStimulusFunctionGraph => ({
-    kind: "function_graph",
-    title: "Function graph",
-    alt: `Graph of y = ${expression}`,
-    xLabel: "x",
-    yLabel: "y",
-    domain: [-2, 2],
-    curves: [{ expression, color: QUEST_GRAPH_CURVE_BLUE, label: "f(x)" }],
-  });
-
-  if (!hasGraph) {
-    if (points.length >= 2 && (promptWantsGraph(input.prompt) || riemannHint || points.length >= 3)) {
-      const xLabel = table?.headers[0]?.trim() || "x";
-      const yLabel = table?.headers[1]?.trim() || "y";
-      const graph: QuestStimulusFunctionGraph = {
-        kind: "function_graph",
-        title: riemannHint ? `${riemannHint.method} Riemann sum` : "Data graph",
-        alt: riemannHint
-          ? `${yLabel} values with ${riemannHint.method} rectangles`
-          : `${yLabel} versus ${xLabel}`,
-        xLabel,
-        yLabel,
-        points,
-      };
-
-      if (riemannHint) {
-        const bars = riemannHeightsFromPoints(points, riemannHint.method, riemannHint.n);
-        if (bars) {
-          graph.riemann = {
-            method: riemannHint.method,
-            from: bars.from,
-            to: bars.to,
-            n: riemannHint.n,
-            heights: bars.heights,
-          };
-          graph.domain = [bars.from, bars.to];
-        }
-      }
-
-      stimulus.push(graph);
-    } else if (curve) {
-      stimulus.push(makePromptCurveGraph(curve));
-    }
-  } else {
-    const graphIndex = stimulus.findIndex((s) => s.kind === "function_graph");
-    const graph = stimulus[graphIndex];
-    if (graph && graph.kind === "function_graph") {
-      const normalizedCurves = (graph.curves ?? [])
-        .map((c) => {
-          const expression = normalizeGraphExpression(c.expression) ?? c.expression.trim();
-          if (!expression) return null;
-          return {
-            ...c,
-            expression,
-            color: c.color || QUEST_GRAPH_CURVE_BLUE,
-          };
-        })
-        .filter((c): c is NonNullable<typeof c> => c != null);
-
-      let next: QuestStimulusFunctionGraph = {
-        ...graph,
-        curves: normalizedCurves.length > 0 ? normalizedCurves : undefined,
-      };
-
-      // Empty axes (or unusable curve text) → draw f(x) from the prompt in Desmos blue.
-      if ((next.curves?.length ?? 0) === 0 && curve && (next.points?.length ?? 0) === 0 && !next.riemann) {
-        const drawn = makePromptCurveGraph(curve);
-        next = {
-          ...next,
-          title: next.title ?? drawn.title,
-          alt: next.alt || drawn.alt,
-          xLabel: next.xLabel ?? drawn.xLabel,
-          yLabel: next.yLabel ?? drawn.yLabel,
-          domain: next.domain ?? drawn.domain,
-          curves: drawn.curves,
-        };
-      }
-
-      if (riemannHint && !next.riemann) {
-        const graphPoints = next.points ?? points;
-        const bars = riemannHeightsFromPoints(graphPoints, riemannHint.method, riemannHint.n);
-        if (bars) {
-          next = {
-            ...next,
-            riemann: {
-              method: riemannHint.method,
-              from: bars.from,
-              to: bars.to,
-              n: riemannHint.n,
-              heights: bars.heights,
-            },
-            domain: next.domain ?? [bars.from, bars.to],
-          };
-        }
-      }
-
-      stimulus[graphIndex] = next;
-    }
-  }
-
-  return { prompt, stimulus };
 }

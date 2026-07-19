@@ -15,6 +15,7 @@ import { cn } from "@/shared/core/utils";
  * Graph answer UI with deterministic ground truth:
  * - feature mode: mark points / intervals vs authored targets
  * - sketch mode: place control points; server grades polyline vs authored f(x)
+ * Live preview draws control points and polyline on the graph before lock.
  */
 export function GraphFeatureQuestion({
   prompt,
@@ -77,13 +78,18 @@ export function GraphFeatureQuestion({
     });
   };
 
-  const addSketchPoint = () => {
+  const addSketchPoint = (x: number, y: number) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    setControls((prev) => [...prev, { x, y }].slice(0, Math.max(8, maxSelections)));
+  };
+
+  const addSketchPointFromInputs = () => {
     const x = Number(xDraft);
     const y = Number(yDraft);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     setXDraft("");
     setYDraft("");
-    setControls((prev) => [...prev, { x, y }].slice(0, Math.max(8, maxSelections)));
+    addSketchPoint(x, y);
   };
 
   const selections: GraphFeatureSelection[] = [
@@ -91,13 +97,46 @@ export function GraphFeatureQuestion({
     ...intervals.map((iv) => ({ kind: "interval" as const, ...iv })),
   ];
 
+  const emptyAxesGraph = useMemo(
+    () => ({
+      kind: "function_graph" as const,
+      title: "Sketch grid",
+      alt: "Empty axes for sketching",
+      domain: sketchDomain,
+      range: [-2, 4] as [number, number],
+      curves: [],
+    }),
+    [sketchDomain],
+  );
+
+  const activeGraph = graph?.kind === "function_graph" ? graph : emptyAxesGraph;
+
   return (
     <div className="space-y-4">
       <PromptWithMath text={prompt} variant="light" highlightKeyTerms />
-      {graph ? <QuestFunctionGraph graph={graph} variant="light" /> : null}
+      <QuestFunctionGraph
+        graph={activeGraph}
+        variant="light"
+        overlay={{
+          sketchControls: mode === "sketch" ? controls : undefined,
+          featureXs: mode === "point" ? points : undefined,
+          intervals: mode === "interval" ? intervals : undefined,
+          interactive: !disabled && !busy && (mode === "sketch" || mode === "point"),
+          onPlotClick: ({ x, y }) => {
+            if (disabled || busy) return;
+            if (mode === "sketch") {
+              addSketchPoint(x, y);
+              return;
+            }
+            if (mode === "point") {
+              setPoints((prev) => [...prev, x].slice(0, maxSelections));
+            }
+          },
+        }}
+      />
       <p className="text-xs text-slate-600">
-        {sketchMode
-          ? "Draw by placing control points. Mentrixa grades your curve against the verified f(x)."
+        {sketchMode || mode === "sketch"
+          ? "Click the graph to place control points. Your curve preview updates live before you lock."
           : "Mark the verified features. Answers are graded automatically against authored targets."}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -128,7 +167,7 @@ export function GraphFeatureQuestion({
             onClick={() => setMode("point")}
             disabled={disabled || busy}
           >
-            Mark point
+            Point
           </button>
         ) : null}
         {!sketchMode && wantsInterval ? (
@@ -143,7 +182,7 @@ export function GraphFeatureQuestion({
             onClick={() => setMode("interval")}
             disabled={disabled || busy}
           >
-            Mark interval
+            Interval
           </button>
         ) : null}
       </div>
@@ -176,7 +215,7 @@ export function GraphFeatureQuestion({
           type="button"
           variant="secondary"
           disabled={disabled || busy || !xDraft || (mode === "sketch" && !yDraft)}
-          onClick={mode === "sketch" ? addSketchPoint : addFeatureX}
+          onClick={mode === "sketch" ? addSketchPointFromInputs : addFeatureX}
         >
           Add
         </Button>
@@ -198,7 +237,7 @@ export function GraphFeatureQuestion({
         {mode === "sketch"
           ? controls.map((p, i) => (
               <li key={`c-${i}`}>
-                Control ({p.x}, {p.y})
+                Control {i + 1}: ({p.x}, {p.y})
               </li>
             ))
           : null}
