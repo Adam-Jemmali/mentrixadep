@@ -362,24 +362,110 @@ async function loadApprovedItemBankRows(
   admin: ReturnType<typeof createAdminClient>,
   nodeIds: string[],
 ): Promise<ItemBankRow[]> {
-  const extended = await admin
-    .from("item_bank")
-    .select(ITEM_BANK_EXTENDED_SELECT)
-    .eq("status", "approved")
-    .in("skill_node_id", nodeIds);
+  const pageSize = 1000;
+  const out: ItemBankRow[] = [];
 
-  if (!extended.error && extended.data?.length) {
-    return extended.data as ItemBankRow[];
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1;
+    const extended = await admin
+      .from("item_bank")
+      .select(ITEM_BANK_EXTENDED_SELECT)
+      .eq("status", "approved")
+      .in("skill_node_id", nodeIds)
+      .range(from, to);
+
+    if (extended.error) {
+      if (from === 0) break;
+      console.error("[item-bank] page load failed:", extended.error.message);
+      break;
+    }
+    const chunk = (extended.data ?? []) as ItemBankRow[];
+    out.push(...chunk);
+    if (chunk.length < pageSize) {
+      return out;
+    }
   }
 
-  const base = await admin
-    .from("item_bank")
-    .select(ITEM_BANK_BASE_SELECT)
-    .eq("status", "approved")
-    .in("skill_node_id", nodeIds);
+  // Fallback without extended columns if first page failed hard.
+  if (out.length > 0) return out;
 
-  if (base.error || !base.data?.length) return [];
-  return base.data as ItemBankRow[];
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1;
+    const base = await admin
+      .from("item_bank")
+      .select(ITEM_BANK_BASE_SELECT)
+      .eq("status", "approved")
+      .in("skill_node_id", nodeIds)
+      .range(from, to);
+    if (base.error || !base.data?.length) break;
+    out.push(...(base.data as ItemBankRow[]));
+    if (base.data.length < pageSize) break;
+  }
+  return out;
+}
+
+/** Drop legacy shared stems (same UV / same poly) so packs explore unique math. */
+export function isLegacyRepetitiveConstructionStem(row: {
+  prompt?: string | null;
+  authoring_meta?: unknown;
+}): boolean {
+  const prompt = String(row.prompt ?? "");
+  if (/product \$uv\$/i.test(prompt) || /differentiate a product \$uv\$/i.test(prompt)) {
+    return true;
+  }
+  const meta =
+    row.authoring_meta && typeof row.authoring_meta === "object"
+      ? (row.authoring_meta as Record<string, unknown>)
+      : null;
+  const key = typeof meta?.template_key === "string" ? meta.template_key.trim() : "";
+  // Pre-variety shared keys (no unique answer / coeff suffix).
+  if (
+    /^(limits|derivatives|applications|integrals):(drag-product|deriv-poly|deriv-trig|deriv-exp|lim-diff-quot|lim-cubic|app-opt|app-related|int-antideriv|int-ftc|cloze-exp|cloze-sin|drag-def|drag-opt|drag-ftc|feat-crit|feat-opt|feat-vertex|feat-area-ends|sketch-sin|sketch-quad|sketch-cubic|sketch-accum|sketch-abs-like)$/.test(
+      key,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+async function loadRecentPracticeItemIds(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  limitQuests = 20,
+): Promise<Set<string>> {
+  const { data } = await admin
+    .from("quests")
+    .select("metadata")
+    .eq("creator_user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limitQuests);
+
+  const ids = new Set<string>();
+  for (const row of data ?? []) {
+    const meta = row.metadata as { questions?: Array<{ id?: string }> } | null;
+    const questions = meta?.questions;
+    if (!Array.isArray(questions)) continue;
+    for (const q of questions) {
+      if (typeof q?.id === "string" && q.id) ids.add(q.id);
+    }
+  }
+  return ids;
+}
+
+function unitPoolForNode(
+  nodeId: string,
+  skillNodes: SkillNodeRow[],
+  itemsByNode: Map<string, ItemBankRow[]>,
+): ItemBankRow[] {
+  const focus = skillNodes.find((n) => n.id === nodeId);
+  if (!focus) return itemsByNode.get(nodeId) ?? [];
+  const pooled: ItemBankRow[] = [];
+  for (const node of skillNodes) {
+    if (node.unit_number !== focus.unit_number) continue;
+    pooled.push(...(itemsByNode.get(node.id) ?? []));
+  }
+  return pooled.length > 0 ? pooled : (itemsByNode.get(nodeId) ?? []);
 }
 
 export async function selectItemBankQuestions(
@@ -419,6 +505,7 @@ export async function selectItemBankQuestions(
   const items = await loadApprovedItemBankRows(admin, nodeIds);
   if (!items.length) return [];
 
+  const recentItemIds = await loadRecentPracticeItemIds(admin, userId);
   const challengeByNode = await loadChallengeDifficultyByNodeIds(userId, nodeIds);
   const ratingBias = difficultyRatingBias(options?.difficulty);
 
@@ -446,7 +533,7 @@ export async function selectItemBankQuestions(
   if (neededNodeIds.length < targetCount) return [];
 
   const selected: PracticeQuestion[] = [];
-  const usedItemIds = new Set<string>();
+  const usedItemIds = new Set<string>(recentItemIds);
   const usedFormats = new Set<string>();
   const usedFingerprints = new Set<string>();
   let constructionCount = 0;
@@ -458,25 +545,60 @@ export async function selectItemBankQuestions(
     const studentRating = challengeByNode.get(nodeId);
     const effectiveRating =
       studentRating == null ? DEFAULT_CHALLENGE_DIFFICULTY + ratingBias : studentRating + ratingBias;
-    const nodePool = (itemsByNode.get(nodeId) ?? []).map((row) => ({
+
+    const primaryRows = (itemsByNode.get(nodeId) ?? []).filter(
+      (row) => !isLegacyRepetitiveConstructionStem(row),
+    );
+    const unitRows = unitPoolForNode(nodeId, skillNodes, itemsByNode).filter(
+      (row) => !isLegacyRepetitiveConstructionStem(row),
+    );
+    const combinedFresh = [
+      ...primaryRows,
+      ...unitRows.filter((row) => row.skill_node_id !== nodeId),
+    ];
+    // Fall back to full pool only if filtering would starve the pack.
+    const combinedRows =
+      combinedFresh.length > 0
+        ? combinedFresh
+        : [
+            ...(itemsByNode.get(nodeId) ?? []),
+            ...unitPoolForNode(nodeId, skillNodes, itemsByNode).filter(
+              (row) => row.skill_node_id !== nodeId,
+            ),
+          ];
+
+    const withRating = combinedRows.map((row) => ({
       ...row,
       difficultyRating: row.difficulty_rating ?? DEFAULT_CHALLENGE_DIFFICULTY,
     }));
-    const preferredDifficulty = preferItemsNearChallengeDifficulty(nodePool, effectiveRating);
+    const preferredDifficulty = preferItemsNearChallengeDifficulty(withRating, effectiveRating);
     const preferredMix = preferConstructionMix(
       preferredDifficulty,
       constructionCount,
       selected.length,
     );
-    const item = pickDiversePackItem(
+    let item = pickDiversePackItem(
       preferredMix,
       usedItemIds,
       usedFormats,
       usedFingerprints,
     );
+
+    // If recent-exclusion emptied the pool, allow older items (still unique within this pack).
+    if (!item) {
+      const packOnlyIds = new Set(selected.map((q) => q.id));
+      item = pickDiversePackItem(
+        preferredMix,
+        packOnlyIds,
+        usedFormats,
+        usedFingerprints,
+      );
+    }
+
     if (!item) continue;
 
-    const question = itemToPracticeQuestion(item, node);
+    const itemNode = nodeById.get(item.skill_node_id) ?? node;
+    const question = itemToPracticeQuestion(item, itemNode);
     if (!question) continue;
 
     usedItemIds.add(item.id);

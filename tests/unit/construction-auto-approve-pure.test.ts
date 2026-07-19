@@ -109,14 +109,30 @@ describe("validateConstructionGroundTruth", () => {
     }
   });
 
-  it("varies template keys across units and nodes", () => {
+  it("varies template keys and answers across units and nodes", () => {
     const limits = buildConstructionTemplatesForNode("One sided limits", 1);
     const integrals = buildConstructionTemplatesForNode("Basic integration rules", 6);
+    const derivA = buildConstructionTemplatesForNode("Product rule", 2);
+    const derivB = buildConstructionTemplatesForNode("Chain rule", 2);
     const keysA = new Set(limits.map((t) => t.authoring_meta.template_key));
     const keysB = new Set(integrals.map((t) => t.authoring_meta.template_key));
     const overlap = [...keysA].filter((k) => keysB.has(k));
     expect(overlap.length).toBeLessThan(keysA.size);
     expect(limits[0]?.answer_expression).not.toBe(integrals[0]?.answer_expression);
+    const answersA = new Set(derivA.map((t) => t.answer_expression).filter(Boolean));
+    const answersB = new Set(derivB.map((t) => t.answer_expression).filter(Boolean));
+    const sharedAnswers = [...answersA].filter((a) => answersB.has(a));
+    expect(sharedAnswers.length).toBeLessThan(Math.min(answersA.size, answersB.size));
+    expect(derivA.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("does not stamp every derivatives node with the same generic UV drag", () => {
+    const a = buildConstructionTemplatesForNode("Power rule", 2);
+    const b = buildConstructionTemplatesForNode("Quotient rule", 3);
+    const dragA = a.filter((t) => t.item_format === "drag_order").map((t) => t.prompt);
+    const dragB = b.filter((t) => t.item_format === "drag_order").map((t) => t.prompt);
+    expect(dragA.some((p) => /product \$uv\$/i.test(p))).toBe(false);
+    expect(dragA.join("\n")).not.toBe(dragB.join("\n"));
   });
 });
 

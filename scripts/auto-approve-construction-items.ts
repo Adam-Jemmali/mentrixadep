@@ -79,9 +79,32 @@ async function main(): Promise<void> {
     }
 
     let inserted = 0;
+    let skippedExisting = 0;
     for (const node of nodes) {
       const templates = buildConstructionTemplatesForNode(node.node_name, node.unit_number);
-      const rows = templates.map((t) => ({
+
+      const { data: existing } = await supabase
+        .from("item_bank")
+        .select("authoring_meta")
+        .eq("skill_node_id", node.id)
+        .limit(500);
+      const existingKeys = new Set(
+        (existing ?? [])
+          .map((row) => {
+            const meta = row.authoring_meta as { template_key?: string } | null;
+            return meta?.template_key?.trim() ?? "";
+          })
+          .filter(Boolean),
+      );
+
+      const fresh = templates.filter((t) => !existingKeys.has(t.authoring_meta.template_key));
+      skippedExisting += templates.length - fresh.length;
+      if (fresh.length === 0) {
+        console.log(`[seed] ${node.node_name}: all ${templates.length} keys already present`);
+        continue;
+      }
+
+      const rows = fresh.map((t) => ({
         skill_node_id: node.id,
         question_type: t.item_format,
         item_format: t.item_format,
@@ -100,7 +123,7 @@ async function main(): Promise<void> {
         step_sequence: null,
       }));
       if (dryRun) {
-        console.log(`[dry-run] would insert ${rows.length} construction templates for ${node.node_name}`);
+        console.log(`[dry-run] would insert ${rows.length} new templates for ${node.node_name}`);
         continue;
       }
       const { error } = await supabase.from("item_bank").insert(rows);
@@ -109,9 +132,11 @@ async function main(): Promise<void> {
         continue;
       }
       inserted += rows.length;
-      console.log(`[seed] ${node.node_name}: ${rows.length} construction items`);
+      console.log(`[seed] ${node.node_name}: +${rows.length} unique construction items`);
     }
-    console.log(`Seeded ${inserted} construction items (pending_review).`);
+    console.log(
+      `Seeded ${inserted} new construction items (pending_review). Skipped ${skippedExisting} existing keys.`,
+    );
   }
 
   const { data: pending, error } = await supabase

@@ -12,8 +12,8 @@ After an 8-question practice pack finishes, present the existing Pack Complete c
 
 | Topic | Choice |
 |-------|--------|
-| Reveal | Envelope slide-out (Hack the North inspired motion) |
-| After reveal | Envelope stays as a fixed resting tray; letter can drag |
+| Reveal | Starts closed: only a letter peek shows; drag up to pull out |
+| After reveal | Envelope stays fixed; letter drags up/down (snap open or tucked) |
 | Content | Keep Pack complete / Worked on / accuracy·XP / verdict / 3 CTAs |
 | Motion | Framer Motion (`framer-motion` already in app) |
 | Colors | Mentrixa only: violet `#7C3AED`, indigo `#6366F1`, navy ink `#0B1220`, cream paper; gold only if verified percentile is shown |

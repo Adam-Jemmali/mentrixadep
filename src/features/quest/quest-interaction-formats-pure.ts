@@ -324,7 +324,10 @@ export function preferConstructionMix<T extends { item_format?: string | null }>
   return [...construction, ...mcq];
 }
 
-/** Fingerprint so packs avoid near-duplicate stems across nodes/runs. */
+/** Fingerprint so packs avoid near-duplicate stems across nodes/runs.
+ * Prefer answer + normalized stem so old shared template_keys (e.g. derivatives:drag-product)
+ * do not collapse distinct math into one bucket incorrectly — and same stems still collide.
+ */
 export function constructionItemFingerprint(row: {
   item_format?: string | null;
   prompt?: string | null;
@@ -336,21 +339,26 @@ export function constructionItemFingerprint(row: {
       ? (row.authoring_meta as Record<string, unknown>)
       : null;
   const key = typeof meta?.template_key === "string" ? meta.template_key.trim() : "";
-  if (key) return key;
   const format = String(row.item_format ?? "").toLowerCase();
   const answer = String(row.answer_expression ?? "").replace(/\s/g, "");
   const stem = String(row.prompt ?? "")
+    .replace(/Skill proof · [^:]+:\s*/gi, "")
+    .replace(/Method pipeline · [^:]+:\s*/gi, "")
+    .replace(/Cloze construction · [^:]+:\s*/gi, "")
+    .replace(/Feature decision · [^:]+:\s*/gi, "")
+    .replace(/Sketch proof · [^:]+:\s*/gi, "")
     .replace(/\$[^$]*\$/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 72)
     .toLowerCase();
-  return `${format}|${answer}|${stem}`;
+  // Include template_key when present, but always bind to answer+stem so unique math differs.
+  return `${key}|${format}|${answer}|${stem}`;
 }
 
 /**
  * Prefer items whose format is not yet in the pack, then avoid duplicate fingerprints.
- * Picks randomly among the top candidates so each Start Pack run differs.
+ * Picks randomly among all fresh-fingerprint candidates so each Start Pack run differs.
  */
 export function pickDiversePackItem<T extends {
   id: string;
@@ -378,8 +386,8 @@ export function pickDiversePackItem<T extends {
     return !usedFormats.has(f);
   });
   const candidates = freshFormat.length > 0 ? freshFormat : base;
-  const window = Math.min(candidates.length, Math.max(3, Math.ceil(candidates.length * 0.4)));
-  const idx = Math.floor(rng() * window);
+  // Full random among unique candidates (not just top 40%) so packs explore the bank.
+  const idx = Math.floor(rng() * candidates.length);
   return candidates[idx] ?? candidates[0] ?? null;
 }
 
