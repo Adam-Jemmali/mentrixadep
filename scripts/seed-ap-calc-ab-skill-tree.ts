@@ -11,6 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { findCycle } from "../src/features/skill-tree/skill-tree-graph-pure";
 
 const SUBJECT = "AP Calculus AB";
 const MIN_NODES = 100;
@@ -25,6 +26,8 @@ type SkillNodeSeed = {
   common_misconceptions: string[];
   display_order: number;
 };
+
+type PrerequisiteSeed = Record<string, string[]>;
 
 function loadEnv(): void {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -49,6 +52,59 @@ function loadNodes(): SkillNodeSeed[] {
   return JSON.parse(readFileSync(path, "utf8")) as SkillNodeSeed[];
 }
 
+function loadConfiguredPrerequisites(): PrerequisiteSeed {
+  const path = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "data/ap-calc-ab-skill-prereqs.json"
+  );
+  return JSON.parse(readFileSync(path, "utf8")) as PrerequisiteSeed;
+}
+
+function resolvePrerequisites(
+  nodes: SkillNodeSeed[],
+  configured: PrerequisiteSeed
+): PrerequisiteSeed {
+  const slugs = new Set(nodes.map((node) => node.node_slug));
+  for (const [childSlug, parentSlugs] of Object.entries(configured)) {
+    if (!slugs.has(childSlug)) {
+      throw new Error(`Unknown prerequisite child slug: ${childSlug}`);
+    }
+    for (const parentSlug of parentSlugs) {
+      if (!slugs.has(parentSlug)) {
+        throw new Error(`Unknown prerequisite parent slug: ${parentSlug}`);
+      }
+    }
+  }
+
+  const byUnit = new Map<number, SkillNodeSeed[]>();
+  for (const node of nodes) {
+    const unitNodes = byUnit.get(node.unit_number) ?? [];
+    unitNodes.push(node);
+    byUnit.set(node.unit_number, unitNodes);
+  }
+
+  const resolved: PrerequisiteSeed = {};
+  for (const unitNodes of byUnit.values()) {
+    unitNodes.sort((a, b) => a.display_order - b.display_order);
+    unitNodes.forEach((node, index) => {
+      resolved[node.node_slug] =
+        configured[node.node_slug] ?? (index === 0 ? [] : [unitNodes[index - 1]!.node_slug]);
+    });
+  }
+
+  const cycle = findCycle(
+    nodes.map((node) => ({
+      id: node.node_slug,
+      prerequisites: resolved[node.node_slug] ?? [],
+    }))
+  );
+  if (cycle) {
+    throw new Error(`Prerequisite cycle detected: ${cycle.join(" -> ")}`);
+  }
+
+  return resolved;
+}
+
 async function main(): Promise<void> {
   loadEnv();
 
@@ -65,6 +121,7 @@ async function main(): Promise<void> {
   });
 
   const nodes = loadNodes();
+  const prerequisitesBySlug = resolvePrerequisites(nodes, loadConfiguredPrerequisites());
   if (nodes.length < MIN_NODES || nodes.length > MAX_NODES) {
     console.error(
       `Expected ${MIN_NODES}–${MAX_NODES} nodes in data file, got ${nodes.length}.`
@@ -86,9 +143,8 @@ async function main(): Promise<void> {
 
   if ((existingCount ?? 0) >= MIN_NODES && (existingCount ?? 0) <= MAX_NODES && !force) {
     console.log(
-      `Already seeded: ${existingCount} rows for "${SUBJECT}" (${MIN_NODES}–${MAX_NODES}). Use --force to re upsert.`
+      `Refreshing ${existingCount} existing rows for "${SUBJECT}" with the current prerequisite DAG.`
     );
-    process.exit(0);
   }
 
   const rows = nodes.map((node) => ({
@@ -160,27 +216,29 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const byUnit = new Map<number, { id: string }[]>();
-  for (const row of inserted) {
-    const list = byUnit.get(row.unit_number) ?? [];
-    list.push({ id: row.id });
-    byUnit.set(row.unit_number, list);
-  }
+  const idBySlug = new Map(inserted.map((row) => [row.node_slug, row.id]));
 
   let linked = 0;
-  for (const unitNodes of byUnit.values()) {
-    for (let i = 0; i < unitNodes.length; i++) {
-      const prereqs = i === 0 ? [] : [unitNodes[i - 1]!.id];
-      const { error: updateError } = await supabase
-        .from("skill_nodes")
-        .update({ prerequisites: prereqs })
-        .eq("id", unitNodes[i]!.id);
-      if (updateError) {
-        console.error("Prerequisite update failed:", updateError.message);
-        process.exit(1);
-      }
-      linked++;
+  for (const node of nodes) {
+    const nodeId = idBySlug.get(node.node_slug);
+    if (!nodeId) {
+      console.error(`Missing database row for canonical slug: ${node.node_slug}`);
+      process.exit(1);
     }
+    const prerequisiteIds = (prerequisitesBySlug[node.node_slug] ?? []).map((slug) => {
+      const id = idBySlug.get(slug);
+      if (!id) throw new Error(`Missing database row for prerequisite slug: ${slug}`);
+      return id;
+    });
+    const { error: updateError } = await supabase
+      .from("skill_nodes")
+      .update({ prerequisites: prerequisiteIds })
+      .eq("id", nodeId);
+    if (updateError) {
+      console.error("Prerequisite update failed:", updateError.message);
+      process.exit(1);
+    }
+    linked += prerequisiteIds.length;
   }
 
   const { count: finalCount, error: finalCountError } = await supabase
@@ -195,7 +253,7 @@ async function main(): Promise<void> {
 
   console.log(`Upserted ${rows.length} skill_nodes for "${SUBJECT}".`);
   console.log(`Total rows for subject: ${finalCount}.`);
-  console.log(`Linked prerequisites for ${linked} nodes across ${byUnit.size} units.`);
+  console.log(`Linked ${linked} prerequisite edges across 8 units.`);
   const inRange =
     finalCount !== null &&
     finalCount >= MIN_NODES &&
