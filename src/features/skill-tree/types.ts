@@ -49,6 +49,8 @@ export type SkillTreeData = {
   focusNodeId: string;
   /** When Next was redirected by repeated failure tags. */
   focusCause: SkillTreeFocusCause | null;
+  /** Reviewed miss items available for Clear misses. */
+  mistakeItemCount: number;
 };
 
 export type SkillTreeLabelKind =

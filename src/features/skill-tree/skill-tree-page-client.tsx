@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { MasteryGridExplorer } from "@/features/mastery-grid/mastery-grid-explorer";
 import { MasteryGridHistoryPanel } from "@/features/mastery-grid/mastery-grid-history-panel";
@@ -17,7 +18,12 @@ import {
   serializeUnlockedBaseline,
 } from "@/features/skill-tree/skill-tree-unlock-baseline-pure";
 import type { SkillTreeData } from "@/features/skill-tree/types";
-import { practiceNodeHref } from "@/features/guidance/verdict-engine-pure";
+import {
+  isSkillTreeReviewDue,
+  skillTreeNodeHref,
+} from "@/features/skill-tree/skill-tree-review-pure";
+import { shouldShowClearMissesCta } from "@/features/skill-tree/mistake-treasury-pure";
+import { startClearMissesPack } from "@/features/skill-tree/start-clear-misses-pack";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
   MentrixaVocabIcon,
@@ -113,15 +119,28 @@ function UnitBranch({
             className="pointer-events-none absolute bottom-4 left-8 top-4 w-px bg-[#6366F1]/35 sm:left-1/2"
             aria-hidden
           />
-          {nodes.map((node) => (
-            <SkillTreeNode
-              key={node.id}
-              node={node}
-              compact
-              href={node.unlocked ? practiceNodeHref(node.nodeName) : undefined}
-              bloomOnMount={false}
-            />
-          ))}
+          {nodes.map((node) => {
+            const reviewDue = isSkillTreeReviewDue({
+              nextReviewAt: node.nextReviewAt,
+              state: node.state,
+            });
+            return (
+              <SkillTreeNode
+                key={node.id}
+                node={node}
+                compact
+                href={
+                  node.unlocked
+                    ? skillTreeNodeHref({
+                        nodeName: node.nodeName,
+                        reviewDue,
+                      })
+                    : undefined
+                }
+                bloomOnMount={false}
+              />
+            );
+          })}
         </div>
       </section>
     </div>
@@ -138,13 +157,22 @@ export function SkillTreePageClient({
   momentumActive: boolean;
 }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const openedFromPack = searchParams.get("opened");
   const [openUnitNumber, setOpenUnitNumber] = useState<number | null>(null);
   const [bloomNodeIds, setBloomNodeIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const [treasuryMessage, setTreasuryMessage] = useState<string | null>(null);
+  const [treasuryPending, startTreasury] = useTransition();
   const unitTriggerRef = useRef<HTMLElement | null>(null);
   const focus = data.nodes.find((node) => node.id === data.focusNodeId);
+  const focusReviewDue = focus
+    ? isSkillTreeReviewDue({
+        nextReviewAt: focus.nextReviewAt,
+        state: focus.state,
+      })
+    : false;
   const unlockedNodeIds = useMemo(
     () => new Set(data.nodes.filter((node) => node.unlocked).map((node) => node.id)),
     [data.nodes],
@@ -158,6 +186,20 @@ export function SkillTreePageClient({
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setOpenUnitNumber(unitNumber);
   }, []);
+  const clearMissesLabel = skillTreeLabel("clearMisses");
+  const showClearMisses = shouldShowClearMissesCta(data.mistakeItemCount);
+
+  const onClearMisses = () => {
+    setTreasuryMessage(null);
+    startTreasury(async () => {
+      const result = await startClearMissesPack();
+      if (!result.ok) {
+        setTreasuryMessage(result.error);
+        return;
+      }
+      router.push(`/student/quest?packId=${encodeURIComponent(result.questId)}`);
+    });
+  };
 
   useEffect(() => {
     const currentIds = [...unlockedNodeIds];
@@ -197,7 +239,21 @@ export function SkillTreePageClient({
             as="h1"
             labelClassName="mx-hand-title !text-2xl !normal-case !tracking-normal sm:!text-3xl"
           />
-          {data.focusCause ? (
+          {focusReviewDue ? (
+            <p
+              className={`mt-3 inline-flex items-center gap-2 ${mentrixStudent.pageSubtitle} motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300`}
+            >
+              <MentrixaVocabIcon
+                name={skillTreeLabel("review").icon}
+                size={22}
+                surface="light"
+                title={skillTreeLabel("review").text}
+              />
+              <span className="font-semibold text-[#0B1220]">
+                {focus?.nodeName ?? "Review"}
+              </span>
+            </p>
+          ) : data.focusCause ? (
             <p
               className={`mt-3 inline-flex items-center gap-2 ${mentrixStudent.pageSubtitle} motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300`}
             >
@@ -224,6 +280,33 @@ export function SkillTreePageClient({
         onOpenUnit={openUnit}
         bloomNodeIds={bloomNodeIds}
       />
+
+      {showClearMisses ? (
+        <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
+          <button
+            type="button"
+            onClick={onClearMisses}
+            disabled={treasuryPending}
+            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#6366F1] bg-white px-4 py-3 font-black text-[#0B1220] shadow-[0_10px_30px_rgba(99,102,241,0.12)] transition-colors hover:border-[#818CF8] hover:bg-[#F5F3FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <MentrixaVocabIcon
+              name={clearMissesLabel.icon}
+              size={28}
+              surface="light"
+              title={clearMissesLabel.text}
+            />
+            <span>{clearMissesLabel.text}</span>
+            <span className="text-xs font-semibold text-[#6366F1]">
+              {data.mistakeItemCount}
+            </span>
+          </button>
+          {treasuryMessage ? (
+            <p role="status" className={`mt-2 text-sm ${mentrixStudent.pageSubtitle}`}>
+              {treasuryMessage}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <MasteryGridHistoryPanel
         history={history}

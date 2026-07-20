@@ -3178,6 +3178,94 @@ export type Database = {
           },
         ]
       }
+      skill_phoenix_slumps: {
+        Row: {
+          consecutive_incorrect: number
+          skill_node_id: string
+          slump_pending: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consecutive_incorrect?: number
+          skill_node_id: string
+          slump_pending?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consecutive_incorrect?: number
+          skill_node_id?: string
+          slump_pending?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_phoenix_slumps_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_phoenix_slumps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_answer_latencies: {
+        Row: {
+          answered_ms: number
+          created_at: string
+          id: string
+          item_id: string | null
+          skill_node_id: string
+          user_id: string
+        }
+        Insert: {
+          answered_ms: number
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          skill_node_id: string
+          user_id: string
+        }
+        Update: {
+          answered_ms?: number
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          skill_node_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_answer_latencies_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "item_bank"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_answer_latencies_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_answer_latencies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_nodes: {
         Row: {
           common_misconceptions: string[] | null

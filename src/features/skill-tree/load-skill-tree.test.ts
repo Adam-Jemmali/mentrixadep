@@ -112,6 +112,7 @@ describe("buildSkillTreeData", () => {
 
     expect(tree.focusNodeId).toBe("open-weak");
     expect(tree.focusCause).toBeNull();
+    expect(tree.mistakeItemCount).toBe(0);
     expect(tree.nodes.find((node) => node.id === "locked-weak")?.unlocked).toBe(false);
     expect(tree.frontier.focusId).toBe("open-weak");
   });
@@ -123,5 +124,21 @@ describe("buildSkillTreeData", () => {
     });
     expect(tree.focusNodeId).toBe("root");
     expect(tree.focusCause).toEqual({ tag: "power-rule", nodeId: "root" });
+  });
+
+  it("prefers unlocked review-due solid over weak focus", () => {
+    const tree = buildSkillTreeData(
+      grid,
+      skillNodes,
+      [
+        {
+          skill_node_id: "root",
+          next_review_at: "2026-07-18T10:00:00.000Z",
+        },
+      ],
+      null,
+      new Date("2026-07-18T12:00:00.000Z"),
+    );
+    expect(tree.focusNodeId).toBe("root");
   });
 });

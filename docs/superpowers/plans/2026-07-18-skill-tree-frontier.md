@@ -529,13 +529,16 @@ Edge cases 21–22.
 - Modify: `load-skill-tree.ts`, `skill-tree-node.tsx`, `skill-tree-copy-pure.ts`  
 - Due if `nextReviewAt <= now` or within 24h window (match decay alert window)  
 
+- [x] Review label + pulse on due nodes  
+- [x] Prefer review-due focus when no cause override  
+
 ### Task 12: Open Review
 
 **Files:**
 - CTA on review node uses existing `decayAlertQuestUrl` / practice href  
 - No new random event system  
 
----
+- [x] Focus CTA shows Review + `retest` icon via `decayAlertQuestUrl`  
 
 # Phase 4 — Mistake Treasury + Phoenix
 
@@ -547,12 +550,19 @@ Edge cases 21–22.
 - Pack builder restricts to miss item IDs from reviewed bank  
 - Hide when empty (edge 24)  
 
+- [x] Derived queue from `skill_error_events`  
+- [x] Clear misses CTA on tree page  
+- [x] Pack builder restricts to miss item IDs  
+
 ### Task 14: Phoenix
 
 **Files:**
 - Pure: detect ≥5 consecutive incorrect then later Solid  
 - Award XP once per recovery key `(user_id, skill_node_id, recovery_at_day)`  
 - Verdict `Recovered` + `xp` icon  
+
+- [x] Slump tracking + recovery XP  
+- [x] Post-pack `Recovered` highlight  
 
 ---
 
@@ -565,6 +575,9 @@ Edge cases 21–22.
 - Client sends `answeredMs`; Zod clamp 0..1_800_000  
 - Ignore nulls  
 
+- [x] `skill_answer_latencies` table (answers live in quest metadata; durable samples here)  
+- [x] Client `answeredMs` + clamp  
+
 ### Task 16: Faster verdict
 
 **Files:**
@@ -572,11 +585,15 @@ Edge cases 21–22.
 - Post-pack: if samples ≥5 and median drop ≥30%, show `Faster`  
 - Edge 27  
 
+- [x] `momentum` icon + **Faster** on done panel  
+
 ### Task 17: Challenge difficulty all formats
 
 **Files:**
 - Extend `applyChallengeDifficultyOutcome` call sites beyond free response  
 - Keep ratings hidden from student UI  
+
+- [x] MCQ / FR / multi-part / construction update hidden ratings  
 
 ---
 
@@ -589,6 +606,10 @@ If needed for safe prod:
 - Default: on for new builds once Phase 1 verified locally  
 
 Flag must not fork data model; only UI + gate enforcement.
+
+- [x] `SKILL_TREE_FRONTIER` (default on; `0`/`false`/`off` rolls back UI + gate)  
+- [x] Mastery page: Frontier canvas vs explorer-only  
+- [x] Practice + duel unlock gate respects the same flag  
 
 ---
 
@@ -613,6 +634,8 @@ Flag must not fork data model; only UI + gate enforcement.
 | 15 | Latency outlier | clamped / excluded |
 | 16 | loadMasteryGrid | identical node id set |
 
+Covered by unit tests for unlock / frontier / velocity / copy / gate / flag. Manual QA for motion + UI polish.
+
 ---
 
 # Definition of done (whole program)
@@ -626,7 +649,9 @@ Flag must not fork data model; only UI + gate enforcement.
 7. No VFA/rank regressions  
 8. Copy/icon rules held  
 
----
+- [x] Items 1–5 shipped on main (Phases 1–5)  
+- [x] Rollback flag available without forking schema  
+- [x] Mastery grid remains a subset of skill-tree node set  
 
 # Suggested git commit messages (when user asks to commit)
 

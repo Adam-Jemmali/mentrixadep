@@ -77,10 +77,10 @@ async function readChallengeDifficultyState(
 }
 
 /**
- * Update hidden difficulty after a free-response grade.
- * Rating numbers stay server-side only.
+ * Update hidden challenge difficulty after any practice outcome.
+ * Rating numbers stay server-side only — never surface to student UI.
  */
-export async function updateChallengeDifficultyFromFreeResponse(input: {
+export async function updateChallengeDifficulty(input: {
   userId: string;
   skillNodeId: string;
   itemDifficultyRating: number;
@@ -112,4 +112,14 @@ export async function updateChallengeDifficultyFromFreeResponse(input: {
     return { ok: false, error: error.message };
   }
   return { ok: true };
+}
+
+/** @deprecated Prefer updateChallengeDifficulty — kept for existing FR callers. */
+export async function updateChallengeDifficultyFromFreeResponse(input: {
+  userId: string;
+  skillNodeId: string;
+  itemDifficultyRating: number;
+  correct: boolean;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  return updateChallengeDifficulty(input);
 }

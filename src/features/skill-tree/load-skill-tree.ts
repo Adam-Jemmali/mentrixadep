@@ -7,8 +7,10 @@ import {
   resolveCauseFocusNodeId,
 } from "@/features/skill-tree/skill-error-aggregate-pure";
 import { loadRecentSkillErrorEvents } from "@/features/skill-tree/record-skill-error";
+import { loadMistakeTreasuryItemIds } from "@/features/skill-tree/load-mistake-treasury";
 import { buildFrontier } from "@/features/skill-tree/skill-tree-frontier-pure";
 import { buildAdjacency } from "@/features/skill-tree/skill-tree-graph-pure";
+import { isSkillTreeReviewDue } from "@/features/skill-tree/skill-tree-review-pure";
 import {
   buildSolidIds,
   isNodeUnlocked,
@@ -38,10 +40,25 @@ type KnowledgeReviewRow = {
 function pickDefaultFocusNodeId(
   grid: MasteryGridData,
   nodes: SkillTreeNode[],
+  now: Date,
 ): string {
   const displayOrderedNodes = [...nodes].sort(
     (left, right) => left.displayOrder - right.displayOrder,
   );
+
+  const reviewDue = displayOrderedNodes.find(
+    (node) =>
+      node.unlocked &&
+      isSkillTreeReviewDue({
+        nextReviewAt: node.nextReviewAt,
+        now,
+        state: node.state,
+      }),
+  );
+  if (reviewDue) {
+    return reviewDue.id;
+  }
+
   const unlockedIds = new Set(
     nodes.filter((node) => node.unlocked).map((node) => node.id),
   );
@@ -78,6 +95,8 @@ export function buildSkillTreeData(
   skillNodes: SkillNodeRow[],
   knowledgeRows: KnowledgeReviewRow[],
   focusOverride: SkillTreeFocusCause | null = null,
+  now: Date = new Date(),
+  mistakeItemCount = 0,
 ): SkillTreeData {
   const skillById = new Map(skillNodes.map((node) => [node.id, node]));
   const reviewById = new Map(
@@ -116,7 +135,7 @@ export function buildSkillTreeData(
   );
 
   let focusCause: SkillTreeFocusCause | null = null;
-  let focusNodeId = pickDefaultFocusNodeId(grid, nodes);
+  let focusNodeId = pickDefaultFocusNodeId(grid, nodes, now);
 
   if (focusOverride && unlocked.has(focusOverride.nodeId)) {
     focusCause = focusOverride;
@@ -138,12 +157,13 @@ export function buildSkillTreeData(
     }),
     focusNodeId,
     focusCause,
+    mistakeItemCount,
   };
 }
 
 export async function loadSkillTree(userId: string): Promise<SkillTreeData> {
   const admin = createAdminClient();
-  const [grid, nodesResult, knowledgeResult, errorEvents] = await Promise.all([
+  const [grid, nodesResult, knowledgeResult, errorEvents, mistakeItemIds] = await Promise.all([
     loadMasteryGrid(userId),
     admin
       .from("skill_nodes")
@@ -158,6 +178,7 @@ export async function loadSkillTree(userId: string): Promise<SkillTreeData> {
       .eq("user_id", userId)
       .eq("subject", AP_CALC_AB_SUBJECT),
     loadRecentSkillErrorEvents(userId).catch(() => []),
+    loadMistakeTreasuryItemIds(userId).catch(() => []),
   ]);
 
   if (nodesResult.error) throw new Error(nodesResult.error.message);
@@ -180,6 +201,8 @@ export async function loadSkillTree(userId: string): Promise<SkillTreeData> {
     skillNodes,
     (knowledgeResult.data ?? []) as KnowledgeReviewRow[],
     null,
+    new Date(),
+    mistakeItemIds.length,
   );
 
   const topDeficit = pickTopSecondaryDeficit(errorEvents);
@@ -210,5 +233,7 @@ export async function loadSkillTree(userId: string): Promise<SkillTreeData> {
     skillNodes,
     (knowledgeResult.data ?? []) as KnowledgeReviewRow[],
     { tag: topDeficit.tag, nodeId: causeNodeId },
+    new Date(),
+    mistakeItemIds.length,
   );
 }

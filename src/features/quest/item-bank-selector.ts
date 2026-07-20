@@ -629,3 +629,61 @@ export async function selectItemBankQuestions(
 
   return selected;
 }
+
+function shuffleRows<T>(rows: T[]): T[] {
+  const copy = [...rows];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const current = copy[i]!;
+    copy[i] = copy[j]!;
+    copy[j] = current;
+  }
+  return copy;
+}
+
+/** Build a pack from reviewed miss item ids only. */
+export async function selectMistakeTreasuryQuestions(
+  userId: string,
+  subject: string,
+  itemIds: string[],
+  count: number,
+  options?: { allowedSkillNodeIds?: ReadonlySet<string> },
+): Promise<PracticeQuestion[]> {
+  void userId;
+  if (!isApCalculusAbSubject(subject) || itemIds.length === 0) return [];
+
+  const targetCount = Math.min(Math.max(1, count), itemIds.length);
+  const admin = createAdminClient();
+  const { data: nodes, error: nodesError } = await admin
+    .from("skill_nodes")
+    .select("id, unit_number, unit_name, node_name, node_slug, display_order, exam_stakes")
+    .eq("subject", AP_CALC_AB_SUBJECT);
+
+  if (nodesError || !nodes?.length) return [];
+
+  const skillNodes = filterSkillNodesToAllowed(
+    nodes as SkillNodeRow[],
+    options?.allowedSkillNodeIds,
+  );
+  const nodeById = new Map(skillNodes.map((node) => [node.id, node]));
+
+  const { data: rows, error } = await admin
+    .from("item_bank")
+    .select(ITEM_BANK_EXTENDED_SELECT)
+    .eq("status", "approved")
+    .in("id", itemIds);
+
+  if (error || !rows?.length) return [];
+
+  const selected: PracticeQuestion[] = [];
+  for (const row of shuffleRows(rows as ItemBankRow[])) {
+    const node = nodeById.get(row.skill_node_id);
+    if (!node) continue;
+    const question = itemToPracticeQuestion(row, node);
+    if (!question) continue;
+    selected.push(question);
+    if (selected.length >= targetCount) break;
+  }
+
+  return selected;
+}

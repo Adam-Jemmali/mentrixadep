@@ -31,6 +31,8 @@ import {
 } from "@/features/duels/duel-forfeit-pure";
 import { DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE } from "@/features/duels/duel-item-bank-pure";
 import { loadNodeUnlockContext } from "@/features/skill-tree/assert-node-unlocked";
+import { isSkillTreeFrontierEnabled } from "@/features/skill-tree/skill-tree-frontier-flag-pure";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 
 export async function activateSkillDuelSession(
   duelId: string
@@ -99,13 +101,22 @@ export async function activateSkillDuelSession(
         ? []
         : [duel.opponent_student_id]),
     ];
-    const unlockContexts = await Promise.all(
-      participantIds.map((participantId) => loadNodeUnlockContext(participantId)),
-    );
-    // Duel candidates stay inside the nodes unlocked for every human participant.
-    const nodeIds = [...(unlockContexts[0]?.unlockedIds ?? [])].filter((nodeId) =>
-      unlockContexts.every((context) => context.unlockedIds.has(nodeId)),
-    );
+    let nodeIds: string[] = [];
+    if (isSkillTreeFrontierEnabled()) {
+      const unlockContexts = await Promise.all(
+        participantIds.map((participantId) => loadNodeUnlockContext(participantId)),
+      );
+      // Duel candidates stay inside the nodes unlocked for every human participant.
+      nodeIds = [...(unlockContexts[0]?.unlockedIds ?? [])].filter((nodeId) =>
+        unlockContexts.every((context) => context.unlockedIds.has(nodeId)),
+      );
+    } else {
+      const { data: nodes } = await admin
+        .from("skill_nodes")
+        .select("id")
+        .eq("subject", AP_CALC_AB_SUBJECT);
+      nodeIds = (nodes ?? []).map((row) => String(row.id));
+    }
     if (!nodeIds.length) {
       return { success: false, error: DUEL_ITEM_BANK_UNAVAILABLE_MESSAGE };
     }

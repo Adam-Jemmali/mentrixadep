@@ -46,6 +46,8 @@ import type {
   MasteryGridData,
   QuestMasteryHighlight,
   QuestOpenedHighlight,
+  QuestPhoenixHighlight,
+  QuestFasterHighlight,
 } from "@/features/mastery-grid/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import {
@@ -83,6 +85,7 @@ export function QuestPracticeWorkspace({
     () => parseQuestPromptParam(searchParams.get("prompt") ?? ""),
     [searchParams],
   );
+  const packIdFromUrl = searchParams.get("packId");
   const tier = useUiPerfTier();
   const [phase, setPhase] = useState<Phase>("wizard");
   const [difficulty, setDifficulty] = useState<PracticeDifficulty>("intermediate");
@@ -129,6 +132,8 @@ export function QuestPracticeWorkspace({
     masteryGrid?: MasteryGridData;
     masteryHighlight?: QuestMasteryHighlight;
     openedHighlight?: QuestOpenedHighlight;
+    phoenixHighlight?: QuestPhoenixHighlight;
+    fasterHighlight?: QuestFasterHighlight;
     questVerdict?: Verdict;
     packSkillNodeIds?: string[];
   } | null>(null);
@@ -148,6 +153,14 @@ export function QuestPracticeWorkspace({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onboardingCompleteRef = useRef(false);
   const touchStartX = useRef<number | null>(null);
+  const questionShownAtRef = useRef<number | null>(null);
+
+  const takeAnsweredMs = useCallback(() => {
+    const started = questionShownAtRef.current;
+    questionShownAtRef.current = null;
+    if (started == null) return null;
+    return Math.max(0, Date.now() - started);
+  }, []);
 
   const buildFinalizeOptions = useCallback((timedOut = false) => {
     return timedOut ? { timedOut: true as const } : {};
@@ -193,6 +206,7 @@ export function QuestPracticeWorkspace({
         setQuestion(q);
         resetQuestionLocalState();
         setQIndex(idx);
+        questionShownAtRef.current = Date.now();
         return true;
       } catch (e) {
         setErr(e instanceof Error ? e.message : "Could not load the next question.");
@@ -249,6 +263,25 @@ export function QuestPracticeWorkspace({
     },
     [loadQuestion, startQuestTimer],
   );
+
+  useEffect(() => {
+    if (!packIdFromUrl || onboardingMode || phase !== "wizard") return;
+    let cancelled = false;
+    void (async () => {
+      setBusy(true);
+      setErr(null);
+      const ok = await resumeQuestRun(packIdFromUrl);
+      if (!cancelled) {
+        setBusy(false);
+        if (ok) {
+          setQuestId(packIdFromUrl);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [onboardingMode, packIdFromUrl, phase, resumeQuestRun]);
 
   const beginPack = async () => {
     setErr(null);
@@ -314,13 +347,20 @@ export function QuestPracticeWorkspace({
       if (fin.success) {
       setDoneResult(fin.result);
       if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
-      const xpTotal = (fin.result.xpAwarded ?? 0) + (fin.result.perfectBonus ?? 0);
+      const xpTotal =
+        (fin.result.xpAwarded ?? 0) +
+        (fin.result.perfectBonus ?? 0) +
+        (fin.result.phoenixHighlight?.xpAwarded ?? 0);
       if (xpTotal > 0) {
         emitXpAward({
           amount: xpTotal,
           totalXp: fin.result.totalXp ?? 0,
           trigger: "quest",
-          message: fin.result.perfect ? "Perfect score bonus!" : undefined,
+          message: fin.result.perfect
+            ? "Perfect score bonus!"
+            : fin.result.phoenixHighlight
+              ? "Recovered."
+              : undefined,
         });
       }
       if (onboardingMode) {
@@ -353,7 +393,7 @@ export function QuestPracticeWorkspace({
     if (!questId || !question || question.kind !== "mcq" || mcqResult) return;
     setMcqPicked(optIdx);
     setBusy(true);
-    const r = await submitPracticeMcq(questId, qIndex, optIdx);
+    const r = await submitPracticeMcq(questId, qIndex, optIdx, takeAnsweredMs());
     setBusy(false);
     if ("error" in r) {
       setErr(r.error);
@@ -432,7 +472,7 @@ export function QuestPracticeWorkspace({
   const onFreeResponseSubmit = async (value: string) => {
     if (!questId || !question || question.kind !== "free_response") return;
     setBusy(true);
-    const r = await submitPracticeFreeResponse(questId, qIndex, value);
+    const r = await submitPracticeFreeResponse(questId, qIndex, value, takeAnsweredMs());
     setBusy(false);
     if ("error" in r) {
       setErr(r.error);
@@ -444,7 +484,7 @@ export function QuestPracticeWorkspace({
   const onClozeSubmit = async (answers: Record<string, string>) => {
     if (!questId || !question || question.kind !== "complete_expression") return;
     setBusy(true);
-    const r = await submitPracticeCompleteExpression(questId, qIndex, answers);
+    const r = await submitPracticeCompleteExpression(questId, qIndex, answers, takeAnsweredMs());
     setBusy(false);
     if ("error" in r) {
       setErr(r.error);
@@ -459,7 +499,7 @@ export function QuestPracticeWorkspace({
   const onDragOrderSubmit = async (ordered: string[]) => {
     if (!questId || !question || question.kind !== "drag_order") return;
     setBusy(true);
-    const r = await submitPracticeDragOrder(questId, qIndex, ordered);
+    const r = await submitPracticeDragOrder(questId, qIndex, ordered, takeAnsweredMs());
     setBusy(false);
     if ("error" in r) {
       setErr(r.error);
@@ -477,7 +517,10 @@ export function QuestPracticeWorkspace({
   }) => {
     if (!questId || !question || question.kind !== "graph_feature") return;
     setBusy(true);
-    const r = await submitPracticeGraphFeature(questId, qIndex, payload);
+    const r = await submitPracticeGraphFeature(questId, qIndex, {
+      ...payload,
+      answeredMs: takeAnsweredMs(),
+    });
     setBusy(false);
     if ("error" in r) {
       setErr(r.error);
@@ -521,6 +564,7 @@ export function QuestPracticeWorkspace({
     const r = await submitPracticeMultiPart(questId, qIndex, input.partIndex, {
       selectedIndex: input.selectedIndex,
       freeResponse: input.freeResponse,
+      answeredMs: takeAnsweredMs(),
     });
     setBusy(false);
     if ("error" in r) {
@@ -637,6 +681,8 @@ export function QuestPracticeWorkspace({
             verdict={verdict}
             masteryHighlight={highlight}
             openedHighlight={doneResult.openedHighlight}
+            phoenixHighlight={doneResult.phoenixHighlight}
+            fasterHighlight={doneResult.fasterHighlight}
             packSkillNodeIds={doneResult.packSkillNodeIds ?? []}
             correct={doneResult.correct}
             total={doneResult.total}

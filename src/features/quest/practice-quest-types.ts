@@ -5,6 +5,8 @@ import type {
   MasteryPackNodeSnapshot,
   QuestMasteryHighlight,
   QuestOpenedHighlight,
+  QuestPhoenixHighlight,
+  QuestFasterHighlight,
 } from "@/features/mastery-grid/types";
 import type {
   PartialCreditRule,
@@ -150,6 +152,7 @@ export interface PracticePackMetadata {
   subject: string;
   difficulty: PracticeDifficulty;
   packType: PracticePackType;
+  packSource?: "mistake_treasury";
   accountLevelTitle: string;
   questionCount: number;
   timeLimitSec: number;
@@ -172,6 +175,8 @@ export interface PracticeSessionAnswer {
   questionId: string;
   index: number;
   correct: boolean;
+  /** Client solve time in ms; clamped server-side. */
+  answeredMs?: number | null;
   userResponse?: string;
   feedback?: string;
   partsCorrect?: number;
@@ -204,6 +209,8 @@ export interface PracticePackResult {
   masteryGrid?: MasteryGridData;
   masteryHighlight?: QuestMasteryHighlight;
   openedHighlight?: QuestOpenedHighlight;
+  phoenixHighlight?: QuestPhoenixHighlight;
+  fasterHighlight?: QuestFasterHighlight;
   questVerdict?: import("@/features/guidance/verdict-engine-pure").Verdict;
   /** Skill node ids covered in this pack — drives post-quest skill tree focus. */
   packSkillNodeIds?: string[];

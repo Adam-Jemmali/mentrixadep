@@ -21,7 +21,7 @@ import {
   AP_CALC_AB_UNAVAILABLE_MESSAGE,
   isApCalculusAbSubject,
 } from "@/features/quest/ap-calc-ab-subject";
-import { selectItemBankQuestions, computePracticePackQuestionCount } from "@/features/quest/item-bank-selector";
+import { selectItemBankQuestions, computePracticePackQuestionCount, selectMistakeTreasuryQuestions } from "@/features/quest/item-bank-selector";
 import {
   hasStepFeedbackTrace,
   matchPartialCredit,
@@ -68,7 +68,17 @@ import {
   assertNodeIdsUnlocked,
   loadNodeUnlockContext,
 } from "@/features/skill-tree/assert-node-unlocked";
+import { isSkillTreeFrontierEnabled } from "@/features/skill-tree/skill-tree-frontier-flag-pure";
 import { loadSkillTree } from "@/features/skill-tree/load-skill-tree";
+import { awardPhoenixRecoveries } from "@/features/skill-tree/award-phoenix-recoveries";
+import { pickFasterHighlight, loadItemDifficultyRating } from "@/features/skill-tree/award-faster-highlight";
+import { recordSkillAnswerLatency } from "@/features/skill-tree/record-answer-latency";
+import { clampAnsweredMs } from "@/features/skill-tree/skill-velocity-pure";
+import { recordPhoenixPracticeOutcome } from "@/features/skill-tree/skill-phoenix-slump";
+import {
+  DEFAULT_CHALLENGE_DIFFICULTY,
+  updateChallengeDifficulty,
+} from "@/features/quest/challenge-difficulty";
 import { collectPracticeSkillNodeIds } from "@/features/quest/practice-skill-node-ids-pure";
 import { z } from "zod";
 import { trackEvent } from "@/shared/integrations/analytics";
@@ -115,6 +125,40 @@ const DEFAULT_TIME_SEC = 15 * 60;
 const finalizePracticeOptionsSchema = z.object({
   timedOut: z.boolean().optional(),
 });
+
+const answeredMsSchema = z.number().finite().nullable().optional();
+
+async function recordPracticeDepthSignals(input: {
+  userId: string;
+  skillNodeId: string | undefined;
+  itemId: string;
+  correct: boolean;
+  answeredMs?: number | null;
+}): Promise<number | null> {
+  if (!input.skillNodeId) return null;
+  const clamped = clampAnsweredMs(input.answeredMs);
+  if (clamped != null) {
+    await recordSkillAnswerLatency({
+      userId: input.userId,
+      skillNodeId: input.skillNodeId,
+      itemId: input.itemId,
+      answeredMs: clamped,
+    });
+  }
+  try {
+    const rating =
+      (await loadItemDifficultyRating(input.itemId)) ?? DEFAULT_CHALLENGE_DIFFICULTY;
+    await updateChallengeDifficulty({
+      userId: input.userId,
+      skillNodeId: input.skillNodeId,
+      itemDifficultyRating: rating,
+      correct: input.correct,
+    });
+  } catch {
+    /* non-critical */
+  }
+  return clamped;
+}
 
 function isPracticeHardLimitMessage(input: unknown): boolean {
   const msg =
@@ -202,6 +246,8 @@ export interface CreatePracticeQuestInput {
   timeLimitSec?: number;
   /** When set, pack leads with this skill node, then fills from the verified bank. */
   focusNodeName?: string;
+  /** Restrict pack to reviewed miss item ids (Mistake Treasury). */
+  mistakeTreasuryItemIds?: string[];
 }
 
 export async function createPracticeQuest(
@@ -231,11 +277,15 @@ export async function createPracticeQuest(
 
     const qc = input.questionCount ?? 5 + Math.floor(Math.random() * 6);
     const timeLimitSec = Math.min(60 * 60, Math.max(5 * 60, input.timeLimitSec ?? DEFAULT_TIME_SEC));
-    const requiredCount = computePracticePackQuestionCount(qc);
+    const treasuryIds = input.mistakeTreasuryItemIds?.filter(Boolean) ?? [];
+    const isTreasuryPack = treasuryIds.length > 0;
+    const requiredCount = isTreasuryPack
+      ? Math.min(qc, treasuryIds.length)
+      : computePracticePackQuestionCount(qc);
 
     let focusSkillNodeId: string | undefined;
     const focusNodeName = input.focusNodeName?.trim();
-    if (focusNodeName) {
+    if (!isTreasuryPack && focusNodeName) {
       const admin = createAdminClient();
       const { data: focusNode } = await admin
         .from("skill_nodes")
@@ -247,7 +297,9 @@ export async function createPracticeQuest(
     }
 
     const unlockContext =
-      user.role === "student" ? await loadNodeUnlockContext(user.id) : null;
+      user.role === "student" && isSkillTreeFrontierEnabled()
+        ? await loadNodeUnlockContext(user.id)
+        : null;
     if (focusSkillNodeId && unlockContext) {
       assertNodeIdsUnlocked(
         [focusSkillNodeId],
@@ -256,11 +308,19 @@ export async function createPracticeQuest(
       );
     }
 
-    const bankQuestions = await selectItemBankQuestions(user.id, AP_CALC_AB_SUBJECT, qc, {
-      focusSkillNodeId,
-      difficulty: input.difficulty,
-      allowedSkillNodeIds: unlockContext?.unlockedIds,
-    });
+    const bankQuestions = isTreasuryPack
+      ? await selectMistakeTreasuryQuestions(
+          user.id,
+          AP_CALC_AB_SUBJECT,
+          treasuryIds,
+          requiredCount,
+          { allowedSkillNodeIds: unlockContext?.unlockedIds },
+        )
+      : await selectItemBankQuestions(user.id, AP_CALC_AB_SUBJECT, qc, {
+          focusSkillNodeId,
+          difficulty: input.difficulty,
+          allowedSkillNodeIds: unlockContext?.unlockedIds,
+        });
     if (bankQuestions.length < requiredCount) {
       return { success: false, error: AP_CALC_AB_UNAVAILABLE_MESSAGE };
     }
@@ -285,6 +345,7 @@ export async function createPracticeQuest(
       subject: AP_CALC_AB_SUBJECT,
       difficulty: input.difficulty,
       packType,
+      packSource: isTreasuryPack ? "mistake_treasury" : undefined,
       accountLevelTitle: "Mentrixer",
       questionCount: questions.length,
       timeLimitSec,
@@ -629,7 +690,11 @@ export async function startPracticeSession(questId: string): Promise<{ success: 
     if (!loaded.ok) return { success: false, error: loaded.error };
     const { meta } = loaded;
 
-    if (user.role === "student" && isApCalculusAbSubject(meta.subject || meta.course)) {
+    if (
+      user.role === "student" &&
+      isSkillTreeFrontierEnabled() &&
+      isApCalculusAbSubject(meta.subject || meta.course)
+    ) {
       const targetNodeIds = collectPracticeSkillNodeIds(meta.questions);
       const unlockContext = await loadNodeUnlockContext(user.id);
       assertNodeIdsUnlocked(
@@ -683,6 +748,7 @@ export async function submitPracticeMcq(
   questId: string,
   questionIndex: number,
   selectedIndex: number,
+  answeredMs?: number | null,
 ): Promise<
   | {
       correct: boolean;
@@ -698,6 +764,8 @@ export async function submitPracticeMcq(
   | { error: string }
 > {
   const user = await requireRole(["student", "admin"]);
+  const latencyParsed = answeredMsSchema.safeParse(answeredMs);
+  const latencyIn = latencyParsed.success ? latencyParsed.data : null;
   const loaded = await loadPackForUser(questId, user.id);
   if (!loaded.ok) return { error: loaded.error };
   const { meta } = loaded;
@@ -711,11 +779,7 @@ export async function submitPracticeMcq(
   }
 
   const correct = selectedIndex === mcq.correctIndex;
-  const ans: PracticeSessionAnswer = {
-    questionId: q.id,
-    index: questionIndex,
-    correct,
-  };
+  let storedMs: number | null = null;
 
   if (isApCalculusAbSubject(meta.subject || meta.course) && mcq.skillNodeId) {
     await recordVerifiedFirstAttemptForNode(
@@ -724,6 +788,18 @@ export async function submitPracticeMcq(
       q.id,
       correct
     );
+    await recordPhoenixPracticeOutcome({
+      userId: user.id,
+      skillNodeId: mcq.skillNodeId,
+      correct,
+    });
+    storedMs = await recordPracticeDepthSignals({
+      userId: user.id,
+      skillNodeId: mcq.skillNodeId,
+      itemId: q.id,
+      correct,
+      answeredMs: latencyIn,
+    });
     if (!correct) {
       await recordPracticeMcqMiss({
         userId: user.id,
@@ -734,6 +810,13 @@ export async function submitPracticeMcq(
       });
     }
   }
+
+  const ans: PracticeSessionAnswer = {
+    questionId: q.id,
+    index: questionIndex,
+    correct,
+    answeredMs: storedMs,
+  };
 
   await patchPackMetadata(questId, (m) => {
     const session = m.session ?? {
@@ -916,11 +999,14 @@ export async function submitPracticeFreeResponse(
   questId: string,
   questionIndex: number,
   userAnswer: string,
+  answeredMs?: number | null,
 ): Promise<
   | { correct: boolean; explanation: string; finished: boolean; feedback: string }
   | { error: string }
 > {
   const user = await requireRole(["student", "admin"]);
+  const latencyParsed = answeredMsSchema.safeParse(answeredMs);
+  const latencyIn = latencyParsed.success ? latencyParsed.data : null;
   const loaded = await loadPackForUser(questId, user.id);
   if (!loaded.ok) return { error: loaded.error };
   const { meta } = loaded;
@@ -940,6 +1026,7 @@ export async function submitPracticeFreeResponse(
     correctExpression: q.answerExpression,
   });
 
+  let storedMs: number | null = null;
   if (isApCalculusAbSubject(meta.subject || meta.course)) {
     await recordConstructionVfa({
       userId: user.id,
@@ -948,12 +1035,26 @@ export async function submitPracticeFreeResponse(
       attemptFormat: "free_response",
       correct,
     });
-    if (!correct && q.skillNodeId) {
-      await recordPracticeSecondaryMiss({
+    if (q.skillNodeId) {
+      await recordPhoenixPracticeOutcome({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        correct,
+      });
+      storedMs = await recordPracticeDepthSignals({
         userId: user.id,
         skillNodeId: q.skillNodeId,
         itemId: q.id,
+        correct,
+        answeredMs: latencyIn,
       });
+      if (!correct) {
+        await recordPracticeSecondaryMiss({
+          userId: user.id,
+          skillNodeId: q.skillNodeId,
+          itemId: q.id,
+        });
+      }
     }
   }
 
@@ -961,6 +1062,7 @@ export async function submitPracticeFreeResponse(
     questionId: q.id,
     index: questionIndex,
     correct,
+    answeredMs: storedMs,
     userResponse: answer,
     feedback: correct ? "Equivalent construction." : "Not equivalent to the verified answer.",
   });
@@ -977,11 +1079,14 @@ export async function submitPracticeCompleteExpression(
   questId: string,
   questionIndex: number,
   blankAnswers: Record<string, string>,
+  answeredMs?: number | null,
 ): Promise<
   | { correct: boolean; accuracyPct: number; explanation: string; finished: boolean }
   | { error: string }
 > {
   const user = await requireRole(["student", "admin"]);
+  const latencyParsed = answeredMsSchema.safeParse(answeredMs);
+  const latencyIn = latencyParsed.success ? latencyParsed.data : null;
   const loaded = await loadPackForUser(questId, user.id);
   if (!loaded.ok) return { error: loaded.error };
   const { meta } = loaded;
@@ -1007,6 +1112,7 @@ export async function submitPracticeCompleteExpression(
   const accuracyPct = gradeClozeAccuracy(q.blanks, equivalentByKey);
   const correct = accuracyPct >= 1;
 
+  let storedMs: number | null = null;
   if (isApCalculusAbSubject(meta.subject || meta.course)) {
     await recordConstructionVfa({
       userId: user.id,
@@ -1016,12 +1122,27 @@ export async function submitPracticeCompleteExpression(
       correct,
       accuracyPct,
     });
+    if (q.skillNodeId) {
+      await recordPhoenixPracticeOutcome({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        correct,
+      });
+      storedMs = await recordPracticeDepthSignals({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        itemId: q.id,
+        correct,
+        answeredMs: latencyIn,
+      });
+    }
   }
 
   await lockPracticeAnswer(questId, questionIndex, {
     questionId: q.id,
     index: questionIndex,
     correct,
+    answeredMs: storedMs,
     userResponse: JSON.stringify(blankAnswers).slice(0, 4000),
     feedback: `Blank accuracy ${(accuracyPct * 100).toFixed(0)}%.`,
   });
@@ -1038,11 +1159,14 @@ export async function submitPracticeDragOrder(
   questId: string,
   questionIndex: number,
   orderedItems: string[],
+  answeredMs?: number | null,
 ): Promise<
   | { correct: boolean; accuracyPct: number; explanation: string; finished: boolean }
   | { error: string }
 > {
   const user = await requireRole(["student", "admin"]);
+  const latencyParsed = answeredMsSchema.safeParse(answeredMs);
+  const latencyIn = latencyParsed.success ? latencyParsed.data : null;
   const loaded = await loadPackForUser(questId, user.id);
   if (!loaded.ok) return { error: loaded.error };
   const { meta } = loaded;
@@ -1053,6 +1177,7 @@ export async function submitPracticeDragOrder(
   if (priorAnswer) return { error: "This answer is locked. First answers only." };
 
   const graded = gradeDragOrder(q.orderedItems, orderedItems);
+  let storedMs: number | null = null;
   if (isApCalculusAbSubject(meta.subject || meta.course)) {
     await recordConstructionVfa({
       userId: user.id,
@@ -1062,12 +1187,27 @@ export async function submitPracticeDragOrder(
       correct: graded.correct,
       accuracyPct: graded.accuracyPct,
     });
+    if (q.skillNodeId) {
+      await recordPhoenixPracticeOutcome({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        correct: graded.correct,
+      });
+      storedMs = await recordPracticeDepthSignals({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        itemId: q.id,
+        correct: graded.correct,
+        answeredMs: latencyIn,
+      });
+    }
   }
 
   await lockPracticeAnswer(questId, questionIndex, {
     questionId: q.id,
     index: questionIndex,
     correct: graded.correct,
+    answeredMs: storedMs,
     userResponse: orderedItems.join(" → ").slice(0, 4000),
   });
 
@@ -1085,12 +1225,15 @@ export async function submitPracticeGraphFeature(
   payload: {
     selections?: GraphFeatureSelection[];
     sketchControls?: GraphSketchSample[];
+    answeredMs?: number | null;
   },
 ): Promise<
   | { correct: boolean; accuracyPct: number; explanation: string; finished: boolean }
   | { error: string }
 > {
   const user = await requireRole(["student", "admin"]);
+  const latencyParsed = answeredMsSchema.safeParse(payload.answeredMs);
+  const latencyIn = latencyParsed.success ? latencyParsed.data : null;
   const loaded = await loadPackForUser(questId, user.id);
   if (!loaded.ok) return { error: loaded.error };
   const { meta } = loaded;
@@ -1122,6 +1265,7 @@ export async function submitPracticeGraphFeature(
     return { error: "This graph item has no machine-gradeable ground truth." };
   }
 
+  let storedMs: number | null = null;
   if (isApCalculusAbSubject(meta.subject || meta.course)) {
     await recordConstructionVfa({
       userId: user.id,
@@ -1131,13 +1275,31 @@ export async function submitPracticeGraphFeature(
       correct: graded.correct,
       accuracyPct: graded.accuracyPct,
     });
+    if (q.skillNodeId) {
+      await recordPhoenixPracticeOutcome({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        correct: graded.correct,
+      });
+      storedMs = await recordPracticeDepthSignals({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        itemId: q.id,
+        correct: graded.correct,
+        answeredMs: latencyIn,
+      });
+    }
   }
 
   await lockPracticeAnswer(questId, questionIndex, {
     questionId: q.id,
     index: questionIndex,
     correct: graded.correct,
-    userResponse: JSON.stringify(payload).slice(0, 4000),
+    answeredMs: storedMs,
+    userResponse: JSON.stringify({
+      selections: payload.selections,
+      sketchControls: payload.sketchControls,
+    }).slice(0, 4000),
   });
 
   return {
@@ -1169,7 +1331,7 @@ export async function submitPracticeMultiPart(
   questId: string,
   questionIndex: number,
   partIndex: number,
-  payload: { selectedIndex?: number; freeResponse?: string },
+  payload: { selectedIndex?: number; freeResponse?: string; answeredMs?: number | null },
 ): Promise<
   | {
       finishedQuestion: boolean;
@@ -1261,6 +1423,18 @@ export async function submitPracticeMultiPart(
       partKey: part.partKey,
       attemptFormat: part.itemFormat === "free_response" ? "multi_part_part" : "mcq",
       isCorrect: correct,
+    });
+    await recordPhoenixPracticeOutcome({
+      userId: user.id,
+      skillNodeId: partSkillNodeId,
+      correct,
+    });
+    await recordPracticeDepthSignals({
+      userId: user.id,
+      skillNodeId: partSkillNodeId,
+      itemId: multi.id,
+      correct,
+      answeredMs: payload.answeredMs,
     });
     if (!correct) {
       if (part.itemFormat === "mcq" && payload.selectedIndex != null) {
@@ -1601,6 +1775,8 @@ export async function finalizePracticeQuest(
     let masteryGrid: PracticePackResult["masteryGrid"];
     let masteryHighlight: PracticePackResult["masteryHighlight"];
     let openedHighlight: PracticePackResult["openedHighlight"];
+    let phoenixHighlight: PracticePackResult["phoenixHighlight"];
+    let fasterHighlight: PracticePackResult["fasterHighlight"];
     if (isApCalculusAbSubject(meta.subject || meta.course) && meta.masteryBeforePack) {
       try {
         const packNodeOrder = qs
@@ -1612,6 +1788,31 @@ export async function finalizePracticeQuest(
           pickQuestMasteryHighlight(meta.masteryBeforePack, masteryGrid, packNodeOrder) ?? undefined;
         openedHighlight =
           pickQuestOpenedHighlight(meta.masteryBeforePack, skillTree.nodes, packNodeOrder) ?? undefined;
+        phoenixHighlight =
+          (await awardPhoenixRecoveries({
+            userId: user.id,
+            masteryBefore: meta.masteryBeforePack,
+            masteryAfter: masteryGrid,
+            packNodeIds: packNodeOrder,
+          })) ?? undefined;
+        const recentByNode = new Map<string, number[]>();
+        for (const answer of meta.session?.answers ?? []) {
+          const qMeta = qs[answer.index] as { skillNodeId?: string } | undefined;
+          const nodeId = qMeta?.skillNodeId;
+          const ms = clampAnsweredMs(answer.answeredMs);
+          if (!nodeId || ms == null) continue;
+          const list = recentByNode.get(nodeId) ?? [];
+          list.push(ms);
+          recentByNode.set(nodeId, list);
+        }
+        fasterHighlight =
+          (await pickFasterHighlight({
+            userId: user.id,
+            recentByNode,
+            nodeNameById: new Map(
+              skillTree.nodes.map((node) => [node.id, node.nodeName]),
+            ),
+          })) ?? undefined;
         if (questVerdict && masteryGrid) {
           questVerdict = applyQuestPostPackStepToVerdict(
             questVerdict,
@@ -1624,6 +1825,8 @@ export async function finalizePracticeQuest(
         result.masteryGrid = masteryGrid;
         result.masteryHighlight = masteryHighlight;
         result.openedHighlight = openedHighlight;
+        result.phoenixHighlight = phoenixHighlight;
+        result.fasterHighlight = fasterHighlight;
         result.packSkillNodeIds = packNodeOrder;
         await patchPackMetadata(questId, (m) => ({
           ...m,

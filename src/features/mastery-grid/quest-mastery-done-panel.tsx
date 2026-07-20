@@ -7,6 +7,8 @@ import type {
   MasteryGridData,
   QuestMasteryHighlight,
   QuestOpenedHighlight,
+  QuestPhoenixHighlight,
+  QuestFasterHighlight,
 } from "@/features/mastery-grid/types";
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import { VerdictPanel } from "@/features/guidance/verdict-panel";
@@ -71,6 +73,8 @@ export function QuestMasteryDonePanel({
   verdict,
   masteryHighlight,
   openedHighlight,
+  phoenixHighlight,
+  fasterHighlight,
   packSkillNodeIds = [],
   correct,
   total,
@@ -81,13 +85,15 @@ export function QuestMasteryDonePanel({
   verdict: Verdict;
   masteryHighlight?: QuestMasteryHighlight | null;
   openedHighlight?: QuestOpenedHighlight | null;
+  phoenixHighlight?: QuestPhoenixHighlight | null;
+  fasterHighlight?: QuestFasterHighlight | null;
   packSkillNodeIds?: string[];
   correct: number;
   total: number;
   xpAwarded: number;
   perfectBonus: number;
 }) {
-  const xpTotal = xpAwarded + perfectBonus;
+  const xpTotal = xpAwarded + perfectBonus + (phoenixHighlight?.xpAwarded ?? 0);
   const questAccuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
   const percentile = verdict.rankDelta?.percentile?.current;
   const workedNodeName =
@@ -146,6 +152,36 @@ export function QuestMasteryDonePanel({
                 {openedHighlight.text}
               </p>
               <p className="text-sm font-semibold">{openedHighlight.nodeName}</p>
+            </div>
+          </div>
+        ) : null}
+        {phoenixHighlight ? (
+          <div className="mb-3 flex items-center gap-3 rounded-lg border border-[#6366F1] bg-[#EEF2FF] px-3 py-2.5 text-[#0B1220] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
+            <IconChip
+              name={phoenixHighlight.icon}
+              title={phoenixHighlight.text}
+              tone="indigo"
+            />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#4F46E5]">
+                {phoenixHighlight.text}
+              </p>
+              <p className="text-sm font-semibold">{phoenixHighlight.nodeName}</p>
+            </div>
+          </div>
+        ) : null}
+        {fasterHighlight ? (
+          <div className="mb-3 flex items-center gap-3 rounded-lg border border-[#6366F1] bg-[#EEF2FF] px-3 py-2.5 text-[#0B1220] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300">
+            <IconChip
+              name={fasterHighlight.icon}
+              title={fasterHighlight.text}
+              tone="indigo"
+            />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#4F46E5]">
+                {fasterHighlight.text}
+              </p>
+              <p className="text-sm font-semibold">{fasterHighlight.nodeName}</p>
             </div>
           </div>
         ) : null}

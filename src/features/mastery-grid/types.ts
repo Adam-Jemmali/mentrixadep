@@ -61,3 +61,20 @@ export type QuestOpenedHighlight = {
   icon: VocabIconName;
   text: string;
 };
+
+export type QuestPhoenixHighlight = {
+  kind: "recovered";
+  nodeId: string;
+  nodeName: string;
+  icon: "xp";
+  text: "Recovered";
+  xpAwarded: number;
+};
+
+export type QuestFasterHighlight = {
+  kind: "faster";
+  nodeId: string;
+  nodeName: string;
+  icon: VocabIconName;
+  text: "Faster";
+};

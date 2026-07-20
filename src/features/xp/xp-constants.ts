@@ -8,6 +8,8 @@ export const XP = {
   DUEL_WIN: 150,
   /** Participation when you do not win (and not a tie) */
   DUEL_LOSS: 50,
+  /** Phoenix recovery after a five-miss slump then Solid */
+  PHOENIX_RECOVERY: 50,
   /** Both sides when a duel ends in a tie */
   DUEL_TIE: 50,
   /** Granted once when you reach a 3-win duel streak */

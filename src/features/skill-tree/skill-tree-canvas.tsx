@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { practiceNodeHref } from "@/features/guidance/verdict-engine-pure";
+import { skillTreeLabel } from "@/features/skill-tree/skill-tree-copy-pure";
 import { SkillTreeEdge } from "@/features/skill-tree/skill-tree-edge";
 import { SkillTreeNode } from "@/features/skill-tree/skill-tree-node";
+import {
+  isSkillTreeReviewDue,
+  skillTreeNodeHref,
+} from "@/features/skill-tree/skill-tree-review-pure";
 import type {
   FrontierNodeView,
   SkillTreeData,
@@ -45,18 +49,56 @@ function resolveNodes(
   });
 }
 
+function nodeHref(node: SkillTreeNodeData): string | undefined {
+  if (!node.unlocked) return undefined;
+  return skillTreeNodeHref({
+    nodeName: node.nodeName,
+    reviewDue: isSkillTreeReviewDue({
+      nextReviewAt: node.nextReviewAt,
+      state: node.state,
+    }),
+  });
+}
+
+function FocusOpenCta({
+  focus,
+  reviewDue,
+  className,
+}: {
+  focus: SkillTreeNodeData;
+  reviewDue: boolean;
+  className: string;
+}) {
+  if (!focus.unlocked) return null;
+  const label = skillTreeLabel(reviewDue ? "review" : "open");
+  return (
+    <Link
+      href={skillTreeNodeHref({ nodeName: focus.nodeName, reviewDue })}
+      className={className}
+    >
+      <MentrixaVocabIcon name={label.icon} size={24} surface="dark" title={label.text} />
+      <span>{label.text}</span>
+    </Link>
+  );
+}
+
+const FOCUS_CTA_CLASS =
+  "mt-4 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[#7C3AED] px-4 py-2 text-sm font-black text-white shadow-[2px_3px_0_#020617] transition-colors hover:bg-[#6D28D9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300";
+
 function DesktopFrontier({
   parents,
   focus,
   childNodes,
   bloomNodeIds,
   isCauseFocus = false,
+  reviewDue = false,
 }: {
   parents: SkillTreeNodeData[];
   focus: SkillTreeNodeData;
   childNodes: SkillTreeNodeData[];
   bloomNodeIds?: ReadonlySet<string>;
   isCauseFocus?: boolean;
+  reviewDue?: boolean;
 }) {
   const parentY = spread(parents.length, 80, 350);
   const childY = spread(childNodes.length, 80, 350);
@@ -93,7 +135,7 @@ function DesktopFrontier({
         >
           <SkillTreeNode
             node={node}
-            href={practiceNodeHref(node.nodeName)}
+            href={nodeHref(node)}
             bloomOnMount={bloomNodeIds?.has(node.id)}
           />
         </div>
@@ -103,18 +145,10 @@ function DesktopFrontier({
         <SkillTreeNode
           node={focus}
           isFocus
-          isCause={isCauseFocus}
+          isCause={isCauseFocus && !reviewDue}
           bloomOnMount={bloomNodeIds?.has(focus.id)}
         />
-        {focus.unlocked ? (
-          <Link
-            href={practiceNodeHref(focus.nodeName)}
-            className="mt-4 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[#7C3AED] px-4 py-2 text-sm font-black text-white shadow-[2px_3px_0_#020617] transition-colors hover:bg-[#6D28D9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD]"
-          >
-            <MentrixaVocabIcon name="quest" size={24} surface="dark" title="Open" />
-            <span>Open</span>
-          </Link>
-        ) : null}
+        <FocusOpenCta focus={focus} reviewDue={reviewDue} className={FOCUS_CTA_CLASS} />
       </div>
 
       {childNodes.map((node, index) => (
@@ -125,7 +159,7 @@ function DesktopFrontier({
         >
           <SkillTreeNode
             node={node}
-            href={node.unlocked ? practiceNodeHref(node.nodeName) : undefined}
+            href={nodeHref(node)}
             bloomOnMount={bloomNodeIds?.has(node.id)}
           />
         </div>
@@ -140,12 +174,14 @@ function MobileFrontier({
   childNodes,
   bloomNodeIds,
   isCauseFocus = false,
+  reviewDue = false,
 }: {
   parents: SkillTreeNodeData[];
   focus: SkillTreeNodeData;
   childNodes: SkillTreeNodeData[];
   bloomNodeIds?: ReadonlySet<string>;
   isCauseFocus?: boolean;
+  reviewDue?: boolean;
 }) {
   const parentX = spread(parents.length, 55, 305);
   const childX = spread(childNodes.length, 55, 305);
@@ -180,7 +216,7 @@ function MobileFrontier({
             key={node.id}
             node={node}
             compact
-            href={practiceNodeHref(node.nodeName)}
+            href={nodeHref(node)}
             bloomOnMount={bloomNodeIds?.has(node.id)}
           />
         ))}
@@ -190,18 +226,14 @@ function MobileFrontier({
         <SkillTreeNode
           node={focus}
           isFocus
-          isCause={isCauseFocus}
+          isCause={isCauseFocus && !reviewDue}
           bloomOnMount={bloomNodeIds?.has(focus.id)}
         />
-        {focus.unlocked ? (
-          <Link
-            href={practiceNodeHref(focus.nodeName)}
-            className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[#7C3AED] px-4 py-2 font-black text-white shadow-[2px_3px_0_#020617] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD]"
-          >
-            <MentrixaVocabIcon name="quest" size={24} surface="dark" title="Open" />
-            <span>Open</span>
-          </Link>
-        ) : null}
+        <FocusOpenCta
+          focus={focus}
+          reviewDue={reviewDue}
+          className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[#7C3AED] px-4 py-2 font-black text-white shadow-[2px_3px_0_#020617] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300"
+        />
       </div>
 
       <div className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-2">
@@ -210,7 +242,7 @@ function MobileFrontier({
             key={node.id}
             node={node}
             compact
-            href={node.unlocked ? practiceNodeHref(node.nodeName) : undefined}
+            href={nodeHref(node)}
             bloomOnMount={bloomNodeIds?.has(node.id)}
           />
         ))}
@@ -232,11 +264,17 @@ export function SkillTreeCanvas({
   const focus = nodesById.get(data.frontier.focus.id);
   const parents = resolveNodes(data.frontier.parents, nodesById);
   const children = resolveNodes(data.frontier.children, nodesById);
+  const reviewDue = focus
+    ? isSkillTreeReviewDue({
+        nextReviewAt: focus.nextReviewAt,
+        state: focus.state,
+      })
+    : false;
 
   if (!focus) {
     return (
       <section className="rounded-2xl border border-white/10 bg-[#0B1220] p-6 text-sm text-slate-300">
-        No frontier is available. Open All skills next.
+        No frontier. Open All skills.
       </section>
     );
   }
@@ -276,6 +314,7 @@ export function SkillTreeCanvas({
         childNodes={children}
         bloomNodeIds={bloomNodeIds}
         isCauseFocus={Boolean(data.focusCause)}
+        reviewDue={reviewDue}
       />
       <MobileFrontier
         parents={parents}
@@ -283,6 +322,7 @@ export function SkillTreeCanvas({
         childNodes={children}
         bloomNodeIds={bloomNodeIds}
         isCauseFocus={Boolean(data.focusCause)}
+        reviewDue={reviewDue}
       />
     </section>
   );
