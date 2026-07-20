@@ -14,6 +14,7 @@ describe("skillTreeLabel", () => {
     ["clearMisses", "practice-pack", "Clear misses"],
     ["recovered", "xp", "Recovered"],
     ["faster", "momentum", "Faster"],
+    ["cause", "skills", "Cause"],
   ])("maps %s to %s / %s", (kind, icon, text) => {
     expect(skillTreeLabel(kind)).toEqual({ icon, text });
   });

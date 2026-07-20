@@ -49,6 +49,7 @@ export type ItemReviewDetail = ItemReviewListItem & {
   solutionSteps: ReturnType<typeof parseSolutionSteps>;
   partialCreditRules: ReturnType<typeof parsePartialCreditRules>;
   stimulus: QuestStimulus[];
+  secondarySkillTags: string[];
   reviewedBy: string | null;
   reviewedAt: string | null;
 };
@@ -143,7 +144,7 @@ export async function getItemReviewDetail(
   const { data, error } = await admin
     .from("item_bank")
     .select(
-      "id, prompt, status, item_format, difficulty_rating, created_at, skill_node_id, options, correct_answer, explanation, answer_expression, answer_alternatives, solution_steps, partial_credit_rules, stimulus, reviewed_by, reviewed_at, skill_nodes(node_name, unit_name, unit_number)",
+      "id, prompt, status, item_format, difficulty_rating, created_at, skill_node_id, options, correct_answer, explanation, answer_expression, answer_alternatives, solution_steps, partial_credit_rules, stimulus, secondary_skill_tags, reviewed_by, reviewed_at, skill_nodes(node_name, unit_name, unit_number)",
     )
     .eq("id", parsed.data)
     .maybeSingle();
@@ -177,6 +178,9 @@ export async function getItemReviewDetail(
     solutionSteps: parseSolutionSteps(data.solution_steps),
     partialCreditRules: parsePartialCreditRules(data.partial_credit_rules),
     stimulus: parseQuestStimulus(data.stimulus),
+    secondarySkillTags: Array.isArray(data.secondary_skill_tags)
+      ? data.secondary_skill_tags.filter((entry): entry is string => typeof entry === "string")
+      : [],
     reviewedBy: data.reviewed_by,
     reviewedAt: data.reviewed_at,
   };
@@ -322,6 +326,43 @@ export async function rejectItemBankItem(
 
   revalidatePath("/admin/item-review");
   return { ok: true };
+}
+
+const secondaryTagsSchema = z
+  .array(z.string().trim().min(1).max(120))
+  .max(24);
+
+/** Reviewed secondary skill slugs only. No live AI tagging. */
+export async function updateItemSecondarySkillTags(
+  itemId: string,
+  tags: string[],
+): Promise<{ ok: true; tags: string[] } | { ok: false; error: string }> {
+  await requireRole("admin");
+  const idParsed = uuidSchema.safeParse(itemId);
+  if (!idParsed.success) return { ok: false, error: "Invalid item." };
+
+  const tagsParsed = secondaryTagsSchema.safeParse(tags);
+  if (!tagsParsed.success) return { ok: false, error: "Invalid tags." };
+
+  const normalized = [
+    ...new Set(
+      tagsParsed.data.map((tag) => tag.trim().toLowerCase()).filter(Boolean),
+    ),
+  ];
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("item_bank")
+    .update({ secondary_skill_tags: normalized })
+    .eq("id", idParsed.data);
+
+  if (error) {
+    console.error("[updateItemSecondarySkillTags]", error.message);
+    return { ok: false, error: "Could not save tags." };
+  }
+
+  revalidatePath("/admin/item-review");
+  return { ok: true, tags: normalized };
 }
 
 /** Coverage snapshot for the admin queue header. */

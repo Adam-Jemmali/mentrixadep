@@ -19,9 +19,11 @@ function nodeLabelKind(
   node: SkillTreeNodeData,
   isFocus: boolean,
   reviewDue: boolean,
+  isCause = false,
 ): SkillTreeLabelKind {
   if (!node.unlocked) return "locked";
   if (reviewDue) return "review";
+  if (isFocus && isCause) return "cause";
   if (isFocus) return "next";
   if (node.state === "proficient") return "solid";
   if (node.state === "weak") return "weak";
@@ -31,12 +33,14 @@ function nodeLabelKind(
 export function SkillTreeNode({
   node,
   isFocus = false,
+  isCause = false,
   href,
   compact = false,
   bloomOnMount = false,
 }: {
   node: SkillTreeNodeData;
   isFocus?: boolean;
+  isCause?: boolean;
   href?: string;
   compact?: boolean;
   bloomOnMount?: boolean;
@@ -46,7 +50,7 @@ export function SkillTreeNode({
   const [bloom, setBloom] = useState(false);
   const reviewDue =
     node.nextReviewAt != null && Date.parse(node.nextReviewAt) <= Date.now();
-  const kind = nodeLabelKind(node, isFocus, reviewDue);
+  const kind = nodeLabelKind(node, isFocus, reviewDue, isCause);
   const label = skillTreeLabel(kind);
   const verified = node.state === "verified";
   const interactive = node.unlocked && href != null;

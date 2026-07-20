@@ -8,6 +8,7 @@ import {
   getItemReviewDetail,
   getItemReviewQueue,
   rejectItemBankItem,
+  updateItemSecondarySkillTags,
   type ItemReviewDetail,
   type ItemReviewListItem,
   type ItemReviewQueuePayload,
@@ -22,6 +23,7 @@ import {
   type ItemReviewQueueFilter,
 } from "@/features/admin/item-review-pure";
 import { ItemReviewStudentPreview } from "@/features/admin/item-review-preview";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
 type Props = {
@@ -40,6 +42,7 @@ export function ItemReviewClient({ initial }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [tagsDraft, setTagsDraft] = useState("");
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -62,6 +65,7 @@ export function ItemReviewClient({ initial }: Props) {
     void getItemReviewDetail(selectedId).then((row) => {
       if (cancelled) return;
       setDetail(row);
+      setTagsDraft(row?.secondarySkillTags.join(", ") ?? "");
       setLoadingDetail(false);
       setTab("review");
       setMessage(null);
@@ -116,6 +120,26 @@ export function ItemReviewClient({ initial }: Props) {
       setMessage("Rejected.");
       refresh("pending_review");
       setFilter("pending_review");
+    });
+  };
+
+  const onSaveTags = () => {
+    if (!selectedId) return;
+    const tags = tagsDraft
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    startTransition(async () => {
+      const result = await updateItemSecondarySkillTags(selectedId, tags);
+      if (!result.ok) {
+        setMessage(result.error);
+        return;
+      }
+      setTagsDraft(result.tags.join(", "));
+      setDetail((prev) =>
+        prev ? { ...prev, secondarySkillTags: result.tags } : prev,
+      );
+      setMessage("Tags saved.");
     });
   };
 
@@ -306,6 +330,37 @@ export function ItemReviewClient({ initial }: Props) {
                     <p className="mt-1 text-[13px] text-slate-600 whitespace-pre-wrap">
                       {detail.explanation}
                     </p>
+                  </div>
+
+                  <div>
+                    <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                      <MentrixaVocabIcon
+                        name="skills"
+                        size={16}
+                        surface="light"
+                        title="Cause tags"
+                      />
+                      Cause tags
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Reviewed slugs only. Comma separated.
+                    </p>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <input
+                        value={tagsDraft}
+                        onChange={(e) => setTagsDraft(e.target.value)}
+                        placeholder="power-rule, chain-rule-basics"
+                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-[13px] text-slate-900 placeholder-slate-400 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                      />
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={onSaveTags}
+                        className="inline-flex shrink-0 items-center justify-center rounded-lg border border-[#E5E7EB] bg-white px-3.5 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                      >
+                        Save tags
+                      </button>
+                    </div>
                   </div>
 
                   {detail.status === "pending_review" ? (

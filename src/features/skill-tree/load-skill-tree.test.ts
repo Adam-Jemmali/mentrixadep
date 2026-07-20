@@ -111,7 +111,17 @@ describe("buildSkillTreeData", () => {
     const tree = buildSkillTreeData(grid, skillNodes, []);
 
     expect(tree.focusNodeId).toBe("open-weak");
+    expect(tree.focusCause).toBeNull();
     expect(tree.nodes.find((node) => node.id === "locked-weak")?.unlocked).toBe(false);
     expect(tree.frontier.focusId).toBe("open-weak");
+  });
+
+  it("honors focusCause override when unlocked", () => {
+    const tree = buildSkillTreeData(grid, skillNodes, [], {
+      tag: "power-rule",
+      nodeId: "root",
+    });
+    expect(tree.focusNodeId).toBe("root");
+    expect(tree.focusCause).toEqual({ tag: "power-rule", nodeId: "root" });
   });
 });

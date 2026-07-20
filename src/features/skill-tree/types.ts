@@ -36,12 +36,19 @@ export type SkillTreeNode = {
   nextReviewAt: string | null;
 };
 
+export type SkillTreeFocusCause = {
+  tag: string;
+  nodeId: string;
+};
+
 export type SkillTreeData = {
   subject: string;
   grid: MasteryGridData;
   nodes: SkillTreeNode[];
   frontier: FrontierView;
   focusNodeId: string;
+  /** When Next was redirected by repeated failure tags. */
+  focusCause: SkillTreeFocusCause | null;
 };
 
 export type SkillTreeLabelKind =
@@ -54,4 +61,5 @@ export type SkillTreeLabelKind =
   | "opened"
   | "clearMisses"
   | "recovered"
-  | "faster";
+  | "faster"
+  | "cause";

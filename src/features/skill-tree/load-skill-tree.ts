@@ -2,6 +2,11 @@ import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { pickPrimaryWeakestMasteryNode } from "@/features/mastery-grid/mastery-grid-pure";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
+import {
+  pickTopSecondaryDeficit,
+  resolveCauseFocusNodeId,
+} from "@/features/skill-tree/skill-error-aggregate-pure";
+import { loadRecentSkillErrorEvents } from "@/features/skill-tree/record-skill-error";
 import { buildFrontier } from "@/features/skill-tree/skill-tree-frontier-pure";
 import { buildAdjacency } from "@/features/skill-tree/skill-tree-graph-pure";
 import {
@@ -10,6 +15,7 @@ import {
 } from "@/features/skill-tree/skill-tree-unlock-pure";
 import type {
   SkillTreeData,
+  SkillTreeFocusCause,
   SkillTreeNode,
 } from "@/features/skill-tree/types";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
@@ -29,7 +35,7 @@ type KnowledgeReviewRow = {
   next_review_at: string | null;
 };
 
-function pickFocusNodeId(
+function pickDefaultFocusNodeId(
   grid: MasteryGridData,
   nodes: SkillTreeNode[],
 ): string {
@@ -71,6 +77,7 @@ export function buildSkillTreeData(
   grid: MasteryGridData,
   skillNodes: SkillNodeRow[],
   knowledgeRows: KnowledgeReviewRow[],
+  focusOverride: SkillTreeFocusCause | null = null,
 ): SkillTreeData {
   const skillById = new Map(skillNodes.map((node) => [node.id, node]));
   const reviewById = new Map(
@@ -91,23 +98,32 @@ export function buildSkillTreeData(
   const { parents, children } = buildAdjacency(graphInputs);
   const solidIds = buildSolidIds(gridNodes);
 
-  const nodes = gridNodes.map(({ unit, ...node }) => ({
-      id: node.id,
-      nodeName: node.nodeName,
-      nodeSlug: node.nodeSlug,
-      unitNumber: unit.unitNumber,
-      unitName: unit.unitName,
-      displayOrder: node.displayOrder,
-      state: node.state,
-      prerequisites: parents.get(node.id) ?? [],
-      unlocked: isNodeUnlocked(node.id, parents, solidIds),
-      nextReviewAt: reviewById.get(node.id) ?? null,
-    }));
-  const focusNodeId = pickFocusNodeId(grid, nodes);
-  const states = new Map(nodes.map((node) => [node.id, node.state]));
+  const nodes: SkillTreeNode[] = gridNodes.map(({ unit, ...node }) => ({
+    id: node.id,
+    nodeName: node.nodeName,
+    nodeSlug: node.nodeSlug,
+    unitNumber: unit.unitNumber,
+    unitName: unit.unitName,
+    displayOrder: node.displayOrder,
+    state: node.state,
+    prerequisites: parents.get(node.id) ?? [],
+    unlocked: isNodeUnlocked(node.id, parents, solidIds),
+    nextReviewAt: reviewById.get(node.id) ?? null,
+  }));
+
   const unlocked = new Set(
     nodes.filter((node) => node.unlocked).map((node) => node.id),
   );
+
+  let focusCause: SkillTreeFocusCause | null = null;
+  let focusNodeId = pickDefaultFocusNodeId(grid, nodes);
+
+  if (focusOverride && unlocked.has(focusOverride.nodeId)) {
+    focusCause = focusOverride;
+    focusNodeId = focusOverride.nodeId;
+  }
+
+  const states = new Map(nodes.map((node) => [node.id, node.state]));
 
   return {
     subject: grid.subject,
@@ -121,12 +137,13 @@ export function buildSkillTreeData(
       unlocked,
     }),
     focusNodeId,
+    focusCause,
   };
 }
 
 export async function loadSkillTree(userId: string): Promise<SkillTreeData> {
   const admin = createAdminClient();
-  const [grid, nodesResult, knowledgeResult] = await Promise.all([
+  const [grid, nodesResult, knowledgeResult, errorEvents] = await Promise.all([
     loadMasteryGrid(userId),
     admin
       .from("skill_nodes")
@@ -140,6 +157,7 @@ export async function loadSkillTree(userId: string): Promise<SkillTreeData> {
       .select("skill_node_id, next_review_at")
       .eq("user_id", userId)
       .eq("subject", AP_CALC_AB_SUBJECT),
+    loadRecentSkillErrorEvents(userId).catch(() => []),
   ]);
 
   if (nodesResult.error) throw new Error(nodesResult.error.message);
@@ -157,9 +175,40 @@ export async function loadSkillTree(userId: string): Promise<SkillTreeData> {
     }
   }
 
+  const base = buildSkillTreeData(
+    grid,
+    skillNodes,
+    (knowledgeResult.data ?? []) as KnowledgeReviewRow[],
+    null,
+  );
+
+  const topDeficit = pickTopSecondaryDeficit(errorEvents);
+  if (!topDeficit) return base;
+
+  const slugToNodeId = new Map(
+    skillNodes.map((node) => [node.node_slug.toLowerCase(), node.id]),
+  );
+  const { parents } = buildAdjacency(
+    skillNodes.map((node) => ({
+      id: node.id,
+      prerequisites: node.prerequisites ?? [],
+    })),
+  );
+  const unlockedIds = new Set(
+    base.nodes.filter((node) => node.unlocked).map((node) => node.id),
+  );
+  const causeNodeId = resolveCauseFocusNodeId({
+    tag: topDeficit.tag,
+    slugToNodeId,
+    parents,
+    unlockedIds,
+  });
+  if (!causeNodeId) return base;
+
   return buildSkillTreeData(
     grid,
     skillNodes,
     (knowledgeResult.data ?? []) as KnowledgeReviewRow[],
+    { tag: topDeficit.tag, nodeId: causeNodeId },
   );
 }

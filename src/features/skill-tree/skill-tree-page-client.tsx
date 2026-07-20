@@ -9,6 +9,7 @@ import type { GridSnapshotWeek } from "@/features/mastery-grid/grid-history-pure
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { SkillTreeCanvas } from "@/features/skill-tree/skill-tree-canvas";
 import { SkillTreeNode } from "@/features/skill-tree/skill-tree-node";
+import { skillTreeLabel } from "@/features/skill-tree/skill-tree-copy-pure";
 import {
   SKILL_TREE_UNLOCKED_BASELINE_KEY,
   diffNewlyUnlockedIds,
@@ -196,11 +197,25 @@ export function SkillTreePageClient({
             as="h1"
             labelClassName="mx-hand-title !text-2xl !normal-case !tracking-normal sm:!text-3xl"
           />
-          <p className={`mt-3 ${mentrixStudent.pageSubtitle}`}>
-            {focus
-              ? `${focus.nodeName} is your next open frontier. Open it to move the tree.`
-              : "Your frontier is ready. Open All skills next."}
-          </p>
+          {data.focusCause ? (
+            <p
+              className={`mt-3 inline-flex items-center gap-2 ${mentrixStudent.pageSubtitle} motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300`}
+            >
+              <MentrixaVocabIcon
+                name={skillTreeLabel("cause").icon}
+                size={22}
+                surface="light"
+                title={skillTreeLabel("cause").text}
+              />
+              <span className="font-semibold text-[#0B1220]">
+                {focus?.nodeName ?? "Open"}
+              </span>
+            </p>
+          ) : (
+            <p className={`mt-3 ${mentrixStudent.pageSubtitle}`}>
+              {focus ? `${focus.nodeName}. Open next.` : "Open All skills."}
+            </p>
+          )}
         </div>
       </header>
 

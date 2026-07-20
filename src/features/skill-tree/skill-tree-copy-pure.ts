@@ -15,6 +15,7 @@ const SKILL_TREE_LABELS: Record<
   clearMisses: { icon: "practice-pack", text: "Clear misses" },
   recovered: { icon: "xp", text: "Recovered" },
   faster: { icon: "momentum", text: "Faster" },
+  cause: { icon: "skills", text: "Cause" },
 };
 
 export function skillTreeLabel(

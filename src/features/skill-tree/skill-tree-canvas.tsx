@@ -50,11 +50,13 @@ function DesktopFrontier({
   focus,
   childNodes,
   bloomNodeIds,
+  isCauseFocus = false,
 }: {
   parents: SkillTreeNodeData[];
   focus: SkillTreeNodeData;
   childNodes: SkillTreeNodeData[];
   bloomNodeIds?: ReadonlySet<string>;
+  isCauseFocus?: boolean;
 }) {
   const parentY = spread(parents.length, 80, 350);
   const childY = spread(childNodes.length, 80, 350);
@@ -101,6 +103,7 @@ function DesktopFrontier({
         <SkillTreeNode
           node={focus}
           isFocus
+          isCause={isCauseFocus}
           bloomOnMount={bloomNodeIds?.has(focus.id)}
         />
         {focus.unlocked ? (
@@ -136,11 +139,13 @@ function MobileFrontier({
   focus,
   childNodes,
   bloomNodeIds,
+  isCauseFocus = false,
 }: {
   parents: SkillTreeNodeData[];
   focus: SkillTreeNodeData;
   childNodes: SkillTreeNodeData[];
   bloomNodeIds?: ReadonlySet<string>;
+  isCauseFocus?: boolean;
 }) {
   const parentX = spread(parents.length, 55, 305);
   const childX = spread(childNodes.length, 55, 305);
@@ -185,6 +190,7 @@ function MobileFrontier({
         <SkillTreeNode
           node={focus}
           isFocus
+          isCause={isCauseFocus}
           bloomOnMount={bloomNodeIds?.has(focus.id)}
         />
         {focus.unlocked ? (
@@ -269,12 +275,14 @@ export function SkillTreeCanvas({
         focus={focus}
         childNodes={children}
         bloomNodeIds={bloomNodeIds}
+        isCauseFocus={Boolean(data.focusCause)}
       />
       <MobileFrontier
         parents={parents}
         focus={focus}
         childNodes={children}
         bloomNodeIds={bloomNodeIds}
+        isCauseFocus={Boolean(data.focusCause)}
       />
     </section>
   );

@@ -1476,6 +1476,7 @@ export type Database = {
           question_type: string
           reviewed_at: string | null
           reviewed_by: string | null
+          secondary_skill_tags: string[]
           skill_node_id: string
           solution_steps: Json | null
           status: string
@@ -1499,6 +1500,7 @@ export type Database = {
           question_type?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          secondary_skill_tags?: string[]
           skill_node_id: string
           solution_steps?: Json | null
           status?: string
@@ -1522,6 +1524,7 @@ export type Database = {
           question_type?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          secondary_skill_tags?: string[]
           skill_node_id?: string
           solution_steps?: Json | null
           status?: string
@@ -3120,6 +3123,58 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "mv_division_leaderboard"
             referencedColumns: ["division_key"]
+          },
+        ]
+      }
+      skill_error_events: {
+        Row: {
+          created_at: string
+          failure_tag: string | null
+          id: string
+          item_id: string | null
+          secondary_tags: string[]
+          skill_node_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          failure_tag?: string | null
+          id?: string
+          item_id?: string | null
+          secondary_tags?: string[]
+          skill_node_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          failure_tag?: string | null
+          id?: string
+          item_id?: string | null
+          secondary_tags?: string[]
+          skill_node_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_error_events_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "item_bank"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_error_events_skill_node_id_fkey"
+            columns: ["skill_node_id"]
+            isOneToOne: false
+            referencedRelation: "skill_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_error_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
         ]
       }

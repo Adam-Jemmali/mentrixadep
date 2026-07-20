@@ -50,6 +50,10 @@ import {
   recordVerifiedFirstAttemptFromGrading,
 } from "@/features/quest/record-verified-first-attempts";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
+import {
+  recordPracticeMcqMiss,
+  recordPracticeSecondaryMiss,
+} from "@/features/skill-tree/record-skill-error";
 import { getVerdict } from "@/features/guidance/verdict-engine";
 import { buildQuestSessionStatsFromPack } from "@/features/guidance/quest-session-stats";
 import {
@@ -720,6 +724,15 @@ export async function submitPracticeMcq(
       q.id,
       correct
     );
+    if (!correct) {
+      await recordPracticeMcqMiss({
+        userId: user.id,
+        skillNodeId: mcq.skillNodeId,
+        itemId: q.id,
+        selectedOptionText: mcq.options[selectedIndex] ?? "",
+        selectedIndex,
+      });
+    }
   }
 
   await patchPackMetadata(questId, (m) => {
@@ -935,6 +948,13 @@ export async function submitPracticeFreeResponse(
       attemptFormat: "free_response",
       correct,
     });
+    if (!correct && q.skillNodeId) {
+      await recordPracticeSecondaryMiss({
+        userId: user.id,
+        skillNodeId: q.skillNodeId,
+        itemId: q.id,
+      });
+    }
   }
 
   await lockPracticeAnswer(questId, questionIndex, {
@@ -1242,6 +1262,23 @@ export async function submitPracticeMultiPart(
       attemptFormat: part.itemFormat === "free_response" ? "multi_part_part" : "mcq",
       isCorrect: correct,
     });
+    if (!correct) {
+      if (part.itemFormat === "mcq" && payload.selectedIndex != null) {
+        await recordPracticeMcqMiss({
+          userId: user.id,
+          skillNodeId: partSkillNodeId,
+          itemId: multi.id,
+          selectedOptionText: studentAnswer,
+          selectedIndex: payload.selectedIndex,
+        });
+      } else {
+        await recordPracticeSecondaryMiss({
+          userId: user.id,
+          skillNodeId: partSkillNodeId,
+          itemId: multi.id,
+        });
+      }
+    }
   }
 
   const nextParts = [...(prior?.multiPart?.parts ?? [])];

@@ -487,9 +487,9 @@ ALTER TABLE public.item_bank
   ADD COLUMN IF NOT EXISTS secondary_skill_tags text[] NOT NULL DEFAULT '{}';
 ```
 
-- [ ] RLS unchanged on item_bank (already covered)  
-- [ ] `npm run types:generate`  
-- [ ] No live Gemini tag generation in product path  
+- [x] RLS unchanged on item_bank (already covered)  
+- [x] `npm run types:generate`  
+- [x] No live Gemini tag generation in product path  
 
 ### Task 9: skill_error_events
 
@@ -517,7 +517,7 @@ Edge cases 21–22.
 - Modify: `skill-tree-frontier-pure.ts` / verdict builders  
 - Test: secondary deficit unlocked → prefer that node; if locked → nearest unlocked ancestor  
 
-- [ ] Brief copy only: icon `skills` + node short name  
+- [x] Brief copy only: icon `skills` + node short name  
 
 ---
 
