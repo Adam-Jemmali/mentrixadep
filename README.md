@@ -73,7 +73,7 @@ mentrixa/
 │   │   ├── quest/             # Quest solver & practice
 │   │   ├── payments/          # Stripe Connect & payouts
 │   │   ├── jobs/              # Background job queue
-│   │   └── …                  # See LEAN_ARCHITECTURE_PLAN.md
+│   │   └── …                  # Other feature slices
 │   ├── shared/
 │   │   ├── core/              # Auth, security, env, cache, proxy logic
 │   │   ├── integrations/      # Supabase, Stripe, email, AI, observability
@@ -89,14 +89,13 @@ mentrixa/
 │   └── globals.css
 ```
 
-Legacy paths removed: `src/lib/`, `src/app/actions/`. All 40 API routes are thin shells re-exporting from `features/`.
-
-See [`LEAN_ARCHITECTURE_PLAN.md`](LEAN_ARCHITECTURE_PLAN.md) for the full domain map and migration roadmap.
+Legacy paths removed: `src/lib/`, `src/app/actions/`. API routes are thin shells re-exporting from `features/`. Conventions live in [`AGENTS.md`](AGENTS.md) and `.cursor/rules/mentrixa-master-context.mdc`.
 
 ```
 mentrixa/
-├── supabase/                  # SQL migrations
-├── scripts/migrate-architecture.mjs
+├── supabase/                  # SQL migrations (numbered; never edit existing)
+├── scripts/                   # Operational: types, verify, seed, build/dev
+├── docs/                      # Ops runbooks only (security, Stripe, scaling)
 ├── tailwind.config.ts
 ├── tsconfig.json
 └── package.json
