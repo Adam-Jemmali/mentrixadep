@@ -16,9 +16,6 @@ export const ARENA_PAGE_COPY = {
 /** Visible rows in the compact Arena feed viewport. */
 export const ARENA_FEED_VISIBLE_LIMIT = 12;
 
-/** Landing hero embed shows six live rows above the fold. */
-export const LANDING_FEED_VISIBLE_LIMIT = 6;
-
 export function liveBoardEventTypeLabel(
   eventType: LiveBoardEventRow["event_type"],
 ): string {

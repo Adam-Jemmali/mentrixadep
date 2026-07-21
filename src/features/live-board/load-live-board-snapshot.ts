@@ -202,30 +202,6 @@ export async function loadLiveBoardEvents(
   }
 }
 
-export async function loadLiveBoardTodayCount(): Promise<number> {
-  try {
-    const admin = createAdminClient();
-    const startOfDay = new Date();
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const { count, error } = await admin
-      .from("live_board_events")
-      .select("id", { count: "exact", head: true })
-      .gte("occurred_at", startOfDay.toISOString());
-
-    if (error) {
-      console.error("loadLiveBoardTodayCount failed", error.message);
-      return 0;
-    }
-    return count ?? 0;
-  } catch (err) {
-    console.error(
-      "loadLiveBoardTodayCount failed",
-      err instanceof Error ? err.message : String(err),
-    );
-    return 0;
-  }
-}
-
 export async function loadArenaLeaders(limit = 10) {
   try {
     const admin = createAdminClient();
