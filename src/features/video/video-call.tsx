@@ -47,6 +47,11 @@ import {
 } from "@/features/video/ui/pre-call-lobby";
 import { Whiteboard } from "@/features/video/ui/whiteboard";
 import { InSessionChat } from "@/features/video/ui/in-session-chat";
+import {
+  SharedSessionGridPanel,
+  SharedSessionGridToggle,
+} from "@/features/video/shared-session-grid";
+import type { SharedSessionGridPayload } from "@/features/video/load-shared-session-grid";
 import { ToolbarQualityBadge } from "@/features/video/ui/connection-quality";
 import Image from "next/image";
 import { BubbleText } from "@/shared/ui/bubble-text";
@@ -262,6 +267,7 @@ interface VideoCallProps {
   sessionStartTime?: string | null;
   /** ISO datetime string — used for warning fallback UX if server check is unavailable */
   sessionEndTime?: string | null;
+  sharedGridPayload?: SharedSessionGridPayload | null;
 }
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
@@ -277,6 +283,7 @@ export function VideoCall({
   guideLabel,
   sessionStartTime,
   sessionEndTime,
+  sharedGridPayload = null,
 }: VideoCallProps) {
   const router = useRouter();
   const afterCallPath =
@@ -287,7 +294,7 @@ export function VideoCall({
   const [lobbySettings, setLobbySettings] = useState<LobbySettings | null>(null);
 
   // ─── Panel state (chat / whiteboard) ─────────────────────────────────────
-  const [activePanel, setActivePanel] = useState<"none" | "chat" | "whiteboard">("none");
+  const [activePanel, setActivePanel] = useState<"none" | "chat" | "whiteboard" | "grid">("none");
   /** Peer messages received while chat panel is closed (badge on chat icon). */
   const [chatUnreadFromPeer, setChatUnreadFromPeer] = useState(0);
 
@@ -316,6 +323,7 @@ export function VideoCall({
   const [waitingForOtherParticipant, setWaitingForOtherParticipant] = useState(false);
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const sessionSecondsRef = useRef(0);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   /** The actual time the session "started" (when the student first joined). Defaults to scheduled start. */
   const [actualStartTime, setActualStartTime] = useState<Date | null>(null);
   const [isSharingScreen, setIsSharingScreen] = useState(false);
@@ -417,7 +425,7 @@ export function VideoCall({
   const inSessionChatBroadcastRef = useRef<((raw: unknown) => void) | null>(null);
   /** Count of peer-authored messages considered "read" (user had chat open through that count). */
   const readPeerChatCountRef = useRef(0);
-  const activePanelRef = useRef<"none" | "chat" | "whiteboard">(activePanel);
+  const activePanelRef = useRef<"none" | "chat" | "whiteboard" | "grid">(activePanel);
   const whiteboardSummaryRef = useRef<SessionAiWhiteboardSummary | null>(null);
   const screenShareTimelineRef = useRef<SessionAiScreenShareEvent[]>([]);
   const recordingHintsRef = useRef<Record<string, unknown>>({});
@@ -436,6 +444,14 @@ export function VideoCall({
   useEffect(() => {
     activePanelRef.current = activePanel;
   }, [activePanel]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobileViewport(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     videoSessionTeardownStartedRef.current = false;
@@ -3410,6 +3426,20 @@ export function VideoCall({
               <LayoutPanelLeft size={14} strokeWidth={2} />
             </button>
 
+            {sharedGridPayload ? (
+              <SharedSessionGridToggle
+                active={activePanel === "grid"}
+                disabled={isLeaving}
+                onClick={() => {
+                  setActivePanel((p) => {
+                    const next = p === "grid" ? "none" : "grid";
+                    activePanelRef.current = next;
+                    return next;
+                  });
+                }}
+              />
+            ) : null}
+
             {/* Record (tutor only) */}
             {userRole === "tutor" && (
               <button
@@ -3490,6 +3520,22 @@ export function VideoCall({
             />
           </div>
         )}
+
+        {sharedGridPayload ? (
+          <SharedSessionGridPanel
+            open={activePanel === "grid"}
+            onOpenChange={(open) => {
+              setActivePanel(open ? "grid" : "none");
+              activePanelRef.current = open ? "grid" : "none";
+            }}
+            mode={userRole === "tutor" ? "guide" : "student"}
+            sessionId={sessionId}
+            guideName={guideLabel}
+            payload={sharedGridPayload}
+            channel={realtimeChannel}
+            isMobile={isMobileViewport}
+          />
+        ) : null}
       </div>
 
     </div>

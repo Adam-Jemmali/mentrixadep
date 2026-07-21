@@ -27,7 +27,10 @@
 
   --radius-node: 8px;
   --radius-card: 12px;
+  --radius-lg: var(--radius-card);
   --radius-pill: 9999px;
+
+  --surface-base: var(--color-navy-900);
 
   /* ── Semantic layer ──────────────────────────────────────────────── */
   --mx-primary: var(--color-violet-600);

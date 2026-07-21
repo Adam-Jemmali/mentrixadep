@@ -13,6 +13,7 @@ import {
   formatGuideBookingDayVerdict,
   guideBookingWindowBounds,
 } from "@/features/booking/guide-booking-date-pure";
+import { cn } from "@/shared/core/utils";
 
 export type GuideBookingSlot = {
   id: string;
@@ -28,12 +29,17 @@ export function GuideBookingSlotPicker({
   canBook,
   onBookSlot,
   formatPrice,
+  selectOnly = false,
+  selectedSlotId = null,
 }: {
   slots: GuideBookingSlot[];
   tutorTimezone: string;
   canBook: boolean;
   onBookSlot: (slot: GuideBookingSlot) => void;
   formatPrice: (baseCents: number | null) => string;
+  /** When true, row action selects a slot instead of opening checkout immediately. */
+  selectOnly?: boolean;
+  selectedSlotId?: string | null;
 }) {
   const { min, max } = useMemo(
     () => guideBookingWindowBounds(tutorTimezone),
@@ -86,7 +92,12 @@ export function GuideBookingSlotPicker({
           {daySlots.map((slot) => (
             <li
               key={slot.id}
-              className="avail-row flex flex-col gap-3 rounded-2xl border border-indigo-50 bg-slate-50/30 p-4 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+              className={cn(
+                "avail-row flex flex-col gap-3 rounded-2xl border p-4 transition-all sm:flex-row sm:items-center sm:justify-between",
+                selectedSlotId === slot.id
+                  ? "border-[#7C3AED] bg-[#EDE9FE]/40 shadow-md"
+                  : "border-indigo-50 bg-slate-50/30 hover:border-indigo-100 hover:bg-white hover:shadow-md",
+              )}
             >
               <div className="space-y-1">
                 <p className="text-sm font-black italic tracking-tight text-indigo-900">
@@ -106,7 +117,7 @@ export function GuideBookingSlotPicker({
                     onClick={() => onBookSlot(slot)}
                     className="h-9 rounded-xl bg-indigo-600 px-4 text-[10px] font-black uppercase tracking-wider text-white hover:bg-indigo-500"
                   >
-                    Book
+                    {selectOnly ? "Select" : "Book"}
                   </Button>
                 ) : null}
               </div>

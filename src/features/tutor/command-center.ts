@@ -35,7 +35,17 @@ import {
 } from "@/features/notifications/load-guide-notifications";
 import { loadGuideWeeklyNodeImpacts } from "@/features/tutor/command-center-weekly-impact";
 import type { GuideWeeklyNodeImpact } from "@/features/tutor/command-center-weekly-impact-pure";
-import { loadGuideEarningsForecastLine } from "@/features/tutor/load-earnings-forecast";
+import { loadGuideEarningsForecast } from "@/features/tutor/load-earnings-forecast";
+import type { GuideEarningsForecastView } from "@/features/tutor/earnings-forecast-pure";
+import { getGuideImpactNodeScoresForTutor } from "@/features/guide-impact/reads";
+import { getGuideBreakthroughs, type GuideBreakthrough } from "@/features/guide-rank/reads";
+import { getTutorSessionsWithPackages } from "@/features/studio-ai/studio-packages";
+import {
+  buildGuideActiveStudents,
+  type GuideActiveStudent,
+  type GuideStudioPendingItem,
+} from "@/features/tutor/guide-home-pure";
+import type { GuideImpactNodeEntry } from "@/features/guide-impact/impact-score-pure";
 
 export type TutorCommandCenterEarningsDay = { date: string; cents: number };
 
@@ -54,6 +64,8 @@ export type TutorCommandCenterPayload = {
     pendingRequestCount: number;
   };
   earningsLast30Days: TutorCommandCenterEarningsDay[];
+  earningsForecast: GuideEarningsForecastView | null;
+  /** @deprecated Derived from earningsForecast.demandPrimary */
   earningsForecastLine: string | null;
   lateCancellationAlerts: { id: string; course: string; start_time: string }[];
   sessionRequests: Awaited<ReturnType<typeof import('@/features/tutor/session-requests').getSessionRequests>>;
@@ -94,6 +106,10 @@ export type TutorCommandCenterPayload = {
   demandSignals: GuideDemandSignal[];
   weeklyNodeImpacts: GuideWeeklyNodeImpact[];
   guideNotifications: GuideNotificationEntry[];
+  impactNodeScores: GuideImpactNodeEntry[];
+  activeStudents: GuideActiveStudent[];
+  studioPendingReview: GuideStudioPendingItem[];
+  breakthroughs: GuideBreakthrough[];
 };
 
 function fallbackTutorCommandCenterPayload(
@@ -118,6 +134,7 @@ function fallbackTutorCommandCenterPayload(
       pendingRequestCount: 0,
     },
     earningsLast30Days: [],
+    earningsForecast: null,
     earningsForecastLine: null,
     lateCancellationAlerts: [],
     sessionRequests: [],
@@ -147,6 +164,10 @@ function fallbackTutorCommandCenterPayload(
     demandSignals: [],
     weeklyNodeImpacts: [],
     guideNotifications: [],
+    impactNodeScores: [],
+    activeStudents: [],
+    studioPendingReview: [],
+    breakthroughs: [],
   };
 }
 
@@ -415,17 +436,68 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       [],
     );
 
-    const earningsForecastLine = await loadTutorSection(
+    const earningsForecast = await loadTutorSection(
       "earningsForecast",
       () =>
-        loadGuideEarningsForecastLine({
+        loadGuideEarningsForecast({
           guideId: tutorId,
           openSlots: (availability ?? []).map((slot) => ({
             course: String(slot.course),
+            price_per_session: slot.price_per_session,
           })),
+          sessionsThisMonth: (monthSessionsRes.data ?? []).length,
+          sessionRatesCents: (monthSessionsRes.data ?? []).map((row) =>
+            typeof row.price_per_session === "number" ? row.price_per_session : 0,
+          ),
+          daysElapsedInMonth: now.getUTCDate(),
         }),
       null,
     );
+
+    const earningsForecastLine = earningsForecast
+      ? earningsForecast.demandSecondary
+        ? `${earningsForecast.demandPrimary} ${earningsForecast.demandSecondary}`
+        : earningsForecast.demandPrimary
+      : null;
+
+    const impactNodeScores = await loadTutorSection(
+      "impactNodeScores",
+      () => getGuideImpactNodeScoresForTutor(tutorId),
+      [],
+    );
+
+    const breakthroughs = await loadTutorSection(
+      "breakthroughs",
+      () => getGuideBreakthroughs(tutorId, 5),
+      [],
+    );
+
+    const studioSessionsRaw = await loadTutorSection(
+      "studioPending",
+      async () => {
+        const result = await getTutorSessionsWithPackages();
+        if ("error" in result) return [];
+        return result;
+      },
+      [],
+    );
+
+    const studioPendingReview: GuideStudioPendingItem[] = studioSessionsRaw
+      .filter(
+        (row) =>
+          row.aiPackage &&
+          !row.aiPackage.package_published_at &&
+          (row.aiPackage.summary?.trim()?.length ?? 0) > 0,
+      )
+      .slice(0, 6)
+      .map((row) => ({
+        sessionId: row.id,
+        course: row.course,
+        studentName: row.student_display_name?.trim() || row.student_email?.split("@")[0] || "Student",
+        endTime: row.end_time,
+      }));
+
+    const activeStudents = buildGuideActiveStudents([...upcomingSessions, ...pastSessions]);
 
     let calendarAvailability = calAvailRes.data ?? [];
     const calAvailIds = calendarAvailability.map((a) => a.id);
@@ -461,6 +533,7 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
         pendingRequestCount: sessionRequests.length,
       },
       earningsLast30Days,
+      earningsForecast,
       earningsForecastLine,
       lateCancellationAlerts,
       sessionRequests,
@@ -491,6 +564,10 @@ export async function getTutorCommandCenterData(): Promise<TutorCommandCenterPay
       demandSignals,
       weeklyNodeImpacts,
       guideNotifications,
+      impactNodeScores,
+      activeStudents,
+      studioPendingReview,
+      breakthroughs,
     };
 
     logTutorLoader("payload-built", {

@@ -76,26 +76,41 @@ function squareStyle(state: MasteryNodeState): CSSProperties | undefined {
   return state === "verified" ? { backgroundColor: `${VERIFIED_GOLD}E6` } : undefined;
 }
 
+const GUIDE_PINNED_CLASS =
+  "border-l-[3px] border-l-[#7C3AED] shadow-[0_0_12px_2px_rgba(124,58,237,0.22)] ring-0 ring-offset-0";
+
+export type MasteryPinnedAccent = "ring" | "guide";
+
 function MasterySquare({
   node,
   unitNumber,
   animateFrom,
   isHighlight,
   isPinned,
+  isFlagged,
   isRecommended,
+  pinnedRingClassName,
+  pinnedAccent = "ring",
   globalTopPercent,
   globalVerifiedCount,
   unlockedNodeIds,
+  onNodePointerEnter,
+  onNodePointerLeave,
 }: {
   node: MasteryGridNode;
   unitNumber?: number;
   animateFrom?: MasteryNodeState;
   isHighlight?: boolean;
   isPinned?: boolean;
+  isFlagged?: boolean;
   isRecommended?: boolean;
+  pinnedRingClassName?: string;
+  pinnedAccent?: MasteryPinnedAccent;
   globalTopPercent?: number | null;
   globalVerifiedCount?: number;
   unlockedNodeIds?: ReadonlySet<string> | null;
+  onNodePointerEnter?: (node: MasteryGridNode, element: HTMLElement) => void;
+  onNodePointerLeave?: () => void;
 }) {
   const { nodeName, state } = node;
   const shouldAnimate = animateFrom != null && animateFrom !== state;
@@ -138,13 +153,23 @@ function MasterySquare({
       placement="top"
     >
       <div
+        data-skill-node-id={node.id}
         aria-label={title}
+        onPointerEnter={(event) => onNodePointerEnter?.(node, event.currentTarget)}
+        onPointerLeave={() => onNodePointerLeave?.()}
         className={cn(
           "relative aspect-square min-w-0 w-full rounded-[4px] border",
         STATE_SQUARE_CLASS[displayState],
         shouldAnimate && "transition-colors transition-duration-[400ms] ease-out",
         isHighlight && shouldAnimate && "z-10 ring-2 ring-indigo-400/80 ring-offset-1 ring-offset-[#FAFAF8]",
-        isPinned && "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#FAFAF8]",
+        isPinned &&
+          pinnedAccent === "guide" &&
+          GUIDE_PINNED_CLASS,
+        isPinned &&
+          pinnedAccent === "ring" &&
+          (pinnedRingClassName ??
+            "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#FAFAF8]"),
+        isFlagged && "ring-2 ring-dashed ring-[#7C3AED]/80 ring-offset-1 ring-offset-[#FAFAF8]",
         isRecommended && "ring-2 ring-dashed ring-[#7C3AED]/70 ring-offset-1 ring-offset-[#FAFAF8]"
       )}
       style={squareStyle(displayState)}
@@ -182,10 +207,15 @@ function MasteryUnitGrid({
   compact,
   highlightTransition,
   pinnedNodeIds,
+  flaggedNodeIds,
   recommendedNodeId,
+  pinnedRingClassName,
+  pinnedAccent = "ring",
   globalTopPercent,
   globalVerifiedCount,
   unlockedNodeIds,
+  onNodePointerEnter,
+  onNodePointerLeave,
 }: {
   nodes: MasteryGridNode[];
   unitNumber?: number;
@@ -196,10 +226,15 @@ function MasteryUnitGrid({
     toState: MasteryNodeState;
   };
   pinnedNodeIds?: Set<string>;
+  flaggedNodeIds?: Set<string>;
   recommendedNodeId?: string;
+  pinnedRingClassName?: string;
+  pinnedAccent?: MasteryPinnedAccent;
   globalTopPercent?: number | null;
   globalVerifiedCount?: number;
   unlockedNodeIds?: ReadonlySet<string> | null;
+  onNodePointerEnter?: (node: MasteryGridNode, element: HTMLElement) => void;
+  onNodePointerLeave?: () => void;
 }) {
   return (
     <div
@@ -220,10 +255,15 @@ function MasteryUnitGrid({
           }
           isHighlight={highlightTransition?.nodeId === node.id}
           isPinned={pinnedNodeIds?.has(node.id)}
+          isFlagged={flaggedNodeIds?.has(node.id)}
           isRecommended={recommendedNodeId === node.id}
+          pinnedRingClassName={pinnedRingClassName}
+          pinnedAccent={pinnedAccent}
           globalTopPercent={globalTopPercent}
           globalVerifiedCount={globalVerifiedCount}
           unlockedNodeIds={unlockedNodeIds}
+          onNodePointerEnter={onNodePointerEnter}
+          onNodePointerLeave={onNodePointerLeave}
         />
       ))}
     </div>
@@ -235,11 +275,16 @@ function MasteryGridUnits({
   compact,
   highlightTransition,
   pinnedNodeIds,
+  flaggedNodeIds,
   recommendedNodeId,
+  pinnedRingClassName,
+  pinnedAccent = "ring",
   globalTopPercent,
   globalVerifiedCount,
   unlockedNodeIds,
   collapsible = true,
+  onNodePointerEnter,
+  onNodePointerLeave,
 }: {
   units: MasteryGridData["units"];
   compact: boolean;
@@ -249,11 +294,16 @@ function MasteryGridUnits({
     toState: MasteryNodeState;
   };
   pinnedNodeIds?: Set<string>;
+  flaggedNodeIds?: Set<string>;
   recommendedNodeId?: string;
+  pinnedRingClassName?: string;
+  pinnedAccent?: MasteryPinnedAccent;
   globalTopPercent?: number | null;
   globalVerifiedCount?: number;
   unlockedNodeIds?: ReadonlySet<string> | null;
   collapsible?: boolean;
+  onNodePointerEnter?: (node: MasteryGridNode, element: HTMLElement) => void;
+  onNodePointerLeave?: () => void;
 }) {
   if (!collapsible) {
     return (
@@ -272,10 +322,15 @@ function MasteryGridUnits({
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={pinnedNodeIds}
+              flaggedNodeIds={flaggedNodeIds}
               recommendedNodeId={recommendedNodeId}
+              pinnedRingClassName={pinnedRingClassName}
+              pinnedAccent={pinnedAccent}
               globalTopPercent={globalTopPercent}
               globalVerifiedCount={globalVerifiedCount}
               unlockedNodeIds={unlockedNodeIds}
+              onNodePointerEnter={onNodePointerEnter}
+              onNodePointerLeave={onNodePointerLeave}
             />
           </div>
         ))}
@@ -315,10 +370,15 @@ function MasteryGridUnits({
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={pinnedNodeIds}
+              flaggedNodeIds={flaggedNodeIds}
               recommendedNodeId={recommendedNodeId}
+              pinnedRingClassName={pinnedRingClassName}
+              pinnedAccent={pinnedAccent}
               globalTopPercent={globalTopPercent}
               globalVerifiedCount={globalVerifiedCount}
               unlockedNodeIds={unlockedNodeIds}
+              onNodePointerEnter={onNodePointerEnter}
+              onNodePointerLeave={onNodePointerLeave}
             />
           </MentrixaAccordionItem>
         );
@@ -334,12 +394,18 @@ export function MasteryGrid({
   hideNextAction = false,
   showLegend = false,
   readOnly = false,
+  sessionInteractive = false,
   highlightTransition,
   pinnedNodeIds,
+  flaggedNodeIds,
   recommendedNodeId,
+  pinnedRingClassName,
+  pinnedAccent = "ring",
   remainderCollapsed = false,
   collapsibleUnits = true,
   unlockedNodeIds,
+  onNodePointerEnter,
+  onNodePointerLeave,
 }: {
   data: MasteryGridData;
   className?: string;
@@ -347,16 +413,23 @@ export function MasteryGrid({
   hideNextAction?: boolean;
   showLegend?: boolean;
   readOnly?: boolean;
+  /** Keeps node hover active while the grid is otherwise read-only (Guide session tools). */
+  sessionInteractive?: boolean;
   highlightTransition?: {
     nodeId: string;
     fromState: MasteryNodeState;
     toState: MasteryNodeState;
   };
   pinnedNodeIds?: string[];
+  flaggedNodeIds?: Set<string>;
   recommendedNodeId?: string;
+  pinnedRingClassName?: string;
+  pinnedAccent?: MasteryPinnedAccent;
   remainderCollapsed?: boolean;
   collapsibleUnits?: boolean;
   unlockedNodeIds?: ReadonlySet<string> | null;
+  onNodePointerEnter?: (node: MasteryGridNode, element: HTMLElement) => void;
+  onNodePointerLeave?: () => void;
 }) {
   const [remainderExpanded, setRemainderExpanded] = useState(false);
 
@@ -379,7 +452,7 @@ export function MasteryGrid({
       className={cn(
         mentrixStudent.cardArena,
         compact ? "p-4 sm:p-5" : "p-5 sm:p-6",
-        readOnly && "pointer-events-none select-none",
+        readOnly && !sessionInteractive && "pointer-events-none select-none",
         className
       )}
       aria-label="AP Calculus AB mastery grid"
@@ -408,10 +481,15 @@ export function MasteryGrid({
               compact={compact}
               highlightTransition={highlightTransition}
               pinnedNodeIds={new Set(pinnedNodeIds)}
+              flaggedNodeIds={flaggedNodeIds}
               recommendedNodeId={recommendedNodeId}
+              pinnedRingClassName={pinnedRingClassName}
+              pinnedAccent={pinnedAccent}
               globalTopPercent={data.globalRank?.topPercent}
               globalVerifiedCount={data.globalRank?.verifiedCount}
               unlockedNodeIds={unlockedNodeIds}
+              onNodePointerEnter={onNodePointerEnter}
+              onNodePointerLeave={onNodePointerLeave}
             />
             <div className="mt-3 space-y-2">
               {pinSplit!.pinnedNodes.map((node) => {
@@ -441,10 +519,15 @@ export function MasteryGrid({
             compact={compact}
             highlightTransition={highlightTransition}
             collapsible={collapsibleUnits}
+            flaggedNodeIds={flaggedNodeIds}
             recommendedNodeId={recommendedNodeId}
+            pinnedRingClassName={pinnedRingClassName}
+            pinnedAccent={pinnedAccent}
             globalTopPercent={data.globalRank?.topPercent}
             globalVerifiedCount={data.globalRank?.verifiedCount}
             unlockedNodeIds={unlockedNodeIds}
+            onNodePointerEnter={onNodePointerEnter}
+            onNodePointerLeave={onNodePointerLeave}
           />
         ) : null}
 

@@ -45,10 +45,10 @@ export function guideMasteryGridDrawerMessage(
   course: string,
 ): MentrixaDrawerMessage {
   return {
-    title: "Student mastery grid",
+    title: "Student context",
     description: `${studentName} · ${course}`,
     verdict: "Locked first answers show what counts for rank.",
-    nextAction: "Target nodes with no locked first answer before the session.",
+    nextAction: "Review target nodes before you join the call.",
   };
 }
 

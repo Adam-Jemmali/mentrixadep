@@ -7,6 +7,18 @@ export const GUIDE_HOME = {
   btnAddSlots: "Add slots",
   slotsToastTitle: "Slots live",
   slotsToastSub: "Scrolling to open slots…",
+  impactHeroTitle: "Your impact this week",
+  impactEmpty: "Impact Score updates after verified first-attempt movement on nodes you teach.",
+  upcomingHeroTitle: "Upcoming sessions",
+  upcomingEmpty: "No sessions scheduled",
+  demandEmpty: "No weak nodes in your verified subjects yet.",
+  rosterTitle: "Your student roster",
+  rosterEmpty: "Active students appear after your first completed session.",
+  earningsForecastTitle: "Earnings forecast",
+  studioPendingTitle: "Studio packages pending review",
+  studioPendingEmpty: "No drafts waiting. Published packages post to learner history.",
+  breakthroughTitle: "Recent breakthroughs",
+  breakthroughEmpty: "Breakthroughs surface when first-attempt accuracy jumps after your sessions.",
   metrics: {
     monthEarnings: "Month earnings",
     sessionsWeek: "Sessions week",
@@ -162,8 +174,8 @@ export const GUIDE_NOTIFICATIONS = {
 } as const;
 
 export const GUIDE_PRE_SESSION = {
-  title: "Pre-session",
-  subtitle: "Unlocks 2h before call.",
+  title: "Pre session",
+  subtitle: "Unlocks 30 minutes before call.",
 } as const;
 
 export const GUIDE_RANK = {

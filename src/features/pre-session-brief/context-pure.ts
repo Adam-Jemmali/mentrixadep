@@ -2,9 +2,9 @@ import { getAccountLevelFromTotalXp, ACCOUNT_LEVELS } from "@/features/xp/levels
 import { normalizeRankTitle } from "@/features/xp/rank-icons";
 
 export const PRE_SESSION_CONTEXT_TTL_MS = 6 * 60 * 60 * 1000;
-export const PRE_SESSION_CONTEXT_WINDOW_MS = 2 * 60 * 60 * 1000;
+export const PRE_SESSION_CONTEXT_WINDOW_MS = 30 * 60 * 1000;
 
-/** Guide context panel unlocks 2 hours before session start. */
+/** Guide context panel unlocks 30 minutes before session start. */
 export function isPreSessionContextWindowOpen(
   sessionStartTime: string,
   now = Date.now(),

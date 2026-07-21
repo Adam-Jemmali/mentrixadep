@@ -51,6 +51,26 @@ export const preSessionBreakthroughSchema = z.object({
   message: z.string(),
 });
 
+export const apReadinessBandViewSchema = z.object({
+  score: z.number().nullable(),
+  label: z.string(),
+  sublabel: z.string(),
+  isVerifiedPrediction: z.boolean(),
+});
+
+export const guideSessionIntelligenceSchema = z.object({
+  strongestNodeName: z.string(),
+  gapNodeName: z.string(),
+  lastGuideSessionLabel: z.string(),
+  focusSignalDisplay: z.string(),
+});
+
+export const guideWarmupItemSchema = z.object({
+  nodeName: z.string(),
+  prompt: z.string(),
+  options: z.array(z.string()).max(8).optional(),
+});
+
 export const preSessionContextSchema = z.object({
   sessionId: z.string().uuid(),
   subject: z.string(),
@@ -62,6 +82,10 @@ export const preSessionContextSchema = z.object({
   verifiedGaps: preSessionVerifiedGapsSchema.nullable().optional(),
   sessionTargetNodeIds: z.array(z.string().uuid()).optional(),
   masteryGrid: masteryGridDataSchema.nullable().optional(),
+  readinessBand: apReadinessBandViewSchema.optional(),
+  workingTowardLine: z.string().optional(),
+  sessionIntelligence: guideSessionIntelligenceSchema.optional(),
+  warmupItem: guideWarmupItemSchema.nullable().optional(),
   cachedAt: z.string(),
 });
 

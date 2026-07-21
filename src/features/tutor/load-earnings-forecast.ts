@@ -1,20 +1,23 @@
 /**
- * Guide earnings forecast line — internal server-only (command center).
- * Not a server action module; import from trusted server code only.
+ * Guide earnings forecast — internal server-only (command center).
  */
 
 import { loadGuideImpactNodeStats } from "@/features/guidance/verdict-materialized-reads";
 import { loadLatestWeeklyDemandRows } from "@/features/demand-signal/reads";
 import { createClient } from "@/shared/integrations/supabase/server";
 import {
-  buildEarningsForecastLine,
+  buildGuideEarningsForecast,
   pickStrongestImpactNodeId,
+  type GuideEarningsForecastView,
 } from "@/features/tutor/earnings-forecast-pure";
 
-export async function loadGuideEarningsForecastLine(params: {
+export async function loadGuideEarningsForecast(params: {
   guideId: string;
-  openSlots: Array<{ course: string }>;
-}): Promise<string | null> {
+  openSlots: Array<{ course: string; price_per_session?: number | null }>;
+  sessionsThisMonth: number;
+  sessionRatesCents: number[];
+  daysElapsedInMonth: number;
+}): Promise<GuideEarningsForecastView | null> {
   const impactNodes = await loadGuideImpactNodeStats(params.guideId);
   const strongestImpactSkillNodeId = pickStrongestImpactNodeId(
     impactNodes.map((node) => ({
@@ -39,10 +42,32 @@ export async function loadGuideEarningsForecastLine(params: {
     course = data?.subject ? String(data.subject) : null;
   }
 
-  return buildEarningsForecastLine({
+  return buildGuideEarningsForecast({
     strongestImpactSkillNodeId,
     course,
     demandRows,
     openSlots: params.openSlots,
+    sessionsThisMonth: params.sessionsThisMonth,
+    sessionRatesCents: params.sessionRatesCents,
+    daysElapsedInMonth: params.daysElapsedInMonth,
   });
+}
+
+/** @deprecated Use loadGuideEarningsForecast */
+export async function loadGuideEarningsForecastLine(params: {
+  guideId: string;
+  openSlots: Array<{ course: string }>;
+}): Promise<string | null> {
+  const view = await loadGuideEarningsForecast({
+    guideId: params.guideId,
+    openSlots: params.openSlots,
+    sessionsThisMonth: 0,
+    sessionRatesCents: [],
+    daysElapsedInMonth: 1,
+  });
+  if (!view) return null;
+  if (view.demandSecondary) {
+    return `${view.demandPrimary} ${view.demandSecondary}`;
+  }
+  return view.demandPrimary;
 }

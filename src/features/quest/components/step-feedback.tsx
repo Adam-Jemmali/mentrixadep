@@ -74,11 +74,8 @@ function StepFeedbackShell({
     <StudentStickyNote
       variant="taped"
       compact
-      className={cn(
-        "step-feedback-sticky",
-        surface === "dark" && "bg-[var(--mx-navy-2)]/95",
-        className,
-      )}
+      color={surface === "dark" ? "neutral" : "yellow"}
+      className={cn("step-feedback-sticky", className)}
     >
       <div className="space-y-4 p-1">{children}</div>
     </StudentStickyNote>

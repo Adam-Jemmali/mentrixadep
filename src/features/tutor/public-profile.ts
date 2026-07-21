@@ -119,9 +119,18 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
 
   const { data: tutorSettingsRow } = await adminClient
     .from("user_settings")
-    .select("timezone, bio")
+    .select("timezone, bio, display_name, avatar_url")
     .eq("user_id", tutorId)
     .maybeSingle();
+
+  const displayName =
+    (typeof tutorSettingsRow?.display_name === "string" && tutorSettingsRow.display_name.trim()) ||
+    (typeof name === "string" ? name : "Guide");
+
+  const avatarUrl =
+    typeof tutorSettingsRow?.avatar_url === "string" && tutorSettingsRow.avatar_url.trim().length > 0
+      ? tutorSettingsRow.avatar_url.trim()
+      : null;
 
   const tutorTimezone =
     typeof tutorSettingsRow?.timezone === "string" && tutorSettingsRow.timezone.trim().length > 0
@@ -145,14 +154,13 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
   }));
 
   const { data: impactNodeRows } = await adminClient
-    .from("guide_impact_node_scores")
+    .from("mv_guide_impact_by_node")
     .select(
-      "skill_node_id, node_name, subject, impact_score, students_counted, after_accuracy, before_accuracy, impact_lift"
+      "skill_node_id, node_name, subject, impact_score, students_counted, after_accuracy, before_accuracy, impact_lift",
     )
     .eq("guide_id", tutorId)
-    .gte("students_counted", 3)
-    .order("impact_lift", { ascending: false })
-    .order("impact_score", { ascending: false });
+    .order("impact_score", { ascending: false })
+    .limit(6);
 
   const impactNodeScores = (impactNodeRows ?? []).map((row) => ({
     skillNodeId: row.skill_node_id as string,
@@ -206,10 +214,24 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
   const breakthroughs = await getGuideBreakthroughs(tutorId, 5);
   const teachingPortfolio = await loadGuidePortfolioForPublic(tutorId);
 
+  const { data: sessionStatusRows } = await adminClient
+    .from("sessions")
+    .select("status")
+    .eq("tutor_id", tutorId)
+    .in("status", ["completed", "cancelled"]);
+
+  const completedCount = (sessionStatusRows ?? []).filter((r) => r.status === "completed").length;
+  const cancelledCount = (sessionStatusRows ?? []).filter((r) => r.status === "cancelled").length;
+  const showUpRatePercent =
+    completedCount + cancelledCount === 0
+      ? null
+      : Math.round((completedCount / (completedCount + cancelledCount)) * 1000) / 10;
+
   return {
     id: tutorId,
     email,
-    name,
+    name: displayName,
+    avatarUrl,
     sessionCount,
     avgRating,
     ratingCount: ratingList.length,
@@ -225,6 +247,7 @@ async function fetchTutorPublicProfileUncached(tutorId: string) {
     guideRank: (tutorUser as { guide_rank?: string }).guide_rank ?? "practitioner",
     avgImpactScore,
     responseRatePercent,
+    showUpRatePercent,
     breakthroughs,
     teachingPortfolio,
   };

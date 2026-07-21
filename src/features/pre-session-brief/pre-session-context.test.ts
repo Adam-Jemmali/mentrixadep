@@ -8,7 +8,7 @@ import {
 } from "@/features/pre-session-brief/context-pure";
 
 describe("pre-session context pure", () => {
-  it("opens context window 2 hours before session", () => {
+  it("opens context window 30 minutes before session", () => {
     const start = new Date("2026-06-10T14:00:00.000Z").getTime();
     expect(isPreSessionContextWindowOpen(new Date(start).toISOString(), start - PRE_SESSION_CONTEXT_WINDOW_MS + 60000)).toBe(true);
     expect(isPreSessionContextWindowOpen(new Date(start).toISOString(), start - PRE_SESSION_CONTEXT_WINDOW_MS - 60000)).toBe(false);

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "@/shared/animation/motion";
 import { createClient } from "@/shared/integrations/supabase/client";
 import {
   ARENA_FEED_VISIBLE_LIMIT,
   ARENA_PAGE_COPY,
+  LANDING_FEED_VISIBLE_LIMIT,
   buildDivisionWarResultCardCopy,
   formatDivisionWarAccuracyLine,
   formatLiveBoardEventDescription,
@@ -39,6 +40,10 @@ type FeedRowMotion = {
 type Props = {
   initialEvents: LiveBoardEventRow[];
   leaders: ArenaLeaderProfile[];
+  /** Compact hero embed on the landing page. */
+  variant?: "default" | "hero";
+  limit?: number;
+  className?: string;
 };
 
 const LIVE_BOARD_EVENT_TYPES = new Set<LiveBoardEventRow["event_type"]>([
@@ -134,9 +139,21 @@ function DivisionWarFeedCard({
   );
 }
 
-export function LiveBoardFeed({ initialEvents, leaders }: Props) {
+export function LiveBoardFeed({
+  initialEvents,
+  leaders,
+  variant = "default",
+  limit,
+  className,
+}: Props) {
+  const isHero = variant === "hero";
+  const visibleLimit = limit ?? (isHero ? LANDING_FEED_VISIBLE_LIMIT : ARENA_FEED_VISIBLE_LIMIT);
   const reducedMotion = usePrefersReducedMotion();
-  const [events, setEvents] = useState(() => initialEvents.slice(0, ARENA_FEED_VISIBLE_LIMIT));
+  const [events, setEvents] = useState(() =>
+    initialEvents
+      .filter((event) => !isHero || event.event_type !== "division_war_result")
+      .slice(0, visibleLimit),
+  );
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const avatarByUserId = useMemo(() => {
@@ -153,8 +170,12 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
   }, [initialEvents, leaders]);
 
   useEffect(() => {
-    setEvents(initialEvents.slice(0, ARENA_FEED_VISIBLE_LIMIT));
-  }, [initialEvents]);
+    setEvents(
+      initialEvents
+        .filter((event) => !isHero || event.event_type !== "division_war_result")
+        .slice(0, visibleLimit),
+    );
+  }, [initialEvents, isHero, visibleLimit]);
 
   useEffect(() => {
     const tick = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -175,6 +196,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
         (payload: { new: Record<string, unknown> }) => {
           const row = parseRealtimeRow(payload.new as Record<string, unknown>);
           if (!row) return;
+          if (isHero && row.event_type === "division_war_result") return;
           if (
             row.event_type !== "division_war_result" &&
             isE2ESyntheticAccount({
@@ -189,7 +211,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           }
           setEvents((current) => {
             if (current.some((event) => event.id === row.id)) return current;
-            return [row, ...current].slice(0, ARENA_FEED_VISIBLE_LIMIT);
+            return [row, ...current].slice(0, visibleLimit);
           });
         },
       )
@@ -198,7 +220,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [avatarByUserId]);
+  }, [avatarByUserId, isHero, visibleLimit]);
 
   const rowMotion = useMemo(
     (): Omit<FeedRowMotion, "layout"> =>
@@ -218,6 +240,90 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
     [reducedMotion],
   );
 
+  const feedBody =
+    events.length === 0 ? (
+      <p
+        className={cn(
+          isHero ? "px-3 py-5 text-center text-sm text-white/50" : mentrixHubSurfaces.inkMuted,
+          !isHero && "px-4 py-6 text-center text-sm",
+        )}
+      >
+        {ARENA_PAGE_COPY.emptyFeed}
+      </p>
+    ) : (
+      <ul className={cn(isHero ? "divide-y divide-white/10" : "divide-y divide-[#E0E7FF]")}>
+        <AnimatePresence initial={false}>
+          {events.map((event) => {
+            if (isDivisionWarLiveBoardEvent(event.event_type)) {
+              return (
+                <DivisionWarFeedCard
+                  key={event.id}
+                  event={event}
+                  nowMs={nowMs}
+                  motionProps={{ ...rowMotion, layout: !reducedMotion }}
+                />
+              );
+            }
+
+            const avatarUrl = event.avatar_url ?? avatarByUserId.get(event.user_id) ?? null;
+            const icon = liveBoardEventVocabIcon(event.event_type);
+            const goldIcon =
+              event.event_type === "verified_attempt" && event.accuracy_pct === 100;
+
+            return (
+              <motion.li
+                key={event.id}
+                layout={!reducedMotion}
+                {...rowMotion}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2",
+                  isHero && "py-2.5",
+                )}
+              >
+                <ArenaPersonAvatar
+                  displayName={event.display_name}
+                  avatarUrl={avatarUrl}
+                  size="sm"
+                />
+                <MentrixaVocabIcon
+                  name={icon}
+                  size={16}
+                  gold={goldIcon}
+                  surface={isHero ? "dark" : "light"}
+                  title={event.event_type}
+                />
+                <p
+                  className={cn(
+                    "min-w-0 flex-1 truncate text-sm leading-snug",
+                    isHero ? "text-white/90" : cn(mentrixHubSurfaces.inkBody, "text-[#0B1220]"),
+                  )}
+                >
+                  {formatLiveBoardEventDescription(event)}
+                </p>
+                <time
+                  className={cn(
+                    "shrink-0 text-[11px] tabular-nums",
+                    isHero ? "text-white/40" : "text-[#64748B]",
+                  )}
+                  dateTime={event.occurred_at}
+                >
+                  {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}
+                </time>
+              </motion.li>
+            );
+          })}
+        </AnimatePresence>
+      </ul>
+    );
+
+  if (isHero) {
+    return (
+      <div aria-label="Live verified first attempt feed" className={cn("w-full", className)}>
+        {feedBody}
+      </div>
+    );
+  }
+
   return (
     <section aria-label="Live verified first attempt feed" className="mt-8">
       <div className="flex items-center gap-2">
@@ -233,69 +339,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           "mt-3 max-h-[18rem] rotate-0 overflow-y-auto overscroll-contain sm:max-h-[20rem]",
         )}
       >
-        {events.length === 0 ? (
-          <p className={cn(mentrixHubSurfaces.inkMuted, "px-4 py-6 text-center text-sm")}>
-            {ARENA_PAGE_COPY.emptyFeed}
-          </p>
-        ) : (
-          <ul className="divide-y divide-[#E0E7FF]">
-            <AnimatePresence initial={false}>
-              {events.map((event) => {
-                if (isDivisionWarLiveBoardEvent(event.event_type)) {
-                  return (
-                    <DivisionWarFeedCard
-                      key={event.id}
-                      event={event}
-                      nowMs={nowMs}
-                      motionProps={{ ...rowMotion, layout: !reducedMotion }}
-                    />
-                  );
-                }
-
-                const avatarUrl = event.avatar_url ?? avatarByUserId.get(event.user_id) ?? null;
-                const icon = liveBoardEventVocabIcon(event.event_type);
-                const goldIcon =
-                  event.event_type === "verified_attempt" && event.accuracy_pct === 100;
-
-                return (
-                  <motion.li
-                    key={event.id}
-                    layout={!reducedMotion}
-                    {...rowMotion}
-                    className="flex items-center gap-2.5 px-3 py-2"
-                  >
-                    <ArenaPersonAvatar
-                      displayName={event.display_name}
-                      avatarUrl={avatarUrl}
-                      size="sm"
-                    />
-                    <MentrixaVocabIcon
-                      name={icon}
-                      size={16}
-                      gold={goldIcon}
-                      surface="light"
-                      title={event.event_type}
-                    />
-                    <p
-                      className={cn(
-                        mentrixHubSurfaces.inkBody,
-                        "min-w-0 flex-1 truncate text-sm leading-snug text-[#0B1220]",
-                      )}
-                    >
-                      {formatLiveBoardEventDescription(event)}
-                    </p>
-                    <time
-                      className="shrink-0 text-[11px] tabular-nums text-[#64748B]"
-                      dateTime={event.occurred_at}
-                    >
-                      {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}
-                    </time>
-                  </motion.li>
-                );
-              })}
-            </AnimatePresence>
-          </ul>
-        )}
+        {feedBody}
       </div>
     </section>
   );

@@ -17,6 +17,18 @@ import { getWeakestNodes } from "@/features/learning-path/weakest-nodes";
 import { loadVerifiedGaps } from "@/features/pre-session-brief/verified-gaps";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { seedSessionTargetNodes } from "@/features/breakthrough-events/seed-session-target-nodes";
+import { buildApReadinessBand } from "@/features/student-home/ap-readiness-band-pure";
+import { loadVerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-rank";
+import { DEFAULT_COGNITIVE_FRICTION } from "@/features/analytics/utils/ebbinghausScheduler";
+import {
+  buildWorkingTowardLine,
+  formatFocusSignalDisplay,
+  formatLastGuideSessionLabel,
+  pickGapNodeName,
+  pickStrongestNodeName,
+  pickWeakestTargetNodeId,
+  type GuideWarmupItem,
+} from "@/features/pre-session-brief/guide-context-pure";
 import {
   preSessionContextSchema,
   type PreSessionContext,
@@ -209,6 +221,74 @@ async function resolveDivisionForSubject(
   return { divisionKey, divisionPosition: idx >= 0 ? idx + 1 : null };
 }
 
+async function lastGuideSessionStartTime(
+  admin: ReturnType<typeof createAdminClient>,
+  studentId: string,
+  guideId: string,
+  beforeIso: string,
+): Promise<string | null> {
+  const { data: prior } = await admin
+    .from("sessions")
+    .select("start_time")
+    .eq("student_id", studentId)
+    .eq("tutor_id", guideId)
+    .eq("status", "completed")
+    .lt("start_time", beforeIso)
+    .order("start_time", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return prior?.start_time ? String(prior.start_time) : null;
+}
+
+async function loadLatestFocusFriction(
+  admin: ReturnType<typeof createAdminClient>,
+  studentId: string,
+): Promise<number> {
+  const { data } = await admin
+    .from("telemetry_logs")
+    .select("computed_friction_score")
+    .eq("user_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const raw = Number(data?.computed_friction_score);
+  return Number.isFinite(raw) ? raw : DEFAULT_COGNITIVE_FRICTION;
+}
+
+async function loadGuideWarmupItem(
+  studentId: string,
+  subject: string,
+  focusSkillNodeId: string | null,
+  nodeName: string,
+): Promise<GuideWarmupItem | null> {
+  if (!focusSkillNodeId || !isApCalculusAbSubject(subject)) return null;
+
+  const { selectItemBankQuestions } = await import("@/features/quest/item-bank-selector");
+
+  const questions = await selectItemBankQuestions(studentId, subject, 1, {
+    focusSkillNodeId,
+    difficulty: "intermediate",
+  });
+
+  const question = questions[0];
+  if (!question) return null;
+
+  if (question.kind === "mcq") {
+    return {
+      nodeName,
+      prompt: question.prompt,
+      options: question.options,
+    };
+  }
+
+  return {
+    nodeName,
+    prompt: question.prompt,
+  };
+}
+
 async function lastSessionTopicWithGuide(
   admin: ReturnType<typeof createAdminClient>,
   studentId: string,
@@ -355,28 +435,6 @@ async function buildFreshContext(
       })
     : null;
 
-  const aiBrief = briefRow
-    ? {
-        likelyCoverage: Array.isArray(briefRow.likely_coverage)
-          ? briefRow.likely_coverage.map(String)
-          : [],
-        weakSpotsToWatch: Array.isArray(briefRow.weak_spots)
-          ? briefRow.weak_spots.map(String)
-          : [],
-        warmUpExercise: {
-          title: String(briefRow.warm_up_title ?? "Quick warm-up"),
-          prompt: String(briefRow.warm_up_prompt ?? ""),
-          hint:
-            typeof briefRow.warm_up_hint === "string" && briefRow.warm_up_hint.trim()
-              ? briefRow.warm_up_hint
-              : undefined,
-        },
-        questionsToAsk: Array.isArray(briefRow.questions_to_ask)
-          ? briefRow.questions_to_ask.map(String)
-          : [],
-      }
-    : null;
-
   const cachedAt = new Date().toISOString();
   const verifiedGaps = isApCalculusAbSubject(String(session.course))
     ? await loadVerifiedGaps(studentId, String(session.course), 3)
@@ -387,6 +445,11 @@ async function buildFreshContext(
     : null;
 
   let sessionTargetNodeIds: string[] | undefined;
+  let readinessBand;
+  let workingTowardLine: string | undefined;
+  let sessionIntelligence;
+  let warmupItem: GuideWarmupItem | null = null;
+
   if (isApCalculusAbSubject(String(session.course))) {
     await seedSessionTargetNodes(sessionId, studentId, String(session.course)).catch(() => {});
     const { data: targetRows } = await admin
@@ -395,6 +458,50 @@ async function buildFreshContext(
       .eq("session_id", sessionId)
       .order("id", { ascending: true });
     sessionTargetNodeIds = (targetRows ?? []).map((row) => String(row.skill_node_id));
+
+    if (masteryGrid) {
+      const [rankStats, lastGuideSession, frictionScore] = await Promise.all([
+        loadVerifiedFirstAttemptRankStats(studentId).catch(() => null),
+        lastGuideSessionStartTime(
+          admin,
+          studentId,
+          guideId,
+          String(session.start_time),
+        ),
+        loadLatestFocusFriction(admin, studentId),
+      ]);
+
+      readinessBand = buildApReadinessBand(
+        rankStats ?? { verifiedCount: 0, accuracyPercent: 0, percentile: null },
+      );
+      workingTowardLine = buildWorkingTowardLine(
+        readinessBand,
+        masteryGrid,
+        sessionTargetNodeIds,
+        rankStats?.verifiedCount ?? 0,
+      );
+
+      sessionIntelligence = {
+        strongestNodeName: pickStrongestNodeName(masteryGrid),
+        gapNodeName: pickGapNodeName(masteryGrid),
+        lastGuideSessionLabel: formatLastGuideSessionLabel(lastGuideSession),
+        focusSignalDisplay: formatFocusSignalDisplay(frictionScore),
+      };
+
+      const weakestTargetId = pickWeakestTargetNodeId(masteryGrid, sessionTargetNodeIds);
+      const weakestNode = weakestTargetId
+        ? masteryGrid.units
+            .flatMap((unit) => unit.nodes)
+            .find((node) => node.id === weakestTargetId)
+        : null;
+
+      warmupItem = await loadGuideWarmupItem(
+        studentId,
+        String(session.course),
+        weakestTargetId,
+        weakestNode?.nodeName ?? "Session target",
+      ).catch(() => null);
+    }
   }
 
   const payload: PreSessionContext = {
@@ -403,7 +510,7 @@ async function buildFreshContext(
     sessionStartTime: String(session.start_time),
     studentDisplayName,
     performance,
-    aiBrief,
+    aiBrief: null,
     breakthrough: breakthroughBuilt
       ? {
           conceptLabel: topWeak!.label,
@@ -415,6 +522,10 @@ async function buildFreshContext(
     verifiedGaps,
     masteryGrid,
     sessionTargetNodeIds,
+    readinessBand,
+    workingTowardLine,
+    sessionIntelligence,
+    warmupItem,
     cachedAt,
   };
 
@@ -446,7 +557,7 @@ async function buildFreshContext(
 }
 
 /**
- * Combined student performance + AI brief for a Guide before a session.
+ * Student truth, session intelligence, and warmup item for a Guide before a session.
  * Cached on session_briefs for 6 hours.
  */
 export async function getPreSessionContext(
@@ -480,7 +591,7 @@ export async function getPreSessionContext(
     isGuideContextCacheFresh(cached.guide_context_cached_at as string | null)
   ) {
     const result = preSessionContextSchema.safeParse(cached.guide_context_json);
-    if (result.success) return result.data;
+    if (result.success && result.data.sessionIntelligence) return result.data;
   }
 
   return buildFreshContext(sessionId, guideId);

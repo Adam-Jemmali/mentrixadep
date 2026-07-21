@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/shared/core/auth";
 import { getRoleHomePath } from "@/shared/core/role-home";
 import { VideoCall } from "@/features/video/video-call-dynamic";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
+import { loadSharedSessionGridPayload } from "@/features/video/load-shared-session-grid";
 
 interface VideoSessionPageProps {
   params: Promise<{ sessionId: string }>;
@@ -119,6 +120,8 @@ export default async function VideoSessionPage({
     guideLabel = tutorEmail?.split("@")[0]?.trim() || "Guide";
   }
 
+  const sharedGridPayload = await loadSharedSessionGridPayload(sessionId).catch(() => null);
+
   return (
     <VideoCall
       sessionId={sessionId}
@@ -131,6 +134,7 @@ export default async function VideoSessionPage({
       guideLabel={guideLabel}
       sessionStartTime={sessionRow?.start_time ?? null}
       sessionEndTime={sessionRow?.end_time ?? null}
+      sharedGridPayload={sharedGridPayload}
     />
   );
 }

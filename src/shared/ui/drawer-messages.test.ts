@@ -13,10 +13,11 @@ describe("drawer messages", () => {
     expect(msg.nextAction).toMatch(/swipe/i);
   });
 
-  it("includes student and course in mastery grid description", () => {
+  it("includes student and course in guide context description", () => {
     const msg = guideMasteryGridDrawerMessage("Alex", "AP Calculus AB");
+    expect(msg.title).toBe("Student context");
     expect(msg.description).toBe("Alex · AP Calculus AB");
-    expect(msg.nextAction).toMatch(/locked first answer/i);
+    expect(msg.nextAction).toMatch(/target nodes/i);
   });
 
   it("falls back when mastery grid context is missing", () => {

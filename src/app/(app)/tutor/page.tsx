@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTutorCommandCenterData } from "@/features/tutor/command-center";
-import { TutorCommandCenterClient } from "./tutor-command-center-client";
+import { GuideHomeClient } from "@/features/tutor/ui/guide-home-client";
 import { requireRole } from "@/shared/core/auth";
 import { getLocalHour, greetingForHour, firstNameFromDisplayName } from "@/features/student-profile/student-dashboard-helpers";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -26,7 +26,7 @@ export default async function TutorPage() {
 
     return (
       <div className={cn(mentrixStudent.pageBgHub, "mentrix-student-type-scope")}>
-        <TutorCommandCenterClient data={data} greeting={greeting} firstName={firstName} />
+        <GuideHomeClient data={data} greeting={greeting} firstName={firstName} />
       </div>
     );
   } catch (e) {

@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/shared/ui/button";
 import { formatDateInZone, formatTimeRangeInZone } from "@/shared/core/time-format";
 import { getPreSessionContext } from "@/features/pre-session-brief/context";
 import { isPreSessionContextWindowOpen } from "@/features/pre-session-brief/context-pure";
-import { loadGuideMemoryForViewer } from "@/features/guide-memory/load-guide-memory";
-import { isGuideMemoryWindowOpen } from "@/features/guide-memory/guide-memory-pure";
-import { GuideMemoryPanel } from "@/features/guide-memory/ui/guide-memory-panel";
 import type { PreSessionContext } from "@/features/pre-session-brief/types";
-import { isApCalculusAbSubject } from "@/features/quest/ap-calc-ab-subject";
-import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 import { MentrixaDrawer } from "@/shared/ui/drawer-patterns";
 import { guideMasteryGridDrawerMessage } from "@/shared/ui/drawer-messages-pure";
+import { GuideContextClient } from "@/features/pre-session-brief/guide-context-client";
+import { GuideAnimatedSticky } from "@/features/tutor/ui/guide-animated-sticky";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 
 export function GuidePreSessionContextPanel({
   sessionId,
@@ -21,7 +19,7 @@ export function GuidePreSessionContextPanel({
   startTime,
   endTime,
   studentName,
-  studentId,
+  studentId: _studentId,
   displayTimeZone = "UTC",
 }: {
   sessionId: string;
@@ -35,13 +33,11 @@ export function GuidePreSessionContextPanel({
 }) {
   const [open, setOpen] = useState(false);
   const [ctx, setCtx] = useState<PreSessionContext | null>(null);
-  const [memory, setMemory] = useState<Awaited<ReturnType<typeof loadGuideMemoryForViewer>>>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const windowOpen = isPreSessionContextWindowOpen(startTime);
-  const memoryWindowOpen = isGuideMemoryWindowOpen(startTime);
-  const masteryCopy = guideMasteryGridDrawerMessage(studentName, course);
+  const drawerCopy = guideMasteryGridDrawerMessage(studentName, course);
 
   function toggle() {
     if (!windowOpen) return;
@@ -52,80 +48,60 @@ export function GuidePreSessionContextPanel({
     startTransition(async () => {
       setError(null);
       try {
-        const [data, memoryData] = await Promise.all([
-          getPreSessionContext(sessionId, guideId),
-          memoryWindowOpen
-            ? loadGuideMemoryForViewer({
-                sessionId,
-                guideId,
-                sessionStartTime: startTime,
-                studentId,
-                guideName: undefined,
-              })
-            : Promise.resolve(null),
-        ]);
+        const data = await getPreSessionContext(sessionId, guideId);
         if (!data) {
-          setError("Could not load student mastery grid.");
+          setError("Could not load student context.");
           return;
         }
         setCtx(data);
-        setMemory(memoryData);
         setOpen(true);
       } catch {
-        setError("Could not load student mastery grid.");
+        setError("Could not load student context.");
       }
     });
   }
 
-  useEffect(() => {
-    if (!memoryWindowOpen || !studentId) return;
-    void loadGuideMemoryForViewer({
-      sessionId,
-      guideId,
-      sessionStartTime: startTime,
-      studentId,
-    }).then(setMemory);
-  }, [sessionId, guideId, startTime, studentId, memoryWindowOpen]);
-
   return (
-    <div className="mt-2 rounded-lg border border-indigo-100 bg-indigo-50/30 p-3">
-      {memory ? (
-        <div className="mb-3">
-          <GuideMemoryPanel data={memory} compact />
+    <GuideAnimatedSticky variant="curl" compact staggerIndex={0}>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0 text-xs text-slate-700">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-slate-900">
+              <MentrixaVocabIcon name="guide-session" size={16} surface="light" title="Session" />
+              {studentName}
+            </span>
+            <span className="mx-1.5 text-slate-400">·</span>
+            {course}
+            <span className="mx-1.5 text-slate-400">·</span>
+            {formatDateInZone(startTime, displayTimeZone)}{" "}
+            {formatTimeRangeInZone(startTime, endTime, displayTimeZone)}
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 text-[11px]"
+            disabled={!windowOpen || pending}
+            onClick={toggle}
+          >
+            {pending ? "Loading" : open ? "Hide context" : "Open context"}
+          </Button>
         </div>
-      ) : null}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0 text-xs text-slate-700">
-          <span className="font-semibold text-slate-900">{studentName}</span>
-          <span className="mx-1.5 text-slate-400">·</span>
-          {course}
-          <span className="mx-1.5 text-slate-400">·</span>
-          {formatDateInZone(startTime, displayTimeZone)}{" "}
-          {formatTimeRangeInZone(startTime, endTime, displayTimeZone)}
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-8 text-[11px]"
-          disabled={!windowOpen || pending}
-          onClick={toggle}
-        >
-          {pending ? "Loading…" : open ? "Hide mastery grid" : "View mastery grid"}
-        </Button>
-      </div>
-      {!windowOpen ? (
-        <p className="mt-2 text-[11px] text-slate-500">
-          Student mastery grid unlocks 2 hours before the session.
-        </p>
-      ) : null}
-      {error ? <p className="mt-2 text-[11px] text-red-600">{error}</p> : null}
-      {open && ctx ? (
-        <div className="mt-3 hidden border-t border-indigo-100 pt-3 lg:block">
-          <GuidePreSessionContextBody context={ctx} />
-        </div>
-      ) : null}
-      {ctx ? (
+
+        {!windowOpen ? (
+          <p className="text-[11px] text-slate-500">
+            Student context unlocks 30 minutes before the session.
+          </p>
+        ) : null}
+
+        {error ? <p className="text-[11px] text-red-600">{error}</p> : null}
+
+        {open ? (
+          <div className="hidden border-t border-[#E2E8F0] pt-3 lg:block">
+            <GuideContextClient context={ctx} loading={pending} />
+          </div>
+        ) : null}
+
         <div className="lg:hidden">
           <MentrixaDrawer
             isOpen={open}
@@ -133,49 +109,24 @@ export function GuidePreSessionContextPanel({
             placement="bottom"
             tone="light"
             brandKind="guide"
-            title={masteryCopy.title}
-            description={masteryCopy.description}
-            bodyClassName="p-0"
+            title={drawerCopy.title}
+            description={drawerCopy.description}
+            bodyClassName="max-h-[78vh] overflow-y-auto p-4"
           >
-            <div className="p-4">
-              <GuidePreSessionContextBody context={ctx} embedded />
-              <p className="mt-4 text-xs leading-relaxed text-slate-500">
-                {masteryCopy.verdict} {masteryCopy.nextAction}
-              </p>
-            </div>
+            <GuideContextClient context={ctx} loading={pending} />
           </MentrixaDrawer>
         </div>
-      ) : null}
-    </div>
+      </div>
+    </GuideAnimatedSticky>
   );
 }
 
+/** @deprecated Use GuideContextClient */
 export function GuidePreSessionContextBody({
   context,
-  embedded = false,
 }: {
   context: PreSessionContext;
   embedded?: boolean;
 }) {
-  const shellClass = embedded ? "" : "mt-3 border-t border-indigo-100 pt-3";
-
-  if (!isApCalculusAbSubject(context.subject) || !context.masteryGrid) {
-    return (
-      <p className={`${shellClass} text-xs text-slate-600`}>
-        Mastery grid is not available for this subject yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className={shellClass}>
-      <MasteryGrid
-        data={context.masteryGrid}
-        showLegend
-        readOnly
-        pinnedNodeIds={context.sessionTargetNodeIds}
-        remainderCollapsed
-      />
-    </div>
-  );
+  return <GuideContextClient context={context} />;
 }

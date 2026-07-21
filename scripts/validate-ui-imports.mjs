@@ -22,6 +22,7 @@ const BARREL_ALLOW = [
   "src/shared/animation/anime.ts",
   "src/shared/animation/motion.ts",
   "src/shared/animation/lenis-provider.tsx",
+  "src/lib/lenis-init.tsx",
   "src/shared/core/gsap.ts",
   "src/shared/core/gsap-lazy.ts",
 ];
