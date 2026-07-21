@@ -34,11 +34,7 @@ export function StudentHomeClient({
       <main className={cn(mentrixStudent.mainWide, "relative z-[1]")}>
         <div className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
           <div className="space-y-6">
-            <StudentVerdictHero
-              verdict={data.verdict}
-              fallbackLine={data.verdictFallback}
-              apBand={data.apReadinessBand}
-            />
+            <StudentVerdictHero hero={data.heroVerdict} apBand={data.apReadinessBand} />
 
             {data.masteryGrid ? (
               <MasteryGridHubCard

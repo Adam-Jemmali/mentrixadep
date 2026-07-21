@@ -2,13 +2,13 @@ import { getTopRival } from "@/features/divisions/top-rival";
 import { loadDueRetestNodes } from "@/features/student-home/load-due-retests";
 import { loadRecentQuestPerformance } from "@/features/student-home/load-recent-quest-performance";
 import { buildApReadinessBand } from "@/features/student-home/ap-readiness-band-pure";
+import { buildStudentHomeVerdictHero } from "@/features/student-home/student-home-verdict-pure";
 import { loadLiveBoardEvents } from "@/features/live-board/load-live-board-snapshot";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import { getMatchmakerGuides } from "@/features/matchmaker/matchmaker";
 import { getStudentSessionsHubBundle, getStudentHubSnapshot } from "@/features/student-profile/hub-snapshot";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
-import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import type { LiveBoardEventRow } from "@/features/live-board/types";
 import type { TopRivalData } from "@/features/divisions/top-rival";
 import type { MatchmakerGuideResult } from "@/features/matchmaker/matchmaker-pure";
@@ -17,6 +17,7 @@ import {
   type VerifiedFirstAttemptRankStats,
 } from "@/features/xp/calibrated-rank";
 import type { ApReadinessBandView } from "@/features/student-home/ap-readiness-band-pure";
+import type { StudentHomeVerdictView } from "@/features/student-home/student-home-verdict-pure";
 import type { DueRetestNode } from "@/features/student-home/load-due-retests";
 import type { RecentQuestPerformanceRow } from "@/features/student-home/load-recent-quest-performance";
 
@@ -31,8 +32,7 @@ export type StudentHomeUpcomingSession = {
 
 export type StudentHomeData = {
   subject: string;
-  verdict: Verdict | null;
-  verdictFallback: string;
+  heroVerdict: StudentHomeVerdictView;
   rankStats: VerifiedFirstAttemptRankStats;
   apReadinessBand: ApReadinessBandView;
   masteryGrid: MasteryGridData | null;
@@ -81,8 +81,7 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
 
   return {
     subject: AP_CALC_AB_SUBJECT,
-    verdict: masteryGrid?.verdict ?? null,
-    verdictFallback: masteryGrid?.nextActionLine ?? "Start your first verified node in Quest.",
+    heroVerdict: buildStudentHomeVerdictHero(rankStats, masteryGrid?.verdict?.nextAction ?? null),
     rankStats,
     apReadinessBand: buildApReadinessBand(rankStats),
     masteryGrid,
