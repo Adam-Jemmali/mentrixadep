@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import { motion, useReducedMotion } from "@/shared/animation/motion";
 import type { LandingStickyVariant } from "@/features/marketing/landing/landing-sticky-variants";
+import { StudentHomeAnimatedSticky } from "@/features/student-home/student-home-animated-sticky";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { MentrixaVocabIcon, VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
@@ -21,6 +22,7 @@ export function StudentHomeStickyCard({
   children,
   className,
   headerClassName,
+  staggerIndex = 0,
 }: {
   variant?: LandingStickyVariant;
   icon: VocabIconName;
@@ -31,10 +33,18 @@ export function StudentHomeStickyCard({
   children: ReactNode;
   className?: string;
   headerClassName?: string;
+  staggerIndex?: number;
 }) {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <StudentStickyNote variant={variant} className={cn(HOME_MOUNT_PANEL_CLASS, className)}>
-      <header className={cn("mb-4 flex items-start justify-between gap-3", headerClassName)}>
+    <StudentHomeAnimatedSticky variant={variant} className={className} staggerIndex={staggerIndex}>
+      <motion.header
+        className={cn("mb-4 flex items-start justify-between gap-3", headerClassName)}
+        initial={reduceMotion ? false : { opacity: 0, x: -16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: staggerIndex * 0.12 + 0.18, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      >
         <VocabSectionHeading name={icon} label={title} surface="light" gold={gold} as="h2" />
         {href && linkLabel ? (
           <Link
@@ -47,9 +57,15 @@ export function StudentHomeStickyCard({
             {linkLabel}
           </Link>
         ) : null}
-      </header>
-      {children}
-    </StudentStickyNote>
+      </motion.header>
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: staggerIndex * 0.12 + 0.28, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {children}
+      </motion.div>
+    </StudentHomeAnimatedSticky>
   );
 }
 

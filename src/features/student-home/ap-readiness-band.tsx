@@ -23,7 +23,7 @@ export function ApReadinessBand({
         size={28}
         surface="light"
         gold={band.isVerifiedPrediction}
-        title="AP score outlook"
+        title="Calculus readiness level"
       />
       {band.score != null ? (
         <span className="inline-flex items-baseline gap-0.5">

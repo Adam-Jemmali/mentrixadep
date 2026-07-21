@@ -78,14 +78,16 @@ export function StudentHomeUpcomingSessions({
   sessions,
   timeZone,
   className,
+  staggerIndex = 3,
 }: {
   sessions: StudentHomeData["upcomingSessions"];
   timeZone: string;
   className?: string;
+  staggerIndex?: number;
 }) {
   return (
     <ScrollRevealSection id="upcoming-sessions" className={className} index={1}>
-      <StudentHomeStickyCard variant="taped" icon={CANONICAL_SESSION_ICON} title="Upcoming sessions">
+      <StudentHomeStickyCard variant="taped" icon={CANONICAL_SESSION_ICON} title="Upcoming sessions" staggerIndex={staggerIndex}>
         {sessions.length === 0 ? (
           <StudentHomeEmptyInvite
             message="No Guide sessions booked yet."
@@ -134,12 +136,14 @@ export function StudentHomeUpcomingSessions({
 
 export function StudentHomeQuestPerformance({
   rows,
+  staggerIndex = 5,
 }: {
   rows: StudentHomeData["recentQuests"];
+  staggerIndex?: number;
 }) {
   return (
     <ScrollRevealSection id="recent-quest-performance" index={2}>
-      <StudentHomeStickyCard variant="dog-ear" icon={CANONICAL_QUEST_ICON} title="Recent quest performance">
+      <StudentHomeStickyCard variant="dog-ear" icon={CANONICAL_QUEST_ICON} title="Recent quest performance" staggerIndex={staggerIndex}>
         {rows.length === 0 ? (
           <StudentHomeEmptyInvite
             message="No completed practice packs yet."
@@ -184,8 +188,10 @@ export function StudentHomeQuestPerformance({
 
 export function StudentHomeArenaPreview({
   events,
+  staggerIndex = 6,
 }: {
   events: StudentHomeData["arenaPreview"];
+  staggerIndex?: number;
 }) {
   return (
     <ScrollRevealSection id="arena-preview" index={3}>
@@ -195,6 +201,7 @@ export function StudentHomeArenaPreview({
         title="Live arena"
         href="/student/division/arena"
         linkLabel="Open arena"
+        staggerIndex={staggerIndex}
       >
         {events.length === 0 ? (
           <StudentHomeEmptyInvite
@@ -223,14 +230,16 @@ export function StudentHomeArenaPreview({
 
 export function StudentHomeGuideRecommendation({
   guide,
+  staggerIndex = 7,
 }: {
   guide: StudentHomeData["recommendedGuide"];
+  staggerIndex?: number;
 }) {
   const reduceMotion = useReducedMotion();
 
   return (
     <ScrollRevealSection id="guide-recommendation" index={4}>
-      <StudentHomeStickyCard variant="pinned" icon="guide" title="Guide recommendation">
+      <StudentHomeStickyCard variant="pinned" icon="guide" title="Guide recommendation" staggerIndex={staggerIndex}>
         {!guide ? (
           <StudentHomeEmptyInvite
             message="No Guide match for your weakest nodes yet."
@@ -294,8 +303,10 @@ export function StudentHomeGuideRecommendation({
 
 export function StudentHomeDivisionCompact({
   division,
+  staggerIndex = 8,
 }: {
   division: StudentHomeData["division"];
+  staggerIndex?: number;
 }) {
   return (
     <ScrollRevealSection id="division-standings" index={5}>
@@ -305,6 +316,7 @@ export function StudentHomeDivisionCompact({
         title="Division standings"
         href="/student/division"
         linkLabel="Open league"
+        staggerIndex={staggerIndex}
       >
         {division.status === "no_division" ? (
           <StudentHomeEmptyInvite

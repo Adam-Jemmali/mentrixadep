@@ -14,7 +14,13 @@ import { cn } from "@/shared/core/utils";
 
 const DISMISS_KEY = "mentrixa-home-retest-alert-dismissed";
 
-export function StudentRetestAlert({ retests }: { retests: DueRetestNode[] }) {
+export function StudentRetestAlert({
+  retests,
+  staggerIndex = 2,
+}: {
+  retests: DueRetestNode[];
+  staggerIndex?: number;
+}) {
   const reduceMotion = useReducedMotion();
   const [dismissed, setDismissed] = useState(true);
 
@@ -63,7 +69,7 @@ export function StudentRetestAlert({ retests }: { retests: DueRetestNode[] }) {
           exit={{ opacity: 0, y: -12, rotate: 1 }}
           transition={{ type: "spring", stiffness: 360, damping: 26 }}
         >
-          <StudentHomeStickyCard variant="clip" icon="retest" title={title} className="border-[#7C3AED]/35">
+          <StudentHomeStickyCard variant="clip" icon="retest" title={title} staggerIndex={staggerIndex} className="border-[#7C3AED]/35">
             <p className={mentrixStudent.pageSubtitle}>{description}</p>
             <p className={cn(mentrixStudent.textMutedOnLight, "mt-2 text-xs")}>
               Start the due retest in Quest. First answers only move rank.

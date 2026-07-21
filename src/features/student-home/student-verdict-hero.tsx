@@ -6,9 +6,8 @@ import { animate, createTimeline, stagger } from "@/shared/animation/anime";
 import { motion, useReducedMotion } from "@/shared/animation/motion";
 import type { ApReadinessBandView } from "@/features/student-home/ap-readiness-band-pure";
 import { ApReadinessBand } from "@/features/student-home/ap-readiness-band";
-import { HOME_MOUNT_PANEL_CLASS } from "@/features/student-home/student-home-sticky-card";
+import { StudentHomeAnimatedSticky } from "@/features/student-home/student-home-animated-sticky";
 import type { StudentHomeVerdictView } from "@/features/student-home/student-home-verdict-pure";
-import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
@@ -126,16 +125,12 @@ export function StudentVerdictHero({
   }, [hero.metrics, reduceMotion]);
 
   return (
-    <StudentStickyNote
+    <StudentHomeAnimatedSticky
       variant={STUDENT_ROUTE_HEADER_VARIANT.home}
-      className={cn(
-        HOME_MOUNT_PANEL_CLASS,
-        mentrixStudent.hubHero,
-        "relative overflow-hidden",
-        className,
-      )}
-      aria-label="Your verified rank verdict"
+      staggerIndex={0}
+      className={cn(mentrixStudent.hubHero, "relative overflow-hidden", className)}
     >
+      <div aria-label="Your verified rank verdict">
       <div
         ref={bannerRef}
         className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#7C3AED]/12 via-[#6366F1]/6 to-transparent"
@@ -195,6 +190,7 @@ export function StudentVerdictHero({
           {hero.cta.label}
         </Link>
       </motion.div>
-    </StudentStickyNote>
+      </div>
+    </StudentHomeAnimatedSticky>
   );
 }

@@ -11,8 +11,6 @@ import {
   StudentHomeQuestPerformance,
   StudentHomeUpcomingSessions,
 } from "@/features/student-home/student-home-sections";
-import { HOME_MOUNT_PANEL_CLASS } from "@/features/student-home/student-home-sticky-card";
-import { useStudentHomeMount } from "@/features/student-home/use-student-home-mount";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -25,8 +23,6 @@ export function StudentHomeClient({
   userId: string;
   data: StudentHomeData;
 }) {
-  useStudentHomeMount();
-
   return (
     <div className={cn(mentrixStudent.pageBg, "relative text-[#0B1220]")}>
       <StudentHubRealtimeRefresh userId={userId} />
@@ -41,22 +37,23 @@ export function StudentHomeClient({
                 data={data.masteryGrid}
                 compact
                 stickyVariant="curl"
-                className={HOME_MOUNT_PANEL_CLASS}
+                staggerIndex={1}
               />
             ) : (
               <StudentHomeGridFallback />
             )}
 
             <div className="lg:hidden">
-              <StudentRetestAlert retests={data.dueRetests} />
+              <StudentRetestAlert retests={data.dueRetests} staggerIndex={2} />
             </div>
           </div>
 
           <aside className="hidden space-y-6 lg:block">
-            <StudentRetestAlert retests={data.dueRetests} />
+            <StudentRetestAlert retests={data.dueRetests} staggerIndex={2} />
             <StudentHomeUpcomingSessions
               sessions={data.upcomingSessions}
               timeZone={data.timeZone}
+              staggerIndex={3}
             />
           </aside>
         </div>
@@ -66,12 +63,13 @@ export function StudentHomeClient({
             <StudentHomeUpcomingSessions
               sessions={data.upcomingSessions}
               timeZone={data.timeZone}
+              staggerIndex={3}
             />
           </div>
-          <StudentHomeQuestPerformance rows={data.recentQuests} />
-          <StudentHomeArenaPreview events={data.arenaPreview} />
-          <StudentHomeGuideRecommendation guide={data.recommendedGuide} />
-          <StudentHomeDivisionCompact division={data.division} />
+          <StudentHomeQuestPerformance rows={data.recentQuests} staggerIndex={5} />
+          <StudentHomeArenaPreview events={data.arenaPreview} staggerIndex={6} />
+          <StudentHomeGuideRecommendation guide={data.recommendedGuide} staggerIndex={7} />
+          <StudentHomeDivisionCompact division={data.division} staggerIndex={8} />
         </div>
       </main>
     </div>

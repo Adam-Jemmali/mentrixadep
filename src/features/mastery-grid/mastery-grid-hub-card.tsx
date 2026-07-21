@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import { motion, useReducedMotion } from "@/shared/animation/motion";
+import { StudentHomeAnimatedSticky } from "@/features/student-home/student-home-animated-sticky";
 import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import type { StudentStickyVariant } from "@/features/student-profile/student-sticky-variants";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
@@ -25,19 +27,21 @@ export function MasteryGridHubCard({
   compact = false,
   stickyVariant = "taped",
   className,
+  staggerIndex,
 }: {
   data: MasteryGridData;
   compact?: boolean;
   stickyVariant?: StudentStickyVariant;
   className?: string;
+  staggerIndex?: number;
 }) {
   const summary = summarizeMasteryGrid(data);
   const weakest = pickWeakestMasteryNodes(data, compact ? 1 : 3);
   const nextAction = buildMasteryGridNextAction(data.units);
+  const reduceMotion = useReducedMotion();
 
-  return (
-    <StudentStickyNote variant={stickyVariant} className={cn("h-full", className)}>
-      <section aria-label="Skill tree summary">
+  const body = (
+    <section aria-label="Skill tree summary">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <VocabSectionHeading
@@ -101,7 +105,30 @@ export function MasteryGridHubCard({
       ) : null}
 
       {!compact ? <p className="mt-4 text-xs font-medium text-[#475569]">{nextAction}</p> : null}
-      </section>
+    </section>
+  );
+
+  if (staggerIndex != null) {
+    return (
+      <StudentHomeAnimatedSticky
+        variant={stickyVariant}
+        className={cn("h-full", className)}
+        staggerIndex={staggerIndex}
+      >
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: staggerIndex * 0.12 + 0.22, duration: 0.45 }}
+        >
+          {body}
+        </motion.div>
+      </StudentHomeAnimatedSticky>
+    );
+  }
+
+  return (
+    <StudentStickyNote variant={stickyVariant} className={cn("h-full", className)}>
+      {body}
     </StudentStickyNote>
   );
 }
