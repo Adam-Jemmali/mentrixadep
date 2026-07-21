@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { LandingShimmerButton } from "@/features/marketing/landing/v2/motion/landing-shimmer-button";
-import { fadeUp, staggerContainer } from "@/features/marketing/landing/v2/motion/landing-motion";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { ARENA_PAGE_COPY } from "@/features/live-board/live-board-messages-pure";
-import { LiveBoardFeed } from "@/features/live-board/ui/live-board-feed";
+import { ArenaBoardFeed } from "@/features/live-board/ui/arena-board-feed";
+import { ArenaBoardNav } from "@/features/live-board/ui/arena-board-nav";
 import { ArenaLeadersPanel } from "@/features/live-board/ui/arena-leaders-panel";
-import type { LiveBoardEventRow } from "@/features/live-board/types";
 import type { ArenaLeaderProfile } from "@/features/live-board/load-arena-leader-profile";
+import type { LiveBoardEventRow } from "@/features/live-board/types";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { useGsapEffect } from "@/shared/core/gsap-lazy";
+import { useReducedMotion } from "@/shared/animation/motion";
+import { cn } from "@/shared/core/utils";
 
 type Props = {
   initialEvents: LiveBoardEventRow[];
@@ -18,42 +22,66 @@ type Props = {
 
 export function ArenaPageClient({ initialEvents, leaders }: Props) {
   const router = useRouter();
+  const heroRef = useRef<HTMLElement>(null);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     router.prefetch(ARENA_PAGE_COPY.ctaHref);
   }, [router]);
 
-  return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-3xl flex-col px-4 pb-16 pt-16 sm:px-6 lg:pt-20">
-      <motion.header
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        className="text-center"
-      >
-        <motion.h1
-          variants={fadeUp}
-          custom={0}
-          className="lp-hand-title text-pretty text-[clamp(1.75rem,4.5vw,2.65rem)] font-bold italic leading-[1.08] tracking-[-0.02em] text-white"
-        >
-          {ARENA_PAGE_COPY.title}
-        </motion.h1>
-        <motion.p
-          variants={fadeUp}
-          custom={1}
-          className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base"
-        >
-          {ARENA_PAGE_COPY.subtitle}
-        </motion.p>
-        <motion.div variants={fadeUp} custom={2} className="mt-7 flex justify-center">
-          <LandingShimmerButton href={ARENA_PAGE_COPY.ctaHref} variant="primary">
-            {ARENA_PAGE_COPY.cta}
-          </LandingShimmerButton>
-        </motion.div>
-      </motion.header>
+  useGsapEffect(
+    (gsap) => {
+      const hero = heroRef.current;
+      if (!hero || reducedMotion) return;
 
-      <LiveBoardFeed initialEvents={initialEvents} leaders={leaders} />
-      <ArenaLeadersPanel leaders={leaders} />
+      gsap.from(".arena-hero-reveal", {
+        y: 18,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 0.55,
+        ease: "power2.out",
+      });
+    },
+    [reducedMotion],
+  );
+
+  return (
+    <div className="mx-shell-arena min-h-[100dvh] bg-[var(--mx-navy,#0B1220)] text-white">
+      <ArenaBoardNav />
+
+      <main className="mx-auto max-w-3xl px-4 pb-16 pt-[calc(3.5rem+1.25rem)] sm:px-6">
+        <header ref={heroRef}>
+          <LandingStickyNote variant="pinned" className="arena-hero-reveal text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6366F1]">
+              {ARENA_PAGE_COPY.titleLine1}
+            </p>
+            <h1 className="mt-2 font-sans text-[28px] font-bold leading-tight text-[#0B1220]">
+              {ARENA_PAGE_COPY.titleLine2}
+            </h1>
+            <p className="arena-hero-reveal mt-3 text-sm leading-relaxed text-[#475569]">
+              {ARENA_PAGE_COPY.subtitle}
+            </p>
+            <p className="arena-hero-reveal mt-1 text-sm text-[#64748B]">{ARENA_PAGE_COPY.subtitleLive}</p>
+            <div className="arena-hero-reveal mt-6 flex justify-center">
+              <Link
+                href={ARENA_PAGE_COPY.ctaHref}
+                prefetch={false}
+                className={cn(
+                  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-full",
+                  "bg-[var(--mx-violet,#7C3AED)] px-5 py-2.5 text-sm font-bold text-white",
+                  "transition-colors hover:bg-[#6D28D9]",
+                )}
+              >
+                <MentrixaVocabIcon name="flow-climb" size={16} surface="dark" title="Try" />
+                {ARENA_PAGE_COPY.cta}
+              </Link>
+            </div>
+          </LandingStickyNote>
+        </header>
+
+        <ArenaBoardFeed initialEvents={initialEvents} />
+        <ArenaLeadersPanel leaders={leaders} />
+      </main>
     </div>
   );
 }

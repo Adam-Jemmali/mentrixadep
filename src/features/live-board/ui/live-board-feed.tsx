@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/shared/integrations/supabase/client";
 import {
   ARENA_FEED_VISIBLE_LIMIT,
   ARENA_PAGE_COPY,
+  LANDING_HERO_FEED_ROW_HEIGHT_REM,
   buildDivisionWarResultCardCopy,
   formatDivisionWarAccuracyLine,
   formatLiveBoardEventDescription,
@@ -39,6 +41,17 @@ type FeedRowMotion = {
 type Props = {
   initialEvents: LiveBoardEventRow[];
   leaders: ArenaLeaderProfile[];
+  /** Override visible row count (landing hero uses 6). */
+  visibleLimit?: number;
+  /** Hide division war rows (landing hero). */
+  hideDivisionWar?: boolean;
+  /** Hide section eyebrow (embedded hero feed). */
+  hideEyebrow?: boolean;
+  /** Extra events today beyond visible rows — shows footer link when > 0. */
+  moreTodayCount?: number;
+  moreTodayHref?: string;
+  moreTodayLabel?: (count: number) => string;
+  className?: string;
 };
 
 const LIVE_BOARD_EVENT_TYPES = new Set<LiveBoardEventRow["event_type"]>([
@@ -134,9 +147,26 @@ function DivisionWarFeedCard({
   );
 }
 
-export function LiveBoardFeed({ initialEvents, leaders }: Props) {
+export function LiveBoardFeed({
+  initialEvents,
+  leaders,
+  visibleLimit = ARENA_FEED_VISIBLE_LIMIT,
+  hideDivisionWar = false,
+  hideEyebrow = false,
+  moreTodayCount = 0,
+  moreTodayHref = "/arena",
+  moreTodayLabel,
+  className,
+}: Props) {
   const reducedMotion = usePrefersReducedMotion();
-  const [events, setEvents] = useState(() => initialEvents.slice(0, ARENA_FEED_VISIBLE_LIMIT));
+  const filteredInitial = useMemo(() => {
+    const rows = hideDivisionWar
+      ? initialEvents.filter((event) => !isDivisionWarLiveBoardEvent(event.event_type))
+      : initialEvents;
+    return rows.slice(0, visibleLimit);
+  }, [hideDivisionWar, initialEvents, visibleLimit]);
+
+  const [events, setEvents] = useState(() => filteredInitial);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const avatarByUserId = useMemo(() => {
@@ -153,8 +183,8 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
   }, [initialEvents, leaders]);
 
   useEffect(() => {
-    setEvents(initialEvents.slice(0, ARENA_FEED_VISIBLE_LIMIT));
-  }, [initialEvents]);
+    setEvents(filteredInitial);
+  }, [filteredInitial]);
 
   useEffect(() => {
     const tick = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -175,6 +205,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
         (payload: { new: Record<string, unknown> }) => {
           const row = parseRealtimeRow(payload.new as Record<string, unknown>);
           if (!row) return;
+          if (hideDivisionWar && isDivisionWarLiveBoardEvent(row.event_type)) return;
           if (
             row.event_type !== "division_war_result" &&
             isE2ESyntheticAccount({
@@ -189,7 +220,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           }
           setEvents((current) => {
             if (current.some((event) => event.id === row.id)) return current;
-            return [row, ...current].slice(0, ARENA_FEED_VISIBLE_LIMIT);
+            return [row, ...current].slice(0, visibleLimit);
           });
         },
       )
@@ -198,7 +229,7 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [avatarByUserId]);
+  }, [avatarByUserId, hideDivisionWar, visibleLimit]);
 
   const rowMotion = useMemo(
     (): Omit<FeedRowMotion, "layout"> =>
@@ -218,20 +249,37 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
     [reducedMotion],
   );
 
+  const feedMaxHeight =
+    visibleLimit <= 6
+      ? `${visibleLimit * LANDING_HERO_FEED_ROW_HEIGHT_REM}rem`
+      : undefined;
+
   return (
-    <section aria-label="Live verified first attempt feed" className="mt-8">
-      <div className="flex items-center gap-2">
-        <MentrixaVocabIcon name="verified" size={16} gold surface="dark" title="Live feed" />
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6366F1]">
-          {ARENA_PAGE_COPY.feedEyebrow}
-        </p>
-      </div>
+    <section
+      aria-label="Live verified first attempt feed"
+      className={cn(hideEyebrow ? "mt-0" : "mt-8", className)}
+    >
+      {!hideEyebrow ? (
+        <div className="flex items-center gap-2">
+          <MentrixaVocabIcon name="verified" size={16} gold surface="dark" title="Live feed" />
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6366F1]">
+            {ARENA_PAGE_COPY.feedEyebrow}
+          </p>
+        </div>
+      ) : null}
 
       <div
         className={cn(
           mentrixStudent.hubSticky,
-          "mt-3 max-h-[18rem] rotate-0 overflow-y-auto overscroll-contain sm:max-h-[20rem]",
+          hideEyebrow ? "mt-0" : "mt-3",
+          "rotate-0 overflow-y-auto overscroll-contain",
+          feedMaxHeight ? "max-h-[var(--lp-feed-max-h)]" : "max-h-[18rem] sm:max-h-[20rem]",
         )}
+        style={
+          feedMaxHeight
+            ? ({ ["--lp-feed-max-h" as string]: feedMaxHeight } as React.CSSProperties)
+            : undefined
+        }
       >
         {events.length === 0 ? (
           <p className={cn(mentrixHubSurfaces.inkMuted, "px-4 py-6 text-center text-sm")}>
@@ -297,6 +345,18 @@ export function LiveBoardFeed({ initialEvents, leaders }: Props) {
           </ul>
         )}
       </div>
+
+      {moreTodayCount > 0 ? (
+        <p className="mt-3 text-right">
+          <Link
+            href={moreTodayHref}
+            prefetch={false}
+            className="cursor-pointer text-sm font-semibold text-[var(--mx-violet,#7C3AED)] transition-colors hover:text-[var(--mx-indigo,#6366F1)]"
+          >
+            {moreTodayLabel ? moreTodayLabel(moreTodayCount) : `${moreTodayCount} more today`}
+          </Link>
+        </p>
+      ) : null}
     </section>
   );
 }

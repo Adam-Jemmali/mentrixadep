@@ -7,6 +7,8 @@ import {
 } from "@/features/live-board/live-board-events-pure";
 import {
   ARENA_FEED_VISIBLE_LIMIT,
+  ARENA_BOARD_FEED_LIMIT,
+  ARENA_LEADERS_LIMIT,
   ARENA_PAGE_COPY,
   buildDivisionWarResultCardCopy,
   divisionWarAverageAccuracy,
@@ -73,9 +75,12 @@ describe("live board event helpers", () => {
 describe("arena page copy", () => {
   it("matches the public arena spec", () => {
     expect(ARENA_PAGE_COPY.title).toBe("AP Calculus AB Live Rank Arena");
-    expect(ARENA_PAGE_COPY.subtitle).toContain("first attempt");
+    expect(ARENA_PAGE_COPY.subtitle).toContain("first try");
+    expect(ARENA_PAGE_COPY.leadersTitle).toContain("Top 5");
     expect(ARENA_PAGE_COPY.ctaHref).toBe("/try");
     expect(ARENA_FEED_VISIBLE_LIMIT).toBe(12);
+    expect(ARENA_BOARD_FEED_LIMIT).toBe(50);
+    expect(ARENA_LEADERS_LIMIT).toBe(5);
   });
 });
 
@@ -109,7 +114,7 @@ describe("live board feed copy", () => {
         new_rank_tier: "SEEKER",
         display_name: "Trapdime",
       }),
-    ).toBe("Trapdime → SEEKER");
+    ).toBe("Trapdime reached SEEKER");
 
     expect(
       formatLiveBoardEventDescription({

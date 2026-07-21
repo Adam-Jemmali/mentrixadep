@@ -160,9 +160,9 @@ async function fetchLandingStatsUncached(): Promise<LandingStatsPayload> {
   return {
     fetchedAt: nowIso,
     stats: [
-      { label: "active learners this month", value: studentsImprovedThisMonth },
-      { label: "sessions completed", value: sessionsCompleted },
-      { label: "Guides available now", value: guidesOnlineNow },
+      { label: "verified on the feed this month", value: studentsImprovedThisMonth },
+      { label: "Guide sessions done", value: sessionsCompleted },
+      { label: "Guides on now", value: guidesOnlineNow },
     ],
   };
 }

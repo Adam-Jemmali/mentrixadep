@@ -3,18 +3,31 @@ import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 
 export const ARENA_PAGE_COPY = {
   title: "AP Calculus AB Live Rank Arena",
-  subtitle: "Every score here is a first attempt. No retries. Updated as it happens.",
+  titleLine1: "AP Calculus AB",
+  titleLine2: "Live Rank Arena",
+  subtitle: "Every score here is a first try on Calculus AB",
+  subtitleLive: "Updated as it happens",
   cta: "Take this test and see where you rank",
   ctaHref: "/try",
   feedEyebrow: "Live feed",
-  leadersTitle: "Top 10 by verified accuracy",
-  leadersSubtitle: "AP Calculus AB first-attempt standing from the rank.",
-  emptyFeed: "No live events yet. Lock your first skill to appear here.",
+  leadersTitle: "Top 5 by verified first try accuracy",
+  leadersSubtitle: "Calculus AB standing from first tries on the rank",
+  leadersEmpty: "Leaderboard fills once five verified skills are locked",
+  emptyFeed: "Answer your first skill to appear on the feed",
   divisionWarEyebrow: "Division War",
+  navBack: "Back to home",
 } as const;
 
-/** Visible rows in the compact Arena feed viewport. */
+/** Visible rows in the compact landing hero feed viewport. */
 export const ARENA_FEED_VISIBLE_LIMIT = 12;
+
+/** Arena board page live feed cap. */
+export const ARENA_BOARD_FEED_LIMIT = 50;
+
+/** Arena board top leaders cap. */
+export const ARENA_LEADERS_LIMIT = 5;
+
+export const LANDING_HERO_FEED_ROW_HEIGHT_REM = 2.75;
 
 export function liveBoardEventTypeLabel(
   eventType: LiveBoardEventRow["event_type"],
@@ -87,15 +100,39 @@ export function formatLiveBoardEventDescription(event: Pick<
     case "verified_attempt":
       if (event.accuracy_pct === 100) return `${name} locked ${event.node_name}`;
       if (event.accuracy_pct === 0) return `${name} missed ${event.node_name}`;
-      return `${name} · ${event.node_name}`;
+      return `${name} tried ${event.node_name}`;
     case "rank_advance":
-      return `${name} → ${event.new_rank_tier?.trim() || "new rank"}`;
+      return `${name} reached ${event.new_rank_tier?.trim() || "new rank"}`;
     case "breakthrough":
       return `${name} broke through ${event.node_name}`;
     case "division_war_result":
       return event.display_name.trim();
     default:
       return event.node_name;
+  }
+}
+
+/** Arena board row event text without display name. */
+export function formatArenaBoardEventText(
+  event: Pick<
+    LiveBoardEventRow,
+    "event_type" | "node_name" | "accuracy_pct" | "new_rank_tier"
+  >,
+): string {
+  const skill = event.node_name.trim() || "a skill";
+  switch (event.event_type) {
+    case "verified_attempt": {
+      const pct = Math.round(Number(event.accuracy_pct ?? 0));
+      return `scored ${pct}% on ${skill} first time`;
+    }
+    case "rank_advance":
+      return `advanced to ${event.new_rank_tier?.trim() || "new rank"}`;
+    case "breakthrough":
+      return `broke through ${skill}`;
+    case "division_war_result":
+      return skill;
+    default:
+      return skill;
   }
 }
 
@@ -188,6 +225,16 @@ export function buildDivisionWarResultCardCopy(
     weekLabel: DIVISION_WAR_WEEK_LABEL,
     loserNote: formatDivisionWarLoserNote(loserName, loserAccuracyPct),
   };
+}
+
+export function formatArenaBoardWarHeadline(
+  event: Pick<
+    LiveBoardEventRow,
+    "node_name" | "unit_name" | "accuracy_pct" | "display_name"
+  >,
+): string {
+  const copy = buildDivisionWarResultCardCopy(event);
+  return `${copy.winnerName} defeated ${copy.loserName}`;
 }
 
 /** Average accuracy from summed quest percentages / quest count. */

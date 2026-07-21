@@ -1,145 +1,132 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { ARENA_PAGE_COPY } from "@/features/live-board/live-board-messages-pure";
 import {
   arenaLeaderAvatarInitial,
   type ArenaLeaderProfile,
 } from "@/features/live-board/load-arena-leader-profile";
 import { ArenaPersonAvatar } from "@/features/live-board/ui/arena-person-avatar";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { RankBadge } from "@/features/student-profile/ui/rank-badge";
-import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
 const VERIFIED_GOLD = "#D4A017";
-const ICON_VERSION = "1";
+const HIGH_SKILL_ACCURACY = 75;
 
 type Props = {
   leaders: ArenaLeaderProfile[];
 };
 
-function ArenaLeaderCard({ leader, position }: { leader: ArenaLeaderProfile; position: number }) {
-  const passportHref = leader.username ? `/rank/${leader.username}` : null;
-  const rankVisual = getAccountRankByLevel(leader.accountRankLevel);
-  const isTopTier = rankVisual.key === "mentrixer";
-  const rankTitle = normalizeRankTitle(leader.accountRankTier);
-
-  const card = (
-    <article
-      className={cn(
-        mentrixStudent.hubSticky,
-        "rotate-0 overflow-hidden px-3 py-3 sm:px-4 sm:py-3.5",
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <p className="w-7 shrink-0 text-center text-xs font-bold tabular-nums text-[#6366F1]">
-          #{position}
-        </p>
-
-        <ArenaPersonAvatar
-          displayName={leader.displayName}
-          avatarUrl={leader.avatarUrl}
-          avatarInitial={arenaLeaderAvatarInitial(leader)}
-          size="md"
-        />
-
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-1.5">
-            {isTopTier ? (
-              <Image
-                src={`/icons/mentrixer.svg?v=${ICON_VERSION}`}
-                alt=""
-                width={16}
-                height={16}
-                className="shrink-0"
-              />
-            ) : (
-              <MentrixaVocabIcon name="profile" size={14} surface="light" title="Mentrixer" />
-            )}
-            <p className="truncate text-sm font-bold text-[#0B1220]">{leader.displayName}</p>
-            {leader.username &&
-            leader.username.toLowerCase() !== leader.displayName.trim().toLowerCase() ? (
-              <p className="truncate text-[11px] font-semibold text-[#6366F1]">@{leader.username}</p>
-            ) : null}
-          </div>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="inline-flex items-center gap-1">
-              <RankBadge
-                rank={{ level: leader.accountRankLevel, title: leader.accountRankTier }}
-                size="sm"
-                active
-                surface="light"
-                showLabel={false}
-              />
-              <span
-                className="text-[10px] font-semibold uppercase tracking-[0.1em]"
-                style={{ color: isTopTier ? VERIFIED_GOLD : rankVisual.labelOnLight }}
-              >
-                {rankTitle}
-              </span>
-            </span>
-
-            <span className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums text-[#0B1220]">
-              <MentrixaVocabIcon name="verified" size={14} gold surface="light" title="Accuracy" />
-              {Math.round(leader.accuracyPercent)}%
-            </span>
-
-            <span
-              className="inline-flex items-center gap-1 text-xs font-bold tabular-nums"
-              style={{ color: VERIFIED_GOLD }}
-            >
-              <MentrixaVocabIcon name="rank-proof" size={14} gold surface="light" title="Top percent" />
-              Top {leader.topPercent}%
-            </span>
-
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums text-[#64748B]">
-              <MentrixaVocabIcon name="practice-pack" size={14} surface="light" title="Verified skills" />
-              {leader.verifiedCount}
-            </span>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-
-  if (!passportHref) return card;
-
-  return (
-    <Link
-      href={passportHref}
-      className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]"
-    >
-      {card}
-    </Link>
-  );
-}
-
 export function ArenaLeadersPanel({ leaders }: Props) {
-  return (
-    <section className="mt-8">
-      <div className="flex items-center gap-2">
-        <MentrixaVocabIcon name="leaderboard" size={18} surface="dark" title="Top 10" />
-        <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
-          {ARENA_PAGE_COPY.leadersTitle}
-        </h2>
-      </div>
-      <p className="mt-1.5 max-w-2xl text-sm text-slate-400">{ARENA_PAGE_COPY.leadersSubtitle}</p>
+  const topFive = leaders.slice(0, 5);
 
-      {leaders.length === 0 ? (
-        <p className="mt-5 text-sm text-slate-500">
-          Leaderboard fills once five verified skills are locked across the cohort.
-        </p>
-      ) : (
-        <ol className="mt-4 space-y-2">
-          {leaders.map((leader, index) => (
-            <li key={leader.userId}>
-              <ArenaLeaderCard leader={leader} position={index + 1} />
-            </li>
-          ))}
-        </ol>
-      )}
+  return (
+    <section className="mt-8 pb-4">
+      <LandingStickyNote variant="clip" className="overflow-hidden p-0">
+        <div className="border-b border-[#E0E7FF] bg-[#EDE9FE]/80 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <MentrixaVocabIcon name="leaderboard" size={18} gold surface="light" title="Top 5" />
+            <h2 className="text-base font-bold text-[#0B1220] sm:text-lg">{ARENA_PAGE_COPY.leadersTitle}</h2>
+          </div>
+          <p className="mt-1 text-sm text-[#475569]">{ARENA_PAGE_COPY.leadersSubtitle}</p>
+        </div>
+
+        {topFive.length === 0 ? (
+          <p className="bg-[var(--mx-navy,#0B1220)] px-4 py-8 text-center text-sm text-[var(--mx-muted,#9CA3AF)]">
+            {ARENA_PAGE_COPY.leadersEmpty}
+          </p>
+        ) : (
+          <div className="overflow-x-auto bg-[var(--mx-navy,#0B1220)]">
+            <table className="w-full min-w-[320px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[var(--mx-rule,#E2E8F0)]/20 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mx-muted,#9CA3AF)]">
+                  <th className="px-3 py-2.5">Rank</th>
+                  <th className="px-3 py-2.5">Name</th>
+                  <th className="px-3 py-2.5">Accuracy</th>
+                  <th className="px-3 py-2.5">Skills</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topFive.map((leader, index) => {
+                  const rank = index + 1;
+                  const passportHref = leader.username ? `/rank/${leader.username}` : null;
+                  const goldSkills = leader.accuracyPercent >= HIGH_SKILL_ACCURACY;
+                  const rowBg =
+                    rank === 1
+                      ? "bg-[rgba(212,160,23,0.14)]"
+                      : index % 2 === 0
+                        ? "bg-[var(--mx-navy,#0B1220)]"
+                        : "bg-[var(--mx-navy-2,#0F172A)]";
+
+                  return (
+                    <tr
+                      key={leader.userId}
+                      className={cn("border-b border-[var(--mx-rule,#E2E8F0)]/15", rowBg)}
+                    >
+                      <td className="px-3 py-3 font-bold tabular-nums text-[var(--mx-indigo,#6366F1)]">
+                        #{rank}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <ArenaPersonAvatar
+                            displayName={leader.displayName}
+                            avatarUrl={leader.avatarUrl}
+                            avatarInitial={arenaLeaderAvatarInitial(leader)}
+                            size="sm"
+                          />
+                          {passportHref ? (
+                            <Link
+                              href={passportHref}
+                              className="truncate font-semibold text-white transition-colors hover:text-[var(--mx-violet,#7C3AED)]"
+                            >
+                              {leader.displayName}
+                            </Link>
+                          ) : (
+                            <span className="truncate font-semibold text-white">{leader.displayName}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 font-bold tabular-nums",
+                            rank === 1 ? "text-[var(--mx-gold,#D4A017)]" : "text-white",
+                          )}
+                        >
+                          <MentrixaVocabIcon
+                            name="verified"
+                            size={14}
+                            gold={rank === 1}
+                            surface="dark"
+                            title="Accuracy"
+                          />
+                          {Math.round(leader.accuracyPercent)}%
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className="inline-flex items-center gap-1 font-bold tabular-nums"
+                          style={{ color: goldSkills ? VERIFIED_GOLD : "var(--mx-muted, #9CA3AF)" }}
+                        >
+                          <MentrixaVocabIcon
+                            name="practice-pack"
+                            size={14}
+                            gold={goldSkills}
+                            surface="dark"
+                            title="Verified skills"
+                          />
+                          {leader.verifiedCount}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </LandingStickyNote>
     </section>
   );
 }

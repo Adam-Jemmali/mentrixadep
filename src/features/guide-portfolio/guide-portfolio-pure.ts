@@ -8,6 +8,7 @@ export type GuidePortfolioCard = {
   nodeName: string;
   beforeAccuracy: number;
   afterAccuracy: number;
+  addedAt?: string;
 };
 
 export function shouldShowGuidePortfolio(approvedCount: number): boolean {

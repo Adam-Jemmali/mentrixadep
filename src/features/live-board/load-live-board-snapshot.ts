@@ -140,6 +140,35 @@ async function rehydrateLiveBoardDisplayNames(
     });
 }
 
+function startOfUtcDayIso(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+}
+
+/** Count of live board events since UTC midnight — for landing hero "more today" link. */
+export async function loadLiveBoardEventsTodayCount(): Promise<number> {
+  try {
+    const admin = createAdminClient();
+    const { count, error } = await admin
+      .from("live_board_events")
+      .select("id", { count: "exact", head: true })
+      .gte("occurred_at", startOfUtcDayIso());
+
+    if (error) {
+      console.error("loadLiveBoardEventsTodayCount failed", error.message);
+      return 0;
+    }
+
+    return count ?? 0;
+  } catch (err) {
+    console.error(
+      "loadLiveBoardEventsTodayCount failed",
+      err instanceof Error ? err.message : String(err),
+    );
+    return 0;
+  }
+}
+
 export async function loadLiveBoardEvents(
   limit = ARENA_FEED_VISIBLE_LIMIT,
 ): Promise<LiveBoardEventRow[]> {

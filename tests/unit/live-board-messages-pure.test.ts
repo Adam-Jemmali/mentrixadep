@@ -1,9 +1,41 @@
 import { describe, expect, it } from "vitest";
 import {
   ARENA_PAGE_COPY,
+  formatArenaBoardEventText,
   formatLiveBoardEventDescription,
   formatLiveBoardTimeAgo,
 } from "@/features/live-board/live-board-messages-pure";
+
+describe("arena board event text", () => {
+  it("formats arena feed lines without display name", () => {
+    expect(
+      formatArenaBoardEventText({
+        event_type: "verified_attempt",
+        node_name: "Chain Rule",
+        accuracy_pct: 82,
+        new_rank_tier: null,
+      }),
+    ).toBe("scored 82% on Chain Rule first time");
+
+    expect(
+      formatArenaBoardEventText({
+        event_type: "rank_advance",
+        node_name: "Chain Rule",
+        accuracy_pct: null,
+        new_rank_tier: "Scholar",
+      }),
+    ).toBe("advanced to Scholar");
+
+    expect(
+      formatArenaBoardEventText({
+        event_type: "breakthrough",
+        node_name: "Related Rates",
+        accuracy_pct: 78,
+        new_rank_tier: null,
+      }),
+    ).toBe("broke through Related Rates");
+  });
+});
 
 describe("live board messages", () => {
   const now = Date.parse("2026-07-07T18:00:00.000Z");
@@ -29,7 +61,7 @@ describe("live board messages", () => {
         new_rank_tier: "Scholar",
         display_name: "Trapdime",
       }),
-    ).toBe("Trapdime → Scholar");
+    ).toBe("Trapdime reached Scholar");
 
     expect(
       formatLiveBoardEventDescription({

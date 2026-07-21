@@ -19,9 +19,9 @@ export async function GET() {
     return NextResponse.json(
       {
         stats: [
-          { label: "active learners this month", value: 0 },
-          { label: "sessions completed", value: 0 },
-          { label: "Guides available now", value: 0 },
+          { label: "verified on the feed this month", value: 0 },
+          { label: "Guide sessions done", value: 0 },
+          { label: "Guides on now", value: 0 },
         ],
         fetchedAt: new Date().toISOString(),
         error: true,

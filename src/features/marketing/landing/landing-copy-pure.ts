@@ -646,9 +646,9 @@ export const LANDING_FOOTER = {
 
   ctaEyebrow: "Start",
 
-  ctaTitle: "Pick a role. Lock proof today.",
+  ctaTitle: "Pick a path",
 
-  mentrixerCta: "Start as Mentrixer",
+  mentrixerCta: "Join the feed",
 
   guideCta: "Apply as Guide",
 
@@ -656,11 +656,11 @@ export const LANDING_FOOTER = {
 
   contactTitle: "Something broken?",
 
-  contactBody: "We read every message.",
+  contactBody: "We read every message",
 
   contactButton: "Send message",
 
-  tagline: "Mentrixers climb rank. Guides earn impact. Calculus AB live.",
+  tagline: "Verified first attempts on Calculus AB",
 
 } as const;
 
@@ -762,7 +762,7 @@ export const LANDING_METADATA = {
 
   description:
 
-    "Mentrixers climb a live feed of first answers. Guides earn Impact Score. Calculus AB first. Free to compete.",
+    "Watch verified first attempts on Calculus AB and join the Live Arena or teach as a Guide",
 
 } as const;
 
@@ -771,5 +771,81 @@ export const LANDING_METADATA = {
 export type LandingFaqCategoryCopy = (typeof LANDING_FAQ.categories)[number];
 
 export type LandingFaqItemCopy = LandingFaqCategoryCopy["items"][number];
+
+/** Sprint E live board hero. Brief plain words. No middots hyphens or parens in copy. */
+export const LANDING_E = {
+  heroSentence: "Your first try on each skill is the score that counts",
+  heroAriaLabel: "Your first try on each skill is the score that counts",
+  nav: {
+    liveArena: "Live Arena",
+    rankCta: "See your rank",
+    rankHref: "/try",
+  },
+  feedMoreToday: (count: number) =>
+    count === 1 ? "1 more today" : `${count.toLocaleString()} more today`,
+  feedMoreTodayHref: "/arena",
+  ctaPrimary: "Find your gaps",
+  ctaPrimaryHref: "/try",
+  ctaSecondary: "Apply as Guide",
+  ctaSecondaryHref: "/auth/signup?role=tutor",
+  howItWorks: {
+    eyebrow: "How it works",
+    title: "Three steps",
+    steps: [
+      {
+        vocabIcon: "verified" as const,
+        title: "Lock",
+        line: "Your first try on a skill becomes your verified score",
+      },
+      {
+        vocabIcon: "leaderboard" as const,
+        title: "Feed",
+        line: "The Live Arena updates as scores land",
+      },
+      {
+        vocabIcon: "rank-proof" as const,
+        title: "Rank",
+        line: "You stand beside everyone on the same skills",
+      },
+    ],
+  },
+  proof: {
+    eyebrow: "Proof",
+    title: "What is happening now",
+    subtitle: "Live Calculus AB activity",
+  },
+  guides: {
+    eyebrow: "Guides",
+    title: "Impact Score is the Guide rank",
+    subtitle: "It moves when first tries improve after your session",
+    cta: "Apply as Guide",
+    ctaHref: "/auth/signup?role=tutor",
+    items: [
+      {
+        word: "Session",
+        sentence: "You read their verified record before you speak",
+      },
+      {
+        word: "Impact",
+        sentence: "Impact Score rises when first tries improve on skills you taught",
+      },
+      {
+        word: "Studio",
+        sentence: "Your session becomes a Quest pack you approve",
+      },
+    ],
+  },
+  finalCta: {
+    line1: "Every rank starts at zero",
+    line2: "Every answer moves it",
+    mentrixerCta: "Join the feed",
+    mentrixerHref: "/try",
+    guideCta: "Apply as Guide",
+    guideHref: "/auth/signup?role=tutor",
+  },
+} as const;
+
+/** Visible rows in the landing hero live feed viewport. */
+export const LANDING_HERO_FEED_VISIBLE_LIMIT = 6;
 
 

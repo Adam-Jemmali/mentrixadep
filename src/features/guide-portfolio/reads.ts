@@ -22,7 +22,7 @@ export async function loadGuidePortfolioForPublic(
 
   const { data, error } = await admin
     .from("guide_teaching_portfolio")
-    .select("id, node_name, before_accuracy, after_accuracy")
+    .select("id, node_name, before_accuracy, after_accuracy, added_at")
     .eq("guide_id", guideId)
     .eq("student_opted_in", true)
     .order("added_at", { ascending: false })
@@ -38,6 +38,7 @@ export async function loadGuidePortfolioForPublic(
     nodeName: String(row.node_name ?? "Skill"),
     beforeAccuracy: Number(row.before_accuracy ?? 0),
     afterAccuracy: Number(row.after_accuracy ?? 0),
+    addedAt: row.added_at ? String(row.added_at) : undefined,
   }));
 
   if (!shouldShowGuidePortfolio(all.length)) return null;
@@ -57,7 +58,7 @@ export async function loadGuidePortfolioAll(
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("guide_teaching_portfolio")
-    .select("id, node_name, before_accuracy, after_accuracy")
+    .select("id, node_name, before_accuracy, after_accuracy, added_at")
     .eq("guide_id", guideId)
     .eq("student_opted_in", true)
     .order("added_at", { ascending: false })
@@ -73,5 +74,6 @@ export async function loadGuidePortfolioAll(
     nodeName: String(row.node_name ?? "Skill"),
     beforeAccuracy: Number(row.before_accuracy ?? 0),
     afterAccuracy: Number(row.after_accuracy ?? 0),
+    addedAt: row.added_at ? String(row.added_at) : undefined,
   }));
 }

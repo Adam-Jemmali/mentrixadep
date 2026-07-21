@@ -4,21 +4,15 @@ import Link from "next/link";
 import { useRef } from "react";
 import { useReducedMotion } from "@/shared/animation/motion";
 import { useGsapScrollTriggerEffect } from "@/shared/core/gsap-lazy";
-import { Card, CardContent } from "@/shared/ui/card";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { CANONICAL_BREAKTHROUGH_ICON } from "@/shared/icons/vocab-canonical";
 import {
-  formatPortfolioAccuracy,
   GUIDE_PORTFOLIO_SHOW_MORE,
   type GuidePortfolioCard,
 } from "@/features/guide-portfolio/guide-portfolio-pure";
+import { BeforeAfterCard } from "@/features/share/before-after-card";
 import { GUIDE_PUBLIC_COPY } from "@/features/tutor/public-profile-pure";
 import { GuideAnimatedSticky } from "@/features/tutor/ui/guide-animated-sticky";
-import { cn } from "@/shared/core/utils";
-
-function portfolioDelta(before: number, after: number): number {
-  return Math.round(after - before);
-}
 
 export function GuidePublicPortfolioSection({
   cards,
@@ -36,7 +30,7 @@ export function GuidePublicPortfolioSection({
     const grid = gridRef.current;
     if (!grid || reduceMotion || cards.length === 0) return;
 
-    const items = grid.querySelectorAll<HTMLElement>(".portfolio-card");
+    const items = grid.querySelectorAll<HTMLElement>("[data-portfolio-card]");
     const tween = gsap.from(items, {
       opacity: 0,
       y: 24,
@@ -73,33 +67,18 @@ export function GuidePublicPortfolioSection({
             {GUIDE_PUBLIC_COPY.portfolioHeading}
           </h2>
         </div>
-        <div ref={gridRef} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((card) => {
-            const delta = portfolioDelta(card.beforeAccuracy, card.afterAccuracy);
-            return (
-              <Card
-                key={card.id}
-                className={cn(
-                  "portfolio-card border-[#334155] bg-[#0F172A] text-white transition-colors duration-200",
-                  "hover:border-[#D4A017]/20",
-                )}
-              >
-                <CardContent className="space-y-1 p-3">
-                  <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">
-                    {card.nodeName}
-                  </p>
-                  <p className="text-sm font-semibold tabular-nums">
-                    <span className="text-[#64748B]">{formatPortfolioAccuracy(card.beforeAccuracy)}</span>
-                    <span className="mx-1.5 text-[#475569]">→</span>
-                    <span className="text-[#D4A017]">{formatPortfolioAccuracy(card.afterAccuracy)}</span>
-                  </p>
-                  {delta > 0 ? (
-                    <p className="text-xs font-semibold text-emerald-400">+{delta} pts first-attempt lift</p>
-                  ) : null}
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div ref={gridRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card) => (
+            <div key={card.id} data-portfolio-card>
+              <BeforeAfterCard
+                mode="portfolio"
+                nodeName={card.nodeName}
+                beforeAccuracy={card.beforeAccuracy}
+                afterAccuracy={card.afterAccuracy}
+                date={new Date(card.addedAt ?? Date.now())}
+              />
+            </div>
+          ))}
         </div>
         {hasMore ? (
           <div className="mt-3 text-center">
