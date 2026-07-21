@@ -40,6 +40,7 @@ import { StepFeedback } from "@/features/quest/components/step-feedback";
 import type { SolutionStep, StepFeedbackPartial } from "@/features/quest/components/step-feedback-pure";
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/get-mastery-grid-action";
+import { patchMasteryGridCache } from "@/features/mastery-grid/use-mastery-grid-cache";
 import { QuestMasteryDonePanel } from "@/features/mastery-grid/quest-mastery-done-panel";
 import { parseQuestPromptParam } from "@/features/quest/quest-post-step-pure";
 import type {
@@ -233,6 +234,9 @@ export function QuestPracticeWorkspace({
             const fin = await finalizePracticeQuest(activeQuestId, buildFinalizeOptions(true));
             if (fin.success) {
               setDoneResult(fin.result);
+              if (fin.result.masteryGrid) {
+                patchMasteryGridCache(fin.result.masteryGrid);
+              }
               if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
               if (onboardingMode) {
                 completeOnboardingQuest();
@@ -346,6 +350,9 @@ export function QuestPracticeWorkspace({
     const fin = await finalizePracticeQuest(id, buildFinalizeOptions());
       if (fin.success) {
       setDoneResult(fin.result);
+      if (fin.result.masteryGrid) {
+        patchMasteryGridCache(fin.result.masteryGrid);
+      }
       if (fin.breakthrough) setBreakthroughCelebration(fin.breakthrough);
       const xpTotal =
         (fin.result.xpAwarded ?? 0) +

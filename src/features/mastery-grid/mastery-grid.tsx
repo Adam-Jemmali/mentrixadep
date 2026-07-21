@@ -142,7 +142,7 @@ function MasterySquare({
         className={cn(
           "relative aspect-square min-w-0 w-full rounded-[4px] border",
         STATE_SQUARE_CLASS[displayState],
-        shouldAnimate && "transition-colors duration-[400ms] ease-out",
+        shouldAnimate && "transition-colors transition-duration-[400ms] ease-out",
         isHighlight && shouldAnimate && "z-10 ring-2 ring-indigo-400/80 ring-offset-1 ring-offset-[#FAFAF8]",
         isPinned && "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#FAFAF8]",
         isRecommended && "ring-2 ring-dashed ring-[#7C3AED]/70 ring-offset-1 ring-offset-[#FAFAF8]"

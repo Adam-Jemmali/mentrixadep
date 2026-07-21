@@ -1,0 +1,51 @@
+---
+description: Premium UI skill stack, import policy, and workflow for Mentrixa rebuild
+globs: "**/*.{tsx,css}"
+alwaysApply: false
+---
+
+# Mentrixa Premium UI Stack
+
+Read with PROMPT 001 (master + animation context) before any UI work.
+
+## Skill and tool map
+
+| Skill / tool | When to use |
+|--------------|-------------|
+| **ui-pro-max** | REQUIRED first step: `python .cursor/skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system -p Mentrixa`. Apply `design-system/MASTER.md` when brand conflicts. |
+| **banner design / brand** | Landing heroes, CTAs, rank reveal. Tokens only. Gold = verified truth. |
+| **design-system / design taste-frontend / frontend-design / ui-styling** | Layout, spacing, typography hierarchy, contrast. Follow MASTER + tokens.css. |
+| **21st MCP + shadcn** | Net-new structural components only (Card, Dialog, Command, Tooltip, Progress, Badge). Integrate into `@/shared/ui/`. |
+| **vercel-react-best-practices** | RSC-first data, SWR cache, thin route shells, no client waterfalls. |
+| **GSAP / gsap-master** | Multi-element timelines, landing entry, ScrollTrigger. Import `@/shared/core/gsap` only. |
+| **Lenis** | Global smooth scroll via `@/shared/animation/lenis-provider` in root layout. GSAP ticker sync. |
+| **anime.js** | Data viz, node bloom, counters, grid stagger. Import `@/shared/animation/anime` only. |
+| **motion.dev / motion-framer** | Micro-interactions + AnimatePresence/layout. Import `@/shared/animation/motion` only. |
+| **Kokonut UI** | `KokonutGlass` for frosted panels and verified ambient glow. |
+| **Bklit UI** | `BklitShimmer` / `BklitShimmerGrid` for all loading states. No spinners. |
+| **convex-create-component** | N/A unless Convex surfaces are added. |
+
+## Import policy (no sloppy imports)
+
+```
+✅ @/shared/animation/anime
+✅ @/shared/animation/motion
+✅ @/shared/animation/lenis-provider
+✅ @/shared/core/gsap
+✅ @/shared/ui/bklit-shimmer
+✅ @/shared/ui/kokonut-glass
+✅ @/styles/tokens.css (via globals)
+
+❌ animejs, motion/react, framer-motion (direct)
+❌ react-spring, lottie-react, aos, @motionone/dom
+```
+
+Run `npm run validate:ui-imports` after UI changes.
+
+## Validation gates
+
+```bash
+npm run validate:tokens
+npm run validate:ui-imports
+npm run test:ci
+```

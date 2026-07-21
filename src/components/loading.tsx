@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion } from "@/shared/animation/motion";
 import { MentrixaLogoLoader } from "@/components/mentrixa-logo";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { playMentrixaLoadingOnce } from "@/shared/integrations/mentrixa-sounds";

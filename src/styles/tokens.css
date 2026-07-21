@@ -1,0 +1,75 @@
+/**
+ * Mentrixa design tokens — three-layer architecture.
+ * Primitive → Semantic → Component. No hex outside this file.
+ */
+
+:root {
+  /* ── Primitive layer ─────────────────────────────────────────────── */
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #8b5cf6;
+  --color-violet-600: #7c3aed;
+  --color-violet-700: #6d28d9;
+
+  --color-indigo-500: #6366f1;
+
+  --color-gold-400: #f59e0b;
+  --color-gold-500: #d4a017;
+  --color-gold-600: #b7860e;
+
+  --color-navy-900: #0b1220;
+  --color-navy-800: #0f172a;
+  --color-navy-700: #1e293b;
+
+  --color-cyan-400: #22d3ee;
+  --color-steel-500: #4b5563;
+  --color-muted-400: #9ca3af;
+  --color-rule-200: #e2e8f0;
+
+  --radius-node: 8px;
+  --radius-card: 12px;
+  --radius-pill: 9999px;
+
+  /* ── Semantic layer ──────────────────────────────────────────────── */
+  --mx-primary: var(--color-violet-600);
+  --mx-primary-hover: var(--color-violet-700);
+  --mx-verified: var(--color-gold-500);
+  --mx-verified-glow: rgba(212, 160, 23, 0.25);
+  --mx-surface: var(--color-navy-900);
+  --mx-surface-2: var(--color-navy-800);
+  --mx-surface-3: var(--color-navy-700);
+
+  /* PROMPT 001 brand aliases */
+  --mx-violet: var(--color-violet-600);
+  --mx-indigo: var(--color-indigo-500);
+  --mx-navy: var(--color-navy-900);
+  --mx-navy-2: var(--color-navy-800);
+  --mx-gold: var(--color-gold-500);
+  --mx-cyan: var(--color-cyan-400);
+  --mx-steel: var(--color-steel-500);
+  --mx-muted: var(--color-muted-400);
+  --mx-rule: var(--color-rule-200);
+
+  /* Node state — mastery grid and impact chips */
+  --mx-node-unstarted: #374151;
+  --mx-node-attempted: #92400e;
+  --mx-node-practiced: #1d4ed8;
+  --mx-node-proficient: #15803d;
+  --mx-node-verified: var(--color-gold-500);
+  --mx-node-verified-glow: var(--mx-verified-glow);
+
+  /* ── Component layer ─────────────────────────────────────────────── */
+  --btn-primary-bg: var(--mx-primary);
+  --btn-primary-hover: var(--mx-primary-hover);
+  --card-bg: var(--mx-surface-2);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --verdict-accent: var(--mx-primary);
+
+  /* Theme token changes animate smoothly */
+  transition: all 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+}

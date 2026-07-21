@@ -367,3 +367,24 @@ export function filterMasteryNodesByQuery(
 
   return matches.slice(0, 24);
 }
+
+/** Maps domain mastery state to the five-token visual model for `MasteryNode`. */
+export function toMasteryNodeVisualState(
+  node: Pick<MasteryGridNode, "state" | "hasVerifiedAttempt" | "accuracyPercent">,
+): "unstarted" | "attempted" | "practiced" | "proficient" | "verified" {
+  if (node.state === "verified") return "verified";
+  if (node.state === "proficient") return "proficient";
+  if (node.state === "none") return "unstarted";
+  if (node.hasVerifiedAttempt) return "attempted";
+  if ((node.accuracyPercent ?? 0) >= 40) return "practiced";
+  return "attempted";
+}
+
+export function countMasteryGridSkills(data: MasteryGridData): number {
+  return flattenMasteryNodes(data).length;
+}
+
+/** One-sentence verdict line beneath the grid. */
+export function masteryGridVerdictSentence(data: MasteryGridData): string {
+  return data.verdict?.changed ?? data.nextActionLine;
+}

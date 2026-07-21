@@ -16,6 +16,7 @@ import { cn } from "@/shared/core/utils";
 import { UiPerformanceBootstrap } from "@/components/ui-performance-bootstrap";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { LenisProvider } from "@/shared/animation/lenis-provider";
 
 const StudentNavbar = dynamic(
   () => import("@/components/student-navbar").then((m) => ({ default: m.StudentNavbar })),
@@ -287,6 +288,7 @@ export function RootLayoutClient({
     !isArenaPlayShellRoute;
 
   return (
+    <LenisProvider>
     <ErrorBoundary>
       {!isVideoRoute ? <NavigationProgress /> : null}
       <UiPerformanceBootstrap />
@@ -355,5 +357,6 @@ export function RootLayoutClient({
         )}
       </main>
     </ErrorBoundary>
+    </LenisProvider>
   );
 }

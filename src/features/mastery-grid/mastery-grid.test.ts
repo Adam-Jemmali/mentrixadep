@@ -6,7 +6,55 @@ import {
   pickQuestMasteryHighlight,
   resolveMasteryNodeState,
   splitMasteryGridByPinned,
+  toMasteryNodeVisualState,
 } from "@/features/mastery-grid/mastery-grid-pure";
+
+describe("toMasteryNodeVisualState", () => {
+  it("maps domain states to visual tokens", () => {
+    expect(
+      toMasteryNodeVisualState({
+        state: "none",
+        hasVerifiedAttempt: false,
+        accuracyPercent: null,
+      }),
+    ).toBe("unstarted");
+    expect(
+      toMasteryNodeVisualState({
+        state: "verified",
+        hasVerifiedAttempt: true,
+        accuracyPercent: 100,
+      }),
+    ).toBe("verified");
+    expect(
+      toMasteryNodeVisualState({
+        state: "proficient",
+        hasVerifiedAttempt: false,
+        accuracyPercent: 80,
+      }),
+    ).toBe("proficient");
+    expect(
+      toMasteryNodeVisualState({
+        state: "weak",
+        hasVerifiedAttempt: true,
+        accuracyPercent: 0,
+      }),
+    ).toBe("attempted");
+    expect(
+      toMasteryNodeVisualState({
+        state: "weak",
+        hasVerifiedAttempt: false,
+        accuracyPercent: 55,
+      }),
+    ).toBe("practiced");
+    expect(
+      toMasteryNodeVisualState({
+        state: "weak",
+        hasVerifiedAttempt: false,
+        accuracyPercent: 20,
+      }),
+    ).toBe("attempted");
+  });
+});
 
 describe("resolveMasteryNodeState", () => {
   it("returns verified gold path when first attempt was correct", () => {

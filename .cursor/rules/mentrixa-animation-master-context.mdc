@@ -1,0 +1,87 @@
+---
+description: Animation stack, brand tokens, and UX animation rules for UI rebuild (PROMPT 001 Animation)
+globs: "**/*.{tsx,css}"
+alwaysApply: false
+---
+
+# PROMPT 001 — Animation Master Context
+
+Rebuilding the entire UI and animation layer of Mentrixa (mentrixa.one). Every component touched must use the full animation stack below. Read every constraint before writing a single line.
+
+## Brand tokens (never hardcode)
+
+| Token | Value | Use |
+|-------|-------|-----|
+| `--mx-violet` | `#7C3AED` | Primary, CTAs, active states |
+| `--mx-indigo` | `#6366F1` | Accent, secondary actions |
+| `--mx-navy` | `#0B1220` | Primary shell background |
+| `--mx-navy-2` | `#0F172A` | Secondary shell background |
+| `--mx-gold` | `#D4A017` | **Verified truth only**: top rank, verified nodes, AP band prediction, VFA streak, Guide Impact badge. Never decorative |
+| `--mx-cyan` | `#22D3EE` | Landing hero only |
+| `--mx-steel` | `#4B5563` | Body text |
+| `--mx-muted` | `#9CA3AF` | Secondary text |
+| `--mx-rule` | `#E2E8F0` | Dividers, borders |
+
+## Animation library assignments
+
+| Library | Use |
+|---------|-----|
+| **GSAP** | Orchestrated multi-element timelines, landing entry, session live sync, proof card reveal, ScrollTrigger scroll reveals |
+| **Lenis** | Smooth scroll on every page, initialized once in root layout, raf loop with gsap ticker |
+| **Anime.js** | Data viz animations, node bloom, impact chip pulse, counters, mastery grid stagger, AP band fill |
+| **Motion.dev** | React state micro-interactions, button physics, card hovers, verdict reveal, form field transitions (`motion/react`) |
+| **Framer Motion** | AnimatePresence exits, layout shifts, modal entrances, step feedback, list item transitions |
+| **shadcn + 21STDEV MCP** | Structural components only: Card, Dialog, Command, Tooltip, Progress, Badge |
+| **Kokonut UI** | Glass morphism surfaces, ambient glows on verified gold nodes, frosted panel overlays |
+| **Bklit UI** | Skeleton loaders and shimmer for every data-loading moment |
+
+## Lenis initialization (root layout)
+
+```tsx
+import Lenis from 'lenis'
+import { useEffect } from 'react'
+
+useEffect(() => {
+  const lenis = new Lenis({
+    duration: 1.2,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true,
+  })
+  function raf(time: number) {
+    lenis.raf(time)
+    requestAnimationFrame(raf)
+  }
+  requestAnimationFrame(raf)
+  return () => lenis.destroy()
+}, [])
+```
+
+## UX rules (non negotiable)
+
+1. Every page has exactly **one** primary action visible above the fold. Other actions are progressive disclosure on scroll or interaction.
+2. Every loading state uses **Bklit shimmer**, never a spinner, never blank space.
+3. Every data update (node state, rank, score) **animates the change**, never jumps.
+4. Every empty state is an invitation to act with a specific next-action button, never text alone.
+5. Every error state names what went wrong and what to do next in one sentence.
+6. No card container has more than 3 actions. Use a Command palette if more are needed.
+7. **Reduced motion**: all animations check `prefers-reduced-motion` and fall back to instant state changes (0 duration).
+
+## Existing stack
+
+Next.js App Router, Supabase, Tailwind, Radix, Lucide icons, Geist + Geist Mono via next/font. Playfair Display for rank reveal modal only. No emoji. No hyphens as bullets.
+
+Shells: `.mx-shell-workbench` (quest/studio), `.mx-shell-arena` (duels/division).
+
+Import GSAP from `@/shared/core/gsap` to avoid duplicate module instances.
+
+## Canonical import barrels
+
+| Library | Import from |
+|---------|-------------|
+| Anime.js | `@/shared/animation/anime` |
+| Motion.dev / Framer | `@/shared/animation/motion` |
+| Lenis | `@/shared/animation/lenis-provider` (root layout only) |
+| Bklit shimmer | `@/shared/ui/bklit-shimmer` |
+| Kokonut glass | `@/shared/ui/kokonut-glass` |
+
+Never import `animejs`, `motion/react`, or `framer-motion` directly in components. Run `npm run validate:ui-imports`.

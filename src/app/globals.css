@@ -1,3 +1,6 @@
+@import "../styles/tokens.css";
+@import "lenis/dist/lenis.css";
+
 /* Caveat / Playfair load via next/font in app/layout.tsx — no blocking Google CSS @import. */
 
 /* Mobile-optimized navbar - disable expensive effects on small screens */
