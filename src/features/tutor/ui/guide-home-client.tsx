@@ -30,6 +30,7 @@ import { GUIDE_HOME } from "@/features/tutor/guide-home-copy-pure";
 import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
 import { guideApCalcVerified } from "@/features/tutor/guide-ap-calc-pure";
 import { cn } from "@/shared/core/utils";
+import { GuideNotificationsPanel } from "@/features/notifications/guide-notifications-panel";
 
 export function GuideHomeClient({
   data,
@@ -46,7 +47,19 @@ export function GuideHomeClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const connectParam = searchParams.get("connect");
+  const briefSessionId = searchParams.get("brief");
   const apCalcVerified = guideApCalcVerified(data.tutorCourses);
+
+  useEffect(() => {
+    if (!briefSessionId) return;
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById(`guide-brief-${briefSessionId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 240);
+    return () => window.clearTimeout(scrollTimer);
+  }, [briefSessionId]);
 
   useEffect(() => {
     if (!slotsCreatedNotice) return;
@@ -176,7 +189,13 @@ export function GuideHomeClient({
           onSetAvailability={() => setAddOpen(true)}
         />
 
-        <GuideHomeBelowFold data={data} />
+        <GuideNotificationsPanel
+          notifications={data.guideNotifications}
+          displayTimeZone={data.tutorTimezone}
+          staggerIndex={2}
+        />
+
+        <GuideHomeBelowFold data={data} autoOpenBriefSessionId={briefSessionId} />
 
         <div className="mt-3 space-y-3">
           {data.metrics.pendingRequestCount > 0 ? (

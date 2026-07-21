@@ -27,6 +27,10 @@ import type { ApReadinessBandView } from "@/features/student-home/ap-readiness-b
 import type { StudentHomeVerdictView } from "@/features/student-home/student-home-verdict-pure";
 import type { DueRetestNode } from "@/features/student-home/load-due-retests";
 import type { RecentQuestPerformanceRow } from "@/features/student-home/load-recent-quest-performance";
+import {
+  loadStudentRetestProofNotifications,
+  type StudentRetestProofNotification,
+} from "@/features/notifications/student-retest-notifications";
 
 export type StudentHomeUpcomingSession = {
   id: string;
@@ -68,6 +72,7 @@ export type StudentHomeData = {
   division: TopRivalData;
   timeZone: string;
   hubFooter: StudentHomeHubFooter;
+  retestProof: StudentRetestProofNotification[];
 };
 
 export async function loadStudentHome(userId: string): Promise<StudentHomeData> {
@@ -81,6 +86,7 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     arenaPreview,
     division,
     matchmaker,
+    retestProof,
   ] = await Promise.all([
     loadVerifiedFirstAttemptRankStats(userId),
     loadMasteryGrid(userId).catch(() => null),
@@ -91,6 +97,7 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     loadLiveBoardEvents(3),
     getTopRival(),
     getMatchmakerGuides(userId).catch(() => ({ guides: [] as MatchmakerGuideResult[] })),
+    loadStudentRetestProofNotifications(1).catch(() => [] as StudentRetestProofNotification[]),
   ]);
 
   const upcomingSessions = sessionsBundle.upcomingSessions.map((s: Record<string, unknown>) => ({
@@ -143,5 +150,6 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     division,
     timeZone: snapshot.user_settings?.timezone?.trim() || "UTC",
     hubFooter,
+    retestProof,
   };
 }

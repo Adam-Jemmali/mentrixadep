@@ -10,6 +10,7 @@ import {
   StudentHomeQuestPerformance,
 } from "@/features/student-home/student-home-sections";
 import { StudentHomeSessionsHub } from "@/features/student-home/student-home-sessions-hub";
+import { StudentRetestNotifyStrip } from "@/features/notifications/ui/student-retest-notify-strip";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -30,6 +31,10 @@ export function StudentHomeClient({
         <div className="grid gap-3 lg:grid-cols-[3fr_2fr] lg:items-start">
           <div className="space-y-3">
             <StudentVerdictHero hero={data.heroVerdict} apBand={data.apReadinessBand} />
+
+            {data.retestProof.length > 0 ? (
+              <StudentRetestNotifyStrip items={data.retestProof} staggerIndex={0} />
+            ) : null}
 
             {data.masteryGrid ? (
               <MasteryGridHubCard

@@ -6,6 +6,7 @@ import { handleEmailJob } from "@/features/jobs/handlers/email";
 import { handlePayoutLedgerJob } from "@/features/jobs/handlers/payout";
 import { handleStudioPackageJob } from "@/features/jobs/handlers/studio-package";
 import { handleTranscriptionJob } from "@/features/jobs/handlers/transcription";
+import { handleRetestPushJob } from "@/features/jobs/handlers/retest-push";
 
 export async function runJobHandler(job: BackgroundJobRow): Promise<void> {
   const payload = job.payload ?? {};
@@ -35,6 +36,9 @@ export async function runJobHandler(job: BackgroundJobRow): Promise<void> {
       await handleShareArtifactImageJob(
         payload as Parameters<typeof handleShareArtifactImageJob>[0],
       );
+      break;
+    case "push.retest_complete":
+      await handleRetestPushJob(payload as Parameters<typeof handleRetestPushJob>[0]);
       break;
     default:
       throw new Error(`Unknown job type: ${job.job_type}`);

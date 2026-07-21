@@ -12,7 +12,6 @@ import {
   CANONICAL_BREAKTHROUGH_ICON,
   CANONICAL_BRIEF_ICON,
   CANONICAL_PROFILE_ICON,
-  CANONICAL_SESSION_ICON,
 } from "@/shared/icons/vocab-canonical";
 import { GUIDE_HOME } from "@/features/tutor/guide-home-copy-pure";
 import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
@@ -20,7 +19,13 @@ import { formatDateInZone } from "@/shared/core/time-format";
 import { studentDisplayNameFromSession } from "@/features/tutor/guide-home-pure";
 import { cn } from "@/shared/core/utils";
 
-export function GuideHomeBelowFold({ data }: { data: TutorCommandCenterPayload }) {
+export function GuideHomeBelowFold({
+  data,
+  autoOpenBriefSessionId = null,
+}: {
+  data: TutorCommandCenterPayload;
+  autoOpenBriefSessionId?: string | null;
+}) {
   const upcoming = data.upcomingSessions.slice(0, 3);
 
   return (
@@ -44,6 +49,7 @@ export function GuideHomeBelowFold({ data }: { data: TutorCommandCenterPayload }
                     studentName={studentDisplayNameFromSession(session)}
                     studentId={session.student_id}
                     displayTimeZone={data.tutorTimezone}
+                    autoOpen={autoOpenBriefSessionId === session.id}
                   />
                 </div>
               ))}
@@ -133,7 +139,7 @@ export function GuideHomeBelowFold({ data }: { data: TutorCommandCenterPayload }
             />
             <h2 className="text-sm font-bold text-[#0B1220]">{GUIDE_HOME.breakthroughTitle}</h2>
           </div>
-          {data.breakthroughs.length === 0 && data.guideNotifications.length === 0 ? (
+          {data.breakthroughs.length === 0 ? (
             <p className="text-sm text-[#475569]">{GUIDE_HOME.breakthroughEmpty}</p>
           ) : (
             <ul className="space-y-2">
@@ -161,22 +167,6 @@ export function GuideHomeBelowFold({ data }: { data: TutorCommandCenterPayload }
                   </li>
                 );
               })}
-              {data.guideNotifications.slice(0, 4).map((notification) => (
-                <li
-                  key={notification.id}
-                  className="rounded-lg border border-[#E0E7FF] bg-white/80 px-3 py-2"
-                >
-                  <p className="flex items-start gap-2 text-sm text-[#0B1220]">
-                    <MentrixaVocabIcon name={CANONICAL_SESSION_ICON} size={16} surface="light" title="Notification" />
-                    {notification.body}
-                  </p>
-                  {notification.href ? (
-                    <Link href={notification.href} className="mt-1 inline-block text-[11px] font-semibold text-[#7C3AED]">
-                      Open →
-                    </Link>
-                  ) : null}
-                </li>
-              ))}
             </ul>
           )}
         </GuideAnimatedSticky>

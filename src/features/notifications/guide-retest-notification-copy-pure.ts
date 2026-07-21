@@ -1,17 +1,46 @@
+import {
+  resolveRetestNotificationTone,
+  type RetestNotificationTone,
+} from "@/features/notifications/notification-card-pure";
+
+export function buildStudentRetestPushTitle(nodeName: string): string {
+  const skill = nodeName.trim() || "Skill";
+  return `${skill} retest complete`;
+}
+
+export function buildStudentRetestPushBody(preAccuracy: number, postAccuracy: number): string {
+  const pre = Math.round(Number(preAccuracy ?? 0));
+  const post = Math.round(Number(postAccuracy ?? 0));
+  return `Your accuracy moved from ${pre}% to ${post}%`;
+}
+
 export function buildGuideInterventionRetestNotificationBody(params: {
   studentName: string;
   nodeName: string;
   preAccuracy: number;
   postAccuracy: number;
+  delta: number;
 }): string {
-  const student = params.studentName.trim() || "your student";
-  const node = params.nodeName.trim() || "the skill node";
-  const pre = Math.round(Number(params.preAccuracy ?? 0));
-  const post = Math.round(Number(params.postAccuracy ?? 0));
+  const delta = Number(params.delta ?? 0);
+  const node = params.nodeName.trim() || "this skill";
 
-  if (post > pre) {
-    return `${student} accuracy on ${node} moved from ${pre}% to ${post}% after your session and package`;
+  if (delta < 0) {
+    return `Consider a different approach on ${node}.`;
   }
 
-  return `${student} accuracy on ${node} did not move. Consider addressing it differently next session.`;
+  if (delta >= 10) {
+    const student = params.studentName.trim() || "Your student";
+    const pre = Math.round(Number(params.preAccuracy ?? 0));
+    const post = Math.round(Number(params.postAccuracy ?? 0));
+    return `${student} accuracy on ${node} moved from ${pre}% to ${post}% after your session.`;
+  }
+
+  const student = params.studentName.trim() || "Your student";
+  const pre = Math.round(Number(params.preAccuracy ?? 0));
+  const post = Math.round(Number(params.postAccuracy ?? 0));
+  return `${student} accuracy on ${node} moved from ${pre}% to ${post}%.`;
+}
+
+export function resolveGuideRetestNotificationTone(delta: number): RetestNotificationTone {
+  return resolveRetestNotificationTone(delta);
 }

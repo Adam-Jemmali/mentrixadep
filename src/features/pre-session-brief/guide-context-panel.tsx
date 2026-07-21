@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/shared/ui/button";
 import { formatDateInZone, formatTimeRangeInZone } from "@/shared/core/time-format";
 import { getPreSessionContext } from "@/features/pre-session-brief/context";
@@ -21,6 +21,7 @@ export function GuidePreSessionContextPanel({
   studentName,
   studentId: _studentId,
   displayTimeZone = "UTC",
+  autoOpen = false,
 }: {
   sessionId: string;
   guideId: string;
@@ -30,6 +31,7 @@ export function GuidePreSessionContextPanel({
   studentName: string;
   studentId?: string;
   displayTimeZone?: string;
+  autoOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [ctx, setCtx] = useState<PreSessionContext | null>(null);
@@ -39,26 +41,39 @@ export function GuidePreSessionContextPanel({
   const windowOpen = isPreSessionContextWindowOpen(startTime);
   const drawerCopy = guideMasteryGridDrawerMessage(studentName, course);
 
+  const openContext = useCallback(
+    (force = false) => {
+      if (!force && !windowOpen) return;
+      startTransition(async () => {
+        setError(null);
+        try {
+          const data = await getPreSessionContext(sessionId, guideId);
+          if (!data) {
+            setError("Could not load student context.");
+            return;
+          }
+          setCtx(data);
+          setOpen(true);
+        } catch {
+          setError("Could not load student context.");
+        }
+      });
+    },
+    [guideId, sessionId, windowOpen],
+  );
+
+  useEffect(() => {
+    if (!autoOpen || pending || open) return;
+    openContext(true);
+  }, [autoOpen, open, openContext, pending]);
+
   function toggle() {
     if (!windowOpen) return;
     if (open) {
       setOpen(false);
       return;
     }
-    startTransition(async () => {
-      setError(null);
-      try {
-        const data = await getPreSessionContext(sessionId, guideId);
-        if (!data) {
-          setError("Could not load student context.");
-          return;
-        }
-        setCtx(data);
-        setOpen(true);
-      } catch {
-        setError("Could not load student context.");
-      }
-    });
+    openContext();
   }
 
   return (

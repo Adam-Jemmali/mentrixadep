@@ -14,6 +14,8 @@ import { useReducedMotion } from "@/shared/animation/motion";
 import { KokonutGlass } from "@/shared/ui/kokonut-glass";
 import { cn } from "@/shared/core/utils";
 
+type GsapTimeline = gsap.core.Timeline;
+
 const PARTICLE_COUNT = 10;
 
 export type BeforeAfterCardProps = {
@@ -112,7 +114,7 @@ export function BeforeAfterCard({
     }
 
     let cancelled = false;
-    let timeline: { kill: () => void } | null = null;
+    let timeline: GsapTimeline | null = null;
 
     void import("@/shared/core/gsap").then(({ gsap }) => {
       if (cancelled || !rootRef.current) return;
