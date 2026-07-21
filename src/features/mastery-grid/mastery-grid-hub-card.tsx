@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
 import type { StudentStickyVariant } from "@/features/student-profile/student-sticky-variants";
@@ -23,17 +24,19 @@ export function MasteryGridHubCard({
   data,
   compact = false,
   stickyVariant = "taped",
+  className,
 }: {
   data: MasteryGridData;
   compact?: boolean;
   stickyVariant?: StudentStickyVariant;
+  className?: string;
 }) {
   const summary = summarizeMasteryGrid(data);
   const weakest = pickWeakestMasteryNodes(data, compact ? 1 : 3);
   const nextAction = buildMasteryGridNextAction(data.units);
 
   return (
-    <StudentStickyNote variant={stickyVariant} className="h-full">
+    <StudentStickyNote variant={stickyVariant} className={cn("h-full", className)}>
       <section aria-label="Skill tree summary">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
@@ -55,9 +58,9 @@ export function MasteryGridHubCard({
             surface="light"
           />
         </div>
-        <Link href="/student/mastery" className={mentrixStudent.hubBtn} title="Open skill tree">
+        <Link href="/student/mastery" className={mentrixStudent.hubBtn} title="Open skills">
           <MentrixaVocabIcon name="skills" size={compact ? 24 : 28} surface="dark" title="Skills" />
-          <span className="text-[9px] font-black uppercase tracking-[0.12em]">Tree</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.12em]">Skills</span>
         </Link>
       </div>
 

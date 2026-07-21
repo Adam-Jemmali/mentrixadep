@@ -1,7 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
-import { MasteryGrid } from "@/components/mastery-grid";
 import type { StudentHomeData } from "@/features/student-home/load-student-home";
 import { StudentVerdictHero } from "@/features/student-home/student-verdict-hero";
 import { StudentRetestAlert } from "@/features/student-home/student-retest-alert";
@@ -13,13 +11,11 @@ import {
   StudentHomeQuestPerformance,
   StudentHomeUpcomingSessions,
 } from "@/features/student-home/student-home-sections";
-import {
-  StudentHomeStickyCard,
-} from "@/features/student-home/student-home-sticky-card";
+import { HOME_MOUNT_PANEL_CLASS } from "@/features/student-home/student-home-sticky-card";
 import { useStudentHomeMount } from "@/features/student-home/use-student-home-mount";
+import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { CANONICAL_MASTERY_GRID_ICON } from "@/shared/icons/vocab-canonical";
 import { cn } from "@/shared/core/utils";
 
 export function StudentHomeClient({
@@ -45,24 +41,12 @@ export function StudentHomeClient({
             />
 
             {data.masteryGrid ? (
-              <Suspense fallback={<StudentHomeGridFallback />}>
-                <StudentHomeStickyCard
-                  variant="curl"
-                  icon={CANONICAL_MASTERY_GRID_ICON}
-                  title="Mastery grid"
-                  className={cn(mentrixStudent.hubNotebook, "p-4 sm:p-5")}
-                >
-                  <MasteryGrid
-                    userId={userId}
-                    subject={data.subject}
-                    mode="student"
-                    compact={false}
-                    initialData={data.masteryGrid}
-                    showVerdict={false}
-                    className="mt-1"
-                  />
-                </StudentHomeStickyCard>
-              </Suspense>
+              <MasteryGridHubCard
+                data={data.masteryGrid}
+                compact
+                stickyVariant="curl"
+                className={HOME_MOUNT_PANEL_CLASS}
+              />
             ) : (
               <StudentHomeGridFallback />
             )}

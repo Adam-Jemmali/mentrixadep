@@ -23,21 +23,24 @@ export function ApReadinessBand({
         size={28}
         surface="light"
         gold={band.isVerifiedPrediction}
-        title="AP readiness band"
+        title="AP score outlook"
       />
       {band.score != null ? (
-        <span
-          className={cn(
-            "font-[family-name:var(--font-playfair),serif] text-lg font-bold tabular-nums leading-none",
-            band.isVerifiedPrediction ? "text-[var(--mx-gold)]" : "text-[#0B1220]",
-          )}
-        >
-          {band.score}
+        <span className="inline-flex items-baseline gap-0.5">
+          <span
+            className={cn(
+              "font-[family-name:var(--font-playfair),serif] text-lg font-bold tabular-nums leading-none",
+              band.isVerifiedPrediction ? "text-[var(--mx-gold)]" : "text-[#0B1220]",
+            )}
+          >
+            {band.score}
+          </span>
+          <span className="text-[10px] font-semibold text-[#475569]">/5</span>
         </span>
       ) : null}
       <span className="min-w-0">
         <span className="block text-xs font-semibold text-[#0B1220]">{band.label}</span>
-        <span className="block truncate text-[10px] text-[#475569]">{band.sublabel}</span>
+        <span className="block text-[10px] leading-snug text-[#475569]">{band.sublabel}</span>
       </span>
     </div>
   );
