@@ -15,16 +15,16 @@ const STICKY_SHADOW_HOVER =
 
 export function StudentHomeAnimatedSticky({
   variant = "curl",
-  compact = false,
   className,
   children,
   staggerIndex = 0,
+  compact = false,
 }: {
   variant?: LandingStickyVariant;
-  compact?: boolean;
   className?: string;
   children: ReactNode;
   staggerIndex?: number;
+  compact?: boolean;
 }) {
   const shellRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
@@ -76,14 +76,14 @@ export function StudentHomeAnimatedSticky({
     <motion.div
       ref={shellRef}
       className="home-sticky-shell group relative"
-      initial={reduceMotion ? false : { opacity: 0, y: 40, rotate: -2.5, scale: 0.94 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 64, rotate: -3, scale: 0.88 }}
       animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
       transition={{
         type: "spring",
-        stiffness: 320,
-        damping: 24,
-        mass: 0.75,
-        delay: reduceMotion ? 0 : staggerIndex * 0.07,
+        stiffness: 260,
+        damping: 20,
+        mass: 0.9,
+        delay: reduceMotion ? 0 : staggerIndex * 0.12,
       }}
     >
       <StudentStickyNote
@@ -91,9 +91,6 @@ export function StudentHomeAnimatedSticky({
         compact={compact}
         className={cn(
           HOME_MOUNT_PANEL_CLASS,
-          compact
-            ? "home-mount-panel--compact !p-2.5 sm:!p-3"
-            : "home-mount-panel--standard !p-3 sm:!p-4",
           "cursor-default will-change-transform",
           className,
         )}

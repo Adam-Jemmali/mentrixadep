@@ -21,6 +21,7 @@ import { readUiPerfTier } from "@/shared/core/ui-performance";
 import { mentrixBrandUi, mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { cn } from "@/shared/core/utils";
 
 const RATE_FLOAT_DISMISSED_KEY = "mentrixa-rate-float-dismissed-ids";
 const statCellClass = `${mentrixStudent.hubNotebook} flex flex-col rounded-2xl px-4 py-3 sm:px-5 sm:py-4`;
@@ -82,13 +83,13 @@ interface SessionsListProps {
   displayTimeZone?: string;
   weekRange?: { startIso: string; endIso: string };
   showHeroStats?: boolean;
-  /** Strip outer notebook shell when nested inside a home sticky card. */
-  embedded?: boolean;
   children?: React.ReactNode;
   /** From server searchParams for correct first paint / hydration when deep-linking. */
   initialOpenStudyPackageId?: string;
   initialSessionsTab?: "past" | "upcoming";
   momentumActive?: boolean;
+  /** Nested inside a home sticky — strip inner notebook shell and side column layout. */
+  embedded?: boolean;
 }
 
 export function SessionsList({
@@ -100,11 +101,11 @@ export function SessionsList({
   displayTimeZone = "UTC",
   weekRange: initialWeekRange,
   showHeroStats = true,
-  embedded = false,
   children,
   initialOpenStudyPackageId = "",
   initialSessionsTab,
   momentumActive = false,
+  embedded = false,
 }: SessionsListProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -321,6 +322,10 @@ export function SessionsList({
     animateCards();
   }, [activeTab, filteredUpcoming.length, pastSessions.length, animateCards]);
 
+  const emptyShell = embedded
+    ? "rounded-lg border border-dashed border-[#A5B4FC] bg-[#EDE9FE]/40 px-3 py-4 text-center text-[#475569]"
+    : mentrixStudent.hubEmpty;
+
   return (
     <>
       {showHeroStats ? (
@@ -400,12 +405,27 @@ export function SessionsList({
         </>
       ) : null}
 
-      <div className={children ? `lg:grid lg:grid-cols-3 ${embedded ? "lg:gap-4" : "lg:gap-8"} ${showHeroStats ? "mt-8" : "mt-0"}` : showHeroStats ? "mt-8" : ""}>
-        <div className={children ? "lg:col-span-2" : ""}>
-          <section className={embedded ? "p-0" : mentrixStudent.hubSessionsPanel}>
+      <div
+        className={
+          children
+            ? embedded
+              ? "mt-0 flex flex-col gap-3"
+              : `lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}`
+            : showHeroStats
+              ? "mt-8"
+              : ""
+        }
+      >
+        <div className={children && !embedded ? "lg:col-span-2" : ""}>
+          <section className={embedded ? "space-y-2" : mentrixStudent.hubSessionsPanel}>
             { }
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-              <TabsList className={`mx-hub-tabs-list flex h-auto w-full gap-1.5 overflow-x-auto rounded-xl p-1 ${embedded ? "mb-2.5" : "mb-5"}`}>
+              <TabsList
+                className={cn(
+                  "mx-hub-tabs-list flex h-auto w-full gap-2 overflow-x-auto rounded-xl p-1.5",
+                  embedded ? "mb-2" : "mb-5",
+                )}
+              >
                 <TabsTrigger
                   value="schedule"
                   className="mx-hub-tab-trigger flex-1 gap-2 px-3 py-2 transition-all"
@@ -454,7 +474,7 @@ export function SessionsList({
 
               <TabsContent value="upcoming" className="mt-0" data-student-sessions-tab="upcoming">
                 {filteredUpcoming.length === 0 ? (
-                  <div className={mentrixStudent.hubEmpty}>
+                  <div className={emptyShell}>
                     <p className={mentrixHubSurfaces.inkBody}>No upcoming sessions.</p>
                     <Link href="#browse-guides" className={`mt-5 ${mentrixStudent.hubBtnSolid}`}>
                       Browse guides
@@ -471,7 +491,7 @@ export function SessionsList({
 
               <TabsContent value="requests" className="mt-0" data-student-sessions-tab="requests">
                 {filteredRequests.length === 0 ? (
-                  <div className={mentrixStudent.hubEmpty}>
+                  <div className={emptyShell}>
                     <p className={mentrixHubSurfaces.inkBody}>No active requests.</p>
                   </div>
                 ) : (
@@ -516,7 +536,7 @@ export function SessionsList({
 
               <TabsContent value="past" className="mt-0" data-student-sessions-tab="past">
                 {pastSessions.length === 0 ? (
-                  <div className={mentrixStudent.hubEmpty}>
+                  <div className={emptyShell}>
                     <p className={mentrixHubSurfaces.inkBody}>No past sessions.</p>
                   </div>
                 ) : (
@@ -538,7 +558,7 @@ export function SessionsList({
           </section>
         </div>
 
-        {children ? <div className="lg:col-span-1">{children}</div> : null}
+        {children ? <div className={embedded ? "w-full" : "lg:col-span-1"}>{children}</div> : null}
       </div>
 
       <RateSessionFloating

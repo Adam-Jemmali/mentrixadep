@@ -23,7 +23,7 @@ export function StudentHomeStickyCard({
   className,
   headerClassName,
   staggerIndex = 0,
-  compact = true,
+  compact = false,
 }: {
   variant?: LandingStickyVariant;
   icon: VocabIconName;
@@ -42,27 +42,21 @@ export function StudentHomeStickyCard({
   return (
     <StudentHomeAnimatedSticky
       variant={variant}
-      compact={compact}
       className={className}
       staggerIndex={staggerIndex}
+      compact={compact}
     >
       <motion.header
         className={cn(
-          compact ? "mb-2 flex items-center justify-between gap-2" : "mb-4 flex items-start justify-between gap-3",
+          "flex items-start justify-between gap-3",
+          compact ? "mb-2" : "mb-4",
           headerClassName,
         )}
-        initial={reduceMotion ? false : { opacity: 0, x: -12 }}
+        initial={reduceMotion ? false : { opacity: 0, x: -16 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: staggerIndex * 0.07 + 0.12, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ delay: staggerIndex * 0.12 + 0.18, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
-        <VocabSectionHeading
-          name={icon}
-          label={title}
-          surface="light"
-          gold={gold}
-          as="h2"
-          iconSize={compact ? 32 : undefined}
-        />
+        <VocabSectionHeading name={icon} label={title} surface="light" gold={gold} as="h2" />
         {href && linkLabel ? (
           <Link
             href={href}
@@ -76,9 +70,9 @@ export function StudentHomeStickyCard({
         ) : null}
       </motion.header>
       <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: staggerIndex * 0.07 + 0.2, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ delay: staggerIndex * 0.12 + 0.28, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         {children}
       </motion.div>
@@ -91,35 +85,42 @@ export function StudentHomeEmptyInvite({
   actionLabel,
   actionHref,
   icon,
+  compact = false,
+  hideAction = false,
 }: {
   message: string;
   actionLabel: string;
   actionHref: string;
   icon: VocabIconName;
+  compact?: boolean;
+  hideAction?: boolean;
 }) {
-  const reduceMotion = useReducedMotion();
+  if (compact) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-[#A5B4FC] bg-[#EDE9FE]/40 px-3 py-2.5 text-sm text-[#475569]">
+        <MentrixaVocabIcon name={icon} size={22} surface="light" title={message} className="shrink-0" />
+        <span className="min-w-0 flex-1 leading-snug">{message}</span>
+        {hideAction ? null : (
+          <Link
+            href={actionHref}
+            className={cn(mentrixStudent.hubGhostLink, "shrink-0 cursor-pointer px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em]")}
+          >
+            {actionLabel}
+          </Link>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className={cn(mentrixStudent.hubEmpty, "space-y-2.5 px-4 py-4 text-center")}>
-      {reduceMotion ? (
-        <MentrixaVocabIcon name={icon} size={36} surface="light" title={message} className="mx-auto" />
-      ) : (
-        <motion.div
-          initial={{ scale: 0.92, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <MentrixaVocabIcon name={icon} size={36} surface="light" title={message} className="mx-auto" />
-        </motion.div>
+    <div className={cn(mentrixStudent.hubEmpty, "space-y-3 py-5 text-center")}>
+      <MentrixaVocabIcon name={icon} size={36} surface="light" title={message} className="mx-auto" />
+      <p className={mentrixStudent.pageSubtitle}>{message}</p>
+      {hideAction ? null : (
+        <Link href={actionHref} className={cn(mentrixStudent.hubBtnSolid, "cursor-pointer text-sm")}>
+          {actionLabel}
+        </Link>
       )}
-      <p className="text-sm font-medium leading-snug text-[#475569]">{message}</p>
-      <Link
-        href={actionHref}
-        className={cn(mentrixStudent.hubBtnSolid, "inline-flex cursor-pointer items-center gap-1.5 text-sm")}
-      >
-        <MentrixaVocabIcon name={icon} size={16} surface="light" title={actionLabel} />
-        {actionLabel}
-      </Link>
     </div>
   );
 }

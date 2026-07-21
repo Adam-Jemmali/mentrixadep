@@ -7,11 +7,14 @@ import { loadLiveBoardEvents } from "@/features/live-board/load-live-board-snaps
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import { getMatchmakerGuides } from "@/features/matchmaker/matchmaker";
-import { getStudentHubSnapshot } from "@/features/student-profile/hub-snapshot";
+import { getTutorAvailability } from "@/features/booking/browse-availability";
 import {
-  loadStudentHubDashboard,
-  type StudentHubDashboardData,
-} from "@/features/student-home/load-student-hub-dashboard";
+  getGuideNodeImpactRollingBatch,
+  loadWeakestRollingStatNode,
+} from "@/features/guide-impact/reads";
+import { getStudentSessionsHubBundle, getStudentHubSnapshot } from "@/features/student-profile/hub-snapshot";
+import type { GuideNodeImpactRollingBatch } from "@/features/guide-impact/impact-score-pure";
+import type { WeakestRollingStatNode } from "@/features/guide-impact/reads";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { LiveBoardEventRow } from "@/features/live-board/types";
 import type { TopRivalData } from "@/features/divisions/top-rival";
@@ -34,6 +37,23 @@ export type StudentHomeUpcomingSession = {
   tutor_avatar_url: string | null;
 };
 
+export type StudentHomeHubFooter = {
+  upcomingSessions: Awaited<ReturnType<typeof getStudentSessionsHubBundle>>["upcomingSessions"];
+  pastSessions: Awaited<ReturnType<typeof getStudentSessionsHubBundle>>["pastSessions"];
+  sessionRequests: Awaited<ReturnType<typeof getStudentSessionsHubBundle>>["sessionRequests"];
+  availability: Awaited<ReturnType<typeof getTutorAvailability>>;
+  availableCourses: string[];
+  tutorExpertise: Record<
+    string,
+    Array<{ course_name: string; proof_description: string; verified: boolean }>
+  >;
+  studentCourseNames: string[];
+  totalXp: number;
+  streak: number;
+  guideNodeImpactRolling: GuideNodeImpactRollingBatch;
+  weakestRollingNode: WeakestRollingStatNode | null;
+};
+
 export type StudentHomeData = {
   subject: string;
   heroVerdict: StudentHomeVerdictView;
@@ -47,13 +67,14 @@ export type StudentHomeData = {
   recommendedGuide: MatchmakerGuideResult | null;
   division: TopRivalData;
   timeZone: string;
-  hubDashboard: StudentHubDashboardData;
+  hubFooter: StudentHomeHubFooter;
 };
 
 export async function loadStudentHome(userId: string): Promise<StudentHomeData> {
   const [
     rankStats,
     masteryGrid,
+    sessionsBundle,
     snapshot,
     dueRetests,
     recentQuests,
@@ -63,6 +84,7 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
   ] = await Promise.all([
     loadVerifiedFirstAttemptRankStats(userId),
     loadMasteryGrid(userId).catch(() => null),
+    getStudentSessionsHubBundle(),
     getStudentHubSnapshot(),
     loadDueRetestNodes(userId),
     loadRecentQuestPerformance(userId, 3),
@@ -71,16 +93,41 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     getMatchmakerGuides(userId).catch(() => ({ guides: [] as MatchmakerGuideResult[] })),
   ]);
 
-  const hubDashboard = await loadStudentHubDashboard(userId, snapshot);
-
-  const upcomingSessions = hubDashboard.upcomingSessions.map((s) => ({
+  const upcomingSessions = sessionsBundle.upcomingSessions.map((s: Record<string, unknown>) => ({
     id: String(s.id),
     course: String(s.course),
     start_time: String(s.start_time),
     end_time: String(s.end_time),
-    tutor_name: s.tutor?.display_name?.trim() || "Guide",
-    tutor_avatar_url: s.tutor?.avatar_url ?? null,
+    tutor_name:
+      (s.tutor as { display_name?: string } | undefined)?.display_name?.trim() ||
+      "Guide",
+    tutor_avatar_url: (s.tutor as { avatar_url?: string | null } | undefined)?.avatar_url ?? null,
   }));
+
+  const availability = await getTutorAvailability(AP_CALC_AB_SUBJECT).catch(() => []);
+  const tutorIds = Array.from(new Set(availability.map((slot) => slot.tutor_id)));
+  const [guideNodeImpactRolling, weakestRollingNode] = await Promise.all([
+    getGuideNodeImpactRollingBatch(tutorIds),
+    loadWeakestRollingStatNode(userId),
+  ]);
+
+  const studentCourseNames = snapshot.student_courses
+    .map((row) => String(row.course_name ?? row.course ?? "").trim())
+    .filter(Boolean);
+
+  const hubFooter: StudentHomeHubFooter = {
+    upcomingSessions: sessionsBundle.upcomingSessions,
+    pastSessions: sessionsBundle.pastSessions,
+    sessionRequests: sessionsBundle.sessionRequests,
+    availability,
+    availableCourses: snapshot.available_courses,
+    tutorExpertise: snapshot.tutor_expertise,
+    studentCourseNames,
+    totalXp: Number(snapshot.user_xp?.total_xp ?? 0),
+    streak: Number(snapshot.user_xp?.streak_days ?? 0),
+    guideNodeImpactRolling,
+    weakestRollingNode,
+  };
 
   return {
     subject: AP_CALC_AB_SUBJECT,
@@ -95,6 +142,6 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     recommendedGuide: matchmaker.guides[0] ?? null,
     division,
     timeZone: snapshot.user_settings?.timezone?.trim() || "UTC",
-    hubDashboard,
+    hubFooter,
   };
 }

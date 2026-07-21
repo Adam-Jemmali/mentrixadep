@@ -340,29 +340,6 @@ html:has(.mentrix-student-type-scope) body {
   color: #0b1220;
 }
 
-/* Student home — sticky cards sit flush on the desk with no orphan margin bands. */
-.student-home-canvas .home-sticky-shell {
-  margin: 0;
-}
-
-.student-home-canvas .home-mount-panel--standard.lp-sticky-note {
-  padding: 0.75rem 0.875rem;
-}
-
-@media (min-width: 640px) {
-  .student-home-canvas .home-mount-panel--standard.lp-sticky-note {
-    padding: 0.875rem 1rem;
-  }
-}
-
-.student-home-canvas .home-mount-panel--compact.lp-sticky-note {
-  padding: 0.625rem 0.75rem;
-}
-
-.student-home-canvas .lp-sticky-note.mx-hub-sticky {
-  margin: 0;
-}
-
 /* Student hub — paper canvas surfaces (solid fills, ruled lines). */
 .mx-hub-ruled-lines {
   background-image: repeating-linear-gradient(
