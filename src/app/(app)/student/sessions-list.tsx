@@ -82,6 +82,8 @@ interface SessionsListProps {
   displayTimeZone?: string;
   weekRange?: { startIso: string; endIso: string };
   showHeroStats?: boolean;
+  /** Strip outer notebook shell when nested inside a home sticky card. */
+  embedded?: boolean;
   children?: React.ReactNode;
   /** From server searchParams for correct first paint / hydration when deep-linking. */
   initialOpenStudyPackageId?: string;
@@ -98,6 +100,7 @@ export function SessionsList({
   displayTimeZone = "UTC",
   weekRange: initialWeekRange,
   showHeroStats = true,
+  embedded = false,
   children,
   initialOpenStudyPackageId = "",
   initialSessionsTab,
@@ -397,12 +400,12 @@ export function SessionsList({
         </>
       ) : null}
 
-      <div className={children ? `lg:grid lg:grid-cols-3 lg:gap-8 ${showHeroStats ? "mt-8" : "mt-0"}` : showHeroStats ? "mt-8" : ""}>
+      <div className={children ? `lg:grid lg:grid-cols-3 ${embedded ? "lg:gap-4" : "lg:gap-8"} ${showHeroStats ? "mt-8" : "mt-0"}` : showHeroStats ? "mt-8" : ""}>
         <div className={children ? "lg:col-span-2" : ""}>
-          <section className={mentrixStudent.hubSessionsPanel}>
+          <section className={embedded ? "p-0" : mentrixStudent.hubSessionsPanel}>
             { }
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-              <TabsList className="mx-hub-tabs-list mb-5 flex h-auto w-full gap-2 rounded-xl p-1.5 overflow-x-auto">
+              <TabsList className={`mx-hub-tabs-list flex h-auto w-full gap-1.5 overflow-x-auto rounded-xl p-1 ${embedded ? "mb-2.5" : "mb-5"}`}>
                 <TabsTrigger
                   value="schedule"
                   className="mx-hub-tab-trigger flex-1 gap-2 px-3 py-2 transition-all"

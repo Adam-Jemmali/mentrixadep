@@ -7,7 +7,11 @@ import { loadLiveBoardEvents } from "@/features/live-board/load-live-board-snaps
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import { getMatchmakerGuides } from "@/features/matchmaker/matchmaker";
-import { getStudentSessionsHubBundle, getStudentHubSnapshot } from "@/features/student-profile/hub-snapshot";
+import { getStudentHubSnapshot } from "@/features/student-profile/hub-snapshot";
+import {
+  loadStudentHubDashboard,
+  type StudentHubDashboardData,
+} from "@/features/student-home/load-student-hub-dashboard";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { LiveBoardEventRow } from "@/features/live-board/types";
 import type { TopRivalData } from "@/features/divisions/top-rival";
@@ -43,13 +47,13 @@ export type StudentHomeData = {
   recommendedGuide: MatchmakerGuideResult | null;
   division: TopRivalData;
   timeZone: string;
+  hubDashboard: StudentHubDashboardData;
 };
 
 export async function loadStudentHome(userId: string): Promise<StudentHomeData> {
   const [
     rankStats,
     masteryGrid,
-    sessionsBundle,
     snapshot,
     dueRetests,
     recentQuests,
@@ -59,7 +63,6 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
   ] = await Promise.all([
     loadVerifiedFirstAttemptRankStats(userId),
     loadMasteryGrid(userId).catch(() => null),
-    getStudentSessionsHubBundle(),
     getStudentHubSnapshot(),
     loadDueRetestNodes(userId),
     loadRecentQuestPerformance(userId, 3),
@@ -68,15 +71,15 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     getMatchmakerGuides(userId).catch(() => ({ guides: [] as MatchmakerGuideResult[] })),
   ]);
 
-  const upcomingSessions = sessionsBundle.upcomingSessions.map((s: Record<string, unknown>) => ({
+  const hubDashboard = await loadStudentHubDashboard(userId, snapshot);
+
+  const upcomingSessions = hubDashboard.upcomingSessions.map((s) => ({
     id: String(s.id),
     course: String(s.course),
     start_time: String(s.start_time),
     end_time: String(s.end_time),
-    tutor_name:
-      (s.tutor as { display_name?: string } | undefined)?.display_name?.trim() ||
-      "Guide",
-    tutor_avatar_url: (s.tutor as { avatar_url?: string | null } | undefined)?.avatar_url ?? null,
+    tutor_name: s.tutor?.display_name?.trim() || "Guide",
+    tutor_avatar_url: s.tutor?.avatar_url ?? null,
   }));
 
   return {
@@ -92,5 +95,6 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     recommendedGuide: matchmaker.guides[0] ?? null,
     division,
     timeZone: snapshot.user_settings?.timezone?.trim() || "UTC",
+    hubDashboard,
   };
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
@@ -30,7 +29,11 @@ import { emitXpAward } from "@/features/xp/xp-events";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { PracticeDifficulty } from "@/features/quest/practice-quest-types";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import { QuestAnimatedSticky, useQuestRunEntry } from "@/features/quest/ui/quest-animated-sticky";
+import { QuestMcqOptions } from "@/features/quest/ui/quest-mcq-options";
+import { QuestQuestionStage } from "@/features/quest/ui/quest-question-stage";
+import { QuestRunChrome, QuestRunLoadingState } from "@/features/quest/ui/quest-run-chrome";
+import type { MasteryNodeVisualState } from "@/components/mastery-node";
 import { BreakthroughCelebrationOverlay } from "@/features/breakthrough-events/breakthrough-overlay";
 import { createNextBreakthroughQuest } from "@/features/breakthrough-events/adaptive-quests";
 import type { BreakthroughCelebration } from "@/features/breakthrough-events/types";
@@ -41,7 +44,7 @@ import type { SolutionStep, StepFeedbackPartial } from "@/features/quest/compone
 import { useUiPerfTier } from "@/shared/core/use-ui-perf-tier";
 import { getMasteryGridForCurrentUser } from "@/features/mastery-grid/get-mastery-grid-action";
 import { patchMasteryGridCache } from "@/features/mastery-grid/use-mastery-grid-cache";
-import { QuestMasteryDonePanel } from "@/features/mastery-grid/quest-mastery-done-panel";
+import { QuestDoneScreen } from "@/features/quest/ui/quest-done-screen";
 import { parseQuestPromptParam } from "@/features/quest/quest-post-step-pure";
 import type {
   MasteryGridData,
@@ -53,10 +56,8 @@ import type {
 import type { Verdict } from "@/features/guidance/verdict-engine-pure";
 import {
   OnboardingQuestProgressBar,
-  QuestSessionProgressBar,
 } from "@/shared/ui/progress-bar-patterns";
 import { QuestPackLoadPendingPanel } from "@/shared/ui/spinner-patterns";
-import { QuestTimerProgressCircle } from "@/shared/ui/progress-circle-patterns";
 import { ExamStakesLabel } from "@/shared/ui/tooltip-patterns";
 import { ApCalcSkillGlyph } from "@/features/quest/ui/ap-calc-skill-glyph";
 import {
@@ -155,6 +156,15 @@ export function QuestPracticeWorkspace({
   const onboardingCompleteRef = useRef(false);
   const touchStartX = useRef<number | null>(null);
   const questionShownAtRef = useRef<number | null>(null);
+
+  useQuestRunEntry(phase === "run", `${questId ?? "idle"}-${qIndex}-${question?.id ?? "loading"}`);
+
+  const questNodeVisualState = useMemo((): MasteryNodeVisualState | undefined => {
+    if (mcqResult?.correct || correctCelebration) return "verified";
+    if (mcqResult && !mcqResult.correct) return "attempted";
+    if (writtenAwaitingContinue && writtenFeedback) return "attempted";
+    return "practiced";
+  }, [correctCelebration, mcqResult, writtenAwaitingContinue, writtenFeedback]);
 
   const takeAnsweredMs = useCallback(() => {
     const started = questionShownAtRef.current;
@@ -303,6 +313,41 @@ export function QuestPracticeWorkspace({
       setErr(res.error);
       return;
     }
+    setQuestId(res.questId);
+    setTimeLimitSec(res.timeLimitSec);
+    timeLeftRef.current = res.timeLimitSec;
+    setTimeLeft(res.timeLimitSec);
+    setQIndex(0);
+    const st = await startPracticeSession(res.questId);
+    if (!st.success) {
+      setErr(st.error);
+      return;
+    }
+    setPhase("run");
+    await loadQuestion(res.questId, 0);
+    startQuestTimer(res.timeLimitSec, res.questId);
+  };
+
+  const queuePracticeForNode = async (nodeName: string) => {
+    setErr(null);
+    setBusy(true);
+    const res = await createPracticeQuest({
+      subject: AP_CALC_AB_SUBJECT,
+      difficulty: onboardingMode ? "intermediate" : difficulty,
+      packType: "mcq",
+      focusNodeName: nodeName,
+    });
+    setBusy(false);
+    if (!res.success) {
+      setErr(res.error);
+      return;
+    }
+    stopTimer();
+    setMcqResult(null);
+    setMcqPicked(null);
+    setWrittenFeedback(null);
+    setWrittenAwaitingContinue(false);
+    setCorrectCelebration(null);
     setQuestId(res.questId);
     setTimeLimitSec(res.timeLimitSec);
     timeLeftRef.current = res.timeLimitSec;
@@ -672,8 +717,6 @@ export function QuestPracticeWorkspace({
 
   if (phase === "done" && doneResult) {
     const grid = doneResult.masteryGrid ?? fallbackMasteryGrid;
-    const highlight = doneResult.masteryHighlight;
-    const verdict = doneResult.questVerdict;
 
     return (
       <>
@@ -682,11 +725,10 @@ export function QuestPracticeWorkspace({
             <OnboardingQuestProgressBar phase="done" />
           </div>
         ) : null}
-        {grid && verdict ? (
-          <QuestMasteryDonePanel
+        {grid ? (
+          <QuestDoneScreen
             grid={grid}
-            verdict={verdict}
-            masteryHighlight={highlight}
+            masteryHighlight={doneResult.masteryHighlight}
             openedHighlight={doneResult.openedHighlight}
             phoenixHighlight={doneResult.phoenixHighlight}
             fasterHighlight={doneResult.fasterHighlight}
@@ -695,6 +737,8 @@ export function QuestPracticeWorkspace({
             total={doneResult.total}
             xpAwarded={doneResult.xpAwarded}
             perfectBonus={doneResult.perfectBonus}
+            newVerifiedSkills={doneResult.newVerifiedSkills ?? 0}
+            onTryAgain={() => void beginPack()}
           />
         ) : (
           <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
@@ -728,292 +772,256 @@ export function QuestPracticeWorkspace({
       question.kind !== "drag_order" &&
       question.kind !== "graph_feature" &&
       question.kind !== "multi_part";
+    const progressPercent = total > 0 ? ((qIndex + 1) / total) * 100 : 0;
 
     return (
       <>
-      <StudentStickyNote variant="taped" className="w-full touch-pan-y">
-      <div
-        onTouchStart={(e) => {
-          touchStartX.current = e.targetTouches[0]?.clientX ?? null;
-        }}
-        onTouchEnd={(e) => {
-          const start = touchStartX.current;
-          touchStartX.current = null;
-          const end = e.changedTouches[0]?.clientX;
-          if (start == null || end == null) return;
-          const dx = end - start;
-          if (Math.abs(dx) < 56) return;
-          if (dx < 0) void goNextBySwipe();
-          else void goPrevQuestion();
-        }}
-      >
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <p className={`text-xs font-mono ${mentrixStudent.textMutedOnLight}`}>
-            Q{qIndex + 1}/{total || "…"}
-          </p>
-          <QuestTimerProgressCircle
-            timeLeftSec={timeLeft}
-            timeLimitSec={timeLimitSec}
-          />
-        </div>
-        <div className="mb-8">
-          {onboardingMode ? (
-            <OnboardingQuestProgressBar
-              phase="run"
-              questionIndex={qIndex}
-              questionTotal={total || 1}
-            />
-          ) : (
-            <QuestSessionProgressBar
-              value={total > 0 ? ((qIndex + 1) / total) * 100 : 0}
-            />
-          )}
-        </div>
-
-        {questionLoading || !question ? (
-          <div className="flex min-h-[12rem] flex-col items-center justify-center gap-3 py-10">
-            <div
-              className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent motion-reduce:animate-none"
-              aria-hidden
-            />
-            <p className={`text-sm ${mentrixStudent.textMutedOnLight}`}>
-              Loading next question…
-            </p>
-            {err ? (
-              <p className="text-sm font-medium text-red-600">{err}</p>
-            ) : null}
-          </div>
-        ) : (
-        <AnimatePresence mode="sync">
-          <motion.div
-            key={question.id || qIndex}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18 }}
-            className="space-y-6"
+        <QuestAnimatedSticky variant="taped">
+          <div
+            onTouchStart={(e) => {
+              touchStartX.current = e.targetTouches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const start = touchStartX.current;
+              touchStartX.current = null;
+              const end = e.changedTouches[0]?.clientX;
+              if (start == null || end == null) return;
+              const dx = end - start;
+              if (Math.abs(dx) < 56) return;
+              if (dx < 0) void goNextBySwipe();
+              else void goPrevQuestion();
+            }}
           >
-            {(question.examStakes || question.subtopicTag) && (
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-3">
-                  {question.subtopicTag ? (
-                    <div className="flex items-center gap-2.5">
-                      <ApCalcSkillGlyph nodeName={question.subtopicTag} size="sm" />
-                      <span className="text-xs font-semibold text-slate-700">{question.subtopicTag}</span>
+            {onboardingMode ? (
+              <div className="quest-header mb-4">
+                <OnboardingQuestProgressBar
+                  phase="run"
+                  questionIndex={qIndex}
+                  questionTotal={total || 1}
+                />
+              </div>
+            ) : (
+              <QuestRunChrome
+                questionIndex={qIndex}
+                questionTotal={total}
+                progressPercent={progressPercent}
+                timeLeftSec={timeLeft}
+                timeLimitSec={timeLimitSec}
+                skillNodeName={question?.subtopicTag}
+                nodeVisualState={question ? questNodeVisualState : undefined}
+              />
+            )}
+
+            {questionLoading || !question ? (
+              <QuestRunLoadingState message="Loading next question…" error={err} />
+            ) : (
+              <QuestQuestionStage questionKey={question.id || String(qIndex)}>
+                {(question.examStakes || question.subtopicTag) && (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {question.subtopicTag ? (
+                        <div className="flex items-center gap-2.5">
+                          <ApCalcSkillGlyph nodeName={question.subtopicTag} size="sm" />
+                          <span className="text-xs font-semibold text-white/80">{question.subtopicTag}</span>
+                        </div>
+                      ) : null}
+                      {question.examStakes ? (
+                        <ExamStakesLabel examStakes={question.examStakes} tone="dark" />
+                      ) : null}
                     </div>
-                  ) : null}
-                  {question.examStakes ? (
-                    <ExamStakesLabel examStakes={question.examStakes} tone="light" />
-                  ) : null}
-                </div>
-                {question.examStakes ? (
-                  <ExamStakesDisclosure examStakes={question.examStakes} />
+                    {question.examStakes ? (
+                      <ExamStakesDisclosure examStakes={question.examStakes} />
+                    ) : null}
+                  </div>
+                )}
+
+                {showPromptOutside ? (
+                  <>
+                    <QuestStimulusBlock stimulus={question.stimulus} variant="dark" />
+                    <div className="text-[17px] leading-[1.6] text-white">
+                      <PromptWithMath
+                        text={question.prompt}
+                        variant="dark"
+                        highlightKeyTerms
+                      />
+                    </div>
+                  </>
                 ) : null}
-              </div>
-            )}
 
-            {showPromptOutside ? (
-              <>
-                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
-                <PromptWithMath text={question.prompt} variant="light" highlightKeyTerms />
-              </>
-            ) : null}
-
-            {question.kind === "multi_part" ? (
-              <MultiPartQuestion
-                stem={question.prompt}
-                stimulus={question.stimulus}
-                parts={question.parts}
-                partsCorrect={question.partsCorrect}
-                partsTotal={question.partsTotal}
-                xpEarned={question.xpEarned}
-                finished={question.finished}
-                busy={busy}
-                onSubmitPart={onMultiPartSubmit}
-                onContinue={
-                  question.finished && !busy
-                    ? () => void multiPartContinue()
-                    : undefined
-                }
-              />
-            ) : null}
-
-            {question.kind === "mcq" && (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {question.options.map((opt, i) => {
-                  const base =
-                    "rounded-xl border p-4 text-left text-sm transition-all overflow-x-auto max-w-full";
-                  let cls = `${base} border-[#A5B4FC] bg-white text-[#0B1220] hover:border-[#6366F1] hover:bg-[#EDE9FE]`;
-                  if (mcqResult) {
-                    if (i === mcqResult.correctIndex) {
-                      cls = `${base} border-emerald-400 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-400/35`;
-                    } else if (i === mcqPicked && !mcqResult.correct) {
-                      cls = `${base} border-red-400 bg-red-50 text-red-900 ring-1 ring-red-400/35`;
-                    } else {
-                      cls = `${base} border-[#C4B5FD] bg-[#F8FAFC] text-[#64748B] opacity-80`;
+                {question.kind === "multi_part" ? (
+                  <MultiPartQuestion
+                    stem={question.prompt}
+                    stimulus={question.stimulus}
+                    parts={question.parts}
+                    partsCorrect={question.partsCorrect}
+                    partsTotal={question.partsTotal}
+                    xpEarned={question.xpEarned}
+                    finished={question.finished}
+                    busy={busy}
+                    onSubmitPart={onMultiPartSubmit}
+                    onContinue={
+                      question.finished && !busy ? () => void multiPartContinue() : undefined
                     }
-                  } else if (mcqPicked === i) {
-                    cls = `${base} border-[#6366F1] bg-[#EDE9FE] text-[#0B1220] ring-2 ring-[#6366F1]/40`;
-                  }
-                  return (
-                    <motion.button
-                      key={i}
-                      type="button"
-                      disabled={!!mcqResult || busy}
-                      onClick={() => void onMcqSelect(i)}
-                      whileTap={{ scale: 0.98 }}
-                      className={`${cls} [&_.katex]:text-inherit`}
-                    >
-                      <PromptWithMath text={opt} variant="light" highlightKeyTerms />
-                    </motion.button>
-                  );
-                })}
-              </div>
-            )}
+                  />
+                ) : null}
 
-            {question.kind === "free_response" && !writtenAwaitingContinue ? (
-              <MathInput
-                itemId={question.id}
-                mode="compose"
-                surface="light"
-                disabled={busy}
-                onComposeSubmit={onFreeResponseSubmit}
-              />
-            ) : null}
+                {question.kind === "mcq" ? (
+                  <QuestMcqOptions
+                    options={question.options}
+                    picked={mcqPicked}
+                    result={
+                      mcqResult
+                        ? { correct: mcqResult.correct, correctIndex: mcqResult.correctIndex }
+                        : null
+                    }
+                    busy={busy}
+                    onSelect={(i) => void onMcqSelect(i)}
+                  />
+                ) : null}
 
-            {question.kind === "complete_expression" && !writtenAwaitingContinue ? (
-              <>
-                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
-                <CompleteExpressionQuestion
-                  itemId={question.id}
-                  prompt={question.prompt}
-                  blankKeys={question.blankKeys}
-                  busy={busy}
-                  disabled={busy}
-                  onSubmit={onClozeSubmit}
-                />
-              </>
-            ) : null}
+                {question.kind === "free_response" && !writtenAwaitingContinue ? (
+                  <MathInput
+                    itemId={question.id}
+                    mode="compose"
+                    surface="dark"
+                    disabled={busy}
+                    onComposeSubmit={onFreeResponseSubmit}
+                  />
+                ) : null}
 
-            {question.kind === "drag_order" && !writtenAwaitingContinue ? (
-              <>
-                <QuestStimulusBlock stimulus={question.stimulus} variant="light" />
-                <DragOrderQuestion
-                  prompt={question.prompt}
-                  items={question.items}
-                  busy={busy}
-                  disabled={busy}
-                  onSubmit={onDragOrderSubmit}
-                />
-              </>
-            ) : null}
+                {question.kind === "complete_expression" && !writtenAwaitingContinue ? (
+                  <>
+                    <QuestStimulusBlock stimulus={question.stimulus} variant="dark" />
+                    <CompleteExpressionQuestion
+                      itemId={question.id}
+                      prompt={question.prompt}
+                      blankKeys={question.blankKeys}
+                      busy={busy}
+                      disabled={busy}
+                      onSubmit={onClozeSubmit}
+                    />
+                  </>
+                ) : null}
 
-            {question.kind === "graph_feature" && !writtenAwaitingContinue ? (
-              <GraphFeatureQuestion
-                prompt={question.prompt}
-                stimulus={question.stimulus}
-                maxSelections={question.maxSelections}
-                targetKinds={question.targetKinds}
-                sketchMode={question.sketchMode}
-                sketchDomain={question.sketchDomain}
-                busy={busy}
-                disabled={busy}
-                onSubmit={onGraphFeatureSubmit}
-              />
-            ) : null}
+                {question.kind === "drag_order" && !writtenAwaitingContinue ? (
+                  <>
+                    <QuestStimulusBlock stimulus={question.stimulus} variant="dark" />
+                    <DragOrderQuestion
+                      prompt={question.prompt}
+                      items={question.items}
+                      busy={busy}
+                      disabled={busy}
+                      onSubmit={onDragOrderSubmit}
+                    />
+                  </>
+                ) : null}
 
-            {(question.kind === "short_answer" || question.kind === "problem_solving") && (
-              <div className="space-y-3">
-                <textarea
-                  className={`${mentrixStudent.hubFieldInput} min-h-[120px]`}
-                  placeholder="Your answer…"
-                  value={written}
-                  onChange={(e) => setWritten(e.target.value)}
-                  disabled={busy || writtenAwaitingContinue}
-                />
-                {!writtenAwaitingContinue ? (
-                  <Button
-                    disabled={busy || !written.trim()}
-                    onClick={() => void onWrittenSubmit()}
-                  >
-                    Submit answer
+                {question.kind === "graph_feature" && !writtenAwaitingContinue ? (
+                  <GraphFeatureQuestion
+                    prompt={question.prompt}
+                    stimulus={question.stimulus}
+                    maxSelections={question.maxSelections}
+                    targetKinds={question.targetKinds}
+                    sketchMode={question.sketchMode}
+                    sketchDomain={question.sketchDomain}
+                    busy={busy}
+                    disabled={busy}
+                    onSubmit={onGraphFeatureSubmit}
+                  />
+                ) : null}
+
+                {(question.kind === "short_answer" || question.kind === "problem_solving") && (
+                  <div className="space-y-3">
+                    <textarea
+                      className={`${mentrixStudent.hubFieldInput} min-h-[120px] bg-[var(--mx-navy-2)] text-white placeholder:text-white/40`}
+                      placeholder="Your answer…"
+                      value={written}
+                      onChange={(e) => setWritten(e.target.value)}
+                      disabled={busy || writtenAwaitingContinue}
+                    />
+                    {!writtenAwaitingContinue ? (
+                      <Button disabled={busy || !written.trim()} onClick={() => void onWrittenSubmit()}>
+                        Submit answer
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
+
+                {writtenFeedback && !correctCelebration && writtenAwaitingContinue ? (
+                  <p className="text-sm whitespace-pre-wrap text-white/75">{writtenFeedback}</p>
+                ) : null}
+
+                {writtenAwaitingContinue && !correctCelebration ? (
+                  <Button type="button" onClick={() => void writtenContinue()}>
+                    Next question
                   </Button>
                 ) : null}
+
+                {question.kind === "mcq" && mcqResult && !mcqResult.correct ? (
+                  mcqResult.hasStepTrace ? (
+                    <StepFeedback
+                      outcome={mcqResult.partialCredit ? "partial" : "incorrect"}
+                      studentAnswer={mcqResult.studentAnswer}
+                      correctAnswer={mcqResult.correctAnswer}
+                      solutionSteps={mcqResult.solutionSteps}
+                      partialCredit={mcqResult.partialCredit}
+                      onPracticeStep={
+                        question.subtopicTag && !busy
+                          ? () => void queuePracticeForNode(question.subtopicTag!)
+                          : undefined
+                      }
+                      onContinue={
+                        !question.subtopicTag && mcqResult.canContinue && !busy
+                          ? () => void mcqNext()
+                          : undefined
+                      }
+                      busy={busy}
+                      surface="dark"
+                    />
+                  ) : (
+                    <PracticeWrongAnswerAlert
+                      explanation={mcqResult.explanation}
+                      onContinue={
+                        mcqResult.canContinue && !busy ? () => void mcqNext() : undefined
+                      }
+                      busy={busy}
+                    />
+                  )
+                ) : null}
+              </QuestQuestionStage>
+            )}
+
+            <PracticeCorrectCelebration
+              open={correctCelebration != null}
+              explanation={correctCelebration?.explanation ?? ""}
+              solutionSteps={correctCelebration?.solutionSteps}
+              correctAnswer={correctCelebration?.correctAnswer}
+              lite={tier === "lite"}
+              onNext={() => {
+                if (correctCelebration?.mode === "mcq") void mcqNext();
+                else void writtenContinue();
+              }}
+            />
+
+            {err && question && !questionLoading ? (
+              <div className="mt-4">
+                {isPracticeLockedAttemptError(err) ? (
+                  <PracticeLockedAttemptAlert />
+                ) : (
+                  <p className="text-sm text-red-600">{err}</p>
+                )}
               </div>
-            )}
-
-            {writtenFeedback && !correctCelebration && writtenAwaitingContinue ? (
-              <p className={`text-sm whitespace-pre-wrap ${mentrixStudent.textMutedOnLight}`}>
-                {writtenFeedback}
-              </p>
             ) : null}
-
-            {writtenAwaitingContinue && !correctCelebration ? (
-              <Button type="button" onClick={() => void writtenContinue()}>
-                Next question
-              </Button>
-            ) : null}
-            {question.kind === "mcq" && mcqResult && !mcqResult.correct ? (
-              mcqResult.hasStepTrace ? (
-                <StepFeedback
-                  outcome={mcqResult.partialCredit ? "partial" : "incorrect"}
-                  studentAnswer={mcqResult.studentAnswer}
-                  correctAnswer={mcqResult.correctAnswer}
-                  solutionSteps={mcqResult.solutionSteps}
-                  partialCredit={mcqResult.partialCredit}
-                  onContinue={
-                    mcqResult.canContinue && !busy ? () => void mcqNext() : undefined
-                  }
-                  busy={busy}
-                  surface="light"
-                  className="mx-hub-notebook mx-hub-ruled-lines mx-hub-paper mx-surface-light rounded-2xl border border-[#E0E7FF] p-4"
-                />
-              ) : (
-                <PracticeWrongAnswerAlert
-                  explanation={mcqResult.explanation}
-                  onContinue={
-                    mcqResult.canContinue && !busy ? () => void mcqNext() : undefined
-                  }
-                  busy={busy}
-                  className="mx-hub-notebook mx-hub-ruled-lines mx-hub-paper mx-surface-light"
-                />
-              )
-            ) : null}
-          </motion.div>
-        </AnimatePresence>
-        )}
-
-        <PracticeCorrectCelebration
-          open={correctCelebration != null}
-          explanation={correctCelebration?.explanation ?? ""}
-          solutionSteps={correctCelebration?.solutionSteps}
-          correctAnswer={correctCelebration?.correctAnswer}
-          lite={tier === "lite"}
-          onNext={() => {
-            if (correctCelebration?.mode === "mcq") void mcqNext();
-            else void writtenContinue();
-          }}
-        />
-
-        {err && question && !questionLoading ? (
-          <div className="mt-4">
-            {isPracticeLockedAttemptError(err) ? (
-              <PracticeLockedAttemptAlert />
-            ) : (
-              <p className="text-sm text-red-600">{err}</p>
-            )}
           </div>
-        ) : null}
-      </div>
-      </StudentStickyNote>
-      <QuestPracticeToolsDrawer
-        questionIndex={qIndex}
-        questionTotal={total || 1}
-        timeLeftSec={timeLeft}
-        timeLimitSec={timeLimitSec}
-        subtopicTag={question?.subtopicTag}
-        examStakes={question?.examStakes}
-      />
+        </QuestAnimatedSticky>
+        <QuestPracticeToolsDrawer
+          questionIndex={qIndex}
+          questionTotal={total || 1}
+          timeLeftSec={timeLeft}
+          timeLimitSec={timeLimitSec}
+          subtopicTag={question?.subtopicTag}
+          examStakes={question?.examStakes}
+        />
       </>
     );
   }

@@ -185,6 +185,7 @@ export function PracticeCorrectCelebration({
                     correctAnswer={correctAnswer}
                     solutionSteps={solutionSteps}
                     surface="dark"
+                    embedded
                   />
                 ) : (
                   <PromptWithMath text={explanation} variant="dark" />

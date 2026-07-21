@@ -15,6 +15,10 @@ export const mentrixStudent = {
 
   main: "max-w-7xl mx-auto px-4 sm:px-6 py-8",
   mainWide: "max-w-6xl mx-auto px-4 sm:px-6 py-8",
+  /** Tight home stack — cards butt together on ruled desk, no dead margin bands. */
+  mainHomeCompact: "max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4",
+  homeStack: "space-y-3",
+  homeGridGap: "gap-3",
   mainSlim: "max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10",
 
   pageHeader: `${mentrixHubSurfaces.notebook} p-5 sm:p-6`,
