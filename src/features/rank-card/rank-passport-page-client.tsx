@@ -6,15 +6,17 @@ import { motion } from "@/shared/animation/motion";
 import { useHydrationSafeMotion } from "@/shared/animation/use-hydration-safe-motion";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { MasteryGrid } from "@/components/mastery-grid";
-import { ApReadinessBand } from "@/features/student-home/ap-readiness-band";
 import { buildApReadinessBand } from "@/features/student-home/ap-readiness-band-pure";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { RankCardData } from "@/features/rank-card/types";
 import { RankPassport3D, RankPassportSlide } from "@/features/rank-card/rank-passport-3d";
 import {
   RankPassportIdentityPage,
-  RankPassportVerifiedSpread,
 } from "@/features/rank-card/rank-passport-identity-page";
+import {
+  RankPassportSkillProofPage,
+  RankPassportVerifiedSpread,
+} from "@/features/rank-card/rank-passport-page-content";
 import {
   formatBreakthroughReceiptLine,
   rankPassportBandCaption,
@@ -31,34 +33,9 @@ import {
 import {
   CANONICAL_MASTERY_GRID_ICON,
   CANONICAL_QUEST_ICON,
-  CANONICAL_RANK_PROOF_ICON,
 } from "@/shared/icons/vocab-canonical";
 import { cn } from "@/shared/core/utils";
 import { getSiteUrl } from "@/shared/core/site";
-
-function PassportPageStat({
-  label,
-  value,
-  gold,
-}: {
-  label: string;
-  value: string;
-  gold?: boolean;
-}) {
-  return (
-    <div className="text-center">
-      <p
-        className={cn(
-          "font-[family-name:var(--font-playfair),serif] text-3xl font-bold tabular-nums leading-none",
-          gold ? "text-[#D4A017]" : "text-[#0B1220]",
-        )}
-      >
-        {value}
-      </p>
-      <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-[#6366F1]">{label}</p>
-    </div>
-  );
-}
 
 function LiveRecordBadge() {
   return (
@@ -152,30 +129,12 @@ export function RankPassportPageClient({
             </RankPassportSlide>
 
             <RankPassportSlide slideIndex={slideIndex++}>
-              <VocabSectionHeading
-                name={CANONICAL_RANK_PROOF_ICON}
-                label="Skill proof"
-                surface="light"
-                gold={readinessBand.isVerifiedPrediction}
+              <RankPassportSkillProofPage
+                data={data}
+                accuracyPercent={accuracyPercent}
+                topPercent={topPercent}
+                bandCaption={bandCaption}
               />
-              <ApReadinessBand band={readinessBand} display="page" className="mt-3" />
-              <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[#C4B5FD]/50 pt-4">
-                <PassportPageStat
-                  label="Nodes"
-                  value={String(data.verifiedSkillCount)}
-                  gold={data.verifiedSkillCount >= 50}
-                />
-                <PassportPageStat
-                  label="First try"
-                  value={`${accuracyPercent}%`}
-                  gold={accuracyPercent >= 70}
-                />
-                <PassportPageStat
-                  label="Top"
-                  value={rankPassportPeerValue(data.passportVerdict, data.verifiedPercentile)}
-                  gold={topPercent != null && topPercent <= 5}
-                />
-              </div>
             </RankPassportSlide>
 
             {data.masteryGrid ? (

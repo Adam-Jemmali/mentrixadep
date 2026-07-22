@@ -38,9 +38,22 @@ export function formatPassportBio(bio: string | null | undefined): string {
   return trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;
 }
 
-/** Machine readable zone line for passport footer. */
+/** Machine readable zone lines for passport footer (ICAO-style filler). */
+export function formatPassportMrzLines(
+  username: string,
+  subject: string,
+  displayName: string,
+): [string, string] {
+  const slug = username.toUpperCase().replace(/[^A-Z0-9]/g, "<").padEnd(9, "<").slice(0, 9);
+  const name = displayName.toUpperCase().replace(/[^A-Z ]/g, "").trim().replace(/\s+/g, "<");
+  const sub = subject.toUpperCase().replace(/[^A-Z0-9]/g, "<").slice(0, 8);
+  const line1 = `P<MTRX${slug}<<${name}`.padEnd(44, "<").slice(0, 44);
+  const line2 = `${sub}<<<<MENTRIXA<<VERIFIED<<<<`.padEnd(44, "<").slice(0, 44);
+  return [line1, line2];
+}
+
+/** @deprecated Use formatPassportMrzLines */
 export function formatPassportMrz(username: string, subject: string): string {
-  const slug = username.toUpperCase().replace(/[^A-Z0-9]/g, "<");
-  const sub = subject.toUpperCase().replace(/[^A-Z0-9]/g, "<").slice(0, 12);
-  return `P<MTRX${slug}<<<<${sub}<<<<<<<<<<<<<<`;
+  const [line1] = formatPassportMrzLines(username, subject, username);
+  return line1;
 }

@@ -47,6 +47,12 @@ export function buildGuestTryPassportPreview(params: {
     warBadges: [],
     masteryGrid: null,
     rankDeltaVerdict: null,
+    passportDivision: {
+      status: "no_division",
+      divisionName: AP_CALC_AB_SUBJECT,
+      myRank: null,
+      myXp: 0,
+    },
     isPrivate: false,
     identity: {
       avatarUrl: null,

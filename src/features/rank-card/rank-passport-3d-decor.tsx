@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { PassportPageSecurityLayer } from "@/features/rank-card/rank-passport-security-layer";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { cn } from "@/shared/core/utils";
 
@@ -49,6 +50,15 @@ export const PASSPORT_STAMP_BY_INDEX = [
 
 export function passportPageStamp(index: number) {
   return PASSPORT_STAMP_BY_INDEX[index % PASSPORT_STAMP_BY_INDEX.length];
+}
+
+/** Visa artwork on content pages; biodata page uses in-content security shell. */
+export function passportPageSecurityVariant(pageIndex: number): "visa" | "biodata" | "none" {
+  return pageIndex === 1 ? "none" : "visa";
+}
+
+export function passportPagePaperTone(pageIndex: number): "visa" | "biodata" {
+  return pageIndex === 1 ? "biodata" : "visa";
 }
 
 export function PassportEntryStamp({
@@ -99,18 +109,28 @@ export function PassportPageChrome({
   stamp,
   animateStamp = false,
   stampEpoch = 0,
+  securityVariant = "visa",
+  paperTone = "visa",
 }: {
   children: ReactNode;
   side: "left" | "right";
   stamp?: { label: string; sublabel?: string; tone?: keyof typeof STAMP_COLORS; rotation?: number };
   animateStamp?: boolean;
   stampEpoch?: number;
+  securityVariant?: "visa" | "biodata" | "none";
+  paperTone?: "visa" | "biodata";
 }) {
   return (
     <div
-      className="rank-passport-page-paper relative overflow-hidden rounded-none"
+      className={cn(
+        "rank-passport-page-paper relative overflow-hidden rounded-none",
+        (securityVariant === "biodata" || paperTone === "biodata") && "rank-passport-page-paper--biodata",
+      )}
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
+      {securityVariant !== "none" ? (
+        <PassportPageSecurityLayer variant={securityVariant === "biodata" ? "biodata" : "visa"} />
+      ) : null}
       {stamp ? (
         <p
           className={cn(

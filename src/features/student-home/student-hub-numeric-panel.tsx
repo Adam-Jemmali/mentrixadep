@@ -21,16 +21,54 @@ export function StudentHubNumericReveal({
   children,
   className,
   animateValues = true,
+  immediate = false,
 }: {
   children: ReactNode;
   className?: string;
   animateValues?: boolean;
+  /** Reveal on mount (e.g. 3D passport Html — no scroll intersection). */
+  immediate?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const reducedMotion = usePrefersReducedMotion();
-  useLandingNumericReveal(ref, { start: "top 82%", animateValues });
+  useLandingNumericReveal(ref, { start: "top 82%", animateValues, immediate });
 
   useEffect(() => {
+    if (!immediate) return;
+    const root = ref.current;
+    if (!root || reducedMotion || !animateValues) return;
+
+    let cancelled = false;
+
+    void import("@/shared/animation/anime").then(({ animate }) => {
+      if (cancelled) return;
+      root.querySelectorAll<HTMLElement>(`.${LP_NUM.value}`).forEach((el) => {
+        const end = Number(el.dataset.value ?? 0);
+        const suffix = el.dataset.suffix ?? "";
+        const format = el.dataset.format ?? "default";
+        const obj = { val: 0 };
+        animate(obj, {
+          val: end,
+          duration: 1.1,
+          ease: "outExpo",
+          onUpdate: () => {
+            if (format === "xp-k") {
+              el.textContent = formatXpCompactK(Math.round(obj.val));
+              return;
+            }
+            el.textContent = `${Math.round(obj.val).toLocaleString()}${suffix}`;
+          },
+        });
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [animateValues, immediate, reducedMotion]);
+
+  useEffect(() => {
+    if (immediate) return;
     const root = ref.current;
     if (!root || reducedMotion || !animateValues) return;
 
@@ -73,7 +111,7 @@ export function StudentHubNumericReveal({
       cancelled = true;
       observer?.disconnect();
     };
-  }, [animateValues, reducedMotion]);
+  }, [animateValues, immediate, reducedMotion]);
 
   return (
     <div ref={ref} className={className}>

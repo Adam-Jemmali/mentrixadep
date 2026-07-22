@@ -9,6 +9,7 @@ import { trackEvent } from "@/shared/integrations/analytics";
 import { getActiveWarBadgesForUser } from "@/features/division-wars/war-notifications";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
 import { loadPassportBreakthroughReceipts } from "@/features/rank-card/load-passport-breakthroughs";
+import { loadPassportDivisionSnapshot } from "@/features/rank-card/load-passport-division";
 import { loadRankPassportVerdict } from "@/features/rank-card/load-rank-passport-verdict";
 import { buildPassportVerdict } from "@/features/rank-card/rank-passport-pure";
 import {
@@ -86,7 +87,7 @@ export async function getRankCardByUsername(
   const totalXp = xpRow?.total_xp ?? 0;
   const globalRank = rankFromTotalXp(totalXp);
   const verifiedStats = await getApCalcVerifiedRankStats(studentId);
-  const [subjects, warBadges, masteryGrid, breakthroughReceipts, rankDeltaVerdict, vfaStreak] =
+  const [subjects, warBadges, masteryGrid, breakthroughReceipts, rankDeltaVerdict, vfaStreak, passportDivision] =
     await Promise.all([
     buildRankCardSubjects(studentId, totalXp),
     getActiveWarBadgesForUser(studentId),
@@ -94,6 +95,12 @@ export async function getRankCardByUsername(
     loadPassportBreakthroughReceipts(studentId).catch(() => []),
     loadRankPassportVerdict(studentId).catch(() => null),
     loadVfaStreakHomeDisplay(studentId).catch(() => ({ kind: "none" as const, days: 0, longest: 0 })),
+    loadPassportDivisionSnapshot(studentId).catch(() => ({
+      status: "no_division" as const,
+      divisionName: "AP Calculus AB",
+      myRank: null,
+      myXp: 0,
+    })),
   ]);
   const vfaStreakDays = vfaStreak.kind === "active" ? vfaStreak.days : 0;
   const topSubject = subjects[0] ?? null;
@@ -132,6 +139,7 @@ export async function getRankCardByUsername(
     masteryGrid,
     rankDeltaVerdict,
     vfaStreakDays,
+    passportDivision,
     identity: {
       avatarUrl: resolvePassportAvatarUrl({
         settingsUrl:

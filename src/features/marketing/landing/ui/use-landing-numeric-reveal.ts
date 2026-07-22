@@ -7,13 +7,14 @@ import { LP_NUM } from "@/features/marketing/landing/ui/landing-number-motion-pu
 type Options = {
   start?: string;
   animateValues?: boolean;
+  immediate?: boolean;
 };
 
 export function useLandingNumericReveal(
   rootRef: RefObject<HTMLElement | null>,
   options: Options = {},
 ): void {
-  const { start = "top 78%", animateValues = false } = options;
+  const { start = "top 78%", animateValues = false, immediate = false } = options;
 
   useGsapScrollTriggerEffect(
     (gsap, ScrollTrigger) => {
@@ -84,6 +85,11 @@ export function useLandingNumericReveal(
         }
       };
 
+      if (immediate) {
+        reveal();
+        return;
+      }
+
       const trigger = ScrollTrigger.create({
         trigger: root,
         start,
@@ -100,6 +106,6 @@ export function useLandingNumericReveal(
         trigger.kill();
       };
     },
-    [animateValues, rootRef, start],
+    [animateValues, immediate, rootRef, start],
   );
 }

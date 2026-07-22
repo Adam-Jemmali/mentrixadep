@@ -4,23 +4,25 @@ import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import type { RankCardData } from "@/features/rank-card/types";
+import { PassportBiodataShell } from "@/features/rank-card/rank-passport-security-layer";
 import {
   formatPassportBio,
   formatPassportMemberSince,
-  formatPassportMrz,
+  formatPassportMrzLines,
   formatPassportRoleLabel,
   formatPassportSexLabel,
   formatPassportTimezone,
   resolvePassportSignature,
 } from "@/features/rank-card/rank-passport-identity-pure";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
-function IdentityField({ label, value }: { label: string; value: string }) {
+function BiodataField({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#6366F1]">{label}</p>
-      <p className="mt-0.5 truncate text-[15px] font-bold uppercase text-[#0B1220]">{value}</p>
+      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#6366F1]">{label}</p>
+      <p className="rank-passport-laser-ink mt-0.5 truncate text-[13px] font-bold uppercase text-[#0B1220]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -36,104 +38,82 @@ export function RankPassportIdentityPage({
   const identity = data.identity;
   const signature = resolvePassportSignature(identity.signature, data.displayName);
   const initial = data.displayName.trim().charAt(0).toUpperCase() || "M";
+  const mrz = formatPassportMrzLines(data.username, AP_CALC_AB_SUBJECT, data.displayName);
 
   return (
-    <div className={cn("rank-passport-id-page flex flex-col gap-2.5", className)}>
-      <div className="flex items-center justify-between gap-2 border-b border-[#C4B5FD]/70 pb-1.5">
-        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6366F1]">Passport</p>
-        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#475569]">{AP_CALC_AB_SUBJECT}</p>
-      </div>
+    <PassportBiodataShell>
+      <div className={cn("rank-passport-id-page flex flex-col gap-2", className)}>
+        <div className="flex items-center justify-between gap-2 border-b border-[#6366F1]/25 pb-1">
+          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#6366F1]">Biodata page</p>
+          <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#475569]">{AP_CALC_AB_SUBJECT}</p>
+        </div>
 
-      <div className="grid grid-cols-[8rem_1fr] gap-4">
-        <div>
-          <div className="rank-passport-id-photo overflow-hidden rounded-md border-2 border-[#6366F1]/35 bg-[#EEF2FF]">
-            {identity.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- OAuth avatars render inside R3F Html
-              <img
-                src={identity.avatarUrl}
-                alt=""
-                width={120}
-                height={160}
-                referrerPolicy="no-referrer"
-                className="h-full w-full object-cover grayscale contrast-[1.05]"
+        <div className="grid grid-cols-[6.5rem_1fr] gap-3">
+          <div>
+            <div className="rank-passport-id-photo rank-passport-laser-photo overflow-hidden rounded-sm border border-[#6366F1]/40 bg-[#E8EEF9]">
+              {identity.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- OAuth avatars render inside R3F Html
+                <img
+                  src={identity.avatarUrl}
+                  alt=""
+                  width={104}
+                  height={132}
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-cover grayscale contrast-[1.08]"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-[#E8EEF9] font-[family-name:var(--font-playfair),serif] text-3xl font-bold text-[#6366F1]">
+                  {initial}
+                </div>
+              )}
+            </div>
+            <div className="mt-1 flex flex-col items-center gap-0.5">
+              <RankBadge
+                rank={{ level: data.rankLevel, title: data.rankTitle }}
+                size="sm"
+                active
+                surface="light"
+                animate={rankVisual.key === "mentrixer" || rankVisual.key === "apex"}
               />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-[#EEF2FF] font-[family-name:var(--font-playfair),serif] text-4xl font-bold text-[#6366F1]">
-                {initial}
-              </div>
-            )}
+              <span
+                className="text-[9px] font-black uppercase tracking-[0.08em]"
+                style={{ color: rankVisual.key === "mentrixer" ? "#D4A017" : rankVisual.labelOnLight }}
+              >
+                {normalizeRankTitle(data.rankTitle)}
+              </span>
+            </div>
           </div>
-          <div className="mt-1.5 flex flex-col items-center gap-1">
-            <RankBadge
-              rank={{ level: data.rankLevel, title: data.rankTitle }}
-              size="sm"
-              active
-              surface="light"
-              animate={rankVisual.key === "mentrixer" || rankVisual.key === "apex"}
-            />
-            <span
-              className="text-[10px] font-black uppercase tracking-[0.08em]"
-              style={{ color: rankVisual.key === "mentrixer" ? "#D4A017" : rankVisual.labelOnLight }}
-            >
-              {normalizeRankTitle(data.rankTitle)}
-            </span>
+
+          <div className="rank-passport-id-fields grid grid-cols-1 gap-2 content-start">
+            <BiodataField label="Name" value={data.displayName} />
+            <BiodataField label="Role" value={formatPassportRoleLabel(identity.role)} />
+            <BiodataField label="Joined" value={formatPassportMemberSince(identity.memberSince)} />
+            <BiodataField label="Zone" value={formatPassportTimezone(identity.timezone)} />
+            <BiodataField label="Sex" value={formatPassportSexLabel(identity.sex)} />
+            <BiodataField label="Handle" value={`@${data.username}`} />
           </div>
         </div>
 
-        <div className="rank-passport-id-fields grid grid-cols-1 gap-2.5 content-start text-[14px]">
-          <IdentityField label="Name" value={data.displayName} />
-          <IdentityField label="Role" value={formatPassportRoleLabel(identity.role)} />
-          <IdentityField label="Joined" value={formatPassportMemberSince(identity.memberSince)} />
-          <IdentityField label="Zone" value={formatPassportTimezone(identity.timezone)} />
-          <IdentityField label="Sex" value={formatPassportSexLabel(identity.sex)} />
-          <IdentityField label="Handle" value={`@${data.username}`} />
+        <div className="border-t border-[#6366F1]/20 pt-1">
+          <p className="text-[8px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Bio</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-[#334155]">{formatPassportBio(identity.bio)}</p>
+        </div>
+
+        <div className="border-t border-[#6366F1]/20 pt-1">
+          <p className="text-[8px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Sign</p>
+          <p className="rank-passport-laser-ink mx-hand-title mt-0.5 text-2xl leading-none text-[#0B1220]">
+            {signature}
+          </p>
+        </div>
+
+        <div className="rank-passport-mrz mt-auto space-y-0.5 border-t border-[#0B1220]/15 pt-1.5">
+          {mrz.map((line) => (
+            <p key={line} className="font-mono text-[8px] leading-tight tracking-[0.18em] text-[#1E293B]">
+              {line}
+            </p>
+          ))}
         </div>
       </div>
-
-      <div className="border-t border-[#C4B5FD]/50 pt-1.5">
-        <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Bio</p>
-        <p className="mt-0.5 text-[14px] leading-snug text-[#334155]">{formatPassportBio(identity.bio)}</p>
-      </div>
-
-      <div className="border-t border-[#C4B5FD]/50 pt-1.5">
-        <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Sign</p>
-        <p className="mx-hand-title mt-0.5 text-3xl leading-none text-[#0B1220]">{signature}</p>
-      </div>
-
-      <p className="font-mono text-[9px] leading-tight tracking-wider text-[#64748B]">
-        {formatPassportMrz(data.username, AP_CALC_AB_SUBJECT)}
-      </p>
-    </div>
-  );
-}
-
-export function RankPassportVerifiedSpread({
-  data,
-  accuracyPercent,
-  topPercent,
-  bandCaption,
-  className,
-}: {
-  data: RankCardData;
-  accuracyPercent: number;
-  topPercent: number | null;
-  bandCaption: string;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex flex-col justify-center gap-4 py-4", className)}>
-      <div className="flex items-center gap-3">
-        <MentrixaVocabIcon name="rank-proof" size={32} surface="light" gold title="Verified" />
-        <p className="text-base font-black uppercase tracking-[0.14em] text-[#6366F1]">Verified passport</p>
-      </div>
-      <p className="font-[family-name:var(--font-playfair),serif] text-[2.5rem] font-bold leading-tight text-[#0B1220]">
-        {data.displayName}
-      </p>
-      <p className="text-xl font-semibold leading-snug text-[#0B1220]">{bandCaption}</p>
-      <p className="text-xl font-bold text-[#0B1220]">
-        {accuracyPercent}% first try{topPercent != null ? ` · Top ${topPercent}%` : ""}
-      </p>
-      <p className="text-base text-[#475569]">First attempt only</p>
-    </div>
+    </PassportBiodataShell>
   );
 }

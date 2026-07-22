@@ -794,6 +794,126 @@ html:has(.mentrix-student-type-scope) body {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
 }
 
+.rank-passport-page-paper--biodata {
+  background: linear-gradient(165deg, #eef2ff 0%, #e8eef8 42%, #dfe8f4 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(99, 102, 241, 0.18),
+    inset 0 2px 0 rgba(255, 255, 255, 0.55);
+}
+
+.rank-passport-security-visa {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 31px,
+      rgba(99, 102, 241, 0.12) 31px,
+      rgba(99, 102, 241, 0.12) 32px
+    ),
+    radial-gradient(circle at 18% 22%, rgba(124, 58, 237, 0.08), transparent 42%),
+    radial-gradient(circle at 82% 78%, rgba(99, 102, 241, 0.06), transparent 38%);
+  opacity: 0.95;
+}
+
+.rank-passport-security-biodata {
+  background-image:
+    linear-gradient(115deg, transparent 40%, rgba(99, 102, 241, 0.06) 41%, rgba(99, 102, 241, 0.06) 42%, transparent 43%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(99, 102, 241, 0.04) 0,
+      rgba(99, 102, 241, 0.04) 1px,
+      transparent 1px,
+      transparent 6px
+    );
+  opacity: 0.9;
+}
+
+.rank-passport-watermark-register {
+  background-image:
+    radial-gradient(circle at 50% 38%, rgba(124, 58, 237, 0.07) 0, transparent 52%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ctext x='8' y='68' fill='%236366F1' fill-opacity='0.08' font-size='28' font-family='Georgia,serif'%3EM%3C/text%3E%3C/svg%3E");
+  background-size: auto, 120px 120px;
+  background-position: center, center;
+  mix-blend-mode: multiply;
+}
+
+.rank-passport-hologram-strip {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.12) 18%,
+    rgba(124, 58, 237, 0.22) 42%,
+    rgba(212, 160, 23, 0.18) 68%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+  animation: rank-passport-holo-strip 6s ease-in-out infinite;
+}
+
+@keyframes rank-passport-holo-strip {
+  0%,
+  100% {
+    filter: hue-rotate(0deg) saturate(1);
+    opacity: 0.45;
+  }
+  50% {
+    filter: hue-rotate(18deg) saturate(1.15);
+    opacity: 0.62;
+  }
+}
+
+.rank-passport-microprint {
+  height: 10px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(11, 18, 32, 0.22) 0,
+    rgba(11, 18, 32, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.35;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.rank-passport-biodata-shell {
+  position: relative;
+  min-height: 100%;
+}
+
+.rank-passport-chip-badge {
+  width: 2.25rem;
+  height: 1.65rem;
+  border-radius: 4px;
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  background: linear-gradient(145deg, #fde68a 0%, #d4a017 38%, #b8860b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.rank-passport-laser-ink {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.04em;
+}
+
+.rank-passport-laser-photo {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 4px rgba(99, 102, 241, 0.12);
+}
+
+.rank-passport-mrz {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.65), rgba(241, 245, 249, 0.85));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-passport-hologram-strip {
+    animation: none;
+  }
+}
+
 .rank-passport-page-ink {
   overflow: hidden;
   font-size: 15px;

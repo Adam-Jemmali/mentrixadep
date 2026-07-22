@@ -58,6 +58,13 @@ export const rankPassportIdentitySchema = z.object({
   role: z.enum(["student", "tutor"]),
 });
 
+export const rankPassportDivisionSchema = z.object({
+  status: z.enum(["no_division", "rank_1", "has_rival"]),
+  divisionName: z.string(),
+  myRank: z.number().int().nullable(),
+  myXp: z.number().int().min(0),
+});
+
 export const rankCardDataSchema = z.object({
   userId: z.string().uuid(),
   username: z.string(),
@@ -82,6 +89,7 @@ export const rankCardDataSchema = z.object({
   masteryGrid: masteryGridDataSchema.nullable().optional(),
   rankDeltaVerdict: z.custom<Verdict>().nullable().optional(),
   vfaStreakDays: z.number().int().min(0).optional(),
+  passportDivision: rankPassportDivisionSchema,
   identity: rankPassportIdentitySchema,
   isPrivate: z.literal(false),
 });
@@ -92,6 +100,7 @@ export const rankCardPrivateSchema = z.object({
 });
 
 export type RankPassportIdentity = z.infer<typeof rankPassportIdentitySchema>;
+export type PassportDivisionSnapshot = z.infer<typeof rankPassportDivisionSchema>;
 
 export type RankCardData = z.infer<typeof rankCardDataSchema>;
 export type RankCardSubject = z.infer<typeof rankCardSubjectSchema>;

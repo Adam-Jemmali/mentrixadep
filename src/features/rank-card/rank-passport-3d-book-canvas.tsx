@@ -21,6 +21,8 @@ import {
   PASSPORT_PAGE_H_UNITS,
   PASSPORT_PAGE_W_UNITS,
   passportHtmlDistanceFactor,
+  passportPagePaperTone,
+  passportPageSecurityVariant,
   passportPageStamp,
 } from "@/features/rank-card/rank-passport-3d-decor";
 import {
@@ -110,6 +112,8 @@ function PageSlot({
   children: ReactNode;
 }) {
   const stamp = passportPageStamp(pageIndex);
+  const securityVariant = passportPageSecurityVariant(pageIndex);
+  const paperTone = passportPagePaperTone(pageIndex);
 
   const handleClick = (event: { stopPropagation: () => void }) => {
     event.stopPropagation();
@@ -139,13 +143,27 @@ function PageSlot({
             style={{ pointerEvents: "auto" }}
             aria-label={side === "left" ? "Turn to previous spread" : "Turn to next spread"}
           >
-            <PassportPageChrome side={side} stamp={stamp} animateStamp={animateStamp} stampEpoch={stampEpoch}>
+            <PassportPageChrome
+              side={side}
+              stamp={stamp}
+              animateStamp={animateStamp}
+              stampEpoch={stampEpoch}
+              securityVariant={securityVariant}
+              paperTone={paperTone}
+            >
               {children}
             </PassportPageChrome>
           </button>
         ) : (
           <div style={{ pointerEvents: "none" }}>
-            <PassportPageChrome side={side} stamp={stamp} animateStamp={animateStamp} stampEpoch={stampEpoch}>
+            <PassportPageChrome
+              side={side}
+              stamp={stamp}
+              animateStamp={animateStamp}
+              stampEpoch={stampEpoch}
+              securityVariant={securityVariant}
+              paperTone={paperTone}
+            >
               {children}
             </PassportPageChrome>
           </div>
@@ -580,6 +598,8 @@ function PassportBookScene({
                         stamp={passportPageStamp(flipSourceIndex)}
                         animateStamp={animateStamp}
                         stampEpoch={stampEpoch}
+                        securityVariant={passportPageSecurityVariant(flipSourceIndex)}
+                        paperTone={passportPagePaperTone(flipSourceIndex)}
                       >
                         {pageAt(pages, flipSourceIndex)}
                       </PassportPageChrome>
@@ -600,6 +620,8 @@ function PassportBookScene({
                         stamp={passportPageStamp(flipTargetIndex)}
                         animateStamp={animateStamp}
                         stampEpoch={stampEpoch}
+                        securityVariant={passportPageSecurityVariant(flipTargetIndex)}
+                        paperTone={passportPagePaperTone(flipTargetIndex)}
                       >
                         {pageAt(pages, flipTargetIndex)}
                       </PassportPageChrome>
@@ -637,6 +659,8 @@ function PassportBookScene({
                         stamp={passportPageStamp(flipBackTargetIndex)}
                         animateStamp={animateStamp}
                         stampEpoch={stampEpoch}
+                        securityVariant={passportPageSecurityVariant(flipBackTargetIndex)}
+                        paperTone={passportPagePaperTone(flipBackTargetIndex)}
                       >
                         {pageAt(pages, flipBackTargetIndex)}
                       </PassportPageChrome>
@@ -657,6 +681,8 @@ function PassportBookScene({
                         stamp={passportPageStamp(flipBackSourceIndex)}
                         animateStamp={animateStamp}
                         stampEpoch={stampEpoch}
+                        securityVariant={passportPageSecurityVariant(flipBackSourceIndex)}
+                        paperTone={passportPagePaperTone(flipBackSourceIndex)}
                       >
                         {pageAt(pages, flipBackSourceIndex)}
                       </PassportPageChrome>
