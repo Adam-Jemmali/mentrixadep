@@ -901,6 +901,30 @@ html:has(.mentrix-student-type-scope) body {
   filter: saturate(1.05);
 }
 
+.rank-passport-stamp--enter {
+  animation: rank-passport-stamp-in 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes rank-passport-stamp-in {
+  0% {
+    opacity: 0;
+    filter: saturate(1.05) blur(3px);
+    transform: rotate(var(--stamp-rotation, -12deg)) scale(1.14);
+  }
+  100% {
+    opacity: 1;
+    filter: saturate(1.05) blur(0);
+    transform: rotate(var(--stamp-rotation, -12deg)) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-passport-stamp--enter {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rank-passport-3d-foil--holo {
     animation: none;

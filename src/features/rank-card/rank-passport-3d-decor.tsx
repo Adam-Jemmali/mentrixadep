@@ -57,12 +57,14 @@ export function PassportEntryStamp({
   tone = "blue",
   rotation = -12,
   className,
+  animateIn = false,
 }: {
   label: string;
   sublabel?: string;
   tone?: keyof typeof STAMP_COLORS;
   rotation?: number;
   className?: string;
+  animateIn?: boolean;
 }) {
   const palette = STAMP_COLORS[tone];
 
@@ -70,9 +72,11 @@ export function PassportEntryStamp({
     <div
       className={cn(
         "rank-passport-stamp pointer-events-none absolute select-none rounded-full border-[3px] border-double px-4 py-2.5 text-center",
+        animateIn && "rank-passport-stamp--enter",
         className,
       )}
       style={{
+        ["--stamp-rotation" as string]: `${rotation}deg`,
         transform: `rotate(${rotation}deg)`,
         borderColor: palette.ring,
         color: palette.ink,
@@ -93,10 +97,14 @@ export function PassportPageChrome({
   children,
   side,
   stamp,
+  animateStamp = false,
+  stampEpoch = 0,
 }: {
   children: ReactNode;
   side: "left" | "right";
   stamp?: { label: string; sublabel?: string; tone?: keyof typeof STAMP_COLORS; rotation?: number };
+  animateStamp?: boolean;
+  stampEpoch?: number;
 }) {
   return (
     <div
@@ -125,19 +133,23 @@ export function PassportPageChrome({
       </div>
       {stamp ? (
         <PassportEntryStamp
+          key={`page-stamp-${stampEpoch}-${stamp.label}`}
           label={stamp.label}
           sublabel={stamp.sublabel}
           tone={stamp.tone}
           rotation={stamp.rotation ?? (side === "left" ? -14 : 11)}
+          animateIn={animateStamp}
           className={side === "left" ? "bottom-6 right-4" : "bottom-10 left-3"}
         />
       ) : null}
       {side === "right" ? (
         <PassportEntryStamp
+          key={`verified-stamp-${stampEpoch}`}
           label="Verified"
           sublabel="First try"
           tone="purple"
           rotation={18}
+          animateIn={animateStamp}
           className="top-5 right-4 opacity-75"
         />
       ) : null}

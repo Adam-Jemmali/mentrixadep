@@ -30,7 +30,6 @@ import {
   spreadAfterCoverClosed,
 } from "@/features/rank-card/rank-passport-3d-nav";
 import { PassportPaperMaterial } from "@/features/rank-card/rank-passport-3d-materials";
-import { cn } from "@/shared/core/utils";
 
 const PAGE_W = PASSPORT_PAGE_W_UNITS;
 const PAGE_H = PASSPORT_PAGE_H_UNITS;
@@ -96,22 +95,31 @@ function PageSlot({
   side,
   pageIndex,
   htmlDistanceFactor,
-  onClick,
+  onPageClick,
+  animateStamp,
+  stampEpoch,
   children,
 }: {
   position: [number, number, number];
   side: "left" | "right";
   pageIndex: number;
   htmlDistanceFactor: number;
-  onClick?: (event: { stopPropagation: () => void }) => void;
+  onPageClick?: () => void;
+  animateStamp?: boolean;
+  stampEpoch?: number;
   children: ReactNode;
 }) {
   const stamp = passportPageStamp(pageIndex);
 
+  const handleClick = (event: { stopPropagation: () => void }) => {
+    event.stopPropagation();
+    onPageClick?.();
+  };
+
   return (
     <group position={position}>
       <SpreadPagePlane />
-      <mesh onClick={onClick}>
+      <mesh onClick={onPageClick ? handleClick : undefined}>
         <boxGeometry args={[PAGE_W, PAGE_H, PAGE_THICK]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
@@ -123,11 +131,25 @@ function PageSlot({
         zIndexRange={[40, 0]}
         style={{ pointerEvents: "none" }}
       >
-        <div style={{ pointerEvents: "none" }}>
-          <PassportPageChrome side={side} stamp={stamp}>
-            {children}
-          </PassportPageChrome>
-        </div>
+        {onPageClick ? (
+          <button
+            type="button"
+            onClick={onPageClick}
+            className="block cursor-pointer overflow-hidden border-0 bg-transparent p-0"
+            style={{ pointerEvents: "auto" }}
+            aria-label={side === "left" ? "Turn to previous spread" : "Turn to next spread"}
+          >
+            <PassportPageChrome side={side} stamp={stamp} animateStamp={animateStamp} stampEpoch={stampEpoch}>
+              {children}
+            </PassportPageChrome>
+          </button>
+        ) : (
+          <div style={{ pointerEvents: "none" }}>
+            <PassportPageChrome side={side} stamp={stamp} animateStamp={animateStamp} stampEpoch={stampEpoch}>
+              {children}
+            </PassportPageChrome>
+          </div>
+        )}
       </Html>
     </group>
   );
@@ -183,6 +205,11 @@ function PassportBookScene({
   const [reduceMotion, setReduceMotion] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosingCover, setIsClosingCover] = useState(false);
+  const [stampEpoch, setStampEpoch] = useState(0);
+
+  const bumpStampEpoch = useCallback(() => {
+    setStampEpoch((epoch) => epoch + 1);
+  }, []);
 
   const coverPivotRef = useRef<THREE.Group>(null);
   const flipPivotRef = useRef<THREE.Group>(null);
@@ -255,8 +282,9 @@ function PassportBookScene({
       onSpreadChange?.(next);
       return next;
     });
+    bumpStampEpoch();
     resetOrbitControls(controlsRef.current);
-  }, [endAnimation, onSpreadChange, totalSpreads]);
+  }, [bumpStampEpoch, endAnimation, onSpreadChange, totalSpreads]);
 
   const finishBackwardFlip = useCallback(() => {
     setIsFlipping(false);
@@ -270,8 +298,9 @@ function PassportBookScene({
       onSpreadChange?.(next);
       return next;
     });
+    bumpStampEpoch();
     resetOrbitControls(controlsRef.current);
-  }, [endAnimation, onSpreadChange]);
+  }, [bumpStampEpoch, endAnimation, onSpreadChange]);
 
   const goNext = useCallback(() => {
     if (isClosingCover || (animatingRef.current && !coverReady)) return;
@@ -296,6 +325,7 @@ function PassportBookScene({
         onSpreadChange?.(next);
         return next;
       });
+      bumpStampEpoch();
       resetOrbitControls(controlsRef.current);
       return;
     }
@@ -307,6 +337,7 @@ function PassportBookScene({
     flipAngle.current = 0;
   }, [
     beginAnimation,
+    bumpStampEpoch,
     closeCover,
     coverOpen,
     coverReady,
@@ -343,6 +374,7 @@ function PassportBookScene({
         onSpreadChange?.(next);
         return next;
       });
+      bumpStampEpoch();
       resetOrbitControls(controlsRef.current);
       return;
     }
@@ -352,12 +384,16 @@ function PassportBookScene({
     beginAnimation();
     flipProgress.current = 0;
     flipAngle.current = -Math.PI;
-  }, [closeCover, coverOpen, coverReady, isClosingCover, isFlipping, onSpreadChange, reduceMotion, spread, beginAnimation]);
+  }, [beginAnimation, bumpStampEpoch, closeCover, coverOpen, coverReady, isClosingCover, isFlipping, onSpreadChange, reduceMotion, spread]);
 
   useEffect(() => {
     if (!coverOpen || coverDoneRef.current) return;
     targetCover.current = OPEN_COVER_ANGLE;
   }, [coverOpen]);
+
+  useEffect(() => {
+    if (coverOpen && coverReady) bumpStampEpoch();
+  }, [coverOpen, coverReady, bumpStampEpoch]);
 
   useEffect(() => {
     onNavChange?.({
@@ -481,6 +517,7 @@ function PassportBookScene({
   const flipBackTargetIndex = spread * 2;
   const flipUnderLeftIndex = spread * 2 - 2;
   const orbitEnabled = coverReady && !isFlipping && !isAnimating;
+  const animateStamp = !reduceMotion && stampEpoch > 0;
 
   return (
     <group ref={floatRef}>
@@ -494,10 +531,9 @@ function PassportBookScene({
               side="left"
               pageIndex={leftIndex}
               htmlDistanceFactor={htmlDistanceFactor}
-              onClick={(event) => {
-                event.stopPropagation();
-                goPrev();
-              }}
+              animateStamp={animateStamp}
+              stampEpoch={stampEpoch}
+              onPageClick={goPrev}
             >
               {pageAt(pages, leftIndex)}
             </PageSlot>
@@ -508,10 +544,9 @@ function PassportBookScene({
                 side="right"
                 pageIndex={rightIndex}
                 htmlDistanceFactor={htmlDistanceFactor}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  goNext();
-                }}
+                animateStamp={animateStamp}
+                stampEpoch={stampEpoch}
+                onPageClick={goNext}
               >
                 {pageAt(pages, rightIndex)}
               </PageSlot>
@@ -543,6 +578,8 @@ function PassportBookScene({
                       <PassportPageChrome
                         side="right"
                         stamp={passportPageStamp(flipSourceIndex)}
+                        animateStamp={animateStamp}
+                        stampEpoch={stampEpoch}
                       >
                         {pageAt(pages, flipSourceIndex)}
                       </PassportPageChrome>
@@ -561,6 +598,8 @@ function PassportBookScene({
                       <PassportPageChrome
                         side="left"
                         stamp={passportPageStamp(flipTargetIndex)}
+                        animateStamp={animateStamp}
+                        stampEpoch={stampEpoch}
                       >
                         {pageAt(pages, flipTargetIndex)}
                       </PassportPageChrome>
@@ -596,6 +635,8 @@ function PassportBookScene({
                       <PassportPageChrome
                         side="left"
                         stamp={passportPageStamp(flipBackTargetIndex)}
+                        animateStamp={animateStamp}
+                        stampEpoch={stampEpoch}
                       >
                         {pageAt(pages, flipBackTargetIndex)}
                       </PassportPageChrome>
@@ -614,6 +655,8 @@ function PassportBookScene({
                       <PassportPageChrome
                         side="right"
                         stamp={passportPageStamp(flipBackSourceIndex)}
+                        animateStamp={animateStamp}
+                        stampEpoch={stampEpoch}
                       >
                         {pageAt(pages, flipBackSourceIndex)}
                       </PassportPageChrome>
@@ -693,44 +736,6 @@ function Scene({
   );
 }
 
-function PassportNavBar({ nav }: { nav: PassportNavState | null }) {
-  if (!nav) return null;
-
-  return (
-    <div className="mt-3 flex items-center justify-between gap-3 px-1">
-      <button
-        type="button"
-        onClick={() => nav.goPrev()}
-        disabled={!nav.canGoPrev}
-        className={cn(
-          "rounded-lg border px-4 py-2.5 text-sm font-bold uppercase tracking-[0.12em]",
-          nav.canGoPrev
-            ? "border-[#6366F1]/40 bg-white text-[#6366F1] hover:bg-[#EDE9FE]"
-            : "cursor-not-allowed border-[#C4B5FD]/40 bg-[#F8F7FF] text-[#94A3B8]",
-        )}
-      >
-        Previous
-      </button>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#64748B]">
-        {nav.coverOpen ? `Spread ${nav.spread + 1} of ${nav.totalSpreads}` : "Cover closed"}
-      </p>
-      <button
-        type="button"
-        onClick={() => nav.goNext()}
-        disabled={!nav.canGoNext}
-        className={cn(
-          "rounded-lg border px-4 py-2.5 text-sm font-bold uppercase tracking-[0.12em]",
-          nav.canGoNext
-            ? "border-[#6366F1]/40 bg-[#6366F1] text-white hover:bg-[#4F46E5]"
-            : "cursor-not-allowed border-[#C4B5FD]/40 bg-[#F8F7FF] text-[#94A3B8]",
-        )}
-      >
-        Next
-      </button>
-    </div>
-  );
-}
-
 export function PassportBookCanvas({
   pages,
   subjectLabel,
@@ -738,8 +743,6 @@ export function PassportBookCanvas({
   onSpreadChange,
   onNavChange,
 }: PassportBookCanvasProps & { className?: string }) {
-  const [nav, setNav] = useState<PassportNavState | null>(null);
-
   const htmlDistanceFactor = useMemo(() => passportHtmlDistanceFactor(), []);
 
   const camera = useMemo(
@@ -771,14 +774,10 @@ export function PassportBookCanvas({
             subjectLabel={subjectLabel}
             htmlDistanceFactor={htmlDistanceFactor}
             onSpreadChange={onSpreadChange}
-            onNavChange={(state) => {
-              setNav(state);
-              onNavChange?.(state);
-            }}
+            onNavChange={onNavChange}
           />
         </Canvas>
       </div>
-      <PassportNavBar nav={nav} />
     </div>
   );
 }
