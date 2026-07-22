@@ -4,14 +4,22 @@ import { StudentHubAnimatedFraction } from "@/features/student-home/student-hub-
 import {
   StudentHubNumericReveal,
   StudentHubNumericStat,
+  StudentHubPlayfairNumbers,
 } from "@/features/student-home/student-hub-numeric-panel";
+import { LandingNumberWatermark } from "@/features/marketing/landing/ui/landing-number-heading";
+import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { landingStickyVariantForIndex } from "@/features/student-profile/student-sticky-variants";
-import type { RankCardData } from "@/features/rank-card/types";
+import type { RankCardData, RankPassportReceipt } from "@/features/rank-card/types";
 import {
-  rankPassportBandCaption,
-  rankPassportPeerValue,
+  breakthroughReceiptDisplayValue,
+  breakthroughReceiptLift,
   passportFirstTryWatermark,
+  rankPassportBandCaption,
+  rankPassportBreakthroughVerdict,
+  rankPassportPeerValue,
+  rankPassportRecordVerdict,
   resolvePassportVerifiedMetrics,
+  summarizePassportBreakthroughs,
 } from "@/features/rank-card/rank-passport-page-pure";
 import { formatXpWatermarkK } from "@/shared/core/copy-format";
 import {
@@ -126,4 +134,136 @@ export function RankPassportSkillProofPage({
 
 export function rankPassportBriefBandCaption(score: number): string {
   return rankPassportBandCaption(score);
+}
+
+export function RankPassportBreakthroughPage({
+  receipts,
+  className,
+}: {
+  receipts: RankPassportReceipt[];
+  className?: string;
+}) {
+  const summary = summarizePassportBreakthroughs(receipts);
+  const verdict = rankPassportBreakthroughVerdict(summary);
+  const bestLiftDisplay = summary.bestLift != null ? `+${summary.bestLift}%` : "—";
+
+  return (
+    <div className={cn("flex flex-col gap-2.5", className)}>
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Breakthroughs</p>
+      <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-2">
+        <StudentHubNumericStat
+          className="col-span-2 rotate-[0.15deg] px-2 py-2.5"
+          variant={landingStickyVariantForIndex(0)}
+          compact
+          watermark={summary.bestLift != null ? `+${summary.bestLift}` : summary.count}
+          icon="receipt"
+          label="Best lift"
+          numericEnd={summary.bestLift ?? summary.count}
+          numericSuffix={summary.bestLift != null ? "%" : ""}
+          displayValue={summary.bestLift != null ? bestLiftDisplay : undefined}
+          detail={summary.bestLiftNodeName ?? undefined}
+        />
+        <StudentHubNumericStat
+          className="rotate-[-0.12deg] px-2 py-2.5"
+          variant={landingStickyVariantForIndex(1)}
+          compact
+          watermark={summary.count}
+          icon="receipt"
+          label="Breakthrough count"
+          numericEnd={summary.count}
+        />
+        <StudentHubNumericStat
+          className="rotate-[0.1deg] px-2 py-2.5"
+          variant={landingStickyVariantForIndex(2)}
+          compact
+          watermark={summary.avgLift != null ? `+${summary.avgLift}` : "—"}
+          icon="rank-proof"
+          label="Average lift"
+          numericEnd={summary.avgLift ?? 0}
+          numericSuffix={summary.avgLift != null ? "%" : ""}
+          displayValue={summary.avgLift == null ? "—" : `+${summary.avgLift}%`}
+        />
+      </StudentHubNumericReveal>
+      <ul className="grid grid-cols-2 gap-2">
+        {receipts.map((receipt, index) => {
+          const lift = breakthroughReceiptLift(receipt);
+          return (
+            <li key={`${receipt.nodeName}-${receipt.date}-${receipt.beforeState}`}>
+              <LandingStickyNote
+                variant={landingStickyVariantForIndex(index % 3)}
+                compact
+                className="relative px-2 py-2 text-center"
+              >
+                <LandingNumberWatermark value={lift != null ? `+${lift}` : receipt.nodeName.slice(0, 3)} />
+                <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(1rem,2.4vw,1.35rem)] font-bold leading-tight text-[#0B1220]">
+                  {breakthroughReceiptDisplayValue(receipt)}
+                </p>
+                <p className="mt-1 truncate text-[10px] font-black uppercase tracking-[0.12em] text-[#6366F1]">
+                  {receipt.nodeName}
+                </p>
+                <p className="mt-0.5 text-[10px] text-[#64748B]">{receipt.date}</p>
+              </LandingStickyNote>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-[10px] font-medium leading-snug text-[#475569]">
+        <StudentHubPlayfairNumbers text={verdict} />
+      </p>
+    </div>
+  );
+}
+
+export function RankPassportRecordPage({
+  username,
+  siteHost,
+  vfaStreakLongest = 0,
+  vfaStreakDays = 0,
+  className,
+}: {
+  username: string;
+  siteHost: string;
+  vfaStreakLongest?: number;
+  vfaStreakDays?: number;
+  className?: string;
+}) {
+  const verdict = rankPassportRecordVerdict(vfaStreakLongest, vfaStreakDays);
+
+  return (
+    <div className={cn("flex flex-col gap-2.5", className)}>
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Live record</p>
+      <StudentHubNumericReveal immediate className="grid grid-cols-1 gap-2">
+        <StudentHubNumericStat
+          className="rotate-[0.1deg] px-2 py-2.5"
+          variant={landingStickyVariantForIndex(0)}
+          compact
+          watermark={vfaStreakLongest}
+          icon="rank-proof"
+          label="Best streak"
+          numericEnd={vfaStreakLongest}
+          numericSuffix=" day"
+          displayValue={`${vfaStreakLongest} day best streak`}
+        />
+        {vfaStreakDays > 0 ? (
+          <StudentHubNumericStat
+            className="rotate-[-0.08deg] px-2 py-2.5"
+            variant={landingStickyVariantForIndex(1)}
+            compact
+            watermark={vfaStreakDays}
+            icon="rank-proof"
+            label="Current streak"
+            numericEnd={vfaStreakDays}
+            numericSuffix=" day"
+            displayValue={`${vfaStreakDays} day proof streak`}
+          />
+        ) : null}
+      </StudentHubNumericReveal>
+      <p className="font-mono text-xs text-[#6366F1]">
+        {siteHost}/rank/{username}
+      </p>
+      <p className="text-[10px] font-medium leading-snug text-[#475569]">
+        <StudentHubPlayfairNumbers text={verdict} />
+      </p>
+    </div>
+  );
 }

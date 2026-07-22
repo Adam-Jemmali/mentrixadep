@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useRef } from "react";
-import { motion } from "@/shared/animation/motion";
 import { useHydrationSafeMotion } from "@/shared/animation/use-hydration-safe-motion";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { MasteryGrid } from "@/components/mastery-grid";
@@ -14,25 +13,21 @@ import {
   RankPassportIdentityPage,
 } from "@/features/rank-card/rank-passport-identity-page";
 import {
+  RankPassportBreakthroughPage,
+  RankPassportRecordPage,
   RankPassportSkillProofPage,
   RankPassportVerifiedSpread,
 } from "@/features/rank-card/rank-passport-page-content";
 import {
-  formatBreakthroughReceiptLine,
   rankPassportBandCaption,
-  rankPassportPeerValue,
 } from "@/features/rank-card/rank-passport-page-pure";
 import { RankPassportTopBar } from "@/features/rank-card/rank-passport-article";
-import { buildMasteryGridNextAction } from "@/features/mastery-grid/mastery-grid-pure";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import {
-  MentrixaVocabIcon,
   VocabSectionHeading,
-  VOCAB_HEADING_ICON_SIZE,
 } from "@/shared/icons/mentrixa-vocab-icons";
 import {
   CANONICAL_MASTERY_GRID_ICON,
-  CANONICAL_QUEST_ICON,
 } from "@/shared/icons/vocab-canonical";
 import { cn } from "@/shared/core/utils";
 import { getSiteUrl } from "@/shared/core/site";
@@ -48,13 +43,12 @@ function LiveRecordBadge() {
 
 export function RankPassportPageClient({
   data,
-  isOwner = false,
 }: {
   data: RankCardData;
   isOwner?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const { prefersReducedMotion, safeReduceMotion } = useHydrationSafeMotion();
+  const { prefersReducedMotion } = useHydrationSafeMotion();
   const accuracyPercent = data.verifiedAccuracyPercent;
   const topPercent = data.passportVerdict.kind === "ranked" ? data.passportVerdict.topPercent : null;
 
@@ -70,7 +64,6 @@ export function RankPassportPageClient({
   );
 
   const bandCaption = rankPassportBandCaption(readinessBand.score);
-  const gridNextAction = data.masteryGrid ? buildMasteryGridNextAction(data.masteryGrid.units) : null;
   const siteHost = getSiteUrl().replace(/^https?:\/\//, "").replace(/\/$/, "");
   const pageCount =
     4 + (data.masteryGrid ? 1 : 0) + (data.breakthroughReceipts.length > 0 ? 1 : 0);
@@ -160,46 +153,17 @@ export function RankPassportPageClient({
 
             {data.breakthroughReceipts.length > 0 ? (
               <RankPassportSlide slideIndex={slideIndex++}>
-                <VocabSectionHeading name="receipt" label="Breakthroughs" surface="light" />
-                <ul className="mt-2 space-y-1.5">
-                  {data.breakthroughReceipts.map((receipt) => (
-                    <li
-                      key={`${receipt.nodeName}-${receipt.date}-${receipt.beforeState}`}
-                      className="flex items-start gap-2 py-1 text-[11px] text-[#0B1220]"
-                    >
-                      <MentrixaVocabIcon name="receipt" size={16} surface="light" title="" />
-                      <span>{formatBreakthroughReceiptLine(receipt)}</span>
-                    </li>
-                  ))}
-                </ul>
+                <RankPassportBreakthroughPage receipts={data.breakthroughReceipts} />
               </RankPassportSlide>
             ) : null}
 
             <RankPassportSlide slideIndex={slideIndex++}>
-              <VocabSectionHeading name="rank-proof" label="Record" surface="light" />
-              <p className="mt-2 font-mono text-xs text-[#6366F1]">
-                {siteHost}/rank/{data.username}
-              </p>
-              <p className="mt-2 text-[10px] text-[#475569]">{data.vfaStreakDays ?? 0} day streak</p>
-              {isOwner && gridNextAction ? (
-                <motion.div className="mt-3" whileTap={safeReduceMotion ? undefined : { scale: 0.98 }}>
-                  <Link
-                    href="/student/quest"
-                    className={cn(
-                      mentrixStudent.hubBtnSolid,
-                      "inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold",
-                    )}
-                  >
-                    <MentrixaVocabIcon
-                      name={CANONICAL_QUEST_ICON}
-                      size={VOCAB_HEADING_ICON_SIZE * 0.36}
-                      surface="light"
-                      title=""
-                    />
-                    Verify next
-                  </Link>
-                </motion.div>
-              ) : null}
+              <RankPassportRecordPage
+                username={data.username}
+                siteHost={siteHost}
+                vfaStreakLongest={data.vfaStreakLongest ?? 0}
+                vfaStreakDays={data.vfaStreakDays ?? 0}
+              />
             </RankPassportSlide>
           </RankPassport3D>
         </div>

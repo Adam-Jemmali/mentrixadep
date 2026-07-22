@@ -303,6 +303,7 @@ function PassportBookScene({
     coverAngle.current = 0;
     coverDoneRef.current = false;
     targetCover.current = 0;
+    if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
     setCoverOpen(false);
     setCoverReady(false);
     setIsClosingCover(false);
@@ -509,6 +510,7 @@ function PassportBookScene({
         endAnimation();
       } else if (!coverOpen && coverAngle.current > 0.004) {
         coverAngle.current = 0;
+        if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
         setSpread(spreadAfterCoverClosed());
         onSpreadChange?.(spreadAfterCoverClosed());
         setIsClosingCover(false);
@@ -538,6 +540,7 @@ function PassportBookScene({
       coverAngle.current = THREE.MathUtils.lerp(coverAngle.current, targetCover.current, step);
       if (Math.abs(coverAngle.current) < 0.004) {
         coverAngle.current = 0;
+        if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
         endAnimation();
         setSpread(spreadAfterCoverClosed());
         onSpreadChange?.(spreadAfterCoverClosed());
@@ -561,7 +564,8 @@ function PassportBookScene({
   });
 
   const showSpread = coverOpen && coverReady;
-  const showCoverGeometry = !showSpread;
+  const showCoverFace = !coverOpen && !coverReady && !isClosingCover && !isAnimating;
+  const showCoverPivot = !showSpread && !showCoverFace;
   const stackZ = 0.014 + spread * PAGE_THICK * 0.45;
   const leftZ = stackZ;
   const rightZ = stackZ + PAGE_THICK;
@@ -739,25 +743,13 @@ function PassportBookScene({
           </>
         ) : null}
 
-        {showCoverGeometry ? (
-        <group ref={coverPivotRef} position={[-PAGE_W / 2, 0, COVER_PIVOT_Z]}>
-          <group position={[PAGE_W / 2, 0, 0]}>
-            <mesh
-              onClick={(event) => {
-                event.stopPropagation();
-                if (!coverOpen) openCover();
-              }}
-            >
-              <boxGeometry args={[PAGE_W, PAGE_H, COVER_THICK]} />
-              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-            </mesh>
-          </group>
-          {!coverOpen ? (
+        {showCoverFace ? (
+          <group position={[0, 0, COVER_PIVOT_Z]}>
             <Html
               transform
               occlude={false}
               distanceFactor={htmlDistanceFactor}
-              position={[PAGE_W / 2, 0, COVER_THICK / 2 + 0.002]}
+              position={[0, 0, COVER_THICK / 2 + 0.002]}
               style={{ pointerEvents: "none" }}
             >
               <button
@@ -770,7 +762,22 @@ function PassportBookScene({
                 <PassportCoverFace subjectLabel={subjectLabel} />
               </button>
             </Html>
-          ) : null}
+          </group>
+        ) : null}
+
+        {showCoverPivot ? (
+        <group ref={coverPivotRef} position={[-PAGE_W / 2, 0, COVER_PIVOT_Z]}>
+          <group position={[PAGE_W / 2, 0, 0]}>
+            <mesh
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!coverOpen) openCover();
+              }}
+            >
+              <boxGeometry args={[PAGE_W, PAGE_H, COVER_THICK]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+          </group>
         </group>
         ) : null}
       </group>

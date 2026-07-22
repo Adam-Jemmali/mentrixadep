@@ -983,16 +983,22 @@ html:has(.mentrix-student-type-scope) body {
   );
 }
 
+.rank-passport-3d-foil--brand {
+  background: linear-gradient(120deg, #7c3aed 0%, #6366f1 48%, #818cf8 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .rank-passport-3d-foil--holo {
   background: linear-gradient(
     120deg,
-    #fef3c7 0%,
-    #d4a017 18%,
+    #7c3aed 0%,
     #6366f1 38%,
-    #22d3ee 52%,
-    #d4a017 68%,
-    #fef3c7 82%,
-    #b8860b 100%
+    #818cf8 52%,
+    #6366f1 68%,
+    #7c3aed 100%
   );
   background-size: 220% 220%;
   -webkit-background-clip: text;

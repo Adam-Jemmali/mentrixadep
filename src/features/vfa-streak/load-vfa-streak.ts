@@ -6,6 +6,14 @@ import {
 } from "@/features/vfa-streak/vfa-streak-pure";
 
 export async function loadVfaStreakHomeDisplay(userId: string): Promise<VfaStreakHomeDisplay> {
+  const snapshot = await loadVfaStreakSnapshot(userId);
+  return snapshot.display;
+}
+
+export async function loadVfaStreakSnapshot(userId: string): Promise<{
+  display: VfaStreakHomeDisplay;
+  longest: number;
+}> {
   const admin = createAdminClient();
   const { data } = await admin
     .from("user_settings")
@@ -16,14 +24,18 @@ export async function loadVfaStreakHomeDisplay(userId: string): Promise<VfaStrea
   const timeZone =
     typeof data?.timezone === "string" && data.timezone.trim() ? data.timezone : "UTC";
   const today = calendarDateInTimeZone(new Date(), timeZone);
+  const longest = Number(data?.vfa_streak_longest ?? 0);
 
-  return resolveVfaStreakHomeDisplay(
-    {
-      streakDays: Number(data?.vfa_streak_days ?? 0),
-      lastDate:
-        typeof data?.vfa_streak_last_date === "string" ? data.vfa_streak_last_date : null,
-      longest: Number(data?.vfa_streak_longest ?? 0),
-    },
-    today,
-  );
+  return {
+    display: resolveVfaStreakHomeDisplay(
+      {
+        streakDays: Number(data?.vfa_streak_days ?? 0),
+        lastDate:
+          typeof data?.vfa_streak_last_date === "string" ? data.vfa_streak_last_date : null,
+        longest,
+      },
+      today,
+    ),
+    longest,
+  };
 }

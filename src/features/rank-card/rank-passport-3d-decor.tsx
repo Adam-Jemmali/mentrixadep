@@ -196,10 +196,24 @@ export function PassportPageChrome({
 export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
   return (
     <div
-      className="flex flex-col items-center justify-between overflow-hidden rounded-none bg-[#0B1220] px-8 py-10 text-center"
+      className="rank-passport-3d-closed-cover relative flex flex-col items-center justify-between overflow-hidden rounded-none px-8 py-10 text-center"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
-      <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#D4A017]/40 bg-[#0B1220]/60">
+      <div
+        className="pointer-events-none absolute bottom-14 left-5 select-none font-[family-name:var(--font-caveat),cursive] text-[1.35rem] leading-none text-[#6366F1]/55"
+        style={{ transform: "rotate(-11deg)" }}
+        aria-hidden
+      >
+        proof inside →
+      </div>
+      <div
+        className="pointer-events-none absolute right-5 top-16 select-none rounded-full border-2 border-dashed border-[#6366F1]/35 px-3 py-2 font-[family-name:var(--font-caveat),cursive] text-sm text-[#818CF8]/70"
+        style={{ transform: "rotate(14deg)" }}
+        aria-hidden
+      >
+        verified
+      </div>
+      <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#6366F1]/45 bg-[#0B1220]/60">
         <Image
           src={MENTRIXA_LOGO_PNG}
           alt="Mentrixa"
@@ -211,7 +225,7 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
         />
       </div>
       <div className="space-y-4">
-        <p className="rank-passport-3d-foil rank-passport-3d-foil--holo text-[2.1rem] font-black leading-none tracking-[0.22em]">
+        <p className="rank-passport-3d-foil rank-passport-3d-foil--brand text-[2.1rem] font-black leading-none tracking-[0.22em]">
           MENTRIXA
         </p>
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>

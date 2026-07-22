@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
@@ -14,7 +15,7 @@ import {
   resolvePassportSignature,
 } from "@/features/rank-card/rank-passport-identity-pure";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
-import { CANONICAL_PROFILE_ICON, CANONICAL_SESSION_ICON } from "@/shared/icons/vocab-canonical";
+import { CANONICAL_SESSION_ICON } from "@/shared/icons/vocab-canonical";
 import { cn } from "@/shared/core/utils";
 
 function BiodataField({
@@ -45,13 +46,18 @@ function BiodataField({
 
 function RoleField({ role }: { role: "student" | "tutor" }) {
   const label = formatPassportRoleLabel(role);
-  const icon = role === "tutor" ? CANONICAL_SESSION_ICON : CANONICAL_PROFILE_ICON;
+  const icon =
+    role === "tutor" ? (
+      <MentrixaVocabIcon name={CANONICAL_SESSION_ICON} size={22} surface="light" title={label} />
+    ) : (
+      <Image src="/icons/mentrixer.svg" alt="" width={22} height={22} className="shrink-0" />
+    );
 
   return (
     <div className="min-w-0">
       <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#6366F1]">Role</p>
       <div className="mt-0.5 flex items-center gap-2">
-        <MentrixaVocabIcon name={icon} size={22} surface="light" title={label} />
+        {icon}
         <p className="rank-passport-laser-ink truncate text-[13px] font-bold uppercase text-[#0B1220]">
           {label}
         </p>

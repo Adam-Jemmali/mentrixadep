@@ -15,7 +15,7 @@ import { buildPassportVerdict } from "@/features/rank-card/rank-passport-pure";
 import {
   getApCalcVerifiedRankStats,
 } from "@/features/xp/calibrated-rank";
-import { loadVfaStreakHomeDisplay } from "@/features/vfa-streak/load-vfa-streak";
+import { loadVfaStreakSnapshot } from "@/features/vfa-streak/load-vfa-streak";
 import { resolvePassportAvatarUrl } from "@/features/rank-card/rank-passport-avatar-pure";
 import { getCurrentUser } from "@/shared/core/auth";
 import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
@@ -94,7 +94,10 @@ export async function getRankCardByUsername(
     loadMasteryGrid(studentId).catch(() => null),
     loadPassportBreakthroughReceipts(studentId).catch(() => []),
     loadRankPassportVerdict(studentId).catch(() => null),
-    loadVfaStreakHomeDisplay(studentId).catch(() => ({ kind: "none" as const, days: 0, longest: 0 })),
+    loadVfaStreakSnapshot(studentId).catch(() => ({
+      display: { kind: "none" as const, days: 0, longest: 0 },
+      longest: 0,
+    })),
     loadPassportDivisionSnapshot(studentId).catch(() => ({
       status: "no_division" as const,
       divisionName: "AP Calculus AB",
@@ -102,7 +105,8 @@ export async function getRankCardByUsername(
       myXp: 0,
     })),
   ]);
-  const vfaStreakDays = vfaStreak.kind === "active" ? vfaStreak.days : 0;
+  const vfaStreakDays = vfaStreak.display.kind === "active" ? vfaStreak.display.days : 0;
+  const vfaStreakLongest = vfaStreak.longest;
   const topSubject = subjects[0] ?? null;
   const passportVerdict = buildPassportVerdict({
     verifiedCount: verifiedStats.verifiedCount,
@@ -140,6 +144,7 @@ export async function getRankCardByUsername(
     masteryGrid,
     rankDeltaVerdict,
     vfaStreakDays,
+    vfaStreakLongest,
     passportDivision,
     identity: {
       avatarUrl: resolvePassportAvatarUrl({

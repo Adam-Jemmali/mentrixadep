@@ -90,6 +90,7 @@ export const rankCardDataSchema = z.object({
   masteryGrid: masteryGridDataSchema.nullable().optional(),
   rankDeltaVerdict: z.custom<Verdict>().nullable().optional(),
   vfaStreakDays: z.number().int().min(0).optional(),
+  vfaStreakLongest: z.number().int().min(0).optional(),
   passportDivision: rankPassportDivisionSchema,
   identity: rankPassportIdentitySchema,
   isPrivate: z.literal(false),

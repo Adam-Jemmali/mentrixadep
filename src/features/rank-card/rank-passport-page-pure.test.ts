@@ -5,8 +5,11 @@ import {
   rankPassportAccuracyHeadline,
   rankPassportBandCaption,
   rankPassportBandFootnote,
+  rankPassportBreakthroughVerdict,
   rankPassportPeerValue,
+  rankPassportRecordVerdict,
   resolvePassportVerifiedMetrics,
+  summarizePassportBreakthroughs,
 } from "@/features/rank-card/rank-passport-page-pure";
 import type { RankCardData } from "@/features/rank-card/types";
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
@@ -109,5 +112,45 @@ describe("rank passport page copy", () => {
         postPercent: 88,
       }),
     ).toBe("Chain rule 40% to 88% Jul 1");
+  });
+
+  it("summarizes breakthrough receipts with lift metrics", () => {
+    const summary = summarizePassportBreakthroughs([
+      {
+        nodeName: "Chain rule",
+        beforeState: "weak",
+        afterState: "verified",
+        date: "Jul 1",
+        prePercent: 40,
+        postPercent: 88,
+      },
+      {
+        nodeName: "Product rule",
+        beforeState: "weak",
+        afterState: "verified",
+        date: "Jul 2",
+        prePercent: 52,
+        postPercent: 70,
+      },
+      {
+        nodeName: "Limits",
+        beforeState: "weak",
+        afterState: "verified",
+        date: "Jul 3",
+      },
+    ]);
+
+    expect(summary.count).toBe(3);
+    expect(summary.receiptsWithPercent).toBe(2);
+    expect(summary.bestLift).toBe(48);
+    expect(summary.bestLiftNodeName).toBe("Chain rule");
+    expect(summary.avgLift).toBe(33);
+    expect(rankPassportBreakthroughVerdict(summary)).toContain("best jump +48% on Chain rule");
+  });
+
+  it("formats live record verdict with best and current streak", () => {
+    expect(rankPassportRecordVerdict(12, 4)).toContain("12 day best streak");
+    expect(rankPassportRecordVerdict(12, 4)).toContain("4 day proof streak active");
+    expect(rankPassportRecordVerdict(5, 0)).toBe("5 day best streak on record.");
   });
 });
