@@ -6,17 +6,17 @@ import { cn } from "@/shared/core/utils";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { LandingVocabWord } from "@/features/marketing/landing/ui/landing-vocab-word";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_FLOW_GAME } from "@/features/marketing/landing/landing-copy-pure";
 import { LandingStickyGameNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
 const STEPS: { id: StepId; number: string; vocabIcon: VocabIconName; title: string }[] = [
-  { id: "book", number: "01", vocabIcon: "flow-book", title: "Book" },
-  { id: "meet", number: "02", vocabIcon: "flow-meet", title: "Meet" },
-  { id: "unpack", number: "03", vocabIcon: "flow-unpack", title: "Unpack" },
-  { id: "climb", number: "04", vocabIcon: "flow-climb", title: "Climb" },
+  { id: "book", number: "1", vocabIcon: "flow-book", title: "Book" },
+  { id: "meet", number: "2", vocabIcon: "flow-meet", title: "Meet" },
+  { id: "unpack", number: "3", vocabIcon: "flow-unpack", title: "Unpack" },
+  { id: "climb", number: "4", vocabIcon: "flow-climb", title: "Climb" },
 ];
 
 type StepId = "book" | "meet" | "unpack" | "climb";
@@ -175,10 +175,9 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
                   <span className={`text-[10px] font-bold ${landingHub.hint}`}>?</span>
                 )}
               </span>
-              <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#A5B4FC] bg-[#EDE9FE] pointer-events-none">
-                <MentrixaVocabIcon name={step.vocabIcon} size={22} surface="light" title={step.title} />
+              <span className="relative shrink-0">
+                <LandingVocabWord word={step.title} icon={step.vocabIcon} size="lg" />
               </span>
-              <span className="text-sm font-bold text-[#0B1220]">{step.title}</span>
               {completed && isCorrectPos ? (
                 <motion.span
                   initial={{ scale: 0 }}

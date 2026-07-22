@@ -14,6 +14,8 @@ import { buildPassportVerdict } from "@/features/rank-card/rank-passport-pure";
 import {
   getApCalcVerifiedRankStats,
 } from "@/features/xp/calibrated-rank";
+import { loadVfaStreakHomeDisplay } from "@/features/vfa-streak/load-vfa-streak";
+import { resolvePassportAvatarUrl } from "@/features/rank-card/rank-passport-avatar-pure";
 import { getCurrentUser } from "@/shared/core/auth";
 import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 
@@ -32,7 +34,9 @@ export async function getRankCardByUsername(
   const admin = createAdminClient();
   const { data: settings } = await admin
     .from("user_settings")
-    .select("user_id, display_name, rank_card_public, rank_card_username")
+    .select(
+      "user_id, display_name, rank_card_public, rank_card_username, bio, avatar_url, timezone, passport_sex, passport_signature",
+    )
     .ilike("rank_card_username", username)
     .maybeSingle();
 
@@ -54,6 +58,7 @@ export async function getRankCardByUsername(
 
   const { data: authUser } = await admin.auth.admin.getUserById(studentId);
   const email = authUser?.user?.email ?? null;
+  const memberSince = authUser?.user?.created_at ?? new Date().toISOString();
   const emailPrefix = email?.split("@")[0] ?? "mentrixer";
   const displayName =
     (typeof settings.display_name === "string" && settings.display_name.trim()
@@ -81,14 +86,16 @@ export async function getRankCardByUsername(
   const totalXp = xpRow?.total_xp ?? 0;
   const globalRank = rankFromTotalXp(totalXp);
   const verifiedStats = await getApCalcVerifiedRankStats(studentId);
-  const [subjects, warBadges, masteryGrid, breakthroughReceipts, rankDeltaVerdict] =
+  const [subjects, warBadges, masteryGrid, breakthroughReceipts, rankDeltaVerdict, vfaStreak] =
     await Promise.all([
     buildRankCardSubjects(studentId, totalXp),
     getActiveWarBadgesForUser(studentId),
     loadMasteryGrid(studentId).catch(() => null),
     loadPassportBreakthroughReceipts(studentId).catch(() => []),
     loadRankPassportVerdict(studentId).catch(() => null),
+    loadVfaStreakHomeDisplay(studentId).catch(() => ({ kind: "none" as const, days: 0, longest: 0 })),
   ]);
+  const vfaStreakDays = vfaStreak.kind === "active" ? vfaStreak.days : 0;
   const topSubject = subjects[0] ?? null;
   const passportVerdict = buildPassportVerdict({
     verifiedCount: verifiedStats.verifiedCount,
@@ -124,6 +131,38 @@ export async function getRankCardByUsername(
     warBadges,
     masteryGrid,
     rankDeltaVerdict,
+    vfaStreakDays,
+    identity: {
+      avatarUrl: resolvePassportAvatarUrl({
+        settingsUrl:
+          typeof (settings as { avatar_url?: unknown }).avatar_url === "string"
+            ? (settings as { avatar_url: string }).avatar_url
+            : null,
+        authMetadata: (authUser?.user?.user_metadata ?? undefined) as
+          | Record<string, unknown>
+          | undefined,
+      }),
+      bio:
+        typeof (settings as { bio?: unknown }).bio === "string"
+          ? (settings as { bio: string }).bio.trim() || null
+          : null,
+      timezone:
+        typeof (settings as { timezone?: unknown }).timezone === "string" &&
+        (settings as { timezone: string }).timezone.trim()
+          ? (settings as { timezone: string }).timezone.trim()
+          : "UTC",
+      memberSince,
+      sex:
+        (settings as { passport_sex?: string | null }).passport_sex === "feminine" ||
+        (settings as { passport_sex?: string | null }).passport_sex === "masculine"
+          ? ((settings as { passport_sex: "feminine" | "masculine" }).passport_sex)
+          : null,
+      signature:
+        typeof (settings as { passport_signature?: unknown }).passport_signature === "string"
+          ? (settings as { passport_signature: string }).passport_signature.trim() || null
+          : null,
+      role: userRow.role === "tutor" ? "tutor" : "student",
+    },
     isPrivate: false as const,
   };
 }

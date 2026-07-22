@@ -7,7 +7,7 @@ import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { cn } from "@/shared/core/utils";
 
 export const metadata: Metadata = {
-  title: "Guide · Mentrixa",
+  title: "Guide. Mentrixa",
   robots: { index: false, follow: true },
 };
 

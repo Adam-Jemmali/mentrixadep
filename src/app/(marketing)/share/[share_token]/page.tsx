@@ -9,13 +9,13 @@ type Props = { params: Promise<{ share_token: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { share_token } = await params;
   const artifact = await loadBeforeAfterShareByToken(share_token);
-  if (!artifact) return { title: "Share · Mentrixa" };
+  if (!artifact) return { title: "Share. Mentrixa" };
 
   const before = formatShareAccuracy(artifact.beforeValue);
   const after = formatShareAccuracy(artifact.afterValue);
 
   return {
-    title: `${artifact.nodeName}: ${before} to ${after} · Mentrixa`,
+    title: `${artifact.nodeName}: ${before} to ${after}. Mentrixa`,
     description: `${artifact.nodeName} improved from ${before} to ${after} on Mentrixa.`,
     openGraph: {
       title: `${artifact.nodeName}: ${before} → ${after}`,

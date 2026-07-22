@@ -30,7 +30,7 @@ export function rankBreakdownPopoverMessage(
       : "";
   const peerLine =
     stats.percentile != null && stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE
-      ? explainPeerStanding(stats.percentile)
+      ? explainPeerStanding(stats.percentile, stats.eligibleCohortSize, stats.verifiedCount)
       : "";
 
   return {
@@ -57,7 +57,7 @@ export function rankBreakdownPopoverRows(
   if (stats.percentile != null && stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE) {
     rows.push({
       label: "Peer standing",
-      value: formatPeerStandingRow(stats.percentile),
+      value: formatPeerStandingRow(stats.percentile, stats.eligibleCohortSize),
     });
     rows.push({
       label: "How we count it",

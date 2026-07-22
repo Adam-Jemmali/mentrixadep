@@ -30,7 +30,7 @@ export function RankCardShareButton({
   const cardUrl = `${siteUrl.replace(/\/$/, "")}/rank/${username}`;
   const displayRankTitle = normalizeRankTitle(rankTitle);
 
-  const tweetText = `Verified AP Calculus AB rank: ${passportVerdict} · ${displayRankTitle} · ${cardUrl}`;
+  const tweetText = `Verified AP Calculus AB rank: ${passportVerdict}. ${displayRankTitle}. ${cardUrl}`;
 
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
   const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(cardUrl)}`;

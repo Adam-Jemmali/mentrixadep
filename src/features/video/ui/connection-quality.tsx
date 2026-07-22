@@ -111,9 +111,9 @@ export function ConnectionQualityIndicator({
   return (
     <div
       className={`flex items-center gap-1.5 ${color}`}
-      title={`${label}${stats.rtt !== null ? ` · ${stats.rtt}ms RTT` : ""}${
+      title={`${label}${stats.rtt !== null ? `. ${stats.rtt}ms RTT` : ""}${
         stats.packetLoss !== null
-          ? ` · ${(stats.packetLoss * 100).toFixed(1)}% loss`
+          ? `. ${(stats.packetLoss * 100).toFixed(1)}% loss`
           : ""
       }`}
     >

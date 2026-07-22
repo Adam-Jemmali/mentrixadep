@@ -127,8 +127,8 @@ export default async function BookingConfirmedPage({ searchParams }: PageProps) 
             <div className="flex-1 w-full">
               <AddToCalendarButton
                 requestId={sr.id}
-                title={`Mentrixa · ${availability.course}`}
-                description={`Learner session · Request ${sr.id.slice(0, 8)}… · ${formatDate(availability.start_time)}`}
+                title={`Mentrixa. ${availability.course}`}
+                description={`Learner session. Request ${sr.id.slice(0, 8)}…. ${formatDate(availability.start_time)}`}
                 startIso={availability.start_time}
                 endIso={availability.end_time}
               />

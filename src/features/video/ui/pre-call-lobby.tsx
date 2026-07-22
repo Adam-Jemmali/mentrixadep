@@ -21,6 +21,7 @@ import {
   WifiOff,
   Loader2,
   ChevronDown,
+  type LucideIcon,
 } from "lucide-react";
 import { MentrixaSelect } from "@/shared/ui/select-patterns";
 import {
@@ -115,7 +116,7 @@ function DeviceSelector({
 function ConnectionBadge({ quality }: { quality: ConnectionQuality }) {
   const config: Record<
     ConnectionQuality,
-    { icon: React.ElementType; label: string; color: string }
+    { icon: LucideIcon; label: string; color: string }
   > = {
     checking: { icon: Loader2, label: "Checking…", color: "text-white/40" },
     excellent: { icon: Wifi, label: "Excellent", color: "text-blue-400" },
@@ -526,7 +527,7 @@ export function PreCallLobby({
                 </p>
                 <AudioMeter stream={streamRef.current} />
                 <p className="text-[10px] text-white/30">
-                  Speak to test · echo cancellation on
+                  Speak to test. echo cancellation on
                 </p>
               </div>
             )}

@@ -63,7 +63,7 @@ export function buildMasteryNodeDetailRows(
   if (node.hasVerifiedAttempt) {
     rows.push({
       label: "First-answer result",
-      value: node.verifiedCorrect ? "100% · locked correct" : "0% · locked miss",
+      value: node.verifiedCorrect ? "100%. locked correct" : "0%. locked miss",
       gold: node.verifiedCorrect === true,
     });
   }
@@ -71,7 +71,7 @@ export function buildMasteryNodeDetailRows(
   if (node.practiceAttempts > 0) {
     rows.push({
       label: "Practice accuracy",
-      value: `${node.accuracyPercent ?? 0}% · ${node.practiceCorrect}/${node.practiceAttempts} right`,
+      value: `${node.accuracyPercent ?? 0}%. ${node.practiceCorrect}/${node.practiceAttempts} right`,
     });
   } else if (!node.hasVerifiedAttempt) {
     rows.push({

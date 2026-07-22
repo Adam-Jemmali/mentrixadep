@@ -158,7 +158,7 @@ export const LANDING_FEATURES = {
 
     eyebrow: "Mentrixer",
 
-    title: "Five tools.",
+    title: "5 tools",
 
     subtitle: "Compete on the live feed.",
 
@@ -170,7 +170,7 @@ export const LANDING_FEATURES = {
 
     eyebrow: "Guide",
 
-    title: "Five tools.",
+    title: "5 tools",
 
     subtitle: "Preview below. Full breakdown in Guide section.",
 
@@ -188,7 +188,7 @@ export const LANDING_RANK_LADDER = {
 
   eyebrow: "Mentrixer",
 
-  title: "Seven XP tiers.",
+  title: "7 tiers",
 
   bubbleLabel: "Mentrixer XP",
 
@@ -254,7 +254,7 @@ export const LANDING_FLOW = {
 
   eyebrow: "Mentrixer loop",
 
-  title: "Four steps.",
+  title: "4 steps",
 
   subtitle: "Book a Guide when stuck. Not the Guide career path.",
 
@@ -406,7 +406,7 @@ export const LANDING_GUIDE = {
 
   notRank: "Guides do not climb the Mentrixer feed or XP ladder.",
 
-  featuresTitle: "Five tools.",
+  featuresTitle: "5 tools",
 
   featuresSubtitle: "What you run every session.",
 
@@ -456,7 +456,7 @@ export const LANDING_PRICING = {
 
   eyebrow: "Mentrixer offer",
 
-  headline: "Three tiers.",
+  headline: "3 tiers",
 
   subhead: "Live feed stays free.",
 
@@ -780,6 +780,16 @@ export const LANDING_E = {
     liveArena: "Live Arena",
     rankCta: "See your rank",
     rankHref: "/try",
+    signIn: "Sign in",
+    signInHref: "/auth/signin?signin=1",
+    items: [
+      { label: "Start", href: "#how-it-works" },
+      { label: "Ranks", href: "#ranks" },
+      { label: "Loop", href: "#flow" },
+      { label: "Path", href: "#path" },
+      { label: "Guide", href: "#guide" },
+      { label: "Offer", href: "#pricing" },
+    ] as const,
   },
   feedMoreToday: (count: number) =>
     count === 1 ? "1 more today" : `${count.toLocaleString()} more today`,
@@ -790,19 +800,22 @@ export const LANDING_E = {
   ctaSecondaryHref: "/auth/signup?role=tutor",
   howItWorks: {
     eyebrow: "How it works",
-    title: "Three steps",
+    title: "3 steps",
     steps: [
       {
+        number: "1",
         vocabIcon: "verified" as const,
         title: "Lock",
         line: "Your first try on a skill becomes your verified score",
       },
       {
+        number: "2",
         vocabIcon: "leaderboard" as const,
         title: "Feed",
         line: "The Live Arena updates as scores land",
       },
       {
+        number: "3",
         vocabIcon: "rank-proof" as const,
         title: "Rank",
         line: "You stand beside everyone on the same skills",
@@ -814,26 +827,10 @@ export const LANDING_E = {
     title: "What is happening now",
     subtitle: "Live Calculus AB activity",
   },
-  guides: {
-    eyebrow: "Guides",
-    title: "Impact Score is the Guide rank",
-    subtitle: "It moves when first tries improve after your session",
-    cta: "Apply as Guide",
-    ctaHref: "/auth/signup?role=tutor",
-    items: [
-      {
-        word: "Session",
-        sentence: "You read their verified record before you speak",
-      },
-      {
-        word: "Impact",
-        sentence: "Impact Score rises when first tries improve on skills you taught",
-      },
-      {
-        word: "Studio",
-        sentence: "Your session becomes a Quest pack you approve",
-      },
-    ],
+  rankGame: {
+    eyebrow: "Play",
+    title: "Stack the ladder",
+    subtitle: "Tap tier then slot before time runs out",
   },
   finalCta: {
     line1: "Every rank starts at zero",
@@ -842,6 +839,18 @@ export const LANDING_E = {
     mentrixerHref: "/try",
     guideCta: "Apply as Guide",
     guideHref: "/auth/signup?role=tutor",
+  },
+  guides: {
+    eyebrow: "Guide",
+    title: "Guide mirror",
+    subtitle: "Live teachers earn Impact Score from first answer movement.",
+    items: [
+      { word: "Session", sentence: "Live video call. You read their verified record before you speak." },
+      { word: "Impact", sentence: "Your score moves when their first answers improve on nodes you taught." },
+      { word: "Breakthrough", sentence: "$39 flat per session. Stripe pays when the call ends." },
+    ],
+    cta: "Apply as Guide",
+    ctaHref: "/auth/signup?role=tutor",
   },
 } as const;
 

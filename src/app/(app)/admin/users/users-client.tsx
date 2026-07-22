@@ -93,7 +93,7 @@ export function AdminUsersClient({ users: initialUsers }: Props) {
       <div className="mb-6">
         <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">Users</h1>
         <p className="text-[13px] text-slate-500 mt-1">
-          {users.length} total · {counts.student} learners · {counts.tutor} guides · {counts.admin} admins
+          {users.length} total. {counts.student} learners. {counts.tutor} guides. {counts.admin} admins
         </p>
       </div>
 

@@ -403,13 +403,16 @@ function ProfileShareSections({
   data,
   accountRank,
   referral,
+  certification,
 }: {
   data: StudentProfileData;
   accountRank: ReturnType<typeof getAccountRankFromTotalXp>;
   referral?: ReferralDashboardData | null;
+  certification?: MentrixaCertificationView | null;
 }) {
   return (
     <div className="space-y-10">
+      <CertificationSettingsPanel cert={certification ?? null} />
       {data.rankCardUsername && data.rankCardPublic ? (
         <RankCardShareButton
           username={data.rankCardUsername}
@@ -753,7 +756,6 @@ export function StudentProfileClient({
                           }}
                         />
                       ) : null}
-                      <CertificationSettingsPanel cert={certification} />
                       <AccountSecurityPanel />
                     </div>
                   ),
@@ -787,6 +789,7 @@ export function StudentProfileClient({
                       data={data}
                       accountRank={accountRank}
                       referral={referral}
+                      certification={certification}
                     />
                   ),
                 },

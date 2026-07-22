@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "@/shared/animation/motion";
+import { useHydrationSafeMotion } from "@/shared/animation/use-hydration-safe-motion";
 import { cn } from "@/shared/core/utils";
 
 export function SkillTreeEdge({
@@ -12,7 +13,28 @@ export function SkillTreeEdge({
   active?: boolean;
   className?: string;
 }) {
-  const reducedMotion = useReducedMotion();
+  const { safeReduceMotion } = useHydrationSafeMotion();
+
+  const pathClassName = cn(
+    active ? "text-[#818CF8]" : "text-[#64748B]/55",
+    className,
+  );
+
+  if (safeReduceMotion) {
+    return (
+      <path
+        d={path}
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={active ? 3 : 2}
+        strokeDasharray={active ? "9 8" : "5 10"}
+        className={pathClassName}
+        opacity={active ? 0.95 : 0.6}
+        aria-hidden
+      />
+    );
+  }
 
   return (
     <motion.path
@@ -22,28 +44,17 @@ export function SkillTreeEdge({
       strokeLinecap="round"
       strokeWidth={active ? 3 : 2}
       strokeDasharray={active ? "9 8" : "5 10"}
-      className={cn(
-        active ? "text-[#818CF8]" : "text-[#64748B]/55",
-        className,
-      )}
+      className={pathClassName}
       initial={false}
-      animate={
-        reducedMotion
-          ? { strokeDashoffset: 0, opacity: active ? 0.95 : 0.6 }
-          : {
-              strokeDashoffset: active ? [0, -34] : [0, -30],
-              opacity: active ? [0.72, 1, 0.72] : [0.4, 0.68, 0.4],
-            }
-      }
-      transition={
-        reducedMotion
-          ? { duration: 0 }
-          : {
-              duration: active ? 2.4 : 5.5,
-              ease: "linear",
-              repeat: Number.POSITIVE_INFINITY,
-            }
-      }
+      animate={{
+        strokeDashoffset: active ? [0, -34] : [0, -30],
+        opacity: active ? [0.72, 1, 0.72] : [0.4, 0.68, 0.4],
+      }}
+      transition={{
+        duration: active ? 2.4 : 5.5,
+        ease: "linear",
+        repeat: Number.POSITIVE_INFINITY,
+      }}
       aria-hidden
     />
   );

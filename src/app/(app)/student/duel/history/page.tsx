@@ -10,7 +10,7 @@ import { ProductPageHeader } from "@/features/student-profile/ui/product-page-he
 import { DuelRowActions } from "@/features/student-profile/ui/duel-row-actions";
 import { CANONICAL_DUELS_ICON } from "@/shared/icons/vocab-canonical";
 
-export const metadata = { title: "Duel history · Mentrixa" };
+export const metadata = { title: "Duel history. Mentrixa" };
 
 export default async function DuelHistoryPage() {
   const user = await requireRole(["student", "admin"]);
@@ -114,7 +114,7 @@ export default async function DuelHistoryPage() {
                   <span className="font-semibold text-[#0B1220]">{divName(d.division_key)}</span>
                   <span className="tabular-nums text-[#475569]">
                     {d.wins}W / {d.played - d.wins}L
-                    <span className="text-[#94A3B8]"> · </span>
+                    <span className="text-[#94A3B8]">. </span>
                     {d.played} played
                   </span>
                 </li>
@@ -136,7 +136,7 @@ export default async function DuelHistoryPage() {
                   <span className="tabular-nums text-[#475569]">
                     {h.myWins}–{h.theirWins}
                     {h.ties > 0 ? ` (${h.ties}D)` : ""}
-                    <span className="text-[#94A3B8]"> · {h.played} total</span>
+                    <span className="text-[#94A3B8]">. {h.played} total</span>
                   </span>
                 </li>
               ))}

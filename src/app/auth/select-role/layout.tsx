@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getSiteUrl } from "@/shared/core/site";
 
 export const metadata: Metadata = {
-  title: "Choose your role · Mentrixa",
+  title: "Choose your role. Mentrixa",
   description:
     "Select whether you are joining Mentrixa as a learner (Mentrixer) or a Guide — we personalize your experience.",
   alternates: { canonical: `${getSiteUrl()}/auth/select-role` },

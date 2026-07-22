@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getSiteUrl } from "@/shared/core/site";
 
 export const metadata: Metadata = {
-  title: "Forgot password · Mentrixa",
+  title: "Forgot password. Mentrixa",
   description: "Reset your Mentrixa account password securely.",
   alternates: { canonical: `${getSiteUrl()}/auth/forgot-password` },
   robots: { index: false, follow: true },

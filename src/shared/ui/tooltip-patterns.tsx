@@ -12,6 +12,9 @@ import { MentrixaMetaTag } from "@/shared/ui/meta-tag-patterns";
 
 export type TooltipTone = "light" | "dark";
 
+const OVERLAY_TRIGGER_CLASS =
+  "cursor-pointer border-0 bg-transparent p-0 text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2";
+
 const CONTENT_CLASS: Record<TooltipTone, string> = {
   light: "border border-slate-200 bg-white text-slate-800 shadow-lg",
   dark: "border border-white/10 bg-[#0F172A] text-slate-100 shadow-lg",
@@ -62,8 +65,16 @@ export function MentrixaTooltip({
 
   return (
     <Tooltip delay={delay} closeDelay={100}>
-      <Tooltip.Trigger className={cn("tooltip__trigger", triggerClassName)}>
-        {children}
+      <Tooltip.Trigger
+        className={cn(
+          "tooltip__trigger inline-flex cursor-default border-0 bg-transparent p-0 text-inherit",
+          OVERLAY_TRIGGER_CLASS,
+          triggerClassName,
+        )}
+      >
+        <button type="button" className="inline-flex border-0 bg-transparent p-0 text-inherit">
+          {children}
+        </button>
       </Tooltip.Trigger>
       <Tooltip.Content
         placement={placement}
@@ -101,7 +112,7 @@ export function ExamStakesLabel({
       content={<p className="max-w-[18rem] leading-relaxed">{text}</p>}
       contentClassName="max-w-sm"
     >
-      <span className="inline-flex cursor-help">
+      <span className="inline-flex">
         <MentrixaMetaTag variant="exam_stakes" tone={tone} className={className}>
           Exam stakes
         </MentrixaMetaTag>

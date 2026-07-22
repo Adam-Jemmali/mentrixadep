@@ -310,11 +310,11 @@ export function buildRankDeltaVerdict(
 
   const changed =
     flat && current.percentile != null
-      ? `${current.accuracyPercent}% first-answer accuracy · ${formatPeerStandingShort(current.percentile)} of Mentrixers.`
+      ? `${current.accuracyPercent}% first-answer accuracy. ${formatPeerStandingShort(current.percentile)} of Mentrixers.`
       : flat
-        ? `${current.accuracyPercent}% first-answer accuracy · ${current.verifiedCount} verified.`
+        ? `${current.accuracyPercent}% first-answer accuracy. ${current.verifiedCount} verified.`
         : pctDelta != null
-          ? `Accuracy ${prevAcc}→${current.accuracyPercent}% · Peer standing top ${peerTopPercent(prevPct!)}%→${peerTopPercent(current.percentile!)}.`
+          ? `Accuracy ${prevAcc}→${current.accuracyPercent}%. Peer standing top ${peerTopPercent(prevPct!)}%→${peerTopPercent(current.percentile!)}.`
           : `Accuracy ${prevAcc}→${current.accuracyPercent}% (${signedDelta(accDelta)}).`;
 
   const reason =
@@ -322,7 +322,7 @@ export function buildRankDeltaVerdict(
       ? drivingNodes
           .slice(0, 3)
           .map((node) => node.nodeName)
-          .join(" · ")
+          .join(". ")
       : "";
 
   const nextUnverified = drivingNodes.find((node) => !node.isCorrect);

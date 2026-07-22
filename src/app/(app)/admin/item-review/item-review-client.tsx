@@ -222,11 +222,11 @@ export function ItemReviewClient({ initial }: Props) {
                 <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
                   {itemFormatLabel(detail.itemFormat)}
                 </span>
-                <span className="text-slate-300">·</span>
+                <span className="text-slate-300">| </span>
                 <span className="text-[11px] text-slate-500">{itemStatusLabel(detail.status)}</span>
-                <span className="text-slate-300">·</span>
+                <span className="text-slate-300">| </span>
                 <span className="text-[11px] text-slate-500">
-                  Unit {detail.unitNumber} · {detail.nodeName}
+                  Unit {detail.unitNumber}. {detail.nodeName}
                 </span>
               </div>
 
@@ -427,7 +427,7 @@ function QueueRow({
       >
         <div className="flex items-center gap-2 text-[11px] text-slate-500">
           <span>{itemFormatLabel(item.itemFormat)}</span>
-          <span>·</span>
+          <span>| </span>
           <span>
             U{item.unitNumber} {item.nodeName}
           </span>

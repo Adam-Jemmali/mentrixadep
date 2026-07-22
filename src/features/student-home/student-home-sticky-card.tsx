@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "@/shared/animation/motion";
+import { motion } from "@/shared/animation/motion";
 import type { LandingStickyVariant } from "@/features/marketing/landing/landing-sticky-variants";
 import { StudentHomeAnimatedSticky } from "@/features/student-home/student-home-animated-sticky";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -37,8 +37,6 @@ export function StudentHomeStickyCard({
   staggerIndex?: number;
   compact?: boolean;
 }) {
-  const reduceMotion = useReducedMotion();
-
   return (
     <StudentHomeAnimatedSticky
       variant={variant}
@@ -52,9 +50,13 @@ export function StudentHomeStickyCard({
           compact ? "mb-2" : "mb-4",
           headerClassName,
         )}
-        initial={reduceMotion ? false : { opacity: 0, x: -16 }}
+        initial={false}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: staggerIndex * 0.12 + 0.18, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        transition={{
+          delay: staggerIndex * 0.12 + 0.18,
+          duration: 0.45,
+          ease: [0.22, 1, 0.36, 1],
+        }}
       >
         <VocabSectionHeading name={icon} label={title} surface="light" gold={gold} as="h2" />
         {href && linkLabel ? (
@@ -70,9 +72,13 @@ export function StudentHomeStickyCard({
         ) : null}
       </motion.header>
       <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: staggerIndex * 0.12 + 0.28, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{
+          delay: staggerIndex * 0.12 + 0.28,
+          duration: 0.5,
+          ease: [0.22, 1, 0.36, 1],
+        }}
       >
         {children}
       </motion.div>

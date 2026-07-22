@@ -49,7 +49,7 @@ export function RankPassportTopBar() {
       )}
     >
       <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6366F1]">
-        Verified rank passport
+        Verified passport
       </span>
       <Link href="/" className={mentrixHubSurfaces.ghostLink}>
         Mentrixa
@@ -244,7 +244,7 @@ export function RankPassportArticle({
                     {rankProofsCountLabel(data.verifiedSkillCount)}
                   </span>
                   {data.verifiedPercentile != null
-                    ? ` · Beat ${peerBeatCount(data.verifiedPercentile)}/100 Mentrixers (${formatPeerStandingShort(data.verifiedPercentile)})`
+                    ? `. Beat ${peerBeatCount(data.verifiedPercentile)}/100 Mentrixers (${formatPeerStandingShort(data.verifiedPercentile)})`
                     : ""}
                 </p>
                 <RankBreakdownPopover
@@ -252,6 +252,7 @@ export function RankPassportArticle({
                     verifiedCount: data.verifiedSkillCount,
                     accuracyPercent,
                     percentile: data.verifiedPercentile,
+                    eligibleCohortSize: null,
                   }}
                   tone="light"
                   triggerLabel="Breakdown"

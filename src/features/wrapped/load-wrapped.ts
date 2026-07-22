@@ -14,11 +14,13 @@ export type WrappedReportRow = {
   generatedAt: string;
   imageUrls: string[];
   rankUsername: string | null;
+  displayName: string;
 };
 
 function mapRow(
   row: Record<string, unknown>,
   rankUsername: string | null = null,
+  displayName = "Mentrixer",
 ): WrappedReportRow | null {
   const role = row.role === "tutor" ? "tutor" : row.role === "student" ? "student" : null;
   if (!role) return null;
@@ -34,18 +36,34 @@ function mapRow(
     generatedAt: String(row.generated_at),
     imageUrls: parseWrappedImageUrls(row.image_url),
     rankUsername,
+    displayName,
   };
 }
 
-async function loadRankUsername(userId: string): Promise<string | null> {
+async function loadWrappedProfile(
+  userId: string,
+): Promise<{ rankUsername: string | null; displayName: string }> {
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("user_settings")
-    .select("rank_card_username")
-    .eq("user_id", userId)
-    .maybeSingle();
-  const username = data?.rank_card_username;
-  return typeof username === "string" && username.trim() ? username.trim() : null;
+  const [{ data: settings }, { data: authUser }] = await Promise.all([
+    admin
+      .from("user_settings")
+      .select("rank_card_username, display_name")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    admin.auth.admin.getUserById(userId),
+  ]);
+
+  const emailPrefix = authUser?.user?.email?.split("@")[0]?.trim() || "Mentrixer";
+  const displayName =
+    typeof settings?.display_name === "string" && settings.display_name.trim()
+      ? settings.display_name.trim()
+      : emailPrefix;
+
+  const username = settings?.rank_card_username;
+  const rankUsername =
+    typeof username === "string" && username.trim() ? username.trim() : null;
+
+  return { rankUsername, displayName };
 }
 
 export async function loadWrappedForOwner(
@@ -60,8 +78,8 @@ export async function loadWrappedForOwner(
     .eq("report_year", reportYear)
     .maybeSingle();
   if (!data) return null;
-  const username = await loadRankUsername(userId);
-  return mapRow(data as Record<string, unknown>, username);
+  const profile = await loadWrappedProfile(userId);
+  return mapRow(data as Record<string, unknown>, profile.rankUsername, profile.displayName);
 }
 
 export async function loadWrappedByShareToken(
@@ -76,6 +94,6 @@ export async function loadWrappedByShareToken(
     .eq("share_token", token)
     .maybeSingle();
   if (!data) return null;
-  const username = await loadRankUsername(String(data.user_id));
-  return mapRow(data as Record<string, unknown>, username);
+  const profile = await loadWrappedProfile(String(data.user_id));
+  return mapRow(data as Record<string, unknown>, profile.rankUsername, profile.displayName);
 }

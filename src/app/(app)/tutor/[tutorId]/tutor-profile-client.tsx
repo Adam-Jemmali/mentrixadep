@@ -371,7 +371,7 @@ export function TutorProfileClient({
                 <p className="mt-2 text-base font-semibold text-neutral-900">{dialogSlot.course}</p>
                 <p className="mt-1 text-sm font-medium text-neutral-900">
                   {formatSlotRangeInZone(dialogSlot.start_time, dialogSlot.end_time, profile.tutorTimezone)}{" "}
-                  · {formatDurationLabel(getSessionDurationMinutes(dialogSlot.start_time, dialogSlot.end_time))}
+                 . {formatDurationLabel(getSessionDurationMinutes(dialogSlot.start_time, dialogSlot.end_time))}
                 </p>
               </div>
               <div className="relative rounded-lg border-2 border-mentrixa-600 bg-mentrixa-50 px-4 py-4">

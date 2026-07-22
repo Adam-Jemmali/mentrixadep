@@ -27,7 +27,7 @@ export default async function ParentCustodianViewPage({ params }: ParentViewPage
         Parent custodian view
       </p>
       <h1 className="mt-2 text-2xl font-black text-zinc-900">{view.studentFirstName}</h1>
-      <p className="mt-1 text-sm text-zinc-600">{view.subject} · read only</p>
+      <p className="mt-1 text-sm text-zinc-600">{view.subject}. read only</p>
       <p className="mt-6 text-sm font-semibold text-zinc-900">{view.verdict}</p>
       <p className="mt-2 text-sm text-zinc-600">{view.nextAction}</p>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">

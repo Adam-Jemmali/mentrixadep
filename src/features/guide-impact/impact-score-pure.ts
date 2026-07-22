@@ -67,7 +67,7 @@ export function formatImpactScoreLabel(score: number): string {
 }
 
 export function formatImpactNodeChipLabel(nodeName: string, score: number): string {
-  return `${nodeName} · ${Math.round(score)}`;
+  return `${nodeName}. ${Math.round(score)}`;
 }
 
 export function formatImpactScoreVerdict(

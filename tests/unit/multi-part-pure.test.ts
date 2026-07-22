@@ -94,7 +94,7 @@ describe("multi-part-pure", () => {
   it("awards partial XP from parts correct", () => {
     expect(computeMultiPartXp(2, 4, 75)).toBe(38);
     expect(computeMultiPartXp(4, 4, 75)).toBe(75);
-    expect(formatMultiPartXpLine(2, 4, 38)).toBe("+38 XP · 2/4 parts");
+    expect(formatMultiPartXpLine(2, 4, 38)).toBe("+38 XP. 2/4 parts");
     expect(
       countMultiPartCorrect([
         { partKey: "a", correct: true, attempts: 1, carriedForward: false },

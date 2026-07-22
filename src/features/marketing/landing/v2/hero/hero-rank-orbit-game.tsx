@@ -193,7 +193,7 @@ export function HeroRankOrbitGame() {
       setPlaced((prev) => ({ ...prev, [slotIndex]: key }));
       setTray((prev) => prev.filter((k) => k !== key));
       setCoach({
-        message: `${normalizeRankTitle(rankByKey(key).title)} locked. ${ACCOUNT_RANK_VISUALS.length - placedCount - 1} left · ${secondsLeft}s`,
+        message: `${normalizeRankTitle(rankByKey(key).title)} locked. ${ACCOUNT_RANK_VISUALS.length - placedCount - 1} left. ${secondsLeft}s`,
         tone: "coach",
       });
       return true;

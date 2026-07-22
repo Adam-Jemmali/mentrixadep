@@ -3,6 +3,8 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import type { LeaderboardEntry, DivisionStat } from "@/features/divisions/leaderboard";
+import { AP_CALC_AB_DIVISION_KEY } from "@/features/divisions/ap-calc-ab-division";
+import { DuelOpponentChallengeTrigger } from "@/features/duels/ui/duel-opponent-challenge-trigger";
 import { MentrixaVocabIcon, StreakCountDisplay } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
@@ -48,9 +50,11 @@ function HeaderIcon({
 export function DivisionTabs({
   leaderboard,
   divisionStats,
+  divisionKey = AP_CALC_AB_DIVISION_KEY,
 }: {
   leaderboard: LeaderboardEntry[];
   divisionStats: DivisionStat[];
+  divisionKey?: string;
 }) {
   return (
     <Tabs defaultValue="leaderboard" className="w-full">
@@ -91,6 +95,7 @@ export function DivisionTabs({
                       <HeaderIcon name="streak" label="Streak" align="end" />
                     </th>
                     <th className="text-right p-3 font-medium text-muted-foreground">Level</th>
+                    <th className="p-3 font-medium text-muted-foreground text-right">Duel</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -125,6 +130,17 @@ export function DivisionTabs({
                       </td>
                       <td className="p-3 text-right">
                         <LevelBadge tier={row.level.tier} label={row.level.label} />
+                      </td>
+                      <td className="p-3 text-right">
+                        {row.isCurrentUser ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          <DuelOpponentChallengeTrigger
+                            opponentId={row.userId}
+                            opponentName={row.displayName}
+                            divisionKey={divisionKey}
+                          />
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -221,7 +221,7 @@ export function buildMovementReceiptVerdict(data: MovementReceiptData): Movement
 export function buildMovementReceiptDetailLines(data: MovementReceiptData): string[] {
   const lines: string[] = [];
   lines.push(
-    `Grid: ${data.grid.newlyVerifiedCount} new verified · ${data.grid.verifiedTotalCount} total verified`,
+    `Grid: ${data.grid.newlyVerifiedCount} new verified. ${data.grid.verifiedTotalCount} total verified`,
   );
   if (data.loops.completedThisWeek > 0) {
     lines.push(`Loops: ${data.loops.completedThisWeek} closed this week`);

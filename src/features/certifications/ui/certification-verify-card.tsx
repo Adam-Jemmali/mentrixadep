@@ -1,89 +1,186 @@
 "use client";
 
+import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
+import { motion, useAnimationControls } from "@/shared/animation/motion";
+import { useHydrationSafeMotion } from "@/shared/animation/use-hydration-safe-motion";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { StudentHubPlayfairNumbers } from "@/features/student-home/student-hub-numeric-panel";
 import {
+  certificationAccuracyLine,
   certificationLiveRecordLine,
-  certificationPeerStandingLabel,
+  certificationNodesVerifiedLine,
+  certificationRankVerifyHint,
+  certificationRevokedBody,
+  certificationTopPercent,
   formatCertificationIssuedAt,
 } from "@/features/certifications/certification-pure";
 import type { MentrixaCertificationView } from "@/features/certifications/load-certification";
+import { cn } from "@/shared/core/utils";
 
-function Stat({
+function StatLine({
   icon,
-  label,
-  value,
+  text,
   gold = false,
 }: {
-  icon: "verified" | "rank-proof" | "skills" | "passport" | "day";
-  label: string;
-  value: string;
+  icon: "rank-proof" | "verified" | "skills";
+  text: string;
   gold?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3">
-      <MentrixaVocabIcon name={icon} size={24} surface="dark" title={label} gold={gold} />
-      <div className="min-w-0">
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{label}</p>
-        <p className={`mt-0.5 text-sm font-bold ${gold ? "text-[#D4A017]" : "text-white"}`}>{value}</p>
-      </div>
-    </div>
+    <p className="inline-flex items-start gap-2 text-[14px] leading-snug text-[#4B5563]">
+      <MentrixaVocabIcon
+        name={icon}
+        size={18}
+        surface="light"
+        title=""
+        gold={gold}
+        className="mt-0.5 shrink-0"
+      />
+      <StudentHubPlayfairNumbers text={text} />
+    </p>
   );
 }
 
-export function CertificationVerifyCard({ cert }: { cert: MentrixaCertificationView }) {
+export function CertificationVerifyCard({
+  cert,
+  qr,
+}: {
+  cert: MentrixaCertificationView;
+  qr: ReactNode;
+}) {
   const revoked = Boolean(cert.revokedAt);
-  const peer = certificationPeerStandingLabel(cert.verifiedPercentile);
+  const { mounted, prefersReducedMotion } = useHydrationSafeMotion();
+  const controls = useAnimationControls();
+  const topPercentRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const visible = { opacity: 1, y: 0 };
+    if (prefersReducedMotion) {
+      void controls.set(visible);
+      return;
+    }
+
+    void controls.set({ opacity: 0, y: 16 });
+    void controls.start({
+      ...visible,
+      transition: { duration: 0.5, ease: "easeOut" },
+    });
+  }, [controls, mounted, prefersReducedMotion]);
+
+  useEffect(() => {
+    if (!mounted || prefersReducedMotion || revoked || !topPercentRef.current) return;
+
+    let cancelled = false;
+    const el = topPercentRef.current;
+    const end = certificationTopPercent(cert.verifiedPercentile);
+    const obj = { val: 0 };
+
+    void import("@/shared/animation/anime").then(({ animate }) => {
+      if (cancelled) return;
+      el.textContent = "0";
+      animate(obj, {
+        val: end,
+        duration: 900,
+        ease: "outExpo",
+        onUpdate: () => {
+          el.textContent = String(Math.round(obj.val));
+        },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cert.verifiedPercentile, mounted, prefersReducedMotion, revoked]);
+
+  const topPercent = certificationTopPercent(cert.verifiedPercentile);
+  const nodesLine = certificationNodesVerifiedLine(cert.nodesVerified, cert.totalNodes);
+  const accuracyLine = certificationAccuracyLine(cert.accuracyOverall);
 
   return (
-    <section className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0F172A] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-      <div className="border-b border-white/10 bg-gradient-to-br from-[#070d1a] via-[#0B1220] to-[#0F172A] px-5 py-6 sm:px-7">
-        <div className="flex items-center gap-2">
-          <MentrixaVocabIcon name="passport" size={28} surface="dark" title="Certification" gold />
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#D4A017]">
-            Mentrixa Certification
-          </p>
-        </div>
-        <h1 className="mt-3 text-2xl font-black text-white sm:text-3xl">{cert.displayName}</h1>
-        <p className="mt-1 text-sm font-medium text-[#C7D2FE]">{cert.subject}</p>
-      </div>
-
+    <motion.section
+      initial={false}
+      animate={controls}
+      className={cn(
+        "rounded-lg border-2 bg-white p-8 shadow-[0_4px_24px_rgba(0,0,0,0.08)] print:shadow-none",
+        revoked ? "border-red-400/60" : "border-[#D4A017]/60",
+      )}
+      aria-label="Mentrixa certification"
+    >
       {revoked ? (
-        <div className="border-b border-amber-400/30 bg-amber-950/40 px-5 py-4 sm:px-7">
-          <p className="inline-flex items-center gap-2 text-sm font-semibold text-amber-100">
-            <MentrixaVocabIcon name="focus-ring" size={20} surface="dark" title="Suspended" />
-            Suspended. Regain peer standing to reinstate.
-          </p>
-        </div>
-      ) : null}
-
-      <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-7">
-        <Stat icon="rank-proof" label="Peer standing" value={peer} gold />
-        <Stat
-          icon="verified"
-          label="Nodes verified"
-          value={`${cert.nodesVerified} / ${cert.totalNodes}`}
-          gold
-        />
-        <Stat icon="skills" label="Accuracy" value={`${Math.round(cert.accuracyOverall)}%`} />
-        <Stat icon="day" label="Issued" value={formatCertificationIssuedAt(cert.issuedAt)} />
-      </div>
-
-      <div className="flex flex-col gap-3 border-t border-white/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-        <p className="inline-flex items-center gap-2 text-sm text-slate-300">
-          <MentrixaVocabIcon name="receipt" size={20} surface="dark" title="Live" />
-          {certificationLiveRecordLine()}
+        <p className="text-center text-[14px] leading-relaxed text-red-600">
+          {certificationRevokedBody(cert.revokedAt!)}
         </p>
-        {cert.rankCardUrl ? (
-          <Link
-            href={cert.rankCardUrl}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-violet-300 hover:text-white"
-          >
-            <MentrixaVocabIcon name="rank-proof" size={18} surface="dark" title="Rank" gold />
-            Public rank card
-          </Link>
-        ) : null}
-      </div>
-    </section>
+      ) : (
+        <>
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A017]">
+            AP Calculus AB Mastery Certificate
+          </p>
+
+          <h1 className="mt-4 text-center font-[family-name:var(--font-playfair),serif] text-[28px] font-bold leading-tight text-[#0A0A0A]">
+            {cert.displayName}
+          </h1>
+
+          <div className="mt-5 space-y-2.5">
+            <p className="inline-flex items-start gap-2 text-[14px] leading-snug text-[#4B5563]">
+              <MentrixaVocabIcon
+                name="rank-proof"
+                size={18}
+                surface="light"
+                title=""
+                gold
+                className="mt-0.5 shrink-0"
+              />
+              <span>
+                Verified top{" "}
+                <span
+                  ref={topPercentRef}
+                  className="font-[family-name:var(--font-playfair),serif] font-bold tabular-nums text-[#7C3AED]"
+                >
+                  {topPercent}
+                </span>{" "}
+                percent of all Mentrixers tested
+              </span>
+            </p>
+            <StatLine icon="verified" text={nodesLine} gold />
+            <StatLine icon="skills" text={accuracyLine} />
+          </div>
+
+          <p className="mt-5 text-center text-[12px] text-[#9CA3AF]">
+            Issued {formatCertificationIssuedAt(cert.issuedAt)}
+          </p>
+
+          <div className="my-6 h-px bg-[#D4A017]/30" aria-hidden />
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0 space-y-1.5">
+              <p className="inline-flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
+                <MentrixaVocabIcon name="receipt" size={14} surface="light" title="" />
+                {certificationLiveRecordLine()}
+              </p>
+              {cert.rankUsername ? (
+                <Link
+                  href={cert.rankCardUrl ?? `/rank/${encodeURIComponent(cert.rankUsername)}`}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#7C3AED] hover:text-[#6D28D9]"
+                >
+                  <MentrixaVocabIcon name="rank-proof" size={14} surface="light" title="" gold />
+                  {certificationRankVerifyHint(cert.rankUsername)}
+                </Link>
+              ) : null}
+            </div>
+
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              {qr}
+              <p className="max-w-[9rem] break-all text-right font-mono text-[11px] text-[#9CA3AF]">
+                {cert.verificationToken}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+    </motion.section>
   );
 }

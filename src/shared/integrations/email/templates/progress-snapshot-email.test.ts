@@ -37,8 +37,8 @@ describe("progressSnapshotEmailBody", () => {
     const html = progressSnapshotEmailBody({ snapshot: baseSnapshot });
     expect(html).toContain("Hi <strong");
     expect(html).toContain("Alex");
-    expect(html).toContain("72% · up 5% vs last week");
-    expect(html).toContain("2 won · 1 lost");
+    expect(html).toContain("72%. up 5% vs last week");
+    expect(html).toContain("2 won. 1 lost");
     expect(html).toContain("Book Jordan");
     expect(html).toContain("Supporting detail");
   });
@@ -60,7 +60,7 @@ describe("progressSnapshotEmailBody", () => {
     expect(html).toContain("This followed a session with Jordan.");
     expect(html).toContain("No persistent blocks this week.");
     expect(html).toContain("Verify Limits");
-    expect(html).toContain("72% · up 5% vs last week");
+    expect(html).toContain("72%. up 5% vs last week");
   });
 
   it("prefers truth report over weeklyVerdict opener", () => {
@@ -127,8 +127,8 @@ describe("progressSnapshotEmailBody", () => {
     };
     expect(() => progressSnapshotEmailBody({ snapshot })).not.toThrow();
     const html = progressSnapshotEmailBody({ snapshot });
-    expect(html).toContain("0% · flat vs last week");
-    expect(html).toContain("0 won · 0 lost");
+    expect(html).toContain("0%. flat vs last week");
+    expect(html).toContain("0 won. 0 lost");
   });
 
   it("renders without throwing for partial weekly history", () => {
@@ -176,7 +176,7 @@ describe("progressSnapshotEmailBody", () => {
 describe("progressSnapshotEmailSubject", () => {
   it("reflects rank direction in subject line", () => {
     expect(progressSnapshotEmailSubject({ snapshot: baseSnapshot })).toBe(
-      "Alex · rank up this week",
+      "Alex. rank up this week",
     );
     expect(
       progressSnapshotEmailSubject({
@@ -185,7 +185,7 @@ describe("progressSnapshotEmailSubject", () => {
           rankChange: { ...baseSnapshot.rankChange, direction: "down" },
         },
       }),
-    ).toBe("Alex · rank down this week");
+    ).toBe("Alex. rank down this week");
     expect(
       progressSnapshotEmailSubject({
         snapshot: {
@@ -193,7 +193,7 @@ describe("progressSnapshotEmailSubject", () => {
           rankChange: { ...baseSnapshot.rankChange, direction: "same" },
         },
       }),
-    ).toBe("Alex · weekly progress snapshot");
+    ).toBe("Alex. weekly progress snapshot");
   });
 });
 

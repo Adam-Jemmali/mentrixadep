@@ -7,6 +7,10 @@ import { createClient } from "@/shared/integrations/supabase/client";
 import { trackClientEvent } from "@/shared/integrations/use-track";
 import type { AuthUser } from "@/shared/core/auth";
 import type { RankLevelUpPayload } from "@/features/xp/components/rank-level-up-modal";
+import {
+  vfaStreakMilestonePeerContext,
+  type VfaStreakMilestone,
+} from "@/features/vfa-streak/vfa-streak-pure";
 import { StreakRiskPopup } from "@/features/xp/ui/streak-risk-popup";
 import {
   dismissStreakRiskUntil,
@@ -22,6 +26,14 @@ const RankLevelUpModal = dynamic(
   { ssr: false, loading: () => null },
 );
 
+const VfaStreakMilestoneModal = dynamic(
+  () =>
+    import("@/components/vfa-streak-milestone-modal").then((m) => ({
+      default: m.VfaStreakMilestoneModal,
+    })),
+  { ssr: false, loading: () => null },
+);
+
 type RealtimeSubscribeStatus = "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED";
 
 type UserAchievementsPayload = {
@@ -29,6 +41,7 @@ type UserAchievementsPayload = {
     achievement_type?: string;
     to_level?: number | null;
     title?: string | null;
+    meta?: { subtitle?: string; peerContext?: string; days?: number } | null;
   };
 };
 
@@ -38,10 +51,21 @@ type RankModalState = {
   subtitle?: string;
 };
 
+type VfaMilestoneModalState = {
+  days: VfaStreakMilestone;
+  peerContext: string;
+};
+
+function parseVfaMilestoneDays(value: number | null | undefined): VfaStreakMilestone | null {
+  if (value === 7 || value === 30 || value === 100) return value;
+  return null;
+}
+
 export function LevelUpExperience({ user }: { user: AuthUser | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [modalState, setModalState] = useState<RankModalState | null>(null);
+  const [vfaModalState, setVfaModalState] = useState<VfaMilestoneModalState | null>(null);
   const [streakBanner, setStreakBanner] = useState<string | null>(null);
   const celebrationTriggeredRef = useRef(false);
 
@@ -82,6 +106,11 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
 
   const dismissRankModal = useCallback(() => {
     setModalState(null);
+    void refreshStreak();
+  }, [refreshStreak]);
+
+  const dismissVfaModal = useCallback(() => {
+    setVfaModalState(null);
     void refreshStreak();
   }, [refreshStreak]);
 
@@ -126,17 +155,18 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
             achievement_type?: string;
             to_level?: number | null;
             title?: string | null;
-            meta?: { subtitle?: string } | null;
+            meta?: { subtitle?: string; peerContext?: string; days?: number } | null;
           };
 
-          if (n.achievement_type === "vfa_streak_milestone" && n.title) {
-            setModalState({
-              payload: { toLevel: n.to_level ?? 1, title: n.title },
-              headline: n.title,
-              subtitle:
-                typeof n.meta?.subtitle === "string"
-                  ? n.meta.subtitle
-                  : "Consecutive days with a new verified first attempt.",
+          if (n.achievement_type === "vfa_streak_milestone") {
+            const days = parseVfaMilestoneDays(n.to_level ?? n.meta?.days ?? null);
+            if (!days) return;
+            setVfaModalState({
+              days,
+              peerContext:
+                typeof n.meta?.peerContext === "string"
+                  ? n.meta.peerContext
+                  : vfaStreakMilestonePeerContext(null),
             });
             return;
           }
@@ -186,6 +216,13 @@ export function LevelUpExperience({ user }: { user: AuthUser | null }) {
           <StreakRiskPopup onDismiss={dismissStreakBanner} />
         </div>
       ) : null}
+
+      <VfaStreakMilestoneModal
+        open={vfaModalState != null}
+        days={vfaModalState?.days ?? null}
+        peerContext={vfaModalState?.peerContext ?? vfaStreakMilestonePeerContext(null)}
+        onDismiss={dismissVfaModal}
+      />
 
       <RankLevelUpModal
         open={modalState != null}

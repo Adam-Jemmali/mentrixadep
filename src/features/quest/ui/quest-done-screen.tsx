@@ -23,7 +23,7 @@ import { animate } from "@/shared/animation/anime";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { Button } from "@/shared/ui/button";
-import { CALC_READINESS_LABEL } from "@/features/student-home/ap-readiness-band-pure";
+import { VERIFIED_SKILL_PROOF_LABEL } from "@/features/student-home/ap-readiness-band-pure";
 import {
   apBandImproved,
   apBandScorePercent,
@@ -256,7 +256,7 @@ function QuestDoneReadinessBand({
           size={28}
           surface="dark"
           gold={isVerified}
-          title={CALC_READINESS_LABEL}
+          title={VERIFIED_SKILL_PROOF_LABEL}
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
@@ -335,8 +335,8 @@ function QuestDoneDetailsAccordion({
               {xpTotal > 0 ? (
                 <p>
                   XP: +{xpAwarded}
-                  {perfectBonus > 0 ? ` · perfect +${perfectBonus}` : ""}
-                  {phoenixXp > 0 ? ` · recovery +${phoenixXp}` : ""}
+                  {perfectBonus > 0 ? `. perfect +${perfectBonus}` : ""}
+                  {phoenixXp > 0 ? `. recovery +${phoenixXp}` : ""}
                 </p>
               ) : null}
               {openedHighlight ? <p>Opened: {openedHighlight.nodeName}</p> : null}
@@ -455,7 +455,7 @@ export function QuestDoneScreen({
           <div className="mb-2 flex items-center gap-2">
             <MentrixaVocabIcon name="trajectory-certificate" size={18} surface="light" title="Readiness" />
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
-              {CALC_READINESS_LABEL}
+              {VERIFIED_SKILL_PROOF_LABEL}
             </p>
           </div>
           <QuestDoneReadinessBand

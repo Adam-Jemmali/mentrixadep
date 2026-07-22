@@ -22,6 +22,7 @@ import {
   Trash2,
   Download,
   Minus,
+  type LucideIcon,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -80,7 +81,7 @@ const LINE_WIDTHS = [2, 4, 8];
 
 // ─── Tool config ─────────────────────────────────────────────────────────────
 
-const TOOLS: { id: Tool; icon: React.ElementType; label: string }[] = [
+const TOOLS: { id: Tool; icon: LucideIcon; label: string }[] = [
   { id: "pen", icon: Pen, label: "Pen" },
   { id: "eraser", icon: Eraser, label: "Eraser" },
   { id: "line", icon: Minus, label: "Line" },

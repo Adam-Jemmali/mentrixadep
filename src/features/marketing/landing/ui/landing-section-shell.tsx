@@ -2,6 +2,8 @@ import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import type { LandingStickyVariant } from "@/features/marketing/landing/landing-sticky-variants";
 import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
+import { LandingEyebrow } from "@/features/marketing/landing/ui/landing-eyebrow";
+import { LandingRoleText } from "@/features/marketing/landing/ui/landing-role-text";
 
 export function LandingSectionShell({
   id,
@@ -54,9 +56,15 @@ export function LandingSectionHeader({
 }) {
   return (
     <header className={cn("text-center", className)}>
-      {eyebrow ? <p className={landingHub.eyebrow}>{eyebrow}</p> : null}
-      <h2 className={cn(landingHub.title, eyebrow && "mt-3")}>{title}</h2>
-      {subtitle ? <p className={cn(landingHub.body, "mx-auto mt-3 max-w-2xl")}>{subtitle}</p> : null}
+      {eyebrow ? <LandingEyebrow text={eyebrow} className="mb-0" /> : null}
+      <h2 className={cn(landingHub.title, eyebrow && "mt-3")}>
+        <LandingRoleText text={title} iconSize="md" />
+      </h2>
+      {subtitle ? (
+        <p className={cn(landingHub.body, "mx-auto mt-3 max-w-2xl")}>
+          <LandingRoleText text={subtitle} iconSize="sm" />
+        </p>
+      ) : null}
     </header>
   );
 }

@@ -3,7 +3,7 @@ import { getTutorSessionsWithPackages } from "@/features/studio-ai/studio-packag
 import type { SessionAiPackage } from "@/shared/types/database";
 import { TutorStudioPageClient } from "./tutor-studio-page-client";
 
-export const metadata = { title: "Studio · Mentrixa" };
+export const metadata = { title: "Studio. Mentrixa" };
 
 function studioSessionsKey(
   sessions: { id: string; aiPackage: SessionAiPackage | null }[],

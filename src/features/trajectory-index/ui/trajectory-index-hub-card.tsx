@@ -20,13 +20,13 @@ export function TrajectoryIndexHubCard({ data }: TrajectoryIndexHubCardProps) {
 
       <ul className="mt-4 grid gap-2 sm:grid-cols-3">
         <li className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
-          Verified nodes · {data.verifiedComponent}
+          Verified nodes. {data.verifiedComponent}
         </li>
         <li className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
-          Retest closure · {data.retestComponent}
+          Retest closure. {data.retestComponent}
         </li>
         <li className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
-          Loop delta · {data.loopComponent}
+          Loop delta. {data.loopComponent}
         </li>
       </ul>
 

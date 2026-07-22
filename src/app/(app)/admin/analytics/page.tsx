@@ -8,7 +8,7 @@ import {
 } from "@/shared/integrations/analytics";
 import { AnalyticsDashboardClient } from "./analytics-client";
 
-export const metadata = { title: "Analytics · Mentrixa Admin" };
+export const metadata = { title: "Analytics. Mentrixa Admin" };
 export const revalidate = 300; // 5 min cache
 
 export default async function AnalyticsPage({

@@ -42,11 +42,11 @@ export function itemStatusLabel(status: string): string {
 
 export function itemReviewQueueTitle(pendingCount: number): string {
   if (pendingCount <= 0) return "Item review";
-  return `Item review · ${pendingCount} pending`;
+  return `Item review. ${pendingCount} pending`;
 }
 
 export function itemReviewQueueSubtitle(pendingCount: number, approvedCount: number): string {
-  return `${pendingCount} pending · ${approvedCount} approved live`;
+  return `${pendingCount} pending. ${approvedCount} approved live`;
 }
 
 export function itemReviewEmptyMessage(filter: ItemReviewQueueFilter): string {

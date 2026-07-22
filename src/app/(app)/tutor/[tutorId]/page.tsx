@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const profile = await getTutorPublicProfile(tutorId);
   if (!profile) return { title: "Tutor not found, Mentrixa" };
   const title = profile.guideRank && profile.guideRank !== "practitioner"
-    ? `${profile.name} — ${profile.guideRank.toUpperCase()} Guide · Mentrixa`
+    ? `${profile.name} — ${profile.guideRank.toUpperCase()} Guide. Mentrixa`
     : `${profile.name} - Mentrixa Guide`;
   const description = `Book a session with ${profile.name} on Mentrixa.`;
   const canonical = `${getSiteUrl()}/tutor/${tutorId}`;

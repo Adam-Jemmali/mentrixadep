@@ -2,7 +2,7 @@ import { requireAuth } from "@/shared/core/auth";
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Settings · Mentrixa",
+  title: "Settings. Mentrixa",
 };
 
 export default async function SettingsPage() {

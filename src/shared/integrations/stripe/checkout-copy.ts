@@ -32,8 +32,8 @@ export function buildCheckoutLineItemCopy(params: {
   const endT = formatTime(params.end_time);
 
   return {
-    name: `Mentrixa · ${params.course} tutoring`,
-    description: `${dateStr} · ${startT} – ${endT} · ${durationLabel} session`,
+    name: `Mentrixa. ${params.course} tutoring`,
+    description: `${dateStr}. ${startT} – ${endT}. ${durationLabel} session`,
   };
 }
 

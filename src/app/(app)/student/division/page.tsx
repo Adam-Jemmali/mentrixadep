@@ -9,7 +9,7 @@ import { ProductPageHeader } from "@/features/student-profile/ui/product-page-he
 import { STUDENT_ROUTE_HEADER_VARIANT } from "@/features/student-profile/student-sticky-variants";
 import { DivisionHubClient } from "./division-hub-client";
 
-export const metadata = { title: "Arena · Mentrixa" };
+export const metadata = { title: "Arena. Mentrixa" };
 
 export default async function DivisionsHubPage() {
   const user = await requireRole(["student", "admin"]);

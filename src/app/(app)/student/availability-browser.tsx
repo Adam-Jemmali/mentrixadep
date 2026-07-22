@@ -339,7 +339,7 @@ export function AvailabilityBrowser({
                       }}
                       className="h-8 border-[#C4B5FD] bg-white px-2.5 text-xs font-semibold text-[#0B1220] hover:border-[#7C3AED] hover:bg-[#EDE9FE]"
                     >
-                      {slot.course} · {formatTimeInZone(slot.start_time, displayTimeZone)}
+                      {slot.course}. {formatTimeInZone(slot.start_time, displayTimeZone)}
                     </Button>
                   ))}
                 </div>
@@ -396,7 +396,7 @@ function BookingDialog({
   const priceCents =
     useSessionCredit && sessionCreditAvailable ? 0 : memberPriceCents;
   const durationMin = getSessionDurationMinutes(slot.start_time, slot.end_time);
-  const scheduleLine = `${formatSlotRangeInZone(slot.start_time, slot.end_time, displayTimeZone)} · ${formatDurationLabel(durationMin)}`;
+  const scheduleLine = `${formatSlotRangeInZone(slot.start_time, slot.end_time, displayTimeZone)}. ${formatDurationLabel(durationMin)}`;
   const expertise = slot.tutor_id ? (tutorExpertise[slot.tutor_id] ?? []) : [];
   const courseExpertise = expertise.find(
     (e) => e.course_name.toLowerCase() === slot.course.toLowerCase(),
@@ -440,7 +440,7 @@ function BookingDialog({
     <Dialog open={!!slot} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[95vh] max-w-lg overflow-y-auto p-0 border-none bg-transparent shadow-none">
         <DialogTitle className="sr-only">
-          Book session — {tutorName} · {slot.course}
+          Book session — {tutorName}. {slot.course}
         </DialogTitle>
         <DialogDescription className="sr-only">
           {scheduleLine}. Confirm to open secure checkout. You can cancel from this dialog.

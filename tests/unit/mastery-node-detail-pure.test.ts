@@ -47,7 +47,7 @@ describe("mastery-node-detail-pure", () => {
       0,
     );
     expect(rows.find((row) => row.label === "Practice accuracy")?.value).toBe(
-      "0% · 0/3 right",
+      "0%. 0/3 right",
     );
   });
 

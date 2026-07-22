@@ -49,7 +49,7 @@ export function progressSnapshotEmailSubject(props: ProgressSnapshotEmailTemplat
       : direction === "down"
         ? "rank down this week"
         : "weekly progress snapshot";
-  return `${hi} · ${subjectRank}`;
+  return `${hi}. ${subjectRank}`;
 }
 
 export function progressSnapshotEmailTitle(props: ProgressSnapshotEmailTemplateProps): string {
@@ -67,9 +67,9 @@ export function progressSnapshotEmailBody(props: ProgressSnapshotEmailTemplatePr
   const divDelta = s.divisionRank.delta;
   const divPhrase =
     divDelta > 0
-      ? `#${s.divisionRank.current} · up from #${s.divisionRank.previous}`
+      ? `#${s.divisionRank.current}. up from #${s.divisionRank.previous}`
       : divDelta < 0
-        ? `#${s.divisionRank.current} · down from #${s.divisionRank.previous}`
+        ? `#${s.divisionRank.current}. down from #${s.divisionRank.previous}`
         : `#${s.divisionRank.current}`;
 
   const accuracyDelta =
@@ -101,17 +101,17 @@ export function progressSnapshotEmailBody(props: ProgressSnapshotEmailTemplatePr
       </tr>
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #222;color:#888;font-size:13px;">Quest accuracy</td>
-        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.accuracyThisWeek}% · ${accuracyDelta}</td>
+        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.accuracyThisWeek}%. ${accuracyDelta}</td>
       </tr>
       <tr>
         <td style="padding:12px 0;border-bottom:1px solid #222;color:#888;font-size:13px;">Duels</td>
-        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.duelsWon} won · ${s.duelsLost} lost</td>
+        <td style="padding:12px 0;border-bottom:1px solid #222;color:#f5f5f5;font-size:14px;">${s.duelsWon} won. ${s.duelsLost} lost</td>
       </tr>
       <tr>
         <td style="padding:12px 0;color:#888;font-size:13px;">Division rank</td>
         <td style="padding:12px 0;color:#f5f5f5;font-size:14px;">${divPhrase}</td>
       </tr>
     </table>
-    ${ctaButton(s.bookingCtaUrl, `Book ${s.recommendedGuide.displayName} · $39`)}
+    ${ctaButton(s.bookingCtaUrl, `Book ${s.recommendedGuide.displayName}. $39`)}
     <p style="margin:20px 0 0;color:#525252;font-size:12px;line-height:1.55;text-align:center;">Free to compete. You only pay when you book.</p>`;
 }

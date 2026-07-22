@@ -260,7 +260,7 @@ export function GuestTryApCalcResultsReveal({
         <motion.div variants={rise} className="mb-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/70">
             AP Calculus AB diagnostic
-            <span className="mx-2 text-white/15">·</span>
+            <span className="mx-2 text-white/15">| </span>
             Sample verdict
           </p>
         </motion.div>

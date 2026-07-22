@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  accountLevelFromRankTitle,
   buildGuideWrappedData,
   buildStudentWrappedData,
   buildWrappedSlideCopy,
@@ -135,5 +136,10 @@ describe("wrapped pure", () => {
     });
     expect(guide.highest_impact_node?.nodeName).toBe("Series");
     expect(guideWrappedStatLines(guide).some((l) => l.value.includes("450"))).toBe(true);
+  });
+
+  it("maps stored rank titles back to account levels", () => {
+    expect(accountLevelFromRankTitle("Seeker").level).toBe(2);
+    expect(accountLevelFromRankTitle("MENTRIXER").level).toBe(7);
   });
 });

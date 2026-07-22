@@ -417,7 +417,7 @@ export function LeagueForumPanel({
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg font-black tracking-tight text-[#0B1220]">{activeThread.title}</h3>
                     <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[#64748B]">
-                      {activeThread.displayName} · {formatWhen(activeThread.createdAt)}
+                      {activeThread.displayName}. {formatWhen(activeThread.createdAt)}
                     </p>
                     <div className="mt-4">
                       <ForumBody body={activeThread.body} />
@@ -439,7 +439,7 @@ export function LeagueForumPanel({
                         <ForumAvatar displayName={reply.displayName} avatarUrl={reply.avatarUrl} size="sm" />
                         <div className="min-w-0 flex-1">
                           <p className="text-[10px] font-bold uppercase tracking-widest text-[#64748B]">
-                            {reply.displayName} · {formatWhen(reply.createdAt)}
+                            {reply.displayName}. {formatWhen(reply.createdAt)}
                           </p>
                           <div className="mt-2">
                             <ForumBody body={reply.body} />

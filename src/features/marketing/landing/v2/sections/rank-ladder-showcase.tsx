@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   motion,
   AnimatePresence,
@@ -16,18 +17,35 @@ import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/land
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
 import { cn } from "@/shared/core/utils";
 import {
-  LandingSectionHeader,
   LandingStickyCard,
 } from "@/features/marketing/landing/ui/landing-section-shell";
+import { LandingNumberHeading, LandingNumberWatermark } from "@/features/marketing/landing/ui/landing-number-heading";
+import { LP_NUM } from "@/features/marketing/landing/ui/landing-number-motion-pure";
+import { useLandingNumericReveal } from "@/features/marketing/landing/ui/use-landing-numeric-reveal";
+import { LandingEyebrow } from "@/features/marketing/landing/ui/landing-eyebrow";
+import { LandingStickyGameNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
-import { LANDING_RANK_LADDER } from "@/features/marketing/landing/landing-copy-pure";
+import { LANDING_E, LANDING_RANK_LADDER } from "@/features/marketing/landing/landing-copy-pure";
 import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
 import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
+import { BklitShimmer } from "@/shared/ui/bklit-shimmer";
+
+const HeroRankStage = dynamic(
+  () =>
+    import("@/features/marketing/landing/v2/hero/hero-rank-stage").then((m) => m.HeroRankStage),
+  {
+    ssr: false,
+    loading: () => (
+      <BklitShimmer className="h-[280px] w-full rounded-lg" aria-label="Loading rank mini game" />
+    ),
+  },
+);
 
 const RANK_MOTIVATION: Record<AccountRankKey, string> = LANDING_RANK_LADDER.motivation;
 
 export function RankLadderShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
+  useLandingNumericReveal(sectionRef);
   const { cinematic, mounted, reduced } = useLandingMotion();
   const isInView = useInView(sectionRef, { amount: 0.35, once: false });
   const [activeIndex, setActiveIndex] = useState(0);
@@ -71,14 +89,14 @@ export function RankLadderShowcase() {
 
   useEffect(() => {
     setCoachMessage(
-      `${normalizeRankTitle(active.title)} · ${active.minXp.toLocaleString()} to ${
+      `${normalizeRankTitle(active.title)}. ${active.minXp.toLocaleString()} to ${
         active.maxXp != null ? active.maxXp.toLocaleString() : "∞"
-      } XP · ${RANK_MOTIVATION[active.key]}`,
+      } XP. ${RANK_MOTIVATION[active.key]}`,
     );
   }, [active.key, active.title, active.minXp, active.maxXp]);
 
   return (
-    <section id="ranks" ref={sectionRef} className={landingHub.section}>
+    <section id="ranks" ref={sectionRef} className={landingHub.sectionTight}>
       <div className={landingHub.sectionInner}>
         <motion.div
           initial="hidden"
@@ -86,9 +104,10 @@ export function RankLadderShowcase() {
           viewport={viewportOnce}
           variants={staggerContainer}
         >
-          <LandingSectionHeader
+          <LandingNumberHeading
             eyebrow={LANDING_RANK_LADDER.eyebrow}
-            title={LANDING_RANK_LADDER.title}
+            count={ACCOUNT_RANK_VISUALS.length}
+            suffix="tiers"
           />
         </motion.div>
 
@@ -96,10 +115,10 @@ export function RankLadderShowcase() {
           message={coachMessage}
           tone="coach"
           label={LANDING_RANK_LADDER.bubbleLabel}
-          className="mx-auto mt-8"
+          className="mx-auto mt-6"
         />
 
-        <LandingStickyCard rotate={false} variant="pinned" className="mx-auto mt-8 max-w-lg rotate-[0.25deg]">
+        <LandingStickyCard rotate={false} variant="pinned" className={cn(LP_NUM.card, "mx-auto mt-6 max-w-lg rotate-[0.25deg] opacity-0")}>
           <div className="flex flex-col items-center gap-8">
             <AnimatePresence mode="wait">
               <motion.div
@@ -128,7 +147,7 @@ export function RankLadderShowcase() {
           </div>
         </LandingStickyCard>
 
-        <div className="relative mt-8 flex w-full gap-3 overflow-x-auto pb-2 snap-x snap-mandatory lg:justify-center lg:overflow-visible">
+        <div className="relative mt-6 flex w-full gap-3 overflow-x-auto pb-2 snap-x snap-mandatory lg:justify-center lg:overflow-visible">
           {ACCOUNT_RANK_VISUALS.map((rank, i) => {
             const isActive = i === activeIndex;
 
@@ -154,8 +173,12 @@ export function RankLadderShowcase() {
               >
                 <LandingStickyNote
                   variant={landingStickyVariantForIndex(i + 2)}
-                  className="flex flex-col items-center gap-2 p-3 shadow-[2px_3px_0_rgba(11,18,32,0.12)]"
+                  className={cn(
+                    LP_NUM.card,
+                    "relative flex flex-col items-center gap-2 overflow-hidden p-3 opacity-0 shadow-[2px_3px_0_rgba(11,18,32,0.12)]",
+                  )}
                 >
+                  <LandingNumberWatermark value={i + 1} />
                   <RankBadge
                     rank={rank}
                     size="md"
@@ -173,6 +196,17 @@ export function RankLadderShowcase() {
               </motion.button>
             );
           })}
+        </div>
+
+        <div className="mx-auto mt-8 max-w-md">
+          <div className="mb-4 text-center">
+            <LandingEyebrow text={LANDING_E.rankGame.eyebrow} className="justify-center" />
+            <h3 className={cn(landingHub.title, "mt-3 text-xl sm:text-2xl")}>{LANDING_E.rankGame.title}</h3>
+            <p className={cn(landingHub.body, "mx-auto mt-2 max-w-md")}>{LANDING_E.rankGame.subtitle}</p>
+          </div>
+          <LandingStickyGameNote variant="pinned" className="rotate-[0.35deg]">
+            <HeroRankStage />
+          </LandingStickyGameNote>
         </div>
       </div>
     </section>

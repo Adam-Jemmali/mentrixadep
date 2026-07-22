@@ -9,20 +9,19 @@ import {
   staggerContainer,
   viewportOnce,
   cardHoverLift,
-  iconFloat,
 } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { FlowStepsOrderGame } from "@/features/marketing/landing/v2/sections/flow-steps-order-game";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
-import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
-import {
-  LandingSectionHeader,
-  LandingStickyCard,
-} from "@/features/marketing/landing/ui/landing-section-shell";
+import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
+import { LandingNumberHeading, LandingNumberWatermark } from "@/features/marketing/landing/ui/landing-number-heading";
+import { LP_NUM } from "@/features/marketing/landing/ui/landing-number-motion-pure";
+import { useLandingNumericReveal } from "@/features/marketing/landing/ui/use-landing-numeric-reveal";
+import { LandingRoleText } from "@/features/marketing/landing/ui/landing-role-text";
+import { LandingVocabWord } from "@/features/marketing/landing/ui/landing-vocab-word";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_FLOW, LANDING_FLOW_STEPS } from "@/features/marketing/landing/landing-copy-pure";
 import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
-import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 
 const FLOW_STEPS: {
   number: string;
@@ -30,10 +29,10 @@ const FLOW_STEPS: {
   title: string;
   line: string;
 }[] = [
-  { number: "01", vocabIcon: "flow-book", title: LANDING_FLOW_STEPS[0].title, line: LANDING_FLOW_STEPS[0].line },
-  { number: "02", vocabIcon: "flow-meet", title: LANDING_FLOW_STEPS[1].title, line: LANDING_FLOW_STEPS[1].line },
-  { number: "03", vocabIcon: "flow-unpack", title: LANDING_FLOW_STEPS[2].title, line: LANDING_FLOW_STEPS[2].line },
-  { number: "04", vocabIcon: "flow-climb", title: LANDING_FLOW_STEPS[3].title, line: LANDING_FLOW_STEPS[3].line },
+  { number: "1", vocabIcon: "flow-book", title: LANDING_FLOW_STEPS[0].title, line: LANDING_FLOW_STEPS[0].line },
+  { number: "2", vocabIcon: "flow-meet", title: LANDING_FLOW_STEPS[1].title, line: LANDING_FLOW_STEPS[1].line },
+  { number: "3", vocabIcon: "flow-unpack", title: LANDING_FLOW_STEPS[2].title, line: LANDING_FLOW_STEPS[2].line },
+  { number: "4", vocabIcon: "flow-climb", title: LANDING_FLOW_STEPS[3].title, line: LANDING_FLOW_STEPS[3].line },
 ];
 
 export function FlowStepsSection() {
@@ -41,6 +40,8 @@ export function FlowStepsSection() {
   const [loopLocked, setLoopLocked] = useState(false);
   const [revealKey, setRevealKey] = useState(0);
   const { cinematic } = useLandingMotion();
+  useLandingNumericReveal(ref);
+
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start 0.75", "end 0.35"],
@@ -58,40 +59,46 @@ export function FlowStepsSection() {
   }, []);
 
   return (
-    <section id="flow" ref={ref} className={landingHub.section}>
+    <section id="flow" ref={ref} className={landingHub.sectionTight}>
       <div className={landingHub.sectionInner}>
-        <LandingSectionHeader
+        <LandingNumberHeading
           eyebrow={LANDING_FLOW.eyebrow}
-          title={LANDING_FLOW.title}
+          count={FLOW_STEPS.length}
+          suffix="steps"
           subtitle={LANDING_FLOW.subtitle}
         />
 
-        <div className="relative mt-10 hidden lg:block">
+        <div className="relative mt-8 hidden lg:block">
           <div className="absolute left-[12.5%] right-[12.5%] top-8 h-0.5 origin-left bg-[#C4B5FD]/50">
             <motion.div className="h-full origin-left bg-[#6366F1]" style={{ scaleX: lineScale }} />
           </div>
-          {FLOW_STEPS.map((_, i) => {
+          {FLOW_STEPS.map((step, i) => {
             const left = 12.5 + i * 25;
             return (
               <motion.div
-                key={FLOW_STEPS[i]!.number}
-                className="absolute top-[1.65rem] h-3 w-3 -translate-x-1/2 rounded-full border-2 border-[#6366F1] bg-[#EDE9FE]"
+                key={step.number}
+                className="absolute top-[1.65rem] flex -translate-x-1/2 flex-col items-center gap-1"
                 style={{ left: `${left}%` }}
-                animate={
-                  cinematic
-                    ? {
-                        scale: [1, 1.35, 1],
-                        borderColor: ["rgba(99,102,241,0.5)", "rgba(99,102,241,1)", "rgba(99,102,241,0.5)"],
-                      }
-                    : undefined
-                }
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  delay: i * 0.35,
-                  ease: "easeInOut",
-                }}
-              />
+              >
+                <span className="text-[10px] font-bold tabular-nums text-[#6366F1]">{step.number}</span>
+                <motion.div
+                  className="h-3 w-3 rounded-full border-2 border-[#6366F1] bg-[#EDE9FE]"
+                  animate={
+                    cinematic
+                      ? {
+                          scale: [1, 1.35, 1],
+                          borderColor: ["rgba(99,102,241,0.5)", "rgba(99,102,241,1)", "rgba(99,102,241,0.5)"],
+                        }
+                      : undefined
+                  }
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: i * 0.35,
+                    ease: "easeInOut",
+                  }}
+                />
+              </motion.div>
             );
           })}
         </div>
@@ -101,37 +108,27 @@ export function FlowStepsSection() {
           whileInView="visible"
           viewport={viewportOnce}
           variants={staggerContainer}
-          className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           {FLOW_STEPS.map((step, i) => (
             <motion.div key={step.title} variants={scaleIn} custom={i} whileHover={cinematic ? cardHoverLift : undefined}>
               <LandingStickyCard
                 rotate={i % 2 === 0}
                 variant={landingStickyVariantForIndex(i)}
-                className={cn("relative overflow-hidden", i % 2 === 1 && "rotate-[0.45deg]")}
-              >
-                {loopLocked ? (
-                  <motion.span
-                    className={`text-[10px] font-bold tabular-nums ${landingHub.eyebrow}`}
-                    initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    transition={{ delay: 0.1 + i * 0.15, duration: 0.45, ease: "easeOut" }}
-                  >
-                    {step.number}
-                  </motion.span>
-                ) : (
-                  <span className="text-[10px] font-bold tabular-nums text-[#94A3B8]">??</span>
+                className={cn(
+                  LP_NUM.card,
+                  "relative overflow-hidden opacity-0",
+                  i % 2 === 1 && "rotate-[0.45deg]",
                 )}
-                <div className="relative mt-3 flex items-center gap-3">
-                  <motion.span
-                    className="relative flex h-9 w-9 shrink-0 rotate-0 items-center justify-center"
-                    animate={cinematic ? iconFloat : undefined}
-                  >
-                    <LandingStickyNote compact variant="strip" className="flex h-9 w-9 items-center justify-center p-0 shadow-none">
-                      <MentrixaVocabIcon name={step.vocabIcon} size={20} surface="light" title={step.title} />
-                    </LandingStickyNote>
-                  </motion.span>
-                  <h3 className={cn("text-base font-bold text-[#0B1220]", landingHub.title)}>{step.title}</h3>
+              >
+                <LandingNumberWatermark value={step.number} />
+                <div className="relative">
+                  <LandingVocabWord
+                    word={step.title}
+                    icon={step.vocabIcon}
+                    prefix={`${step.number}.`}
+                    size="xl"
+                  />
                 </div>
                 <div className={`relative mt-3 min-h-[2.75rem] text-[13px] leading-snug md:text-sm ${landingHub.body}`}>
                   {loopLocked ? (
@@ -143,8 +140,8 @@ export function FlowStepsSection() {
                       resetKey={`${revealKey}-${step.number}`}
                     />
                   ) : (
-                    <span className="invisible select-none" aria-hidden>
-                      {step.line}
+                    <span className="text-[#94A3B8]">
+                      <LandingRoleText text={step.line} iconSize="sm" />
                     </span>
                   )}
                 </div>

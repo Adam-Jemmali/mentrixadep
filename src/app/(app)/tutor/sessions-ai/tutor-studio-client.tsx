@@ -737,7 +737,7 @@ export function TutorStudioClient({
       </div>
 
       <p className="mt-3 font-mono text-[11px] text-slate-400">
-        {publishedCount} published · {rows.length} past sessions
+        {publishedCount} published. {rows.length} past sessions
       </p>
     </section>
   );
@@ -844,7 +844,7 @@ function SessionPackageEditor({
                 <div>
                   <h2 className="text-xl font-bold text-white tracking-tight">Studio Output</h2>
                   <p className="text-xs text-blue-50/80 font-medium mt-0.5">
-                    {course} · <span className={published ? "text-blue-200" : "text-amber-200"}>
+                    {course}. <span className={published ? "text-blue-200" : "text-amber-200"}>
                       {published ? "Visible to learner" : "Draft Mode"}
                     </span>
                   </p>

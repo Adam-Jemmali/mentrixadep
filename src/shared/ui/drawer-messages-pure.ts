@@ -33,7 +33,7 @@ export function guideSessionRequestsDrawerMessage(): MentrixaDrawerMessage {
 
 export function guideEarningsDrawerMessage(): MentrixaDrawerMessage {
   return {
-    title: "Earnings · 30d",
+    title: "Earnings. 30d",
     description: "Completed sessions only.",
     verdict: "Posts when session ends.",
     nextAction: "Check payouts if one is missing.",
@@ -46,7 +46,7 @@ export function guideMasteryGridDrawerMessage(
 ): MentrixaDrawerMessage {
   return {
     title: "Student context",
-    description: `${studentName} · ${course}`,
+    description: `${studentName}. ${course}`,
     verdict: "Locked first answers show what counts for rank.",
     nextAction: "Review target nodes before you join the call.",
   };

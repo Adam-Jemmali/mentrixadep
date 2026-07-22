@@ -43,6 +43,9 @@ const TONE_CLASS: Record<MentrixaPopoverTone, string> = {
   workbench: "mentrixa-popover--workbench",
 };
 
+const OVERLAY_TRIGGER_CLASS =
+  "cursor-pointer border-0 bg-transparent p-0 text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2";
+
 export function MentrixaPopover({
   trigger,
   title,
@@ -72,7 +75,13 @@ export function MentrixaPopover({
 }) {
   return (
     <Popover>
-      <Popover.Trigger className={cn("mentrixa-popover__trigger", className)}>{trigger}</Popover.Trigger>
+      <Popover.Trigger
+        className={cn("mentrixa-popover__trigger block w-full text-left", OVERLAY_TRIGGER_CLASS, className)}
+      >
+        <button type="button" className="block w-full border-0 bg-transparent p-0 text-left text-inherit">
+          {trigger}
+        </button>
+      </Popover.Trigger>
       <Popover.Content placement={placement} className={cn("mentrixa-popover__content max-w-xs", contentClassName)}>
         <Popover.Dialog className={cn("mentrixa-popover", TONE_CLASS[tone])}>
           <Popover.Arrow className="mentrixa-popover__arrow" />
@@ -277,7 +286,7 @@ export function MasteryNodeDetailPopover({
 
   return (
     <MentrixaPopover
-      trigger={<span className="block min-w-0 w-full cursor-pointer">{children}</span>}
+      trigger={children}
       title={nodeName}
       verdict={verdict}
       tone={tone}

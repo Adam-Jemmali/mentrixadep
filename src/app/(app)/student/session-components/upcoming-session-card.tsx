@@ -41,7 +41,7 @@ export function UpcomingSessionCard({
           <p className="truncate font-medium text-slate-900">{name}</p>
           <CourseTagChip course={session.course} className="mt-1" />
           <p className="mt-2 text-sm text-slate-600">
-            {formatDateInZone(session.start_time, displayTimeZone)} · {formatTimeInZone(session.start_time, displayTimeZone)} – {formatTimeInZone(session.end_time, displayTimeZone)}
+            {formatDateInZone(session.start_time, displayTimeZone)}. {formatTimeInZone(session.start_time, displayTimeZone)} – {formatTimeInZone(session.end_time, displayTimeZone)}
           </p>
         </div>
       </div>

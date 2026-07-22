@@ -3,7 +3,7 @@ import { requireRole } from "@/shared/core/auth";
 import { AdminSidebar } from "./admin-sidebar";
 
 export const metadata: Metadata = {
-  title: "Admin · Mentrixa",
+  title: "Admin. Mentrixa",
   robots: { index: false, follow: false },
 };
 

@@ -26,6 +26,8 @@ export type VerifiedFirstAttemptRankStats = {
   verifiedCount: number;
   accuracyPercent: number;
   percentile: number | null;
+  /** Mentrixers with min verified skills in the peer pool — from Postgres, never invented. */
+  eligibleCohortSize: number | null;
 };
 
 export type CalibratedRank = {
@@ -72,7 +74,7 @@ export function formatVerifiedFirstAttemptSummary(
   if (stats.percentile == null || stats.verifiedCount < MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE) {
     return null;
   }
-  return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} ${explainPeerStanding(stats.percentile)}`;
+  return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} ${explainPeerStanding(stats.percentile, stats.eligibleCohortSize, stats.verifiedCount)}`;
 }
 
 /** Receipt-style verdict for email and screen readers. */
@@ -81,7 +83,7 @@ export function formatVerifiedRankVerdict(stats: VerifiedFirstAttemptRankStats):
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE &&
     stats.percentile != null
   ) {
-    return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} ${formatPeerStandingShort(stats.percentile)} of Mentrixers.`;
+    return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} ${formatPeerStandingShort(stats.percentile, stats.eligibleCohortSize)} of Mentrixers.`;
   }
   if (stats.verifiedCount > 0) {
     return `${explainFirstAttemptAccuracy(stats.verifiedCount, stats.accuracyPercent)} Peer standing unlocks at ${MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE} verified skills.`;
@@ -103,6 +105,16 @@ export function formatVerifiedRankNextAction(stats: VerifiedFirstAttemptRankStat
   return "Start Quest";
 }
 
+async function loadEligibleCohortSize(admin: ReturnType<typeof createAdminClient>): Promise<number | null> {
+  const { count, error } = await admin
+    .from("ap_calc_verified_rank_cache")
+    .select("*", { count: "exact", head: true })
+    .gte("verified_count", MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE);
+
+  if (error || count == null) return null;
+  return count;
+}
+
 export async function loadVerifiedFirstAttemptRankStats(
   userId: string
 ): Promise<VerifiedFirstAttemptRankStats> {
@@ -113,17 +125,26 @@ export async function loadVerifiedFirstAttemptRankStats(
     });
 
     if (error || !data) {
-      return { verifiedCount: 0, accuracyPercent: 0, percentile: null };
+      return { verifiedCount: 0, accuracyPercent: 0, percentile: null, eligibleCohortSize: null };
     }
 
     const row = Array.isArray(data) ? data[0] : data;
     const verifiedCount = Number(row?.verified_count ?? 0);
     const accuracyPercent = Number(row?.accuracy_percent ?? 0);
     const rawPercentile = row?.percentile;
+    const rawCohortSize = row?.eligible_cohort_size;
     const percentile =
       rawPercentile == null || Number.isNaN(Number(rawPercentile))
         ? null
         : Number(rawPercentile);
+    let eligibleCohortSize =
+      rawCohortSize == null || Number.isNaN(Number(rawCohortSize))
+        ? null
+        : Number(rawCohortSize);
+
+    if (eligibleCohortSize == null) {
+      eligibleCohortSize = await loadEligibleCohortSize(admin);
+    }
 
     return {
       verifiedCount: Number.isFinite(verifiedCount) ? verifiedCount : 0,
@@ -132,9 +153,10 @@ export async function loadVerifiedFirstAttemptRankStats(
         verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE && percentile != null
           ? percentile
           : null,
+      eligibleCohortSize: Number.isFinite(eligibleCohortSize) ? eligibleCohortSize : null,
     };
   } catch {
-    return { verifiedCount: 0, accuracyPercent: 0, percentile: null };
+    return { verifiedCount: 0, accuracyPercent: 0, percentile: null, eligibleCohortSize: null };
   }
 }
 

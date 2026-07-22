@@ -3,7 +3,7 @@ import { ArenaEmbedPageClient } from "@/features/arena-widget/ui/arena-embed-pag
 import { getSiteUrl } from "@/shared/core/site";
 
 export const metadata: Metadata = {
-  title: "Embed Arena widget · Mentrixa",
+  title: "Embed Arena widget. Mentrixa",
   description: "Embed the Mentrixa live Arena feed on your site.",
 };
 

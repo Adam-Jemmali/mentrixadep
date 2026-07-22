@@ -69,13 +69,13 @@ export function formatDateInZone(date: Date | string, timeZone: string): string 
   }
 }
 
-/** e.g. "Mon, Jan 15 · 14:30 – 15:00" in the viewer's timezone */
+/** e.g. "Mon, Jan 15. 14:30 – 15:00" in the viewer's timezone */
 export function formatSlotRangeInZone(
   startIso: string,
   endIso: string,
   timeZone: string,
 ): string {
-  return `${formatDateInZone(startIso, timeZone)} · ${formatTimeInZone(startIso, timeZone)} – ${formatTimeInZone(endIso, timeZone)}`;
+  return `${formatDateInZone(startIso, timeZone)}. ${formatTimeInZone(startIso, timeZone)} – ${formatTimeInZone(endIso, timeZone)}`;
 }
 
 /**

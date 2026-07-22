@@ -1,5 +1,7 @@
 import { isValidIanaTimeZone } from "@/shared/core/timezones";
 
+import { formatPeerStandingShort } from "@/features/xp/rank-statistics-pure";
+
 export const VFA_STREAK_MILESTONES = [7, 30, 100] as const;
 export type VfaStreakMilestone = (typeof VFA_STREAK_MILESTONES)[number];
 
@@ -98,4 +100,19 @@ export function vfaStreakMilestoneTitle(days: VfaStreakMilestone): string {
 
 export function vfaStreakMilestoneSubtitle(): string {
   return "Consecutive days with a new verified first attempt.";
+}
+
+export function vfaStreakMilestoneDaysLabel(): string {
+  return "days of proving something new";
+}
+
+export function vfaStreakMilestonePeerContext(percentile: number | null): string {
+  if (percentile == null) {
+    return "Your streak is on the verified board.";
+  }
+  return `${formatPeerStandingShort(percentile)} of Mentrixers this month`;
+}
+
+export function vfaStreakBrokenBannerStorageKey(userId: string, endedDays: number): string {
+  return `mentrixa:vfa-streak-broken:${userId}:${endedDays}`;
 }

@@ -30,7 +30,7 @@ export function GuideMemoryPanel({ data, compact = false }: GuideMemoryPanelProp
             </li>
           ) : null}
           <li className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
-            Retests: {data.retestsPassed} passed · {data.retestsFailed} open or flat
+            Retests: {data.retestsPassed} passed. {data.retestsFailed} open or flat
           </li>
           {data.weakestOpenNode ? (
             <li className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">

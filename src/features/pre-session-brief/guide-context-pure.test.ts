@@ -7,7 +7,7 @@ import {
   pickWeakestTargetNodeId,
 } from "@/features/pre-session-brief/guide-context-pure";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
-import { CALC_READINESS_LABEL } from "@/features/student-home/ap-readiness-band-pure";
+import { VERIFIED_SKILL_PROOF_LABEL, VERIFIED_SKILL_TIER_CAPTION, VERIFIED_SKILL_TIER_SUFFIX } from "@/features/student-home/ap-readiness-band-pure";
 
 function grid(): MasteryGridData {
   return {
@@ -70,15 +70,17 @@ describe("guide-context-pure", () => {
     const line = buildWorkingTowardLine(
       {
         score: 3,
-        label: CALC_READINESS_LABEL,
-        sublabel: "Level 3",
+        label: VERIFIED_SKILL_PROOF_LABEL,
+        scoreCaption: VERIFIED_SKILL_TIER_CAPTION,
+        scoreSuffix: VERIFIED_SKILL_TIER_SUFFIX,
+        sublabel: "Proof tier 3",
         isVerifiedPrediction: true,
       },
       grid(),
       ["a", "b"],
       12,
     );
-    expect(line).toContain("level 4");
+    expect(line).toContain("proof tier 4");
     expect(line).toContain("2 nodes away");
   });
 });

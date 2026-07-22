@@ -5,7 +5,11 @@ import {
   buildQuestDonePrimaryAction,
   apBandImproved,
 } from "@/features/quest/ui/quest-done-screen-pure";
-import { CALC_READINESS_LABEL } from "@/features/student-home/ap-readiness-band-pure";
+import {
+  VERIFIED_SKILL_PROOF_LABEL,
+  VERIFIED_SKILL_TIER_CAPTION,
+  VERIFIED_SKILL_TIER_SUFFIX,
+} from "@/features/student-home/ap-readiness-band-pure";
 import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
 
 const HIGHLIGHT: QuestMasteryHighlight = {
@@ -83,8 +87,22 @@ describe("ap band helpers", () => {
   it("detects improvement when score rises", () => {
     expect(
       apBandImproved(
-        { score: 3, label: CALC_READINESS_LABEL, sublabel: "", isVerifiedPrediction: true },
-        { score: 4, label: CALC_READINESS_LABEL, sublabel: "", isVerifiedPrediction: true },
+        {
+          score: 3,
+          label: VERIFIED_SKILL_PROOF_LABEL,
+          scoreCaption: VERIFIED_SKILL_TIER_CAPTION,
+          scoreSuffix: VERIFIED_SKILL_TIER_SUFFIX,
+          sublabel: "",
+          isVerifiedPrediction: true,
+        },
+        {
+          score: 4,
+          label: VERIFIED_SKILL_PROOF_LABEL,
+          scoreCaption: VERIFIED_SKILL_TIER_CAPTION,
+          scoreSuffix: VERIFIED_SKILL_TIER_SUFFIX,
+          sublabel: "",
+          isVerifiedPrediction: true,
+        },
       ),
     ).toBe(true);
   });

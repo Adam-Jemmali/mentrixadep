@@ -29,6 +29,12 @@ export type MasteryGridProps = {
   showVerdict?: boolean;
   /** Skip first fetch when parent already loaded grid data (e.g. public rank RSC). */
   initialData?: MasteryGridData;
+  /** Light paper for rank passport inner pages. */
+  surface?: "dark" | "light";
+  /** Full grid scroll inside passport book page. */
+  passportScroll?: boolean;
+  /** Flat passport page: no nested scroll, no expand control. */
+  passportPage?: boolean;
   className?: string;
 };
 
@@ -112,10 +118,13 @@ export function MasteryGrid({
   compact = false,
   showVerdict = true,
   initialData,
+  surface = "dark",
+  passportScroll = false,
+  passportPage = false,
   className,
 }: MasteryGridProps) {
   const reduceMotion = useReducedMotion();
-  const [expanded, setExpanded] = useState(!compact);
+  const [expanded, setExpanded] = useState(!compact || passportScroll || passportPage);
   const hasAnimatedRef = useRef(false);
 
   const unitLabelRefs = useRef<(HTMLParagraphElement | null)[]>([]);
@@ -133,12 +142,23 @@ export function MasteryGrid({
 
   const visibleUnits = useMemo(() => {
     if (!data) return [];
+    if (passportScroll) return data.units;
+    if (passportPage) return data.units.slice(0, 3);
     return expanded ? data.units : data.units.slice(0, 2);
-  }, [data, expanded]);
+  }, [data, expanded, passportPage, passportScroll]);
 
   const totalSkills = data ? countMasteryGridSkills(data) : 0;
   const verdictLine = data ? masteryGridVerdictSentence(data) : "";
-  const hiddenUnitCount = data && compact && !expanded ? Math.max(0, data.units.length - 2) : 0;
+  const hiddenUnitCount =
+    data && compact && !expanded && !passportScroll && !passportPage ? Math.max(0, data.units.length - 2) : 0;
+  const verdictTextClass =
+    surface === "light"
+      ? "font-[family-name:var(--font-playfair),serif] text-base italic leading-snug text-[#0B1220] opacity-0"
+      : "font-[family-name:var(--font-playfair),serif] text-base italic leading-snug text-white opacity-0";
+  const errorShellClass =
+    surface === "light"
+      ? "rounded-[var(--radius-card)] border border-[#C4B5FD] bg-white/90 p-4"
+      : "rounded-[var(--radius-card)] border border-white/10 bg-[var(--mx-surface-2)] p-4";
 
   useEffect(() => {
     if (!data || reduceMotion || hasAnimatedRef.current) return;
@@ -217,7 +237,7 @@ export function MasteryGrid({
 
   if (error || !data) {
     return (
-      <section className={cn("rounded-[var(--radius-card)] border border-white/10 bg-[var(--mx-surface-2)] p-4", className)}>
+      <section className={cn(errorShellClass, className)}>
         <p className="text-sm text-[var(--mx-muted)]">
           The mastery grid did not load. Refresh the page or try again in a moment.
         </p>
@@ -231,8 +251,10 @@ export function MasteryGrid({
     <section className={cn("space-y-3", className)} data-mastery-grid-mode={mode}>
       <div
         className={cn(
-          "max-h-[320px] space-y-3 overflow-hidden",
-          expanded && compact && "overflow-y-auto",
+          passportScroll ? "max-h-[min(26rem,52vh)] space-y-3 overflow-y-auto overscroll-y-contain pr-1" : "space-y-3",
+          !passportScroll && !passportPage && compact && !expanded && "max-h-[320px] space-y-3 overflow-hidden",
+          !passportScroll && !passportPage && expanded && compact && "max-h-[320px] space-y-3 overflow-y-auto",
+          passportPage && "space-y-2 overflow-hidden",
         )}
       >
         {visibleUnits.map((unit, unitIndex) => {
@@ -277,7 +299,7 @@ export function MasteryGrid({
       >
         <p
           ref={verdictRef}
-          className="font-[family-name:var(--font-playfair),serif] text-base italic leading-snug text-white opacity-0"
+          className={verdictTextClass}
         >
           {verdictLine}
         </p>

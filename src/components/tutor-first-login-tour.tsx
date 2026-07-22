@@ -191,7 +191,7 @@ export function TutorFirstLoginTour({ user }: { user: AuthUser }) {
             onChange={(event) => setProfileConfirmed(event.target.checked)}
             className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-indigo-200/70 bg-transparent accent-cyan-200"
           />
-          <span>I saved my profile, let's continue to the next step.</span>
+          <span>I saved my profile, let&apos;s continue to the next step.</span>
         </label>
       ) : null}
 

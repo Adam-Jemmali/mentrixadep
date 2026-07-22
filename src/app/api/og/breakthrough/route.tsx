@@ -70,14 +70,14 @@ export async function GET(request: Request) {
             border: "1px solid rgba(129, 140, 248, 0.25)",
           }}
         >
-          <div style={{ fontSize: 16, color: "#94a3b8" }}>Verified accuracy jump · {dateLabel}</div>
+          <div style={{ fontSize: 16, color: "#94a3b8" }}>Verified accuracy jump. {dateLabel}</div>
           <div style={{ marginTop: 8, fontSize: 18, color: "#64748b" }}>
             mentrixa.one/breakthrough/{event.eventId.slice(0, 8)}…
           </div>
         </div>
 
         <div style={{ fontSize: 14, color: "#475569", marginTop: 24 }}>
-          Prove what you know · Public rank · Real stakes
+          Prove what you know. Public rank. Real stakes
         </div>
       </div>
     ),

@@ -198,7 +198,7 @@ export function StudentCommandCenterClient({
                         </div>
                       </td>
                       <td className="px-4 py-3 tabular-nums text-[#475569]">
-                        {formatDateInZone(s.start_time, displayTimeZone)} ·{" "}
+                        {formatDateInZone(s.start_time, displayTimeZone)} |{" "}
                         {formatTimeInZone(s.start_time, displayTimeZone)}
                       </td>
                       <td className="px-4 py-3 text-right">

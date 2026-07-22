@@ -129,10 +129,10 @@ export function DivisionWarPanel({
         <div className="mt-8 space-y-3">
           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
             <span className={cn(war.mySide === "a" && "text-indigo-700")}>
-              {war.sideA.divisionName} · {war.sideA.totalAccuracyPoints.toLocaleString()} pts
+              {war.sideA.divisionName}. {war.sideA.totalAccuracyPoints.toLocaleString()} pts
             </span>
             <span className={cn(war.mySide === "b" && "text-indigo-700")}>
-              {war.sideB.totalAccuracyPoints.toLocaleString()} pts · {war.sideB.divisionName}
+              {war.sideB.totalAccuracyPoints.toLocaleString()} pts. {war.sideB.divisionName}
             </span>
           </div>
           <div className="flex h-3 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">

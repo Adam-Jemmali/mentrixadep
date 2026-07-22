@@ -3,9 +3,11 @@ import { invalidateStudentHubCache } from "@/features/student-profile/hub-snapsh
 import {
   applyVfaStreakOnSuccessfulInsert,
   calendarDateInTimeZone,
+  vfaStreakMilestonePeerContext,
   vfaStreakMilestoneSubtitle,
   vfaStreakMilestoneTitle,
 } from "@/features/vfa-streak/vfa-streak-pure";
+import { loadVerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-rank";
 
 /** After a successful verified_first_attempts insert — once per local day. */
 export async function updateVfaStreakAfterSuccessfulInsert(userId: string): Promise<void> {
@@ -82,6 +84,7 @@ export async function updateVfaStreakAfterSuccessfulInsert(userId: string): Prom
   if (existing) return;
 
   const title = vfaStreakMilestoneTitle(next.milestone);
+  const rankStats = await loadVerifiedFirstAttemptRankStats(userId);
   const { error: achError } = await admin.from("user_achievements").insert({
     user_id: userId,
     achievement_type: "vfa_streak_milestone",
@@ -91,6 +94,7 @@ export async function updateVfaStreakAfterSuccessfulInsert(userId: string): Prom
     meta: {
       days: next.milestone,
       subtitle: vfaStreakMilestoneSubtitle(),
+      peerContext: vfaStreakMilestonePeerContext(rankStats.percentile),
     },
   });
 

@@ -1,33 +1,51 @@
 import type { VerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-rank";
 import { MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE } from "@/features/xp/calibrated-rank";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 
 export type ApReadinessBandView = {
-  /** Predicted AP score band 1–5 when enough verified evidence exists. */
+  /** Proof tier 1–5 from verified first-try accuracy — not an exam prediction. */
   score: number | null;
   label: string;
+  scoreCaption: string;
+  scoreSuffix: string;
   sublabel: string;
-  /** True when band uses verified first-attempt evidence (gold eligible). */
   isVerifiedPrediction: boolean;
 };
 
-export const CALC_READINESS_LABEL = "Calculus readiness level";
+export const VERIFIED_SKILL_PROOF_LABEL = "Verified skill proof";
+/** @deprecated Use VERIFIED_SKILL_PROOF_LABEL */
+export const AP_CALC_READINESS_LABEL = VERIFIED_SKILL_PROOF_LABEL;
+/** @deprecated Use VERIFIED_SKILL_PROOF_LABEL */
+export const CALC_READINESS_LABEL = VERIFIED_SKILL_PROOF_LABEL;
 
-function calcReadinessNextAction(score: number): string {
-  if (score <= 2) return "Pick a weak skill and try it for the first time.";
-  if (score === 3) return "Push your weakest skills to move this up.";
-  if (score === 4) return "Stay sharp on first tries for what's left.";
-  return "Keep first tries clean on new skills.";
+export const VERIFIED_SKILL_TIER_CAPTION = "From locked first tries";
+/** @deprecated Use VERIFIED_SKILL_TIER_CAPTION */
+export const AP_EXAM_SCORE_CAPTION = VERIFIED_SKILL_TIER_CAPTION;
+
+export const VERIFIED_SKILL_TIER_SUFFIX = "of 5 proof tiers";
+
+function proofTierNextAction(score: number): string {
+  if (score <= 2) return "Verify a weak skill you have not tried yet.";
+  if (score === 3) return "Lock more first tries on your weakest skills.";
+  if (score === 4) return "Keep first tries clean on what is left.";
+  return "Stay sharp on new first tries.";
 }
 
-/** Plain-language readiness pill — not exam-day framing; level on the AP 1–5 scale. */
+/** Proof tier from verified first tries — separate from practice reps or exam framing. */
 export function buildApReadinessBand(
   stats: VerifiedFirstAttemptRankStats,
 ): ApReadinessBandView {
+  const base = {
+    label: VERIFIED_SKILL_PROOF_LABEL,
+    scoreCaption: VERIFIED_SKILL_TIER_CAPTION,
+    scoreSuffix: VERIFIED_SKILL_TIER_SUFFIX,
+  };
+
   if (stats.verifiedCount <= 0) {
     return {
+      ...base,
       score: null,
-      label: CALC_READINESS_LABEL,
-      sublabel: "Try a skill once. Your first answer starts your readiness level.",
+      sublabel: `Try one ${AP_CALC_AB_SUBJECT} skill once. Your first answer becomes proof.`,
       isVerifiedPrediction: false,
     };
   }
@@ -35,9 +53,9 @@ export function buildApReadinessBand(
   if (stats.verifiedCount < MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE) {
     const remaining = MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE - stats.verifiedCount;
     return {
+      ...base,
       score: null,
-      label: CALC_READINESS_LABEL,
-      sublabel: `${remaining} more first ${remaining === 1 ? "try" : "tries"} unlock your readiness level.`,
+      sublabel: `${remaining} more first ${remaining === 1 ? "try" : "tries"} unlock your proof tier.`,
       isVerifiedPrediction: false,
     };
   }
@@ -49,12 +67,10 @@ export function buildApReadinessBand(
   else if (accuracy >= 72) score = 3;
   else if (accuracy >= 58) score = 2;
 
-  const skillWord = stats.verifiedCount === 1 ? "skill" : "skills";
-
   return {
+    ...base,
     score,
-    label: CALC_READINESS_LABEL,
-    sublabel: `${accuracy}% on first try · ${stats.verifiedCount} ${skillWord} · Level ${score}/5 on the AP scale. ${calcReadinessNextAction(score)}`,
+    sublabel: proofTierNextAction(score),
     isVerifiedPrediction: true,
   };
 }

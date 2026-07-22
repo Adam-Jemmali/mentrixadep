@@ -51,6 +51,8 @@ export async function loadPassportBreakthroughReceipts(
       beforeState: practiceAccuracyToMasteryStateLabel(before),
       afterState: practiceAccuracyToMasteryStateLabel(after),
       date: formatPassportReceiptDate(String(event.detected_at)),
+      prePercent: Math.round(before),
+      postPercent: Math.round(after),
     });
     if (receipts.length >= 3) return receipts;
   }

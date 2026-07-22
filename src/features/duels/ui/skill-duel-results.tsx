@@ -256,12 +256,10 @@ export function SkillDuelResults({
           <p className="mx-hub-ink-muted inline-flex flex-wrap items-center gap-1.5 text-xs tabular-nums">
             <span>
               {yourScore}/{total} vs {theirScore}/{total}
-              {` · ${stats.accuracy}% accuracy`}
+              {`. ${stats.accuracy}% accuracy`}
             </span>
             {xpAmount > 0 ? (
-              <span className="inline-flex items-center gap-1">
-                ·
-                <MentrixaVocabIcon name="xp" size={14} surface="light" title="XP earned" />
+              <span className="inline-flex items-center gap-1">| <MentrixaVocabIcon name="xp" size={14} surface="light" title="XP earned" />
                 +{xpAmount}
               </span>
             ) : null}
@@ -352,7 +350,7 @@ export function SkillDuelResults({
                       <PromptWithMathInline text={formatPick(round.myPick, round.question.choices)} />
                     </span>
                   </span>
-                  <span className="text-[#C4B5FD]">·</span>
+                  <span className="text-[#C4B5FD]">| </span>
                   <span>
                     {themLabel}:{" "}
                     <span className="mx-hub-math-prose inline text-[#0B1220]">

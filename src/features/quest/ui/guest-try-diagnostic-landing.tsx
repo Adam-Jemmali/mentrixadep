@@ -65,7 +65,7 @@ export function GuestTryDiagnosticLanding({
       <div className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6366F1]">
           Free diagnostic
-          <span className="mx-2 text-[#C4B5FD]">·</span>
+          <span className="mx-2 text-[#C4B5FD]">| </span>
           {AP_CALC_AB_SUBJECT}
         </p>
 

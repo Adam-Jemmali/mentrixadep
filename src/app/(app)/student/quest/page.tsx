@@ -1,7 +1,7 @@
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import { QuestPageClient } from "./quest-page-client";
 
-export const metadata = { title: "Quest · Mentrixa" };
+export const metadata = { title: "Quest. Mentrixa" };
 
 export const maxDuration = 120;
 

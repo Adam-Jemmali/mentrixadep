@@ -1,10 +1,8 @@
-import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
 import type { RankCardData } from "@/features/rank-card/types";
-import { RankPassportArticle, RankPassportTopBar } from "@/features/rank-card/rank-passport-article";
+import { RankPassportPageClient } from "@/features/rank-card/rank-passport-page-client";
 import { cn } from "@/shared/core/utils";
-import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
 import Link from "next/link";
+import { RankPassportTopBar } from "@/features/rank-card/rank-passport-article";
 
 export function RankCardPublicPage({
   data,
@@ -13,41 +11,33 @@ export function RankCardPublicPage({
   data: RankCardData;
   isOwner?: boolean;
 }) {
-  return (
-    <div className="mentrix-student-type-scope mx-auto max-w-4xl px-4 pb-16 pt-8 sm:px-6 lg:pb-24 lg:pt-12">
-      <RankPassportTopBar />
-      <RankPassportArticle data={data} className="mb-8" isOwner={isOwner} />
-      {data.masteryGrid ? (
-        <div className="mb-8">
-          <MasteryGrid data={data.masteryGrid} showLegend readOnly className="rotate-0" />
-        </div>
-      ) : null}
-    </div>
-  );
+  return <RankPassportPageClient data={data} isOwner={isOwner} />;
 }
 
 export function RankCardPrivateNotice({ username }: { username: string }) {
   return (
-    <div className="mentrix-student-type-scope mx-auto max-w-lg px-4 pb-24 pt-8">
-      <RankPassportTopBar />
-      <div
-        className={cn(
-          mentrixStudent.hubSticky,
-          "flex min-h-[50vh] rotate-0 flex-col items-center justify-center py-16 text-center",
-        )}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6366F1]">
-          @{username}
-        </p>
-        <h1 className={cn(mentrixHubSurfaces.inkTitle, "mt-4 text-3xl")}>
-          This passport is private
-        </h1>
-        <p className={cn(mentrixHubSurfaces.inkBody, "mt-4 max-w-sm text-sm leading-relaxed")}>
-          The owner chose to keep this verified record private.
-        </p>
-        <Link href="/" className={cn(mentrixHubSurfaces.ghostLink, "mt-8")}>
-          Back to Mentrixa
-        </Link>
+    <div className="min-h-dvh bg-[#0B1220] text-slate-100">
+      <div className="mx-auto max-w-lg px-4 pb-24 pt-8">
+        <RankPassportTopBar />
+        <div
+          className={cn(
+            "flex min-h-[50vh] flex-col items-center justify-center rounded-lg border border-white/10 bg-[#0F172A]/80 py-16 text-center",
+          )}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6366F1]">
+            @{username}
+          </p>
+          <h1 className="mt-4 text-3xl font-bold text-white">This passport is private</h1>
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#9CA3AF]">
+            The owner chose to keep this verified record private.
+          </p>
+          <Link
+            href="/"
+            className="mt-8 inline-flex rounded-md border border-[#6366F1]/50 px-4 py-2 text-sm font-medium text-violet-300 hover:bg-white/5"
+          >
+            Back to Mentrixa
+          </Link>
+        </div>
       </div>
     </div>
   );

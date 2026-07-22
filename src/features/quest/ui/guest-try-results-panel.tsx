@@ -78,7 +78,7 @@ function GenericQuestResultsReveal({
           <div>
             <h2 className="text-2xl font-bold text-[#0B1220] sm:text-3xl">Quest complete</h2>
             <p className="mt-2 text-sm text-[#475569]">
-              Best streak {streakRecord} · Would earn {wouldXp} XP with an account
+              Best streak {streakRecord}. Would earn {wouldXp} XP with an account
             </p>
           </div>
         </div>

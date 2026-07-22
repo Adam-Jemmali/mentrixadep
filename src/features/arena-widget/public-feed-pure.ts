@@ -76,7 +76,7 @@ export function formatPublicFeedLine(item: PublicFeedItem): string {
   if (item.accuracy_pct === 0) {
     return `${item.display_name} missed ${item.node_name}`;
   }
-  return `${item.display_name} · ${item.node_name}`;
+  return `${item.display_name}. ${item.node_name}`;
 }
 
 export function parseWidgetTheme(raw: string | null | undefined): "dark" | "light" {

@@ -58,7 +58,7 @@ export function WrappedShareCarousel({
     }
   }, [index, shareUrl]);
 
-  const tweetText = `${current.title} · Mentrixa Wrapped ${reportYear}. ${shareUrl}`;
+  const tweetText = `${current.title}. Mentrixa Wrapped ${reportYear}. ${shareUrl}`;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6">

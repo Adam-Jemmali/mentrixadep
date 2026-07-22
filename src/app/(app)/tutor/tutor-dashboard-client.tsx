@@ -428,7 +428,7 @@ export function TutorDashboardClient({
                   className="py-2.5 border-b border-[#F8FAFC] last:border-0 flex items-center justify-between"
                 >
                   <p className="text-xs text-slate-500 font-medium">
-                    {session.course} · {formatDate(session.start_time)}
+                    {session.course}. {formatDate(session.start_time)}
                   </p>
                   <Link
                     href={studioHref}

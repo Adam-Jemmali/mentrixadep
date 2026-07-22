@@ -14,6 +14,7 @@ import {
   ArrowRight,
   TrendingUp,
   AlertCircle,
+  type LucideIcon,
 } from "lucide-react";
 
 interface Props {
@@ -32,7 +33,7 @@ function MetricCard({
   label: string;
   value: string | number;
   sub?: string;
-  icon?: React.ElementType;
+  icon?: LucideIcon;
   vocabIcon?: VocabIconName;
   accent?: string;
   href?: string;
@@ -79,7 +80,7 @@ export function AdminDashboardClient({ metrics }: Props) {
         <MetricCard
           label="Total users"
           value={m?.totalUsers ?? "—"}
-          sub={m ? `${m.studentCount} learners · ${m.tutorCount} guides` : undefined}
+          sub={m ? `${m.studentCount} learners. ${m.tutorCount} guides` : undefined}
           icon={Users}
           accent="bg-blue-50"
           href="/admin/users"
@@ -87,7 +88,7 @@ export function AdminDashboardClient({ metrics }: Props) {
         <MetricCard
           label="Sessions this month"
           value={m?.sessionsMonth ?? "—"}
-          sub={m ? `${m.sessionsToday} today · ${m.sessionsWeek} this week` : undefined}
+          sub={m ? `${m.sessionsToday} today. ${m.sessionsWeek} this week` : undefined}
           icon={BookOpen}
           accent="bg-emerald-50"
         />

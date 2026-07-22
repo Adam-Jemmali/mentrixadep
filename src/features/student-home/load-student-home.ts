@@ -1,7 +1,6 @@
 import { getTopRival } from "@/features/divisions/top-rival";
 import { loadDueRetestNodes } from "@/features/student-home/load-due-retests";
 import { loadRecentQuestPerformance } from "@/features/student-home/load-recent-quest-performance";
-import { buildApReadinessBand } from "@/features/student-home/ap-readiness-band-pure";
 import { buildStudentHomeVerdictHero } from "@/features/student-home/student-home-verdict-pure";
 import { loadLiveBoardEvents } from "@/features/live-board/load-live-board-snapshot";
 import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
@@ -23,7 +22,6 @@ import {
   loadVerifiedFirstAttemptRankStats,
   type VerifiedFirstAttemptRankStats,
 } from "@/features/xp/calibrated-rank";
-import type { ApReadinessBandView } from "@/features/student-home/ap-readiness-band-pure";
 import type { StudentHomeVerdictView } from "@/features/student-home/student-home-verdict-pure";
 import type { DueRetestNode } from "@/features/student-home/load-due-retests";
 import type { RecentQuestPerformanceRow } from "@/features/student-home/load-recent-quest-performance";
@@ -31,6 +29,8 @@ import {
   loadStudentRetestProofNotifications,
   type StudentRetestProofNotification,
 } from "@/features/notifications/student-retest-notifications";
+import { loadVfaStreakHomeDisplay } from "@/features/vfa-streak/load-vfa-streak";
+import type { VfaStreakHomeDisplay } from "@/features/vfa-streak/vfa-streak-pure";
 
 export type StudentHomeUpcomingSession = {
   id: string;
@@ -62,7 +62,6 @@ export type StudentHomeData = {
   subject: string;
   heroVerdict: StudentHomeVerdictView;
   rankStats: VerifiedFirstAttemptRankStats;
-  apReadinessBand: ApReadinessBandView;
   masteryGrid: MasteryGridData | null;
   dueRetests: DueRetestNode[];
   upcomingSessions: StudentHomeUpcomingSession[];
@@ -73,6 +72,7 @@ export type StudentHomeData = {
   timeZone: string;
   hubFooter: StudentHomeHubFooter;
   retestProof: StudentRetestProofNotification[];
+  vfaStreak: VfaStreakHomeDisplay;
 };
 
 export async function loadStudentHome(userId: string): Promise<StudentHomeData> {
@@ -87,6 +87,7 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     division,
     matchmaker,
     retestProof,
+    vfaStreak,
   ] = await Promise.all([
     loadVerifiedFirstAttemptRankStats(userId),
     loadMasteryGrid(userId).catch(() => null),
@@ -98,6 +99,9 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     getTopRival(),
     getMatchmakerGuides(userId).catch(() => ({ guides: [] as MatchmakerGuideResult[] })),
     loadStudentRetestProofNotifications(1).catch(() => [] as StudentRetestProofNotification[]),
+    loadVfaStreakHomeDisplay(userId).catch(
+      (): VfaStreakHomeDisplay => ({ kind: "none" }),
+    ),
   ]);
 
   const upcomingSessions = sessionsBundle.upcomingSessions.map((s: Record<string, unknown>) => ({
@@ -140,7 +144,6 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     subject: AP_CALC_AB_SUBJECT,
     heroVerdict: buildStudentHomeVerdictHero(rankStats, masteryGrid?.verdict?.nextAction ?? null),
     rankStats,
-    apReadinessBand: buildApReadinessBand(rankStats),
     masteryGrid,
     dueRetests,
     upcomingSessions,
@@ -151,5 +154,6 @@ export async function loadStudentHome(userId: string): Promise<StudentHomeData> 
     timeZone: snapshot.user_settings?.timezone?.trim() || "UTC",
     hubFooter,
     retestProof,
+    vfaStreak,
   };
 }

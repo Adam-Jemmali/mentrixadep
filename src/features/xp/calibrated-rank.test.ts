@@ -47,9 +47,10 @@ describe("formatVerifiedFirstAttemptSummary", () => {
       verifiedCount: 12,
       accuracyPercent: 72,
       percentile: 45,
+      eligibleCohortSize: 20,
     });
     expect(line).toContain("9 right out of 12 first answers");
-    expect(line).toContain("beat 45 out of every 100");
+    expect(line).toContain("Ahead of 9 of 20 Mentrixers");
   });
 
   it("returns null before five verified skills", () => {
@@ -58,6 +59,7 @@ describe("formatVerifiedFirstAttemptSummary", () => {
         verifiedCount: 4,
         accuracyPercent: 80,
         percentile: null,
+        eligibleCohortSize: null,
       })
     ).toBeNull();
   });
@@ -70,6 +72,7 @@ describe("formatVerifiedRankVerdict", () => {
         verifiedCount: 12,
         accuracyPercent: 76,
         percentile: 89,
+        eligibleCohortSize: 30,
       })
     ).toContain("first answers");
     expect(
@@ -77,8 +80,9 @@ describe("formatVerifiedRankVerdict", () => {
         verifiedCount: 12,
         accuracyPercent: 76,
         percentile: 89,
+        eligibleCohortSize: 30,
       })
-    ).toContain("Top 11%");
+    ).toContain("27 of 30");
   });
 
   it("guides user before five verified skills", () => {
@@ -87,6 +91,7 @@ describe("formatVerifiedRankVerdict", () => {
         verifiedCount: 2,
         accuracyPercent: 50,
         percentile: null,
+        eligibleCohortSize: null,
       })
     ).toMatch(/verify 3 more/i);
   });

@@ -47,7 +47,7 @@ export function IconsGalleryClient() {
         <h2 className="mb-1 text-lg font-bold text-white">Core 18 vocabulary</h2>
         <p className="mb-4 text-xs text-slate-400">
           Phase 2 atomic stickers in{" "}
-          <span className="font-mono text-violet-300">public/icons/vocab/</span> ·{" "}
+          <span className="font-mono text-violet-300">public/icons/vocab/</span> |{" "}
           {CORE_VOCAB_ICON_NAMES.length} icons
         </p>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -63,7 +63,7 @@ export function IconsGalleryClient() {
           <section key={category}>
             <h2 className="mb-1 text-lg font-bold text-white">{CATEGORY_LABELS[category]}</h2>
             <p className="mb-4 text-xs text-slate-400">
-              {icons.length} icon{icons.length === 1 ? "" : "s"} · dashed box = SVG not yet designed
+              {icons.length} icon{icons.length === 1 ? "" : "s"}. dashed box = SVG not yet designed
             </p>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {icons.map((icon) => (

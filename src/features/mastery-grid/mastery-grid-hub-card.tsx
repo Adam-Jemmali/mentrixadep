@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
-import { motion, useReducedMotion } from "@/shared/animation/motion";
+import { motion } from "@/shared/animation/motion";
 import { StudentHomeAnimatedSticky } from "@/features/student-home/student-home-animated-sticky";
 import { StudentStickyNote } from "@/features/student-profile/ui/student-sticky-note";
+import {
+  StudentHubNumericReveal,
+  StudentHubNumericStat,
+} from "@/features/student-home/student-hub-numeric-panel";
+import { landingStickyVariantForIndex } from "@/features/student-profile/student-sticky-variants";
 import type { StudentStickyVariant } from "@/features/student-profile/student-sticky-variants";
 import type { MasteryGridData } from "@/features/mastery-grid/types";
 import {
@@ -16,8 +21,8 @@ import {
 import { SkillNodeStrengthMeter } from "@/shared/ui/meter-patterns";
 import { XpTierProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
 import {
-  MasteryGridSummaryMetrics,
   MentrixaVocabIcon,
   VocabSectionHeading,
 } from "@/shared/icons/mentrixa-vocab-icons";
@@ -38,7 +43,6 @@ export function MasteryGridHubCard({
   const summary = summarizeMasteryGrid(data);
   const weakest = pickWeakestMasteryNodes(data, compact ? 1 : 3);
   const nextAction = buildMasteryGridNextAction(data.units);
-  const reduceMotion = useReducedMotion();
 
   const body = (
     <section aria-label="Skill tree summary">
@@ -54,13 +58,39 @@ export function MasteryGridHubCard({
           <div className="mt-1">
             <AbCalculusSubjectTitle hubPaper className={compact ? "text-sm sm:text-base" : undefined} />
           </div>
-          <MasteryGridSummaryMetrics
-            className="mt-2"
-            verifiedCount={summary.verifiedCount}
-            proficientCount={summary.proficientCount}
-            totalNodes={summary.totalNodes}
-            surface="light"
-          />
+          <StudentHubNumericReveal className="mt-3 grid gap-2 sm:grid-cols-3">
+            <StudentHubNumericStat
+              className="rotate-0 px-2 py-2"
+              variant={landingStickyVariantForIndex(0)}
+              compact
+              watermark={summary.verifiedCount}
+              icon="verified"
+              label="Verified first tries"
+              numericEnd={summary.verifiedCount}
+              detail={`${AP_CALC_AB_SUBJECT} skills with a locked first answer. Updates when you finish a new first try.`}
+              gold={summary.verifiedCount > 0}
+            />
+            <StudentHubNumericStat
+              className="rotate-[0.2deg] px-2 py-2"
+              variant={landingStickyVariantForIndex(1)}
+              compact
+              watermark={summary.proficientCount}
+              icon="practice-pack"
+              label="Practice at 70%+"
+              numericEnd={summary.proficientCount}
+              detail="Skills solid in practice reps only. Not verified yet. Zero means none crossed 70% in practice."
+            />
+            <StudentHubNumericStat
+              className="rotate-0 px-2 py-2"
+              variant={landingStickyVariantForIndex(2)}
+              compact
+              watermark={summary.totalNodes}
+              icon="skills"
+              label="Skills in tree"
+              numericEnd={summary.totalNodes}
+              detail={`Total ${AP_CALC_AB_SUBJECT} skills on the mastery grid.`}
+            />
+          </StudentHubNumericReveal>
         </div>
         <Link href="/student/mastery" className={mentrixStudent.hubBtn} title="Open skills">
           <MentrixaVocabIcon name="skills" size={compact ? 24 : 28} surface="dark" title="Skills" />
@@ -116,7 +146,7 @@ export function MasteryGridHubCard({
         staggerIndex={staggerIndex}
       >
         <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: staggerIndex * 0.12 + 0.22, duration: 0.45 }}
         >

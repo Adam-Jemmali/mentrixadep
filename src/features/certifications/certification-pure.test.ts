@@ -7,6 +7,11 @@ import {
   shouldReinstateCertification,
   tickCertificationRevocation,
   certificationPeerStandingLabel,
+  certificationVerifiedTopLine,
+  certificationNodesVerifiedLine,
+  certificationAccuracyLine,
+  certificationRevokedBody,
+  certificationRankVerifyHint,
 } from "@/features/certifications/certification-pure";
 
 describe("certification eligibility", () => {
@@ -96,5 +101,15 @@ describe("certification eligibility", () => {
 
   it("labels peer standing as Top %, not percentile", () => {
     expect(certificationPeerStandingLabel(CERT_ISSUE_PEER_STANDING)).toBe("Top 10%");
+  });
+
+  it("formats verify page copy", () => {
+    expect(certificationVerifiedTopLine(92)).toBe(
+      "Verified top 8 percent of all Mentrixers tested",
+    );
+    expect(certificationNodesVerifiedLine(90, 113)).toBe("90 of 113 skill nodes verified");
+    expect(certificationAccuracyLine(87.4)).toBe("Overall accuracy: 87%");
+    expect(certificationRevokedBody("2026-07-01T00:00:00.000Z")).toContain("Jul 1, 2026");
+    expect(certificationRankVerifyHint("alex")).toBe("Visit mentrixa.one/rank/alex to verify");
   });
 });

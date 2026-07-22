@@ -7,7 +7,7 @@ import { LANDING_DUAL_PATH } from "@/features/marketing/landing/landing-copy-pur
 /** Dual-path section — sticky-note framed reaction game (lighter spawn rates inside). */
 export function DualPathSection() {
   return (
-    <LandingSectionShell id="path">
+    <LandingSectionShell id="path" tight>
       <DualPathReactionGame
         sides={LANDING_DUAL_PATH.sides.map((side) => ({
           ...side,

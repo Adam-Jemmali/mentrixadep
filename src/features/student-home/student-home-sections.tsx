@@ -6,6 +6,7 @@ import { useRef, type ReactNode } from "react";
 import { motion, useReducedMotion } from "@/shared/animation/motion";
 import { useGsapScrollTriggerEffect } from "@/shared/core/gsap-lazy";
 import { formatDateInZone, formatTimeInZone } from "@/shared/core/time-format";
+import { formatXpWatermarkK } from "@/shared/core/copy-format";
 import {
   formatLiveBoardEventDescription,
   formatLiveBoardTimeAgo,
@@ -16,6 +17,11 @@ import {
   StudentHomeStickyCard,
 } from "@/features/student-home/student-home-sticky-card";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
+import {
+  StudentHubNumericReveal,
+  StudentHubNumericStat,
+} from "@/features/student-home/student-hub-numeric-panel";
+import { StudentHubQuestScoreCard } from "@/features/student-home/student-hub-quest-score-card";
 import { landingStickyVariantForIndex } from "@/features/student-profile/student-sticky-variants";
 import {
   MentrixaVocabIcon,
@@ -124,7 +130,7 @@ export function StudentHomeUpcomingSessions({
                   <p className="flex items-center gap-1.5 text-xs text-[#475569]">
                     <MentrixaVocabIcon name="session" size={14} surface="light" title="Session time" />
                     {formatDateInZone(session.start_time, timeZone)}
-                    {" · "}
+                    {" at "}
                     {formatTimeInZone(session.start_time, timeZone)}
                   </p>
                 </div>
@@ -163,34 +169,19 @@ export function StudentHomeQuestPerformance({
             compact
           />
         ) : (
-          <ul className="space-y-2">
-            {rows.map((row) => {
-              const pct = row.total > 0 ? Math.round((row.correct / row.total) * 100) : 0;
-              return (
-                <li
-                  key={row.questId}
-                  className="flex items-center justify-between rounded-lg border border-[#E0E7FF] bg-white/75 px-3 py-2.5"
-                >
-                  <div className="flex items-start gap-2">
-                    <MentrixaVocabIcon
-                      name="practice-pack"
-                      size={VOCAB_HEADING_ICON_SIZE * 0.44}
-                      surface="light"
-                      title="Practice pack"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-[#0B1220]">
-                        {row.correct}/{row.total} correct
-                        {row.perfect ? " · Perfect" : ""}
-                      </p>
-                      <p className="text-xs text-[#475569]">{row.subject}</p>
-                    </div>
-                  </div>
-                  <span className="font-mono text-sm font-bold tabular-nums text-[#6366F1]">{pct}%</span>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {rows.map((row, index) => (
+              <StudentHubQuestScoreCard
+                key={row.questId}
+                className={cn(index === 1 && "rotate-[0.3deg]")}
+                variant={landingStickyVariantForIndex(index + 2)}
+                correct={row.correct}
+                total={row.total}
+                subject={row.subject}
+                perfect={row.perfect}
+              />
+            ))}
+          </div>
         )}
       </StudentHomeStickyCard>
     </ScrollRevealSection>
@@ -343,22 +334,34 @@ export function StudentHomeDivisionCompact({
             compact
           />
         ) : (
-          <div className="space-y-1.5 text-sm">
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-[#0B1220]">
-              <MentrixaVocabIcon name={CANONICAL_RANK_PROOF_ICON} size={18} surface="light" title="Rank" />
-              Rank #{division.myRank ?? "—"}
-              <MentrixaVocabIcon name="xp" size={16} surface="light" title="Division XP" />
-              <span className="font-mono tabular-nums">{division.myXp ?? 0} XP</span>
-            </p>
-            {division.status === "has_rival" ? (
-              <p className="flex items-center gap-2 text-[#475569]">
-                <MentrixaVocabIcon name="rival" size={16} surface="light" title="Rival" />
-                {division.xpGap ?? 0} XP behind {division.rivalName} for the next spot.
-              </p>
-            ) : (
-              <p className="text-[#475569]">You hold the top spot in your division.</p>
-            )}
-          </div>
+          <StudentHubNumericReveal className="grid gap-2 sm:grid-cols-2">
+            <StudentHubNumericStat
+              className="rotate-0 px-2 py-3"
+              variant={landingStickyVariantForIndex(5)}
+              compact
+              watermark={division.myRank ?? 1}
+              icon={CANONICAL_RANK_PROOF_ICON}
+              label="Division rank"
+              numericEnd={division.myRank ?? 0}
+              detail={
+                division.status === "has_rival"
+                  ? `${division.xpGap ?? 0} XP behind ${division.rivalName?.split(/\s+/)[0] ?? "rival"}`
+                  : "You hold the top spot in your division."
+              }
+              gold={division.status === "rank_1"}
+            />
+            <StudentHubNumericStat
+              className="rotate-[0.25deg] px-2 py-3"
+              variant={landingStickyVariantForIndex(6)}
+              compact
+              watermark={formatXpWatermarkK(division.myXp ?? 0)}
+              icon="xp"
+              label="Division XP"
+              numericEnd={division.myXp ?? 0}
+              valueFormat="xp-k"
+              detail="League standing on AP Calculus AB"
+            />
+          </StudentHubNumericReveal>
         )}
       </StudentHomeStickyCard>
     </ScrollRevealSection>

@@ -14,6 +14,8 @@ export const rankPassportReceiptSchema = z.object({
   beforeState: z.string(),
   afterState: z.string(),
   date: z.string(),
+  prePercent: z.number().int().min(0).max(100).optional(),
+  postPercent: z.number().int().min(0).max(100).optional(),
 });
 
 export const passportVerdictSchema = z.discriminatedUnion("kind", [
@@ -46,6 +48,16 @@ export const rankCardSubjectSchema = z.object({
   verifiedFirstAttemptSummary: z.string().nullable().optional(),
 });
 
+export const rankPassportIdentitySchema = z.object({
+  avatarUrl: z.string().nullable(),
+  bio: z.string().nullable(),
+  timezone: z.string(),
+  memberSince: z.string(),
+  sex: z.enum(["feminine", "masculine"]).nullable(),
+  signature: z.string().nullable(),
+  role: z.enum(["student", "tutor"]),
+});
+
 export const rankCardDataSchema = z.object({
   userId: z.string().uuid(),
   username: z.string(),
@@ -69,6 +81,8 @@ export const rankCardDataSchema = z.object({
   ),
   masteryGrid: masteryGridDataSchema.nullable().optional(),
   rankDeltaVerdict: z.custom<Verdict>().nullable().optional(),
+  vfaStreakDays: z.number().int().min(0).optional(),
+  identity: rankPassportIdentitySchema,
   isPrivate: z.literal(false),
 });
 
@@ -76,6 +90,8 @@ export const rankCardPrivateSchema = z.object({
   username: z.string(),
   isPrivate: z.literal(true),
 });
+
+export type RankPassportIdentity = z.infer<typeof rankPassportIdentitySchema>;
 
 export type RankCardData = z.infer<typeof rankCardDataSchema>;
 export type RankCardSubject = z.infer<typeof rankCardSubjectSchema>;

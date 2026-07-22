@@ -58,7 +58,7 @@ export function CompleteExpressionQuestion({
             )}
           >
             Blank {key}
-            {(answers[key] ?? "").trim() ? " · set" : ""}
+            {(answers[key] ?? "").trim() ? ". set" : ""}
           </button>
         ))}
       </div>

@@ -85,9 +85,9 @@ export function GuidePreSessionContextPanel({
               <MentrixaVocabIcon name="guide-session" size={16} surface="light" title="Session" />
               {studentName}
             </span>
-            <span className="mx-1.5 text-slate-400">·</span>
+            <span className="mx-1.5 text-slate-400">| </span>
             {course}
-            <span className="mx-1.5 text-slate-400">·</span>
+            <span className="mx-1.5 text-slate-400">| </span>
             {formatDateInZone(startTime, displayTimeZone)}{" "}
             {formatTimeRangeInZone(startTime, endTime, displayTimeZone)}
           </div>

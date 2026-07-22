@@ -62,7 +62,7 @@ export function GuidePublicProfileHeader({
         ) : (
           <span>Response rate building</span>
         )}
-        {" · "}
+        {". "}
         {showUpRatePercent != null ? (
           <span>{GUIDE_PUBLIC_COPY.showUpRate(Math.round(showUpRatePercent))}</span>
         ) : (

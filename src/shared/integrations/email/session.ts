@@ -73,7 +73,7 @@ export async function sendSessionConfirmedStudentEmail(
   const start = new Date(session.startTime);
   const end = new Date(session.endTime);
   const calUrl = googleCalendarTemplateUrl({
-    title: `Mentrixa · ${session.course}`,
+    title: `Mentrixa. ${session.course}`,
     description: `Live tutoring on Mentrixa with ${guide ?? "your Guide"}. Join: ${APP_URL}/video/session/${session.sessionId}`,
     start,
     end,
@@ -104,7 +104,7 @@ export async function sendSessionConfirmedStudentEmail(
 
   await sendEmail(
     studentEmail,
-    `${hi}, you're on — ${session.course} is confirmed · Mentrixa`,
+    `${hi}, you're on — ${session.course} is confirmed. Mentrixa`,
     baseTemplate("Session confirmed", body)
   );
 }
@@ -134,7 +134,7 @@ export async function sendSessionConfirmedTutorEmail(
 
   await sendEmail(
     tutorEmail,
-    `${hi}, new booking — ${session.course} · Mentrixa`,
+    `${hi}, new booking — ${session.course}. Mentrixa`,
     baseTemplate("New booking on your calendar", body)
   );
 }
@@ -338,7 +338,7 @@ export async function sendAiPackageReadyEmail(
     fq ? `${fq} follow-up quest${fq === 1 ? "" : "s"}` : null,
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(". ");
 
   const previewBlock = preview
     ? `<p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:12px 0 0;padding:12px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;border-left:3px solid #6366f1;"><span style="color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;">Summary preview</span><br /><span style="color:#d1d5db;">${escapeHtml(preview.length > 320 ? `${preview.slice(0, 320)}…` : preview)}</span></p>`
@@ -356,7 +356,7 @@ export async function sendAiPackageReadyEmail(
 
   await sendEmail(
     studentEmail,
-    `${hi}, your ${session.course} Quest package is ready · Mentrixa`,
+    `${hi}, your ${session.course} Quest package is ready. Mentrixa`,
     baseTemplate("Your Quest Study Package is ready", body)
   );
 }

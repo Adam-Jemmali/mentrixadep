@@ -4,7 +4,7 @@ import { DEFAULT_PUBLIC_FEEDBACK_EMAIL } from "@/features/marketing/mentrixa-bra
 import { getSiteUrl } from "@/shared/core/site";
 
 export const metadata: Metadata = {
-  title: "Contact & feedback · Mentrixa",
+  title: "Contact & feedback. Mentrixa",
   description:
     "Reach the Mentrixa team — feedback, ideas, and support. We read every message from Mentrixers and Guides.",
   alternates: {

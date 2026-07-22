@@ -52,7 +52,7 @@ export function BriefArchiveClient({
                     day: "numeric",
                     year: "numeric",
                   })}{" "}
-                  · {brief.guideName} · {brief.course}
+                 . {brief.guideName}. {brief.course}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-[#0B1220]">
                   {brief.targetNodes.length > 0

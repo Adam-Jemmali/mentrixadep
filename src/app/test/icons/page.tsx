@@ -6,7 +6,7 @@ import {
 } from "@/shared/icons/mentrixa-vocab-map";
 
 export const metadata = {
-  title: "Vocab icons · Mentrixa dev",
+  title: "Vocab icons. Mentrixa dev",
   robots: { index: false, follow: false },
 };
 
@@ -36,7 +36,7 @@ export default function VocabIconsTestPage() {
             and are not listed here.
           </p>
           <p className="mt-2 text-xs text-slate-500">
-            {VOCAB_ICON_NAMES.length} registered · {goldCount} allow gold verified styling · Core 18
+            {VOCAB_ICON_NAMES.length} registered. {goldCount} allow gold verified styling. Core 18
             at top
           </p>
         </header>

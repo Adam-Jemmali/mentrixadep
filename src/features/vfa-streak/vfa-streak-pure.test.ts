@@ -5,6 +5,7 @@ import {
   calendarDateInTimeZone,
   resolveVfaStreakHomeDisplay,
   vfaStreakBrokenCopy,
+  vfaStreakMilestonePeerContext,
   vfaStreakMilestoneTitle,
 } from "@/features/vfa-streak/vfa-streak-pure";
 
@@ -83,5 +84,10 @@ describe("copy", () => {
   it("is factual and brief", () => {
     expect(vfaStreakBrokenCopy(9)).toBe("Your 9-day proof streak ended. Start a new one.");
     expect(vfaStreakMilestoneTitle(30)).toBe("30-day proof streak");
+  });
+
+  it("formats milestone peer context from percentile", () => {
+    expect(vfaStreakMilestonePeerContext(92)).toBe("Top 8% of Mentrixers this month");
+    expect(vfaStreakMilestonePeerContext(null)).toContain("verified board");
   });
 });

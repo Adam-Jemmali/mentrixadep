@@ -49,7 +49,7 @@ export function ItemReviewStudentPreview({ item }: Props) {
 
       <div className="rounded-xl border border-[#1e293b] bg-[#0B1220] p-4 text-slate-100">
         <p className="text-[11px] font-medium text-slate-400">
-          Unit {item.unitNumber} · {item.nodeName}
+          Unit {item.unitNumber}. {item.nodeName}
         </p>
         <div className="mt-3 space-y-3">
           <QuestStimulusBlock stimulus={item.stimulus} variant="dark" />
@@ -118,7 +118,7 @@ export function ItemReviewStudentPreview({ item }: Props) {
 
       {item.answerAlternatives.length > 0 ? (
         <p className="text-[12px] text-slate-500">
-          Alternatives: {item.answerAlternatives.join(" · ")}
+          Alternatives: {item.answerAlternatives.join(". ")}
         </p>
       ) : null}
 

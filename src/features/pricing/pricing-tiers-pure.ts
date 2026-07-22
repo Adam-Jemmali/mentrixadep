@@ -104,7 +104,7 @@ export function buildTierComparisonRows(): TierComparisonRow[] {
       momentumExclusive: true,
     },
     {
-      feature: `Member rate · ${memberRate} vs ${formatStudentBreakthroughPrice()}`,
+      feature: `Member rate. ${memberRate} vs ${formatStudentBreakthroughPrice()}`,
       arena: "no",
       breakthrough: "no",
       momentum: "yes",

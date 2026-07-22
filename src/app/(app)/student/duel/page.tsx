@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import { requireRole } from "@/shared/core/auth";
 import { getDuelHistorySummary, listStudentDuels, getLearnerPreview } from "@/features/duels/duel-reads";
 import { getDivisionsCatalog } from "@/features/divisions/leaderboard";
+import { AP_CALC_AB_DIVISION_KEY } from "@/features/divisions/ap-calc-ab-division";
 import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getCachedUserMetaBatch } from "@/shared/core/user-meta-cache";
 import { DuelHub } from "./duel-hub";
+import { DuelChallengeUrlHost } from "@/features/duels/ui/duel-challenge-url-host";
 import { AccountRankLadder } from "@/features/student-profile/ui/account-rank-ladder";
 import { YourDuelsList } from "@/features/student-profile/ui/your-duels-list";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -15,7 +18,7 @@ import { ParticleTextEffect } from "@/shared/ui/particle-text-effect";
 import { MentrixaVocabIcon, XpIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { CANONICAL_DUELS_ICON } from "@/shared/icons/vocab-canonical";
 
-export const metadata = { title: "Skill duels · Mentrixa" };
+export const metadata = { title: "Skill duels. Mentrixa" };
 
 function sortDuels<
   T extends { status: string; created_at: string },
@@ -141,6 +144,13 @@ export default async function StudentDuelsPage() {
             initialQueueDivision={initialQueueDivision}
             currentUser={currentUser}
           />
+          <Suspense fallback={null}>
+            <DuelChallengeUrlHost
+              defaultDivisionKey={
+                preferredDuelDivision ?? divisions[0]?.key ?? AP_CALC_AB_DIVISION_KEY
+              }
+            />
+          </Suspense>
         </div>
 
 

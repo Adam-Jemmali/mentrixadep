@@ -2,7 +2,7 @@ import { getItemReviewQueue } from "@/features/admin/item-review";
 import { ItemReviewClient } from "./item-review-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Item review · Admin · Mentrixa" };
+export const metadata = { title: "Item review. Admin. Mentrixa" };
 
 export default async function AdminItemReviewPage() {
   const initial = await getItemReviewQueue("pending_review").catch(() => ({

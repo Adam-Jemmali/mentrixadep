@@ -1,33 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRef } from "react";
 import { LANDING_E } from "@/features/marketing/landing/landing-copy-pure";
+import { LandingRoleIcon } from "@/features/marketing/landing/ui/landing-role-icon";
 import { useGsapScrollTriggerEffect } from "@/shared/core/gsap-lazy";
 import { cn } from "@/shared/core/utils";
-
-const ICON_VERSION = "20260718";
-
-function RoleIcon({ role }: { role: "mentrixer" | "guide" }) {
-  return (
-    <span className="relative inline-block size-4 shrink-0" aria-hidden>
-      <Image
-        src={
-          role === "mentrixer"
-            ? `/icons/mentrixer.svg?v=${ICON_VERSION}`
-            : `/icons/guide.svg?v=${ICON_VERSION}`
-        }
-        alt=""
-        width={16}
-        height={16}
-        unoptimized
-        className="size-full object-contain"
-        sizes="16px"
-      />
-    </span>
-  );
-}
 
 /** Section E — dark final CTA with compete + Guide paths. */
 export function LandingFinalCtaSection() {
@@ -66,7 +44,7 @@ export function LandingFinalCtaSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-[var(--mx-navy-2,#0F172A)] py-20 md:py-28"
+      className="relative overflow-hidden bg-[var(--mx-navy-2,#0F172A)] py-14 md:py-16"
     >
       <div className="relative z-10 mx-auto max-w-2xl px-4 text-center sm:px-6">
         <h2 className="lp-final-cta-reveal font-[family-name:var(--font-playfair),serif] text-[clamp(1.75rem,4vw,2.5rem)] font-bold leading-tight text-white opacity-0">
@@ -79,24 +57,24 @@ export function LandingFinalCtaSection() {
             href={finalCta.mentrixerHref}
             prefetch={false}
             className={cn(
-              "inline-flex cursor-pointer items-center justify-center gap-2 rounded-full",
+              "inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-full",
               "bg-[var(--mx-violet,#7C3AED)] px-6 py-3 text-[15px] font-bold text-white",
               "transition-colors hover:bg-[#6D28D9]",
             )}
           >
-            <RoleIcon role="mentrixer" />
+            <LandingRoleIcon role="mentrixer" size="md" surface="dark" />
             {finalCta.mentrixerCta}
           </Link>
           <Link
             href={finalCta.guideHref}
             prefetch={false}
             className={cn(
-              "inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border",
+              "inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-full border",
               "border-white/20 px-6 py-3 text-[15px] font-semibold text-[var(--mx-muted,#9CA3AF)]",
               "transition-colors hover:border-white/40 hover:text-white",
             )}
           >
-            <RoleIcon role="guide" />
+            <LandingRoleIcon role="guide" size="md" surface="dark" />
             {finalCta.guideCta}
           </Link>
         </div>

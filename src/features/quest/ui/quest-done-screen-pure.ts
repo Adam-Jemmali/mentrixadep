@@ -60,12 +60,14 @@ export function buildApBandFromGrid(grid: MasteryGridData): ApReadinessBandView 
       verifiedCount: 0,
       accuracyPercent: 0,
       percentile: null,
+      eligibleCohortSize: null,
     });
   }
   return buildApReadinessBand({
     verifiedCount: rank.verifiedCount,
     accuracyPercent: rank.accuracyPercent,
     percentile: rank.topPercent != null ? 100 - rank.topPercent : null,
+    eligibleCohortSize: null,
   });
 }
 
@@ -82,6 +84,7 @@ export function buildPriorApBand(
     verifiedCount: priorVerified,
     accuracyPercent: rank.accuracyPercent,
     percentile: rank.topPercent != null ? 100 - rank.topPercent : null,
+    eligibleCohortSize: null,
   });
 }
 

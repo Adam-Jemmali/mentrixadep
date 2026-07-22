@@ -52,7 +52,7 @@ export function baseTemplate(title: string, bodyContent: string): string {
                 ${MENTRIXER_LINE}
               </p>
               <p style="margin:16px 0 0;color:#444;font-size:11px;text-align:center;">
-                © ${new Date().getFullYear()} Mentrixa ·
+                © ${new Date().getFullYear()} Mentrixa |
                 <a href="${APP_URL}" style="color:#60a5fa;text-decoration:none;">Open Mentrixa</a>
               </p>
             </td>

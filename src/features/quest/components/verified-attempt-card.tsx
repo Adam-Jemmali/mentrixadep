@@ -33,7 +33,7 @@ export function VerifiedAttemptCard({
       </div>
       <h3 className="mt-2 text-sm font-semibold text-[#0B1220]">{card.nodeName}</h3>
       <p className="mt-1 text-xs text-slate-600">
-        Unit {card.unitNumber} · {card.unitName}
+        Unit {card.unitNumber}. {card.unitName}
       </p>
       <p className="mt-3 text-sm text-slate-800">{card.proofLine}</p>
       <p className="mt-2 text-xs font-medium text-slate-700">{card.verdict}</p>

@@ -196,7 +196,7 @@ async function getWeakestConcept(
     return { label: `${subject} fundamentals`, accuracyPercent: 0 };
   }
 
-  let label = [pick.topic, pick.subtopic].filter(Boolean).join(" · ");
+  let label = [pick.topic, pick.subtopic].filter(Boolean).join(". ");
   if (pick.skillNodeId) {
     const { data: skill } = await admin
       .from("skill_nodes")

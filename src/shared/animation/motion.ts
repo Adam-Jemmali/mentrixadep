@@ -9,6 +9,7 @@ export {
   AnimatePresence,
   LayoutGroup,
   useReducedMotion,
+  useAnimationControls,
   useMotionValue,
   useTransform,
   useSpring,

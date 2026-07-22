@@ -376,7 +376,7 @@ function drawScoreCredentialCard(
 
   ctx.fillStyle = data.rank.labelOnDark;
   ctx.font = "600 13px ui-monospace, SFMono-Regular, Menlo, monospace";
-  ctx.fillText(`${rankTitle} · ${data.dateLabel}`, 108, footerY + 44);
+  ctx.fillText(`${rankTitle}. ${data.dateLabel}`, 108, footerY + 44);
 
   ctx.fillStyle = "rgba(148,163,184,0.7)";
   ctx.font = "600 12px ui-monospace, SFMono-Regular, Menlo, monospace";

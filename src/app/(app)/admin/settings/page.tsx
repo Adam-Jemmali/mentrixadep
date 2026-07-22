@@ -3,7 +3,7 @@ import { getSystemSettings } from "@/features/admin/system-settings";
 import { AdminSettingsClient } from "./settings-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Settings · Admin · Mentrixa" };
+export const metadata = { title: "Settings. Admin. Mentrixa" };
 
 export default async function AdminSettingsPage() {
   const settings = await getSystemSettings().catch(() => ({

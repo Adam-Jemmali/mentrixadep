@@ -1,23 +1,29 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/core/utils";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LANDING_DUAL_PATH } from "@/features/marketing/landing/landing-copy-pure";
+import { LandingNumberHeading } from "@/features/marketing/landing/ui/landing-number-heading";
+import { useLandingNumericReveal } from "@/features/marketing/landing/ui/use-landing-numeric-reveal";
+import { LandingRoleIcon } from "@/features/marketing/landing/ui/landing-role-icon";
+import { LandingRoleText } from "@/features/marketing/landing/ui/landing-role-text";
+import { LandingVocabWord } from "@/features/marketing/landing/ui/landing-vocab-word";
 import { LandingStickyNote, LandingStickyGameNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { LandingSpeechBubble } from "@/features/marketing/landing/v2/motion/landing-speech-bubble";
 import { FallingRoleSliceArena, type SliceRole } from "@/features/marketing/landing/v2/motion/falling-role-slice-arena";
 import { springSoft } from "@/features/marketing/landing/v2/motion/landing-motion";
 import { useLandingMotion } from "@/features/marketing/landing/v2/motion/use-landing-motion";
-import {
-  RANK_ICON_ON_LIGHT_FILTER,
-  RANK_ICON_VERSION,
-} from "@/features/xp/rank-icon-contrast";
 
-const ICON_VERSION = RANK_ICON_VERSION;
 const PATH_ARENA_HEIGHT = 240;
+
+const Check = ({ className = "" }: { className?: string }) => (
+  <svg className={cn("h-4 w-4 shrink-0", className)} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+  </svg>
+);
 
 export type DualPathSide = {
   role: "Mentrixer" | "Guide";
@@ -32,44 +38,9 @@ type Props = {
   sides: DualPathSide[];
 };
 
-function RoleIcon({
-  role,
-  className = "",
-  size = 40,
-}: {
-  role: "Mentrixer" | "Guide";
-  className?: string;
-  size?: number;
-}) {
-  const src = role === "Mentrixer" ? `/icons/mentrixer.svg?v=${ICON_VERSION}` : `/icons/guide.svg?v=${ICON_VERSION}`;
-  return (
-    <img
-      src={src}
-      alt=""
-      width={size}
-      height={size}
-      draggable={false}
-      className={cn("pointer-events-none mx-rank-icon-on-light select-none object-contain", className)}
-      style={{ filter: RANK_ICON_ON_LIGHT_FILTER }}
-      aria-hidden
-    />
-  );
-}
-
-const ArrowRight = () => (
-  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-  </svg>
-);
-
-const Check = ({ className = "" }: { className?: string }) => (
-  <svg className={cn("h-4 w-4 shrink-0", className)} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-  </svg>
-);
-
 function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean }) {
   const { cinematic } = useLandingMotion();
+  const role = side.role === "Mentrixer" ? "mentrixer" : "guide";
 
   return (
     <motion.article
@@ -83,24 +54,25 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
         variant={side.role === "Mentrixer" ? "pinned" : "clip"}
         className="relative overflow-hidden p-6"
       >
-      <p className={cn("relative inline-flex items-center gap-1.5", landingHub.stickyWord)}>
-        <RoleIcon role={side.role} size={16} />
-        {side.role}
+      <p className={cn("relative", landingHub.stickyWord)}>
+        <LandingVocabWord word={side.role} role={role} size="xl" />
       </p>
-      <h3 className={cn("relative mt-2 text-lg font-bold md:text-[19px]", landingHub.title)}>{side.title}</h3>
+      <h3 className={cn("relative mt-3 text-lg font-bold md:text-[19px]", landingHub.title)}>
+        <LandingVocabWord word={side.title.split(/\s+/)[0] ?? side.title} size="lg" />
+        {side.title.includes(" ") ? ` ${side.title.split(/\s+/).slice(1).join(" ")}` : null}
+      </h3>
       <ul className={cn("relative mt-4 space-y-2.5 text-[13px]", landingHub.body)}>
         {side.points.map((point) => (
           <li key={point} className="flex gap-2.5">
             <Check className="text-[#6366F1]" />
-            {point}
+            <LandingRoleText text={point} iconSize="sm" />
           </li>
         ))}
       </ul>
       <motion.div whileHover={cinematic ? { scale: 1.03 } : undefined} whileTap={cinematic ? { scale: 0.98 } : undefined}>
         <Link href={side.href} className={cn("relative mt-7", landingHub.btnPrimary)}>
-          <RoleIcon role={side.role} size={18} />
+          <LandingRoleIcon role={role} size="md" className="brightness-0 invert" />
           {side.cta}
-          <ArrowRight />
         </Link>
       </motion.div>
       </LandingStickyNote>
@@ -111,6 +83,8 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
 const GAME_COACH = LANDING_DUAL_PATH.gameCoach;
 
 export function DualPathReactionGame({ sides }: Props) {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  useLandingNumericReveal(sectionRef);
   const { mounted, lowEnd } = useLandingMotion();
   const [phase, setPhase] = useState<"game" | "result">("game");
   const [arenaKey, setArenaKey] = useState(0);
@@ -142,13 +116,14 @@ export function DualPathReactionGame({ sides }: Props) {
   const winningSide = sides.find((s) => s.role === winner) ?? sides[0]!;
 
   return (
-    <div className="relative mx-auto max-w-[28rem]">
-      <div className="mb-6 text-center">
-        <h2 id="path-heading" className={landingHub.title}>
-          {LANDING_DUAL_PATH.pathHeading}
-        </h2>
-        <p className={`mt-2 ${landingHub.body}`}>{LANDING_DUAL_PATH.pathSub}</p>
-      </div>
+    <div ref={sectionRef} className="relative mx-auto max-w-[28rem]">
+      <LandingNumberHeading
+        id="path-heading"
+        count={sides.length}
+        suffix="roles"
+        subtitle={LANDING_DUAL_PATH.pathSub}
+        className="mb-6"
+      />
 
       {phase === "game" ? (
         <LandingStickyGameNote variant="curl" className="rotate-[0.25deg]">

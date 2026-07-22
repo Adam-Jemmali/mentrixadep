@@ -149,7 +149,7 @@ export function apCalcSkillVisual(params: {
   const { glyph, hint } = matchGlyph(params.nodeName, params.nodeSlug);
   const unitLabel =
     unitNumber > 0 && params.unitName
-      ? `Unit ${unitNumber} · ${params.unitName}`
+      ? `Unit ${unitNumber}. ${params.unitName}`
       : params.unitName ?? "AP Calculus AB";
 
   return { glyph, hint, unitLabel, accent };

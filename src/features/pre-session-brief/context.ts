@@ -94,7 +94,7 @@ async function weakestConceptsFromTags(
       const weakest = await getWeakestNodes(studentId, subject, 3);
       if (weakest.length > 0) {
         return weakest.map((node) => ({
-          label: `${node.unitName} · ${node.nodeName}`,
+          label: `${node.unitName}. ${node.nodeName}`,
           accuracyPercent: computeAccuracyPercent(node.correctCount, node.attemptsCount),
         }));
       }
@@ -114,7 +114,7 @@ async function weakestConceptsFromTags(
   const byConcept = new Map<string, { correct: number; total: number }>();
   for (const tag of tags ?? []) {
     if (!subjectsLooselyMatch(String(tag.subject ?? ""), subject)) continue;
-    const label = [tag.topic, tag.subtopic].filter(Boolean).join(" · ") || String(tag.topic ?? "Practice");
+    const label = [tag.topic, tag.subtopic].filter(Boolean).join(". ") || String(tag.topic ?? "Practice");
     const cur = byConcept.get(label) ?? { correct: 0, total: 0 };
     cur.total += 1;
     if (tag.correct) cur.correct += 1;
@@ -132,7 +132,7 @@ async function weakestConceptsFromTags(
 
     for (const n of nodes ?? []) {
       if (!subjectsLooselyMatch(String(n.subject ?? ""), subject)) continue;
-      const label = [n.topic, n.subtopic].filter(Boolean).join(" · ") || `${subject} fundamentals`;
+      const label = [n.topic, n.subtopic].filter(Boolean).join(". ") || `${subject} fundamentals`;
       const attempts = Number(n.attempts ?? 0);
       const correct = Number(n.correct ?? 0);
       byConcept.set(label, { correct, total: attempts });
@@ -472,7 +472,7 @@ async function buildFreshContext(
       ]);
 
       readinessBand = buildApReadinessBand(
-        rankStats ?? { verifiedCount: 0, accuracyPercent: 0, percentile: null },
+        rankStats ?? { verifiedCount: 0, accuracyPercent: 0, percentile: null, eligibleCohortSize: null },
       );
       workingTowardLine = buildWorkingTowardLine(
         readinessBand,

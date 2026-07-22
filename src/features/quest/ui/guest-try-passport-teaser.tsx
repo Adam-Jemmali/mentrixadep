@@ -77,7 +77,7 @@ export function GuestTryPassportTeaser({
             {normalizeRankTitle(rank.title)}
           </span>
           {wouldXp > 0 ? (
-            <span className="text-slate-400"> · +{wouldXp} XP if saved</span>
+            <span className="text-slate-400">. +{wouldXp} XP if saved</span>
           ) : null}
         </p>
         <Link

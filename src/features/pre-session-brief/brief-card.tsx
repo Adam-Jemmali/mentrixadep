@@ -8,7 +8,7 @@
 
 import { useState, useRef } from "react";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
-import { ChevronDown, Brain, AlertTriangle, MessageSquare, Clock } from "lucide-react";
+import { ChevronDown, Brain, AlertTriangle, MessageSquare, Clock, type LucideIcon } from "lucide-react";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { StoredPreSessionBrief } from "@/features/pre-session-brief/brief";
 
@@ -42,7 +42,7 @@ function SectionLabel({
   label,
   color,
 }: {
-  icon?: React.ElementType;
+  icon?: LucideIcon;
   vocabIcon?: "practice-pack" | "quest" | "brief";
   label: string;
   color: string;
@@ -151,8 +151,8 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
               {brief.sessionCourse}
             </p>
             <p className="text-xs text-slate-500 mt-0.5">
-              Session brief · {brief.likelyCoverage.length} topic
-              {brief.likelyCoverage.length !== 1 ? "s" : ""} · warm-up included
+              Session brief. {brief.likelyCoverage.length} topic
+              {brief.likelyCoverage.length !== 1 ? "s" : ""}. warm-up included
             </p>
           </div>
         </div>
@@ -205,7 +205,7 @@ export function PreSessionBriefCard({ brief }: PreSessionBriefCardProps) {
             <section>
               <SectionLabel
                 vocabIcon="quest"
-                label={`Warm-up · ${brief.warmUpExercise.title}`}
+                label={`Warm-up. ${brief.warmUpExercise.title}`}
                 color="text-emerald-500"
               />
               <div className="rounded-md border border-slate-100 bg-slate-50 px-3.5 py-3">

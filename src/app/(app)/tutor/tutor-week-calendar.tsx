@@ -186,7 +186,7 @@ export function TutorWeekCalendar({
       if (isPast || slot.status === "completed" || slot.status === "cancelled") {
         return {
           className: "border-slate-200 bg-slate-100 text-slate-600",
-          label: slot.status === "cancelled" ? "Past · cancelled" : "Past",
+          label: slot.status === "cancelled" ? "Past. cancelled" : "Past",
         };
       }
       return {
@@ -198,7 +198,7 @@ export function TutorWeekCalendar({
     if (!slot.active) {
       return {
         className: "border border-dashed border-slate-300 bg-slate-50 text-slate-700",
-        label: isPast ? "Past · hidden" : "Hidden from learners",
+        label: isPast ? "Past. hidden" : "Hidden from learners",
       };
     }
 
@@ -324,7 +324,7 @@ export function TutorWeekCalendar({
                   <>
                     <p>
                       <span className="font-semibold text-blue-900">{deleteTarget.course}</span>
-                      {" · "}
+                      {". "}
                       <span className="tabular-nums">{deleteTarget.rangeLabel}</span>
                     </p>
                     {deleteTarget.pending > 0 ? (

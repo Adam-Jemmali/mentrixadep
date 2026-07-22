@@ -48,6 +48,15 @@ export function buildGuestTryPassportPreview(params: {
     masteryGrid: null,
     rankDeltaVerdict: null,
     isPrivate: false,
+    identity: {
+      avatarUrl: null,
+      bio: null,
+      timezone: "UTC",
+      memberSince: new Date().toISOString().slice(0, 10),
+      sex: null,
+      signature: null,
+      role: "student",
+    },
   };
 }
 

@@ -54,6 +54,8 @@ export const preSessionBreakthroughSchema = z.object({
 export const apReadinessBandViewSchema = z.object({
   score: z.number().nullable(),
   label: z.string(),
+  scoreCaption: z.string(),
+  scoreSuffix: z.string(),
   sublabel: z.string(),
   isVerifiedPrediction: z.boolean(),
 });

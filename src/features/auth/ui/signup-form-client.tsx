@@ -462,15 +462,15 @@ export function SignupFormClient({
       </p>
 
       <ol className="mb-5 flex flex-wrap items-center gap-x-1 gap-y-1 text-[11px] font-medium text-slate-500">
-        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">1 · Role</li>
+        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">1. Role</li>
         <li aria-hidden="true" className="text-slate-300">
           →
         </li>
-        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">2 · Terms</li>
+        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">2. Terms</li>
         <li aria-hidden="true" className="text-slate-300">
           →
         </li>
-        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">3 · Google or email</li>
+        <li className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">3. Google or email</li>
       </ol>
 
       <div className="grid grid-cols-2 gap-3 mb-6">

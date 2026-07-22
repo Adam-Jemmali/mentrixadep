@@ -362,7 +362,7 @@ async function getWeeklySnapshotVerdict(
     return finalizeStudentVerdict(
       userId,
       {
-        changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skills${rank.percentile != null ? ` · ${formatPeerStandingShort(rank.percentile)} of Mentrixers` : ""}.`,
+        changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skills${rank.percentile != null ? `. ${formatPeerStandingShort(rank.percentile)} of Mentrixers` : ""}.`,
         reason: "A post-session retest is due before new practice will move your verified rank.",
         nextAction: {
           label: `Retest ${dueRetest.nodeName}`,
@@ -376,7 +376,7 @@ async function getWeeklySnapshotVerdict(
   return finalizeStudentVerdict(
     userId,
     {
-      changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skill${rank.verifiedCount === 1 ? "" : "s"}${rank.percentile != null ? ` · ${formatPeerStandingShort(rank.percentile)} of Mentrixers` : ""}.`,
+      changed: `Verified accuracy is ${rank.accuracyPercent}% across ${rank.verifiedCount} skill${rank.verifiedCount === 1 ? "" : "s"}${rank.percentile != null ? `. ${formatPeerStandingShort(rank.percentile)} of Mentrixers` : ""}.`,
       reason: "No weekly snapshot is stored yet; rank reflects your latest locked first answers.",
       nextAction: {
         label: "Start a verified practice pack",

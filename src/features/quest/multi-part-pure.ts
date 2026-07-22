@@ -174,7 +174,7 @@ export function countMultiPartCorrect(results: MultiPartPartResult[]): number {
 }
 
 export function formatMultiPartXpLine(partsCorrect: number, partsTotal: number, xp: number): string {
-  return `+${xp} XP · ${partsCorrect}/${partsTotal} parts`;
+  return `+${xp} XP. ${partsCorrect}/${partsTotal} parts`;
 }
 
 export function multiPartCarryForwardLabel(partKey: string): string {

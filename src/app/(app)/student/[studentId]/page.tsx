@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return { title: "Profile - Mentrixa" };
   return {
     title: `${data.displayName} - Mentrixa`,
-    description: `Learner profile · ${data.totalXp.toLocaleString()} XP · ${data.levelLabel}`,
+    description: `Learner profile. ${data.totalXp.toLocaleString()} XP. ${data.levelLabel}`,
   };
 }
 

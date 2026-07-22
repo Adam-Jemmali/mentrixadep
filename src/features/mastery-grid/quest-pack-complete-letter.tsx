@@ -63,7 +63,7 @@ export function QuestPackCompleteLetter({
       )}
     >
       <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-[#6366F1]">
-        {isOut ? "Drag down to close the envelope" : "Envelope closed · drag the letter up to open"}
+        {isOut ? "Drag down to close the envelope" : "Envelope closed. drag the letter up to open"}
       </p>
 
       {reduceMotion ? (

@@ -136,7 +136,7 @@ export function ArenaWidgetClient({
           dark ? "border-white/10 text-slate-500" : "border-[#E0E7FF] text-[#64748B]",
         )}
       >
-        Powered by Mentrixa · first attempts only
+        Powered by Mentrixa. first attempts only
       </footer>
     </div>
   );

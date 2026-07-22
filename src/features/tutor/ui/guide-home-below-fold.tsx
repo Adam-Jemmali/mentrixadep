@@ -111,7 +111,7 @@ export function GuideHomeBelowFold({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-[#0B1220]">{item.studentName}</p>
                     <p className="text-[11px] text-[#475569]">
-                      {item.course} · {formatDateInZone(item.endTime, data.tutorTimezone)}
+                      {item.course}. {formatDateInZone(item.endTime, data.tutorTimezone)}
                     </p>
                   </div>
                   <Link

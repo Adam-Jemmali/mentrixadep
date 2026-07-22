@@ -11,15 +11,19 @@ import {
   rejectDuelXpWager,
   type DuelXpWagerRow,
 } from "@/features/duels/duel-wager";
+import { DuelInviteStakeBadge } from "@/features/duels/ui/duel-invite-stake-badge";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { CANONICAL_DUELS_ICON } from "@/shared/icons/vocab-canonical";
 import { cn } from "@/shared/core/utils";
 
 type Props = {
   duelId: string;
   wager: DuelXpWagerRow | null;
+  challengerName: string;
 };
 
 /** Opponent: accept duel; if stake pending, choose stake or skip stake. */
-export function DuelInviteeActions({ duelId, wager }: Props) {
+export function DuelInviteeActions({ duelId, wager, challengerName }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,15 +48,20 @@ export function DuelInviteeActions({ duelId, wager }: Props) {
   return (
     <div className={cn(mentrixStudent.hubNotebook, "space-y-4 px-5 py-5 sm:px-6 sm:py-6")}>
       <div>
-        <p className="mx-hub-ink-title text-base">You were challenged</p>
+        <p className="mx-hub-ink-title inline-flex items-center gap-2 text-base">
+          <MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={20} surface="light" title="Duel" />
+          You were challenged
+        </p>
         <p className="mx-hub-ink-muted mt-2 text-sm leading-relaxed">
           Same questions. Highest score wins.
         </p>
         {pendingStake ? (
-          <p className="mx-hub-ink-title mt-3 text-sm">
-            Stake{" "}
-            <span className="font-mono tabular-nums">{pendingStake.challengerWager}</span> XP
-          </p>
+          <div className="mt-4">
+            <DuelInviteStakeBadge
+              challengerName={challengerName}
+              amount={pendingStake.challengerWager}
+            />
+          </div>
         ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">

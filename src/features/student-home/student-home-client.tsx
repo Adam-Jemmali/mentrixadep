@@ -11,6 +11,8 @@ import {
 } from "@/features/student-home/student-home-sections";
 import { StudentHomeSessionsHub } from "@/features/student-home/student-home-sessions-hub";
 import { StudentRetestNotifyStrip } from "@/features/notifications/ui/student-retest-notify-strip";
+import { StudentHomeRankStreakStrip } from "@/features/student-home/student-home-rank-streak-strip";
+import { VfaStreakBrokenBanner } from "@/components/vfa-streak-broken-banner";
 import { MasteryGridHubCard } from "@/features/mastery-grid/mastery-grid-hub-card";
 import { StudentHubRealtimeRefresh } from "@/components/student-hub-realtime-refresh";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
@@ -28,9 +30,15 @@ export function StudentHomeClient({
       <StudentHubRealtimeRefresh userId={userId} />
 
       <main className={cn(mentrixStudent.mainWide, "relative z-[1]")}>
+        <VfaStreakBrokenBanner userId={userId} display={data.vfaStreak} className="mb-3" />
+        <StudentHomeRankStreakStrip
+          totalXp={data.hubFooter.totalXp}
+          vfaStreak={data.vfaStreak}
+          className="mb-3"
+        />
         <div className="grid gap-3 lg:grid-cols-[3fr_2fr] lg:items-start">
           <div className="space-y-3">
-            <StudentVerdictHero hero={data.heroVerdict} apBand={data.apReadinessBand} />
+            <StudentVerdictHero hero={data.heroVerdict} />
 
             {data.retestProof.length > 0 ? (
               <StudentRetestNotifyStrip items={data.retestProof} staggerIndex={0} />

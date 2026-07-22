@@ -1,21 +1,26 @@
 import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
 import { buildPassportVerdict, passportVerdictPlainText } from "@/features/rank-card/rank-passport-pure";
+import { loadMasteryGrid } from "@/features/mastery-grid/load-mastery-grid";
+import { buildApReadinessBand } from "@/features/student-home/ap-readiness-band-pure";
 import { supabaseRestSelect } from "@/shared/integrations/supabase/rest-fetch";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
-
 export type OgRankCardData =
   | { status: "not_found" }
   | { status: "private"; username: string }
   | {
       status: "ok";
       username: string;
+      userId: string;
       displayName: string;
       rankLevel: number;
       rankTitle: string;
       passportVerdictText: string;
       topPercentGold: number | null;
       verifiedSkillCount: number;
+      proofTier: number | null;
+      accuracyPercent: number;
+      topNodes: { name: string; verified: boolean }[];
     };
 
 type SettingsRow = {
@@ -36,6 +41,7 @@ type XpRow = {
 type RankCacheRow = {
   verified_count: number | null;
   percentile: number | string | null;
+  accuracy_percent: number | string | null;
 };
 
 /** Edge-safe loader for OG images — avoids @supabase/supabase-js and full rank-card build. */
@@ -69,7 +75,7 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
     ),
     supabaseRestSelect<RankCacheRow>(
       "ap_calc_verified_rank_cache",
-      `user_id=eq.${encodeURIComponent(studentId)}&select=verified_count,percentile&limit=1`,
+      `user_id=eq.${encodeURIComponent(studentId)}&select=verified_count,percentile,accuracy_percent&limit=1`,
     ),
   ]);
 
@@ -85,6 +91,28 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
     rawPercentile == null || Number.isNaN(Number(rawPercentile))
       ? null
       : Number(rawPercentile);
+  const accuracyPercent = Number(rankCacheRows[0]?.accuracy_percent ?? 0);
+
+  const proofBand = buildApReadinessBand({
+    verifiedCount: verifiedSkillCount,
+    accuracyPercent,
+    percentile,
+    eligibleCohortSize: null,
+  });
+
+  let topNodes: { name: string; verified: boolean }[] = [];
+  try {
+    const grid = await loadMasteryGrid(studentId);
+    topNodes = grid.units
+      .flatMap((unit) => unit.nodes)
+      .slice(0, 6)
+      .map((node) => ({
+        name: node.nodeName,
+        verified: node.state === "verified",
+      }));
+  } catch {
+    topNodes = [];
+  }
 
   const passportVerdict = buildPassportVerdict({
     verifiedCount: verifiedSkillCount,
@@ -106,11 +134,15 @@ export async function loadOgRankCardData(rawUsername: string): Promise<OgRankCar
   return {
     status: "ok",
     username,
+    userId: studentId,
     displayName,
     rankLevel,
     rankTitle: normalizeRankTitle(rankVisual.title),
     passportVerdictText: passportVerdictPlainText(passportVerdict),
     topPercentGold: passportVerdict.kind === "ranked" ? passportVerdict.topPercent : null,
     verifiedSkillCount,
+    proofTier: proofBand.score,
+    accuracyPercent,
+    topNodes,
   };
 }

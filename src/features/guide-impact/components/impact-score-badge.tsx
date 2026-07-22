@@ -45,7 +45,7 @@ export function ImpactScoreBadge({
           title="Guide Impact Score"
         />
         {formatImpactScoreLabel(impactScore)}
-        {subject ? ` · ${subject}` : ""}
+        {subject ? `. ${subject}` : ""}
       </span>
       <span className="text-[10px] text-slate-500 leading-snug">
         {formatImpactScoreVerdict(impactScore, sessionsCounted, subject)}

@@ -25,7 +25,7 @@ export function GuideImpactReceiptCard({
         <ul className="mt-3 space-y-1 text-xs text-indigo-900/85">
           {receipts.slice(1, 4).map((receipt, index) => (
             <li key={`${receipt.guideId}-${index}`}>
-              {receipt.guideName} · {receipt.nodeName}
+              {receipt.guideName}. {receipt.nodeName}
             </li>
           ))}
         </ul>

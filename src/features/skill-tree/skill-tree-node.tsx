@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "@/shared/animation/motion";
+import { useHydrationSafeMotion } from "@/shared/animation/use-hydration-safe-motion";
 import { skillTreeLabel } from "@/features/skill-tree/skill-tree-copy-pure";
 import {
   canRenderUnlockBloom,
@@ -31,7 +32,7 @@ export function SkillTreeNode({
   compact?: boolean;
   bloomOnMount?: boolean;
 }) {
-  const reducedMotion = useReducedMotion();
+  const { safeReduceMotion, prefersReducedMotion } = useHydrationSafeMotion();
   const previousUnlocked = useRef(node.unlocked && !bloomOnMount);
   const [bloom, setBloom] = useState(false);
   const reviewDue = isSkillTreeReviewDue({
@@ -48,13 +49,13 @@ export function SkillTreeNode({
   const label = skillTreeLabel(kind);
   const showVerifiedChrome = node.state === "verified" && !reviewDue;
   const interactive = node.unlocked && href != null;
-  const bloomActive = canRenderUnlockBloom(bloom, Boolean(reducedMotion));
+  const bloomActive = canRenderUnlockBloom(bloom, prefersReducedMotion);
 
   useEffect(() => {
     const wasUnlocked = previousUnlocked.current;
     previousUnlocked.current = node.unlocked;
 
-    if (reducedMotion) {
+    if (prefersReducedMotion) {
       setBloom(false);
       return undefined;
     }
@@ -62,7 +63,7 @@ export function SkillTreeNode({
     const shouldBloom = canStartUnlockBloom(
       wasUnlocked,
       node.unlocked,
-      Boolean(reducedMotion),
+      prefersReducedMotion,
       bloomOnMount,
     );
 
@@ -73,7 +74,7 @@ export function SkillTreeNode({
     }
 
     return undefined;
-  }, [node.unlocked, reducedMotion, bloomOnMount]);
+  }, [node.unlocked, prefersReducedMotion, bloomOnMount]);
 
   const content = (
     <>
@@ -132,23 +133,23 @@ export function SkillTreeNode({
     <motion.div
       className={cn(
         "relative",
-        isFocus && !reducedMotion && "drop-shadow-[0_0_18px_rgba(124,58,237,0.5)]",
+        isFocus && !safeReduceMotion && "drop-shadow-[0_0_18px_rgba(124,58,237,0.5)]",
         reviewDue &&
-          !reducedMotion &&
+          !safeReduceMotion &&
           "drop-shadow-[0_0_14px_rgba(99,102,241,0.45)]",
       )}
       initial={false}
       animate={
         bloomActive
           ? { scale: [1, 1.12, 1], opacity: [1, 1, 1] }
-          : (isFocus || reviewDue) && !reducedMotion
+          : (isFocus || reviewDue) && !safeReduceMotion
             ? { scale: [1, 1.025, 1] }
             : { scale: 1 }
       }
       transition={
         bloomActive
           ? { duration: 0.8, ease: "easeOut" }
-          : (isFocus || reviewDue) && !reducedMotion
+          : (isFocus || reviewDue) && !safeReduceMotion
             ? { duration: 2.1, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
             : { duration: 0 }
       }
@@ -162,7 +163,7 @@ export function SkillTreeNode({
           aria-hidden
         />
       ) : null}
-      {reviewDue && !bloomActive && !reducedMotion ? (
+      {reviewDue && !bloomActive && !safeReduceMotion ? (
         <motion.span
           className="pointer-events-none absolute -inset-2 rounded-2xl border border-[#A5B4FC]/80"
           initial={{ opacity: 0.55, scale: 0.96 }}

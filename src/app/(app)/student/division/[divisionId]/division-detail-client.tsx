@@ -236,7 +236,7 @@ export function DivisionDetailClient({
             <section className="space-y-4">
               <div className="flex items-end justify-between px-2">
                 <div>
-                  <h2 className={cn(mentrixHubSurfaces.inkTitle, "text-xl")}>Weekly XP · Top 50</h2>
+                  <h2 className={cn(mentrixHubSurfaces.inkTitle, "text-xl")}>Weekly XP. Top 50</h2>
                   <p className={cn(mentrixHubSurfaces.inkMuted, "text-[10px] font-bold uppercase tracking-widest")}>
                     Resets every Monday 00:00 UTC. Top 3 each week earn bonus XP !
                   </p>

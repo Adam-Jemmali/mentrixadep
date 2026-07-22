@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadWrappedByShareToken } from "@/features/wrapped/load-wrapped";
-import { WrappedShareCarousel } from "@/features/wrapped/ui/wrapped-share-carousel";
+import { WrappedSlidesExperience } from "@/features/wrapped/ui/wrapped-slides-experience";
 import {
   buildWrappedSlideUrls,
   wrappedHeadline,
@@ -10,14 +10,14 @@ import {
 import { getSiteUrl } from "@/shared/core/site";
 
 type Props = {
-  params: Promise<{ token: string }>;
+  params: Promise<{ share_token: string }>;
   searchParams: Promise<{ slide?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { token } = await params;
-  const report = await loadWrappedByShareToken(token);
-  if (!report) return { title: "Wrapped · Mentrixa" };
+  const { share_token } = await params;
+  const report = await loadWrappedByShareToken(share_token);
+  if (!report) return { title: "Wrapped. Mentrixa" };
 
   const site = getSiteUrl();
   const sharePath = wrappedSharePath(report.shareToken);
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const og = images[0]!;
 
   return {
-    title: `${wrappedHeadline(report.role, report.reportYear)} · Mentrixa`,
+    title: `${wrappedHeadline(report.role, report.reportYear)}. Mentrixa`,
     description: "Five slides. Your year. Locked.",
     openGraph: {
       title: wrappedHeadline(report.role, report.reportYear),
@@ -44,30 +44,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PublicWrappedPage({ params, searchParams }: Props) {
-  const { token } = await params;
+export default async function PublicWrappedSharePage({ params, searchParams }: Props) {
+  const { share_token } = await params;
   const query = await searchParams;
-  const report = await loadWrappedByShareToken(token);
+  const report = await loadWrappedByShareToken(share_token);
   if (!report) notFound();
 
   const site = getSiteUrl();
   const sharePath = wrappedSharePath(report.shareToken);
-  const slideUrls =
-    report.imageUrls.length === 5
-      ? report.imageUrls
-      : buildWrappedSlideUrls(site, report.shareToken);
   const initialSlide = Number(query.slide ?? "1");
 
   return (
-    <main className="min-h-dvh bg-[#0B1220] text-slate-100">
-      <WrappedShareCarousel
-        reportYear={report.reportYear}
-        data={report.reportData}
-        shareUrl={`${site}${sharePath}`}
-        slideUrls={slideUrls}
-        rankUsername={report.rankUsername}
-        initialSlide={Number.isFinite(initialSlide) ? initialSlide : 1}
-      />
-    </main>
+    <WrappedSlidesExperience
+      reportYear={report.reportYear}
+      displayName={report.displayName}
+      data={report.reportData}
+      shareUrl={`${site}${sharePath}`}
+      rankUsername={report.rankUsername}
+      initialSlide={Number.isFinite(initialSlide) ? initialSlide : 1}
+    />
   );
 }

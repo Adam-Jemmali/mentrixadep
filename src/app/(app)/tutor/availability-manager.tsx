@@ -59,7 +59,7 @@ export function AvailabilityManager({ availability, displayTimezone }: Availabil
       );
       const byDay = new Map<string, AvailabilityManagerSlot[]>();
       for (const slot of slots) {
-        const dayKey = formatInTimeZone(new Date(slot.start_time), displayTimezone, "EEEE · MMM d");
+        const dayKey = formatInTimeZone(new Date(slot.start_time), displayTimezone, "EEEE. MMM d");
         if (!byDay.has(dayKey)) byDay.set(dayKey, []);
         byDay.get(dayKey)!.push(slot);
       }

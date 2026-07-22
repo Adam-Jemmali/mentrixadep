@@ -770,6 +770,283 @@ html:has(.mentrix-student-type-scope) body {
   background-color: #fafbff;
 }
 
+/* 3D verified rank passport (Three.js canvas) */
+.rank-passport-3d-canvas-shell {
+  width: min(100%, 1100px);
+  margin-inline: auto;
+  background: transparent;
+}
+
+.rank-passport-3d-canvas {
+  display: block;
+  background: transparent !important;
+}
+
+.rank-passport-page-paper {
+  background: linear-gradient(180deg, #fffef5 0%, #fef9c3 48%, #fef3c7 100%);
+  border: 1px solid rgba(234, 179, 8, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.65),
+    2px 4px 0 rgba(11, 18, 32, 0.08);
+}
+
+.rank-passport-page-ink {
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #0b1220;
+}
+
+.rank-passport-page-ink:not(:only-child) {
+  max-height: calc(100% - 2.75rem);
+}
+
+.rank-passport-3d-canvas-shell *,
+.rank-passport-3d-canvas * {
+  scrollbar-width: none;
+}
+
+.rank-passport-3d-canvas-shell *::-webkit-scrollbar,
+.rank-passport-3d-canvas *::-webkit-scrollbar {
+  display: none;
+}
+
+.rank-passport-page-ink .mx-hub-sticky,
+.rank-passport-page-ink .lp-sticky-note {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  padding: 0 !important;
+}
+
+.rank-passport-page-ink .mx-hub-sticky::before,
+.rank-passport-page-ink .mx-hub-sticky::after,
+.rank-passport-page-ink .lp-sticky-note::before,
+.rank-passport-page-ink .lp-sticky-note::after {
+  display: none !important;
+}
+
+.rank-passport-page-ink .rank-passport-id-page {
+  gap: 0.5rem;
+}
+
+.rank-passport-id-photo {
+  max-width: 8rem;
+  aspect-ratio: 3 / 4;
+}
+
+.rank-passport-id-fields {
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.5rem;
+}
+
+.rank-passport-page-ink .mx-hand-title {
+  font-size: 1.25rem !important;
+}
+
+.rank-passport-page-title {
+  font-size: 0.8rem !important;
+  letter-spacing: 0.14em !important;
+}
+
+.rank-passport-3d-closed-cover {
+  background: linear-gradient(155deg, #121826 0%, #0b1220 48%, #0f172a 100%);
+}
+
+.rank-passport-3d-cover-texture {
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent,
+    transparent 14px,
+    rgba(99, 102, 241, 0.35) 14px,
+    rgba(99, 102, 241, 0.35) 15px
+  );
+}
+
+.rank-passport-3d-foil--holo {
+  background: linear-gradient(
+    120deg,
+    #fef3c7 0%,
+    #d4a017 18%,
+    #6366f1 38%,
+    #22d3ee 52%,
+    #d4a017 68%,
+    #fef3c7 82%,
+    #b8860b 100%
+  );
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rank-passport-holo 5s ease-in-out infinite;
+}
+
+@keyframes rank-passport-holo {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.rank-passport-stamp {
+  mix-blend-mode: multiply;
+  filter: saturate(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-passport-3d-foil--holo {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
+.rank-passport-3d-book {
+  position: relative;
+  width: min(100%, 340px);
+  height: min(72dvh, 520px);
+  margin-inline: auto;
+  transform-style: preserve-3d;
+}
+
+.rank-passport-3d-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px 14px 14px 10px;
+  background: linear-gradient(145deg, #0f172a 0%, #0b1220 55%, #111827 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 36px -20px rgba(2, 6, 23, 0.75);
+  transform: translateZ(-3px);
+}
+
+.rank-passport-3d-edge {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  right: -2px;
+  width: 6px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 45%, #cbd5e1 100%);
+  transform-origin: left center;
+}
+
+.rank-passport-3d-edge--1 {
+  transform: translateZ(-1px) translateX(1px);
+  opacity: 0.95;
+}
+
+.rank-passport-3d-edge--2 {
+  transform: translateZ(-2px) translateX(2px);
+  opacity: 0.85;
+}
+
+.rank-passport-3d-edge--3 {
+  transform: translateZ(-3px) translateX(3px);
+  opacity: 0.7;
+}
+
+.rank-passport-3d-front {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #312e81;
+  border-radius: 10px 14px 14px 10px;
+  background: linear-gradient(155deg, #121826 0%, #0b1220 48%, #0f172a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    4px 14px 32px -16px rgba(2, 6, 23, 0.85);
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  backface-visibility: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.25s ease;
+}
+
+.rank-passport-3d-front:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    6px 18px 36px -14px rgba(49, 46, 129, 0.55);
+}
+
+.rank-passport-3d-front--open {
+  pointer-events: none;
+}
+
+.rank-passport-3d-front-texture {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.16;
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent,
+    transparent 16px,
+    rgba(99, 102, 241, 0.35) 16px,
+    rgba(99, 102, 241, 0.35) 17px
+  );
+}
+
+.rank-passport-3d-foil {
+  background: linear-gradient(120deg, #f5e6a8 0%, #d4a017 38%, #fef3c7 52%, #b8860b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rank-passport-3d-foil--logo {
+  filter: drop-shadow(0 0 10px rgba(212, 160, 23, 0.35));
+}
+
+.rank-passport-3d-inner {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border: 1px solid #c4b5fd;
+  border-radius: 8px 12px 12px 8px;
+  background: #fafbff;
+  box-shadow: inset 14px 0 22px -18px rgba(49, 46, 129, 0.22);
+}
+
+.rank-passport-3d-book.is-open .rank-passport-3d-front {
+  transform: rotateY(-168deg);
+  pointer-events: none;
+}
+
+.rank-passport-3d-book.is-open .rank-passport-3d-inner {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.rank-passport-3d-slides {
+  scrollbar-width: none;
+}
+
+.rank-passport-3d-slides::-webkit-scrollbar {
+  display: none;
+}
+
+.rank-passport-3d-slide {
+  background-color: #fafbff;
+}
+
+.rank-passport-id-page {
+  min-height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-passport-3d-front {
+    transition: none;
+  }
+}
+
 /* Bold italic VS knockout mark */
 .mx-hub-vs-mark {
   font-family: "Arial Black", "Helvetica Neue", Impact, sans-serif;
@@ -3403,7 +3680,7 @@ html.lp-landing-logo-cursor-active * {
     @apply pe-8;
   }
 
-  /* Profile-parity typography: home · skills · quest · league · duel */
+  /* Profile-parity typography: home. skills. quest. league. duel */
   .mentrix-student-type-scope {
     font-family: var(--font-geist, ui-sans-serif, system-ui, sans-serif);
     -webkit-font-smoothing: antialiased;

@@ -57,7 +57,7 @@ export function WrappedReportCard({
 
       {sharePath ? (
         <p className="mt-4 text-xs text-zinc-500">
-          Share · <span className="font-mono text-zinc-700">{sharePath}</span>
+          Share. <span className="font-mono text-zinc-700">{sharePath}</span>
         </p>
       ) : null}
     </section>

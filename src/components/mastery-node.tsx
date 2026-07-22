@@ -111,8 +111,8 @@ export function MasteryNode({
   const px = NODE_SIZE_PX[size];
   const isVerified = state === "verified";
   const glowEnabled = isVerified && showGlow !== false;
-  const tooltipEnabled = size === "xs" || size === "sm";
-  const interactive = typeof onPress === "function";
+  const isPressable = typeof onPress === "function";
+  const tooltipEnabled = (size === "xs" || size === "sm") && typeof onPress !== "function";
 
   useEffect(() => {
     if (prevStateRef.current === state) return;
@@ -144,14 +144,14 @@ export function MasteryNode({
     "aria-label": formatMasteryNodeTooltip(nodeName, accuracy),
     className: cn(
       "relative shrink-0",
-      interactive && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mx-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mx-surface)]",
+      isPressable && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mx-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mx-surface)]",
     ),
     style: nodeSurfaceStyle(state, px),
-    whileHover: reduceMotion || !interactive ? undefined : { scale: 1.12 },
-    whileTap: reduceMotion || !interactive ? undefined : { scale: 0.92 },
+    whileHover: reduceMotion || !isPressable ? undefined : { scale: 1.12 },
+    whileTap: reduceMotion || !isPressable ? undefined : { scale: 0.92 },
     transition: { type: "spring" as const, stiffness: 400 },
-    onClick: interactive ? onPress : undefined,
-    onKeyDown: interactive
+    onClick: isPressable ? onPress : undefined,
+    onKeyDown: isPressable
       ? (event: KeyboardEvent) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -159,8 +159,8 @@ export function MasteryNode({
           }
         }
       : undefined,
-    role: interactive ? "button" : undefined,
-    tabIndex: interactive ? 0 : undefined,
+    role: isPressable ? "button" : undefined,
+    tabIndex: isPressable ? 0 : undefined,
   };
 
   const nodeSquare = <motion.div {...motionProps} />;

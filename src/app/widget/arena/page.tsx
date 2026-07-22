@@ -7,7 +7,7 @@ import {
 } from "@/features/arena-widget/public-feed-pure";
 
 export const metadata: Metadata = {
-  title: "Arena feed · Mentrixa",
+  title: "Arena feed. Mentrixa",
   robots: { index: false, follow: false },
 };
 

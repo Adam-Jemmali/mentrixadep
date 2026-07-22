@@ -109,15 +109,15 @@ export function ProgressSnapshotCard({
 
   const ctaLabel =
     weeklyVerdict?.nextAction.label ??
-    `Book ${data.recommendedGuide.displayName} · ${sessionPriceLabel}${
-      momentumSubscriber ? " member" : ` · pay as you go ${formatStudentBreakthroughPrice()}`
+    `Book ${data.recommendedGuide.displayName}. ${sessionPriceLabel}${
+      momentumSubscriber ? " member" : `. pay as you go ${formatStudentBreakthroughPrice()}`
     }`;
 
   const divisionLine =
     divDelta > 0
-      ? `#${data.divisionRank.current} · up from #${data.divisionRank.previous}`
+      ? `#${data.divisionRank.current}. up from #${data.divisionRank.previous}`
       : divDelta < 0
-        ? `#${data.divisionRank.current} · down from #${data.divisionRank.previous}`
+        ? `#${data.divisionRank.current}. down from #${data.divisionRank.previous}`
         : `#${data.divisionRank.current}`;
 
   return (
@@ -161,10 +161,10 @@ export function ProgressSnapshotCard({
           {rankDirection === "up" ? " ↑" : rankDirection === "down" ? " ↓" : ""}
         </StatRow>
         <StatRow icon="quest" label="Quest accuracy">
-          {data.accuracyThisWeek}% · {accuracyDeltaLabel(data.accuracyDelta)}
+          {data.accuracyThisWeek}%. {accuracyDeltaLabel(data.accuracyDelta)}
         </StatRow>
         <StatRow icon="duels" label="Duels">
-          {data.duelsWon} won · {data.duelsLost} lost
+          {data.duelsWon} won. {data.duelsLost} lost
         </StatRow>
         <StatRow icon="league" label="Division rank">
           {divisionLine}
@@ -186,7 +186,7 @@ export function ProgressSnapshotCard({
             {data.recommendedGuide.impactScore > 0 ? (
               <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-emerald-900">
                 <MentrixaVocabIcon name="impact-score" size={20} surface="light" title="Impact" />
-                {data.recommendedGuide.displayName} · {Math.round(data.recommendedGuide.impactScore)}{" "}
+                {data.recommendedGuide.displayName}. {Math.round(data.recommendedGuide.impactScore)}{" "}
                 Impact on {data.recommendedGuide.impactSubject}
               </p>
             ) : null}

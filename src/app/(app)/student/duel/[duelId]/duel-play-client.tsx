@@ -810,7 +810,7 @@ function LegacyDuelForm({
       {duel.questions.map((q, qi) => (
         <div key={qi} className={cn(mentrixStudent.hubNotebook, "p-5 sm:p-6")}>
           <p className="mx-hub-type-ui text-[10px] font-bold uppercase tracking-[0.18em]">
-            {kindLabel(q.type)} · Question {qi + 1}
+            {kindLabel(q.type)}. Question {qi + 1}
           </p>
           <div className="mx-hub-math-prose mt-2">
             <PromptWithMath

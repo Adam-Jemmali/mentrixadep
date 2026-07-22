@@ -34,7 +34,7 @@ export function profileTabMessage(tab: MentrixaProfileTabId): MentrixaTabMessage
       return {
         label: "Share",
         verdict: MENTRIXA_FIRST_ANSWER.passportShows,
-        nextAction: "Keep rank card public if you want a shareable verified passport.",
+        nextAction: "Open View certificate when issued, or copy your public rank card link.",
       };
   }
 }

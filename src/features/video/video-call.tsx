@@ -3104,9 +3104,7 @@ export function VideoCall({
       <div className="flex-none h-12 z-10 px-4 flex items-center justify-between border-b border-white/10 backdrop-blur-md bg-[rgba(8,12,20,0.8)]">
         <div className="w-24 shrink-0" aria-hidden />
         <p className="text-xs text-white/30 hidden sm:block">
-          <BubbleText text={courseLabel} className="mr-2" />
-          ·
-          <BubbleText text={learnerLabel} className="mx-2" />
+          <BubbleText text={courseLabel} className="mr-2" />| <BubbleText text={learnerLabel} className="mx-2" />
           &amp;
           <BubbleText text={guideLabel} className="ml-2" />
         </p>

@@ -306,9 +306,18 @@ export const NavbarButton = ({
     className,
   );
 
-  const Tag = as ?? (href ? Link : "button");
+  if (as) {
+    const CustomTag = as as React.ComponentType<
+      React.PropsWithChildren<{ className?: string } & Record<string, unknown>>
+    >;
+    return (
+      <CustomTag className={sharedClassName} {...props}>
+        {children}
+      </CustomTag>
+    );
+  }
 
-  if (Tag === Link && href) {
+  if (href) {
     return (
       <Link href={href} prefetch={prefetch} className={sharedClassName} {...props}>
         {children}
@@ -317,8 +326,8 @@ export const NavbarButton = ({
   }
 
   return (
-    <Tag href={href || undefined} className={sharedClassName} {...props}>
+    <button type="button" className={sharedClassName} {...props}>
       {children}
-    </Tag>
+    </button>
   );
 };

@@ -76,7 +76,10 @@ export function MentrixaDisclosure({
       className={cn("mentrixa-disclosure", TONE_CLASS[tone], className)}
     >
       <Disclosure.Heading>
-        <Disclosure.Trigger className="mentrixa-disclosure__trigger">
+        <Disclosure.Trigger
+          type="button"
+          className="mentrixa-disclosure__trigger flex w-full items-center gap-2 border-0 bg-transparent p-0 text-left text-inherit"
+        >
           {vocabIcon ? (
             <span
               className={cn(

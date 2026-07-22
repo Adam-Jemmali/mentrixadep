@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireRole } from "@/shared/core/auth";
-import { getDuelForUser } from "@/features/duels/duel-reads";
+import { getDuelForUser, getLearnerPreview } from "@/features/duels/duel-reads";
+import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { DuelPlayClient } from "./duel-play-client";
 import { DuelInviteeActions } from "./duel-invitee-actions";
 import { DuelWagerProposeCard } from "@/features/duels/ui/duel-wager-propose-card";
@@ -30,6 +31,12 @@ export default async function DuelDetailPage({ params }: Props) {
   if ("error" in duel) notFound();
 
   const wager = await loadDuelXpWager(duel.id).catch(() => null);
+
+  const admin = createAdminClient();
+  const challengerPreview = duel.student_id
+    ? await getLearnerPreview(admin, duel.student_id)
+    : null;
+  const challengerName = challengerPreview?.name ?? "Challenger";
 
   const side =
     user.id === duel.student_id
@@ -93,7 +100,13 @@ export default async function DuelDetailPage({ params }: Props) {
               </p>
             </section>
           ) : null}
-          {showInviteeActions ? <DuelInviteeActions duelId={duel.id} wager={wager} /> : null}
+          {showInviteeActions ? (
+            <DuelInviteeActions
+              duelId={duel.id}
+              wager={wager}
+              challengerName={challengerName}
+            />
+          ) : null}
           <DuelPlayClient duel={duel} side={side} viewerUserId={user.id} />
         </div>
       </main>

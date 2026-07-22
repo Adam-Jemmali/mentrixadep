@@ -1,4 +1,5 @@
 import { rankFromTotalXp } from "@/features/rank-card/calculate-pure";
+import { ACCOUNT_RANK_VISUALS, normalizeRankTitle } from "@/features/xp/rank-icons";
 
 export const WRAPPED_MIN_ACTIVITY_DAYS = 30;
 
@@ -46,6 +47,17 @@ export function hasEnoughActivityDays(distinctActiveDays: number): boolean {
 
 export function rankTitleFromTotalXp(totalXp: number): string {
   return rankFromTotalXp(Math.max(0, totalXp)).title;
+}
+
+export function accountLevelFromRankTitle(title: string): { level: number; title: string } {
+  const needle = normalizeRankTitle(title).toLowerCase();
+  const found = ACCOUNT_RANK_VISUALS.find(
+    (row) => row.title.toLowerCase() === needle,
+  );
+  if (found) {
+    return { level: found.level, title: found.title };
+  }
+  return { level: 1, title: "Wanderer" };
 }
 
 /** XP held on Jan 1 = current − awards on/after Jan 1 of report year. */
@@ -232,28 +244,28 @@ export function studentWrappedStatLines(data: StudentWrappedData): WrappedStatLi
     lines.push({
       icon: "focus-ring",
       label: "Hardest",
-      value: `${data.hardest_node.nodeName} · ${data.hardest_node.attempts} attempts`,
+      value: `${data.hardest_node.nodeName}. ${data.hardest_node.attempts} attempts`,
     });
   }
   if (data.breakthrough_node) {
     lines.push({
       icon: "breakthrough",
       label: "Breakthrough",
-      value: `${data.breakthrough_node.nodeName} · ${data.breakthrough_node.beforePct}% → ${data.breakthrough_node.afterPct}%`,
+      value: `${data.breakthrough_node.nodeName}. ${data.breakthrough_node.beforePct}% → ${data.breakthrough_node.afterPct}%`,
     });
   }
   if (data.best_month) {
     lines.push({
       icon: "day",
       label: "Best month",
-      value: `${monthLabel(data.best_month.month)} · ${data.best_month.vfaCount} VFA`,
+      value: `${monthLabel(data.best_month.month)}. ${data.best_month.vfaCount} VFA`,
     });
   }
   if (data.best_session_delta) {
     lines.push({
       icon: "impact-score",
       label: "Best session",
-      value: `${data.best_session_delta.nodeName} · +${data.best_session_delta.deltaPoints}`,
+      value: `${data.best_session_delta.nodeName}. +${data.best_session_delta.deltaPoints}`,
     });
   }
 
@@ -283,7 +295,7 @@ export function guideWrappedStatLines(data: GuideWrappedData): WrappedStatLine[]
     lines.push({
       icon: "focus-ring",
       label: "Top impact",
-      value: `${data.highest_impact_node.nodeName} · +${data.highest_impact_node.avgDelta}`,
+      value: `${data.highest_impact_node.nodeName}. +${data.highest_impact_node.avgDelta}`,
     });
   }
   return lines;

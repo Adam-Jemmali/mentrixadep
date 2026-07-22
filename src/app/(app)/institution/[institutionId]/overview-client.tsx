@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { Users, CreditCard, TrendingUp, ArrowRight, Building2 } from "lucide-react";
+import { Users, CreditCard, TrendingUp, ArrowRight, Building2, type LucideIcon } from "lucide-react";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { cn } from "@/shared/core/utils";
@@ -25,7 +25,7 @@ function StatCard({
   sub,
   accent = false,
 }: {
-  icon?: React.ElementType;
+  icon?: LucideIcon;
   vocabIcon?: VocabIconName;
   label: string;
   value: string | number;

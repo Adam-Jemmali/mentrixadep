@@ -1,33 +1,33 @@
 import { describe, expect, it } from "vitest";
 import {
-  estimateCorrectFirstAttempts,
-  explainFirstAttemptAccuracy,
   explainPeerStanding,
-  formatPeerStandingRow,
+  formatPeerStandingShort,
+  formatPeerStandingWithCohort,
+  peerAheadCount,
   peerBeatCount,
   peerTopPercent,
 } from "@/features/xp/rank-statistics-pure";
 
 describe("rank-statistics-pure", () => {
-  it("reconstructs correct count from rounded accuracy", () => {
-    expect(estimateCorrectFirstAttempts(80, 5)).toBe(4);
-    expect(estimateCorrectFirstAttempts(72, 12)).toBe(9);
-  });
-
-  it("explains accuracy as division times 100", () => {
-    expect(explainFirstAttemptAccuracy(5, 80)).toBe(
-      "4 right out of 5 first answers. 4 ÷ 5 × 100 = 80%.",
-    );
-  });
-
-  it("maps CUME_DIST percentile to beat count and top percent", () => {
+  it("maps percentile rank to top percent", () => {
     expect(peerBeatCount(92)).toBe(92);
     expect(peerTopPercent(92)).toBe(8);
-    expect(formatPeerStandingRow(92)).toBe("Beat 92/100 · top 8%");
   });
 
-  it("describes peer standing in plain language", () => {
-    expect(explainPeerStanding(45)).toContain("beat 45 out of every 100");
-    expect(explainPeerStanding(45)).toContain("Top 55%");
+  it("converts percentile to real cohort head count", () => {
+    expect(peerAheadCount(45, 20)).toBe(9);
+    expect(peerAheadCount(0, 12)).toBe(0);
+    expect(formatPeerStandingWithCohort(45, 20, 8).value).toBe("9 of 20 Mentrixers");
+  });
+
+  it("describes peer standing with real cohort size", () => {
+    expect(explainPeerStanding(45, 20, 8)).toContain("Ahead of 9 of 20 Mentrixers");
+    expect(explainPeerStanding(0, 12, 25)).toContain("Ahead of 0 of 12 Mentrixers");
+    expect(explainPeerStanding(0, 12, 25)).not.toContain("100 Mentrixers");
+  });
+
+  it("never invents 100 when cohort size is known", () => {
+    expect(formatPeerStandingShort(45, 20)).toBe("9 of 20");
+    expect(formatPeerStandingShort(0, 12)).toBe("0 of 12");
   });
 });

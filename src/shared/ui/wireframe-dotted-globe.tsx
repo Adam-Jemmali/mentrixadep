@@ -365,7 +365,7 @@ export function WireframeDottedGlobe({
       ) : null}
       {!hideHint ? (
         <div className="absolute bottom-3 left-3 rounded-md bg-slate-950/80 px-2 py-1 text-[10px] text-slate-400 backdrop-blur-sm">
-          Drag to rotate · Scroll to zoom
+          Drag to rotate. Scroll to zoom
         </div>
       ) : null}
     </div>

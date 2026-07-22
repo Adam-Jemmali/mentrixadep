@@ -3,10 +3,19 @@ import type { VerifiedFirstAttemptRankStats } from "@/features/xp/calibrated-ran
 import { MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE } from "@/features/xp/calibrated-rank";
 import {
   estimateCorrectFirstAttempts,
-  peerBeatCount,
-  peerTopPercent,
+  formatPeerStandingWithCohort,
+  MIN_VERIFIED_SKILLS_FOR_PEER_STANDING,
+  peerAheadCount,
 } from "@/features/xp/rank-statistics-pure";
+import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { formatFirstTryAccuracyFormula } from "@/shared/core/copy-format";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
+
+export type StudentHomeAccuracyFraction = {
+  correct: number;
+  total: number;
+  percent: number;
+};
 
 export type StudentHomeVerdictMetric = {
   icon: VocabIconName;
@@ -14,11 +23,17 @@ export type StudentHomeVerdictMetric = {
   value: string;
   detail: string;
   gold?: boolean;
+  watermark: string | number;
+  numericEnd: number;
+  numericSuffix?: string;
+  displayValue?: string;
 };
 
 export type StudentHomeVerdictView = {
-  /** Playfair rank-reveal line — always grounded in rankStats math. */
   headline: string;
+  accuracyFraction?: StudentHomeAccuracyFraction;
+  accuracyDetail?: string;
+  peerSummary?: string;
   metrics: StudentHomeVerdictMetric[];
   cta: { label: string; href: string };
 };
@@ -33,26 +48,59 @@ export function formatStudentHomeAccuracyMath(
   accuracyPercent: number,
 ): { correct: number; headline: string; detail: string; value: string } {
   const correct = estimateCorrectFirstAttempts(accuracyPercent, verifiedCount);
+  const formula = formatFirstTryAccuracyFormula(correct, verifiedCount, accuracyPercent);
   const skillWord = verifiedCount === 1 ? "skill" : "skills";
   return {
     correct,
-    headline: `${correct} right on ${verifiedCount} first ${skillWord} = ${accuracyPercent}%`,
-    detail: `${correct} ÷ ${verifiedCount} × 100 = ${accuracyPercent}%`,
-    value: `${correct}/${verifiedCount}`,
+    headline: `${correct} right on ${verifiedCount} first ${skillWord} in ${AP_CALC_AB_SUBJECT}`,
+    detail: `${correct} right out of ${verifiedCount} ${skillWord}. Each first try is permanent.`,
+    value: formula,
   };
 }
 
-/** Peer standing only when cohort rules are met — beat count, not vague hype. */
+/** Peer standing from real cohort size — never invent 100 Mentrixers. */
 export function formatStudentHomePeerMetric(
   percentile: number,
+  verifiedCount: number,
+  cohortSize: number | null,
 ): { label: string; value: string; detail: string } {
-  const beat = peerBeatCount(percentile);
-  const top = peerTopPercent(percentile);
+  const peer = formatPeerStandingWithCohort(
+    percentile,
+    cohortSize ?? 0,
+    verifiedCount,
+  );
   return {
-    label: "Peer standing",
-    value: `Beat ${beat}/100`,
-    detail: `Top ${top}% of Mentrixers with 5+ verified skills`,
+    label: "Peer rank",
+    value: peer.value,
+    detail: peer.detail,
   };
+}
+
+export function buildStudentHomePeerSummary(
+  stats: VerifiedFirstAttemptRankStats,
+): string | undefined {
+  if (
+    stats.verifiedCount < MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE ||
+    stats.percentile == null
+  ) {
+    const remaining = MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE - stats.verifiedCount;
+    if (remaining > 0) {
+      return `${remaining} more first ${remaining === 1 ? "try" : "tries"} unlock peer rank`;
+    }
+    return undefined;
+  }
+
+  const cohortSize = stats.eligibleCohortSize ?? 0;
+  if (cohortSize <= 0) {
+    return "Peer pool is still forming among Mentrixers with 5+ first tries";
+  }
+
+  const ahead = peerAheadCount(stats.percentile, cohortSize);
+  if (cohortSize === 1) {
+    return "You are the only Mentrixer in the peer pool so far";
+  }
+
+  return `${ahead} of ${cohortSize} Mentrixers ahead on first-try accuracy`;
 }
 
 /**
@@ -67,20 +115,30 @@ export function buildStudentHomeVerdictHero(
 
   if (stats.verifiedCount <= 0) {
     return {
-      headline: "Try a skill once to start your verified rank.",
+      headline: `Try one ${AP_CALC_AB_SUBJECT} skill once to start your verified rank.`,
       metrics: [],
       cta,
     };
   }
 
   const accuracy = formatStudentHomeAccuracyMath(stats.verifiedCount, stats.accuracyPercent);
+  const accuracyFraction: StudentHomeAccuracyFraction = {
+    correct: accuracy.correct,
+    total: stats.verifiedCount,
+    percent: stats.accuracyPercent,
+  };
+
   const metrics: StudentHomeVerdictMetric[] = [
     {
       icon: "verified",
-      label: "First tries",
+      label: "First-try accuracy",
       value: accuracy.value,
+      displayValue: accuracy.value,
       detail: accuracy.detail,
       gold: stats.accuracyPercent >= 70,
+      watermark: stats.verifiedCount,
+      numericEnd: accuracy.correct,
+      numericSuffix: `/${stats.verifiedCount}`,
     },
   ];
 
@@ -88,16 +146,30 @@ export function buildStudentHomeVerdictHero(
     stats.verifiedCount >= MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE && stats.percentile != null;
 
   if (peerEligible) {
-    const peer = formatStudentHomePeerMetric(stats.percentile!);
+    const cohortSize = stats.eligibleCohortSize ?? 0;
+    const ahead = peerAheadCount(stats.percentile!, cohortSize);
+    const peer = formatStudentHomePeerMetric(
+      stats.percentile!,
+      stats.verifiedCount,
+      stats.eligibleCohortSize,
+    );
     metrics.push({
       icon: "percentile",
       label: peer.label,
       value: peer.value,
+      displayValue: peer.value,
       detail: peer.detail,
-      gold: peerBeatCount(stats.percentile!) >= 90,
+      gold: cohortSize > 0 && ahead >= Math.max(1, Math.floor(cohortSize * 0.9)),
+      watermark: ahead,
+      numericEnd: ahead,
+      numericSuffix: cohortSize > 0 ? `/${cohortSize}` : "",
     });
+
     return {
-      headline: `${accuracy.headline} · ${peer.value} Mentrixers`,
+      headline: accuracy.headline,
+      accuracyFraction,
+      accuracyDetail: accuracy.detail,
+      peerSummary: buildStudentHomePeerSummary(stats),
       metrics,
       cta,
     };
@@ -107,13 +179,19 @@ export function buildStudentHomeVerdictHero(
   if (remaining > 0) {
     return {
       headline: accuracy.headline,
+      accuracyFraction,
+      accuracyDetail: accuracy.detail,
+      peerSummary: buildStudentHomePeerSummary(stats),
       metrics: [
         ...metrics,
         {
           icon: "rank-proof",
-          label: "Peer standing",
+          label: "Peer rank",
           value: `${remaining} to go`,
-          detail: `${remaining} more first ${remaining === 1 ? "try" : "tries"} unlock peer rank`,
+          displayValue: `${remaining} to go`,
+          detail: `${remaining} more first ${remaining === 1 ? "try" : "tries"} unlock peer rank among Mentrixers with ${MIN_VERIFIED_SKILLS_FOR_PEER_STANDING}+ first tries`,
+          watermark: remaining,
+          numericEnd: remaining,
         },
       ],
       cta,
@@ -122,6 +200,8 @@ export function buildStudentHomeVerdictHero(
 
   return {
     headline: accuracy.headline,
+    accuracyFraction,
+    accuracyDetail: accuracy.detail,
     metrics,
     cta,
   };

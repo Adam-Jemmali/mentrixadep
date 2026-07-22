@@ -59,7 +59,7 @@ export function ProgressArchiveClient({
                   </div>
                   <p className={`mt-2 ${mentrixStudent.pageSubtitle}`}>
                     {normalizeRankTitle(data.rankChange.previous.title)} →{" "}
-                    {normalizeRankTitle(data.rankChange.current.title)} · Quest accuracy{" "}
+                    {normalizeRankTitle(data.rankChange.current.title)}. Quest accuracy{" "}
                     {data.accuracyThisWeek}%
                   </p>
                 </li>

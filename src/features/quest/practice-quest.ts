@@ -1504,7 +1504,7 @@ export async function submitPracticeMultiPart(
     partsCorrect,
     partsTotal,
     xpEarned,
-    xpLine: `+${xpEarned} XP · ${partsCorrect}/${partsTotal} parts`,
+    xpLine: `+${xpEarned} XP. ${partsCorrect}/${partsTotal} parts`,
     part: {
       partKey: applied.result.partKey,
       correct: applied.result.correct,

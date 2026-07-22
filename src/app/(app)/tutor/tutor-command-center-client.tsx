@@ -255,7 +255,7 @@ export function TutorCommandCenterClient({
           <ul className="mt-2 list-inside list-disc text-xs text-amber-900/85">
             {lateCancellationAlerts.map((a) => (
               <li key={a.id}>
-                {a.course} · {formatDateInZone(a.start_time, data.tutorTimezone)}
+                {a.course}. {formatDateInZone(a.start_time, data.tutorTimezone)}
               </li>
             ))}
           </ul>

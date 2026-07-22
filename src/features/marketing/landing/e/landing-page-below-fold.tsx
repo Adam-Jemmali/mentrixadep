@@ -5,8 +5,15 @@ import dynamic from "next/dynamic";
 import type { LandingStatItem } from "@/features/marketing/landing-stats";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 import { LandingHowItWorksSection } from "@/features/marketing/landing/e/how-it-works-section";
-import { LandingGuidesSection } from "@/features/marketing/landing/e/guides-section";
 import { LandingFinalCtaSection } from "@/features/marketing/landing/e/final-cta-section";
+import {
+  DeferredDualPathSection,
+  DeferredFlowStepsSection,
+  DeferredGuideSection,
+  DeferredLandingFooterBlock,
+  DeferredPricingSection,
+  DeferredRankLadderShowcase,
+} from "@/features/marketing/landing/v2/landing-page-deferred";
 import { useTrack } from "@/shared/integrations/use-track";
 
 const LandingProofSection = dynamic(
@@ -15,19 +22,11 @@ const LandingProofSection = dynamic(
   { ssr: false },
 );
 
-const DeferredLandingFooterBlock = dynamic(
-  () =>
-    import("@/features/marketing/landing/v2/sections/landing-footer-block").then(
-      (m) => m.LandingFooterBlock,
-    ),
-  { loading: () => <div className="min-h-[200px]" aria-hidden /> },
-);
-
 type Props = {
   stats: LandingStatItem[];
 };
 
-/** Below-the-fold Lenis scroll sections — sticky note desk. */
+/** Shorter below fold — mini games, ranks, guide, offer. No screenshot bento. */
 export function LandingPageBelowFold({ stats }: Props) {
   const track = useTrack();
 
@@ -69,8 +68,14 @@ export function LandingPageBelowFold({ stats }: Props) {
   return (
     <div className={landingHub.pageRoot}>
       <LandingHowItWorksSection />
+      <DeferredRankLadderShowcase />
+      <DeferredFlowStepsSection />
+      <DeferredDualPathSection />
+      <DeferredGuideSection />
       <LandingProofSection stats={stats} />
-      <LandingGuidesSection />
+      <div id="pricing" className="lp-section-reveal">
+        <DeferredPricingSection />
+      </div>
       <LandingFinalCtaSection />
       <DeferredLandingFooterBlock />
     </div>

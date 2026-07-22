@@ -5,12 +5,12 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { LANDING_E } from "@/features/marketing/landing/landing-copy-pure";
 import type { LandingStatItem } from "@/features/marketing/landing-stats";
 import { landingStickyVariantForIndex } from "@/features/marketing/landing/landing-sticky-variants";
-import {
-  LandingSectionHeader,
-  LandingStickyCard,
-} from "@/features/marketing/landing/ui/landing-section-shell";
+import { LandingNumberHeading, LandingNumberWatermark } from "@/features/marketing/landing/ui/landing-number-heading";
+import { LP_NUM, LP_NUM_STAT_VALUE_CLASS } from "@/features/marketing/landing/ui/landing-number-motion-pure";
+import { useLandingNumericReveal } from "@/features/marketing/landing/ui/use-landing-numeric-reveal";
+import { LandingRoleText } from "@/features/marketing/landing/ui/landing-role-text";
+import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
 import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
-import { useGsapScrollTriggerEffect } from "@/shared/core/gsap-lazy";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { cn } from "@/shared/core/utils";
 
@@ -20,38 +20,11 @@ type Props = {
   stats: LandingStatItem[];
 };
 
-/** Section C — platform numbers with Anime.js counter on scroll. */
+/** Live platform stats — numbered cards with count up. */
 export function LandingProofSection({ stats }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
   const reducedMotion = usePrefersReducedMotion();
-
-  useGsapScrollTriggerEffect(
-    (gsap, ScrollTrigger) => {
-      const root = sectionRef.current;
-      if (!root) return;
-
-      const cards = root.querySelectorAll(".lp-proof-card");
-      gsap.set(cards, { y: 24, opacity: 0 });
-
-      const trigger = ScrollTrigger.create({
-        trigger: root,
-        start: "top 75%",
-        once: true,
-        onEnter: () => {
-          gsap.to(cards, {
-            y: 0,
-            opacity: 1,
-            stagger: 0.1,
-            duration: 0.5,
-            ease: "power2.out",
-          });
-        },
-      });
-
-      return () => trigger.kill();
-    },
-    [],
-  );
+  useLandingNumericReveal(sectionRef, { start: "top 75%", animateValues: true });
 
   useEffect(() => {
     const root = sectionRef.current;
@@ -67,15 +40,16 @@ export function LandingProofSection({ stats }: Props) {
 
         void import("@/shared/animation/anime").then(({ animate }) => {
           if (cancelled) return;
-          root.querySelectorAll<HTMLElement>(".lp-proof-value").forEach((el) => {
+          root.querySelectorAll<HTMLElement>(`.${LP_NUM.value}`).forEach((el) => {
             const end = Number(el.dataset.value ?? 0);
+            const suffix = el.dataset.suffix ?? "";
             const obj = { val: 0 };
             animate(obj, {
               val: end,
               duration: 1.2,
               ease: "outExpo",
               onUpdate: () => {
-                el.textContent = Math.round(obj.val).toLocaleString();
+                el.textContent = `${Math.round(obj.val).toLocaleString()}${suffix}`;
               },
             });
           });
@@ -95,42 +69,53 @@ export function LandingProofSection({ stats }: Props) {
   const { proof } = LANDING_E;
 
   return (
-    <section id="proof" ref={sectionRef} className={landingHub.section}>
+    <section id="proof" ref={sectionRef} className={landingHub.sectionTight}>
       <div className={landingHub.sectionInner}>
-        <LandingSectionHeader
+        <LandingNumberHeading
           eyebrow={proof.eyebrow}
-          title={proof.title}
+          count={stats.length}
+          suffix="live signals"
           subtitle={proof.subtitle}
         />
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-3">
-          {stats.map((stat, index) => (
-            <LandingStickyCard
-              key={stat.label}
-              variant={landingStickyVariantForIndex(index + 2)}
-              className={cn(
-                "lp-proof-card text-center opacity-0",
-                index === 1 && "rotate-[0.4deg]",
-              )}
-            >
-              <div className="mx-auto flex justify-center">
-                <MentrixaVocabIcon
-                  name={PROOF_ICONS[index] ?? "verified"}
-                  size={20}
-                  surface="light"
-                  title={stat.label}
-                />
-              </div>
-              <p
-                className="lp-proof-value lp-sticky-word mt-3 tabular-nums"
-                data-value={stat.value}
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {stats.map((stat, index) => {
+            const num = String(index + 1);
+            return (
+              <LandingStickyCard
+                key={stat.label}
+                variant={landingStickyVariantForIndex(index + 2)}
+                className={cn(
+                  LP_NUM.card,
+                  "relative text-center opacity-0",
+                  index === 1 && "rotate-[0.4deg]",
+                )}
               >
-                {reducedMotion ? stat.value.toLocaleString() : "0"}
-                {stat.suffix ?? ""}
-              </p>
-              <p className={cn(landingHub.bodySm, "mt-2")}>{stat.label}</p>
-            </LandingStickyCard>
-          ))}
+                <LandingNumberWatermark value={num} />
+                <div className="relative mx-auto flex justify-center">
+                  <MentrixaVocabIcon
+                    name={PROOF_ICONS[index] ?? "verified"}
+                    size={32}
+                    surface="light"
+                    title={stat.label}
+                  />
+                </div>
+                <p
+                  className={LP_NUM_STAT_VALUE_CLASS}
+                  data-value={stat.value}
+                  data-suffix={stat.suffix ?? ""}
+                >
+                  {reducedMotion
+                    ? `${stat.value.toLocaleString()}${stat.suffix ?? ""}`
+                    : `0${stat.suffix ?? ""}`}
+                </p>
+                <p className={cn(landingHub.bodySm, "mt-2")}>
+                  <span className="sr-only">Signal {num}. </span>
+                  <LandingRoleText text={stat.label} iconSize="sm" />
+                </p>
+              </LandingStickyCard>
+            );
+          })}
         </div>
       </div>
     </section>

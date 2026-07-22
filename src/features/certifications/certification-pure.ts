@@ -152,3 +152,34 @@ export function formatCertificationIssuedAt(iso: string): string {
     timeZone: "UTC",
   }).format(d);
 }
+
+export function certificationVerifiedTopLine(verifiedPercentile: number): string {
+  return `Verified top ${certificationTopPercent(verifiedPercentile)} percent of all Mentrixers tested`;
+}
+
+export function certificationNodesVerifiedLine(
+  nodesVerified: number,
+  totalNodes: number,
+): string {
+  return `${nodesVerified} of ${totalNodes} skill nodes verified`;
+}
+
+export function certificationAccuracyLine(accuracyOverall: number): string {
+  return `Overall accuracy: ${Math.round(accuracyOverall)}%`;
+}
+
+export function certificationRevokedBody(revokedAt: string): string {
+  return `This certification was suspended on ${formatCertificationIssuedAt(revokedAt)}. The holder's rank dropped below the required threshold.`;
+}
+
+export function certificationRankVerifyHint(username: string): string {
+  return `Visit mentrixa.one/rank/${username} to verify`;
+}
+
+export function certificationShareEmptyVerdict(): string {
+  return "No certification yet. It issues automatically when you cross verified peer standing, skill coverage, and streak thresholds.";
+}
+
+export function certificationShareNextAction(): string {
+  return "Earn it on Quest and Mastery Grid, then open View certificate here.";
+}

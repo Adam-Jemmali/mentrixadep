@@ -9,17 +9,17 @@ type Props = { params: Promise<{ eventId: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { eventId } = await params;
   const event = await getBreakthroughForShare(eventId);
-  if (!event) return { title: "Breakthrough · Mentrixa" };
+  if (!event) return { title: "Breakthrough. Mentrixa" };
 
   const siteUrl = getSiteUrl();
   const ogUrl = `${siteUrl}/api/og/breakthrough?event_id=${encodeURIComponent(eventId)}`;
 
   return {
-    title: `Breakthrough: ${event.concept} · Mentrixa`,
+    title: `Breakthrough: ${event.concept}. Mentrixa`,
     description: `${event.concept} — ${Math.round(event.accuracyBefore)}% to ${Math.round(event.accuracyAfter)}% accuracy jump on Mentrixa.`,
     openGraph: {
       title: `BREAKTHROUGH: ${event.concept}`,
-      description: `${Math.round(event.accuracyBefore)}% → ${Math.round(event.accuracyAfter)}% · ${event.subject}`,
+      description: `${Math.round(event.accuracyBefore)}% → ${Math.round(event.accuracyAfter)}%. ${event.subject}`,
       url: event.shareUrl,
       images: [{ url: ogUrl, width: 1200, height: 630, alt: `Breakthrough: ${event.concept}` }],
     },

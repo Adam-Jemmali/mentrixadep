@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getSiteUrl } from "@/shared/core/site";
 
 export const metadata: Metadata = {
-  title: "Request received · Mentrixa",
+  title: "Request received. Mentrixa",
   description: "Your Mentrixa onboarding request has been received.",
   alternates: { canonical: `${getSiteUrl()}/auth/request-received` },
   robots: { index: false, follow: false },

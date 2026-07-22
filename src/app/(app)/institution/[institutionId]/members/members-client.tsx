@@ -82,7 +82,7 @@ export function InstitutionMembersClient({
           <h1 className="text-[15px] font-semibold text-slate-900">Members</h1>
           <p className="text-[12px] text-slate-400 mt-0.5">
             {studentCount} student{studentCount !== 1 ? "s" : ""}
-            {limit !== null ? ` · ${limit} seat limit` : " · Unlimited"}
+            {limit !== null ? `. ${limit} seat limit` : ". Unlimited"}
           </p>
         </div>
       </div>

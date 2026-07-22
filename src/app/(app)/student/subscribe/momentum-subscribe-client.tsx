@@ -125,7 +125,7 @@ export function MomentumSubscribeClient({
               <p className={cn("mt-3 text-sm font-medium", mentrixHubSurfaces.inkBody)}>{packGoal.verdict}</p>
             ) : (
               <p className={cn("mt-3 text-sm", mentrixHubSurfaces.inkBody)}>
-                {MOMENTUM_PACK_SESSION_COUNT} sessions · {formatStudentMomentumPackPrice()}
+                {MOMENTUM_PACK_SESSION_COUNT} sessions. {formatStudentMomentumPackPrice()}
               </p>
             )}
             <Button

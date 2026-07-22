@@ -113,14 +113,14 @@ export function buildWorkingTowardLine(
     const remaining = Math.max(0, MIN_VERIFIED_ATTEMPTS_FOR_PERCENTILE - verifiedCount);
     if (remaining > 0) {
       const word = remaining === 1 ? "try" : "tries";
-      return `Working toward your readiness level, ${remaining} first ${word} left.`;
+      return `Working toward your proof tier, ${remaining} first ${word} left.`;
     }
-    return `Working toward your readiness level, ${nodesAway} nodes away.`;
+    return `Working toward your proof tier, ${nodesAway} nodes away.`;
   }
 
   const targetScore = Math.min(5, band.score + 1);
   const word = nodesAway === 1 ? "node" : "nodes";
-  return `Working toward level ${targetScore}, ${nodesAway} ${word} away.`;
+  return `Working toward proof tier ${targetScore}, ${nodesAway} ${word} away.`;
 }
 
 export function formatLastGuideSessionLabel(startTimeIso: string | null): string {

@@ -16,12 +16,12 @@ describe("drawer messages", () => {
   it("includes student and course in guide context description", () => {
     const msg = guideMasteryGridDrawerMessage("Alex", "AP Calculus AB");
     expect(msg.title).toBe("Student context");
-    expect(msg.description).toBe("Alex · AP Calculus AB");
+    expect(msg.description).toBe("Alex. AP Calculus AB");
     expect(msg.nextAction).toMatch(/target nodes/i);
   });
 
   it("falls back when mastery grid context is missing", () => {
     const msg = mentrixaDrawerMessage("guide_mastery_grid");
-    expect(msg.description).toBe("Student · Course");
+    expect(msg.description).toBe("Student. Course");
   });
 });

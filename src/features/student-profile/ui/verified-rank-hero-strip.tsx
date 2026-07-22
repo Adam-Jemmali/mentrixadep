@@ -124,7 +124,7 @@ export function VerifiedRankHeroStrip({
         </p>
       ) : beatCount != null ? (
         <p className="text-[10px] font-semibold text-[#475569]">
-          Top {topPercent}% · beat {beatCount}/100.
+          Top {topPercent}%. beat {beatCount}/100.
         </p>
       ) : null}
 

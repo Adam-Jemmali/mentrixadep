@@ -504,8 +504,8 @@ export function StreakCountDisplay({
   return (
     <span
       className={cn("relative inline-flex flex-col items-center gap-1", className)}
-      aria-label={`${days} day streak · ${dayName}${atRisk ? " · at risk" : ""}`}
-      title={`${days} day streak · ${dayName}${atRisk ? " · at risk" : ""}`}
+      aria-label={`${days} day streak. ${dayName}${atRisk ? ". at risk" : ""}`}
+      title={`${days} day streak. ${dayName}${atRisk ? ". at risk" : ""}`}
     >
       <span className="inline-flex items-center gap-1.5">
         <span

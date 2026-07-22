@@ -174,7 +174,7 @@ export async function sendLevelUpEmail(email: string, props: LevelUpEmailProps):
 
   await sendEmail(
     email,
-    `${hi}, you reached ${props.newLevelTitle} · Mentrixa`,
+    `${hi}, you reached ${props.newLevelTitle}. Mentrixa`,
     baseTemplate("Level up", body)
   );
 }
@@ -230,7 +230,7 @@ export async function sendReferralSuccessEmail(
 
   await sendEmail(
     email,
-    `${hi}, you earned ${props.xpAwarded} referral XP · Mentrixa`,
+    `${hi}, you earned ${props.xpAwarded} referral XP. Mentrixa`,
     baseTemplate("Referral reward", body)
   );
 }
@@ -269,7 +269,7 @@ export async function sendTutorApprovedEmail(
 
   await sendEmail(
     tutorEmail,
-    `${hi}, your Guide application is approved · Mentrixa`,
+    `${hi}, your Guide application is approved. Mentrixa`,
     baseTemplate("You're approved", body)
   );
 }
@@ -295,7 +295,7 @@ export async function sendTutorPayoutEmail(tutorEmail: string, props: TutorPayou
 
   await sendEmail(
     tutorEmail,
-    `Payout of ${amt} is on the way · Mentrixa`,
+    `Payout of ${amt} is on the way. Mentrixa`,
     baseTemplate("Payout sent", body)
   );
 }
