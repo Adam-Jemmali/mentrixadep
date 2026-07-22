@@ -54,13 +54,22 @@ describe("rank-passport-3d-nav", () => {
     ).toBe(false);
   });
 
-  it("canGoNext on last spread", () => {
+  it("canGoNext on last spread closes book", () => {
     expect(canGoPassportNext(ctx({ coverOpen: true, coverReady: true, spread: 2, totalSpreads: 3 }))).toBe(
-      false,
+      true,
     );
     expect(canGoPassportNext(ctx({ coverOpen: true, coverReady: true, spread: 1, totalSpreads: 3 }))).toBe(
       true,
     );
+  });
+
+  it("canGoNext blocked on last spread while busy", () => {
+    expect(
+      canGoPassportNext(ctx({ coverOpen: true, coverReady: true, spread: 2, totalSpreads: 3, isFlipping: true })),
+    ).toBe(false);
+    expect(
+      canGoPassportNext(ctx({ coverOpen: true, coverReady: true, spread: 2, totalSpreads: 3, isAnimating: true })),
+    ).toBe(false);
   });
 
   it("spread resets to 0 after cover closes", () => {

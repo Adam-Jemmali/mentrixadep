@@ -27,7 +27,7 @@ export function canGoPassportPrev(ctx: PassportNavContext): boolean {
 export function canGoPassportNext(ctx: PassportNavContext): boolean {
   if (!ctx.coverOpen) return !ctx.isClosingCover && !ctx.isAnimating;
   if (!ctx.coverReady || isPassportBusy(ctx)) return false;
-  return ctx.spread < ctx.totalSpreads - 1;
+  return true;
 }
 
 /** Spread resets to 0 when the cover fully closes. */

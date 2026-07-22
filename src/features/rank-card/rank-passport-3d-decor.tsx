@@ -17,8 +17,8 @@ export const PASSPORT_CAMERA_FOV = 48;
 export const PASSPORT_VIEWPORT_H = 720;
 /** Fine-tuning scale applied to the whole book group in the canvas. */
 export const PASSPORT_BOOK_SCALE = 1;
-/** Extra Html scale on the closed cover for readability. */
-export const PASSPORT_COVER_HTML_BOOST = 1.1;
+/** Fine-tunes Html overlay scale so page chrome fills the 3D plane edge-to-edge. */
+export const PASSPORT_HTML_BLEED_BOOST = 1.03;
 
 /** Scales Html overlays to match one page mesh width at the default camera. */
 export function passportHtmlDistanceFactor(
@@ -99,10 +99,7 @@ export function PassportPageChrome({
 }) {
   return (
     <div
-      className={cn(
-        "rank-passport-page-paper relative overflow-hidden",
-        side === "left" ? "rounded-l-[4px]" : "rounded-r-[4px]",
-      )}
+      className="rank-passport-page-paper relative overflow-hidden rounded-none"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
       {stamp ? (
@@ -150,7 +147,7 @@ export function PassportPageChrome({
 export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
   return (
     <div
-      className="flex flex-col items-center justify-between overflow-hidden bg-[#0B1220] px-8 py-10 text-center"
+      className="flex flex-col items-center justify-between overflow-hidden rounded-none bg-[#0B1220] px-8 py-10 text-center"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
       <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#D4A017]/40 bg-[#0B1220]/60">
