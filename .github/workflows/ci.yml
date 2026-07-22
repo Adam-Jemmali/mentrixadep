@@ -67,6 +67,9 @@ jobs:
           RLS_TEST_USER_EMAIL: ${{ secrets.RLS_TEST_USER_EMAIL }}
           RLS_TEST_USER_PASSWORD: ${{ secrets.RLS_TEST_USER_PASSWORD }}
 
+      - name: Typecheck
+        run: npx tsc --noEmit
+
       - name: Build
         run: npm run build
 

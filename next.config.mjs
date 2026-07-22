@@ -28,6 +28,11 @@ const supabasePattern = supabaseStorageRemotePattern();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ["@google/genai"],
+  typescript: {
+    tsconfigPath: "tsconfig.build.json",
+    // Vercel Hobby OOMs/hangs on "Running TypeScript". CI runs `npx tsc` + build without VERCEL=1.
+    ignoreBuildErrors: process.env.VERCEL === "1",
+  },
   experimental: {
     optimizePackageImports: [
       "lucide-react",
