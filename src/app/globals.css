@@ -772,8 +772,9 @@ html:has(.mentrix-student-type-scope) body {
 
 /* 3D verified rank passport (Three.js canvas) */
 .rank-passport-3d-canvas-shell {
-  width: min(100%, 680px);
+  width: min(100%, 940px);
   margin-inline: auto;
+  overflow: visible;
   background: radial-gradient(ellipse 80% 60% at 50% 45%, #f8f7ff 0%, #ede9fe 55%, transparent 100%);
 }
 

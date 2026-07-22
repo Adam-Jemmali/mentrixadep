@@ -13,9 +13,27 @@ export const PASSPORT_PAGE_H_PX = 690;
 /** World units for one passport page in the 3D scene. */
 export const PASSPORT_PAGE_W_UNITS = 2.15;
 export const PASSPORT_PAGE_H_UNITS = 3.2;
-export const PASSPORT_CAMERA_Z = 3.85;
 export const PASSPORT_CAMERA_FOV = 48;
 export const PASSPORT_VIEWPORT_H = 720;
+/** Max shell width — two pages side by side at PASSPORT_PAGE_W_PX each. */
+export const PASSPORT_CANVAS_SHELL_MAX_PX = 940;
+/** Single closed cover — fill the viewport. */
+export const PASSPORT_CAMERA_Z_CLOSED = 3.85;
+
+/** Pull camera back so both open pages fit without cropping the outer edge. */
+export function passportOpenSpreadCameraZ(
+  viewportAspect = 680 / 720,
+  marginWorld = 0.2,
+): number {
+  const spreadHalfWidth = PASSPORT_PAGE_W_UNITS + marginWorld;
+  const verticalHalfRad = (PASSPORT_CAMERA_FOV * Math.PI) / 360;
+  const horizontalHalfRad = Math.atan(Math.tan(verticalHalfRad) * viewportAspect);
+  return spreadHalfWidth / Math.tan(horizontalHalfRad);
+}
+
+export const PASSPORT_CAMERA_Z_OPEN = passportOpenSpreadCameraZ();
+/** @deprecated Use PASSPORT_CAMERA_Z_CLOSED or PASSPORT_CAMERA_Z_OPEN */
+export const PASSPORT_CAMERA_Z = PASSPORT_CAMERA_Z_OPEN;
 /** Fine-tuning scale applied to the whole book group in the canvas. */
 export const PASSPORT_BOOK_SCALE = 1;
 /** Fine-tunes Html overlay scale so page chrome fills the 3D plane edge-to-edge. */

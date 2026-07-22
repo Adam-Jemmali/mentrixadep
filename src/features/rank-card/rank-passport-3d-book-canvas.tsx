@@ -1,6 +1,6 @@
 "use client";
 
-import { Html, OrbitControls } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   type ReactNode,
@@ -11,13 +11,13 @@ import {
   useState,
 } from "react";
 import * as THREE from "three";
-import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import {
   PassportCoverFace,
   PassportPageChrome,
   PASSPORT_BOOK_SCALE,
   PASSPORT_CAMERA_FOV,
-  PASSPORT_CAMERA_Z,
+  PASSPORT_CAMERA_Z_CLOSED,
+  PASSPORT_CAMERA_Z_OPEN,
   PASSPORT_PAGE_H_PX,
   PASSPORT_PAGE_H_UNITS,
   PASSPORT_PAGE_W_PX,
@@ -30,7 +30,6 @@ import {
 import {
   canGoPassportNext,
   canGoPassportPrev,
-  isPassportBusy,
   isPassportPageTurnBlocked,
   PASSPORT_ANIMATION_WATCHDOG_MS,
   spreadAfterCoverClosed,
@@ -219,14 +218,6 @@ function PassportSpineGutter({ z }: { z: number }) {
   );
 }
 
-function resetOrbitControls(controls: OrbitControlsType | null) {
-  if (!controls) return;
-  controls.setAzimuthalAngle(0);
-  controls.setPolarAngle(Math.PI / 2.1);
-  controls.target.set(0, 0, 0);
-  controls.update();
-}
-
 function PassportBookScene({
   pages,
   interactivePages = [],
@@ -237,7 +228,6 @@ function PassportBookScene({
 }: PassportBookCanvasProps & { htmlDistanceFactor: number }) {
   const floatRef = useRef<THREE.Group>(null);
   const entranceRef = useRef(0);
-  const controlsRef = useRef<OrbitControlsType>(null);
   const [coverOpen, setCoverOpen] = useState(false);
   const [coverReady, setCoverReady] = useState(false);
   const [spread, setSpread] = useState(0);
@@ -319,7 +309,6 @@ function PassportBookScene({
     setSpread(spreadAfterCoverClosed());
     onSpreadChange?.(spreadAfterCoverClosed());
     endAnimation();
-    resetOrbitControls(controlsRef.current);
   }, [endAnimation, onSpreadChange]);
 
   const openCover = useCallback(() => {
@@ -345,7 +334,6 @@ function PassportBookScene({
       return next;
     });
     bumpStampEpoch();
-    resetOrbitControls(controlsRef.current);
   }, [bumpStampEpoch, endAnimation, onSpreadChange, totalSpreads]);
 
   const finishBackwardFlip = useCallback(() => {
@@ -361,7 +349,6 @@ function PassportBookScene({
       return next;
     });
     bumpStampEpoch();
-    resetOrbitControls(controlsRef.current);
   }, [bumpStampEpoch, endAnimation, onSpreadChange]);
 
   const goNext = useCallback(() => {
@@ -389,7 +376,6 @@ function PassportBookScene({
         return next;
       });
       bumpStampEpoch();
-      resetOrbitControls(controlsRef.current);
       return;
     }
 
@@ -433,7 +419,6 @@ function PassportBookScene({
         return next;
       });
       bumpStampEpoch();
-      resetOrbitControls(controlsRef.current);
       return;
     }
 
@@ -506,6 +491,12 @@ function PassportBookScene({
   useFrame((_state, delta) => {
     const step = Math.min(1, delta * 7);
     const now = performance.now();
+    const spreadOpen = coverOpen && coverReady;
+    _state.camera.position.z = THREE.MathUtils.lerp(
+      _state.camera.position.z,
+      spreadOpen ? PASSPORT_CAMERA_Z_OPEN : PASSPORT_CAMERA_Z_CLOSED,
+      Math.min(1, delta * 6),
+    );
 
     if (animatingRef.current && now - animationStartedAt.current > PASSPORT_ANIMATION_WATCHDOG_MS) {
       if (isFlipping) {
@@ -522,7 +513,6 @@ function PassportBookScene({
         onSpreadChange?.(spreadAfterCoverClosed());
         setIsClosingCover(false);
         endAnimation();
-        resetOrbitControls(controlsRef.current);
       } else {
         endAnimation();
       }
@@ -541,7 +531,6 @@ function PassportBookScene({
         coverDoneRef.current = true;
         setCoverReady(true);
         endAnimation();
-        resetOrbitControls(controlsRef.current);
       }
     }
 
@@ -553,7 +542,6 @@ function PassportBookScene({
         setSpread(spreadAfterCoverClosed());
         onSpreadChange?.(spreadAfterCoverClosed());
         setIsClosingCover(false);
-        resetOrbitControls(controlsRef.current);
       }
     }
 
@@ -583,12 +571,10 @@ function PassportBookScene({
   const flipBackSourceIndex = spread * 2 - 1;
   const flipBackTargetIndex = spread * 2;
   const flipUnderLeftIndex = spread * 2 - 2;
-  const passportBusy = isPassportBusy({ isFlipping, isAnimating, isClosingCover });
   const pageTurnBlocked = isPassportPageTurnBlocked({ isFlipping, isClosingCover });
   const navCtx = getNavContext();
   const canPrev = canGoPassportPrev(navCtx);
   const canNext = canGoPassportNext(navCtx);
-  const orbitEnabled = coverReady && !passportBusy;
   const animateStamp = !reduceMotion && stampEpoch > 0;
   const pageInteractive = (index: number) => interactivePages[index] ?? false;
 
@@ -787,21 +773,6 @@ function PassportBookScene({
           ) : null}
         </group>
         ) : null}
-
-        <OrbitControls
-          ref={controlsRef}
-          enabled={orbitEnabled}
-          enablePan={false}
-          enableZoom={false}
-          enableRotate={!passportBusy}
-          enableDamping
-          dampingFactor={0.08}
-          minPolarAngle={Math.PI / 2.75}
-          maxPolarAngle={Math.PI / 1.95}
-          minAzimuthAngle={-0.12}
-          maxAzimuthAngle={0.12}
-          target={[0, 0, 0]}
-        />
       </group>
     </group>
   );
@@ -834,7 +805,7 @@ export function PassportBookCanvas({
 
   const camera = useMemo(
     () => ({
-      position: [0, 0, PASSPORT_CAMERA_Z] as [number, number, number],
+      position: [0, 0, PASSPORT_CAMERA_Z_CLOSED] as [number, number, number],
       fov: PASSPORT_CAMERA_FOV,
       near: 0.1,
       far: 32,
@@ -854,7 +825,7 @@ export function PassportBookCanvas({
             gl.shadowMap.type = THREE.PCFShadowMap;
             gl.setClearColor(0x000000, 0);
           }}
-          className="rank-passport-3d-canvas absolute inset-0 touch-none"
+          className="rank-passport-3d-canvas absolute inset-0"
         >
           <Scene
             pages={pages}
