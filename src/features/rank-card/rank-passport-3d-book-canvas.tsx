@@ -15,6 +15,7 @@ import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import {
   PassportCoverFace,
   PassportPageChrome,
+  PASSPORT_BOOK_SCALE,
   PASSPORT_CAMERA_FOV,
   PASSPORT_CAMERA_Z,
   PASSPORT_PAGE_H_UNITS,
@@ -41,9 +42,10 @@ const PAGE_HALF = PAGE_W / 2;
 const PAGE_THICK = 0.012;
 const COVER_THICK = 0.032;
 const EDGE_THICK = 0.006;
-/** Left/right page centers — inner edges meet at spine x = 0. */
-const LEFT_PAGE_X = -PAGE_HALF;
-const RIGHT_PAGE_X = PAGE_HALF;
+const SPINE_KISS = 0.008;
+/** Left/right page centers — inner edges kiss at spine x = 0. */
+const LEFT_PAGE_X = -(PAGE_HALF - SPINE_KISS / 2);
+const RIGHT_PAGE_X = PAGE_HALF - SPINE_KISS / 2;
 const OPEN_COVER_ANGLE = -Math.PI * 0.88;
 const FLIP_DURATION = 0.88;
 const COVER_PIVOT_Z = COVER_THICK * 0.45 + 0.012;
@@ -168,36 +170,11 @@ function PageTurnEdge() {
   );
 }
 
-function ClosedPageEdges({ layers }: { layers: number }) {
-  const count = Math.min(layers, 16);
-  return (
-    <>
-      {Array.from({ length: count }).map((_, index) => (
-        <mesh
-          key={index}
-          position={[
-            PAGE_HALF + index * PAGE_THICK * 0.92,
-            -0.01 + index * 0.002,
-            index * PAGE_THICK * 0.38,
-          ]}
-          castShadow
-        >
-          <boxGeometry args={[PAGE_THICK, PAGE_H * 0.96, PAGE_H * 0.64]} />
-          <meshStandardMaterial
-            color={index % 2 === 0 ? "#EDE8DC" : "#E2DDD0"}
-            roughness={0.9}
-          />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
 function PassportSpineGutter({ z }: { z: number }) {
   return (
     <group position={[0, 0, z]}>
       <mesh>
-        <boxGeometry args={[0.02, PAGE_H, PAGE_THICK * 1.1]} />
+        <boxGeometry args={[0.012, PAGE_H, PAGE_THICK * 1.1]} />
         <meshStandardMaterial color="#C9BFA8" roughness={1} />
       </mesh>
       <mesh position={[0, 0, PAGE_THICK * 0.05]}>
@@ -208,10 +185,11 @@ function PassportSpineGutter({ z }: { z: number }) {
   );
 }
 
-function PassportBackCover({ z }: { z: number }) {
+function PassportBackCover({ z, open }: { z: number; open: boolean }) {
+  const width = open ? PAGE_W * 2 + 0.04 : PAGE_W + 0.02;
   return (
     <mesh position={[0, 0, z - COVER_THICK * 0.6]} castShadow receiveShadow>
-      <boxGeometry args={[PAGE_W * 2 + 0.04, PAGE_H, COVER_THICK]} />
+      <boxGeometry args={[width, PAGE_H, COVER_THICK]} />
       <meshStandardMaterial color="#0B1220" roughness={0.78} metalness={0.1} />
     </mesh>
   );
@@ -219,9 +197,11 @@ function PassportBackCover({ z }: { z: number }) {
 
 function PassportCoverShell({
   reduceMotion,
+  showForeEdge,
   onClick,
 }: {
   reduceMotion: boolean;
+  showForeEdge: boolean;
   onClick?: (event: ThreeEvent<MouseEvent>) => void;
 }) {
   return (
@@ -230,10 +210,12 @@ function PassportCoverShell({
         <boxGeometry args={[PAGE_W, PAGE_H, COVER_THICK]} />
         <PassportCoverMaterial reduceMotion={reduceMotion} />
       </mesh>
-      <mesh position={[PAGE_W / 2 - EDGE_THICK / 2, 0, 0]}>
-        <boxGeometry args={[EDGE_THICK, PAGE_H, COVER_THICK + 0.004]} />
-        <PassportEdgeMaterial color="#070D18" />
-      </mesh>
+      {showForeEdge ? (
+        <mesh position={[PAGE_W / 2 - EDGE_THICK / 2, 0, 0]}>
+          <boxGeometry args={[EDGE_THICK, PAGE_H, COVER_THICK + 0.004]} />
+          <PassportEdgeMaterial color="#070D18" />
+        </mesh>
+      ) : null}
       <mesh position={[0, PAGE_H / 2 - EDGE_THICK / 2, 0]}>
         <boxGeometry args={[PAGE_W, EDGE_THICK, COVER_THICK + 0.004]} />
         <PassportEdgeMaterial color="#0F172A" />
@@ -542,17 +524,14 @@ function PassportBookScene({
 
   return (
     <group ref={floatRef}>
-      <group>
-        <PassportBackCover z={leftZ} />
+      <group scale={PASSPORT_BOOK_SCALE}>
+        <PassportBackCover z={leftZ} open={showSpread} />
 
         {!showSpread ? (
-          <>
-            <mesh position={[0, 0, 0.002]} castShadow receiveShadow>
-              <boxGeometry args={[PAGE_W - 0.02, PAGE_H - 0.02, pages.length * PAGE_THICK * 0.55]} />
-              <PassportPaperMaterial />
-            </mesh>
-            <ClosedPageEdges layers={pages.length} />
-          </>
+          <mesh position={[0, 0, 0.002]} castShadow receiveShadow>
+            <boxGeometry args={[PAGE_W - 0.02, PAGE_H - 0.02, pages.length * PAGE_THICK * 0.55]} />
+            <PassportPaperMaterial />
+          </mesh>
         ) : null}
 
         {showSpread ? (
@@ -698,6 +677,7 @@ function PassportBookScene({
         <group ref={coverPivotRef} position={[-PAGE_W / 2, 0, COVER_PIVOT_Z]}>
           <PassportCoverShell
             reduceMotion={reduceMotion}
+            showForeEdge={coverOpen}
             onClick={(event) => {
               event.stopPropagation();
               if (!coverOpen) openCover();
@@ -804,7 +784,7 @@ export function PassportBookCanvas({
 }: PassportBookCanvasProps & { className?: string }) {
   const [nav, setNav] = useState<PassportNavState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [viewportH, setViewportH] = useState(920);
+  const [viewportH, setViewportH] = useState(720);
 
   const htmlDistanceFactor = useMemo(
     () => passportHtmlDistanceFactor(PASSPORT_CAMERA_Z, PASSPORT_CAMERA_FOV, viewportH),
@@ -836,7 +816,7 @@ export function PassportBookCanvas({
 
   return (
     <div className={className}>
-      <div ref={containerRef} className="relative h-[min(94dvh,920px)] w-full">
+      <div ref={containerRef} className="relative h-[min(78dvh,720px)] w-full">
         <Canvas
           shadows
           dpr={[1, 2]}

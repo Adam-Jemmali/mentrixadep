@@ -6,24 +6,26 @@ import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { cn } from "@/shared/core/utils";
 
 /** Pixel canvas for in-scene Html — matched to 3D page mesh aspect. */
-export const PASSPORT_PAGE_W_PX = 520;
-export const PASSPORT_PAGE_H_PX = 780;
+export const PASSPORT_PAGE_W_PX = 460;
+export const PASSPORT_PAGE_H_PX = 690;
 
 /** World units for one passport page in the 3D scene. */
-export const PASSPORT_PAGE_W_UNITS = 3.05;
-export const PASSPORT_PAGE_H_UNITS = 4.55;
-export const PASSPORT_CAMERA_Z = 3.55;
+export const PASSPORT_PAGE_W_UNITS = 2.15;
+export const PASSPORT_PAGE_H_UNITS = 3.2;
+export const PASSPORT_CAMERA_Z = 4.35;
 export const PASSPORT_CAMERA_FOV = 48;
-export const PASSPORT_VIEWPORT_H = 920;
+export const PASSPORT_VIEWPORT_H = 720;
+/** Fine-tuning scale applied to the whole book group in the canvas. */
+export const PASSPORT_BOOK_SCALE = 0.92;
 
-/** Scales Html overlays to match page mesh width at the default camera. */
+/** Scales Html overlays to match one page mesh width at the default camera. */
 export function passportHtmlDistanceFactor(
   cameraZ = PASSPORT_CAMERA_Z,
   fov = PASSPORT_CAMERA_FOV,
   viewportH = PASSPORT_VIEWPORT_H,
 ) {
   const vFov = (fov * Math.PI) / 180;
-  const denom = PASSPORT_PAGE_W_PX * 2 * Math.tan(vFov / 2) * cameraZ;
+  const denom = PASSPORT_PAGE_W_PX * Math.tan(vFov / 2) * cameraZ;
   return (PASSPORT_PAGE_W_UNITS * viewportH) / denom;
 }
 
@@ -146,7 +148,7 @@ export function PassportPageChrome({
 export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
   return (
     <div
-      className="flex flex-col items-center justify-between px-10 py-14 text-center"
+      className="flex flex-col items-center justify-between overflow-hidden bg-[#0B1220] px-10 py-14 text-center"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
       <div className="flex h-32 w-32 items-center justify-center rounded-full border-2 border-[#D4A017]/40 bg-[#0B1220]/60">

@@ -27,7 +27,7 @@ const PassportBookCanvasDynamic = dynamic(
     loading: () => (
       <div
         className="rank-passport-3d-canvas-shell flex items-center justify-center"
-        style={{ height: "min(94dvh, 920px)" }}
+        style={{ height: "min(78dvh, 720px)" }}
       >
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6366F1]">Loading passport</p>
       </div>
