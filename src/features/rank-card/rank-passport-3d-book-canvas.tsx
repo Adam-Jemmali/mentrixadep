@@ -1,7 +1,7 @@
 "use client";
 
 import { Html, OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import {
   type ReactNode,
   useCallback,
@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import {
   PassportCoverFace,
   PassportPageChrome,
@@ -22,7 +23,14 @@ import {
   passportPageStamp,
 } from "@/features/rank-card/rank-passport-3d-decor";
 import {
+  canGoPassportNext,
+  canGoPassportPrev,
+  PASSPORT_ANIMATION_WATCHDOG_MS,
+  spreadAfterCoverClosed,
+} from "@/features/rank-card/rank-passport-3d-nav";
+import {
   PassportCoverMaterial,
+  PassportEdgeMaterial,
   PassportPaperMaterial,
 } from "@/features/rank-card/rank-passport-3d-materials";
 import { cn } from "@/shared/core/utils";
@@ -32,13 +40,13 @@ const PAGE_H = PASSPORT_PAGE_H_UNITS;
 const PAGE_HALF = PAGE_W / 2;
 const PAGE_THICK = 0.012;
 const COVER_THICK = 0.032;
-/** Pages overlap slightly at the spine like bound paper. */
-const SPINE_OVERLAP = 0.06;
-const LEFT_PAGE_X = -(PAGE_HALF - SPINE_OVERLAP / 2);
-const RIGHT_PAGE_X = PAGE_HALF - SPINE_OVERLAP / 2;
+const EDGE_THICK = 0.006;
+/** Left/right page centers — inner edges meet at spine x = 0. */
+const LEFT_PAGE_X = -PAGE_HALF;
+const RIGHT_PAGE_X = PAGE_HALF;
 const OPEN_COVER_ANGLE = -Math.PI * 0.88;
 const FLIP_DURATION = 0.88;
-const HTML_DISTANCE_FACTOR = passportHtmlDistanceFactor();
+const COVER_PIVOT_Z = COVER_THICK * 0.45 + 0.012;
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -77,12 +85,23 @@ function pageAt(pages: ReactNode[], index: number) {
   return pages[index];
 }
 
-function PageSpineEdge({ side }: { side: "left" | "right" }) {
+function PageOuterEdges({ side }: { side: "left" | "right" }) {
+  const foreX = side === "left" ? -PAGE_HALF + EDGE_THICK / 2 : PAGE_HALF - EDGE_THICK / 2;
   return (
-    <mesh position={[side === "left" ? PAGE_HALF - 0.001 : -PAGE_HALF + 0.001, 0, 0]}>
-      <boxGeometry args={[0.003, PAGE_H * 0.98, PAGE_THICK * 1.2]} />
-      <meshStandardMaterial color="#E8E2D4" roughness={0.95} />
-    </mesh>
+    <group>
+      <mesh position={[foreX, 0, PAGE_THICK / 2 + EDGE_THICK / 2]}>
+        <boxGeometry args={[EDGE_THICK, PAGE_H * 0.98, EDGE_THICK]} />
+        <PassportEdgeMaterial color="#E8E2D4" />
+      </mesh>
+      <mesh position={[0, PAGE_H / 2 - EDGE_THICK / 2, PAGE_THICK / 2]}>
+        <boxGeometry args={[PAGE_W * 0.98, EDGE_THICK, EDGE_THICK]} />
+        <PassportEdgeMaterial color="#EDE8DC" />
+      </mesh>
+      <mesh position={[0, -PAGE_H / 2 + EDGE_THICK / 2, PAGE_THICK / 2]}>
+        <boxGeometry args={[PAGE_W * 0.98, EDGE_THICK, EDGE_THICK]} />
+        <PassportEdgeMaterial color="#EDE8DC" />
+      </mesh>
+    </group>
   );
 }
 
@@ -93,7 +112,7 @@ function PagePaperMesh({ side }: { side: "left" | "right" }) {
         <boxGeometry args={[PAGE_W, PAGE_H, PAGE_THICK]} />
         <PassportPaperMaterial />
       </mesh>
-      <PageSpineEdge side={side} />
+      <PageOuterEdges side={side} />
     </group>
   );
 }
@@ -102,12 +121,14 @@ function PageSlot({
   position,
   side,
   pageIndex,
+  htmlDistanceFactor,
   onClick,
   children,
 }: {
   position: [number, number, number];
   side: "left" | "right";
   pageIndex: number;
+  htmlDistanceFactor: number;
   onClick?: (event: { stopPropagation: () => void }) => void;
   children: ReactNode;
 }) {
@@ -119,11 +140,11 @@ function PageSlot({
         <boxGeometry args={[PAGE_W, PAGE_H, PAGE_THICK]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <PageSpineEdge side={side} />
+      <PageOuterEdges side={side} />
       <Html
         transform
         occlude={false}
-        distanceFactor={HTML_DISTANCE_FACTOR}
+        distanceFactor={htmlDistanceFactor}
         position={[0, 0, PAGE_THICK / 2 + 0.003]}
         zIndexRange={[40, 0]}
         style={{ pointerEvents: "none" }}
@@ -141,7 +162,7 @@ function PageSlot({
 function PageTurnEdge() {
   return (
     <mesh>
-      <boxGeometry args={[PAGE_THICK, PAGE_H * 0.98, 0.004]} />
+      <boxGeometry args={[PAGE_THICK, PAGE_H * 0.98, EDGE_THICK]} />
       <PassportPaperMaterial color="#E8E2D4" />
     </mesh>
   );
@@ -154,7 +175,11 @@ function ClosedPageEdges({ layers }: { layers: number }) {
       {Array.from({ length: count }).map((_, index) => (
         <mesh
           key={index}
-          position={[PAGE_W * 0.5 + index * PAGE_THICK * 0.92, -0.01 + index * 0.002, index * PAGE_THICK * 0.38]}
+          position={[
+            PAGE_HALF + index * PAGE_THICK * 0.92,
+            -0.01 + index * 0.002,
+            index * PAGE_THICK * 0.38,
+          ]}
           castShadow
         >
           <boxGeometry args={[PAGE_THICK, PAGE_H * 0.96, PAGE_H * 0.64]} />
@@ -168,29 +193,88 @@ function ClosedPageEdges({ layers }: { layers: number }) {
   );
 }
 
-function PassportSpineCrease({ z }: { z: number }) {
+function PassportSpineGutter({ z }: { z: number }) {
   return (
-    <mesh position={[0, 0, z]}>
-      <boxGeometry args={[0.004, PAGE_H, PAGE_THICK * 0.8]} />
-      <meshStandardMaterial color="#DDD6C6" roughness={1} />
+    <group position={[0, 0, z]}>
+      <mesh>
+        <boxGeometry args={[0.02, PAGE_H, PAGE_THICK * 1.1]} />
+        <meshStandardMaterial color="#C9BFA8" roughness={1} />
+      </mesh>
+      <mesh position={[0, 0, PAGE_THICK * 0.05]}>
+        <boxGeometry args={[0.006, PAGE_H * 0.96, 0.002]} />
+        <meshStandardMaterial color="#A89880" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+function PassportBackCover({ z }: { z: number }) {
+  return (
+    <mesh position={[0, 0, z - COVER_THICK * 0.6]} castShadow receiveShadow>
+      <boxGeometry args={[PAGE_W * 2 + 0.04, PAGE_H, COVER_THICK]} />
+      <meshStandardMaterial color="#0B1220" roughness={0.78} metalness={0.1} />
     </mesh>
   );
+}
+
+function PassportCoverShell({
+  reduceMotion,
+  onClick,
+}: {
+  reduceMotion: boolean;
+  onClick?: (event: ThreeEvent<MouseEvent>) => void;
+}) {
+  return (
+    <group position={[PAGE_W / 2, 0, 0]}>
+      <mesh castShadow receiveShadow onClick={onClick}>
+        <boxGeometry args={[PAGE_W, PAGE_H, COVER_THICK]} />
+        <PassportCoverMaterial reduceMotion={reduceMotion} />
+      </mesh>
+      <mesh position={[PAGE_W / 2 - EDGE_THICK / 2, 0, 0]}>
+        <boxGeometry args={[EDGE_THICK, PAGE_H, COVER_THICK + 0.004]} />
+        <PassportEdgeMaterial color="#070D18" />
+      </mesh>
+      <mesh position={[0, PAGE_H / 2 - EDGE_THICK / 2, 0]}>
+        <boxGeometry args={[PAGE_W, EDGE_THICK, COVER_THICK + 0.004]} />
+        <PassportEdgeMaterial color="#0F172A" />
+      </mesh>
+      <mesh position={[0, -PAGE_H / 2 + EDGE_THICK / 2, 0]}>
+        <boxGeometry args={[PAGE_W, EDGE_THICK, COVER_THICK + 0.004]} />
+        <PassportEdgeMaterial color="#0F172A" />
+      </mesh>
+      <mesh position={[-PAGE_W / 2 + EDGE_THICK / 2, 0, -COVER_THICK / 2 - 0.001]}>
+        <boxGeometry args={[EDGE_THICK, PAGE_H * 0.96, 0.004]} />
+        <PassportEdgeMaterial color="#1E293B" />
+      </mesh>
+    </group>
+  );
+}
+
+function resetOrbitControls(controls: OrbitControlsType | null) {
+  if (!controls) return;
+  controls.setAzimuthalAngle(0);
+  controls.setPolarAngle(Math.PI / 2.1);
+  controls.target.set(0, 0, 0);
+  controls.update();
 }
 
 function PassportBookScene({
   pages,
   subjectLabel,
+  htmlDistanceFactor,
   onSpreadChange,
   onNavChange,
-}: PassportBookCanvasProps) {
+}: PassportBookCanvasProps & { htmlDistanceFactor: number }) {
   const floatRef = useRef<THREE.Group>(null);
   const entranceRef = useRef(0);
+  const controlsRef = useRef<OrbitControlsType>(null);
   const [coverOpen, setCoverOpen] = useState(false);
   const [coverReady, setCoverReady] = useState(false);
   const [spread, setSpread] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
   const [flipBackward, setFlipBackward] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const coverPivotRef = useRef<THREE.Group>(null);
   const flipPivotRef = useRef<THREE.Group>(null);
@@ -200,6 +284,7 @@ function PassportBookScene({
   const targetCover = useRef(0);
   const coverDoneRef = useRef(false);
   const animatingRef = useRef(false);
+  const animationStartedAt = useRef(0);
 
   const totalSpreads = spreadCount(pages.length);
   const leftIndex = spread * 2;
@@ -209,26 +294,37 @@ function PassportBookScene({
     setReduceMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
+  const beginAnimation = useCallback(() => {
+    animatingRef.current = true;
+    setIsAnimating(true);
+    animationStartedAt.current = performance.now();
+  }, []);
+
+  const endAnimation = useCallback(() => {
+    animatingRef.current = false;
+    setIsAnimating(false);
+  }, []);
+
   const closeCover = useCallback(() => {
-    if (!coverOpen || animatingRef.current) return;
+    if (!coverOpen) return;
     setCoverReady(false);
     setCoverOpen(false);
     coverDoneRef.current = false;
     targetCover.current = 0;
-    animatingRef.current = true;
-  }, [coverOpen]);
+    beginAnimation();
+  }, [beginAnimation, coverOpen]);
 
   const openCover = useCallback(() => {
     if (coverOpen || animatingRef.current) return;
     setCoverOpen(true);
     targetCover.current = OPEN_COVER_ANGLE;
-    animatingRef.current = true;
-  }, [coverOpen]);
+    beginAnimation();
+  }, [beginAnimation, coverOpen]);
 
   const finishForwardFlip = useCallback(() => {
     setIsFlipping(false);
     setFlipBackward(false);
-    animatingRef.current = false;
+    endAnimation();
     flipProgress.current = 0;
     flipAngle.current = 0;
     if (flipPivotRef.current) flipPivotRef.current.rotation.y = 0;
@@ -237,12 +333,13 @@ function PassportBookScene({
       onSpreadChange?.(next);
       return next;
     });
-  }, [onSpreadChange, totalSpreads]);
+    resetOrbitControls(controlsRef.current);
+  }, [endAnimation, onSpreadChange, totalSpreads]);
 
   const finishBackwardFlip = useCallback(() => {
     setIsFlipping(false);
     setFlipBackward(false);
-    animatingRef.current = false;
+    endAnimation();
     flipProgress.current = 0;
     flipAngle.current = 0;
     if (flipPivotRef.current) flipPivotRef.current.rotation.y = 0;
@@ -251,14 +348,15 @@ function PassportBookScene({
       onSpreadChange?.(next);
       return next;
     });
-  }, [onSpreadChange]);
+    resetOrbitControls(controlsRef.current);
+  }, [endAnimation, onSpreadChange]);
 
   const goNext = useCallback(() => {
     if (!coverOpen) {
       openCover();
       return;
     }
-    if (!coverReady || isFlipping || spread >= totalSpreads - 1) return;
+    if (!coverReady || isFlipping || animatingRef.current || spread >= totalSpreads - 1) return;
 
     if (reduceMotion) {
       setSpread((current) => {
@@ -266,23 +364,38 @@ function PassportBookScene({
         onSpreadChange?.(next);
         return next;
       });
+      resetOrbitControls(controlsRef.current);
       return;
     }
 
     setFlipBackward(false);
     setIsFlipping(true);
-    animatingRef.current = true;
+    beginAnimation();
     flipProgress.current = 0;
     flipAngle.current = 0;
-  }, [coverOpen, coverReady, isFlipping, onSpreadChange, openCover, reduceMotion, spread, totalSpreads]);
+  }, [
+    beginAnimation,
+    coverOpen,
+    coverReady,
+    isFlipping,
+    onSpreadChange,
+    openCover,
+    reduceMotion,
+    spread,
+    totalSpreads,
+  ]);
 
   const goPrev = useCallback(() => {
     if (!coverOpen) return;
-    if (isFlipping || animatingRef.current) return;
+    if (isFlipping) return;
+
     if (!coverReady) {
       closeCover();
       return;
     }
+
+    if (animatingRef.current) return;
+
     if (spread <= 0) {
       closeCover();
       return;
@@ -294,15 +407,16 @@ function PassportBookScene({
         onSpreadChange?.(next);
         return next;
       });
+      resetOrbitControls(controlsRef.current);
       return;
     }
 
     setFlipBackward(true);
     setIsFlipping(true);
-    animatingRef.current = true;
+    beginAnimation();
     flipProgress.current = 0;
     flipAngle.current = -Math.PI;
-  }, [closeCover, coverOpen, coverReady, isFlipping, onSpreadChange, reduceMotion, spread]);
+  }, [closeCover, coverOpen, coverReady, isFlipping, onSpreadChange, reduceMotion, spread, beginAnimation]);
 
   useEffect(() => {
     if (!coverOpen || coverDoneRef.current) return;
@@ -314,8 +428,22 @@ function PassportBookScene({
       spread,
       totalSpreads,
       coverOpen,
-      canGoPrev: coverOpen && !isFlipping,
-      canGoNext: !coverOpen || (coverReady && !isFlipping && spread < totalSpreads - 1),
+      canGoPrev: canGoPassportPrev({
+        coverOpen,
+        coverReady,
+        isFlipping,
+        isAnimating,
+        spread,
+        totalSpreads,
+      }),
+      canGoNext: canGoPassportNext({
+        coverOpen,
+        coverReady,
+        isFlipping,
+        isAnimating,
+        spread,
+        totalSpreads,
+      }),
       goPrev,
       goNext,
       openCover,
@@ -325,6 +453,7 @@ function PassportBookScene({
     coverReady,
     goNext,
     goPrev,
+    isAnimating,
     isFlipping,
     onNavChange,
     openCover,
@@ -334,12 +463,32 @@ function PassportBookScene({
 
   useFrame((_state, delta) => {
     const step = Math.min(1, delta * 7);
+    const now = performance.now();
+
+    if (animatingRef.current && now - animationStartedAt.current > PASSPORT_ANIMATION_WATCHDOG_MS) {
+      if (isFlipping) {
+        if (flipBackward) finishBackwardFlip();
+        else finishForwardFlip();
+      } else if (coverOpen && !coverDoneRef.current) {
+        coverAngle.current = OPEN_COVER_ANGLE;
+        coverDoneRef.current = true;
+        setCoverReady(true);
+        endAnimation();
+      } else if (!coverOpen && coverAngle.current > 0.004) {
+        coverAngle.current = 0;
+        setSpread(spreadAfterCoverClosed());
+        onSpreadChange?.(spreadAfterCoverClosed());
+        endAnimation();
+        resetOrbitControls(controlsRef.current);
+      } else {
+        endAnimation();
+      }
+    }
 
     if (floatRef.current) {
       entranceRef.current = Math.min(1, entranceRef.current + delta * 1.6);
       const entranceEase = 1 - (1 - entranceRef.current) ** 3;
-      const baseY = THREE.MathUtils.lerp(-0.12, 0, entranceEase);
-      floatRef.current.position.y = baseY;
+      floatRef.current.position.y = THREE.MathUtils.lerp(-0.12, 0, entranceEase);
     }
 
     if (coverOpen && !coverDoneRef.current) {
@@ -348,7 +497,8 @@ function PassportBookScene({
         coverAngle.current = targetCover.current;
         coverDoneRef.current = true;
         setCoverReady(true);
-        animatingRef.current = false;
+        endAnimation();
+        resetOrbitControls(controlsRef.current);
       }
     }
 
@@ -356,7 +506,10 @@ function PassportBookScene({
       coverAngle.current = THREE.MathUtils.lerp(coverAngle.current, targetCover.current, step);
       if (Math.abs(coverAngle.current) < 0.004) {
         coverAngle.current = 0;
-        animatingRef.current = false;
+        endAnimation();
+        setSpread(spreadAfterCoverClosed());
+        onSpreadChange?.(spreadAfterCoverClosed());
+        resetOrbitControls(controlsRef.current);
       }
     }
 
@@ -376,25 +529,21 @@ function PassportBookScene({
   });
 
   const showSpread = coverOpen && coverReady;
-  const leftZ = 0.014 + spread * PAGE_THICK * 0.45;
-  const rightZ = 0.014 + spread * PAGE_THICK * 0.45 + PAGE_THICK;
+  const stackZ = 0.014 + spread * PAGE_THICK * 0.45;
+  const leftZ = stackZ;
+  const rightZ = stackZ + PAGE_THICK;
   const flipSourceIndex = spread * 2 + 1;
   const flipTargetIndex = spread * 2 + 2;
   const flipUnderRightIndex = spread * 2 + 3;
   const flipBackSourceIndex = spread * 2 - 1;
   const flipBackTargetIndex = spread * 2;
   const flipUnderLeftIndex = spread * 2 - 2;
-  const coverPivotZ = coverReady ? COVER_THICK * 0.45 + 0.012 - 0.12 : COVER_THICK * 0.45 + 0.012;
+  const orbitEnabled = coverReady && !isFlipping && !isAnimating;
 
   return (
     <group ref={floatRef}>
-      <group rotation={[0, 0, 0]}>
-        {!showSpread ? (
-          <mesh position={[0, 0, -COVER_THICK * 0.55]} castShadow receiveShadow>
-            <boxGeometry args={[PAGE_W + 0.04, PAGE_H + 0.04, COVER_THICK]} />
-            <meshStandardMaterial color="#0B1220" roughness={0.78} metalness={0.1} />
-          </mesh>
-        ) : null}
+      <group>
+        <PassportBackCover z={leftZ} />
 
         {!showSpread ? (
           <>
@@ -408,12 +557,13 @@ function PassportBookScene({
 
         {showSpread ? (
           <>
-            <PassportSpineCrease z={leftZ - 0.001} />
+            <PassportSpineGutter z={leftZ + PAGE_THICK * 0.5} />
 
             <PageSlot
               position={[LEFT_PAGE_X, 0, leftZ]}
               side="left"
               pageIndex={leftIndex}
+              htmlDistanceFactor={htmlDistanceFactor}
               onClick={(event) => {
                 event.stopPropagation();
                 goPrev();
@@ -427,6 +577,7 @@ function PassportBookScene({
                 position={[RIGHT_PAGE_X, 0, rightZ]}
                 side="right"
                 pageIndex={rightIndex}
+                htmlDistanceFactor={htmlDistanceFactor}
                 onClick={(event) => {
                   event.stopPropagation();
                   goNext();
@@ -442,6 +593,7 @@ function PassportBookScene({
                   position={[RIGHT_PAGE_X, 0, rightZ - PAGE_THICK]}
                   side="right"
                   pageIndex={flipUnderRightIndex}
+                  htmlDistanceFactor={htmlDistanceFactor}
                 >
                   {pageAt(pages, flipUnderRightIndex)}
                 </PageSlot>
@@ -453,7 +605,7 @@ function PassportBookScene({
                     <Html
                       transform
                       occlude={false}
-                      distanceFactor={HTML_DISTANCE_FACTOR}
+                      distanceFactor={htmlDistanceFactor}
                       position={[0, 0, PAGE_THICK / 2 + 0.003]}
                       zIndexRange={[50, 0]}
                       style={{ pointerEvents: "none" }}
@@ -471,7 +623,7 @@ function PassportBookScene({
                     <Html
                       transform
                       occlude={false}
-                      distanceFactor={HTML_DISTANCE_FACTOR}
+                      distanceFactor={htmlDistanceFactor}
                       position={[0, 0, PAGE_THICK / 2 + 0.003]}
                       zIndexRange={[50, 0]}
                       style={{ pointerEvents: "none" }}
@@ -494,6 +646,7 @@ function PassportBookScene({
                   position={[LEFT_PAGE_X, 0, leftZ - PAGE_THICK]}
                   side="left"
                   pageIndex={flipUnderLeftIndex}
+                  htmlDistanceFactor={htmlDistanceFactor}
                 >
                   {pageAt(pages, flipUnderLeftIndex)}
                 </PageSlot>
@@ -505,7 +658,7 @@ function PassportBookScene({
                     <Html
                       transform
                       occlude={false}
-                      distanceFactor={HTML_DISTANCE_FACTOR}
+                      distanceFactor={htmlDistanceFactor}
                       position={[0, 0, PAGE_THICK / 2 + 0.003]}
                       zIndexRange={[50, 0]}
                       style={{ pointerEvents: "none" }}
@@ -523,7 +676,7 @@ function PassportBookScene({
                     <Html
                       transform
                       occlude={false}
-                      distanceFactor={HTML_DISTANCE_FACTOR}
+                      distanceFactor={htmlDistanceFactor}
                       position={[0, 0, PAGE_THICK / 2 + 0.003]}
                       zIndexRange={[50, 0]}
                       style={{ pointerEvents: "none" }}
@@ -542,24 +695,19 @@ function PassportBookScene({
           </>
         ) : null}
 
-        <group ref={coverPivotRef} position={[-PAGE_W / 2, 0, coverPivotZ]}>
-          <mesh
-            position={[PAGE_W / 2, 0, 0]}
-            castShadow
-            receiveShadow
+        <group ref={coverPivotRef} position={[-PAGE_W / 2, 0, COVER_PIVOT_Z]}>
+          <PassportCoverShell
+            reduceMotion={reduceMotion}
             onClick={(event) => {
               event.stopPropagation();
               if (!coverOpen) openCover();
             }}
-          >
-            <boxGeometry args={[PAGE_W, PAGE_H + 0.015, COVER_THICK]} />
-            <PassportCoverMaterial reduceMotion={reduceMotion} />
-          </mesh>
+          />
           {!coverOpen ? (
             <Html
               transform
               occlude={false}
-              distanceFactor={HTML_DISTANCE_FACTOR}
+              distanceFactor={htmlDistanceFactor}
               position={[PAGE_W / 2, 0, COVER_THICK / 2 + 0.002]}
               style={{ pointerEvents: "none" }}
             >
@@ -574,22 +722,19 @@ function PassportBookScene({
               </button>
             </Html>
           ) : null}
-          <mesh position={[0.012, 0, 0]}>
-            <boxGeometry args={[0.02, PAGE_H * 0.92, COVER_THICK * 1.05]} />
-            <meshStandardMaterial color="#070D18" roughness={0.85} />
-          </mesh>
         </group>
 
         <OrbitControls
-          enabled={coverReady && !isFlipping}
+          ref={controlsRef}
+          enabled={orbitEnabled}
           enablePan={false}
           enableZoom={false}
           enableDamping
           dampingFactor={0.08}
           minPolarAngle={Math.PI / 2.75}
           maxPolarAngle={Math.PI / 1.95}
-          minAzimuthAngle={-0.22}
-          maxAzimuthAngle={0.22}
+          minAzimuthAngle={-0.12}
+          maxAzimuthAngle={0.12}
           target={[0, 0, 0]}
         />
       </group>
@@ -597,13 +742,17 @@ function PassportBookScene({
   );
 }
 
-function Scene(props: PassportBookCanvasProps) {
+function Scene({
+  htmlDistanceFactor,
+  ...props
+}: PassportBookCanvasProps & { htmlDistanceFactor: number }) {
   return (
     <>
       <ambientLight intensity={0.78} />
       <directionalLight position={[2.5, 4.5, 3.5]} intensity={1.05} castShadow />
       <directionalLight position={[-3, 1.5, 2]} intensity={0.28} color="#6366F1" />
-      <PassportBookScene {...props} />
+      <directionalLight position={[-2.5, 0.5, -2]} intensity={0.18} color="#94A3B8" />
+      <PassportBookScene htmlDistanceFactor={htmlDistanceFactor} {...props} />
     </>
   );
 }
@@ -654,14 +803,40 @@ export function PassportBookCanvas({
   onNavChange,
 }: PassportBookCanvasProps & { className?: string }) {
   const [nav, setNav] = useState<PassportNavState | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [viewportH, setViewportH] = useState(920);
+
+  const htmlDistanceFactor = useMemo(
+    () => passportHtmlDistanceFactor(PASSPORT_CAMERA_Z, PASSPORT_CAMERA_FOV, viewportH),
+    [viewportH],
+  );
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setViewportH(entry.contentRect.height);
+    });
+    observer.observe(node);
+    setViewportH(node.getBoundingClientRect().height);
+    return () => observer.disconnect();
+  }, []);
+
   const camera = useMemo(
-    () => ({ position: [0, 0, PASSPORT_CAMERA_Z] as [number, number, number], fov: PASSPORT_CAMERA_FOV, near: 0.1, far: 32 }),
+    () => ({
+      position: [0, 0, PASSPORT_CAMERA_Z] as [number, number, number],
+      fov: PASSPORT_CAMERA_FOV,
+      near: 0.1,
+      far: 32,
+    }),
     [],
   );
 
   return (
     <div className={className}>
-      <div className="relative h-[min(94dvh,920px)] w-full">
+      <div ref={containerRef} className="relative h-[min(94dvh,920px)] w-full">
         <Canvas
           shadows
           dpr={[1, 2]}
@@ -676,6 +851,7 @@ export function PassportBookCanvas({
           <Scene
             pages={pages}
             subjectLabel={subjectLabel}
+            htmlDistanceFactor={htmlDistanceFactor}
             onSpreadChange={onSpreadChange}
             onNavChange={(state) => {
               setNav(state);

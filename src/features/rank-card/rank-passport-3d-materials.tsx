@@ -89,3 +89,7 @@ export function PassportPaperMaterial({
 }) {
   return <meshStandardMaterial color={color} roughness={0.94} metalness={0.02} />;
 }
+
+export function PassportEdgeMaterial({ color = "#070D18" }: { color?: string }) {
+  return <meshStandardMaterial color={color} roughness={0.82} metalness={0.08} />;
+}

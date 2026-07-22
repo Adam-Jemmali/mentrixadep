@@ -774,12 +774,18 @@ html:has(.mentrix-student-type-scope) body {
 .rank-passport-3d-canvas-shell {
   width: min(100%, 1100px);
   margin-inline: auto;
-  background: transparent;
+  background: radial-gradient(ellipse 80% 60% at 50% 45%, #f8f7ff 0%, #ede9fe 55%, transparent 100%);
 }
 
 .rank-passport-3d-canvas {
   display: block;
   background: transparent !important;
+}
+
+.rank-passport-3d-canvas div,
+.rank-passport-3d-canvas iframe {
+  outline: none !important;
+  border: none !important;
 }
 
 .rank-passport-page-paper {

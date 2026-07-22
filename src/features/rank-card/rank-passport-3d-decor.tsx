@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import type { ReactNode } from "react";
+import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { cn } from "@/shared/core/utils";
 
 /** Pixel canvas for in-scene Html — matched to 3D page mesh aspect. */
@@ -147,8 +149,15 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
       className="flex flex-col items-center justify-between px-10 py-14 text-center"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
-      <div className="rank-passport-3d-foil rank-passport-3d-foil--holo rank-passport-3d-foil--logo flex h-32 w-32 items-center justify-center rounded-full border-2 border-[#D4A017]/40">
-        <span className="text-6xl font-black tracking-[0.2em]">M</span>
+      <div className="flex h-32 w-32 items-center justify-center rounded-full border-2 border-[#D4A017]/40 bg-[#0B1220]/60">
+        <Image
+          src={MENTRIXA_LOGO_PNG}
+          alt="Mentrixa"
+          width={128}
+          height={128}
+          className="h-28 w-28 object-contain"
+          priority
+        />
       </div>
       <div className="space-y-5">
         <p className="rank-passport-3d-foil rank-passport-3d-foil--holo text-[2.75rem] font-black leading-none tracking-[0.22em]">
