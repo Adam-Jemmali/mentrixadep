@@ -35,8 +35,11 @@ const PassportBookCanvasDynamic = dynamic(
   },
 );
 
-function extractPassportPages(children: ReactNode | undefined): ReactNode[] {
-  const slides: { index: number; content: ReactNode }[] = [];
+function extractPassportSlides(children: ReactNode | undefined): {
+  pages: ReactNode[];
+  interactivePages: boolean[];
+} {
+  const slides: { index: number; content: ReactNode; interactive: boolean }[] = [];
 
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return;
@@ -45,11 +48,16 @@ function extractPassportPages(children: ReactNode | undefined): ReactNode[] {
       slides.push({
         index: typeof child.props.slideIndex === "number" ? child.props.slideIndex : slides.length,
         content: child.props.children,
+        interactive: Boolean(child.props.interactive),
       });
     }
   });
 
-  return slides.sort((a, b) => a.index - b.index).map((slide) => slide.content);
+  const sorted = slides.sort((a, b) => a.index - b.index);
+  return {
+    pages: sorted.map((slide) => slide.content),
+    interactivePages: sorted.map((slide) => slide.interactive),
+  };
 }
 
 export function RankPassport3D({
@@ -59,12 +67,14 @@ export function RankPassport3D({
   pageCount: _pageCount,
   className,
 }: RankPassport3DProps) {
-  const extractedPages = useMemo(() => extractPassportPages(children), [children]);
-  const pages = pagesProp ?? extractedPages;
+  const extracted = useMemo(() => extractPassportSlides(children), [children]);
+  const pages = pagesProp ?? extracted.pages;
+  const interactivePages = extracted.interactivePages;
 
   return (
     <PassportBookCanvasDynamic
       pages={pages}
+      interactivePages={interactivePages}
       subjectLabel={subjectLabel}
       className={cn("rank-passport-3d-canvas-shell relative", className)}
     />
@@ -74,14 +84,21 @@ export function RankPassport3D({
 export function RankPassportSlide({
   children,
   slideIndex,
+  interactive = false,
   className,
 }: {
   children: ReactNode;
   slideIndex: number;
+  interactive?: boolean;
   className?: string;
 }) {
   return (
-    <div className={cn("hidden", className)} aria-hidden data-passport-slide={slideIndex}>
+    <div
+      className={cn("hidden", className)}
+      aria-hidden
+      data-passport-slide={slideIndex}
+      data-passport-interactive={interactive ? "true" : undefined}
+    >
       {children}
     </div>
   );

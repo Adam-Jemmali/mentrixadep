@@ -7,6 +7,11 @@ export function resolvePassportVerifiedMetrics(data: RankCardData) {
   return formatStudentHomeAccuracyMath(data.verifiedSkillCount, data.verifiedAccuracyPercent);
 }
 
+/** Playfair watermark behind the Skill Proof First try card — correct count, not total verified. */
+export function passportFirstTryWatermark(data: RankCardData): number {
+  return resolvePassportVerifiedMetrics(data).correct;
+}
+
 export function rankPassportBandCaption(bandScore: number | null): string {
   if (bandScore == null) return `Building proof on ${AP_CALC_AB_SUBJECT}`;
   return `Proof tier ${bandScore} on ${AP_CALC_AB_SUBJECT}`;

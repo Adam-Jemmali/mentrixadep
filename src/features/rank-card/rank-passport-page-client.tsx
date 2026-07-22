@@ -138,7 +138,7 @@ export function RankPassportPageClient({
             </RankPassportSlide>
 
             {data.masteryGrid ? (
-              <RankPassportSlide slideIndex={slideIndex++}>
+              <RankPassportSlide slideIndex={slideIndex++} interactive>
                 <VocabSectionHeading name={CANONICAL_MASTERY_GRID_ICON} label="Grid" surface="light" />
                 <MasteryGrid
                   userId={data.userId}
@@ -146,6 +146,8 @@ export function RankPassportPageClient({
                   mode="public"
                   compact
                   passportPage
+                  attemptedOnly
+                  passportScroll
                   surface="light"
                   initialData={data.masteryGrid}
                   showVerdict={false}

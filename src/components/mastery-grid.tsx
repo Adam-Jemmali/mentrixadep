@@ -10,6 +10,8 @@ import { cn } from "@/shared/core/utils";
 import type { MasteryGridFetchMode } from "@/features/mastery-grid/get-mastery-grid-action";
 import {
   countMasteryGridSkills,
+  filterMasteryGridAttempted,
+  hasAttemptedMasteryNodes,
   masteryGridVerdictSentence,
   toMasteryNodeVisualState,
 } from "@/features/mastery-grid/mastery-grid-pure";
@@ -35,6 +37,8 @@ export type MasteryGridProps = {
   passportScroll?: boolean;
   /** Flat passport page: no nested scroll, no expand control. */
   passportPage?: boolean;
+  /** Show only attempted/practiced/verified nodes (passport grid slide). */
+  attemptedOnly?: boolean;
   className?: string;
 };
 
@@ -60,6 +64,7 @@ function MasteryGridUnit({
   unitLabelRef,
   registerNodeRef,
   nodeOffset,
+  nodeSize = "sm",
 }: {
   unitName: string;
   nodes: MasteryGridNode[];
@@ -68,6 +73,7 @@ function MasteryGridUnit({
   unitLabelRef: (el: HTMLParagraphElement | null) => void;
   registerNodeRef: (index: number, el: HTMLDivElement | null) => void;
   nodeOffset: number;
+  nodeSize?: "xs" | "sm" | "md" | "lg";
 }) {
   return (
     <section className="space-y-2">
@@ -97,7 +103,7 @@ function MasteryGridUnit({
                 state={toMasteryNodeVisualState(node)}
                 nodeName={node.nodeName}
                 accuracy={node.accuracyPercent ?? undefined}
-                size="sm"
+                size={nodeSize}
                 showGlow={node.state === "verified"}
                 onPress={onNodePress ? () => onNodePress(node.id) : undefined}
               />
@@ -121,6 +127,7 @@ export function MasteryGrid({
   surface = "dark",
   passportScroll = false,
   passportPage = false,
+  attemptedOnly = false,
   className,
 }: MasteryGridProps) {
   const reduceMotion = useReducedMotion();
@@ -140,17 +147,27 @@ export function MasteryGrid({
     initialData,
   });
 
-  const visibleUnits = useMemo(() => {
-    if (!data) return [];
-    if (passportScroll) return data.units;
-    if (passportPage) return data.units.slice(0, 3);
-    return expanded ? data.units : data.units.slice(0, 2);
-  }, [data, expanded, passportPage, passportScroll]);
+  const gridData = useMemo(() => {
+    if (!data) return null;
+    if (!attemptedOnly) return data;
+    return filterMasteryGridAttempted(data);
+  }, [attemptedOnly, data]);
 
-  const totalSkills = data ? countMasteryGridSkills(data) : 0;
-  const verdictLine = data ? masteryGridVerdictSentence(data) : "";
+  const visibleUnits = useMemo(() => {
+    if (!gridData) return [];
+    if (passportScroll) return gridData.units;
+    if (passportPage && attemptedOnly) return gridData.units;
+    if (passportPage) return gridData.units.slice(0, 3);
+    return expanded ? gridData.units : gridData.units.slice(0, 2);
+  }, [attemptedOnly, expanded, gridData, passportPage, passportScroll]);
+
+  const totalSkills = gridData ? countMasteryGridSkills(gridData) : 0;
+  const verdictLine = gridData ? masteryGridVerdictSentence(gridData) : "";
+  const nodeSize = passportPage ? "xs" : "sm";
   const hiddenUnitCount =
-    data && compact && !expanded && !passportScroll && !passportPage ? Math.max(0, data.units.length - 2) : 0;
+    gridData && compact && !expanded && !passportScroll && !passportPage && !attemptedOnly
+      ? Math.max(0, gridData.units.length - 2)
+      : 0;
   const verdictTextClass =
     surface === "light"
       ? "font-[family-name:var(--font-playfair),serif] text-base italic leading-snug text-[#0B1220] opacity-0"
@@ -161,7 +178,7 @@ export function MasteryGrid({
       : "rounded-[var(--radius-card)] border border-white/10 bg-[var(--mx-surface-2)] p-4";
 
   useEffect(() => {
-    if (!data || reduceMotion || hasAnimatedRef.current) return;
+    if (!gridData || reduceMotion || hasAnimatedRef.current) return;
 
     const labels = unitLabelRefs.current.filter(Boolean) as HTMLParagraphElement[];
     const nodes = nodeRefs.current.filter(Boolean) as HTMLDivElement[];
@@ -212,10 +229,10 @@ export function MasteryGrid({
     return () => {
       timeline.revert();
     };
-  }, [data, reduceMotion, showVerdict]);
+  }, [gridData, reduceMotion, showVerdict]);
 
   useEffect(() => {
-    if (!reduceMotion || !data) return;
+    if (!reduceMotion || !gridData) return;
     for (const label of unitLabelRefs.current) {
       if (label) label.style.opacity = "1";
     }
@@ -229,18 +246,26 @@ export function MasteryGrid({
       verdictRef.current.style.opacity = "1";
       verdictRef.current.style.transform = "none";
     }
-  }, [data, reduceMotion]);
+  }, [gridData, reduceMotion]);
 
   if (isLoading && !data) {
     return <MasteryGridLoading className={className} />;
   }
 
-  if (error || !data) {
+  if (error || !gridData) {
     return (
       <section className={cn(errorShellClass, className)}>
         <p className="text-sm text-[var(--mx-muted)]">
           The mastery grid did not load. Refresh the page or try again in a moment.
         </p>
+      </section>
+    );
+  }
+
+  if (attemptedOnly && !hasAttemptedMasteryNodes(gridData)) {
+    return (
+      <section className={cn("space-y-3", className)} data-mastery-grid-mode={mode}>
+        <p className="text-[11px] leading-snug text-[#475569]">No quest activity yet.</p>
       </section>
     );
   }
@@ -275,6 +300,7 @@ export function MasteryGrid({
                 nodeRefs.current[offset + index] = el;
               }}
               nodeOffset={offset}
+              nodeSize={nodeSize}
             />
           );
         })}

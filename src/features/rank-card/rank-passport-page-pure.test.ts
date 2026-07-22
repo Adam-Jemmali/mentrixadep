@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatBreakthroughReceiptLine,
+  passportFirstTryWatermark,
   rankPassportAccuracyHeadline,
   rankPassportBandCaption,
   rankPassportBandFootnote,
@@ -80,6 +81,12 @@ describe("rank passport page copy", () => {
     const data = mockRankCard({ verifiedSkillCount: 54, verifiedAccuracyPercent: 44 });
     const metrics = resolvePassportVerifiedMetrics(data);
     expect(metrics.correct).toBe(24);
+  });
+
+  it("first try watermark uses correct count not verified skill total", () => {
+    const data = mockRankCard({ verifiedSkillCount: 54, verifiedAccuracyPercent: 44 });
+    expect(passportFirstTryWatermark(data)).toBe(24);
+    expect(passportFirstTryWatermark(data)).not.toBe(data.verifiedSkillCount);
   });
 
   it("formats accuracy headline", () => {

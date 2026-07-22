@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   buildMasteryGridNextAction,
   defaultMasteryNodeStats,
+  filterMasteryGridAttempted,
   groupSkillNodesIntoUnits,
+  hasAttemptedMasteryNodes,
   pickQuestMasteryHighlight,
   resolveMasteryNodeState,
   splitMasteryGridByPinned,
   toMasteryNodeVisualState,
 } from "@/features/mastery-grid/mastery-grid-pure";
+import type { MasteryGridData } from "@/features/mastery-grid/types";
 
 describe("toMasteryNodeVisualState", () => {
   it("maps domain states to visual tokens", () => {
@@ -53,6 +56,75 @@ describe("toMasteryNodeVisualState", () => {
         accuracyPercent: 20,
       }),
     ).toBe("attempted");
+  });
+});
+
+describe("filterMasteryGridAttempted", () => {
+  const sampleGrid: MasteryGridData = {
+    subject: "AP Calculus AB",
+    nextActionLine: "Practice limits",
+    units: [
+      {
+        unitNumber: 1,
+        unitName: "Limits",
+        nodes: [
+          {
+            id: "a",
+            nodeName: "Limits intro",
+            nodeSlug: "limits-intro",
+            displayOrder: 1,
+            state: "verified",
+            accuracyPercent: 100,
+            ...defaultMasteryNodeStats(),
+            hasVerifiedAttempt: true,
+            verifiedCorrect: true,
+          },
+          {
+            id: "b",
+            nodeName: "Continuity",
+            nodeSlug: "continuity",
+            displayOrder: 2,
+            state: "none",
+            accuracyPercent: null,
+            ...defaultMasteryNodeStats(),
+          },
+        ],
+      },
+      {
+        unitNumber: 2,
+        unitName: "Derivatives",
+        nodes: [
+          {
+            id: "c",
+            nodeName: "Power rule",
+            nodeSlug: "power-rule",
+            displayOrder: 3,
+            state: "none",
+            accuracyPercent: null,
+            ...defaultMasteryNodeStats(),
+          },
+        ],
+      },
+    ],
+  };
+
+  it("keeps only attempted nodes and drops empty units", () => {
+    const filtered = filterMasteryGridAttempted(sampleGrid);
+    expect(filtered.units).toHaveLength(1);
+    expect(filtered.units[0]?.nodes).toHaveLength(1);
+    expect(filtered.units[0]?.nodes[0]?.id).toBe("a");
+  });
+
+  it("detects when no nodes were attempted", () => {
+    const untouched = filterMasteryGridAttempted({
+      ...sampleGrid,
+      units: sampleGrid.units.map((unit) => ({
+        ...unit,
+        nodes: unit.nodes.map((node) => ({ ...node, state: "none" as const })),
+      })),
+    });
+    expect(hasAttemptedMasteryNodes(untouched)).toBe(false);
+    expect(hasAttemptedMasteryNodes(filterMasteryGridAttempted(sampleGrid))).toBe(true);
   });
 });
 

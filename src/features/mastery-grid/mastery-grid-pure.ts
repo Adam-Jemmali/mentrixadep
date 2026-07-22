@@ -82,6 +82,22 @@ export function flattenMasteryNodes(grid: MasteryGridData): MasteryGridNode[] {
   return grid.units.flatMap((unit) => unit.nodes);
 }
 
+/** Passport grid: only nodes the user has attempted, practiced, or verified. */
+export function filterMasteryGridAttempted(data: MasteryGridData): MasteryGridData {
+  const units = data.units
+    .map((unit) => ({
+      ...unit,
+      nodes: unit.nodes.filter((node) => node.state !== "none"),
+    }))
+    .filter((unit) => unit.nodes.length > 0);
+
+  return { ...data, units };
+}
+
+export function hasAttemptedMasteryNodes(data: MasteryGridData): boolean {
+  return data.units.some((unit) => unit.nodes.some((node) => node.state !== "none"));
+}
+
 export function snapshotPackNodesFromGrid(
   grid: MasteryGridData,
   packNodeIds: string[]

@@ -26,12 +26,16 @@ export function isPassportPageTurnBlocked(
 export function canGoPassportPrev(ctx: PassportNavContext): boolean {
   if (!ctx.coverOpen && !ctx.isClosingCover) return false;
   if (isPassportPageTurnBlocked(ctx)) return false;
+  if (ctx.isAnimating) return false;
   return true;
 }
 
 export function canGoPassportNext(ctx: PassportNavContext): boolean {
-  if (!ctx.coverOpen) return !ctx.isClosingCover && !isPassportPageTurnBlocked(ctx);
+  if (!ctx.coverOpen) {
+    return !ctx.isClosingCover && !isPassportPageTurnBlocked(ctx) && !ctx.isAnimating;
+  }
   if (!ctx.coverReady || isPassportPageTurnBlocked(ctx)) return false;
+  if (ctx.isAnimating && ctx.spread < ctx.totalSpreads - 1) return false;
   return true;
 }
 

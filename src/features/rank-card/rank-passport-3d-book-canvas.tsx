@@ -50,6 +50,7 @@ const RIGHT_PAGE_X = PAGE_HALF;
 const OPEN_COVER_ANGLE = -Math.PI * 0.88;
 const FLIP_DURATION = 0.88;
 const COVER_PIVOT_Z = COVER_THICK * 0.45 + 0.012;
+const PAGE_EDGE_NAV_PX = Math.round(PASSPORT_PAGE_W_PX * 0.18);
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -68,6 +69,7 @@ export type PassportNavState = {
 
 export type PassportBookCanvasProps = {
   pages: ReactNode[];
+  interactivePages?: boolean[];
   subjectLabel: string;
   onSpreadChange?: (spread: number) => void;
   onNavChange?: (nav: PassportNavState) => void;
@@ -103,6 +105,7 @@ function PageSlot({
   pageIndex,
   htmlDistanceFactor,
   onPageClick,
+  interactiveContent = false,
   animateStamp,
   stampEpoch,
   children,
@@ -112,6 +115,7 @@ function PageSlot({
   pageIndex: number;
   htmlDistanceFactor: number;
   onPageClick?: () => void;
+  interactiveContent?: boolean;
   animateStamp?: boolean;
   stampEpoch?: number;
   children: ReactNode;
@@ -119,6 +123,35 @@ function PageSlot({
   const stamp = passportPageStamp(pageIndex);
   const securityVariant = passportPageSecurityVariant(pageIndex);
   const paperTone = passportPagePaperTone(pageIndex);
+  const navLabel = side === "left" ? "Turn to previous spread" : "Turn to next spread";
+
+  const pageChrome = (
+    <PassportPageChrome
+      side={side}
+      stamp={stamp}
+      animateStamp={animateStamp}
+      stampEpoch={stampEpoch}
+      securityVariant={securityVariant}
+      paperTone={paperTone}
+    >
+      {children}
+    </PassportPageChrome>
+  );
+
+  const edgeNavButton =
+    onPageClick && interactiveContent ? (
+      <button
+        type="button"
+        onClick={onPageClick}
+        className="absolute top-0 z-10 h-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
+        style={{
+          pointerEvents: "auto",
+          width: PAGE_EDGE_NAV_PX,
+          [side === "left" ? "left" : "right"]: 0,
+        }}
+        aria-label={navLabel}
+      />
+    ) : null;
 
   return (
     <group position={position}>
@@ -135,7 +168,19 @@ function PageSlot({
         zIndexRange={[40, 0]}
         style={{ pointerEvents: "none" }}
       >
-        {onPageClick ? (
+        {onPageClick && interactiveContent ? (
+          <div
+            className="relative overflow-hidden"
+            style={{
+              pointerEvents: "auto",
+              width: PASSPORT_PAGE_W_PX,
+              height: PASSPORT_PAGE_H_PX,
+            }}
+          >
+            {pageChrome}
+            {edgeNavButton}
+          </div>
+        ) : onPageClick ? (
           <button
             type="button"
             onClick={onPageClick}
@@ -145,32 +190,12 @@ function PageSlot({
               width: PASSPORT_PAGE_W_PX,
               height: PASSPORT_PAGE_H_PX,
             }}
-            aria-label={side === "left" ? "Turn to previous spread" : "Turn to next spread"}
+            aria-label={navLabel}
           >
-            <PassportPageChrome
-              side={side}
-              stamp={stamp}
-              animateStamp={animateStamp}
-              stampEpoch={stampEpoch}
-              securityVariant={securityVariant}
-              paperTone={paperTone}
-            >
-              {children}
-            </PassportPageChrome>
+            {pageChrome}
           </button>
         ) : (
-          <div style={{ pointerEvents: "none" }}>
-            <PassportPageChrome
-              side={side}
-              stamp={stamp}
-              animateStamp={animateStamp}
-              stampEpoch={stampEpoch}
-              securityVariant={securityVariant}
-              paperTone={paperTone}
-            >
-              {children}
-            </PassportPageChrome>
-          </div>
+          <div style={{ pointerEvents: "none" }}>{pageChrome}</div>
         )}
       </Html>
     </group>
@@ -211,6 +236,7 @@ function resetOrbitControls(controls: OrbitControlsType | null) {
 
 function PassportBookScene({
   pages,
+  interactivePages = [],
   subjectLabel,
   htmlDistanceFactor,
   onSpreadChange,
@@ -277,6 +303,11 @@ function PassportBookScene({
 
   const closeCover = useCallback(() => {
     if (!coverOpen && !isClosingCover) return;
+    setIsFlipping(false);
+    setFlipBackward(false);
+    flipProgress.current = 0;
+    flipAngle.current = 0;
+    if (flipPivotRef.current) flipPivotRef.current.rotation.y = 0;
     setCoverReady(false);
     setCoverOpen(false);
     setIsClosingCover(true);
@@ -300,21 +331,21 @@ function PassportBookScene({
 
   const openCover = useCallback(() => {
     if (coverOpen) return;
-    if (animatingRef.current && !isClosingCover) {
-      endAnimation();
-    }
+    if (isClosingCover) return;
+    coverDoneRef.current = false;
     setCoverOpen(true);
+    setCoverReady(false);
     targetCover.current = OPEN_COVER_ANGLE;
     beginAnimation();
-  }, [beginAnimation, coverOpen, endAnimation, isClosingCover]);
+  }, [beginAnimation, coverOpen, isClosingCover]);
 
   const finishForwardFlip = useCallback(() => {
+    if (flipPivotRef.current) flipPivotRef.current.rotation.y = 0;
+    flipProgress.current = 0;
+    flipAngle.current = 0;
     setIsFlipping(false);
     setFlipBackward(false);
     endAnimation();
-    flipProgress.current = 0;
-    flipAngle.current = 0;
-    if (flipPivotRef.current) flipPivotRef.current.rotation.y = 0;
     setSpread((current) => {
       const next = Math.min(current + 1, totalSpreads - 1);
       onSpreadChange?.(next);
@@ -325,12 +356,12 @@ function PassportBookScene({
   }, [bumpStampEpoch, endAnimation, onSpreadChange, totalSpreads]);
 
   const finishBackwardFlip = useCallback(() => {
+    if (flipPivotRef.current) flipPivotRef.current.rotation.y = 0;
+    flipProgress.current = 0;
+    flipAngle.current = 0;
     setIsFlipping(false);
     setFlipBackward(false);
     endAnimation();
-    flipProgress.current = 0;
-    flipAngle.current = 0;
-    if (flipPivotRef.current) flipPivotRef.current.rotation.y = 0;
     setSpread((current) => {
       const next = Math.max(current - 1, 0);
       onSpreadChange?.(next);
@@ -546,16 +577,6 @@ function PassportBookScene({
     }
 
     if (coverPivotRef.current) coverPivotRef.current.rotation.y = coverAngle.current;
-
-    if (
-      coverReady &&
-      !isFlipping &&
-      !isClosingCover &&
-      animatingRef.current &&
-      now - animationStartedAt.current > 32
-    ) {
-      endAnimation();
-    }
   });
 
   const showSpread = coverOpen && coverReady;
@@ -576,6 +597,7 @@ function PassportBookScene({
   const canNext = canGoPassportNext(navCtx);
   const orbitEnabled = coverReady && !passportBusy;
   const animateStamp = !reduceMotion && stampEpoch > 0;
+  const pageInteractive = (index: number) => interactivePages[index] ?? false;
 
   return (
     <group ref={floatRef}>
@@ -584,17 +606,20 @@ function PassportBookScene({
           <>
             <PassportSpineGutter z={leftZ + PAGE_THICK * 0.5} />
 
-            <PageSlot
-              position={[LEFT_PAGE_X, 0, leftZ]}
-              side="left"
-              pageIndex={leftIndex}
-              htmlDistanceFactor={htmlDistanceFactor}
-              animateStamp={animateStamp}
-              stampEpoch={stampEpoch}
-              onPageClick={canPrev ? goPrev : undefined}
-            >
-              {pageAt(pages, leftIndex)}
-            </PageSlot>
+            {!pageTurnBlocked && !(isFlipping && flipBackward) ? (
+              <PageSlot
+                position={[LEFT_PAGE_X, 0, leftZ]}
+                side="left"
+                pageIndex={leftIndex}
+                htmlDistanceFactor={htmlDistanceFactor}
+                animateStamp={animateStamp}
+                stampEpoch={stampEpoch}
+                interactiveContent={pageInteractive(leftIndex)}
+                onPageClick={canPrev ? goPrev : undefined}
+              >
+                {pageAt(pages, leftIndex)}
+              </PageSlot>
+            ) : null}
 
             {!pageTurnBlocked ? (
               <PageSlot
@@ -604,6 +629,7 @@ function PassportBookScene({
                 htmlDistanceFactor={htmlDistanceFactor}
                 animateStamp={animateStamp}
                 stampEpoch={stampEpoch}
+                interactiveContent={pageInteractive(rightIndex)}
                 onPageClick={canNext ? goNext : undefined}
               >
                 {pageAt(pages, rightIndex)}
@@ -805,6 +831,7 @@ function Scene({
 
 export function PassportBookCanvas({
   pages,
+  interactivePages,
   subjectLabel,
   className,
   onSpreadChange,
@@ -838,6 +865,7 @@ export function PassportBookCanvas({
         >
           <Scene
             pages={pages}
+            interactivePages={interactivePages}
             subjectLabel={subjectLabel}
             htmlDistanceFactor={htmlDistanceFactor}
             onSpreadChange={onSpreadChange}

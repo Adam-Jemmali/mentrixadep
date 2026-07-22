@@ -10,6 +10,7 @@ import type { RankCardData } from "@/features/rank-card/types";
 import {
   rankPassportBandCaption,
   rankPassportPeerValue,
+  passportFirstTryWatermark,
   resolvePassportVerifiedMetrics,
 } from "@/features/rank-card/rank-passport-page-pure";
 import { formatXpWatermarkK } from "@/shared/core/copy-format";
@@ -82,20 +83,10 @@ export function RankPassportSkillProofPage({
       <p className="text-[12px] font-semibold leading-snug text-[#0B1220]">{bandCaption}</p>
       <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-2">
         <StudentHubNumericStat
-          className="rotate-0 px-2 py-2.5"
+          className="col-span-2 rotate-[0.2deg] px-2 py-2.5"
           variant={landingStickyVariantForIndex(0)}
           compact
-          watermark={data.verifiedSkillCount}
-          icon={CANONICAL_RANK_PROOF_ICON}
-          label="Verified nodes"
-          numericEnd={data.verifiedSkillCount}
-          gold={data.verifiedSkillCount >= 50}
-        />
-        <StudentHubNumericStat
-          className="rotate-[0.2deg] px-2 py-2.5"
-          variant={landingStickyVariantForIndex(1)}
-          compact
-          watermark={data.verifiedSkillCount}
+          watermark={passportFirstTryWatermark(data)}
           icon={CANONICAL_RANK_PROOF_ICON}
           label="First try"
           numericEnd={accuracyMetrics.correct}
@@ -104,7 +95,7 @@ export function RankPassportSkillProofPage({
         />
         <StudentHubNumericStat
           className="rotate-[-0.15deg] px-2 py-2.5"
-          variant={landingStickyVariantForIndex(2)}
+          variant={landingStickyVariantForIndex(1)}
           compact
           watermark={division.myRank ?? "—"}
           icon={CANONICAL_LEAGUE_ICON}
@@ -116,7 +107,7 @@ export function RankPassportSkillProofPage({
         />
         <StudentHubNumericStat
           className="rotate-[0.15deg] px-2 py-2.5"
-          variant={landingStickyVariantForIndex(3)}
+          variant={landingStickyVariantForIndex(2)}
           compact
           watermark={formatXpWatermarkK(division.myXp)}
           icon="xp"

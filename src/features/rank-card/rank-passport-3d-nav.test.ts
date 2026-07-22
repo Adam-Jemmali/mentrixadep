@@ -28,12 +28,12 @@ describe("rank-passport-3d-nav", () => {
     expect(isPassportBusy({ isFlipping: false, isAnimating: false, isClosingCover: true })).toBe(true);
   });
 
-  it("canGoPrev only when cover is open and not busy", () => {
+  it("canGoPrev only when cover is open, not busy, and not animating", () => {
     expect(canGoPassportPrev(ctx())).toBe(false);
-    expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: false, isAnimating: true }))).toBe(true);
+    expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: false, isAnimating: true }))).toBe(false);
     expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: false }))).toBe(true);
     expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true, isFlipping: true }))).toBe(false);
-    expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true, isAnimating: true }))).toBe(true);
+    expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true, isAnimating: true }))).toBe(false);
     expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true }))).toBe(true);
   });
 
@@ -41,13 +41,14 @@ describe("rank-passport-3d-nav", () => {
     expect(canGoPassportPrev(ctx({ coverOpen: false, isClosingCover: true, isAnimating: true }))).toBe(false);
   });
 
-  it("canGoNext opens cover when closed", () => {
+  it("canGoNext opens cover when closed and idle", () => {
     expect(canGoPassportNext(ctx())).toBe(true);
   });
 
-  it("canGoNext blocked while cover opening", () => {
+  it("canGoNext blocked while cover opening or animating", () => {
     expect(canGoPassportNext(ctx({ coverOpen: true, coverReady: false, isAnimating: true }))).toBe(false);
     expect(canGoPassportNext(ctx({ coverOpen: true, coverReady: false }))).toBe(false);
+    expect(canGoPassportNext(ctx({ isAnimating: true }))).toBe(false);
   });
 
   it("canGoNext blocked while cover opening, closing, or flipping", () => {
@@ -75,9 +76,15 @@ describe("rank-passport-3d-nav", () => {
     ).toBe(true);
   });
 
+  it("canGoNext blocked mid-animation on non-last spreads", () => {
+    expect(
+      canGoPassportNext(ctx({ coverOpen: true, coverReady: true, spread: 1, totalSpreads: 3, isAnimating: true })),
+    ).toBe(false);
+  });
+
   it("canGoPrev blocked mid-flip only", () => {
     expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true, isFlipping: true }))).toBe(false);
-    expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true, isAnimating: true }))).toBe(true);
+    expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true, isAnimating: true }))).toBe(false);
   });
 
   it("canGoNext blocked mid-flip on any spread", () => {
