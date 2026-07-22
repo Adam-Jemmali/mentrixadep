@@ -193,12 +193,56 @@ export function PassportPageChrome({
   );
 }
 
+export function PassportCoverDoodleEmblem() {
+  return (
+    <svg
+      className="pointer-events-none absolute left-3 top-8 h-[5.5rem] w-[5.5rem] select-none"
+      viewBox="0 0 88 88"
+      fill="none"
+      aria-hidden
+      style={{ transform: "rotate(-10deg)" }}
+    >
+      <circle cx="44" cy="44" r="30" stroke="#6366F1" strokeWidth="1.75" strokeDasharray="5 4" opacity="0.45" />
+      <circle cx="44" cy="44" r="22" stroke="#818CF8" strokeWidth="1.25" strokeDasharray="3 5" opacity="0.35" />
+      <path
+        d="M44 20 L48.5 34.5 L63 34.5 L51.5 43.5 L56 58 L44 49 L32 58 L36.5 43.5 L25 34.5 L39.5 34.5 Z"
+        stroke="#7C3AED"
+        strokeWidth="1.85"
+        strokeLinejoin="round"
+        opacity="0.72"
+      />
+      <path
+        d="M44 30 L44 52 M34 38 L54 38 M36 48 C40 44 48 44 52 48"
+        stroke="#6366F1"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        opacity="0.8"
+      />
+      <path
+        d="M14 68 C28 74 56 76 74 62"
+        stroke="#818CF8"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+      <path
+        d="M18 24 L24 18 M64 18 L70 24"
+        stroke="#6366F1"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+        opacity="0.4"
+      />
+    </svg>
+  );
+}
+
 export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
   return (
     <div
       className="rank-passport-3d-closed-cover relative flex flex-col items-center justify-between overflow-hidden rounded-none px-8 py-10 text-center"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
+      <PassportCoverDoodleEmblem />
       <div
         className="pointer-events-none absolute bottom-14 left-5 select-none font-[family-name:var(--font-caveat),cursive] text-[1.35rem] leading-none text-[#6366F1]/55"
         style={{ transform: "rotate(-11deg)" }}
@@ -225,7 +269,7 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
         />
       </div>
       <div className="space-y-4">
-        <p className="rank-passport-3d-foil rank-passport-3d-foil--brand text-[2.1rem] font-black leading-none tracking-[0.22em]">
+        <p className="rank-passport-3d-foil--brand text-[2.1rem] font-black leading-none tracking-[0.22em]">
           MENTRIXA
         </p>
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>

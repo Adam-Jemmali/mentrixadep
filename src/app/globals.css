@@ -984,7 +984,7 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .rank-passport-3d-foil--brand {
-  background: linear-gradient(120deg, #7c3aed 0%, #6366f1 48%, #818cf8 100%);
+  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 48%, #a855f7 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;

@@ -284,6 +284,17 @@ function PassportBookScene({
     setIsAnimating(false);
   }, []);
 
+  const finalizeCoverClosed = useCallback(() => {
+    coverAngle.current = 0;
+    if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
+    coverDoneRef.current = false;
+    targetCover.current = 0;
+    setIsClosingCover(false);
+    setSpread(spreadAfterCoverClosed());
+    onSpreadChange?.(spreadAfterCoverClosed());
+    endAnimation();
+  }, [endAnimation, onSpreadChange]);
+
   const closeCover = useCallback(() => {
     if (!coverOpen && !isClosingCover) return;
     setIsFlipping(false);
@@ -296,8 +307,12 @@ function PassportBookScene({
     setIsClosingCover(true);
     coverDoneRef.current = false;
     targetCover.current = 0;
+    if (Math.abs(coverAngle.current) <= 0.004) {
+      finalizeCoverClosed();
+      return;
+    }
     beginAnimation();
-  }, [beginAnimation, coverOpen, isClosingCover]);
+  }, [beginAnimation, coverOpen, finalizeCoverClosed, isClosingCover]);
 
   const resetToClosedCover = useCallback(() => {
     coverAngle.current = 0;
@@ -508,13 +523,8 @@ function PassportBookScene({
         coverDoneRef.current = true;
         setCoverReady(true);
         endAnimation();
-      } else if (!coverOpen && coverAngle.current > 0.004) {
-        coverAngle.current = 0;
-        if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
-        setSpread(spreadAfterCoverClosed());
-        onSpreadChange?.(spreadAfterCoverClosed());
-        setIsClosingCover(false);
-        endAnimation();
+      } else if (!coverOpen && Math.abs(coverAngle.current) > 0.004) {
+        finalizeCoverClosed();
       } else {
         endAnimation();
       }
@@ -536,15 +546,12 @@ function PassportBookScene({
       }
     }
 
-    if (!coverOpen && coverAngle.current > 0.004) {
+    if (!coverOpen && Math.abs(coverAngle.current) > 0.004) {
       coverAngle.current = THREE.MathUtils.lerp(coverAngle.current, targetCover.current, step);
       if (Math.abs(coverAngle.current) < 0.004) {
         coverAngle.current = 0;
         if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
-        endAnimation();
-        setSpread(spreadAfterCoverClosed());
-        onSpreadChange?.(spreadAfterCoverClosed());
-        setIsClosingCover(false);
+        finalizeCoverClosed();
       }
     }
 
