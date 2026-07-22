@@ -18,17 +18,18 @@ export const PASSPORT_VIEWPORT_H = 720;
 /** Fine-tuning scale applied to the whole book group in the canvas. */
 export const PASSPORT_BOOK_SCALE = 1;
 /** Fine-tunes Html overlay scale so page chrome fills the 3D plane edge-to-edge. */
-export const PASSPORT_HTML_BLEED_BOOST = 1.03;
+export const PASSPORT_HTML_BLEED_BOOST = 1.02;
 
-/** Scales Html overlays to match one page mesh width at the default camera. */
+/**
+ * Html `transform` scale in drei: world width ≈ clientWidth * (factor / 400).
+ * Match one page mesh width (world units) to the chrome pixel width.
+ */
 export function passportHtmlDistanceFactor(
-  cameraZ = PASSPORT_CAMERA_Z,
-  fov = PASSPORT_CAMERA_FOV,
-  viewportH = PASSPORT_VIEWPORT_H,
+  pageWorldW = PASSPORT_PAGE_W_UNITS,
+  pagePxW = PASSPORT_PAGE_W_PX,
+  bleedBoost = PASSPORT_HTML_BLEED_BOOST,
 ) {
-  const vFov = (fov * Math.PI) / 180;
-  const denom = PASSPORT_PAGE_W_PX * Math.tan(vFov / 2) * cameraZ;
-  return (PASSPORT_PAGE_W_UNITS * PASSPORT_BOOK_SCALE * viewportH) / denom;
+  return (pageWorldW * 400 * PASSPORT_BOOK_SCALE * bleedBoost) / pagePxW;
 }
 
 const STAMP_COLORS = {
@@ -106,7 +107,7 @@ export function PassportPageChrome({
         <p
           className={cn(
             "rank-passport-page-title mx-hub-type-ui border-b border-[#C4B5FD]/60 pb-2.5 pt-4 text-[#4F46E5]",
-            side === "left" ? "pl-5 pr-7" : "pl-8 pr-4",
+            side === "left" ? "pl-4 pr-2" : "pl-2 pr-4",
           )}
         >
           {stamp.label}
@@ -115,7 +116,7 @@ export function PassportPageChrome({
       <div
         className={cn(
           "rank-passport-page-ink relative z-[1] pb-6",
-          side === "left" ? "pl-5 pr-7" : "pl-8 pr-4",
+          side === "left" ? "pl-4 pr-2" : "pl-2 pr-4",
           stamp ? "pt-3" : "pt-5",
         )}
         style={stamp ? { height: "calc(100% - 3rem)" } : { height: "100%" }}

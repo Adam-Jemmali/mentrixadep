@@ -18,7 +18,6 @@ import {
   PASSPORT_BOOK_SCALE,
   PASSPORT_CAMERA_FOV,
   PASSPORT_CAMERA_Z,
-  PASSPORT_HTML_BLEED_BOOST,
   PASSPORT_PAGE_H_UNITS,
   PASSPORT_PAGE_W_UNITS,
   passportHtmlDistanceFactor,
@@ -39,10 +38,9 @@ const PAGE_HALF = PAGE_W / 2;
 const PAGE_THICK = 0.012;
 const COVER_THICK = 0.032;
 const EDGE_THICK = 0.006;
-const SPINE_KISS = 0.008;
-/** Left/right page centers — inner edges kiss at spine x = 0. */
-const LEFT_PAGE_X = -(PAGE_HALF - SPINE_KISS / 2);
-const RIGHT_PAGE_X = PAGE_HALF - SPINE_KISS / 2;
+/** Left/right page centers — inner edges meet at spine x = 0. */
+const LEFT_PAGE_X = -PAGE_HALF;
+const RIGHT_PAGE_X = PAGE_HALF;
 const OPEN_COVER_ANGLE = -Math.PI * 0.88;
 const FLIP_DURATION = 0.88;
 const COVER_PIVOT_Z = COVER_THICK * 0.45 + 0.012;
@@ -84,6 +82,15 @@ function pageAt(pages: ReactNode[], index: number) {
   return pages[index];
 }
 
+function SpreadPagePlane() {
+  return (
+    <mesh receiveShadow>
+      <boxGeometry args={[PAGE_W, PAGE_H, PAGE_THICK]} />
+      <meshStandardMaterial color="#fef9c3" roughness={0.94} metalness={0.02} />
+    </mesh>
+  );
+}
+
 function PageSlot({
   position,
   side,
@@ -103,6 +110,7 @@ function PageSlot({
 
   return (
     <group position={position}>
+      <SpreadPagePlane />
       <mesh onClick={onClick}>
         <boxGeometry args={[PAGE_W, PAGE_H, PAGE_THICK]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
@@ -215,6 +223,19 @@ function PassportBookScene({
     beginAnimation();
   }, [beginAnimation, coverOpen, isClosingCover]);
 
+  const resetToClosedCover = useCallback(() => {
+    coverAngle.current = 0;
+    coverDoneRef.current = false;
+    targetCover.current = 0;
+    setCoverOpen(false);
+    setCoverReady(false);
+    setIsClosingCover(false);
+    setSpread(spreadAfterCoverClosed());
+    onSpreadChange?.(spreadAfterCoverClosed());
+    endAnimation();
+    resetOrbitControls(controlsRef.current);
+  }, [endAnimation, onSpreadChange]);
+
   const openCover = useCallback(() => {
     if (coverOpen || animatingRef.current) return;
     setCoverOpen(true);
@@ -261,6 +282,10 @@ function PassportBookScene({
     if (!coverReady || isFlipping || animatingRef.current) return;
 
     if (spread >= totalSpreads - 1) {
+      if (reduceMotion) {
+        resetToClosedCover();
+        return;
+      }
       closeCover();
       return;
     }
@@ -289,6 +314,7 @@ function PassportBookScene({
     onSpreadChange,
     openCover,
     reduceMotion,
+    resetToClosedCover,
     spread,
     totalSpreads,
     isClosingCover,
@@ -505,6 +531,7 @@ function PassportBookScene({
                 <group ref={flipPivotRef} position={[0, 0, rightZ + 0.01]}>
                   <PageTurnEdge />
                   <group position={[RIGHT_PAGE_X, 0, 0]}>
+                    <SpreadPagePlane />
                     <Html
                       transform
                       occlude={false}
@@ -522,6 +549,7 @@ function PassportBookScene({
                     </Html>
                   </group>
                   <group position={[RIGHT_PAGE_X, 0, -PAGE_THICK * 0.65]} rotation={[0, Math.PI, 0]}>
+                    <SpreadPagePlane />
                     <Html
                       transform
                       occlude={false}
@@ -556,6 +584,7 @@ function PassportBookScene({
                 <group ref={flipPivotRef} position={[0, 0, leftZ + 0.01]}>
                   <PageTurnEdge />
                   <group position={[LEFT_PAGE_X, 0, 0]}>
+                    <SpreadPagePlane />
                     <Html
                       transform
                       occlude={false}
@@ -573,6 +602,7 @@ function PassportBookScene({
                     </Html>
                   </group>
                   <group position={[LEFT_PAGE_X, 0, -PAGE_THICK * 0.65]} rotation={[0, Math.PI, 0]}>
+                    <SpreadPagePlane />
                     <Html
                       transform
                       occlude={false}
@@ -709,28 +739,8 @@ export function PassportBookCanvas({
   onNavChange,
 }: PassportBookCanvasProps & { className?: string }) {
   const [nav, setNav] = useState<PassportNavState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [viewportH, setViewportH] = useState(720);
 
-  const htmlDistanceFactor = useMemo(
-    () =>
-      passportHtmlDistanceFactor(PASSPORT_CAMERA_Z, PASSPORT_CAMERA_FOV, viewportH) *
-      PASSPORT_HTML_BLEED_BOOST,
-    [viewportH],
-  );
-
-  useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return;
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) setViewportH(entry.contentRect.height);
-    });
-    observer.observe(node);
-    setViewportH(node.getBoundingClientRect().height);
-    return () => observer.disconnect();
-  }, []);
+  const htmlDistanceFactor = useMemo(() => passportHtmlDistanceFactor(), []);
 
   const camera = useMemo(
     () => ({
@@ -744,7 +754,7 @@ export function PassportBookCanvas({
 
   return (
     <div className={className}>
-      <div ref={containerRef} className="relative h-[min(78dvh,720px)] w-full">
+      <div className="relative h-[min(78dvh,720px)] w-full">
         <Canvas
           shadows
           dpr={[1, 2]}
