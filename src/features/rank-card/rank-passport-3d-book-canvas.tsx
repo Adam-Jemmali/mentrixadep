@@ -50,7 +50,6 @@ const RIGHT_PAGE_X = PAGE_HALF;
 const OPEN_COVER_ANGLE = -Math.PI * 0.88;
 const FLIP_DURATION = 0.88;
 const COVER_PIVOT_Z = COVER_THICK * 0.45 + 0.012;
-const PAGE_EDGE_NAV_PX = Math.round(PASSPORT_PAGE_W_PX * 0.18);
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -138,21 +137,6 @@ function PageSlot({
     </PassportPageChrome>
   );
 
-  const edgeNavButton =
-    onPageClick && interactiveContent ? (
-      <button
-        type="button"
-        onClick={onPageClick}
-        className="absolute top-0 z-10 h-full cursor-pointer border-0 bg-transparent p-0 opacity-0"
-        style={{
-          pointerEvents: "auto",
-          width: PAGE_EDGE_NAV_PX,
-          [side === "left" ? "left" : "right"]: 0,
-        }}
-        aria-label={navLabel}
-      />
-    ) : null;
-
   return (
     <group position={position}>
       <SpreadPagePlane />
@@ -170,15 +154,24 @@ function PageSlot({
       >
         {onPageClick && interactiveContent ? (
           <div
-            className="relative overflow-hidden"
+            role="button"
+            tabIndex={0}
+            className="block cursor-pointer overflow-hidden border-0 bg-transparent p-0 outline-none"
             style={{
               pointerEvents: "auto",
               width: PASSPORT_PAGE_W_PX,
               height: PASSPORT_PAGE_H_PX,
             }}
+            aria-label={navLabel}
+            onClick={onPageClick}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onPageClick();
+              }
+            }}
           >
             {pageChrome}
-            {edgeNavButton}
           </div>
         ) : onPageClick ? (
           <button

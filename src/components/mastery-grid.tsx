@@ -65,6 +65,7 @@ function MasteryGridUnit({
   registerNodeRef,
   nodeOffset,
   nodeSize = "sm",
+  localTooltip = false,
 }: {
   unitName: string;
   nodes: MasteryGridNode[];
@@ -74,6 +75,7 @@ function MasteryGridUnit({
   registerNodeRef: (index: number, el: HTMLDivElement | null) => void;
   nodeOffset: number;
   nodeSize?: "xs" | "sm" | "md" | "lg";
+  localTooltip?: boolean;
 }) {
   return (
     <section className="space-y-2">
@@ -105,6 +107,7 @@ function MasteryGridUnit({
                 accuracy={node.accuracyPercent ?? undefined}
                 size={nodeSize}
                 showGlow={node.state === "verified"}
+                localTooltip={localTooltip}
                 onPress={onNodePress ? () => onNodePress(node.id) : undefined}
               />
             </div>
@@ -273,13 +276,20 @@ export function MasteryGrid({
   let nodeOffset = 0;
 
   return (
-    <section className={cn("space-y-3", className)} data-mastery-grid-mode={mode}>
+    <section
+      className={cn("space-y-3", passportPage && "flex h-full min-h-0 flex-col", className)}
+      data-mastery-grid-mode={mode}
+    >
       <div
         className={cn(
-          passportScroll ? "max-h-[min(26rem,52vh)] space-y-3 overflow-y-auto overscroll-y-contain pr-1" : "space-y-3",
+          passportScroll && passportPage
+            ? "min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-y-contain"
+            : passportScroll
+              ? "max-h-[min(26rem,52vh)] space-y-3 overflow-y-auto overscroll-y-contain pr-1"
+              : "space-y-3",
           !passportScroll && !passportPage && compact && !expanded && "max-h-[320px] space-y-3 overflow-hidden",
           !passportScroll && !passportPage && expanded && compact && "max-h-[320px] space-y-3 overflow-y-auto",
-          passportPage && "space-y-2 overflow-hidden",
+          passportPage && !passportScroll && "min-h-0 flex-1 space-y-2 overflow-hidden",
         )}
       >
         {visibleUnits.map((unit, unitIndex) => {
@@ -301,6 +311,7 @@ export function MasteryGrid({
               }}
               nodeOffset={offset}
               nodeSize={nodeSize}
+              localTooltip={passportPage}
             />
           );
         })}

@@ -134,8 +134,7 @@ export function PassportPageChrome({
       {stamp ? (
         <p
           className={cn(
-            "rank-passport-page-title mx-hub-type-ui border-b border-[#C4B5FD]/60 pb-2.5 pt-4 text-[#4F46E5]",
-            side === "left" ? "pl-4 pr-2" : "pl-2 pr-4",
+            "rank-passport-page-title mx-hub-type-ui border-b border-[#C4B5FD]/60 px-3 pb-2.5 pt-4 text-[#4F46E5]",
           )}
         >
           {stamp.label}
@@ -143,8 +142,7 @@ export function PassportPageChrome({
       ) : null}
       <div
         className={cn(
-          "rank-passport-page-ink relative z-[1] pb-6",
-          side === "left" ? "pl-4 pr-2" : "pl-2 pr-4",
+          "rank-passport-page-ink relative z-[1] h-full min-h-0 px-3 pb-6",
           stamp ? "pt-3" : "pt-5",
         )}
         style={stamp ? { height: "calc(100% - 3rem)" } : { height: "100%" }}

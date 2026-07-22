@@ -24,6 +24,8 @@ export type MasteryNodeProps = {
   showLabel?: boolean;
   /** Verified state only. Defaults to true when verified. */
   showGlow?: boolean;
+  /** Use in-scene CSS tooltip (passport 3D Html — portal tooltips misalign under transform). */
+  localTooltip?: boolean;
   onPress?: () => void;
 };
 
@@ -77,8 +79,24 @@ function wrapWithTooltip(
   enabled: boolean,
   nodeName: string,
   accuracy: number | undefined,
+  local = false,
 ) {
   if (!enabled) return node;
+
+  if (local) {
+    const text = formatMasteryNodeTooltip(nodeName, accuracy);
+    return (
+      <span className="group relative inline-flex">
+        {node}
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-[calc(100%+5px)] left-1/2 z-[60] -translate-x-1/2 whitespace-nowrap rounded border border-white/10 bg-[#0F172A] px-2 py-1 text-[10px] leading-snug text-slate-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+        >
+          {text}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <MentrixaTooltip
@@ -102,6 +120,7 @@ export function MasteryNode({
   size,
   showLabel = false,
   showGlow,
+  localTooltip = false,
   onPress,
 }: MasteryNodeProps) {
   const reduceMotion = useReducedMotion();
@@ -203,5 +222,5 @@ export function MasteryNode({
     </span>
   );
 
-  return wrapWithTooltip(body, tooltipEnabled, nodeName, accuracy);
+  return wrapWithTooltip(body, tooltipEnabled, nodeName, accuracy, localTooltip);
 }

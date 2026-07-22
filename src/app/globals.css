@@ -913,6 +913,12 @@ html:has(.mentrix-student-type-scope) body {
   max-height: calc(100% - 2.75rem);
 }
 
+.rank-passport-page-ink > .rank-passport-page-fill {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+
 .rank-passport-3d-canvas-shell *,
 .rank-passport-3d-canvas * {
   scrollbar-width: none;

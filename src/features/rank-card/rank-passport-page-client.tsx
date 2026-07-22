@@ -139,20 +139,22 @@ export function RankPassportPageClient({
 
             {data.masteryGrid ? (
               <RankPassportSlide slideIndex={slideIndex++} interactive>
-                <VocabSectionHeading name={CANONICAL_MASTERY_GRID_ICON} label="Grid" surface="light" />
-                <MasteryGrid
-                  userId={data.userId}
-                  subject={AP_CALC_AB_SUBJECT}
-                  mode="public"
-                  compact
-                  passportPage
-                  attemptedOnly
-                  passportScroll
-                  surface="light"
-                  initialData={data.masteryGrid}
-                  showVerdict={false}
-                  className="mt-2"
-                />
+                <div className="rank-passport-page-fill flex h-full min-h-0 flex-col">
+                  <VocabSectionHeading name={CANONICAL_MASTERY_GRID_ICON} label="Grid" surface="light" />
+                  <MasteryGrid
+                    userId={data.userId}
+                    subject={AP_CALC_AB_SUBJECT}
+                    mode="public"
+                    compact
+                    passportPage
+                    attemptedOnly
+                    passportScroll
+                    surface="light"
+                    initialData={data.masteryGrid}
+                    showVerdict={false}
+                    className="mt-2 min-h-0 flex-1"
+                  />
+                </div>
               </RankPassportSlide>
             ) : null}
 
