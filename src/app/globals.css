@@ -881,18 +881,6 @@ html:has(.mentrix-student-type-scope) body {
   min-height: 100%;
 }
 
-.rank-passport-chip-badge {
-  width: 2.25rem;
-  height: 1.65rem;
-  border-radius: 4px;
-  border: 1px solid rgba(99, 102, 241, 0.45);
-  background: linear-gradient(145deg, #fde68a 0%, #d4a017 38%, #b8860b 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-}
-
 .rank-passport-laser-ink {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
   letter-spacing: 0.04em;

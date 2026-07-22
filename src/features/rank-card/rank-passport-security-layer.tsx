@@ -25,9 +25,6 @@ export function PassportBiodataShell({ children }: { children: ReactNode }) {
   return (
     <div className="rank-passport-biodata-shell relative h-full">
       <PassportPageSecurityLayer variant="biodata" />
-      <div className="rank-passport-chip-badge pointer-events-none absolute right-2 top-2 z-[2]" aria-hidden>
-        <span className="text-[7px] font-black uppercase tracking-[0.2em] text-[#6366F1]">ePassport</span>
-      </div>
       <div className="relative z-[1]">{children}</div>
     </div>
   );

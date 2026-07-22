@@ -55,7 +55,7 @@ export function RankPassportPageClient({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const { prefersReducedMotion, safeReduceMotion } = useHydrationSafeMotion();
-  const accuracyPercent = data.topSubject?.currentAccuracy ?? 0;
+  const accuracyPercent = data.verifiedAccuracyPercent;
   const topPercent = data.passportVerdict.kind === "ranked" ? data.passportVerdict.topPercent : null;
 
   const readinessBand = useMemo(

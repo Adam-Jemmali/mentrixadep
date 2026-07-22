@@ -10,19 +10,52 @@ import {
   formatPassportMemberSince,
   formatPassportMrzLines,
   formatPassportRoleLabel,
-  formatPassportSexLabel,
   formatPassportTimezone,
   resolvePassportSignature,
 } from "@/features/rank-card/rank-passport-identity-pure";
+import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { CANONICAL_PROFILE_ICON, CANONICAL_SESSION_ICON } from "@/shared/icons/vocab-canonical";
 import { cn } from "@/shared/core/utils";
 
-function BiodataField({ label, value }: { label: string; value: string }) {
+function BiodataField({
+  label,
+  value,
+  playfair,
+}: {
+  label: string;
+  value: string;
+  playfair?: boolean;
+}) {
   return (
     <div className="min-w-0">
       <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#6366F1]">{label}</p>
-      <p className="rank-passport-laser-ink mt-0.5 truncate text-[13px] font-bold uppercase text-[#0B1220]">
+      <p
+        className={cn(
+          "mt-0.5 truncate font-bold text-[#0B1220]",
+          playfair
+            ? "font-[family-name:var(--font-playfair),serif] text-[clamp(1.25rem,3vw,1.65rem)] leading-tight"
+            : "rank-passport-laser-ink text-[13px] uppercase",
+        )}
+      >
         {value}
       </p>
+    </div>
+  );
+}
+
+function RoleField({ role }: { role: "student" | "tutor" }) {
+  const label = formatPassportRoleLabel(role);
+  const icon = role === "tutor" ? CANONICAL_SESSION_ICON : CANONICAL_PROFILE_ICON;
+
+  return (
+    <div className="min-w-0">
+      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#6366F1]">Role</p>
+      <div className="mt-0.5 flex items-center gap-2">
+        <MentrixaVocabIcon name={icon} size={22} surface="light" title={label} />
+        <p className="rank-passport-laser-ink truncate text-[13px] font-bold uppercase text-[#0B1220]">
+          {label}
+        </p>
+      </div>
     </div>
   );
 }
@@ -44,7 +77,6 @@ export function RankPassportIdentityPage({
     <PassportBiodataShell>
       <div className={cn("rank-passport-id-page flex flex-col gap-2", className)}>
         <div className="flex items-center justify-between gap-2 border-b border-[#6366F1]/25 pb-1">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#6366F1]">Biodata page</p>
           <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#475569]">{AP_CALC_AB_SUBJECT}</p>
         </div>
 
@@ -85,11 +117,10 @@ export function RankPassportIdentityPage({
           </div>
 
           <div className="rank-passport-id-fields grid grid-cols-1 gap-2 content-start">
-            <BiodataField label="Name" value={data.displayName} />
-            <BiodataField label="Role" value={formatPassportRoleLabel(identity.role)} />
+            <BiodataField label="Name" value={data.displayName} playfair />
+            <RoleField role={identity.role} />
             <BiodataField label="Joined" value={formatPassportMemberSince(identity.memberSince)} />
             <BiodataField label="Zone" value={formatPassportTimezone(identity.timezone)} />
-            <BiodataField label="Sex" value={formatPassportSexLabel(identity.sex)} />
             <BiodataField label="Handle" value={`@${data.username}`} />
           </div>
         </div>

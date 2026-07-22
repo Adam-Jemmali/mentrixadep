@@ -27,6 +27,7 @@ export function buildGuestTryPassportPreview(params: {
     totalXp: params.wouldXp,
     verifiedPercentile: null,
     verifiedSkillCount: verifiedCount,
+    verifiedAccuracyPercent: accuracy,
     passportVerdict: buildPassportVerdict({ verifiedCount, percentile: null }),
     breakthroughReceipts: params.breakthroughReceipts ?? [],
     subjects: [],

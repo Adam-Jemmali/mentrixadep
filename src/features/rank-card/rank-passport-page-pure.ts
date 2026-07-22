@@ -1,6 +1,11 @@
 import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
-import type { PassportVerdict, RankPassportReceipt } from "@/features/rank-card/types";
+import type { PassportVerdict, RankCardData, RankPassportReceipt } from "@/features/rank-card/types";
+import { formatStudentHomeAccuracyMath } from "@/features/student-home/student-home-verdict-pure";
 import { peerTopPercent } from "@/features/xp/rank-statistics-pure";
+
+export function resolvePassportVerifiedMetrics(data: RankCardData) {
+  return formatStudentHomeAccuracyMath(data.verifiedSkillCount, data.verifiedAccuracyPercent);
+}
 
 export function rankPassportBandCaption(bandScore: number | null): string {
   if (bandScore == null) return `Building proof on ${AP_CALC_AB_SUBJECT}`;
@@ -8,7 +13,7 @@ export function rankPassportBandCaption(bandScore: number | null): string {
 }
 
 export function rankPassportBandFootnote(): string {
-  return "First attempt only";
+  return "";
 }
 
 export function rankPassportAccuracyHeadline(accuracyPercent: number, topPercent: number | null): string {

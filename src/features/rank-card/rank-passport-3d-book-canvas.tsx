@@ -18,7 +18,9 @@ import {
   PASSPORT_BOOK_SCALE,
   PASSPORT_CAMERA_FOV,
   PASSPORT_CAMERA_Z,
+  PASSPORT_PAGE_H_PX,
   PASSPORT_PAGE_H_UNITS,
+  PASSPORT_PAGE_W_PX,
   PASSPORT_PAGE_W_UNITS,
   passportHtmlDistanceFactor,
   passportPagePaperTone,
@@ -28,8 +30,10 @@ import {
 import {
   canGoPassportNext,
   canGoPassportPrev,
+  isPassportBusy,
   PASSPORT_ANIMATION_WATCHDOG_MS,
   spreadAfterCoverClosed,
+  type PassportNavContext,
 } from "@/features/rank-card/rank-passport-3d-nav";
 import { PassportPaperMaterial } from "@/features/rank-card/rank-passport-3d-materials";
 
@@ -115,15 +119,10 @@ function PageSlot({
   const securityVariant = passportPageSecurityVariant(pageIndex);
   const paperTone = passportPagePaperTone(pageIndex);
 
-  const handleClick = (event: { stopPropagation: () => void }) => {
-    event.stopPropagation();
-    onPageClick?.();
-  };
-
   return (
     <group position={position}>
       <SpreadPagePlane />
-      <mesh onClick={onPageClick ? handleClick : undefined}>
+      <mesh>
         <boxGeometry args={[PAGE_W, PAGE_H, PAGE_THICK]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
@@ -140,7 +139,11 @@ function PageSlot({
             type="button"
             onClick={onPageClick}
             className="block cursor-pointer overflow-hidden border-0 bg-transparent p-0"
-            style={{ pointerEvents: "auto" }}
+            style={{
+              pointerEvents: "auto",
+              width: PASSPORT_PAGE_W_PX,
+              height: PASSPORT_PAGE_H_PX,
+            }}
             aria-label={side === "left" ? "Turn to previous spread" : "Turn to next spread"}
           >
             <PassportPageChrome
@@ -243,6 +246,19 @@ function PassportBookScene({
   const leftIndex = spread * 2;
   const rightIndex = spread * 2 + 1;
 
+  const getNavContext = useCallback(
+    (): PassportNavContext => ({
+      coverOpen,
+      coverReady,
+      isFlipping,
+      isAnimating,
+      isClosingCover,
+      spread,
+      totalSpreads,
+    }),
+    [coverOpen, coverReady, isFlipping, isAnimating, isClosingCover, spread, totalSpreads],
+  );
+
   useEffect(() => {
     setReduceMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
@@ -321,12 +337,13 @@ function PassportBookScene({
   }, [bumpStampEpoch, endAnimation, onSpreadChange]);
 
   const goNext = useCallback(() => {
-    if (isClosingCover || (animatingRef.current && !coverReady)) return;
+    const ctx = getNavContext();
+    if (!canGoPassportNext(ctx)) return;
+
     if (!coverOpen) {
       openCover();
       return;
     }
-    if (!coverReady || isFlipping || animatingRef.current) return;
 
     if (spread >= totalSpreads - 1) {
       if (reduceMotion) {
@@ -358,28 +375,23 @@ function PassportBookScene({
     bumpStampEpoch,
     closeCover,
     coverOpen,
-    coverReady,
-    isFlipping,
+    getNavContext,
     onSpreadChange,
     openCover,
     reduceMotion,
     resetToClosedCover,
     spread,
     totalSpreads,
-    isClosingCover,
   ]);
 
   const goPrev = useCallback(() => {
-    if (isClosingCover) return;
-    if (!coverOpen) return;
-    if (isFlipping) return;
+    const ctx = getNavContext();
+    if (!canGoPassportPrev(ctx)) return;
 
     if (!coverReady) {
       closeCover();
       return;
     }
-
-    if (animatingRef.current) return;
 
     if (spread <= 0) {
       closeCover();
@@ -402,7 +414,16 @@ function PassportBookScene({
     beginAnimation();
     flipProgress.current = 0;
     flipAngle.current = -Math.PI;
-  }, [beginAnimation, bumpStampEpoch, closeCover, coverOpen, coverReady, isClosingCover, isFlipping, onSpreadChange, reduceMotion, spread]);
+  }, [
+    beginAnimation,
+    bumpStampEpoch,
+    closeCover,
+    coverReady,
+    getNavContext,
+    onSpreadChange,
+    reduceMotion,
+    spread,
+  ]);
 
   useEffect(() => {
     if (!coverOpen || coverDoneRef.current) return;
@@ -534,7 +555,9 @@ function PassportBookScene({
   const flipBackSourceIndex = spread * 2 - 1;
   const flipBackTargetIndex = spread * 2;
   const flipUnderLeftIndex = spread * 2 - 2;
-  const orbitEnabled = coverReady && !isFlipping && !isAnimating;
+  const passportBusy = isPassportBusy({ isFlipping, isAnimating, isClosingCover });
+  const orbitEnabled = coverReady && !passportBusy;
+  const pageNavEnabled = !isFlipping;
   const animateStamp = !reduceMotion && stampEpoch > 0;
 
   return (
@@ -551,7 +574,7 @@ function PassportBookScene({
               htmlDistanceFactor={htmlDistanceFactor}
               animateStamp={animateStamp}
               stampEpoch={stampEpoch}
-              onPageClick={goPrev}
+              onPageClick={pageNavEnabled ? goPrev : undefined}
             >
               {pageAt(pages, leftIndex)}
             </PageSlot>
@@ -564,7 +587,7 @@ function PassportBookScene({
                 htmlDistanceFactor={htmlDistanceFactor}
                 animateStamp={animateStamp}
                 stampEpoch={stampEpoch}
-                onPageClick={goNext}
+                onPageClick={pageNavEnabled ? goNext : undefined}
               >
                 {pageAt(pages, rightIndex)}
               </PageSlot>
@@ -734,6 +757,7 @@ function PassportBookScene({
           enabled={orbitEnabled}
           enablePan={false}
           enableZoom={false}
+          enableRotate={!passportBusy}
           enableDamping
           dampingFactor={0.08}
           minPolarAngle={Math.PI / 2.75}

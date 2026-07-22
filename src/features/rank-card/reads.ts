@@ -131,6 +131,7 @@ export async function getRankCardByUsername(
     totalXp,
     verifiedPercentile: verifiedStats.percentile,
     verifiedSkillCount: verifiedStats.verifiedCount,
+    verifiedAccuracyPercent: verifiedStats.accuracyPercent,
     passportVerdict,
     breakthroughReceipts,
     subjects,

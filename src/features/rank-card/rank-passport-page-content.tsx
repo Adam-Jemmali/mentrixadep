@@ -5,12 +5,12 @@ import {
   StudentHubNumericReveal,
   StudentHubNumericStat,
 } from "@/features/student-home/student-hub-numeric-panel";
-import { formatStudentHomeAccuracyMath } from "@/features/student-home/student-home-verdict-pure";
 import { landingStickyVariantForIndex } from "@/features/student-profile/student-sticky-variants";
 import type { RankCardData } from "@/features/rank-card/types";
 import {
   rankPassportBandCaption,
   rankPassportPeerValue,
+  resolvePassportVerifiedMetrics,
 } from "@/features/rank-card/rank-passport-page-pure";
 import { formatXpWatermarkK } from "@/shared/core/copy-format";
 import {
@@ -32,7 +32,7 @@ export function RankPassportVerifiedSpread({
   bandCaption: string;
   className?: string;
 }) {
-  const accuracy = formatStudentHomeAccuracyMath(data.verifiedSkillCount, accuracyPercent);
+  const accuracy = resolvePassportVerifiedMetrics(data);
   const peerLine =
     topPercent != null
       ? `Top ${topPercent}% on first try`
@@ -74,6 +74,7 @@ export function RankPassportSkillProofPage({
   const division = data.passportDivision;
   const divisionRankDisplay =
     division.status === "no_division" || division.myRank == null ? "—" : `#${division.myRank}`;
+  const accuracyMetrics = resolvePassportVerifiedMetrics(data);
 
   return (
     <div className={cn("flex flex-col gap-2.5", className)}>
@@ -97,8 +98,8 @@ export function RankPassportSkillProofPage({
           watermark={accuracyPercent}
           icon={CANONICAL_RANK_PROOF_ICON}
           label="First try"
-          numericEnd={accuracyPercent}
-          numericSuffix="%"
+          numericEnd={accuracyMetrics.correct}
+          displayValue={accuracyMetrics.value}
           gold={accuracyPercent >= 70}
         />
         <StudentHubNumericStat

@@ -100,7 +100,7 @@ export function RankPassportArticle({
   const gridSummary = data.masteryGrid ? summarizeMasteryGrid(data.masteryGrid) : null;
   const totalNodes = gridSummary?.totalNodes ?? totalSkillNodes ?? 0;
   const verifiedCount = data.verifiedSkillCount;
-  const accuracyPercent = data.topSubject?.currentAccuracy ?? 0;
+  const accuracyPercent = data.verifiedAccuracyPercent;
   const nodesBarPercent =
     totalNodes > 0 ? Math.min(100, Math.round((verifiedCount / totalNodes) * 100)) : 0;
   const nodesBarWidth =

@@ -76,6 +76,7 @@ export const rankCardDataSchema = z.object({
   totalXp: z.number().int().min(0),
   verifiedPercentile: z.number().nullable(),
   verifiedSkillCount: z.number().int().min(0),
+  verifiedAccuracyPercent: z.number().int().min(0).max(100),
   passportVerdict: passportVerdictSchema,
   breakthroughReceipts: z.array(rankPassportReceiptSchema).max(3),
   subjects: z.array(rankCardSubjectSchema),
