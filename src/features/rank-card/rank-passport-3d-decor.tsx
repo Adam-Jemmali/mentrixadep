@@ -12,11 +12,13 @@ export const PASSPORT_PAGE_H_PX = 690;
 /** World units for one passport page in the 3D scene. */
 export const PASSPORT_PAGE_W_UNITS = 2.15;
 export const PASSPORT_PAGE_H_UNITS = 3.2;
-export const PASSPORT_CAMERA_Z = 4.35;
+export const PASSPORT_CAMERA_Z = 3.85;
 export const PASSPORT_CAMERA_FOV = 48;
 export const PASSPORT_VIEWPORT_H = 720;
 /** Fine-tuning scale applied to the whole book group in the canvas. */
-export const PASSPORT_BOOK_SCALE = 0.92;
+export const PASSPORT_BOOK_SCALE = 1;
+/** Extra Html scale on the closed cover for readability. */
+export const PASSPORT_COVER_HTML_BOOST = 1.1;
 
 /** Scales Html overlays to match one page mesh width at the default camera. */
 export function passportHtmlDistanceFactor(
@@ -26,7 +28,7 @@ export function passportHtmlDistanceFactor(
 ) {
   const vFov = (fov * Math.PI) / 180;
   const denom = PASSPORT_PAGE_W_PX * Math.tan(vFov / 2) * cameraZ;
-  return (PASSPORT_PAGE_W_UNITS * viewportH) / denom;
+  return (PASSPORT_PAGE_W_UNITS * PASSPORT_BOOK_SCALE * viewportH) / denom;
 }
 
 const STAMP_COLORS = {
@@ -148,27 +150,28 @@ export function PassportPageChrome({
 export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
   return (
     <div
-      className="flex flex-col items-center justify-between overflow-hidden bg-[#0B1220] px-10 py-14 text-center"
+      className="flex flex-col items-center justify-between overflow-hidden bg-[#0B1220] px-8 py-10 text-center"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
-      <div className="flex h-32 w-32 items-center justify-center rounded-full border-2 border-[#D4A017]/40 bg-[#0B1220]/60">
+      <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#D4A017]/40 bg-[#0B1220]/60">
         <Image
           src={MENTRIXA_LOGO_PNG}
           alt="Mentrixa"
-          width={128}
-          height={128}
-          className="h-28 w-28 object-contain"
+          width={96}
+          height={96}
+          className="h-24 w-24 object-contain"
           priority
+          sizes="96px"
         />
       </div>
-      <div className="space-y-5">
-        <p className="rank-passport-3d-foil rank-passport-3d-foil--holo text-[2.75rem] font-black leading-none tracking-[0.22em]">
+      <div className="space-y-4">
+        <p className="rank-passport-3d-foil rank-passport-3d-foil--holo text-[2.1rem] font-black leading-none tracking-[0.22em]">
           MENTRIXA
         </p>
-        <p className="text-lg font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
-        <p className="text-base font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
+        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
       </div>
-      <span className="text-base font-black uppercase tracking-[0.14em] text-[#6366F1]">Tap to open</span>
+      <span className="text-sm font-black uppercase tracking-[0.14em] text-[#6366F1]">Tap to open</span>
     </div>
   );
 }

@@ -13,6 +13,7 @@ function ctx(overrides: Partial<PassportNavContext> = {}): PassportNavContext {
     coverReady: false,
     isFlipping: false,
     isAnimating: false,
+    isClosingCover: false,
     spread: 0,
     totalSpreads: 3,
     ...overrides,
@@ -20,10 +21,11 @@ function ctx(overrides: Partial<PassportNavContext> = {}): PassportNavContext {
 }
 
 describe("rank-passport-3d-nav", () => {
-  it("isPassportBusy when flipping or animating cover", () => {
-    expect(isPassportBusy({ isFlipping: false, isAnimating: false })).toBe(false);
-    expect(isPassportBusy({ isFlipping: true, isAnimating: false })).toBe(true);
-    expect(isPassportBusy({ isFlipping: false, isAnimating: true })).toBe(true);
+  it("isPassportBusy when flipping, animating cover, or closing", () => {
+    expect(isPassportBusy({ isFlipping: false, isAnimating: false, isClosingCover: false })).toBe(false);
+    expect(isPassportBusy({ isFlipping: true, isAnimating: false, isClosingCover: false })).toBe(true);
+    expect(isPassportBusy({ isFlipping: false, isAnimating: true, isClosingCover: false })).toBe(true);
+    expect(isPassportBusy({ isFlipping: false, isAnimating: false, isClosingCover: true })).toBe(true);
   });
 
   it("canGoPrev only when cover is open and not busy", () => {
@@ -35,13 +37,18 @@ describe("rank-passport-3d-nav", () => {
     expect(canGoPassportPrev(ctx({ coverOpen: true, coverReady: true }))).toBe(true);
   });
 
+  it("canGoPrev blocked while cover is closing", () => {
+    expect(canGoPassportPrev(ctx({ coverOpen: false, isClosingCover: true, isAnimating: true }))).toBe(false);
+  });
+
   it("canGoNext opens cover when closed", () => {
     expect(canGoPassportNext(ctx())).toBe(true);
   });
 
-  it("canGoNext blocked while cover opening or flipping", () => {
+  it("canGoNext blocked while cover opening, closing, or flipping", () => {
     expect(canGoPassportNext(ctx({ coverOpen: true, coverReady: false }))).toBe(false);
     expect(canGoPassportNext(ctx({ coverOpen: true, coverReady: false, isAnimating: true }))).toBe(false);
+    expect(canGoPassportNext(ctx({ coverOpen: false, isClosingCover: true, isAnimating: true }))).toBe(false);
     expect(
       canGoPassportNext(ctx({ coverOpen: true, coverReady: true, isFlipping: true, spread: 0 })),
     ).toBe(false);
