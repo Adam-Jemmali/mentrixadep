@@ -76,6 +76,12 @@ describe("rank passport page copy", () => {
     expect(data.verifiedAccuracyPercent).toBe(54);
   });
 
+  it("first try display uses correct count out of verified skills", () => {
+    const data = mockRankCard({ verifiedSkillCount: 54, verifiedAccuracyPercent: 44 });
+    const metrics = resolvePassportVerifiedMetrics(data);
+    expect(metrics.correct).toBe(24);
+  });
+
   it("formats accuracy headline", () => {
     expect(rankPassportAccuracyHeadline(71, 1)).toBe("71% first try Top 1%");
     expect(rankPassportAccuracyHeadline(71, null)).toBe("71% first try");

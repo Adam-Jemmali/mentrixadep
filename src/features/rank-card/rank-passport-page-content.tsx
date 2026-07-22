@@ -48,7 +48,7 @@ export function RankPassportVerifiedSpread({
         compact
         numerator={accuracy.correct}
         denominator={data.verifiedSkillCount}
-        percent={accuracyPercent}
+        percent={data.verifiedAccuracyPercent}
         unitLabel="skills"
       />
       <p className="text-[11px] font-semibold leading-snug text-[#475569]">{bandCaption}</p>
@@ -95,12 +95,12 @@ export function RankPassportSkillProofPage({
           className="rotate-[0.2deg] px-2 py-2.5"
           variant={landingStickyVariantForIndex(1)}
           compact
-          watermark={accuracyPercent}
+          watermark={data.verifiedSkillCount}
           icon={CANONICAL_RANK_PROOF_ICON}
           label="First try"
           numericEnd={accuracyMetrics.correct}
-          displayValue={accuracyMetrics.value}
-          gold={accuracyPercent >= 70}
+          numericSuffix={`/${data.verifiedSkillCount}`}
+          gold={data.verifiedAccuracyPercent >= 70}
         />
         <StudentHubNumericStat
           className="rotate-[-0.15deg] px-2 py-2.5"

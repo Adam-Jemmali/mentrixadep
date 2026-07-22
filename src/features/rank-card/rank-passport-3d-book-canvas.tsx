@@ -31,6 +31,7 @@ import {
   canGoPassportNext,
   canGoPassportPrev,
   isPassportBusy,
+  isPassportPageTurnBlocked,
   PASSPORT_ANIMATION_WATCHDOG_MS,
   spreadAfterCoverClosed,
   type PassportNavContext,
@@ -298,11 +299,14 @@ function PassportBookScene({
   }, [endAnimation, onSpreadChange]);
 
   const openCover = useCallback(() => {
-    if (coverOpen || animatingRef.current) return;
+    if (coverOpen) return;
+    if (animatingRef.current && !isClosingCover) {
+      endAnimation();
+    }
     setCoverOpen(true);
     targetCover.current = OPEN_COVER_ANGLE;
     beginAnimation();
-  }, [beginAnimation, coverOpen]);
+  }, [beginAnimation, coverOpen, endAnimation, isClosingCover]);
 
   const finishForwardFlip = useCallback(() => {
     setIsFlipping(false);
@@ -542,6 +546,16 @@ function PassportBookScene({
     }
 
     if (coverPivotRef.current) coverPivotRef.current.rotation.y = coverAngle.current;
+
+    if (
+      coverReady &&
+      !isFlipping &&
+      !isClosingCover &&
+      animatingRef.current &&
+      now - animationStartedAt.current > 32
+    ) {
+      endAnimation();
+    }
   });
 
   const showSpread = coverOpen && coverReady;
@@ -556,8 +570,11 @@ function PassportBookScene({
   const flipBackTargetIndex = spread * 2;
   const flipUnderLeftIndex = spread * 2 - 2;
   const passportBusy = isPassportBusy({ isFlipping, isAnimating, isClosingCover });
+  const pageTurnBlocked = isPassportPageTurnBlocked({ isFlipping, isClosingCover });
+  const navCtx = getNavContext();
+  const canPrev = canGoPassportPrev(navCtx);
+  const canNext = canGoPassportNext(navCtx);
   const orbitEnabled = coverReady && !passportBusy;
-  const pageNavEnabled = !isFlipping;
   const animateStamp = !reduceMotion && stampEpoch > 0;
 
   return (
@@ -574,12 +591,12 @@ function PassportBookScene({
               htmlDistanceFactor={htmlDistanceFactor}
               animateStamp={animateStamp}
               stampEpoch={stampEpoch}
-              onPageClick={pageNavEnabled ? goPrev : undefined}
+              onPageClick={canPrev ? goPrev : undefined}
             >
               {pageAt(pages, leftIndex)}
             </PageSlot>
 
-            {!isFlipping ? (
+            {!pageTurnBlocked ? (
               <PageSlot
                 position={[RIGHT_PAGE_X, 0, rightZ]}
                 side="right"
@@ -587,7 +604,7 @@ function PassportBookScene({
                 htmlDistanceFactor={htmlDistanceFactor}
                 animateStamp={animateStamp}
                 stampEpoch={stampEpoch}
-                onPageClick={pageNavEnabled ? goNext : undefined}
+                onPageClick={canNext ? goNext : undefined}
               >
                 {pageAt(pages, rightIndex)}
               </PageSlot>

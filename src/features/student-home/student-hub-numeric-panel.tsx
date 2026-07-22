@@ -43,7 +43,8 @@ export function StudentHubNumericReveal({
     void import("@/shared/animation/anime").then(({ animate }) => {
       if (cancelled) return;
       root.querySelectorAll<HTMLElement>(`.${LP_NUM.value}`).forEach((el) => {
-        const end = Number(el.dataset.value ?? 0);
+        if (el.dataset.value == null || el.dataset.value === "") return;
+        const end = Number(el.dataset.value);
         const suffix = el.dataset.suffix ?? "";
         const format = el.dataset.format ?? "default";
         const obj = { val: 0 };
@@ -83,7 +84,8 @@ export function StudentHubNumericReveal({
         void import("@/shared/animation/anime").then(({ animate }) => {
           if (cancelled) return;
           root.querySelectorAll<HTMLElement>(`.${LP_NUM.value}`).forEach((el) => {
-            const end = Number(el.dataset.value ?? 0);
+            if (el.dataset.value == null || el.dataset.value === "") return;
+            const end = Number(el.dataset.value);
             const suffix = el.dataset.suffix ?? "";
             const format = el.dataset.format ?? "default";
             const obj = { val: 0 };
