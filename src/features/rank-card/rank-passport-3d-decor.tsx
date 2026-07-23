@@ -6,17 +6,22 @@ import { PassportPageSecurityLayer } from "@/features/rank-card/rank-passport-se
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { cn } from "@/shared/core/utils";
 
+/** ~15% bump for in-scene page readability; HTML canvas and 3D mesh scale together. */
+export const PASSPORT_PAGE_SCALE = 1.15;
+
 /** Pixel canvas for in-scene Html — matched to 3D page mesh aspect. */
-export const PASSPORT_PAGE_W_PX = 460;
-export const PASSPORT_PAGE_H_PX = 690;
+export const PASSPORT_PAGE_W_PX = Math.round(460 * PASSPORT_PAGE_SCALE);
+export const PASSPORT_PAGE_H_PX = Math.round(690 * PASSPORT_PAGE_SCALE);
 
 /** World units for one passport page in the 3D scene. */
-export const PASSPORT_PAGE_W_UNITS = 2.15;
-export const PASSPORT_PAGE_H_UNITS = 3.2;
+export const PASSPORT_PAGE_W_UNITS = 2.15 * PASSPORT_PAGE_SCALE;
+export const PASSPORT_PAGE_H_UNITS = 3.2 * PASSPORT_PAGE_SCALE;
 export const PASSPORT_CAMERA_FOV = 48;
-export const PASSPORT_VIEWPORT_H = 720;
+export const PASSPORT_VIEWPORT_H = Math.round(720 * PASSPORT_PAGE_SCALE);
 /** Max shell width — two pages side by side at PASSPORT_PAGE_W_PX each. */
-export const PASSPORT_CANVAS_SHELL_MAX_PX = 940;
+export const PASSPORT_CANVAS_SHELL_MAX_PX = Math.round(940 * PASSPORT_PAGE_SCALE);
+/** Shared viewport height for canvas shell and loading placeholder. */
+export const PASSPORT_VIEWPORT_HEIGHT = `min(78dvh, ${PASSPORT_VIEWPORT_H}px)`;
 /** Single closed cover — fill the viewport. */
 export const PASSPORT_CAMERA_Z_CLOSED = 3.85;
 
@@ -113,9 +118,9 @@ export function PassportEntryStamp({
       }}
       aria-hidden
     >
-      <p className="text-xs font-black uppercase tracking-[0.12em]">{label}</p>
+      <p className="text-sm font-black uppercase tracking-[0.12em]">{label}</p>
       {sublabel ? (
-        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.08em] opacity-80">{sublabel}</p>
+        <p className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.08em] opacity-80">{sublabel}</p>
       ) : null}
     </div>
   );
@@ -152,7 +157,7 @@ export function PassportPageChrome({
       {stamp ? (
         <p
           className={cn(
-            "rank-passport-page-title mx-hub-type-ui border-b border-[#C4B5FD]/60 px-3 pb-2.5 pt-4 text-[#4F46E5]",
+            "rank-passport-page-title mx-hub-type-ui border-b border-[#C4B5FD]/60 px-4 pb-3 pt-5 text-[#4F46E5]",
           )}
         >
           {stamp.label}
@@ -160,8 +165,8 @@ export function PassportPageChrome({
       ) : null}
       <div
         className={cn(
-          "rank-passport-page-ink relative z-[1] h-full min-h-0 px-3 pb-6",
-          stamp ? "pt-3" : "pt-5",
+          "rank-passport-page-ink relative z-[1] h-full min-h-0 px-4 pb-7",
+          stamp ? "pt-3.5" : "pt-6",
         )}
         style={stamp ? { height: "calc(100% - 3rem)" } : { height: "100%" }}
       >
@@ -239,7 +244,7 @@ export function PassportCoverDoodleEmblem() {
 export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
   return (
     <div
-      className="rank-passport-3d-closed-cover relative flex flex-col items-center justify-between overflow-hidden rounded-none px-8 py-10 text-center"
+      className="rank-passport-3d-closed-cover relative flex flex-col items-center justify-between overflow-hidden rounded-none px-9 py-11 text-center"
       style={{ width: PASSPORT_PAGE_W_PX, height: PASSPORT_PAGE_H_PX }}
     >
       <PassportCoverDoodleEmblem />
@@ -257,26 +262,26 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
       >
         verified
       </div>
-      <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#6366F1]/45 bg-[#0B1220]/60">
+      <div className="flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#6366F1]/45 bg-[#0B1220]/60">
         <Image
           src={MENTRIXA_LOGO_PNG}
           alt="Mentrixa"
-          width={96}
-          height={96}
-          className="h-24 w-24 object-contain"
+          width={112}
+          height={112}
+          className="h-28 w-28 object-contain"
           priority
-          sizes="96px"
+          sizes="112px"
         />
       </div>
       <div className="space-y-4">
-        <p className="rank-passport-3d-foil--brand text-[2.1rem] font-black leading-none tracking-[0.22em]">
+        <p className="rank-passport-3d-foil--brand text-[2.45rem] font-black leading-none tracking-[0.22em]">
           MENTRIXA
         </p>
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
+        <p className="text-base font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
       </div>
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed border-[#6366F1]/50 bg-[#EDE9FE]/40 text-[#6366F1] transition-transform group-hover:translate-x-0.5">
-        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" aria-hidden>
+      <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-[#6366F1]/50 bg-[#EDE9FE]/40 text-[#6366F1] transition-transform group-hover:translate-x-0.5">
+        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden>
           <path
             d="M8 12h8M14 8l4 4-4 4"
             stroke="currentColor"

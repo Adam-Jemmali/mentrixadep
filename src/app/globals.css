@@ -772,7 +772,7 @@ html:has(.mentrix-student-type-scope) body {
 
 /* 3D verified rank passport (Three.js canvas) */
 .rank-passport-3d-canvas-shell {
-  width: min(100%, 940px);
+  width: min(100%, 1081px);
   margin-inline: auto;
   overflow: visible;
   background: radial-gradient(ellipse 80% 60% at 50% 45%, #f8f7ff 0%, #ede9fe 55%, transparent 100%);
@@ -905,7 +905,7 @@ html:has(.mentrix-student-type-scope) body {
 
 .rank-passport-page-ink {
   overflow: hidden;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.45;
   color: #0b1220;
 }
@@ -947,25 +947,25 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .rank-passport-page-ink .rank-passport-id-page {
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .rank-passport-id-photo {
-  max-width: 8rem;
+  max-width: 9rem;
   aspect-ratio: 3 / 4;
 }
 
 .rank-passport-id-fields {
   grid-template-columns: 1fr 1fr;
-  gap: 0.35rem 0.5rem;
+  gap: 0.45rem 0.65rem;
 }
 
 .rank-passport-page-ink .mx-hand-title {
-  font-size: 1.25rem !important;
+  font-size: 1.45rem !important;
 }
 
 .rank-passport-page-title {
-  font-size: 0.8rem !important;
+  font-size: 0.92rem !important;
   letter-spacing: 0.14em !important;
 }
 

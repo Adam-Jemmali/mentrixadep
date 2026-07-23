@@ -22,6 +22,7 @@ import {
   PASSPORT_PAGE_H_UNITS,
   PASSPORT_PAGE_W_PX,
   PASSPORT_PAGE_W_UNITS,
+  PASSPORT_VIEWPORT_HEIGHT,
   passportHtmlDistanceFactor,
   passportPagePaperTone,
   passportPageSecurityVariant,
@@ -838,7 +839,7 @@ export function PassportBookCanvas({
 
   return (
     <div className={className}>
-      <div className="relative h-[min(78dvh,720px)] w-full">
+      <div className="relative w-full" style={{ height: PASSPORT_VIEWPORT_HEIGHT }}>
         <Canvas
           shadows
           dpr={[1, 2]}
