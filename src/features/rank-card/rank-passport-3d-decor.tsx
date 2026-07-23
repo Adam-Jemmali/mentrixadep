@@ -24,15 +24,17 @@ export const PASSPORT_CANVAS_SHELL_MAX_PX = Math.round(940 * PASSPORT_PAGE_SCALE
 export const PASSPORT_VIEWPORT_HEIGHT = `min(86dvh, ${PASSPORT_VIEWPORT_H}px)`;
 /** Fine-tuning scale applied to the whole book group in the canvas. */
 export const PASSPORT_BOOK_SCALE = 1.08;
-/** Modest read boost on open spread — full pages stay in frame. */
-export const PASSPORT_OPEN_READ_ZOOM = 0.81;
-/** Nearly full fit on closed cover — prevents top/bottom crop. */
+/** Nearly full fit on one page — cover and each open page share this framing. */
 export const PASSPORT_CLOSED_READ_ZOOM = 0.98;
 
-/** Fit closed cover in both width and height with a small readability nudge. */
-export function passportClosedCoverCameraZ(
-  viewportAspect = 680 / 720,
+/** Canvas aspect used for camera fit (two pages wide at max shell width). */
+export const PASSPORT_VIEWPORT_ASPECT = PASSPORT_CANVAS_SHELL_MAX_PX / PASSPORT_VIEWPORT_H;
+
+/** Fit one passport page (cover or each open side) in width and height. */
+export function passportSinglePageCameraZ(
+  viewportAspect = PASSPORT_VIEWPORT_ASPECT,
   marginWorld = 0.2,
+  readZoom = PASSPORT_CLOSED_READ_ZOOM,
 ): number {
   const halfWidth = (PASSPORT_PAGE_W_UNITS / 2 + marginWorld) * PASSPORT_BOOK_SCALE;
   const halfHeight = (PASSPORT_PAGE_H_UNITS / 2 + marginWorld * 1.25) * PASSPORT_BOOK_SCALE;
@@ -40,24 +42,26 @@ export function passportClosedCoverCameraZ(
   const horizontalHalfRad = Math.atan(Math.tan(verticalHalfRad) * viewportAspect);
   const zForWidth = halfWidth / Math.tan(horizontalHalfRad);
   const zForHeight = halfHeight / Math.tan(verticalHalfRad);
-  return Math.max(zForWidth, zForHeight) * PASSPORT_CLOSED_READ_ZOOM;
+  return Math.max(zForWidth, zForHeight) * readZoom;
 }
 
-/** Single closed cover — derived from page aspect so the full cover stays visible. */
-export const PASSPORT_CAMERA_Z_CLOSED = passportClosedCoverCameraZ();
-
-/** Fit open spread in both width and height, then apply a modest read zoom. */
-export function passportOpenSpreadCameraZ(
-  viewportAspect = 680 / 720,
-  marginWorld = 0.12,
+/** @deprecated Use passportSinglePageCameraZ */
+export function passportClosedCoverCameraZ(
+  viewportAspect = PASSPORT_VIEWPORT_ASPECT,
+  marginWorld = 0.2,
 ): number {
-  const spreadHalfWidth = (PASSPORT_PAGE_W_UNITS + marginWorld) * PASSPORT_BOOK_SCALE;
-  const spreadHalfHeight = (PASSPORT_PAGE_H_UNITS + marginWorld * 1.35) * PASSPORT_BOOK_SCALE;
-  const verticalHalfRad = (PASSPORT_CAMERA_FOV * Math.PI) / 360;
-  const horizontalHalfRad = Math.atan(Math.tan(verticalHalfRad) * viewportAspect);
-  const zForWidth = spreadHalfWidth / Math.tan(horizontalHalfRad);
-  const zForHeight = spreadHalfHeight / Math.tan(verticalHalfRad);
-  return Math.max(zForWidth, zForHeight) * PASSPORT_OPEN_READ_ZOOM;
+  return passportSinglePageCameraZ(viewportAspect, marginWorld, PASSPORT_CLOSED_READ_ZOOM);
+}
+
+/** Closed cover — one page fills the viewport. */
+export const PASSPORT_CAMERA_Z_CLOSED = passportSinglePageCameraZ();
+
+/** Open spread — same per-page camera as cover so left and right match cover size. */
+export function passportOpenSpreadCameraZ(
+  viewportAspect = PASSPORT_VIEWPORT_ASPECT,
+  marginWorld = 0.2,
+): number {
+  return passportSinglePageCameraZ(viewportAspect, marginWorld, PASSPORT_CLOSED_READ_ZOOM);
 }
 
 export const PASSPORT_CAMERA_Z_OPEN = passportOpenSpreadCameraZ();

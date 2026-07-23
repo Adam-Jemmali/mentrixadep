@@ -773,7 +773,11 @@ function PassportBookScene({
                 type="button"
                 onClick={openCover}
                 className="group cursor-pointer border-0 bg-transparent p-0"
-                style={{ pointerEvents: "auto" }}
+                style={{
+                  pointerEvents: "auto",
+                  width: PASSPORT_PAGE_W_PX,
+                  height: PASSPORT_PAGE_H_PX,
+                }}
                 aria-label="Open verified passport"
               >
                 <PassportCoverFace subjectLabel={subjectLabel} />
