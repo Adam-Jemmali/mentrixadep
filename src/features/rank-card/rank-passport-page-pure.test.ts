@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   formatBreakthroughReceiptLine,
   passportFirstTryWatermark,
+  pickBestPassportBreakthroughReceipt,
   rankPassportAccuracyHeadline,
   rankPassportBandCaption,
   rankPassportBandFootnote,
+  rankPassportBreakthroughConciseVerdict,
   rankPassportBreakthroughVerdict,
   rankPassportPeerValue,
   rankPassportRecordVerdict,
@@ -146,6 +148,31 @@ describe("rank passport page copy", () => {
     expect(summary.bestLiftNodeName).toBe("Chain rule");
     expect(summary.avgLift).toBe(33);
     expect(rankPassportBreakthroughVerdict(summary)).toContain("best jump +48% on Chain rule");
+  });
+
+  it("picks best breakthrough receipt by percent lift", () => {
+    const receipts = [
+      {
+        nodeName: "Product rule",
+        beforeState: "weak",
+        afterState: "verified",
+        date: "Jul 2",
+        prePercent: 52,
+        postPercent: 70,
+      },
+      {
+        nodeName: "Chain rule",
+        beforeState: "weak",
+        afterState: "verified",
+        date: "Jul 1",
+        prePercent: 40,
+        postPercent: 88,
+      },
+    ];
+    expect(pickBestPassportBreakthroughReceipt(receipts)?.nodeName).toBe("Chain rule");
+    expect(rankPassportBreakthroughConciseVerdict(receipts[1], receipts.length)).toContain(
+      "40% to 88%",
+    );
   });
 
   it("formats live record verdict with best and current streak", () => {

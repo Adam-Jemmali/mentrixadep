@@ -6,26 +6,27 @@ import {
   StudentHubNumericStat,
   StudentHubPlayfairNumbers,
 } from "@/features/student-home/student-hub-numeric-panel";
-import { LandingNumberWatermark } from "@/features/marketing/landing/ui/landing-number-heading";
-import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-sticky-note";
 import { landingStickyVariantForIndex } from "@/features/student-profile/student-sticky-variants";
 import type { RankCardData, RankPassportReceipt } from "@/features/rank-card/types";
 import {
   breakthroughReceiptDisplayValue,
   breakthroughReceiptLift,
+  formatBreakthroughReceiptLine,
   passportFirstTryWatermark,
+  pickBestPassportBreakthroughReceipt,
   rankPassportBandCaption,
-  rankPassportBreakthroughVerdict,
+  rankPassportBreakthroughConciseVerdict,
   rankPassportPeerValue,
   rankPassportRecordVerdict,
   resolvePassportVerifiedMetrics,
-  summarizePassportBreakthroughs,
 } from "@/features/rank-card/rank-passport-page-pure";
 import { formatXpWatermarkK } from "@/shared/core/copy-format";
 import {
+  CANONICAL_BREAKTHROUGH_ICON,
   CANONICAL_LEAGUE_ICON,
   CANONICAL_RANK_PROOF_ICON,
 } from "@/shared/icons/vocab-canonical";
+import { VocabSectionHeading, MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
 export function RankPassportVerifiedSpread({
@@ -49,9 +50,14 @@ export function RankPassportVerifiedSpread({
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
-      <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(1.45rem,3.4vw,1.85rem)] font-bold leading-tight text-[#6366F1]">
-        First-try accuracy
-      </p>
+      <VocabSectionHeading
+        name={CANONICAL_RANK_PROOF_ICON}
+        label="First-try accuracy"
+        surface="light"
+        iconSize={28}
+        className="gap-2.5"
+        labelClassName="font-[family-name:var(--font-playfair),serif] text-[clamp(1.35rem,3.2vw,1.65rem)] font-bold normal-case tracking-normal text-[#6366F1]"
+      />
       <StudentHubAnimatedFraction
         compact
         className="rank-passport-verified-fraction"
@@ -87,7 +93,6 @@ export function RankPassportSkillProofPage({
 
   return (
     <div className={cn("flex flex-col gap-3.5", className)}>
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6366F1]">Skill proof</p>
       <p className="text-base font-semibold leading-snug text-[#0B1220]">{bandCaption}</p>
       <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-3">
         <StudentHubNumericStat
@@ -143,70 +148,48 @@ export function RankPassportBreakthroughPage({
   receipts: RankPassportReceipt[];
   className?: string;
 }) {
-  const summary = summarizePassportBreakthroughs(receipts);
-  const verdict = rankPassportBreakthroughVerdict(summary);
-  const bestLiftDisplay = summary.bestLift != null ? `+${summary.bestLift}%` : "—";
+  const best = pickBestPassportBreakthroughReceipt(receipts);
+  const others = receipts.filter((receipt) => receipt !== best).slice(0, 2);
+  const bestLift = best ? breakthroughReceiptLift(best) : null;
+  const verdict = rankPassportBreakthroughConciseVerdict(best, receipts.length);
 
   return (
     <div className={cn("flex flex-col gap-3.5", className)}>
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6366F1]">Breakthroughs</p>
-      <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-3">
-        <StudentHubNumericStat
-          className="col-span-2 rotate-[0.15deg] px-3 py-3.5"
-          variant={landingStickyVariantForIndex(0)}
-          compact
-          watermark={summary.bestLift != null ? `+${summary.bestLift}` : summary.count}
-          icon="receipt"
-          label="Best lift"
-          numericEnd={summary.bestLift ?? summary.count}
-          numericSuffix={summary.bestLift != null ? "%" : ""}
-          displayValue={summary.bestLift != null ? bestLiftDisplay : undefined}
-          detail={summary.bestLiftNodeName ?? undefined}
-        />
-        <StudentHubNumericStat
-          className="rotate-[-0.12deg] px-3 py-3.5"
-          variant={landingStickyVariantForIndex(1)}
-          compact
-          watermark={summary.count}
-          icon="receipt"
-          label="Breakthrough count"
-          numericEnd={summary.count}
-        />
-        <StudentHubNumericStat
-          className="rotate-[0.1deg] px-3 py-3.5"
-          variant={landingStickyVariantForIndex(2)}
-          compact
-          watermark={summary.avgLift != null ? `+${summary.avgLift}` : "—"}
-          icon="rank-proof"
-          label="Average lift"
-          numericEnd={summary.avgLift ?? 0}
-          numericSuffix={summary.avgLift != null ? "%" : ""}
-          displayValue={summary.avgLift == null ? "—" : `+${summary.avgLift}%`}
-        />
-      </StudentHubNumericReveal>
-      <ul className="grid grid-cols-2 gap-3">
-        {receipts.map((receipt, index) => {
-          const lift = breakthroughReceiptLift(receipt);
-          return (
-            <li key={`${receipt.nodeName}-${receipt.date}-${receipt.beforeState}`}>
-              <LandingStickyNote
-                variant={landingStickyVariantForIndex(index % 3)}
-                compact
-                className="relative px-3 py-3 text-center"
-              >
-                <LandingNumberWatermark value={lift != null ? `+${lift}` : receipt.nodeName.slice(0, 3)} />
-                <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(1.2rem,2.8vw,1.65rem)] font-bold leading-tight text-[#0B1220]">
-                  {breakthroughReceiptDisplayValue(receipt)}
-                </p>
-                <p className="mt-1 truncate text-xs font-black uppercase tracking-[0.12em] text-[#6366F1]">
-                  {receipt.nodeName}
-                </p>
-                <p className="mt-0.5 text-xs text-[#64748B]">{receipt.date}</p>
-              </LandingStickyNote>
+      {best ? (
+        <StudentHubNumericReveal immediate>
+          <StudentHubNumericStat
+            className="rotate-[0.12deg] px-3 py-3.5"
+            variant={landingStickyVariantForIndex(0)}
+            compact
+            watermark={bestLift != null ? `+${bestLift}` : best.nodeName.slice(0, 3)}
+            icon={CANONICAL_BREAKTHROUGH_ICON}
+            label={best.nodeName}
+            numericEnd={bestLift ?? 0}
+            displayValue={breakthroughReceiptDisplayValue(best)}
+            detail={bestLift != null ? `+${bestLift}% · ${best.date}` : best.date}
+            gold={bestLift != null && bestLift >= 20}
+          />
+        </StudentHubNumericReveal>
+      ) : null}
+      {others.length > 0 ? (
+        <ul className="space-y-2">
+          {others.map((receipt) => (
+            <li
+              key={`${receipt.nodeName}-${receipt.date}-${receipt.beforeState}`}
+              className="flex items-start gap-2 text-sm leading-snug text-[#475569]"
+            >
+              <MentrixaVocabIcon
+                name={CANONICAL_BREAKTHROUGH_ICON}
+                size={20}
+                surface="light"
+                title=""
+                className="mt-0.5 shrink-0"
+              />
+              <span>{formatBreakthroughReceiptLine(receipt)}</span>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      ) : null}
       <p className="text-xs font-medium leading-snug text-[#475569]">
         <StudentHubPlayfairNumbers text={verdict} />
       </p>
@@ -231,18 +214,16 @@ export function RankPassportRecordPage({
 
   return (
     <div className={cn("flex flex-col gap-3.5", className)}>
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6366F1]">Live record</p>
       <StudentHubNumericReveal immediate className="grid grid-cols-1 gap-3">
         <StudentHubNumericStat
           className="rotate-[0.1deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(0)}
           compact
           watermark={vfaStreakLongest}
-          icon="rank-proof"
+          icon="streak"
           label="Best streak"
           numericEnd={vfaStreakLongest}
-          numericSuffix=" day"
-          displayValue={`${vfaStreakLongest} day best streak`}
+          numericSuffix=" days"
         />
         {vfaStreakDays > 0 ? (
           <StudentHubNumericStat
@@ -250,17 +231,19 @@ export function RankPassportRecordPage({
             variant={landingStickyVariantForIndex(1)}
             compact
             watermark={vfaStreakDays}
-            icon="rank-proof"
+            icon="streak"
             label="Current streak"
             numericEnd={vfaStreakDays}
-            numericSuffix=" day"
-            displayValue={`${vfaStreakDays} day proof streak`}
+            numericSuffix=" days"
           />
         ) : null}
       </StudentHubNumericReveal>
-      <p className="font-mono text-base text-[#6366F1]">
-        {siteHost}/rank/{username}
-      </p>
+      <div className="flex items-center gap-2">
+        <VocabSectionHeading name="passport" surface="light" iconSize={22} className="shrink-0 gap-0" as="span" />
+        <p className="font-mono text-base text-[#6366F1]">
+          {siteHost}/rank/{username}
+        </p>
+      </div>
       <p className="text-xs font-medium leading-snug text-[#475569]">
         <StudentHubPlayfairNumbers text={verdict} />
       </p>

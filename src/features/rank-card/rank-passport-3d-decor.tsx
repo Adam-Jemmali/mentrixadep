@@ -101,6 +101,11 @@ export function passportPageStamp(index: number) {
   return PASSPORT_STAMP_BY_INDEX[index % PASSPORT_STAMP_BY_INDEX.length];
 }
 
+function passportPageStampPosition(side: "left" | "right", role: "page" | "verified"): string {
+  if (role === "verified") return "top-5 right-5";
+  return side === "left" ? "bottom-14 right-12" : "bottom-14 left-10";
+}
+
 /** Visa artwork on content pages; biodata page uses in-content security shell. */
 export function passportPageSecurityVariant(pageIndex: number): "visa" | "biodata" | "none" {
   return pageIndex === 1 ? "none" : "visa";
@@ -130,7 +135,7 @@ export function PassportEntryStamp({
   return (
     <div
       className={cn(
-        "rank-passport-stamp pointer-events-none absolute select-none rounded-full border-[3px] border-double px-4 py-2.5 text-center",
+        "rank-passport-stamp pointer-events-none absolute z-[2] max-w-[8.75rem] select-none rounded-full border-[3px] border-double px-3 py-2 text-center",
         animateIn && "rank-passport-stamp--enter",
         className,
       )}
@@ -144,9 +149,9 @@ export function PassportEntryStamp({
       }}
       aria-hidden
     >
-      <p className="text-sm font-black uppercase tracking-[0.12em]">{label}</p>
+      <p className="text-xs font-black uppercase tracking-[0.1em] leading-tight">{label}</p>
       {sublabel ? (
-        <p className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.08em] opacity-80">{sublabel}</p>
+        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.06em] opacity-80">{sublabel}</p>
       ) : null}
     </div>
   );
@@ -191,8 +196,8 @@ export function PassportPageChrome({
       ) : null}
       <div
         className={cn(
-          "rank-passport-page-ink relative z-[1] h-full min-h-0 px-4 pb-8",
-          stamp ? "pt-4" : "pt-6",
+          "rank-passport-page-ink relative z-[1] h-full min-h-0 px-4",
+          stamp ? "pb-32 pt-4" : "pb-8 pt-6",
         )}
         style={stamp ? { height: "calc(100% - 3rem)" } : { height: "100%" }}
       >
@@ -204,9 +209,9 @@ export function PassportPageChrome({
           label={stamp.label}
           sublabel={stamp.sublabel}
           tone={stamp.tone}
-          rotation={stamp.rotation ?? (side === "left" ? -14 : 11)}
+          rotation={stamp.rotation ?? (side === "left" ? -10 : 10)}
           animateIn={animateStamp}
-          className={side === "left" ? "bottom-6 right-4" : "bottom-10 left-3"}
+          className={passportPageStampPosition(side, "page")}
         />
       ) : null}
       {side === "right" ? (
@@ -215,9 +220,9 @@ export function PassportPageChrome({
           label="Verified"
           sublabel="First try"
           tone="purple"
-          rotation={18}
+          rotation={14}
           animateIn={animateStamp}
-          className="top-5 right-4 opacity-75"
+          className={cn(passportPageStampPosition("right", "verified"), "opacity-80")}
         />
       ) : null}
     </div>

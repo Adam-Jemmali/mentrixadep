@@ -73,6 +73,40 @@ export function summarizePassportBreakthroughs(receipts: RankPassportReceipt[]):
   };
 }
 
+export function pickBestPassportBreakthroughReceipt(
+  receipts: RankPassportReceipt[],
+): RankPassportReceipt | null {
+  if (receipts.length === 0) return null;
+
+  let best: RankPassportReceipt | null = null;
+  let bestLift = -1;
+
+  for (const receipt of receipts) {
+    const lift = breakthroughReceiptLift(receipt);
+    if (lift != null && lift > bestLift) {
+      bestLift = lift;
+      best = receipt;
+    }
+  }
+
+  return best ?? receipts[0] ?? null;
+}
+
+export function rankPassportBreakthroughConciseVerdict(
+  best: RankPassportReceipt | null,
+  totalCount: number,
+): string {
+  if (!best || totalCount <= 0) return "No breakthrough receipts yet.";
+
+  const lift = breakthroughReceiptLift(best);
+  if (lift != null && best.prePercent != null && best.postPercent != null) {
+    const more = totalCount > 1 ? ` ${totalCount - 1} more on record.` : "";
+    return `${best.nodeName} moved ${best.prePercent}% to ${best.postPercent}% (+${lift}%).${more}`;
+  }
+
+  return `${best.nodeName}: ${best.beforeState} to ${best.afterState}.`;
+}
+
 export function rankPassportBreakthroughVerdict(summary: PassportBreakthroughSummary): string {
   if (summary.count <= 0) return "No breakthrough receipts yet.";
   if (summary.bestLift != null && summary.bestLiftNodeName) {
