@@ -101,7 +101,7 @@ export function RankPassportPageClient({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1200px] px-3 pb-16 pt-4 sm:px-4">
+      <main className="mx-auto w-full max-w-[1280px] px-3 pb-16 pt-4 sm:px-4">
         <div className="rank-passport-mount">
           <RankPassportTopBar />
         </div>

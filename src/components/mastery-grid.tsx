@@ -166,7 +166,7 @@ export function MasteryGrid({
 
   const totalSkills = gridData ? countMasteryGridSkills(gridData) : 0;
   const verdictLine = gridData ? masteryGridVerdictSentence(gridData) : "";
-  const nodeSize = passportPage ? "xs" : "sm";
+  const nodeSize = passportPage ? "sm" : "sm";
   const hiddenUnitCount =
     gridData && compact && !expanded && !passportScroll && !passportPage && !attemptedOnly
       ? Math.max(0, gridData.units.length - 2)

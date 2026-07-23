@@ -29,13 +29,13 @@ function BiodataField({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6366F1]">{label}</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#6366F1]">{label}</p>
       <p
         className={cn(
           "mt-0.5 truncate font-bold text-[#0B1220]",
           playfair
-            ? "font-[family-name:var(--font-playfair),serif] text-[clamp(1.4rem,3.4vw,1.85rem)] leading-tight"
-            : "rank-passport-laser-ink text-sm uppercase",
+            ? "font-[family-name:var(--font-playfair),serif] text-[clamp(1.55rem,3.8vw,2rem)] leading-tight"
+            : "rank-passport-laser-ink text-base uppercase",
         )}
       >
         {value}
@@ -55,10 +55,10 @@ function RoleField({ role }: { role: "student" | "tutor" }) {
 
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#6366F1]">Role</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#6366F1]">Role</p>
       <div className="mt-0.5 flex items-center gap-2">
         {icon}
-        <p className="rank-passport-laser-ink truncate text-sm font-bold uppercase text-[#0B1220]">
+        <p className="rank-passport-laser-ink truncate text-base font-bold uppercase text-[#0B1220]">
           {label}
         </p>
       </div>
@@ -81,12 +81,12 @@ export function RankPassportIdentityPage({
 
   return (
     <PassportBiodataShell>
-      <div className={cn("rank-passport-id-page flex flex-col gap-2.5", className)}>
-        <div className="flex items-center justify-between gap-2 border-b border-[#6366F1]/25 pb-1.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#475569]">{AP_CALC_AB_SUBJECT}</p>
+      <div className={cn("rank-passport-id-page flex flex-col gap-3", className)}>
+        <div className="flex items-center justify-between gap-2 border-b border-[#6366F1]/25 pb-2">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#475569]">{AP_CALC_AB_SUBJECT}</p>
         </div>
 
-        <div className="grid grid-cols-[7.5rem_1fr] gap-3.5">
+        <div className="grid grid-cols-[8.25rem_1fr] gap-4">
           <div>
             <div className="rank-passport-id-photo rank-passport-laser-photo overflow-hidden rounded-sm border border-[#6366F1]/40 bg-[#E8EEF9]">
               {identity.avatarUrl ? (
@@ -114,7 +114,7 @@ export function RankPassportIdentityPage({
                 animate={rankVisual.key === "mentrixer" || rankVisual.key === "apex"}
               />
               <span
-                className="text-[10px] font-black uppercase tracking-[0.08em]"
+                className="text-[11px] font-black uppercase tracking-[0.08em]"
                 style={{ color: rankVisual.key === "mentrixer" ? "#D4A017" : rankVisual.labelOnLight }}
               >
                 {normalizeRankTitle(data.rankTitle)}
@@ -132,20 +132,20 @@ export function RankPassportIdentityPage({
         </div>
 
         <div className="border-t border-[#6366F1]/20 pt-1.5">
-          <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Bio</p>
-          <p className="mt-0.5 text-sm leading-snug text-[#334155]">{formatPassportBio(identity.bio)}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Bio</p>
+          <p className="mt-1 text-base leading-snug text-[#334155]">{formatPassportBio(identity.bio)}</p>
         </div>
 
-        <div className="border-t border-[#6366F1]/20 pt-1.5">
-          <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Sign</p>
-          <p className="rank-passport-laser-ink mx-hand-title mt-0.5 text-[1.65rem] leading-none text-[#0B1220]">
+        <div className="border-t border-[#6366F1]/20 pt-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Sign</p>
+          <p className="rank-passport-laser-ink mx-hand-title mt-1 text-[1.85rem] leading-none text-[#0B1220]">
             {signature}
           </p>
         </div>
 
         <div className="rank-passport-mrz mt-auto space-y-0.5 border-t border-[#0B1220]/15 pt-1.5">
           {mrz.map((line) => (
-            <p key={line} className="font-mono text-[9px] leading-tight tracking-[0.18em] text-[#1E293B]">
+            <p key={line} className="font-mono text-[10px] leading-tight tracking-[0.18em] text-[#1E293B]">
               {line}
             </p>
           ))}

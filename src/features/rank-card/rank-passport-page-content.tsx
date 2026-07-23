@@ -48,11 +48,11 @@ export function RankPassportVerifiedSpread({
       : rankPassportPeerValue(data.passportVerdict, data.verifiedPercentile);
 
   return (
-    <div className={cn("flex flex-col gap-3.5", className)}>
-      <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(1.85rem,4.5vw,2.25rem)] font-bold leading-tight text-[#0B1220]">
+    <div className={cn("flex flex-col gap-4", className)}>
+      <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(2rem,5vw,2.5rem)] font-bold leading-tight text-[#0B1220]">
         {data.displayName}
       </p>
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6366F1]">First-try accuracy</p>
+      <p className="text-sm font-black uppercase tracking-[0.14em] text-[#6366F1]">First-try accuracy</p>
       <StudentHubAnimatedFraction
         compact
         numerator={accuracy.correct}
@@ -60,9 +60,9 @@ export function RankPassportVerifiedSpread({
         percent={data.verifiedAccuracyPercent}
         unitLabel="skills"
       />
-      <p className="text-xs font-semibold leading-snug text-[#475569]">{bandCaption}</p>
-      <p className="text-[11px] font-medium text-[#0B1220]">{peerLine}</p>
-      <p className="text-[11px] uppercase tracking-[0.12em] text-[#64748B]">First attempt only</p>
+      <p className="text-sm font-semibold leading-snug text-[#475569]">{bandCaption}</p>
+      <p className="text-xs font-medium text-[#0B1220]">{peerLine}</p>
+      <p className="text-xs uppercase tracking-[0.12em] text-[#64748B]">First attempt only</p>
     </div>
   );
 }
@@ -86,12 +86,12 @@ export function RankPassportSkillProofPage({
   const accuracyMetrics = resolvePassportVerifiedMetrics(data);
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Skill proof</p>
-      <p className="text-sm font-semibold leading-snug text-[#0B1220]">{bandCaption}</p>
-      <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-2.5">
+    <div className={cn("flex flex-col gap-3.5", className)}>
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6366F1]">Skill proof</p>
+      <p className="text-base font-semibold leading-snug text-[#0B1220]">{bandCaption}</p>
+      <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-3">
         <StudentHubNumericStat
-          className="col-span-2 rotate-[0.2deg] px-2.5 py-3"
+          className="col-span-2 rotate-[0.2deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(0)}
           compact
           watermark={passportFirstTryWatermark(data)}
@@ -102,7 +102,7 @@ export function RankPassportSkillProofPage({
           gold={data.verifiedAccuracyPercent >= 70}
         />
         <StudentHubNumericStat
-          className="rotate-[-0.15deg] px-2.5 py-3"
+          className="rotate-[-0.15deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(1)}
           compact
           watermark={division.myRank ?? "—"}
@@ -114,7 +114,7 @@ export function RankPassportSkillProofPage({
           gold={division.status === "rank_1"}
         />
         <StudentHubNumericStat
-          className="rotate-[0.15deg] px-2.5 py-3"
+          className="rotate-[0.15deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(2)}
           compact
           watermark={formatXpWatermarkK(division.myXp)}
@@ -124,7 +124,7 @@ export function RankPassportSkillProofPage({
           valueFormat="xp-k"
         />
       </StudentHubNumericReveal>
-      <p className="text-[11px] font-medium text-[#475569]">
+      <p className="text-xs font-medium text-[#475569]">
         {rankPassportPeerValue(data.passportVerdict, data.verifiedPercentile)}
         {topPercent != null ? ` · Top ${topPercent}%` : ""}
       </p>
@@ -148,11 +148,11 @@ export function RankPassportBreakthroughPage({
   const bestLiftDisplay = summary.bestLift != null ? `+${summary.bestLift}%` : "—";
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Breakthroughs</p>
-      <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-2.5">
+    <div className={cn("flex flex-col gap-3.5", className)}>
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6366F1]">Breakthroughs</p>
+      <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-3">
         <StudentHubNumericStat
-          className="col-span-2 rotate-[0.15deg] px-2.5 py-3"
+          className="col-span-2 rotate-[0.15deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(0)}
           compact
           watermark={summary.bestLift != null ? `+${summary.bestLift}` : summary.count}
@@ -164,7 +164,7 @@ export function RankPassportBreakthroughPage({
           detail={summary.bestLiftNodeName ?? undefined}
         />
         <StudentHubNumericStat
-          className="rotate-[-0.12deg] px-2.5 py-3"
+          className="rotate-[-0.12deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(1)}
           compact
           watermark={summary.count}
@@ -173,7 +173,7 @@ export function RankPassportBreakthroughPage({
           numericEnd={summary.count}
         />
         <StudentHubNumericStat
-          className="rotate-[0.1deg] px-2.5 py-3"
+          className="rotate-[0.1deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(2)}
           compact
           watermark={summary.avgLift != null ? `+${summary.avgLift}` : "—"}
@@ -184,7 +184,7 @@ export function RankPassportBreakthroughPage({
           displayValue={summary.avgLift == null ? "—" : `+${summary.avgLift}%`}
         />
       </StudentHubNumericReveal>
-      <ul className="grid grid-cols-2 gap-2.5">
+      <ul className="grid grid-cols-2 gap-3">
         {receipts.map((receipt, index) => {
           const lift = breakthroughReceiptLift(receipt);
           return (
@@ -192,22 +192,22 @@ export function RankPassportBreakthroughPage({
               <LandingStickyNote
                 variant={landingStickyVariantForIndex(index % 3)}
                 compact
-                className="relative px-2.5 py-2.5 text-center"
+                className="relative px-3 py-3 text-center"
               >
                 <LandingNumberWatermark value={lift != null ? `+${lift}` : receipt.nodeName.slice(0, 3)} />
-                <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(1.1rem,2.6vw,1.5rem)] font-bold leading-tight text-[#0B1220]">
+                <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(1.2rem,2.8vw,1.65rem)] font-bold leading-tight text-[#0B1220]">
                   {breakthroughReceiptDisplayValue(receipt)}
                 </p>
-                <p className="mt-1 truncate text-[11px] font-black uppercase tracking-[0.12em] text-[#6366F1]">
+                <p className="mt-1 truncate text-xs font-black uppercase tracking-[0.12em] text-[#6366F1]">
                   {receipt.nodeName}
                 </p>
-                <p className="mt-0.5 text-[11px] text-[#64748B]">{receipt.date}</p>
+                <p className="mt-0.5 text-xs text-[#64748B]">{receipt.date}</p>
               </LandingStickyNote>
             </li>
           );
         })}
       </ul>
-      <p className="text-[10px] font-medium leading-snug text-[#475569]">
+      <p className="text-xs font-medium leading-snug text-[#475569]">
         <StudentHubPlayfairNumbers text={verdict} />
       </p>
     </div>
@@ -230,11 +230,11 @@ export function RankPassportRecordPage({
   const verdict = rankPassportRecordVerdict(vfaStreakLongest, vfaStreakDays);
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#6366F1]">Live record</p>
-      <StudentHubNumericReveal immediate className="grid grid-cols-1 gap-2.5">
+    <div className={cn("flex flex-col gap-3.5", className)}>
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#6366F1]">Live record</p>
+      <StudentHubNumericReveal immediate className="grid grid-cols-1 gap-3">
         <StudentHubNumericStat
-          className="rotate-[0.1deg] px-2.5 py-3"
+          className="rotate-[0.1deg] px-3 py-3.5"
           variant={landingStickyVariantForIndex(0)}
           compact
           watermark={vfaStreakLongest}
@@ -246,7 +246,7 @@ export function RankPassportRecordPage({
         />
         {vfaStreakDays > 0 ? (
           <StudentHubNumericStat
-            className="rotate-[-0.08deg] px-2.5 py-3"
+            className="rotate-[-0.08deg] px-3 py-3.5"
             variant={landingStickyVariantForIndex(1)}
             compact
             watermark={vfaStreakDays}
@@ -258,10 +258,10 @@ export function RankPassportRecordPage({
           />
         ) : null}
       </StudentHubNumericReveal>
-      <p className="font-mono text-sm text-[#6366F1]">
+      <p className="font-mono text-base text-[#6366F1]">
         {siteHost}/rank/{username}
       </p>
-      <p className="text-[10px] font-medium leading-snug text-[#475569]">
+      <p className="text-xs font-medium leading-snug text-[#475569]">
         <StudentHubPlayfairNumbers text={verdict} />
       </p>
     </div>

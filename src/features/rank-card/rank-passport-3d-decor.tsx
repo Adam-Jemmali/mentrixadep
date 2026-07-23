@@ -6,8 +6,8 @@ import { PassportPageSecurityLayer } from "@/features/rank-card/rank-passport-se
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { cn } from "@/shared/core/utils";
 
-/** ~15% bump for in-scene page readability; HTML canvas and 3D mesh scale together. */
-export const PASSPORT_PAGE_SCALE = 1.15;
+/** HTML canvas + mesh scale for sharper in-page typography. */
+export const PASSPORT_PAGE_SCALE = 1.32;
 
 /** Pixel canvas for in-scene Html — matched to 3D page mesh aspect. */
 export const PASSPORT_PAGE_W_PX = Math.round(460 * PASSPORT_PAGE_SCALE);
@@ -17,30 +17,32 @@ export const PASSPORT_PAGE_H_PX = Math.round(690 * PASSPORT_PAGE_SCALE);
 export const PASSPORT_PAGE_W_UNITS = 2.15 * PASSPORT_PAGE_SCALE;
 export const PASSPORT_PAGE_H_UNITS = 3.2 * PASSPORT_PAGE_SCALE;
 export const PASSPORT_CAMERA_FOV = 48;
-export const PASSPORT_VIEWPORT_H = Math.round(720 * PASSPORT_PAGE_SCALE);
+export const PASSPORT_VIEWPORT_H = 920;
 /** Max shell width — two pages side by side at PASSPORT_PAGE_W_PX each. */
 export const PASSPORT_CANVAS_SHELL_MAX_PX = Math.round(940 * PASSPORT_PAGE_SCALE);
 /** Shared viewport height for canvas shell and loading placeholder. */
-export const PASSPORT_VIEWPORT_HEIGHT = `min(78dvh, ${PASSPORT_VIEWPORT_H}px)`;
-/** Single closed cover — fill the viewport. */
-export const PASSPORT_CAMERA_Z_CLOSED = 3.85;
+export const PASSPORT_VIEWPORT_HEIGHT = `min(92dvh, ${PASSPORT_VIEWPORT_H}px)`;
+/** Fine-tuning scale applied to the whole book group in the canvas. */
+export const PASSPORT_BOOK_SCALE = 1.24;
+/** Pull open-spread camera closer than full fit so left/right pages read without zoom. */
+export const PASSPORT_OPEN_READ_ZOOM = 0.58;
+/** Single closed cover — tuned for readable cover at PASSPORT_BOOK_SCALE. */
+export const PASSPORT_CAMERA_Z_CLOSED = 3.05;
 
-/** Pull camera back so both open pages fit without cropping the outer edge. */
+/** Pull camera back so both open pages fit; then apply read zoom for on-screen size. */
 export function passportOpenSpreadCameraZ(
   viewportAspect = 680 / 720,
-  marginWorld = 0.2,
+  marginWorld = 0.06,
 ): number {
-  const spreadHalfWidth = PASSPORT_PAGE_W_UNITS + marginWorld;
+  const spreadHalfWidth = (PASSPORT_PAGE_W_UNITS + marginWorld) * PASSPORT_BOOK_SCALE;
   const verticalHalfRad = (PASSPORT_CAMERA_FOV * Math.PI) / 360;
   const horizontalHalfRad = Math.atan(Math.tan(verticalHalfRad) * viewportAspect);
-  return spreadHalfWidth / Math.tan(horizontalHalfRad);
+  return (spreadHalfWidth / Math.tan(horizontalHalfRad)) * PASSPORT_OPEN_READ_ZOOM;
 }
 
 export const PASSPORT_CAMERA_Z_OPEN = passportOpenSpreadCameraZ();
 /** @deprecated Use PASSPORT_CAMERA_Z_CLOSED or PASSPORT_CAMERA_Z_OPEN */
 export const PASSPORT_CAMERA_Z = PASSPORT_CAMERA_Z_OPEN;
-/** Fine-tuning scale applied to the whole book group in the canvas. */
-export const PASSPORT_BOOK_SCALE = 1;
 /** Fine-tunes Html overlay scale so page chrome fills the 3D plane edge-to-edge. */
 export const PASSPORT_HTML_BLEED_BOOST = 1.02;
 
@@ -165,8 +167,8 @@ export function PassportPageChrome({
       ) : null}
       <div
         className={cn(
-          "rank-passport-page-ink relative z-[1] h-full min-h-0 px-4 pb-7",
-          stamp ? "pt-3.5" : "pt-6",
+          "rank-passport-page-ink relative z-[1] h-full min-h-0 px-4 pb-8",
+          stamp ? "pt-4" : "pt-6",
         )}
         style={stamp ? { height: "calc(100% - 3rem)" } : { height: "100%" }}
       >
@@ -274,18 +276,18 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
         />
       </div>
       <div className="space-y-4">
-        <p className="rank-passport-3d-foil--brand text-[2.45rem] font-black leading-none tracking-[0.22em]">
+        <p className="rank-passport-3d-foil--brand text-[2.65rem] font-black leading-none tracking-[0.22em]">
           MENTRIXA
         </p>
-        <p className="text-base font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
-        <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
+        <p className="text-lg font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
+        <p className="text-base font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
       </div>
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-[#6366F1]/50 bg-[#EDE9FE]/40 text-[#6366F1] transition-transform group-hover:translate-x-0.5">
-        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden>
+      <span className="rank-passport-cover-open-cue inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#22D3EE] bg-[#F8FAFC] text-[#0B1220] shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_6px_20px_rgba(34,211,238,0.45)] transition-transform group-hover:translate-x-0.5 group-hover:bg-white">
+        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden>
           <path
             d="M8 12h8M14 8l4 4-4 4"
             stroke="currentColor"
-            strokeWidth="2.25"
+            strokeWidth="2.75"
             strokeLinecap="round"
             strokeLinejoin="round"
           />

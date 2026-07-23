@@ -772,7 +772,7 @@ html:has(.mentrix-student-type-scope) body {
 
 /* 3D verified rank passport (Three.js canvas) */
 .rank-passport-3d-canvas-shell {
-  width: min(100%, 1081px);
+  width: min(100%, 1241px);
   margin-inline: auto;
   overflow: visible;
   background: radial-gradient(ellipse 80% 60% at 50% 45%, #f8f7ff 0%, #ede9fe 55%, transparent 100%);
@@ -905,7 +905,7 @@ html:has(.mentrix-student-type-scope) body {
 
 .rank-passport-page-ink {
   overflow: hidden;
-  font-size: 17px;
+  font-size: 20px;
   line-height: 1.45;
   color: #0b1220;
 }
@@ -951,7 +951,7 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .rank-passport-id-photo {
-  max-width: 9rem;
+  max-width: 10rem;
   aspect-ratio: 3 / 4;
 }
 
@@ -961,12 +961,29 @@ html:has(.mentrix-student-type-scope) body {
 }
 
 .rank-passport-page-ink .mx-hand-title {
-  font-size: 1.45rem !important;
+  font-size: 1.65rem !important;
 }
 
 .rank-passport-page-title {
-  font-size: 0.92rem !important;
+  font-size: 1rem !important;
   letter-spacing: 0.14em !important;
+}
+
+.rank-passport-page-ink .lp-sticky-note p[data-value],
+.rank-passport-page-ink .lp-sticky-note > p:nth-of-type(3) {
+  font-size: clamp(1.5rem, 3.2vw, 2rem) !important;
+}
+
+.rank-passport-page-ink .lp-sticky-note p.text-\[10px\] {
+  font-size: 0.72rem !important;
+}
+
+.rank-passport-page-ink .lp-sticky-note p.text-\[11px\] {
+  font-size: 0.8rem !important;
+}
+
+.rank-passport-cover-open-cue {
+  color: #0b1220;
 }
 
 .rank-passport-3d-closed-cover {
