@@ -49,20 +49,20 @@ export function RankPassportVerifiedSpread({
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
-      <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(2rem,5vw,2.5rem)] font-bold leading-tight text-[#0B1220]">
-        {data.displayName}
+      <p className="font-[family-name:var(--font-playfair),serif] text-[clamp(1.45rem,3.4vw,1.85rem)] font-bold leading-tight text-[#6366F1]">
+        First-try accuracy
       </p>
-      <p className="text-sm font-black uppercase tracking-[0.14em] text-[#6366F1]">First-try accuracy</p>
       <StudentHubAnimatedFraction
         compact
+        className="rank-passport-verified-fraction"
         numerator={accuracy.correct}
         denominator={data.verifiedSkillCount}
         percent={data.verifiedAccuracyPercent}
         unitLabel="skills"
       />
-      <p className="text-sm font-semibold leading-snug text-[#475569]">{bandCaption}</p>
-      <p className="text-xs font-medium text-[#0B1220]">{peerLine}</p>
-      <p className="text-xs uppercase tracking-[0.12em] text-[#64748B]">First attempt only</p>
+      <p className="text-base font-semibold leading-snug text-[#475569]">{bandCaption}</p>
+      <p className="text-sm font-medium text-[#0B1220]">{peerLine}</p>
+      <p className="text-sm uppercase tracking-[0.12em] text-[#64748B]">First attempt only</p>
     </div>
   );
 }
