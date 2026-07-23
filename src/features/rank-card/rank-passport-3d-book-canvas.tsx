@@ -249,6 +249,7 @@ function PassportBookScene({
   const flipProgress = useRef(0);
   const targetCover = useRef(0);
   const coverDoneRef = useRef(false);
+  const coverClosingRef = useRef(false);
   const animatingRef = useRef(false);
   const animationStartedAt = useRef(0);
 
@@ -286,9 +287,12 @@ function PassportBookScene({
 
   const finalizeCoverClosed = useCallback(() => {
     coverAngle.current = 0;
+    coverClosingRef.current = false;
     if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
     coverDoneRef.current = false;
     targetCover.current = 0;
+    setCoverOpen(false);
+    setCoverReady(false);
     setIsClosingCover(false);
     setSpread(spreadAfterCoverClosed());
     onSpreadChange?.(spreadAfterCoverClosed());
@@ -297,6 +301,7 @@ function PassportBookScene({
 
   const closeCover = useCallback(() => {
     if (!coverOpen && !isClosingCover) return;
+    coverClosingRef.current = true;
     setIsFlipping(false);
     setFlipBackward(false);
     flipProgress.current = 0;
@@ -316,6 +321,7 @@ function PassportBookScene({
 
   const resetToClosedCover = useCallback(() => {
     coverAngle.current = 0;
+    coverClosingRef.current = false;
     coverDoneRef.current = false;
     targetCover.current = 0;
     if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
@@ -330,6 +336,7 @@ function PassportBookScene({
   const openCover = useCallback(() => {
     if (coverOpen) return;
     if (isClosingCover) return;
+    coverClosingRef.current = false;
     coverDoneRef.current = false;
     setCoverOpen(true);
     setCoverReady(false);
@@ -455,6 +462,10 @@ function PassportBookScene({
   ]);
 
   useEffect(() => {
+    if (!coverOpen && coverReady) setCoverReady(false);
+  }, [coverOpen, coverReady]);
+
+  useEffect(() => {
     if (!coverOpen || coverDoneRef.current) return;
     targetCover.current = OPEN_COVER_ANGLE;
   }, [coverOpen]);
@@ -518,12 +529,12 @@ function PassportBookScene({
       if (isFlipping) {
         if (flipBackward) finishBackwardFlip();
         else finishForwardFlip();
-      } else if (coverOpen && !coverDoneRef.current) {
+      } else if (coverOpen && !coverDoneRef.current && !coverClosingRef.current) {
         coverAngle.current = OPEN_COVER_ANGLE;
         coverDoneRef.current = true;
         setCoverReady(true);
         endAnimation();
-      } else if (!coverOpen && Math.abs(coverAngle.current) > 0.004) {
+      } else if (coverClosingRef.current && Math.abs(coverAngle.current) > 0.004) {
         finalizeCoverClosed();
       } else {
         endAnimation();
@@ -536,7 +547,7 @@ function PassportBookScene({
       floatRef.current.position.y = THREE.MathUtils.lerp(-0.12, 0, entranceEase);
     }
 
-    if (coverOpen && !coverDoneRef.current) {
+    if (coverOpen && !coverDoneRef.current && !coverClosingRef.current && targetCover.current < -0.1) {
       coverAngle.current = THREE.MathUtils.lerp(coverAngle.current, targetCover.current, step);
       if (Math.abs(coverAngle.current - targetCover.current) < 0.004) {
         coverAngle.current = targetCover.current;
@@ -546,11 +557,9 @@ function PassportBookScene({
       }
     }
 
-    if (!coverOpen && Math.abs(coverAngle.current) > 0.004) {
+    if (coverClosingRef.current && Math.abs(coverAngle.current) > 0.004) {
       coverAngle.current = THREE.MathUtils.lerp(coverAngle.current, targetCover.current, step);
       if (Math.abs(coverAngle.current) < 0.004) {
-        coverAngle.current = 0;
-        if (coverPivotRef.current) coverPivotRef.current.rotation.y = 0;
         finalizeCoverClosed();
       }
     }
@@ -762,7 +771,7 @@ function PassportBookScene({
               <button
                 type="button"
                 onClick={openCover}
-                className="cursor-pointer border-0 bg-transparent p-0"
+                className="group cursor-pointer border-0 bg-transparent p-0"
                 style={{ pointerEvents: "auto" }}
                 aria-label="Open verified passport"
               >

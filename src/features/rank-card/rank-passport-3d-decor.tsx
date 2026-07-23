@@ -275,7 +275,17 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
       </div>
-      <span className="text-sm font-black uppercase tracking-[0.14em] text-[#6366F1]">Tap to open</span>
+      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed border-[#6366F1]/50 bg-[#EDE9FE]/40 text-[#6366F1] transition-transform group-hover:translate-x-0.5">
+        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" aria-hidden>
+          <path
+            d="M8 12h8M14 8l4 4-4 4"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
     </div>
   );
 }
