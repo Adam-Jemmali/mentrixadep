@@ -772,7 +772,7 @@ html:has(.mentrix-student-type-scope) body {
 
 /* 3D verified rank passport (Three.js canvas) */
 .rank-passport-3d-canvas-shell {
-  width: min(100%, 1241px);
+  width: min(100%, 1128px);
   margin-inline: auto;
   overflow: visible;
   background: radial-gradient(ellipse 80% 60% at 50% 45%, #f8f7ff 0%, #ede9fe 55%, transparent 100%);
@@ -905,7 +905,7 @@ html:has(.mentrix-student-type-scope) body {
 
 .rank-passport-page-ink {
   overflow: hidden;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.45;
   color: #0b1220;
 }
@@ -971,7 +971,7 @@ html:has(.mentrix-student-type-scope) body {
 
 .rank-passport-page-ink .lp-sticky-note p[data-value],
 .rank-passport-page-ink .lp-sticky-note > p:nth-of-type(3) {
-  font-size: clamp(1.5rem, 3.2vw, 2rem) !important;
+  font-size: clamp(1.35rem, 2.8vw, 1.75rem) !important;
 }
 
 .rank-passport-page-ink .lp-sticky-note p.text-\[10px\] {

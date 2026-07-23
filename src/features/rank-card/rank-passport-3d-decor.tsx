@@ -7,7 +7,7 @@ import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { cn } from "@/shared/core/utils";
 
 /** HTML canvas + mesh scale for sharper in-page typography. */
-export const PASSPORT_PAGE_SCALE = 1.32;
+export const PASSPORT_PAGE_SCALE = 1.2;
 
 /** Pixel canvas for in-scene Html — matched to 3D page mesh aspect. */
 export const PASSPORT_PAGE_W_PX = Math.round(460 * PASSPORT_PAGE_SCALE);
@@ -17,27 +17,30 @@ export const PASSPORT_PAGE_H_PX = Math.round(690 * PASSPORT_PAGE_SCALE);
 export const PASSPORT_PAGE_W_UNITS = 2.15 * PASSPORT_PAGE_SCALE;
 export const PASSPORT_PAGE_H_UNITS = 3.2 * PASSPORT_PAGE_SCALE;
 export const PASSPORT_CAMERA_FOV = 48;
-export const PASSPORT_VIEWPORT_H = 920;
+export const PASSPORT_VIEWPORT_H = 820;
 /** Max shell width — two pages side by side at PASSPORT_PAGE_W_PX each. */
 export const PASSPORT_CANVAS_SHELL_MAX_PX = Math.round(940 * PASSPORT_PAGE_SCALE);
 /** Shared viewport height for canvas shell and loading placeholder. */
-export const PASSPORT_VIEWPORT_HEIGHT = `min(92dvh, ${PASSPORT_VIEWPORT_H}px)`;
+export const PASSPORT_VIEWPORT_HEIGHT = `min(84dvh, ${PASSPORT_VIEWPORT_H}px)`;
 /** Fine-tuning scale applied to the whole book group in the canvas. */
-export const PASSPORT_BOOK_SCALE = 1.24;
-/** Pull open-spread camera closer than full fit so left/right pages read without zoom. */
-export const PASSPORT_OPEN_READ_ZOOM = 0.58;
-/** Single closed cover — tuned for readable cover at PASSPORT_BOOK_SCALE. */
-export const PASSPORT_CAMERA_Z_CLOSED = 3.05;
+export const PASSPORT_BOOK_SCALE = 1.06;
+/** Slight read boost — keep full spread visible; avoid aggressive crop. */
+export const PASSPORT_OPEN_READ_ZOOM = 0.86;
+/** Single closed cover — show full cover with margin at PASSPORT_BOOK_SCALE. */
+export const PASSPORT_CAMERA_Z_CLOSED = 3.72;
 
-/** Pull camera back so both open pages fit; then apply read zoom for on-screen size. */
+/** Fit open spread in both width and height, then apply a modest read zoom. */
 export function passportOpenSpreadCameraZ(
   viewportAspect = 680 / 720,
-  marginWorld = 0.06,
+  marginWorld = 0.14,
 ): number {
   const spreadHalfWidth = (PASSPORT_PAGE_W_UNITS + marginWorld) * PASSPORT_BOOK_SCALE;
+  const spreadHalfHeight = (PASSPORT_PAGE_H_UNITS + marginWorld * 1.35) * PASSPORT_BOOK_SCALE;
   const verticalHalfRad = (PASSPORT_CAMERA_FOV * Math.PI) / 360;
   const horizontalHalfRad = Math.atan(Math.tan(verticalHalfRad) * viewportAspect);
-  return (spreadHalfWidth / Math.tan(horizontalHalfRad)) * PASSPORT_OPEN_READ_ZOOM;
+  const zForWidth = spreadHalfWidth / Math.tan(horizontalHalfRad);
+  const zForHeight = spreadHalfHeight / Math.tan(verticalHalfRad);
+  return Math.max(zForWidth, zForHeight) * PASSPORT_OPEN_READ_ZOOM;
 }
 
 export const PASSPORT_CAMERA_Z_OPEN = passportOpenSpreadCameraZ();
