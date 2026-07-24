@@ -39,6 +39,10 @@ import { GuidePublicPortfolioSection } from "@/features/tutor/ui/public-profile/
 import { GuidePublicBookingSection } from "@/features/tutor/ui/public-profile/guide-public-booking-section";
 import { GuidePublicReviewsSection } from "@/features/tutor/ui/public-profile/guide-public-reviews-section";
 import { GuideAnimatedSticky } from "@/features/tutor/ui/guide-animated-sticky";
+import { GuideBreakthroughTimeline } from "@/features/tutor/ui/guide-breakthrough-timeline";
+import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
+import { GUIDE_HOME } from "@/features/tutor/guide-home-copy-pure";
+import { CANONICAL_BREAKTHROUGH_ICON } from "@/shared/icons/vocab-canonical";
 import { KokonutGlass } from "@/shared/ui/kokonut-glass";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { CANONICAL_PROFILE_ICON } from "@/shared/icons/vocab-canonical";
@@ -315,11 +319,28 @@ export function TutorProfileClient({
             guideRank={profile.guideRank}
             responseRatePercent={profile.responseRatePercent ?? null}
             showUpRatePercent={profile.showUpRatePercent ?? null}
+            avgImpactScore={profile.avgImpactScore ?? null}
           />
         </KokonutGlass>
 
         <div className="space-y-3">
           <GuidePublicImpactChipsSection entries={impactNodeScores} />
+
+          {profile.breakthroughs && profile.breakthroughs.length > 0 ? (
+            <GuideAnimatedSticky variant={GUIDE_SECTION_STICKY_VARIANT.impact} staggerIndex={2}>
+              <div className="mb-2 flex items-center gap-2">
+                <MentrixaVocabIcon
+                  name={CANONICAL_BREAKTHROUGH_ICON}
+                  size={18}
+                  gold
+                  surface="dark"
+                  title="Breakthrough"
+                />
+                <h2 className="text-sm font-bold text-white">{GUIDE_HOME.breakthroughTitle}</h2>
+              </div>
+              <GuideBreakthroughTimeline rows={profile.breakthroughs} tone="dark" />
+            </GuideAnimatedSticky>
+          ) : null}
 
           {profile.teachingPortfolio ? (
             <GuidePublicPortfolioSection

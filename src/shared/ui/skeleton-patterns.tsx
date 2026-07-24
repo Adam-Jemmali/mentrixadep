@@ -5,6 +5,7 @@ import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { Skeleton, type SkeletonTone } from "@/shared/ui/skeleton";
 import { MentrixaBrandMark, MentrixaSkeletonWatermark } from "@/shared/ui/mentrixa-ui-brand";
+import { UiSkeletonShimmer, UiSkeletonShimmerGrid } from "@/components/ui";
 
 export type { SkeletonTone };
 
@@ -92,6 +93,15 @@ export function SkeletonStatGrid({
   className?: string;
   tone?: SkeletonTone;
 }) {
+  if (tone === "dark") {
+    return (
+      <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
+        {Array.from({ length: count }).map((_, index) => (
+          <UiSkeletonShimmer key={index} className="h-[5.5rem] rounded-2xl" aria-label={index === 0 ? "Loading metrics" : undefined} />
+        ))}
+      </div>
+    );
+  }
   return (
     <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
       {Array.from({ length: count }).map((_, index) => (
@@ -203,7 +213,7 @@ export function TutorDashboardSkeleton() {
         <Skeleton className="h-40 flex-1 rounded-2xl" />
       </div>
 
-      <SkeletonStatGrid />
+      <UiSkeletonShimmerGrid count={5} className="grid grid-cols-2 gap-3 sm:grid-cols-5" itemClassName="h-[5.5rem] rounded-2xl" />
 
       <div className="grid gap-8 lg:grid-cols-12">
         <section className="lg:col-span-8">

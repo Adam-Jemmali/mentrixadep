@@ -18,6 +18,8 @@ import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-vari
 import { formatDateInZone } from "@/shared/core/time-format";
 import { studentDisplayNameFromSession } from "@/features/tutor/guide-home-pure";
 import { cn } from "@/shared/core/utils";
+import { GuideRosterTable } from "@/features/tutor/ui/guide-roster-table";
+import { GuideBreakthroughTimeline } from "@/features/tutor/ui/guide-breakthrough-timeline";
 
 export function GuideHomeBelowFold({
   data,
@@ -67,22 +69,7 @@ export function GuideHomeBelowFold({
           {data.activeStudents.length === 0 ? (
             <p className="text-sm text-[#475569]">{GUIDE_HOME.rosterEmpty}</p>
           ) : (
-            <ul className="divide-y divide-[#E0E7FF]">
-              {data.activeStudents.map((student) => (
-                <li
-                  key={student.studentId}
-                  className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
-                >
-                  <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-[#0B1220]">
-                    <MentrixaVocabIcon name="profile" size={16} surface="light" title="Student" />
-                    <span className="truncate">{student.displayName}</span>
-                  </p>
-                  <p className="shrink-0 text-[11px] text-[#475569]">
-                    {student.sessionCount} session{student.sessionCount === 1 ? "" : "s"}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <GuideRosterTable students={data.activeStudents} displayTimeZone={data.tutorTimezone} />
           )}
         </GuideAnimatedSticky>
       </GuideHomeScrollSection>
@@ -142,32 +129,7 @@ export function GuideHomeBelowFold({
           {data.breakthroughs.length === 0 ? (
             <p className="text-sm text-[#475569]">{GUIDE_HOME.breakthroughEmpty}</p>
           ) : (
-            <ul className="space-y-2">
-              {data.breakthroughs.map((row, index) => {
-                const lift = row.postPercent - row.prePercent;
-                const verifiedLift = lift >= 20;
-                return (
-                  <li
-                    key={`${row.concept}-${index}`}
-                    className="rounded-lg border border-[#E0E7FF] bg-white/80 px-3 py-2"
-                  >
-                    <p className="flex items-center gap-2 text-sm font-semibold text-[#0B1220]">
-                      <MentrixaVocabIcon
-                        name={CANONICAL_BREAKTHROUGH_ICON}
-                        size={16}
-                        gold={verifiedLift}
-                        surface="light"
-                        title="Breakthrough"
-                      />
-                      {row.concept}
-                    </p>
-                    <p className={cn("mt-0.5 text-xs", verifiedLift ? "text-[#D4A017]" : "text-[#475569]")}>
-                      {row.prePercent}% → {row.postPercent}% first-attempt accuracy
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
+            <GuideBreakthroughTimeline rows={data.breakthroughs} />
           )}
         </GuideAnimatedSticky>
       </GuideHomeScrollSection>

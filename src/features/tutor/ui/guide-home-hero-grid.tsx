@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 import { motion } from "@/shared/animation/motion";
-import { animate } from "@/shared/animation/anime";
 import { MasteryNode } from "@/components/mastery-node";
 import type { TutorCommandCenterPayload } from "@/features/tutor/command-center";
 import { GuideAnimatedSticky } from "@/features/tutor/ui/guide-animated-sticky";
 import { GuideBrowseImpactChips } from "@/features/guide-impact/components/guide-browse-impact-chips";
+import { GuideImpactProgressRing } from "@/features/tutor/ui/guide-impact-progress-ring";
 import { VerdictPanel } from "@/features/guidance/verdict-panel";
 import { Card, CardContent } from "@/shared/ui/card";
 import { formatTimeInZone, formatDateInZone } from "@/shared/core/time-format";
@@ -21,7 +20,6 @@ import {
 import { GUIDE_SECTION_STICKY_VARIANT } from "@/features/tutor/guide-sticky-variants";
 import { GUIDE_HOME, GUIDE_DEMAND } from "@/features/tutor/guide-home-copy-pure";
 import {
-  GUIDE_IMPACT_HERO_CLASS,
   guideImpactHeroTone,
   studentDisplayNameFromSession,
   toTopImpactChips,
@@ -54,29 +52,7 @@ export function GuideHomeHeroGrid({
 }) {
   const impactScore = maxImpactScore(data.impactScores);
   const impactTone = guideImpactHeroTone(impactScore);
-  const scoreRef = useRef<HTMLSpanElement>(null);
   const upcoming = data.upcomingSessions.slice(0, 3);
-
-  useEffect(() => {
-    const el = scoreRef.current;
-    if (!el) return;
-    if (impactScore <= 0) {
-      el.textContent = "—";
-      return;
-    }
-    const proxy = { value: 0 };
-    const tween = animate(proxy, {
-      value: impactScore,
-      duration: 900,
-      ease: "outExpo",
-      onUpdate: () => {
-        el.textContent = String(Math.round(proxy.value));
-      },
-    });
-    return () => {
-      tween.pause();
-    };
-  }, [impactScore]);
 
   return (
     <div className="mb-4 grid gap-3 lg:grid-cols-3 lg:items-stretch">
@@ -143,19 +119,16 @@ export function GuideHomeHeroGrid({
             {GUIDE_HOME.impactHeroTitle}
           </p>
         </div>
-        <p
-          className={cn(
-            "font-[family-name:var(--font-playfair-display)] text-[36px] font-bold leading-none tabular-nums",
-            GUIDE_IMPACT_HERO_CLASS[impactTone],
-          )}
-        >
-          <span ref={scoreRef}>{impactScore > 0 ? impactScore : "—"}</span>
-        </p>
-        {data.impactVerdict ? (
-          <VerdictPanel verdict={data.impactVerdict} tone="light" className="mt-2 space-y-1.5" />
-        ) : (
-          <p className="mt-2 text-xs leading-snug text-[#475569]">{GUIDE_HOME.impactEmpty}</p>
-        )}
+        <div className="flex items-start gap-3">
+          <GuideImpactProgressRing score={impactScore} size={72} className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            {data.impactVerdict ? (
+              <VerdictPanel verdict={data.impactVerdict} tone="light" className="space-y-1.5" />
+            ) : (
+              <p className="text-xs leading-snug text-[#475569]">{GUIDE_HOME.impactEmpty}</p>
+            )}
+          </div>
+        </div>
         <GuideBrowseImpactChips
           chips={toTopImpactChips(data.impactNodeScores, 3)}
           className="mt-3 border-t border-[#C4B5FD]/50 pt-2"

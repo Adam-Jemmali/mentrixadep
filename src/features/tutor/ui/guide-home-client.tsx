@@ -8,6 +8,7 @@ import { TutorHubRealtimeRefresh } from "@/components/tutor-hub-realtime-refresh
 import { GuideAddAvailabilityDialog } from "@/features/tutor/ui/guide-add-availability-dialog";
 import { GuideHomeHeroGrid } from "@/features/tutor/ui/guide-home-hero-grid";
 import { GuideHomeBelowFold } from "@/features/tutor/ui/guide-home-below-fold";
+import { GuideMetricsStatRow } from "@/features/tutor/ui/guide-metrics-stat-row";
 import { GuideHomeScrollSection } from "@/features/tutor/ui/guide-home-scroll-section";
 import { GuideAnimatedSticky } from "@/features/tutor/ui/guide-animated-sticky";
 import { TutorWeekCalendar } from "@/app/(app)/tutor/tutor-week-calendar";
@@ -179,6 +180,8 @@ export function GuideHomeClient({
             <p className="mt-1 text-xs text-amber-900/90">{GUIDE_HOME.lateCancelBody}</p>
           </div>
         ) : null}
+
+        <GuideMetricsStatRow data={data} />
 
         <GuideHomeHeroGrid
           data={data}

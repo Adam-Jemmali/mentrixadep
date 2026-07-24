@@ -61,6 +61,14 @@ const CookieConsentBanner = dynamic(
   () => import("@/components/cookie-consent-banner").then((m) => ({ default: m.CookieConsentBanner })),
   { ssr: false, loading: () => null },
 );
+const MentrixaCommandPalette = dynamic(
+  () => import("@/components/mentrixa-command-palette").then((m) => ({ default: m.MentrixaCommandPalette })),
+  { ssr: false, loading: () => null },
+);
+const QuestStartFab = dynamic(
+  () => import("@/components/quest-start-fab").then((m) => ({ default: m.QuestStartFab })),
+  { ssr: false, loading: () => null },
+);
 
 const XP_CACHE_KEY = "mentrixa-xp-cache";
 
@@ -308,6 +316,10 @@ export function RootLayoutClient({
       ) : null}
       {user && user.approved && !isVideoRoute ? <FeedbackWidget /> : null}
       {!isVideoRoute ? <CookieConsentBanner /> : null}
+      {!isVideoRoute ? <MentrixaCommandPalette user={user} /> : null}
+      {isApprovedStudent && user && !isQuestOnboarding && !isVideoRoute && !isArenaPlayShellRoute ? (
+        <QuestStartFab />
+      ) : null}
       <main
         suppressHydrationWarning
         className={cn(
