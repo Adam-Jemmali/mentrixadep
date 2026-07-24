@@ -39,18 +39,18 @@ export function MentrixaGoalStickyNote({
     <aside
       className={cn(
         mentrixHubSurfaces.stickyNote,
-        "mentrix-student-type-scope mx-surface-light mx-hub-paper relative text-[#0B1220]",
+        "mentrix-student-type-scope mx-surface-light mx-hub-paper relative text-[var(--mx-navy)]",
         rotate && "rotate-[-0.6deg]",
         isLanding && "shadow-[3px_5px_0_rgba(11,18,32,0.2),6px_14px_28px_-8px_rgba(0,0,0,0.45)]",
         className,
       )}
       aria-label="What Mentrixa is for"
     >
-      <p className="mx-hub-type-ui text-[#6366F1]">Mentrixa goal</p>
+      <p className="mx-hub-type-ui text-[var(--mx-indigo)]">Mentrixa goal</p>
       {density === "full" ? (
         <>
-          <p className="mt-3 text-xl font-bold leading-snug text-[#0B1220]">
-            <span className="text-[#6366F1]">Who: </span>
+          <p className="mt-3 text-xl font-bold leading-snug text-[var(--mx-navy)]">
+            <span className="text-[var(--mx-indigo)]">Who: </span>
             {block.who}
           </p>
           <p className="mt-3 text-lg leading-relaxed text-[#334155]">
@@ -64,11 +64,11 @@ export function MentrixaGoalStickyNote({
         </>
       ) : (
         <>
-          <p className="mt-2 text-lg font-bold leading-snug text-[#0B1220]">{block.who}</p>
+          <p className="mt-2 text-lg font-bold leading-snug text-[var(--mx-navy)]">{block.who}</p>
           <p className="mt-2 text-base leading-relaxed text-[#334155]">{block.whyNow}</p>
         </>
       )}
-      <p className="mt-4 border-t border-[#C4B5FD]/80 pt-3 text-base font-semibold leading-relaxed text-[#0B1220]">
+      <p className="mt-4 border-t border-violet-300/80 pt-3 text-base font-semibold leading-relaxed text-[var(--mx-navy)]">
         {block.verdict}
       </p>
       <p className="mt-2 text-sm font-medium text-[#475569]">{block.nextAction}</p>

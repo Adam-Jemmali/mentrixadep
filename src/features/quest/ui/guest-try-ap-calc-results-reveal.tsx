@@ -182,7 +182,7 @@ function TrapInsightCard({
   return (
     <motion.div
       variants={rise}
-      className="flex items-start gap-4 rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 via-[#0F172A]/40 to-transparent p-4"
+      className="flex items-start gap-4 rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 via-[var(--mx-navy-2)]/40 to-transparent p-4"
     >
       <ApCalcSkillGlyph
         nodeName={verdict.weakestNodeName}
@@ -231,7 +231,7 @@ export function GuestTryApCalcResultsReveal({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden bg-[#0B1220] text-white",
+        "relative w-full overflow-hidden bg-[var(--mx-navy)] text-white",
         embedded ? "min-h-[70vh]" : "min-h-dvh",
       )}
     >
@@ -309,7 +309,7 @@ export function GuestTryApCalcResultsReveal({
           <motion.div variants={rise} className="flex flex-col gap-3 pt-1">
             <Button
               asChild
-              className="h-14 w-full rounded-xl bg-[#7C3AED] text-base font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.35)] hover:bg-[#6D28D9]"
+              className="h-14 w-full rounded-xl bg-[var(--mx-violet)] text-base font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.35)] hover:bg-[var(--mx-primary-hover)]"
             >
               <Link href="/auth/signup">Save this and start fixing it</Link>
             </Button>

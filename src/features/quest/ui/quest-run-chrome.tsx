@@ -40,7 +40,7 @@ export function QuestRunChrome({
         </div>
         <div className="flex items-center gap-3">
           {skillNodeName && nodeVisualState ? (
-            <div className="flex items-center gap-2 rounded-lg border border-[#C4B5FD] bg-white/90 px-2 py-1 shadow-sm">
+            <div className="flex items-center gap-2 rounded-lg border border-violet-300 bg-white/90 px-2 py-1 shadow-sm">
               <MasteryNode
                 nodeId={`quest-${skillNodeName}`}
                 state={nodeVisualState}

@@ -82,7 +82,7 @@ export function SkillTreeNode({
         className={cn(
           "relative flex shrink-0 items-center justify-center rounded-xl border p-2",
           showVerifiedChrome
-            ? "border-[#D4A017]/70 bg-[#D4A017]/10"
+            ? "border-[var(--mx-gold)]/70 bg-[var(--mx-gold)]/10"
             : reviewDue
               ? "border-[#818CF8]/70 bg-[#312E81]/70"
               : node.unlocked
@@ -156,7 +156,7 @@ export function SkillTreeNode({
     >
       {bloomActive ? (
         <motion.span
-          className="pointer-events-none absolute -inset-3 rounded-2xl border-2 border-[#6366F1]"
+          className="pointer-events-none absolute -inset-3 rounded-2xl border-2 border-[var(--mx-indigo)]"
           initial={{ opacity: 0.85, scale: 0.84 }}
           animate={{ opacity: 0, scale: 1.15 }}
           transition={{ duration: 0.8 }}
@@ -165,7 +165,7 @@ export function SkillTreeNode({
       ) : null}
       {reviewDue && !bloomActive && !safeReduceMotion ? (
         <motion.span
-          className="pointer-events-none absolute -inset-2 rounded-2xl border border-[#A5B4FC]/80"
+          className="pointer-events-none absolute -inset-2 rounded-2xl border border-violet-300/80"
           initial={{ opacity: 0.55, scale: 0.96 }}
           animate={{ opacity: [0.55, 0.15, 0.55], scale: [0.96, 1.04, 0.96] }}
           transition={{ duration: 2.4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
@@ -176,13 +176,13 @@ export function SkillTreeNode({
         <Link
           href={href}
           className={cn(
-            "flex w-full cursor-pointer items-center gap-3 rounded-2xl border bg-[#111C32]/95 text-left shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A5B4FC] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]",
+            "flex w-full cursor-pointer items-center gap-3 rounded-2xl border bg-[#111C32]/95 text-left shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A5B4FC] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mx-navy)]",
             compact ? "min-h-16 p-2.5" : isFocus ? "min-h-24 p-4" : "min-h-20 p-3",
             showVerifiedChrome
-              ? "border-[#D4A017]/70 hover:bg-[#17233B]"
+              ? "border-[var(--mx-gold)]/70 hover:bg-[#17233B]"
               : reviewDue
-                ? "border-[#818CF8] hover:border-[#C4B5FD] hover:bg-[#17233B]"
-                : "border-[#6366F1]/70 hover:border-[#A5B4FC] hover:bg-[#17233B]",
+                ? "border-[#818CF8] hover:border-violet-300 hover:bg-[#17233B]"
+                : "border-[var(--mx-indigo)]/70 hover:border-violet-300 hover:bg-[#17233B]",
           )}
           aria-label={`${label.text}: ${node.nodeName}`}
         >
@@ -191,12 +191,12 @@ export function SkillTreeNode({
       ) : (
         <div
           className={cn(
-            "flex w-full items-center gap-3 rounded-2xl border bg-[#0F172A]/90 text-left",
+            "flex w-full items-center gap-3 rounded-2xl border bg-[var(--mx-navy-2)]/90 text-left",
             compact ? "min-h-16 p-2.5" : isFocus ? "min-h-24 p-4" : "min-h-20 p-3",
             node.unlocked
               ? reviewDue
                 ? "border-[#818CF8]/80"
-                : "border-[#6366F1]/60"
+                : "border-[var(--mx-indigo)]/60"
               : "border-white/10 opacity-75",
           )}
           aria-label={`${label.text}: ${node.nodeName}`}

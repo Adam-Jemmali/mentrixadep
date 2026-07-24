@@ -84,7 +84,7 @@ export function MomentumMembershipPanel({
       {isSubscribe ? (
         <>
           <PricingTierVisualGrid highlight="momentum" iconSize={88} compact surface="light" className="mb-8" />
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#C4B5FD] pb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-violet-300 pb-6">
             <div className="min-w-0">
               <SubscriptionTierChip tier="momentum" active={active} />
               <h2 className={cn(mentrixHubSurfaces.inkTitle, "mt-3 text-2xl")}>
@@ -104,7 +104,7 @@ export function MomentumMembershipPanel({
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <SubscriptionTierChip tier="momentum" active={active} />
               {momentumTier?.popularBadge ? (
-                <span className="rounded-full bg-[#7C3AED] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
+                <span className="rounded-full bg-[var(--mx-violet)] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
                   {momentumTier.popularBadge}
                 </span>
               ) : null}
@@ -121,11 +121,11 @@ export function MomentumMembershipPanel({
       )}
 
       {roi && isSubscribe ? (
-        <div className="mt-5 grid gap-2 rounded-2xl border border-[#C4B5FD] bg-white/75 p-4 sm:grid-cols-3">
+        <div className="mt-5 grid gap-2 rounded-2xl border border-violet-300 bg-white/75 p-4 sm:grid-cols-3">
           <div className="flex flex-col items-center text-center">
             <PricingTierIcon tier="breakthrough" size={40} />
             <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#64748B]">Breakthrough</p>
-            <p className="mt-1 font-bold tabular-nums text-[#0B1220]">{roi.breakthroughTwelveTotal}</p>
+            <p className="mt-1 font-bold tabular-nums text-[var(--mx-navy)]">{roi.breakthroughTwelveTotal}</p>
           </div>
           <div className="flex flex-col items-center text-center">
             <PricingTierIcon tier="momentum" size={40} />
@@ -134,7 +134,7 @@ export function MomentumMembershipPanel({
           </div>
           <div className="flex flex-col items-center text-center">
             <p className="text-[10px] font-black uppercase tracking-widest text-[#64748B]">You keep</p>
-            <p className="mt-1 font-bold tabular-nums text-[#0B1220]">{roi.savings}</p>
+            <p className="mt-1 font-bold tabular-nums text-[var(--mx-navy)]">{roi.savings}</p>
           </div>
         </div>
       ) : null}
@@ -148,7 +148,7 @@ export function MomentumMembershipPanel({
       {momentumTier && isSubscribe ? (
         <>
           
-          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-[#6366F1]">
+          <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-[var(--mx-indigo)]">
             What&apos;s included
           </p>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -167,7 +167,7 @@ export function MomentumMembershipPanel({
         </>
       ) : momentumTier ? (
         <ul className="mt-5 space-y-2.5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#6366F1]">What you get</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--mx-indigo)]">What you get</p>
           {momentumTier.receipts.map((receipt) => (
             <li key={receipt} className={cn("flex items-start gap-2.5 text-sm", mentrixHubSurfaces.inkBody)}>
               <MentrixaVocabIcon
@@ -196,7 +196,7 @@ export function MomentumMembershipPanel({
 
       {active && creditsCopy ? (
         <div className="mt-4 space-y-2">
-          <p className="rounded-xl border border-[#C4B5FD] bg-white/80 px-4 py-3 text-sm font-medium text-[#334155]">
+          <p className="rounded-xl border border-violet-300 bg-white/80 px-4 py-3 text-sm font-medium text-[#334155]">
             {creditsCopy.verdict}
           </p>
           <p className={cn("text-sm", mentrixHubSurfaces.inkMuted)}>{creditsCopy.nextAction}</p>
@@ -209,7 +209,7 @@ export function MomentumMembershipPanel({
 
       {isSubscribe && !active ? (
         <p
-          className="mt-4 rounded-xl border-2 border-[#7C3AED] bg-white px-4 py-3 text-sm font-bold text-[#4F46E5]"
+          className="mt-4 rounded-xl border-2 border-[var(--mx-violet)] bg-white px-4 py-3 text-sm font-bold text-[#4F46E5]"
           aria-live="polite"
         >
           {interval === "annual"
@@ -221,11 +221,11 @@ export function MomentumMembershipPanel({
       <div className="mt-6 flex flex-wrap gap-3">
         {active ? (
           <>
-            <Button asChild variant="outline" className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]">
+            <Button asChild variant="outline" className="border-[var(--mx-indigo)] text-[#4F46E5] hover:bg-violet-100">
               <Link href="/student#browse-guides">Book a Guide session</Link>
             </Button>
             {!isSubscribe ? (
-              <Button asChild variant="ghost" className="text-[#4F46E5] hover:bg-[#EDE9FE]">
+              <Button asChild variant="ghost" className="text-[#4F46E5] hover:bg-violet-100">
                 <Link href="/student/subscribe">Manage plan</Link>
               </Button>
             ) : null}
@@ -240,11 +240,11 @@ export function MomentumMembershipPanel({
           </Button>
         )}
         {!isSubscribe ? (
-          <Button asChild variant="outline" className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]">
+          <Button asChild variant="outline" className="border-[var(--mx-indigo)] text-[#4F46E5] hover:bg-violet-100">
             <Link href="/student/subscribe">View full plan</Link>
           </Button>
         ) : (
-          <Button asChild variant="outline" className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]">
+          <Button asChild variant="outline" className="border-[var(--mx-indigo)] text-[#4F46E5] hover:bg-violet-100">
             <Link href="/student">Back to hub</Link>
           </Button>
         )}

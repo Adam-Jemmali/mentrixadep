@@ -130,7 +130,7 @@ export function DivisionPickerCards(
             <div className="flex items-start gap-3">
               <span
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-[#6366F1] bg-[#7C3AED] text-lg font-bold text-white shadow-[2px_2px_0_#0B1220]"
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--mx-indigo)] bg-[var(--mx-violet)] text-lg font-bold text-white shadow-[2px_2px_0_var(--mx-navy)]"
                 )}
               >
                 ∞
@@ -145,10 +145,10 @@ export function DivisionPickerCards(
               </div>
             </div>
             {pending === "auto" && (
-              <p className="mt-2 text-[11px] text-[#6366F1]">Saving…</p>
+              <p className="mt-2 text-[11px] text-[var(--mx-indigo)]">Saving…</p>
             )}
             {selected === null ? (
-              <p className="mt-2 text-[9px] font-black uppercase tracking-[0.14em] text-[#6366F1]">
+              <p className="mt-2 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
                 Active focus
               </p>
             ) : null}
@@ -187,7 +187,7 @@ export function DivisionPickerCards(
               <div className="flex items-start gap-3">
                 <span
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-[#6366F1] bg-[#7C3AED] text-sm font-bold text-white shadow-[2px_2px_0_#0B1220]",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--mx-indigo)] bg-[var(--mx-violet)] text-sm font-bold text-white shadow-[2px_2px_0_var(--mx-navy)]",
                   )}
                   aria-hidden
                 >
@@ -210,12 +210,12 @@ export function DivisionPickerCards(
                 </div>
               </div>
               {pending === d.key && (
-                <p className={cn("mt-2 text-[11px]", useArenaFocus ? "text-[#6366F1]" : "text-mentrixa-600")}>
+                <p className={cn("mt-2 text-[11px]", useArenaFocus ? "text-[var(--mx-indigo)]" : "text-mentrixa-600")}>
                   Saving…
                 </p>
               )}
               {useArenaFocus && active ? (
-                <p className="mt-2 text-[9px] font-black uppercase tracking-[0.14em] text-[#6366F1]">
+                <p className="mt-2 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
                   Active focus
                 </p>
               ) : null}

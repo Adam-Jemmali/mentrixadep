@@ -59,7 +59,7 @@ export function GuideImpactNodeChips({
                     {Math.round(entry.impactScore)}
                   </span>
                   {isVerified ? (
-                    <Check className="h-3 w-3 shrink-0 text-[#0B1220]" strokeWidth={3} aria-hidden />
+                    <Check className="h-3 w-3 shrink-0 text-[var(--mx-navy)]" strokeWidth={3} aria-hidden />
                   ) : null}
                 </MentrixaChip>
               </span>

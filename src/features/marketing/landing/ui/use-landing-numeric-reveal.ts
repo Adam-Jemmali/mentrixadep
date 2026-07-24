@@ -28,7 +28,7 @@ export function useLandingNumericReveal(
 
       if (!cards.length && !titleNums.length && !values.length) return;
 
-      if (cards.length) gsap.set(cards, { y: 28, opacity: 0 });
+      if (cards.length) gsap.set(cards, { y: 40, opacity: 0 });
       if (watermarks.length) gsap.set(watermarks, { scale: 0.35, opacity: 0, rotate: -8 });
       if (titleNums.length) gsap.set(titleNums, { scale: 0.5, opacity: 0, y: 12 });
       if (animateValues && values.length) gsap.set(values, { scale: 0.85, opacity: 0, y: 8 });
@@ -55,7 +55,7 @@ export function useLandingNumericReveal(
             opacity: 1,
             stagger: 0.12,
             duration: 0.55,
-            ease: "power2.out",
+            ease: "power3.out",
             delay: 0.06,
           });
         }

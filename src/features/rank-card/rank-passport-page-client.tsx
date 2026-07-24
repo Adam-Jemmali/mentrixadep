@@ -34,7 +34,7 @@ import { getSiteUrl } from "@/shared/core/site";
 
 function LiveRecordBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#6366F1]/35 bg-[#EDE9FE] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#4F46E5]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--mx-indigo)]/35 bg-violet-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#4F46E5]">
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
       Live
     </span>
@@ -90,11 +90,11 @@ export function RankPassportPageClient({
   return (
     <div
       ref={rootRef}
-      className={cn(mentrixStudent.pageBg, "mentrix-student-type-scope relative min-h-dvh text-[#0B1220]")}
+      className={cn(mentrixStudent.pageBg, "mentrix-student-type-scope relative min-h-dvh text-[var(--mx-navy)]")}
     >
-      <header className="rank-passport-mount sticky top-0 z-20 border-b border-[#C4B5FD]/80 bg-[#F8F7FF]/92 px-4 py-3 backdrop-blur-sm sm:px-6">
+      <header className="rank-passport-mount sticky top-0 z-20 border-b border-violet-300/80 bg-[#F8F7FF]/92 px-4 py-3 backdrop-blur-sm sm:px-6">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
-          <Link href="/" className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6366F1]">
+          <Link href="/" className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--mx-indigo)]">
             Mentrixa
           </Link>
           <LiveRecordBadge />

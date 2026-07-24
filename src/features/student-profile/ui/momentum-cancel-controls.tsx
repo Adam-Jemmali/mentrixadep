@@ -102,7 +102,7 @@ export function MomentumCancelControls({
             <Button
               type="button"
               variant="outline"
-              className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]"
+              className="border-[var(--mx-indigo)] text-[#4F46E5] hover:bg-violet-100"
               disabled={pending}
             >
               Resume membership renewal

@@ -112,7 +112,7 @@ export function GuidePreSessionContextPanel({
         {error ? <p className="text-[11px] text-red-600">{error}</p> : null}
 
         {open ? (
-          <div className="hidden border-t border-[#E2E8F0] pt-3 lg:block">
+          <div className="hidden border-t border-[var(--mx-rule)] pt-3 lg:block">
             <GuideContextClient context={ctx} loading={pending} />
           </div>
         ) : null}

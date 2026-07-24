@@ -84,13 +84,13 @@ export function MultiPartQuestion({
               key={part.partKey}
               className={cn(
                 "rounded-xl border p-4",
-                locked && "border-[#E2E8F0] bg-[#F8FAFC] opacity-60",
-                activePart && "border-[#7C3AED]/45 bg-white",
+                locked && "border-[var(--mx-rule)] bg-[#F8FAFC] opacity-60",
+                activePart && "border-[var(--mx-violet)]/45 bg-white",
                 part.state === "done" && "border-[#CBD5E1] bg-white",
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6366F1]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
                   Part {part.partKey}
                 </p>
                 {locked ? (
@@ -102,7 +102,7 @@ export function MultiPartQuestion({
                   <span
                     className={cn(
                       "text-[10px] font-semibold uppercase tracking-wider",
-                      part.correct ? "text-emerald-700" : "text-[#7C3AED]",
+                      part.correct ? "text-emerald-700" : "text-[var(--mx-violet)]",
                     )}
                   >
                     {part.correct ? "Correct" : "Carried"}
@@ -122,7 +122,7 @@ export function MultiPartQuestion({
                     </p>
                   ) : null}
                   {part.carryForwardNote ? (
-                    <p className="text-[#7C3AED]">{part.carryForwardNote}</p>
+                    <p className="text-[var(--mx-violet)]">{part.carryForwardNote}</p>
                   ) : null}
                   {part.revealedAnswer ? (
                     <p>
@@ -143,8 +143,8 @@ export function MultiPartQuestion({
                       className={cn(
                         "rounded-xl border p-3 text-left text-sm",
                         picked === i
-                          ? "border-[#6366F1] bg-[#EDE9FE] ring-2 ring-[#6366F1]/40"
-                          : "border-[#A5B4FC] bg-white hover:border-[#6366F1]",
+                          ? "border-[var(--mx-indigo)] bg-violet-100 ring-2 ring-[var(--mx-indigo)]/40"
+                          : "border-violet-300 bg-white hover:border-[var(--mx-indigo)]",
                       )}
                     >
                       <PromptWithMath text={option} variant="light" />
@@ -155,7 +155,7 @@ export function MultiPartQuestion({
 
               {activePart && part.itemFormat === "free_response" ? (
                 <textarea
-                  className="mt-3 min-h-[96px] w-full rounded-xl border border-[#A5B4FC] bg-white px-3 py-2 text-sm text-[#0B1220]"
+                  className="mt-3 min-h-[96px] w-full rounded-xl border border-violet-300 bg-white px-3 py-2 text-sm text-[var(--mx-navy)]"
                   placeholder="Your answer…"
                   value={written}
                   disabled={busy}

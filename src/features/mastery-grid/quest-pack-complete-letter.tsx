@@ -62,7 +62,7 @@ export function QuestPackCompleteLetter({
         className,
       )}
     >
-      <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-[#6366F1]">
+      <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--mx-indigo)]">
         {isOut ? "Drag down to close the envelope" : "Envelope closed. drag the letter up to open"}
       </p>
 
@@ -70,7 +70,7 @@ export function QuestPackCompleteLetter({
         <div className="mb-3 flex justify-center">
           <button
             type="button"
-            className="rounded-lg border border-[#6366F1] bg-[#EDE9FE] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#4F46E5] shadow-[1px_2px_0_#0B1220]"
+            className="rounded-lg border border-[var(--mx-indigo)] bg-violet-100 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#4F46E5] shadow-[1px_2px_0_var(--mx-navy)]"
             onClick={() => setOpen(!isOut)}
           >
             {isOut ? "Close envelope" : "Open letter"}
@@ -81,7 +81,7 @@ export function QuestPackCompleteLetter({
       <div className="relative mx-auto h-[min(88dvh,44rem)] w-full max-w-[40rem] overflow-hidden">
         {/* Envelope back */}
         <div
-          className="absolute inset-x-0 bottom-0 z-[1] h-[13.5rem] rounded-b-[1.2rem] border-2 border-[#6366F1] bg-gradient-to-b from-[#A5B4FC] to-[#818CF8] shadow-[4px_7px_0_#0B1220]"
+          className="absolute inset-x-0 bottom-0 z-[1] h-[13.5rem] rounded-b-[1.2rem] border-2 border-[var(--mx-indigo)] bg-gradient-to-b from-[#A5B4FC] to-[#818CF8] shadow-[4px_7px_0_var(--mx-navy)]"
           aria-hidden
         />
 
@@ -103,15 +103,15 @@ export function QuestPackCompleteLetter({
             "absolute inset-x-3 z-[5] flex flex-col sm:inset-x-4",
             reduceMotion ? "cursor-default" : "cursor-grab touch-none active:cursor-grabbing",
             "bottom-[9.5rem] h-[min(34rem,72dvh)]",
-            "overflow-hidden rounded-[2px] border-2 border-[#A5B4FC]",
+            "overflow-hidden rounded-[2px] border-2 border-violet-300",
             "shadow-[0_14px_32px_rgba(79,70,229,0.24)]",
             "mx-hub-ruled-lines",
           )}
           aria-label="Mentrixa letter. Drag up to open the envelope, down to close."
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-[#C4B5FD]/80 bg-[#FFFBF5] px-4 py-2.5 sm:px-5">
+          <div className="flex shrink-0 items-center justify-between border-b border-violet-300/80 bg-[#FFFBF5] px-4 py-2.5 sm:px-5">
             <div className="flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-md border border-[#6366F1] bg-[#7C3AED] shadow-[1px_1px_0_#0B1220]">
+              <span className="flex size-7 items-center justify-center rounded-md border border-[var(--mx-indigo)] bg-[var(--mx-violet)] shadow-[1px_1px_0_var(--mx-navy)]">
                 <Image
                   src={MENTRIXA_LOGO_PNG}
                   alt=""
@@ -121,7 +121,7 @@ export function QuestPackCompleteLetter({
                   draggable={false}
                 />
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6366F1]">
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
                 Mentrixa letter
               </span>
             </div>
@@ -144,16 +144,16 @@ export function QuestPackCompleteLetter({
           >
             <motion.div className="h-full w-full origin-bottom" style={{ rotateX: flapRotateX }}>
               <div
-                className="h-full w-full border-x-2 border-t-2 border-[#6366F1] bg-gradient-to-b from-[#EDE9FE] to-[#C4B5FD]"
+                className="h-full w-full border-x-2 border-t-2 border-[var(--mx-indigo)] bg-gradient-to-b from-[#EDE9FE] to-[#C4B5FD]"
                 style={{ clipPath: "polygon(0 100%, 50% 6%, 100% 100%)" }}
               />
             </motion.div>
           </div>
 
-          <div className="pointer-events-auto absolute inset-x-0 bottom-0 h-[9.75rem] overflow-hidden rounded-b-[1.15rem] border-2 border-t-[#7C3AED]/40 border-[#6366F1] bg-gradient-to-b from-[#DDD6FE] via-[#C4B5FD] to-[#A78BFA]">
+          <div className="pointer-events-auto absolute inset-x-0 bottom-0 h-[9.75rem] overflow-hidden rounded-b-[1.15rem] border-2 border-t-[var(--mx-violet)]/40 border-[var(--mx-indigo)] bg-gradient-to-b from-[#DDD6FE] via-[#C4B5FD] to-[var(--color-violet-400)]">
             <div className="absolute inset-x-5 top-0 h-px bg-white/60" />
             <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1">
-              <span className="flex size-12 items-center justify-center rounded-full border-2 border-[#7C3AED] bg-white shadow-[2px_2px_0_#0B1220]">
+              <span className="flex size-12 items-center justify-center rounded-full border-2 border-[var(--mx-violet)] bg-white shadow-[2px_2px_0_var(--mx-navy)]">
                 <Image
                   src={MENTRIXA_LOGO_PNG}
                   alt=""
@@ -175,7 +175,7 @@ export function QuestPackCompleteLetter({
             className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2"
             style={{ bottom: "13.65rem", opacity: hintOpacity }}
           >
-            <span className="whitespace-nowrap rounded-full border border-[#6366F1] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#7C3AED] shadow-[1px_2px_0_#0B1220]">
+            <span className="whitespace-nowrap rounded-full border border-[var(--mx-indigo)] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mx-violet)] shadow-[1px_2px_0_var(--mx-navy)]">
               Drag letter up
             </span>
           </motion.div>

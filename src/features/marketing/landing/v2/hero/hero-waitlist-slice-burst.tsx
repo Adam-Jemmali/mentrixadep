@@ -50,7 +50,7 @@ export function HeroWaitlistSliceBurst({ active, accent = "learn", className }: 
             key={deg}
             className={cn(
               "absolute left-1/2 top-1/2 block h-1 w-10 rounded-full",
-              learn ? "bg-cyan-400/90 shadow-[0_0_12px_#22d3ee]" : "bg-amber-400/90 shadow-[0_0_12px_#fbbf24]",
+              learn ? "bg-cyan-400/90 shadow-[0_0_12px_var(--mx-cyan)]" : "bg-amber-400/90 shadow-[0_0_12px_#fbbf24]",
             )}
             initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
             animate={{

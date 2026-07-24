@@ -8,7 +8,9 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { cn } from "@/shared/core/utils";
 
-const GOLD = "#D4A017";
+import { VERIFIED_GOLD_CSS } from "@/components/ui/mentrixa-ui-tokens";
+
+const GOLD = VERIFIED_GOLD_CSS;
 
 /** Verified proof streak pill beside rank badge — gold count + streak vocab icon. */
 export function VfaStreakBadge({
@@ -62,7 +64,7 @@ export function VfaStreakBadge({
   return (
     <StudentStickyNote compact variant="strip" className={cn("inline-flex rotate-0 px-2 py-1 shadow-none", className)}>
       <div
-        className="inline-flex items-center gap-2.5 rounded-full border border-[#D4A017]/30 bg-[#D4A017]/10 px-2.5 py-1"
+        className="inline-flex items-center gap-2.5 rounded-full border border-[var(--mx-gold)]/30 bg-[var(--mx-gold)]/10 px-2.5 py-1"
         aria-label={`${days} ${vfaProofStreakLabel(days)}`}
       >
         <span ref={iconRef} className="inline-flex shrink-0 origin-center">

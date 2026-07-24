@@ -42,14 +42,14 @@ export function impactNodeScoreToState(score: number): ImpactNodeColorState {
 export const IMPACT_NODE_STATE_CLASS: Record<ImpactNodeColorState, string> = {
   none: "border-slate-300/80 bg-slate-100 text-slate-600",
   weak: "border-amber-300/80 bg-amber-100 text-amber-950",
-  proficient: "border-emerald-300/80 bg-emerald-100 text-emerald-950",
+  proficient: "border-green-300/80 bg-green-100 text-green-950",
   verified: "border-[#D4A017]/90 bg-[#D4A017]/15 text-[#0B1220]",
 };
 
 export const IMPACT_NODE_SCORE_CLASS: Record<ImpactNodeColorState, string> = {
   none: "text-slate-600",
   weak: "text-amber-900",
-  proficient: "text-emerald-900",
+  proficient: "text-green-900",
   verified: "text-[#D4A017]",
 };
 
@@ -132,7 +132,7 @@ export function impactForCourseFilter(
 }
 
 export const IMPACT_SCORE_TIER_CLASS: Record<ImpactColorTier, string> = {
-  green: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  green: "border-green-200 bg-green-50 text-green-800",
   yellow: "border-amber-200 bg-amber-50 text-amber-900",
   gray: "border-slate-200 bg-slate-50 text-slate-600",
 };

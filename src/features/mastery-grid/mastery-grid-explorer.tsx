@@ -47,7 +47,7 @@ function VocabMetric({
       gold={gold}
       surface={surface}
       iconSize={VOCAB_HEADING_ICON_SIZE}
-      valueClassName="text-xl font-black tabular-nums leading-none text-[#0B1220] sm:text-2xl"
+      valueClassName="text-xl font-black tabular-nums leading-none text-[var(--mx-navy)] sm:text-2xl"
     />
   );
 }
@@ -95,7 +95,7 @@ export function MasteryGridExplorer({
           <div>
             <Link
               href="/student"
-              className="inline-flex items-center text-[#6366F1] hover:text-[#4F46E5]"
+              className="inline-flex items-center text-[var(--mx-indigo)] hover:text-[#4F46E5]"
               aria-label="Back to home"
               title="Back to home"
             >
@@ -107,7 +107,7 @@ export function MasteryGridExplorer({
                 label="Skill tree"
                 surface="light"
                 as="span"
-                labelClassName="mx-hand-title !text-2xl !font-bold !normal-case !tracking-normal !text-[#0B1220] sm:!text-3xl"
+                labelClassName="mx-hand-title !text-2xl !font-bold !normal-case !tracking-normal !text-[var(--mx-navy)] sm:!text-3xl"
               />
             </h1>
             <p className={`mt-1 text-sm font-medium leading-relaxed ${mentrixStudent.pageSubtitle}`}>
@@ -174,8 +174,8 @@ export function MasteryGridExplorer({
                     className={cn(
                       "mx-hub-btn-hand inline-flex min-h-10 w-[12rem] max-w-[14rem] flex-col items-center rounded-xl border px-2.5 py-2 text-center transition",
                       active
-                        ? "border-[#6366F1] bg-[#7C3AED] text-white shadow-[2px_2px_0_#0B1220]"
-                        : "border-[#A5B4FC] bg-white text-[#4F46E5] hover:border-[#7C3AED] hover:bg-[#EDE9FE]",
+                        ? "border-[var(--mx-indigo)] bg-[var(--mx-violet)] text-white shadow-[2px_2px_0_var(--mx-navy)]"
+                        : "border-violet-300 bg-white text-[#4F46E5] hover:border-[var(--mx-violet)] hover:bg-violet-100",
                     )}
                     title={`Unit ${unit.unitNumber}: ${unit.unitName}`}
                   >
@@ -215,7 +215,7 @@ export function MasteryGridExplorer({
                       setSearchQuery("");
                       setSelectedUnit(node.unitNumber);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-[#A5B4FC] bg-white px-3 py-2 text-left transition hover:border-[#6366F1] hover:bg-[#EDE9FE]"
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-violet-300 bg-white px-3 py-2 text-left transition hover:border-[var(--mx-indigo)] hover:bg-violet-100"
                   >
                     <span className="inline-flex min-w-0 items-center gap-2">
                       <SkillConceptIcon
@@ -226,7 +226,7 @@ export function MasteryGridExplorer({
                         surface="onLight"
                         title={node.nodeName}
                       />
-                      <span className="line-clamp-2 min-w-0 text-left text-xs font-semibold leading-snug text-[#0B1220]">
+                      <span className="line-clamp-2 min-w-0 text-left text-xs font-semibold leading-snug text-[var(--mx-navy)]">
                         {node.nodeName}
                       </span>
                     </span>

@@ -342,7 +342,7 @@ export function RootLayoutClient({
             !isWorkbenchRoute &&
             !isArenaPlayShellRoute &&
             isStudentHubRoute &&
-            "mx-hub-desk text-[#0B1220]",
+            "mx-hub-desk text-[var(--mx-navy)]",
           !isHome &&
             !isProfileRoute &&
             !isVideoRoute &&

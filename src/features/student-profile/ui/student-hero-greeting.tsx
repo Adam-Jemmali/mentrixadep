@@ -34,7 +34,7 @@ export function StudentHeroGreeting({ greeting, firstName }: { greeting: string;
           deleteSpeed={30}
           waitTime={3000}
           className={mentrixHubAccent.heroTitle}
-          cursorClassName="text-[#6366F1]/70"
+          cursorClassName="text-[var(--mx-indigo)]/70"
         />
       ) : (
         <span className={mentrixHubAccent.heroTitle}>{greeting}</span>

@@ -5,6 +5,9 @@ import {
   guideImpactOnSkillNode,
   impactForCourseFilter,
   impactNodeScoreToState,
+  IMPACT_NODE_STATE_CLASS,
+  IMPACT_NODE_SCORE_CLASS,
+  IMPACT_SCORE_TIER_CLASS,
   impactScoreColorTier,
   pickImpactForSubject,
   pickTopImpactRollingChips,
@@ -20,6 +23,14 @@ describe("guide impact score", () => {
     expect(impactScoreColorTier(87)).toBe("green");
     expect(impactScoreColorTier(70)).toBe("green");
     expect(impactScoreColorTier(40)).toBe("yellow");
+  });
+
+  it("uses green (not emerald) classes for proficient impact tiers", () => {
+    expect(IMPACT_NODE_STATE_CLASS.proficient).toContain("green-");
+    expect(IMPACT_NODE_STATE_CLASS.proficient).not.toContain("emerald-");
+    expect(IMPACT_NODE_SCORE_CLASS.proficient).toContain("green-");
+    expect(IMPACT_SCORE_TIER_CLASS.green).toContain("green-");
+    expect(IMPACT_SCORE_TIER_CLASS.green).not.toContain("emerald-");
   });
 
   it("formats display label", () => {

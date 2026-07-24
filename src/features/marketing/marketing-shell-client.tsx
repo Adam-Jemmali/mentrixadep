@@ -33,7 +33,7 @@ export function MarketingShellClient({ children }: { children: ReactNode }) {
     <LenisProvider>
       <MentrixaCursor />
       <CookieConsentBanner />
-      <main className="relative min-h-screen bg-[#0B1220] text-slate-100">
+      <main className="relative min-h-screen bg-[var(--mx-navy)] text-slate-100">
         <div className="relative z-10">{children}</div>
       </main>
     </LenisProvider>

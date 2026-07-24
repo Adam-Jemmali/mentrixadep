@@ -29,7 +29,7 @@ export function GuidePortfolioOptInStrip({ items }: { items: Entry[] }) {
         "flex flex-wrap items-center justify-between gap-3 px-5 py-4",
       )}
     >
-      <p className="max-w-xl text-sm font-semibold leading-snug text-[#0B1220]">
+      <p className="max-w-xl text-sm font-semibold leading-snug text-[var(--mx-navy)]">
         {first.body}
       </p>
       <div className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export function GuidePortfolioOptInStrip({ items }: { items: Entry[] }) {
             });
           }}
           className={cn(
-            "rounded-md bg-[#7C3AED] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#6D28D9]",
+            "rounded-md bg-[var(--mx-violet)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[var(--mx-primary-hover)]",
             pending && "opacity-70",
           )}
         >
@@ -59,7 +59,7 @@ export function GuidePortfolioOptInStrip({ items }: { items: Entry[] }) {
             });
           }}
           className={cn(
-            "rounded-md border border-[#C4B5FD] bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#475569] hover:bg-[#F5F3FF]",
+            "rounded-md border border-violet-300 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#475569] hover:bg-[#F5F3FF]",
             pending && "opacity-70",
           )}
         >

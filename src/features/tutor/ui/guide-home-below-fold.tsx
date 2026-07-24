@@ -37,7 +37,7 @@ export function GuideHomeBelowFold({
           <GuideAnimatedSticky variant="clip" staggerIndex={3}>
             <div className="mb-2 flex items-center gap-2">
               <MentrixaVocabIcon name={CANONICAL_BRIEF_ICON} size={18} surface="light" title="Briefs" />
-              <h2 className="text-sm font-bold text-[#0B1220]">Session briefs</h2>
+              <h2 className="text-sm font-bold text-[var(--mx-navy)]">Session briefs</h2>
             </div>
             <div className="space-y-2">
               {upcoming.map((session) => (
@@ -64,7 +64,7 @@ export function GuideHomeBelowFold({
         <GuideAnimatedSticky variant={GUIDE_SECTION_STICKY_VARIANT.home} staggerIndex={4}>
           <div className="mb-2 flex items-center gap-2">
             <MentrixaVocabIcon name={CANONICAL_PROFILE_ICON} size={18} surface="light" title="Roster" />
-            <h2 className="text-sm font-bold text-[#0B1220]">{GUIDE_HOME.rosterTitle}</h2>
+            <h2 className="text-sm font-bold text-[var(--mx-navy)]">{GUIDE_HOME.rosterTitle}</h2>
           </div>
           {data.activeStudents.length === 0 ? (
             <p className="text-sm text-[#475569]">{GUIDE_HOME.rosterEmpty}</p>
@@ -84,7 +84,7 @@ export function GuideHomeBelowFold({
         <GuideAnimatedSticky variant={GUIDE_SECTION_STICKY_VARIANT.studio} staggerIndex={6}>
           <div className="mb-2 flex items-center gap-2">
             <MentrixaVocabIcon name={CANONICAL_BRIEF_ICON} size={18} surface="light" title="Studio" />
-            <h2 className="text-sm font-bold text-[#0B1220]">{GUIDE_HOME.studioPendingTitle}</h2>
+            <h2 className="text-sm font-bold text-[var(--mx-navy)]">{GUIDE_HOME.studioPendingTitle}</h2>
           </div>
           {data.studioPendingReview.length === 0 ? (
             <p className="text-sm text-[#475569]">{GUIDE_HOME.studioPendingEmpty}</p>
@@ -93,10 +93,10 @@ export function GuideHomeBelowFold({
               {data.studioPendingReview.map((item) => (
                 <li
                   key={item.sessionId}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#E0E7FF] bg-white/80 px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-violet-200 bg-white/80 px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[#0B1220]">{item.studentName}</p>
+                    <p className="truncate text-sm font-semibold text-[var(--mx-navy)]">{item.studentName}</p>
                     <p className="text-[11px] text-[#475569]">
                       {item.course}. {formatDateInZone(item.endTime, data.tutorTimezone)}
                     </p>
@@ -124,7 +124,7 @@ export function GuideHomeBelowFold({
               surface="light"
               title="Breakthrough"
             />
-            <h2 className="text-sm font-bold text-[#0B1220]">{GUIDE_HOME.breakthroughTitle}</h2>
+            <h2 className="text-sm font-bold text-[var(--mx-navy)]">{GUIDE_HOME.breakthroughTitle}</h2>
           </div>
           {data.breakthroughs.length === 0 ? (
             <p className="text-sm text-[#475569]">{GUIDE_HOME.breakthroughEmpty}</p>

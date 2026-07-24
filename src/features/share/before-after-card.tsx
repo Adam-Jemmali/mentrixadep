@@ -204,14 +204,14 @@ export function BeforeAfterCard({
         <KokonutGlass
           verifiedGlow
           className={cn(
-            "rounded-xl border border-[rgba(212,160,23,0.25)] bg-[var(--mx-navy-2,#0F172A)]",
+            "rounded-xl border border-[rgba(212,160,23,0.25)] bg-[var(--mx-navy-2)]",
             compact ? "p-3" : "p-4 sm:p-5",
           )}
         >
           <div ref={rootRef} className="relative">
             <div className="flex items-center gap-1.5">
               <MentrixaVocabIcon name="verified" size={14} gold surface="dark" title="Proof" />
-              <span className="text-[11px] font-bold tracking-[0.14em] text-[var(--mx-violet,#7C3AED)]">
+              <span className="text-[11px] font-bold tracking-[0.14em] text-[var(--mx-violet)]">
                 {PROOF_CARD_COPY.wordmark}
               </span>
             </div>
@@ -223,7 +223,7 @@ export function BeforeAfterCard({
               )}
             >
               <div className="text-center">
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--mx-muted,#9CA3AF)]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--mx-muted)]">
                   {PROOF_CARD_COPY.beforeLabel}
                 </p>
                 <p
@@ -237,7 +237,7 @@ export function BeforeAfterCard({
               </div>
 
               <div
-                className="card-divider h-14 w-px bg-[var(--mx-gold,#D4A017)]/60"
+                className="card-divider h-14 w-px bg-[var(--mx-gold)]/60"
                 aria-hidden
               />
 
@@ -247,14 +247,14 @@ export function BeforeAfterCard({
                       <span
                         key={index}
                         className={cn(
-                          "proof-particle pointer-events-none absolute left-1/2 top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--mx-gold,#D4A017)] opacity-0",
+                          "proof-particle pointer-events-none absolute left-1/2 top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--mx-gold)] opacity-0",
                           `particle-${index}`,
                         )}
                         aria-hidden
                       />
                     ))
                   : null}
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--mx-muted,#9CA3AF)]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--mx-muted)]">
                   {PROOF_CARD_COPY.afterLabel}
                 </p>
                 <p
@@ -279,19 +279,19 @@ export function BeforeAfterCard({
             </p>
 
             {guideName?.trim() ? (
-              <p className="mt-1 text-center text-[13px] text-[var(--mx-muted,#9CA3AF)]">
+              <p className="mt-1 text-center text-[13px] text-[var(--mx-muted)]">
                 {PROOF_CARD_COPY.withGuide(guideName)}
               </p>
             ) : null}
 
-            <p className="mt-1 text-center text-xs text-[var(--mx-muted,#9CA3AF)]">
+            <p className="mt-1 text-center text-xs text-[var(--mx-muted)]">
               {formatProofDate(date)}
             </p>
 
             {rankFootprint && mode !== "portfolio" ? (
-              <p className="mt-3 text-center text-[11px] font-semibold text-[var(--mx-violet,#7C3AED)]">
+              <p className="mt-3 text-center text-[11px] font-semibold text-[var(--mx-violet)]">
                 {rankUsername ? (
-                  <Link href={`/rank/${rankUsername}`} className="hover:text-[var(--mx-indigo,#6366F1)]">
+                  <Link href={`/rank/${rankUsername}`} className="hover:text-[var(--mx-indigo)]">
                     {rankFootprint}
                   </Link>
                 ) : (
@@ -310,8 +310,8 @@ export function BeforeAfterCard({
           disabled={sharing}
           className={cn(
             "mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full",
-            "bg-[var(--mx-violet,#7C3AED)] px-5 py-2.5 text-sm font-bold text-white",
-            "transition-colors hover:bg-[#6D28D9] disabled:opacity-70",
+            "bg-[var(--mx-violet)] px-5 py-2.5 text-sm font-bold text-white",
+            "transition-colors hover:bg-[var(--mx-primary-hover)] disabled:opacity-70",
           )}
         >
           <MentrixaVocabIcon name="rank-proof" size={16} surface="dark" title="Share" />

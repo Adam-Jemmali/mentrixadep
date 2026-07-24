@@ -6,8 +6,6 @@ import type { RankCardData } from "@/features/rank-card/types";
 import { AP_CALC_AB_SKILL_NODE_TOTAL } from "@/features/quest/guest-try-passport-preview-pure";
 import { cn } from "@/shared/core/utils";
 
-const VERIFIED_GOLD = "#D4A017";
-
 export function GuestTryPassportPreview({
   data,
   className,
@@ -17,7 +15,7 @@ export function GuestTryPassportPreview({
 }) {
   return (
     <div className={cn("mentrix-student-type-scope w-full", className)}>
-      <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6366F1]">
+      <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--mx-indigo)]">
         Passport preview
       </p>
       <RankPassportArticle
@@ -27,13 +25,13 @@ export function GuestTryPassportPreview({
       />
       <p className="mt-4 text-center text-sm leading-relaxed text-[#475569]">
         This is the same public passport students get at{" "}
-        <span className="font-mono text-[#6366F1]">mentrixa.one/rank/you</span>.{" "}
-        <span style={{ color: VERIFIED_GOLD }}>Sign up to lock your first answers.</span>
+        <span className="font-mono text-[var(--mx-indigo)]">mentrixa.one/rank/you</span>.{" "}
+        <span className="text-[var(--mx-violet)]">Sign up to lock your first answers.</span>
       </p>
       <div className="mt-4 flex justify-center">
         <Link
           href="/auth/signup"
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#6366F1] bg-[#7C3AED] px-5 text-sm font-semibold text-white shadow-[2px_3px_0_#0B1220] hover:bg-[#6D28D9]"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--mx-indigo)] bg-[var(--mx-violet)] px-5 text-sm font-semibold text-white shadow-[2px_3px_0_var(--mx-navy)] hover:bg-[var(--mx-primary-hover)]"
         >
           Save passport
         </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
@@ -344,8 +344,13 @@ function WrongAnswerReveal({
   busy?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const primaryActionRef = useRef<HTMLButtonElement>(null);
   const reduceMotion = useReducedMotion();
   const isLight = surface === "light";
+
+  useEffect(() => {
+    primaryActionRef.current?.focus();
+  }, [studentAnswer, correctAnswer, steps.length, divergeIndex]);
 
   useGsapEffect(
     (gsap) => {
@@ -440,6 +445,7 @@ function WrongAnswerReveal({
       {primaryAction ? (
         <motion.div whileTap={reduceMotion ? undefined : { scale: 0.96 }}>
           <Button
+            ref={primaryActionRef}
             type="button"
             disabled={busy}
             onClick={primaryAction}
@@ -475,10 +481,22 @@ export function StepFeedback({
   const steps = solutionSteps;
   const hasTrace = hasStepFeedbackTrace(steps);
   const reduceMotion = useReducedMotion();
+  const fallbackContinueRef = useRef<HTMLButtonElement>(null);
+  const correctContinueRef = useRef<HTMLButtonElement>(null);
   const divergeIndex = useMemo(
     () => findDivergeStepIndex(steps, studentAnswer, correctAnswer),
     [steps, studentAnswer, correctAnswer],
   );
+
+  useEffect(() => {
+    if (hasTrace || !fallbackExplanation) return;
+    fallbackContinueRef.current?.focus();
+  }, [fallbackExplanation, hasTrace, onContinue]);
+
+  useEffect(() => {
+    if (!hasTrace || outcome !== "correct") return;
+    correctContinueRef.current?.focus();
+  }, [hasTrace, onContinue, outcome]);
 
   if (!hasTrace && fallbackExplanation) {
     return (
@@ -491,7 +509,7 @@ export function StepFeedback({
               <PromptWithMath text={fallbackExplanation} variant={surface} />
             </div>
             {onContinue ? (
-              <Button type="button" onClick={onContinue} disabled={busy}>
+              <Button ref={fallbackContinueRef} type="button" onClick={onContinue} disabled={busy}>
                 {continueLabel}
               </Button>
             ) : null}
@@ -520,7 +538,7 @@ export function StepFeedback({
           </div>
           <SolutionPathAccordion steps={steps} surface={surface} />
           {onContinue ? (
-            <Button type="button" onClick={onContinue} disabled={busy} variant="outline">
+            <Button ref={correctContinueRef} type="button" onClick={onContinue} disabled={busy} variant="outline">
               {continueLabel}
             </Button>
           ) : null}

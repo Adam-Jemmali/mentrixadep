@@ -72,6 +72,8 @@ export function PracticeCorrectCelebration({
   lite?: boolean;
 }) {
   const fxPlayedRef = useRef(false);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -82,13 +84,34 @@ export function PracticeCorrectCelebration({
       fxPlayedRef.current = true;
       if (!lite) void fireCorrectAnswerConfetti();
     }
+    window.requestAnimationFrame(() => nextButtonRef.current?.focus());
   }, [open, lite]);
+
+  const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Tab" || !dialogRef.current) return;
+    const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusables.length === 0) return;
+    const first = focusables[0]!;
+    const last = focusables[focusables.length - 1]!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <AnimatePresence>
       {open ? (
         <motion.div
           key="practice-correct-celebration"
+          ref={dialogRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -98,6 +121,7 @@ export function PracticeCorrectCelebration({
           role="dialog"
           aria-modal="true"
           aria-labelledby="practice-correct-title"
+          onKeyDown={handleDialogKeyDown}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.5, y: 28 }}
@@ -198,6 +222,7 @@ export function PracticeCorrectCelebration({
                 transition={{ delay: 0.3, duration: 0.35 }}
               >
                 <Button
+                  ref={nextButtonRef}
                   className="mt-6 min-w-[10rem] bg-emerald-400 text-emerald-950 hover:bg-emerald-300 font-semibold shadow-[0_8px_24px_-8px_rgba(52,211,153,0.65)]"
                   onClick={onNext}
                 >

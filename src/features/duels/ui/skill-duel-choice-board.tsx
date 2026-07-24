@@ -91,15 +91,15 @@ export function SkillDuelChoiceBoard({
         className={cn(
           "min-h-[4.5rem] rounded-xl border-2 border-dashed px-4 py-3 transition-colors",
           hoverDrop && !locked
-            ? "border-[#6366F1] bg-[#EDE9FE]"
+            ? "border-[var(--mx-indigo)] bg-violet-100"
             : droppedLabel
-              ? "border-[#6366F1] bg-[#EDE9FE]/80"
-              : "border-[#A5B4FC] bg-white/90",
+              ? "border-[var(--mx-indigo)] bg-violet-100/80"
+              : "border-violet-300 bg-white/90",
         )}
         aria-label="Answer drop zone"
       >
         {droppedLabel ? (
-          <p className="mx-hub-math-prose text-sm font-semibold leading-snug text-[#0B1220]">
+          <p className="mx-hub-math-prose text-sm font-semibold leading-snug text-[var(--mx-navy)]">
             <PromptWithMathInline text={droppedLabel} />
           </p>
         ) : (
@@ -139,12 +139,12 @@ export function SkillDuelChoiceBoard({
               tabIndex={locked ? -1 : 0}
               aria-disabled={locked}
               className={cn(
-                "mx-hub-math-prose flex cursor-grab items-start gap-3 rounded-xl border-2 bg-white px-4 py-3 text-left text-sm font-medium text-[#0B1220] transition-colors active:cursor-grabbing [&_.katex]:text-inherit",
+                "mx-hub-math-prose flex cursor-grab items-start gap-3 rounded-xl border-2 bg-white px-4 py-3 text-left text-sm font-medium text-[var(--mx-navy)] transition-colors active:cursor-grabbing [&_.katex]:text-inherit",
                 isSelected
-                  ? "border-[#6366F1] bg-[#EDE9FE] ring-2 ring-[#6366F1]/30"
-                  : "border-[#A5B4FC] hover:border-[#6366F1] hover:bg-[#EDE9FE]/60",
+                  ? "border-[var(--mx-indigo)] bg-violet-100 ring-2 ring-[var(--mx-indigo)]/30"
+                  : "border-violet-300 hover:border-[var(--mx-indigo)] hover:bg-violet-100/60",
                 locked && "pointer-events-none opacity-60",
-                isDragging && "border-[#6366F1]",
+                isDragging && "border-[var(--mx-indigo)]",
               )}
             >
               <span

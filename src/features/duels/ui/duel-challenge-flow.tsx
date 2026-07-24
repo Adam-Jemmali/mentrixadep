@@ -45,7 +45,7 @@ function WagerStepHeader({ opponentName }: { opponentName: string }) {
   return (
     <div className="space-y-3">
       <StudentStickyNote variant="clip" className="rotate-0 px-3 py-2.5">
-        <p className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#6366F1]">
+        <p className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
           <MentrixaVocabIcon name={CANONICAL_DUELS_ICON} size={18} surface="light" title="Duel" />
           Challenge {first}
         </p>
@@ -137,7 +137,7 @@ export function DuelChallengeFlow({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "max-w-md gap-0 border-[#334155] bg-[#0F172A] p-0 text-white",
+          "max-w-md gap-0 border-[#334155] bg-[var(--mx-navy-2)] p-0 text-white",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
         )}
       >

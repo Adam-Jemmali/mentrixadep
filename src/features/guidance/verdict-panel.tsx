@@ -18,7 +18,7 @@ export function VerdictPanel({
   const changedClass =
     tone === "dark"
       ? "text-base font-semibold leading-snug text-white sm:text-lg"
-      : "text-base font-semibold leading-snug text-[#0B1220] sm:text-lg";
+      : "text-base font-semibold leading-snug text-[var(--mx-navy)] sm:text-lg";
   const reasonClass =
     tone === "dark"
       ? "text-sm leading-snug text-slate-300"
@@ -26,7 +26,7 @@ export function VerdictPanel({
   const actionClass =
     tone === "dark"
       ? "inline-flex text-sm font-semibold text-indigo-300 underline-offset-2 hover:text-indigo-200 hover:underline"
-      : "inline-flex rounded-md bg-[#7C3AED] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#6D28D9]";
+      : "inline-flex rounded-md bg-[var(--mx-violet)] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[var(--mx-primary-hover)]";
 
   if (verdict.rankDelta) {
     return (

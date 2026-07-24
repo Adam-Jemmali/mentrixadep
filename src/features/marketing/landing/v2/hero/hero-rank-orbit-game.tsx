@@ -93,8 +93,8 @@ function StickyRankChip({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "lp-sticky-rank-chip flex flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-[#6366F1] bg-white p-1 shadow-[1px_2px_0_rgba(11,18,32,0.16)] outline-none transition-[transform,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[#6366F1]",
-        selected && "border-[#7C3AED] ring-2 ring-[#A78BFA]",
+        "lp-sticky-rank-chip flex flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-[var(--mx-indigo)] bg-white p-1 shadow-[1px_2px_0_rgba(11,18,32,0.16)] outline-none transition-[transform,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[var(--mx-indigo)]",
+        selected && "border-[var(--mx-violet)] ring-2 ring-[var(--color-violet-400)]",
         shaking && "lp-sticky-rank-chip--shake",
         disabled && "cursor-default opacity-70",
         !disabled && "cursor-pointer hover:-translate-y-0.5 active:translate-y-0",
@@ -113,11 +113,11 @@ function StickyRankChip({
           draggable={false}
         />
       ) : (
-        <span className="flex h-7 w-7 items-center justify-center rounded-md border-2 border-dashed border-[#6366F1] text-[11px] font-bold text-[#4338CA]">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md border-2 border-dashed border-[var(--mx-indigo)] text-[11px] font-bold text-[#4338CA]">
           {emptyLabel}
         </span>
       )}
-      <span className="max-w-[3rem] truncate text-[8px] font-bold uppercase tracking-wide text-[#0B1220]">
+      <span className="max-w-[3rem] truncate text-[8px] font-bold uppercase tracking-wide text-[var(--mx-navy)]">
         {rank ? normalizeRankTitle(rank.title).slice(0, 6) : "slot"}
       </span>
     </button>
@@ -255,7 +255,7 @@ export function HeroRankOrbitGame() {
               "rounded-md border px-2.5 py-1 tabular-nums",
               secondsLeft <= 8
                 ? "border-rose-300 bg-rose-50 text-rose-700"
-                : "border-[#C4B5FD] bg-[#EEF2FF] text-[#4F46E5]",
+                : "border-violet-300 bg-[#EEF2FF] text-[#4F46E5]",
             )}
             role="timer"
             aria-live="polite"
@@ -276,7 +276,7 @@ export function HeroRankOrbitGame() {
       </div>
 
       {/* Paper board — sticky-note surface for the orbit */}
-      <div className="lp-paper-game-board relative rounded-xl border border-[#C4B5FD] bg-[#F8FAFC] p-2 sm:p-2.5">
+      <div className="lp-paper-game-board relative rounded-xl border border-violet-300 bg-[#F8FAFC] p-2 sm:p-2.5">
         <div
           className={cn(
             "relative mx-auto flex h-[min(220px,48vw)] min-h-[200px] w-full max-w-[22rem] items-center justify-center sm:h-[236px]",
@@ -284,9 +284,9 @@ export function HeroRankOrbitGame() {
           )}
           style={orbitSpins ? orbitDurationStyle(ORBIT_SPIN_SECONDS) : undefined}
         >
-          <div className="pointer-events-none absolute inset-[12%] rounded-full border border-dashed border-[#A5B4FC]/80" aria-hidden />
+          <div className="pointer-events-none absolute inset-[12%] rounded-full border border-dashed border-violet-300/80" aria-hidden />
 
-          <div className="relative z-10 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-[#6366F1] bg-white shadow-[2px_3px_0_rgba(11,18,32,0.12)]">
+          <div className="relative z-10 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-[var(--mx-indigo)] bg-white shadow-[2px_3px_0_rgba(11,18,32,0.12)]">
             <Image
               src={`/icons/mentrixer.svg?v=${ICON_VERSION}`}
               alt=""
@@ -296,7 +296,7 @@ export function HeroRankOrbitGame() {
               style={{ filter: RANK_ICON_ON_LIGHT_FILTER }}
               draggable={false}
             />
-            <span className="text-[7px] font-bold uppercase tracking-wide text-[#6366F1]">{LANDING_HERO_GAME.xpLabel}</span>
+            <span className="text-[7px] font-bold uppercase tracking-wide text-[var(--mx-indigo)]">{LANDING_HERO_GAME.xpLabel}</span>
           </div>
 
           {mounted

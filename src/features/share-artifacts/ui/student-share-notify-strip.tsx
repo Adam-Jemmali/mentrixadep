@@ -36,8 +36,8 @@ export function StudentShareNotifyStrip({ items }: { items: StudentShareProofNot
             }}
             className={cn(
               "inline-flex cursor-pointer items-center justify-center rounded-full",
-              "bg-[var(--mx-violet,#7C3AED)] px-5 py-2 text-sm font-bold text-white",
-              "transition-colors hover:bg-[#6D28D9]",
+              "bg-[var(--mx-violet)] px-5 py-2 text-sm font-bold text-white",
+              "transition-colors hover:bg-[var(--mx-primary-hover)]",
               pending && "opacity-70",
             )}
           >

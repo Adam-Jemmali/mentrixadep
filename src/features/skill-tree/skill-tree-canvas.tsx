@@ -83,7 +83,7 @@ function FocusOpenCta({
 }
 
 const FOCUS_CTA_CLASS =
-  "mt-4 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[#7C3AED] px-4 py-2 text-sm font-black text-white shadow-[2px_3px_0_#020617] transition-colors hover:bg-[#6D28D9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300";
+  "mt-4 flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[var(--mx-violet)] px-4 py-2 text-sm font-black text-white shadow-[2px_3px_0_#020617] transition-colors hover:bg-[var(--mx-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300";
 
 function DesktopFrontier({
   parents,
@@ -232,7 +232,7 @@ function MobileFrontier({
         <FocusOpenCta
           focus={focus}
           reviewDue={reviewDue}
-          className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[#7C3AED] px-4 py-2 font-black text-white shadow-[2px_3px_0_#020617] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300"
+          className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#818CF8] bg-[var(--mx-violet)] px-4 py-2 font-black text-white shadow-[2px_3px_0_#020617] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-300"
         />
       </div>
 
@@ -273,7 +273,7 @@ export function SkillTreeCanvas({
 
   if (!focus) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#0B1220] p-6 text-sm text-slate-300">
+      <section className="rounded-2xl border border-white/10 bg-[var(--mx-navy)] p-6 text-sm text-slate-300">
         No frontier. Open All skills.
       </section>
     );
@@ -281,7 +281,7 @@ export function SkillTreeCanvas({
 
   return (
     <section
-      className="overflow-hidden rounded-3xl border border-[#334155] bg-[#0B1220] p-3 shadow-[0_18px_50px_rgba(15,23,42,0.24)] sm:p-5"
+      className="overflow-hidden rounded-3xl border border-[#334155] bg-[var(--mx-navy)] p-3 shadow-[0_18px_50px_rgba(15,23,42,0.24)] sm:p-5"
       aria-label="AP Calculus AB frontier"
     >
       <div className="-mx-1 overflow-x-auto px-1 pb-3">

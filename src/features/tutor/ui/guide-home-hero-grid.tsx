@@ -57,7 +57,7 @@ export function GuideHomeHeroGrid({
   return (
     <div className="mb-4 grid gap-3 lg:grid-cols-3 lg:items-stretch">
       <GuideAnimatedSticky variant={GUIDE_SECTION_STICKY_VARIANT.home} staggerIndex={0}>
-        <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[#7C3AED]">
+        <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--mx-violet)]">
           {GUIDE_DEMAND.title}
         </p>
         {data.demandSignals.length === 0 ? (
@@ -73,7 +73,7 @@ export function GuideHomeHeroGrid({
               <motion.li
                 key={signal.skillNodeId}
                 variants={demandRowVariants}
-                className="flex items-center gap-2 rounded-lg border border-[#E0E7FF] bg-white/80 px-2 py-1.5"
+                className="flex items-center gap-2 rounded-lg border border-violet-200 bg-white/80 px-2 py-1.5"
               >
                 <MasteryNode
                   nodeId={signal.skillNodeId}
@@ -82,7 +82,7 @@ export function GuideHomeHeroGrid({
                   size="sm"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-[#0B1220]">{signal.nodeName}</p>
+                  <p className="truncate text-xs font-semibold text-[var(--mx-navy)]">{signal.nodeName}</p>
                   <p className="flex items-center gap-1 text-[10px] text-[#475569]">
                     <MentrixaVocabIcon name={CANONICAL_SKILLS_ICON} size={12} surface="light" title="Students" />
                     {signal.weakStudentCount} student{signal.weakStudentCount === 1 ? "" : "s"}
@@ -115,7 +115,7 @@ export function GuideHomeHeroGrid({
             surface="light"
             title="Guide Impact Score"
           />
-          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[#7C3AED]">
+          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--mx-violet)]">
             {GUIDE_HOME.impactHeroTitle}
           </p>
         </div>
@@ -131,19 +131,19 @@ export function GuideHomeHeroGrid({
         </div>
         <GuideBrowseImpactChips
           chips={toTopImpactChips(data.impactNodeScores, 3)}
-          className="mt-3 border-t border-[#C4B5FD]/50 pt-2"
+          className="mt-3 border-t border-violet-300/50 pt-2"
         />
       </GuideAnimatedSticky>
 
       <GuideAnimatedSticky variant={GUIDE_SECTION_STICKY_VARIANT.schedule} staggerIndex={2}>
         <div className="mb-2 flex items-center gap-2">
           <MentrixaVocabIcon name={CANONICAL_SESSION_ICON} size={18} surface="light" title="Sessions" />
-          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[#7C3AED]">
+          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--mx-violet)]">
             {GUIDE_HOME.upcomingHeroTitle}
           </p>
         </div>
         {upcoming.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-[#A5B4FC] bg-[#EDE9FE]/40 px-3 py-4 text-center">
+          <div className="rounded-lg border border-dashed border-violet-300 bg-violet-100/40 px-3 py-4 text-center">
             <p className="text-sm font-medium text-[#475569]">{GUIDE_HOME.upcomingEmpty}</p>
             <button
               type="button"
@@ -159,9 +159,9 @@ export function GuideHomeHeroGrid({
               const name = studentDisplayNameFromSession(session);
               return (
                 <li key={session.id}>
-                  <Card className="border-[#E0E7FF] bg-white/85 shadow-[1px_2px_0_rgba(11,18,32,0.06)]">
+                  <Card className="border-violet-200 bg-white/85 shadow-[1px_2px_0_rgba(11,18,32,0.06)]">
                     <CardContent className="space-y-1 p-3">
-                      <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-[#0B1220]">
+                      <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-[var(--mx-navy)]">
                         <MentrixaVocabIcon name="profile" size={14} surface="light" title="Student" />
                         {name}
                       </p>
@@ -176,7 +176,7 @@ export function GuideHomeHeroGrid({
                       </p>
                       <Link
                         href={`#guide-brief-${session.id}`}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#7C3AED] hover:text-[#6D28D9]"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--mx-violet)] hover:text-[var(--mx-primary-hover)]"
                       >
                         <MentrixaVocabIcon name="brief" size={12} surface="light" title="Brief" />
                         View brief →

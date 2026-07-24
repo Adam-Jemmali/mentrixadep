@@ -67,7 +67,7 @@ export function QuestPracticePackWizard({
           name="quest"
           label="Practice packs"
           surface="light"
-          labelClassName="mx-hub-type-ui text-[#6366F1]"
+          labelClassName="mx-hub-type-ui text-[var(--mx-indigo)]"
           className="block w-full"
         />
         <h1 className={`flex items-center gap-4 ${mentrixStudent.cardTitle}`}>
@@ -87,7 +87,7 @@ export function QuestPracticePackWizard({
         <div className="mt-8 space-y-6">
           <div>
             <label className={`text-xs font-medium ${mentrixStudent.textMutedOnDark}`}>Subject</label>
-            <p className="mt-2 rounded-xl border border-[#A5B4FC] bg-white px-4 py-3 text-sm font-semibold text-[#0B1220]">
+            <p className="mt-2 rounded-xl border border-violet-300 bg-white px-4 py-3 text-sm font-semibold text-[var(--mx-navy)]">
               {AP_CALC_AB_SUBJECT}
             </p>
           </div>

@@ -65,8 +65,8 @@ export function RankCardShareButton({
         </p>
       </div>
 
-      <div className="mb-6 rounded-lg border border-[#C4B5FD] bg-white/75 p-4 sm:p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6366F1]">
+      <div className="mb-6 rounded-lg border border-violet-300 bg-white/75 p-4 sm:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--mx-indigo)]">
           Share preview
         </p>
         <p className={cn(mentrixHubSurfaces.inkBody, "mt-2 text-sm font-medium leading-relaxed")}>
@@ -115,7 +115,7 @@ export function RankCardShareButton({
         </a>
       </div>
 
-      <div className="mt-6 flex items-start gap-3 border-t border-[#C4B5FD]/70 pt-5">
+      <div className="mt-6 flex items-start gap-3 border-t border-violet-300/70 pt-5">
         <MentrixaVocabIcon name="passport" size={28} surface="light" className="shrink-0 opacity-80" />
         <p className={cn(mentrixHubSurfaces.inkMuted, "text-xs leading-relaxed")}>
           Anyone with the link sees your verified mastery map and peer standing.

@@ -9,7 +9,7 @@ import { toUserFacingAuthError } from "@/shared/core/user-facing-error";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 const buttonClassName =
-  "w-full h-10 border border-[#E2E8F0] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none";
+  "w-full h-10 border border-[var(--mx-rule)] bg-white rounded-lg text-[14px] font-medium text-slate-900 text-center hover:border-mentrixa-300 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none";
 
 /** Uses `/api/auth/oauth-next` instead of a Server Action (avoids Next 16 RSC/action parse errors). */
 async function fetchPostOAuthRedirectWithRetry(): Promise<{ path: string } | { error: string }> {

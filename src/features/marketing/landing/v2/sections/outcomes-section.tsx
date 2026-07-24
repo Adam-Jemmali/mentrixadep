@@ -53,7 +53,7 @@ export function OutcomesSection() {
               className={cn("cursor-default", i % 2 === 1 && "rotate-[0.5deg]")}
             >
               <motion.span
-                className="mb-2 inline-block h-1 w-8 rounded-full bg-[#6366F1]"
+                className="mb-2 inline-block h-1 w-8 rounded-full bg-[var(--mx-indigo)]"
                 initial={{ scaleX: 0 }}
                 whileInView={{ scaleX: 1 }}
                 viewport={viewportOnce}

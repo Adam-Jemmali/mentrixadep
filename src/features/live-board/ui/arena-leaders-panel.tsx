@@ -11,7 +11,6 @@ import { ArenaPersonAvatar } from "@/features/live-board/ui/arena-person-avatar"
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
-const VERIFIED_GOLD = "#D4A017";
 const HIGH_SKILL_ACCURACY = 75;
 
 type Props = {
@@ -24,23 +23,23 @@ export function ArenaLeadersPanel({ leaders }: Props) {
   return (
     <section className="mt-8 pb-4">
       <LandingStickyNote variant="clip" className="overflow-hidden p-0">
-        <div className="border-b border-[#E0E7FF] bg-[#EDE9FE]/80 px-4 py-3">
+        <div className="border-b border-violet-200 bg-violet-100/80 px-4 py-3">
           <div className="flex items-center gap-2">
-            <MentrixaVocabIcon name="leaderboard" size={18} gold surface="light" title="Top 5" />
-            <h2 className="text-base font-bold text-[#0B1220] sm:text-lg">{ARENA_PAGE_COPY.leadersTitle}</h2>
+            <MentrixaVocabIcon name="leaderboard" size={18} surface="light" title="Top 5" />
+            <h2 className="text-base font-bold text-[var(--mx-navy)] sm:text-lg">{ARENA_PAGE_COPY.leadersTitle}</h2>
           </div>
           <p className="mt-1 text-sm text-[#475569]">{ARENA_PAGE_COPY.leadersSubtitle}</p>
         </div>
 
         {topFive.length === 0 ? (
-          <p className="bg-[var(--mx-navy,#0B1220)] px-4 py-8 text-center text-sm text-[var(--mx-muted,#9CA3AF)]">
+          <p className="bg-[var(--mx-navy)] px-4 py-8 text-center text-sm text-[var(--mx-muted)]">
             {ARENA_PAGE_COPY.leadersEmpty}
           </p>
         ) : (
-          <div className="overflow-x-auto bg-[var(--mx-navy,#0B1220)]">
+          <div className="overflow-x-auto bg-[var(--mx-navy)]">
             <table className="w-full min-w-[320px] border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-[var(--mx-rule,#E2E8F0)]/20 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mx-muted,#9CA3AF)]">
+                <tr className="border-b border-[var(--mx-rule)]/20 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mx-muted)]">
                   <th className="px-3 py-2.5">Rank</th>
                   <th className="px-3 py-2.5">Name</th>
                   <th className="px-3 py-2.5">Accuracy</th>
@@ -54,17 +53,17 @@ export function ArenaLeadersPanel({ leaders }: Props) {
                   const goldSkills = leader.accuracyPercent >= HIGH_SKILL_ACCURACY;
                   const rowBg =
                     rank === 1
-                      ? "bg-[rgba(212,160,23,0.14)]"
+                      ? "bg-[rgba(124,58,237,0.14)]"
                       : index % 2 === 0
-                        ? "bg-[var(--mx-navy,#0B1220)]"
-                        : "bg-[var(--mx-navy-2,#0F172A)]";
+                        ? "bg-[var(--mx-navy)]"
+                        : "bg-[var(--mx-navy-2)]";
 
                   return (
                     <tr
                       key={leader.userId}
-                      className={cn("border-b border-[var(--mx-rule,#E2E8F0)]/15", rowBg)}
+                      className={cn("border-b border-[var(--mx-rule)]/15", rowBg)}
                     >
-                      <td className="px-3 py-3 font-bold tabular-nums text-[var(--mx-indigo,#6366F1)]">
+                      <td className="px-3 py-3 font-bold tabular-nums text-[var(--mx-indigo)]">
                         #{rank}
                       </td>
                       <td className="px-3 py-3">
@@ -78,7 +77,7 @@ export function ArenaLeadersPanel({ leaders }: Props) {
                           {passportHref ? (
                             <Link
                               href={passportHref}
-                              className="truncate font-semibold text-white transition-colors hover:text-[var(--mx-violet,#7C3AED)]"
+                              className="truncate font-semibold text-white transition-colors hover:text-[var(--mx-violet)]"
                             >
                               {leader.displayName}
                             </Link>
@@ -91,13 +90,13 @@ export function ArenaLeadersPanel({ leaders }: Props) {
                         <span
                           className={cn(
                             "inline-flex items-center gap-1 font-bold tabular-nums",
-                            rank === 1 ? "text-[var(--mx-gold,#D4A017)]" : "text-white",
+                            rank === 1 ? "text-[var(--mx-indigo)]" : "text-white",
                           )}
                         >
                           <MentrixaVocabIcon
                             name="verified"
                             size={14}
-                            gold={rank === 1}
+                            gold={false}
                             surface="dark"
                             title="Accuracy"
                           />
@@ -106,8 +105,10 @@ export function ArenaLeadersPanel({ leaders }: Props) {
                       </td>
                       <td className="px-3 py-3">
                         <span
-                          className="inline-flex items-center gap-1 font-bold tabular-nums"
-                          style={{ color: goldSkills ? VERIFIED_GOLD : "var(--mx-muted, #9CA3AF)" }}
+                          className={cn(
+                            "inline-flex items-center gap-1 font-bold tabular-nums",
+                            goldSkills ? "text-[var(--mx-gold)]" : "text-[var(--mx-muted)]",
+                          )}
                         >
                           <MentrixaVocabIcon
                             name="practice-pack"

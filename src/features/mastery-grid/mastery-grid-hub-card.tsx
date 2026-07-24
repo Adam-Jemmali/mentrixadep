@@ -103,7 +103,7 @@ export function MasteryGridHubCard({
           <XpTierProgressBar
             value={summary.progressPercent}
             tone="light"
-            fillStyle={{ background: "#6366F1" }}
+            fillStyle={{ background: "var(--mx-indigo)" }}
           />
         </div>
       ) : null}

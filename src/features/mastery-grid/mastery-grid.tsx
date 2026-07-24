@@ -27,7 +27,7 @@ const STATE_SQUARE_CLASS: Record<MasteryNodeState, string> = {
   none: "bg-slate-200/90 border-slate-300/80",
   weak: "bg-amber-300/90 border-amber-400/70",
   proficient: "bg-emerald-400/90 border-emerald-500/70",
-  verified: "border-[#D4A017]/90",
+  verified: "border-[var(--mx-gold)]/90",
 };
 
 const LEGEND_ITEMS: { word: string; state: MasteryNodeState; icon: "focus-ring" | "practice-pack" | "verified" }[] = [
@@ -60,7 +60,7 @@ function MasteryLegendGlyph({ state }: { state: MasteryNodeState }) {
         style={squareStyle("verified")}
         aria-hidden
       >
-        <MentrixaVocabIcon name="verified" size={9} gold className="text-[#0B1220]" />
+        <MentrixaVocabIcon name="verified" size={9} gold className="text-[var(--mx-navy)]" />
       </span>
     );
   }
@@ -77,7 +77,7 @@ function squareStyle(state: MasteryNodeState): CSSProperties | undefined {
 }
 
 const GUIDE_PINNED_CLASS =
-  "border-l-[3px] border-l-[#7C3AED] shadow-[0_0_12px_2px_rgba(124,58,237,0.22)] ring-0 ring-offset-0";
+  "border-l-[3px] border-l-[var(--mx-violet)] shadow-[0_0_12px_2px_rgba(124,58,237,0.22)] ring-0 ring-offset-0";
 
 export type MasteryPinnedAccent = "ring" | "guide";
 
@@ -169,8 +169,8 @@ function MasterySquare({
           pinnedAccent === "ring" &&
           (pinnedRingClassName ??
             "ring-2 ring-indigo-400/90 ring-offset-1 ring-offset-[#FAFAF8]"),
-        isFlagged && "ring-2 ring-dashed ring-[#7C3AED]/80 ring-offset-1 ring-offset-[#FAFAF8]",
-        isRecommended && "ring-2 ring-dashed ring-[#7C3AED]/70 ring-offset-1 ring-offset-[#FAFAF8]"
+        isFlagged && "ring-2 ring-dashed ring-[var(--mx-violet)]/80 ring-offset-1 ring-offset-[#FAFAF8]",
+        isRecommended && "ring-2 ring-dashed ring-[var(--mx-violet)]/70 ring-offset-1 ring-offset-[#FAFAF8]"
       )}
       style={squareStyle(displayState)}
     >
@@ -179,7 +179,7 @@ function MasterySquare({
           name="verified"
           size={10}
           gold
-          className="absolute bottom-0 right-0 text-[#0B1220]"
+          className="absolute bottom-0 right-0 text-[var(--mx-navy)]"
         />
       ) : null}
       </div>
@@ -310,7 +310,7 @@ function MasteryGridUnits({
       <>
         {units.map((unit) => (
           <div key={unit.unitNumber}>
-            <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366F1]">
+            <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
               <UnitConceptIcon unitNumber={unit.unitNumber} size={28} surface="onLight" />
               <span className="line-clamp-2 min-w-0 text-left text-[10px] font-semibold leading-snug">
                 {unitDisplayName(unit.unitNumber, unit.unitName)}
@@ -472,7 +472,7 @@ export function MasteryGrid({
       <div className={cn("mt-5 space-y-5", compact && "mt-4 space-y-4", showLegend && "mt-4")}>
         {showPinnedSection ? (
           <div>
-            <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6366F1]">
+            <p className="mb-2 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
               <MentrixaVocabIcon name="focus-ring" size={18} surface="light" title="Focus" />
               <span>Focus</span>
             </p>
@@ -535,7 +535,7 @@ export function MasteryGrid({
           <button
             type="button"
             onClick={() => setRemainderExpanded(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6366F1] transition-colors hover:text-[#4F46E5]"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--mx-indigo)] transition-colors hover:text-[#4F46E5]"
           >
             <ChevronDown className="h-3.5 w-3.5" aria-hidden />
             Show full mastery grid

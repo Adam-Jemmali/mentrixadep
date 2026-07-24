@@ -19,6 +19,7 @@ import { createClient } from "@/shared/integrations/supabase/client";
 import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { AnimatePresence, motion, useReducedMotion } from "@/shared/animation/motion";
+import { useLiveBoardFeedAnnouncement } from "@/features/live-board/use-live-board-feed-announcement";
 import { BklitShimmer } from "@/shared/ui/bklit-shimmer";
 
 const LIVE_BOARD_EVENT_TYPES = new Set<LiveBoardEventRow["event_type"]>([
@@ -91,30 +92,30 @@ function DivisionWarBoardRow({
       };
 
   return (
-    <motion.li layout={layout} {...motionProps} className="border-b border-[var(--mx-rule,#E2E8F0)]/20 px-3 py-3">
+    <motion.li layout={layout} {...motionProps} className="border-b border-[var(--mx-rule)]/20 px-3 py-3">
       <div
-        className="rounded-lg border border-[var(--mx-violet,#7C3AED)]/30 bg-[rgba(212,160,23,0.1)] px-3 py-2.5"
-        style={{ borderLeft: "4px solid var(--mx-violet, #7C3AED)" }}
+        className="rounded-lg border border-[var(--mx-violet)]/30 bg-[rgba(212,160,23,0.1)] px-3 py-2.5"
+        style={{ borderLeft: "4px solid var(--mx-violet)" }}
       >
         <div className="flex items-start justify-between gap-2">
           <p className="min-w-0 text-sm font-semibold leading-snug text-white">
             {headline}
           </p>
           <time
-            className="shrink-0 text-xs tabular-nums text-[var(--mx-muted,#9CA3AF)]"
+            className="shrink-0 text-xs tabular-nums text-[var(--mx-muted)]"
             dateTime={event.occurred_at}
           >
             {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}
           </time>
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-sm tabular-nums">
-          <span className="font-bold text-[var(--mx-violet,#7C3AED)]">
+          <span className="font-bold text-[var(--mx-violet)]">
             {copy.winnerName}{" "}
-            <span className="text-[var(--mx-gold,#D4A017)]">
+            <span className="text-[var(--mx-gold)]">
               {formatDivisionWarAccuracyLine(copy.winnerAccuracyPct)}
             </span>
           </span>
-          <span className="text-[var(--mx-muted,#9CA3AF)]">
+          <span className="text-[var(--mx-muted)]">
             {copy.loserName}{" "}
             {formatDivisionWarAccuracyLine(copy.loserAccuracyPct)}
           </span>
@@ -150,7 +151,7 @@ function ArenaFeedRow({
     <motion.li
       layout={layout}
       {...motionProps}
-      className="flex h-11 items-center gap-2.5 border-b border-[var(--mx-rule,#E2E8F0)]/20 px-3"
+      className="flex h-11 items-center gap-2.5 border-b border-[var(--mx-rule)]/20 px-3"
     >
       <MasteryNode
         nodeId={nodeId}
@@ -160,12 +161,12 @@ function ArenaFeedRow({
         accuracy={event.accuracy_pct ?? undefined}
         showGlow={masteryStateFromEvent(event) === "verified"}
       />
-      <span className="shrink-0 text-sm font-semibold text-[var(--mx-violet,#7C3AED)]">
+      <span className="shrink-0 text-sm font-semibold text-[var(--mx-violet)]">
         {event.display_name.trim() || "Mentrixer"}
       </span>
       <span className="min-w-0 flex-1 truncate text-sm text-white">{eventText}</span>
       <time
-        className="shrink-0 text-xs tabular-nums text-[var(--mx-muted,#9CA3AF)]"
+        className="shrink-0 text-xs tabular-nums text-[var(--mx-muted)]"
         dateTime={event.occurred_at}
       >
         {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}
@@ -180,6 +181,7 @@ type Props = {
 
 export function ArenaBoardFeed({ initialEvents }: Props) {
   const reducedMotion = useReducedMotion();
+  const { announcement, announceEvent } = useLiveBoardFeedAnnouncement();
   const [hydrated, setHydrated] = useState(false);
   const [events, setEvents] = useState(() => initialEvents.slice(0, ARENA_BOARD_FEED_LIMIT));
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -220,6 +222,7 @@ export function ArenaBoardFeed({ initialEvents }: Props) {
           ) {
             return;
           }
+          announceEvent(row);
           setEvents((current) => {
             if (current.some((event) => event.id === row.id)) return current;
             return [row, ...current].slice(0, ARENA_BOARD_FEED_LIMIT);
@@ -237,26 +240,29 @@ export function ArenaBoardFeed({ initialEvents }: Props) {
 
   return (
     <section aria-label="Live Arena feed" className="mt-8">
+      <div className="sr-only" aria-live="polite" aria-atomic="false">
+        {announcement}
+      </div>
       <LandingStickyNote variant="taped" className="overflow-hidden p-0">
-        <div className="flex items-center gap-2 border-b border-[#E0E7FF] bg-[#EDE9FE]/80 px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-violet-200 bg-violet-100/80 px-4 py-3">
           <MentrixaVocabIcon name="verified" size={16} gold surface="light" title="Live feed" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6366F1]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--mx-indigo)]">
             {ARENA_PAGE_COPY.feedEyebrow}
           </p>
         </div>
 
-        <div className="max-h-[min(50rem,70vh)] overflow-y-auto overscroll-contain bg-[var(--mx-navy,#0B1220)]">
+        <div className="max-h-[min(50rem,70vh)] overflow-y-auto overscroll-contain bg-[var(--mx-navy)]">
           {!hydrated ? (
             <BklitShimmer
               className="m-3 h-48 rounded-lg border border-white/10"
               aria-label="Loading live feed"
             />
           ) : events.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-[var(--mx-muted,#9CA3AF)]">
+            <p className="px-4 py-8 text-center text-sm text-[var(--mx-muted)]">
               {ARENA_PAGE_COPY.emptyFeed}
             </p>
           ) : (
-            <ul className="divide-y divide-[var(--mx-rule,#E2E8F0)]/10">
+            <ul className="divide-y divide-[var(--mx-rule)]/10">
               <AnimatePresence mode="sync" initial={false}>
                 {events.map((event) =>
                   isDivisionWarLiveBoardEvent(event.event_type) ? (

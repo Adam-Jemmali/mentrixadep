@@ -78,7 +78,7 @@ export function StudentVerdictHero({
       <div aria-label="Your verified rank verdict">
         <div
           ref={bannerRef}
-          className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#7C3AED]/12 via-[#6366F1]/6 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[var(--mx-violet)]/12 via-[var(--mx-indigo)]/6 to-transparent"
           aria-hidden
         />
 
@@ -91,8 +91,8 @@ export function StudentVerdictHero({
         />
 
         {hasFraction ? (
-          <div className="home-verdict-panel relative mt-3 rounded-lg border border-[#E0E7FF] bg-white/85 px-3 py-2.5">
-            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#6366F1]">
+          <div className="home-verdict-panel relative mt-3 rounded-lg border border-violet-200 bg-white/85 px-3 py-2.5">
+            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
               First-try accuracy
             </p>
             <StudentHubAnimatedFraction
@@ -105,7 +105,7 @@ export function StudentVerdictHero({
               Each first try is permanent on AP Calculus AB.
             </p>
             {hero.peerSummary ? (
-              <p className="mt-1 text-[10px] font-medium text-[#0B1220]">{hero.peerSummary}</p>
+              <p className="mt-1 text-[10px] font-medium text-[var(--mx-navy)]">{hero.peerSummary}</p>
             ) : null}
           </div>
         ) : (

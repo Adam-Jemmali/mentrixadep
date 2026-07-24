@@ -28,7 +28,7 @@ function StatLine({
   gold?: boolean;
 }) {
   return (
-    <p className="inline-flex items-start gap-2 text-[14px] leading-snug text-[#4B5563]">
+    <p className="inline-flex items-start gap-2 text-[14px] leading-snug text-[var(--mx-steel)]">
       <MentrixaVocabIcon
         name={icon}
         size={18}
@@ -106,7 +106,7 @@ export function CertificationVerifyCard({
       animate={controls}
       className={cn(
         "rounded-lg border-2 bg-white p-8 shadow-[0_4px_24px_rgba(0,0,0,0.08)] print:shadow-none",
-        revoked ? "border-red-400/60" : "border-[#D4A017]/60",
+        revoked ? "border-red-400/60" : "border-[var(--mx-gold)]/60",
       )}
       aria-label="Mentrixa certification"
     >
@@ -116,7 +116,7 @@ export function CertificationVerifyCard({
         </p>
       ) : (
         <>
-          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[#D4A017]">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--mx-gold)]">
             AP Calculus AB Mastery Certificate
           </p>
 
@@ -125,7 +125,7 @@ export function CertificationVerifyCard({
           </h1>
 
           <div className="mt-5 space-y-2.5">
-            <p className="inline-flex items-start gap-2 text-[14px] leading-snug text-[#4B5563]">
+            <p className="inline-flex items-start gap-2 text-[14px] leading-snug text-[var(--mx-steel)]">
               <MentrixaVocabIcon
                 name="rank-proof"
                 size={18}
@@ -138,7 +138,7 @@ export function CertificationVerifyCard({
                 Verified top{" "}
                 <span
                   ref={topPercentRef}
-                  className="font-[family-name:var(--font-playfair),serif] font-bold tabular-nums text-[#7C3AED]"
+                  className="font-[family-name:var(--font-playfair),serif] font-bold tabular-nums text-[var(--mx-violet)]"
                 >
                   {topPercent}
                 </span>{" "}
@@ -149,22 +149,22 @@ export function CertificationVerifyCard({
             <StatLine icon="skills" text={accuracyLine} />
           </div>
 
-          <p className="mt-5 text-center text-[12px] text-[#9CA3AF]">
+          <p className="mt-5 text-center text-[12px] text-[var(--mx-muted)]">
             Issued {formatCertificationIssuedAt(cert.issuedAt)}
           </p>
 
-          <div className="my-6 h-px bg-[#D4A017]/30" aria-hidden />
+          <div className="my-6 h-px bg-[var(--mx-gold)]/30" aria-hidden />
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0 space-y-1.5">
-              <p className="inline-flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
+              <p className="inline-flex items-center gap-1.5 text-[11px] text-[var(--mx-muted)]">
                 <MentrixaVocabIcon name="receipt" size={14} surface="light" title="" />
                 {certificationLiveRecordLine()}
               </p>
               {cert.rankUsername ? (
                 <Link
                   href={cert.rankCardUrl ?? `/rank/${encodeURIComponent(cert.rankUsername)}`}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#7C3AED] hover:text-[#6D28D9]"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--mx-violet)] hover:text-[var(--mx-primary-hover)]"
                 >
                   <MentrixaVocabIcon name="rank-proof" size={14} surface="light" title="" gold />
                   {certificationRankVerifyHint(cert.rankUsername)}
@@ -174,7 +174,7 @@ export function CertificationVerifyCard({
 
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               {qr}
-              <p className="max-w-[9rem] break-all text-right font-mono text-[11px] text-[#9CA3AF]">
+              <p className="max-w-[9rem] break-all text-right font-mono text-[11px] text-[var(--mx-muted)]">
                 {cert.verificationToken}
               </p>
             </div>

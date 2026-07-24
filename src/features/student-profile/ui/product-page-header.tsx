@@ -5,7 +5,7 @@ import { VocabSectionHeading } from "@/shared/icons/mentrixa-vocab-icons";
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { cn } from "@/shared/core/utils";
 
-const hubEyebrowClass = "mx-hub-type-ui text-[#6366F1]";
+const hubEyebrowClass = "mx-hub-type-ui text-[var(--mx-indigo)]";
 
 export function ProductPageHeader({
   icon,

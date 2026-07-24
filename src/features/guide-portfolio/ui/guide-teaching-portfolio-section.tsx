@@ -47,7 +47,7 @@ export function GuideTeachingPortfolioSection({
         <div className="text-center">
           <Link
             href={`/tutor/${guideId}/portfolio`}
-            className="text-sm font-semibold text-[var(--mx-violet,#7C3AED)] hover:text-[var(--mx-indigo,#6366F1)]"
+            className="text-sm font-semibold text-[var(--mx-violet)] hover:text-[var(--mx-indigo)]"
           >
             {GUIDE_PORTFOLIO_SHOW_MORE}
           </Link>

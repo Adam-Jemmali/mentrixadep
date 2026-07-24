@@ -152,16 +152,16 @@ export function FlowStepsOrderGame({ onCompletedChange }: Props) {
                 completed ? "cursor-default" : "cursor-grab touch-none active:cursor-grabbing",
                 completed && isCorrectPos
                   ? "border-emerald-500 bg-emerald-50"
-                  : "border-[#A5B4FC] bg-white hover:border-[#6366F1]",
+                  : "border-violet-300 bg-white hover:border-[var(--mx-indigo)]",
               )}
             >
               <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#C4B5FD] bg-[#EDE9FE] text-[11px] font-black leading-none text-[#4F46E5]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-violet-300 bg-violet-100 text-[11px] font-black leading-none text-[#4F46E5]"
                 aria-hidden
               >
                 ⋮⋮
               </span>
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#C4B5FD] bg-[#EDE9FE] text-xs font-black text-[#4F46E5]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-violet-300 bg-violet-100 text-xs font-black text-[#4F46E5]">
                 {completed ? (
                   <motion.span
                     key={`${id}-num`}

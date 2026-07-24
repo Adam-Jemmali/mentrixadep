@@ -1,9 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { cn } from "@/shared/core/utils";
+import { BklitShimmer } from "@/shared/ui/bklit-shimmer";
 
 function SectionFallback({ className = "min-h-[240px]" }: { className?: string }) {
-  return <div className={className} aria-hidden />;
+  return (
+    <BklitShimmer
+      className={cn("w-full rounded-lg", className)}
+      aria-label="Loading section"
+    />
+  );
 }
 
 export const DeferredLandingStoryBridge = dynamic(

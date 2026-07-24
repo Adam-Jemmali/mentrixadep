@@ -56,7 +56,7 @@ export function RankPassportVerifiedSpread({
         surface="light"
         iconSize={28}
         className="gap-2.5"
-        labelClassName="font-[family-name:var(--font-playfair),serif] text-[clamp(1.35rem,3.2vw,1.65rem)] font-bold normal-case tracking-normal text-[#6366F1]"
+        labelClassName="font-[family-name:var(--font-playfair),serif] text-[clamp(1.35rem,3.2vw,1.65rem)] font-bold normal-case tracking-normal text-[var(--mx-indigo)]"
       />
       <StudentHubAnimatedFraction
         compact
@@ -67,7 +67,7 @@ export function RankPassportVerifiedSpread({
         unitLabel="skills"
       />
       <p className="text-base font-semibold leading-snug text-[#475569]">{bandCaption}</p>
-      <p className="text-sm font-medium text-[#0B1220]">{peerLine}</p>
+      <p className="text-sm font-medium text-[var(--mx-navy)]">{peerLine}</p>
       <p className="text-sm uppercase tracking-[0.12em] text-[#64748B]">First attempt only</p>
     </div>
   );
@@ -93,7 +93,7 @@ export function RankPassportSkillProofPage({
 
   return (
     <div className={cn("flex flex-col gap-3.5", className)}>
-      <p className="text-base font-semibold leading-snug text-[#0B1220]">{bandCaption}</p>
+      <p className="text-base font-semibold leading-snug text-[var(--mx-navy)]">{bandCaption}</p>
       <StudentHubNumericReveal immediate className="grid grid-cols-2 gap-3">
         <StudentHubNumericStat
           className="col-span-2 rotate-[0.2deg] px-3 py-3.5"
@@ -240,7 +240,7 @@ export function RankPassportRecordPage({
       </StudentHubNumericReveal>
       <div className="flex items-center gap-2">
         <VocabSectionHeading name="passport" surface="light" iconSize={22} className="shrink-0 gap-0" as="span" />
-        <p className="font-mono text-base text-[#6366F1]">
+        <p className="font-mono text-base text-[var(--mx-indigo)]">
           {siteHost}/rank/{username}
         </p>
       </div>

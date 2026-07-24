@@ -25,7 +25,7 @@ export function DragOrderQuestion({
   return (
     <div className="space-y-4">
       <PromptWithMath text={prompt} variant="light" highlightKeyTerms />
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6366F1]">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
         Drag to rank
       </p>
       <Reorder.Group
@@ -41,11 +41,11 @@ export function DragOrderQuestion({
             value={item}
             drag={!disabled && !busy}
             className={cn(
-              "flex list-none items-center gap-2 rounded-xl border border-[#A5B4FC] bg-white px-3 py-3 text-sm text-[#0B1220] shadow-[1px_2px_0_rgba(11,18,32,0.08)]",
+              "flex list-none items-center gap-2 rounded-xl border border-violet-300 bg-white px-3 py-3 text-sm text-[var(--mx-navy)] shadow-[1px_2px_0_rgba(11,18,32,0.08)]",
               (disabled || busy) && "opacity-70",
             )}
           >
-            <GripVertical className="size-4 shrink-0 text-[#6366F1]" aria-hidden />
+            <GripVertical className="size-4 shrink-0 text-[var(--mx-indigo)]" aria-hidden />
             <span className="[&_.katex]:text-inherit">
               <PromptWithMath text={item} variant="light" highlightKeyTerms />
             </span>

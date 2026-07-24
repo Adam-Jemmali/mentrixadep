@@ -48,7 +48,7 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
       initial={{ opacity: 0, y: 20, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={springSoft}
-      className={cn(highlight && "ring-2 ring-[#6366F1] rounded-sm")}
+      className={cn(highlight && "ring-2 ring-[var(--mx-indigo)] rounded-sm")}
     >
       <LandingStickyNote
         variant={side.role === "Mentrixer" ? "pinned" : "clip"}
@@ -64,7 +64,7 @@ function SideCard({ side, highlight }: { side: DualPathSide; highlight?: boolean
       <ul className={cn("relative mt-4 space-y-2.5 text-[13px]", landingHub.body)}>
         {side.points.map((point) => (
           <li key={point} className="flex gap-2.5">
-            <Check className="text-[#6366F1]" />
+            <Check className="text-[var(--mx-indigo)]" />
             <LandingRoleText text={point} iconSize="sm" />
           </li>
         ))}
@@ -156,7 +156,7 @@ export function DualPathReactionGame({ sides }: Props) {
             />
           ) : (
             <div
-              className="lp-path-arena lp-paper-game-board w-full rounded-xl border border-[#C4B5FD]"
+              className="lp-path-arena lp-paper-game-board w-full rounded-xl border border-violet-300"
               style={{ height: PATH_ARENA_HEIGHT }}
               aria-hidden
             />

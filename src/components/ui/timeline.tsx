@@ -56,7 +56,7 @@ export function Timeline({ items, tone = "light", className }: TimelineProps) {
                     ? "border-[var(--mx-gold)]/50 bg-[var(--mx-gold)]/10"
                     : isDark
                       ? "border-white/15 bg-white/5"
-                      : "border-[#C4B5FD] bg-[#EDE9FE]/60",
+                      : "border-violet-300 bg-violet-100/60",
                 )}
               >
                 {item.icon}

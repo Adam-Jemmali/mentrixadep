@@ -57,7 +57,7 @@ export function LandingVocabWord({
         </LandingStickyNote>
       )}
       <span className={landingHub.stickyWord}>
-        {prefix ? <span className="mr-1.5 tabular-nums text-[#6366F1]">{prefix}</span> : null}
+        {prefix ? <span className="mr-1.5 tabular-nums text-[var(--mx-indigo)]">{prefix}</span> : null}
         {word}
       </span>
     </span>

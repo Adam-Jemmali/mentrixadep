@@ -10,16 +10,16 @@ export function MentrixHeroDecor({ className = "" }: { className?: string }) {
     >
       <defs>
         <radialGradient id="mentrix-hero-glow-violet" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--mx-violet)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--mx-violet)" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="mentrix-hero-glow-indigo" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#6366F1" stopOpacity="0.32" />
-          <stop offset="100%" stopColor="#6366F1" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--mx-indigo)" stopOpacity="0.32" />
+          <stop offset="100%" stopColor="var(--mx-indigo)" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="mentrix-hero-glow-cyan" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#22D3EE" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--mx-cyan)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="var(--mx-cyan)" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="88%" cy="12%" r="130" fill="url(#mentrix-hero-glow-violet)" />

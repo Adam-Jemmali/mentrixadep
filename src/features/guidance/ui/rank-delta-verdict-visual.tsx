@@ -10,7 +10,7 @@ import { peerBeatCount, peerTopPercent } from "@/features/xp/rank-statistics-pur
 function DeltaBadge({ delta }: { delta: number }) {
   if (delta === 0) {
     return (
-      <span className="rounded-md border border-[#C4B5FD] bg-[#EDE9FE] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#6366F1]">
+      <span className="rounded-md border border-violet-300 bg-violet-100 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[var(--mx-indigo)]">
         hold
       </span>
     );
@@ -62,7 +62,7 @@ function MetricRow({
           <span
             className={cn(
               "text-[9px] font-black uppercase tracking-[0.12em]",
-              isDark ? "text-indigo-200/90" : "text-[#6366F1]",
+              isDark ? "text-indigo-200/90" : "text-[var(--mx-indigo)]",
             )}
           >
             {label}
@@ -72,7 +72,7 @@ function MetricRow({
           <span
             className={cn(
               "font-mono text-sm font-black tabular-nums",
-              isDark ? "text-white" : "text-[#0B1220]",
+              isDark ? "text-white" : "text-[var(--mx-navy)]",
             )}
           >
             {value}
@@ -87,7 +87,7 @@ function MetricRow({
         label={label}
         showHeader={false}
         fillStyle={{
-          background: icon === "verified" ? "#7C3AED" : "#6366F1",
+          background: icon === "verified" ? "var(--mx-violet)" : "var(--mx-indigo)",
         }}
       />
     </div>
@@ -193,7 +193,7 @@ export function RankDeltaVerdictVisual({
       {showNextAction ? (
         <Link
           href={nextAction.href}
-          className="inline-flex items-center gap-2 rounded-md bg-[#7C3AED] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#6D28D9]"
+          className="inline-flex items-center gap-2 rounded-md bg-[var(--mx-violet)] px-3 py-1.5 text-xs font-bold text-white hover:bg-[var(--mx-primary-hover)]"
         >
           {nextAction.label}
         </Link>

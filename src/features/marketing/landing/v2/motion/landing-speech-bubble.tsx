@@ -7,10 +7,10 @@ import { LandingStickyNote } from "@/features/marketing/landing/ui/landing-stick
 type Tone = "coach" | "success" | "error" | "neutral";
 
 const TONE_BORDER: Record<Tone, string> = {
-  coach: "border-[#6366F1]",
+  coach: "border-[var(--mx-indigo)]",
   success: "border-emerald-500",
   error: "border-rose-500",
-  neutral: "border-[#A5B4FC]",
+  neutral: "border-violet-300",
 };
 
 type Props = {

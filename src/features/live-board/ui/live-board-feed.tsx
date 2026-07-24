@@ -25,9 +25,9 @@ import { easeOutExpo } from "@/features/marketing/landing/v2/motion/landing-moti
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { isE2ESyntheticAccount } from "@/shared/core/e2e-synthetic-account-pure";
+import { useLiveBoardFeedAnnouncement } from "@/features/live-board/use-live-board-feed-announcement";
 import { cn } from "@/shared/core/utils";
 
-const VERIFIED_GOLD = "#D4A017";
 const ROW_ENTER_MS = 0.2;
 
 type FeedRowMotion = {
@@ -113,12 +113,12 @@ function DivisionWarFeedCard({
       className="space-y-2 px-3 py-2.5"
     >
       <div
-        className="rounded-lg border border-[#E0E7FF] bg-white px-3 py-2.5"
-        style={{ borderLeft: "4px solid #7C3AED" }}
+        className="rounded-lg border border-violet-200 bg-white px-3 py-2.5"
+        style={{ borderLeft: "4px solid var(--mx-violet)" }}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 text-sm leading-snug text-[#0B1220]">
-            <span className="font-bold text-[#7C3AED]">{copy.winnerName}</span>
+          <p className="min-w-0 text-sm leading-snug text-[var(--mx-navy)]">
+            <span className="font-bold text-[var(--mx-violet)]">{copy.winnerName}</span>
             <span className="text-[#64748B]"> defeated </span>
             <span className="text-[#64748B]">{copy.loserName}</span>
           </p>
@@ -129,18 +129,18 @@ function DivisionWarFeedCard({
             {formatLiveBoardTimeAgo(event.occurred_at, nowMs)}
           </time>
         </div>
-        <p className="mt-1.5 text-sm font-semibold tabular-nums" style={{ color: VERIFIED_GOLD }}>
+        <p className="mt-1.5 text-sm font-semibold tabular-nums text-[var(--mx-violet)]">
           {formatDivisionWarAccuracyLine(copy.winnerAccuracyPct)}
         </p>
         <p className="mt-0.5 text-xs tabular-nums text-[#64748B]">
           {formatDivisionWarAccuracyLine(copy.loserAccuracyPct)}
         </p>
-        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6366F1]">
+        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
           {copy.weekLabel}
         </p>
       </div>
 
-      <div className="rounded-lg border border-[#E0E7FF] bg-[#F8FAFC] px-3 py-2">
+      <div className="rounded-lg border border-violet-200 bg-[#F8FAFC] px-3 py-2">
         <p className="text-xs leading-snug text-[#475569]">{copy.loserNote}</p>
       </div>
     </motion.li>
@@ -159,6 +159,7 @@ export function LiveBoardFeed({
   className,
 }: Props) {
   const reducedMotion = usePrefersReducedMotion();
+  const { announcement, announceEvent } = useLiveBoardFeedAnnouncement();
   const filteredInitial = useMemo(() => {
     const rows = hideDivisionWar
       ? initialEvents.filter((event) => !isDivisionWarLiveBoardEvent(event.event_type))
@@ -218,6 +219,7 @@ export function LiveBoardFeed({
           if (row.avatar_url) {
             avatarByUserId.set(row.user_id, row.avatar_url);
           }
+          announceEvent(row);
           setEvents((current) => {
             if (current.some((event) => event.id === row.id)) return current;
             return [row, ...current].slice(0, visibleLimit);
@@ -259,10 +261,13 @@ export function LiveBoardFeed({
       aria-label="Live verified first attempt feed"
       className={cn(hideEyebrow ? "mt-0" : "mt-8", className)}
     >
+      <div className="sr-only" aria-live="polite" aria-atomic="false">
+        {announcement}
+      </div>
       {!hideEyebrow ? (
         <div className="flex items-center gap-2">
           <MentrixaVocabIcon name="verified" size={16} gold surface="dark" title="Live feed" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6366F1]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--mx-indigo)]">
             {ARENA_PAGE_COPY.feedEyebrow}
           </p>
         </div>
@@ -327,7 +332,7 @@ export function LiveBoardFeed({
                     <p
                       className={cn(
                         mentrixHubSurfaces.inkBody,
-                        "min-w-0 flex-1 truncate text-sm leading-snug text-[#0B1220]",
+                        "min-w-0 flex-1 truncate text-sm leading-snug text-[var(--mx-navy)]",
                       )}
                     >
                       {formatLiveBoardEventDescription(event)}
@@ -351,7 +356,7 @@ export function LiveBoardFeed({
           <Link
             href={moreTodayHref}
             prefetch={false}
-            className="cursor-pointer text-sm font-semibold text-[var(--mx-violet,#7C3AED)] transition-colors hover:text-[var(--mx-indigo,#6366F1)]"
+            className="cursor-pointer text-sm font-semibold text-[var(--mx-violet)] transition-colors hover:text-[var(--mx-indigo)]"
           >
             {moreTodayLabel ? moreTodayLabel(moreTodayCount) : `${moreTodayCount} more today`}
           </Link>

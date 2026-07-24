@@ -84,8 +84,8 @@ export function passportHtmlDistanceFactor(
 
 const STAMP_COLORS = {
   red: { ring: "#DC2626", ink: "#991B1B", bg: "rgba(254,226,226,0.35)" },
-  blue: { ring: "#2563EB", ink: "#1D4ED8", bg: "rgba(219,234,254,0.4)" },
-  purple: { ring: "#7C3AED", ink: "#5B21B6", bg: "rgba(237,233,254,0.45)" },
+  blue: { ring: "#2563EB", ink: "var(--mx-node-practiced)", bg: "rgba(219,234,254,0.4)" },
+  purple: { ring: "var(--mx-violet)", ink: "#5B21B6", bg: "rgba(237,233,254,0.45)" },
 } as const;
 
 export const PASSPORT_STAMP_BY_INDEX = [
@@ -188,7 +188,7 @@ export function PassportPageChrome({
       {stamp ? (
         <p
           className={cn(
-            "rank-passport-page-title mx-hub-type-ui border-b border-[#C4B5FD]/60 px-4 pb-3 pt-5 text-[#4F46E5]",
+            "rank-passport-page-title mx-hub-type-ui border-b border-violet-300/60 px-4 pb-3 pt-5 text-[#4F46E5]",
           )}
         >
           {stamp.label}
@@ -238,18 +238,18 @@ export function PassportCoverDoodleEmblem() {
       aria-hidden
       style={{ transform: "rotate(-10deg)" }}
     >
-      <circle cx="44" cy="44" r="30" stroke="#6366F1" strokeWidth="1.75" strokeDasharray="5 4" opacity="0.45" />
+      <circle cx="44" cy="44" r="30" stroke="var(--mx-indigo)" strokeWidth="1.75" strokeDasharray="5 4" opacity="0.45" />
       <circle cx="44" cy="44" r="22" stroke="#818CF8" strokeWidth="1.25" strokeDasharray="3 5" opacity="0.35" />
       <path
         d="M44 20 L48.5 34.5 L63 34.5 L51.5 43.5 L56 58 L44 49 L32 58 L36.5 43.5 L25 34.5 L39.5 34.5 Z"
-        stroke="#7C3AED"
+        stroke="var(--mx-violet)"
         strokeWidth="1.85"
         strokeLinejoin="round"
         opacity="0.72"
       />
       <path
         d="M44 30 L44 52 M34 38 L54 38 M36 48 C40 44 48 44 52 48"
-        stroke="#6366F1"
+        stroke="var(--mx-indigo)"
         strokeWidth="1.65"
         strokeLinecap="round"
         opacity="0.8"
@@ -263,7 +263,7 @@ export function PassportCoverDoodleEmblem() {
       />
       <path
         d="M18 24 L24 18 M64 18 L70 24"
-        stroke="#6366F1"
+        stroke="var(--mx-indigo)"
         strokeWidth="1.35"
         strokeLinecap="round"
         opacity="0.4"
@@ -280,20 +280,20 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
     >
       <PassportCoverDoodleEmblem />
       <div
-        className="pointer-events-none absolute bottom-14 left-5 select-none font-[family-name:var(--font-caveat),cursive] text-[1.35rem] leading-none text-[#6366F1]/55"
+        className="pointer-events-none absolute bottom-14 left-5 select-none font-[family-name:var(--font-caveat),cursive] text-[1.35rem] leading-none text-[var(--mx-indigo)]/55"
         style={{ transform: "rotate(-11deg)" }}
         aria-hidden
       >
         proof inside →
       </div>
       <div
-        className="pointer-events-none absolute right-5 top-16 select-none rounded-full border-2 border-dashed border-[#6366F1]/35 px-3 py-2 font-[family-name:var(--font-caveat),cursive] text-sm text-[#818CF8]/70"
+        className="pointer-events-none absolute right-5 top-16 select-none rounded-full border-2 border-dashed border-[var(--mx-indigo)]/35 px-3 py-2 font-[family-name:var(--font-caveat),cursive] text-sm text-[#818CF8]/70"
         style={{ transform: "rotate(14deg)" }}
         aria-hidden
       >
         verified
       </div>
-      <div className="flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#6366F1]/45 bg-[#0B1220]/60">
+      <div className="flex h-28 w-28 items-center justify-center rounded-full border-2 border-[var(--mx-indigo)]/45 bg-[var(--mx-navy)]/60">
         <Image
           src={MENTRIXA_LOGO_PNG}
           alt="Mentrixa"
@@ -311,7 +311,7 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
         <p className="text-lg font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
         <p className="text-base font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
       </div>
-      <span className="rank-passport-cover-open-cue inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#22D3EE] bg-[#F8FAFC] text-[#0B1220] shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_6px_20px_rgba(34,211,238,0.45)] transition-transform group-hover:translate-x-0.5 group-hover:bg-white">
+      <span className="rank-passport-cover-open-cue inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[var(--mx-cyan)] bg-[#F8FAFC] text-[var(--mx-navy)] shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_6px_20px_rgba(34,211,238,0.45)] transition-transform group-hover:translate-x-0.5 group-hover:bg-white">
         <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden>
           <path
             d="M8 12h8M14 8l4 4-4 4"

@@ -77,7 +77,7 @@ export function NotificationCard({
               ? "text-emerald-700 hover:text-emerald-900"
               : tone === "warn"
                 ? "text-orange-700 hover:text-orange-900"
-                : "text-[#7C3AED] hover:text-[#6D28D9]",
+                : "text-[var(--mx-violet)] hover:text-[var(--mx-primary-hover)]",
           )}
         >
           {linkLabel}
@@ -98,7 +98,7 @@ export function NotificationCard({
           exit={reduceMotion ? { opacity: 0 } : { x: 40, opacity: 0 }}
           transition={{ type: "spring", stiffness: 380, damping: 28 }}
           className={cn(
-            "pointer-events-auto overflow-hidden rounded-xl border border-[#E0E7FF]/80",
+            "pointer-events-auto overflow-hidden rounded-xl border border-violet-200/80",
             "px-3.5 py-3 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.35)] backdrop-blur-sm",
             surface,
           )}

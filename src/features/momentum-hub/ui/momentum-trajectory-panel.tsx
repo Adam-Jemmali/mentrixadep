@@ -93,7 +93,7 @@ export function MomentumTrajectoryPanel({ data }: MomentumTrajectoryPanelProps) 
           {MOMENTUM_MEMBERSHIP_FEATURE_EYEBROW}
         </p>
         <div className="text-right">
-          <p className="text-3xl font-bold tabular-nums text-[#D4A017]">{trajectory.score}</p>
+          <p className="text-3xl font-bold tabular-nums text-[var(--mx-gold)]">{trajectory.score}</p>
           {weekOverWeek ? (
             <p className="text-xs font-semibold text-zinc-600">{weekOverWeek}</p>
           ) : null}

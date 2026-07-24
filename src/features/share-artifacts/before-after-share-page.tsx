@@ -8,12 +8,12 @@ export function BeforeAfterSharePage({ data }: { data: BeforeAfterShareArtifact 
   return (
     <div className="mx-auto max-w-md px-4 pb-16 pt-[calc(3.5rem+1rem)] sm:px-6">
       <div className="mb-6 flex items-center justify-between">
-        <span className="text-sm font-bold tracking-[0.08em] text-[var(--mx-violet,#7C3AED)]">
+        <span className="text-sm font-bold tracking-[0.08em] text-[var(--mx-violet)]">
           MENTRIXA
         </span>
         <Link
           href="/"
-          className="cursor-pointer text-sm font-semibold text-[var(--mx-muted,#9CA3AF)] hover:text-white"
+          className="cursor-pointer text-sm font-semibold text-[var(--mx-muted)] hover:text-white"
         >
           Back to home
         </Link>
@@ -30,9 +30,9 @@ export function BeforeAfterSharePage({ data }: { data: BeforeAfterShareArtifact 
         shareUrl={data.shareUrl}
       />
 
-      <p className="mt-8 text-center text-sm text-[var(--mx-muted,#9CA3AF)]">
+      <p className="mt-8 text-center text-sm text-[var(--mx-muted)]">
         See your own proof on{" "}
-        <Link href="/try" className="font-semibold text-[var(--mx-violet,#7C3AED)] hover:text-white">
+        <Link href="/try" className="font-semibold text-[var(--mx-violet)] hover:text-white">
           Mentrixa
         </Link>
       </p>

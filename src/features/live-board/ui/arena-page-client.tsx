@@ -46,16 +46,16 @@ export function ArenaPageClient({ initialEvents, leaders }: Props) {
   );
 
   return (
-    <div className="mx-shell-arena min-h-[100dvh] bg-[var(--mx-navy,#0B1220)] text-white">
+    <div className="mx-shell-arena min-h-[100dvh] bg-[var(--mx-navy)] text-white">
       <ArenaBoardNav />
 
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-[calc(3.5rem+1.25rem)] sm:px-6">
         <header ref={heroRef}>
           <LandingStickyNote variant="pinned" className="arena-hero-reveal text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6366F1]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--mx-indigo)]">
               {ARENA_PAGE_COPY.titleLine1}
             </p>
-            <h1 className="mt-2 font-sans text-[28px] font-bold leading-tight text-[#0B1220]">
+            <h1 className="mt-2 font-sans text-[28px] font-bold leading-tight text-[var(--mx-navy)]">
               {ARENA_PAGE_COPY.titleLine2}
             </h1>
             <p className="arena-hero-reveal mt-3 text-sm leading-relaxed text-[#475569]">
@@ -68,8 +68,8 @@ export function ArenaPageClient({ initialEvents, leaders }: Props) {
                 prefetch={false}
                 className={cn(
                   "inline-flex cursor-pointer items-center justify-center gap-2 rounded-full",
-                  "bg-[var(--mx-violet,#7C3AED)] px-5 py-2.5 text-sm font-bold text-white",
-                  "transition-colors hover:bg-[#6D28D9]",
+                  "bg-[var(--mx-violet)] px-5 py-2.5 text-sm font-bold text-white",
+                  "transition-colors hover:bg-[var(--mx-primary-hover)]",
                 )}
               >
                 <MentrixaVocabIcon name="flow-climb" size={16} surface="dark" title="Try" />

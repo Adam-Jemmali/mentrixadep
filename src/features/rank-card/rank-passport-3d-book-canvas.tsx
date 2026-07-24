@@ -814,7 +814,7 @@ function Scene({
     <>
       <ambientLight intensity={0.78} />
       <directionalLight position={[2.5, 4.5, 3.5]} intensity={1.05} castShadow />
-      <directionalLight position={[-3, 1.5, 2]} intensity={0.28} color="#6366F1" />
+      <directionalLight position={[-3, 1.5, 2]} intensity={0.28} color="var(--mx-indigo)" />
       <directionalLight position={[-2.5, 0.5, -2]} intensity={0.18} color="#94A3B8" />
       <PassportBookScene htmlDistanceFactor={htmlDistanceFactor} {...props} />
     </>

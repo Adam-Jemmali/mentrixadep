@@ -137,7 +137,7 @@ export function RankLadderShowcase() {
                   showGlow={mounted && (active.key === "mentrixer" || active.key === "apex")}
                   priority
                 />
-                <RankTitle rank={active} tone="light" className={cn("text-lg font-bold text-[#0B1220]", landingHub.title)} />
+                <RankTitle rank={active} tone="light" className={cn("text-lg font-bold text-[var(--mx-navy)]", landingHub.title)} />
                 <p className={`text-xs font-medium tabular-nums ${landingHub.inkMuted}`}>
                   {active.minXp.toLocaleString()} XP
                   {active.maxXp != null ? ` to ${active.maxXp.toLocaleString()} XP` : "+"}
@@ -166,7 +166,7 @@ export function RankLadderShowcase() {
                 transition={{ type: "spring", stiffness: 320, damping: 24 }}
                 className={cn(
                   "group relative flex shrink-0 snap-center cursor-pointer flex-col items-center gap-2 p-3",
-                  isActive && "ring-2 ring-[#6366F1]",
+                  isActive && "ring-2 ring-[var(--mx-indigo)]",
                 )}
                 aria-pressed={isActive}
                 aria-label={normalizeRankTitle(rank.title)}

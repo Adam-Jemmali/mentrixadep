@@ -88,8 +88,8 @@ export function ProofChainPanel({ data }: { data: ProofChainPanelData }) {
       <ProofChainRail steps={data.steps} />
 
       {data.counterfactual && data.counterfactual.lift > 0 ? (
-        <div className="mt-5 rounded-xl border border-[#D4A017]/40 bg-amber-50/80 px-4 py-4">
-          <p className="text-2xl font-black tabular-nums text-[#D4A017]">
+        <div className="mt-5 rounded-xl border border-[var(--mx-gold)]/40 bg-amber-50/80 px-4 py-4">
+          <p className="text-2xl font-black tabular-nums text-[var(--mx-gold)]">
             {data.counterfactual.currentScore} → {data.counterfactual.projectedScore}
             <span className="ml-2 text-base text-emerald-800">+{data.counterfactual.lift}</span>
           </p>

@@ -75,7 +75,7 @@ export function MomentumActiveHubCard({
           <Button asChild className={mentrixStudent.hubBtnSolid}>
             <Link href="/student#browse-guides">Book a Guide session</Link>
           </Button>
-          <Button asChild variant="outline" className="border-[#6366F1] text-[#4F46E5] hover:bg-[#EDE9FE]">
+          <Button asChild variant="outline" className="border-[var(--mx-indigo)] text-[#4F46E5] hover:bg-violet-100">
             <Link href="/student/subscribe" className="inline-flex items-center gap-2">
               <MentrixaVocabIcon name="settings" size={18} surface="light" title="Manage" />
               Manage Momentum membership

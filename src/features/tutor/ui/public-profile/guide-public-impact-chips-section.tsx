@@ -69,7 +69,7 @@ export function GuidePublicImpactChipsSection({
             surface="light"
             title="Verified impact"
           />
-          <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#7C3AED]">
+          <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--mx-violet)]">
             {GUIDE_PUBLIC_COPY.impactHeading}
           </h2>
         </div>

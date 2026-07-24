@@ -363,7 +363,7 @@ function drawScoreCredentialCard(
     ctx.fillStyle = "rgba(255,255,255,0.1)";
     ctx.fill();
     const initials = (data.playerName.match(/\b\w/g)?.slice(0, 2).join("") || "M").toUpperCase();
-    ctx.fillStyle = "#e2e8f0";
+    ctx.fillStyle = "var(--mx-rule)";
     ctx.font = "700 18px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(initials, 48 + avatarSize / 2, footerY + avatarSize / 2 + 6);

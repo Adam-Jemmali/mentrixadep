@@ -36,7 +36,7 @@ function AccuracyTooltip({
       : "";
 
   return (
-    <div className="rounded-lg border border-indigo-400/40 bg-[#0f172a] px-2.5 py-1.5 text-xs shadow-lg">
+    <div className="rounded-lg border border-indigo-400/40 bg-[var(--mx-navy-2)] px-2.5 py-1.5 text-xs shadow-lg">
       <div className="text-slate-300">{dateLabel}</div>
       <div className="mt-0.5 font-semibold text-white">
         {Number.isFinite(accuracy) ? `${accuracy}%` : "—"}

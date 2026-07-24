@@ -9,8 +9,8 @@ const PassportCoverMaterialImpl = shaderMaterial(
   {
     uTime: 0,
     uShimmer: 1,
-    uBaseColor: new THREE.Color("#0B1220"),
-    uFoilColor: new THREE.Color("#D4A017"),
+    uBaseColor: new THREE.Color("var(--mx-navy)"),
+    uFoilColor: new THREE.Color("var(--mx-gold)"),
   },
   /* glsl */ `
     varying vec3 vNormal;

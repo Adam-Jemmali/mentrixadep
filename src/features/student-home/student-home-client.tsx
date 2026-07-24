@@ -26,7 +26,7 @@ export function StudentHomeClient({
   data: StudentHomeData;
 }) {
   return (
-    <div className={cn(mentrixStudent.pageBg, "relative text-[#0B1220]")}>
+    <div className={cn(mentrixStudent.pageBg, "relative text-[var(--mx-navy)]")}>
       <StudentHubRealtimeRefresh userId={userId} />
 
       <main className={cn(mentrixStudent.mainWide, "relative z-[1]")}>

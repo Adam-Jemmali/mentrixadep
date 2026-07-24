@@ -41,7 +41,7 @@ export function StudentDashboardIllustration() {
           <rect x="56" y="24" width="10" height="46" rx="2" fill="url(#student-xp)" />
         </g>
         <g ref={flameRef} transform="translate(68, 12)">
-          <path d="M4 20 C4 8 10 4 10 4 C10 4 16 8 16 20 C16 28 10 36 10 36 C10 36 4 28 4 20 Z" fill="#F59E0B" opacity={0.9} />
+          <path d="M4 20 C4 8 10 4 10 4 C10 4 16 8 16 20 C16 28 10 36 10 36 C10 36 4 28 4 20 Z" fill="var(--mx-violet)" opacity={0.9} />
         </g>
       </svg>
     </div>

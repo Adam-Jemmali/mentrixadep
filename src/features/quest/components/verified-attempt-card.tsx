@@ -13,16 +13,16 @@ export function VerifiedAttemptCard({
   return (
     <article
       className={cn(
-        "rounded-2xl border border-[#C4B5FD] bg-white p-4 shadow-[1px_2px_0_rgba(11,18,32,0.08)]",
+        "rounded-2xl border border-violet-300 bg-white p-4 shadow-[1px_2px_0_rgba(11,18,32,0.08)]",
         className,
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6366F1]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--mx-indigo)]">
           {card.modalityLabel}
         </p>
         {card.isCorrect ? (
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#D4A017]">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mx-gold)]">
             Verified
           </span>
         ) : (
@@ -31,13 +31,13 @@ export function VerifiedAttemptCard({
           </span>
         )}
       </div>
-      <h3 className="mt-2 text-sm font-semibold text-[#0B1220]">{card.nodeName}</h3>
+      <h3 className="mt-2 text-sm font-semibold text-[var(--mx-navy)]">{card.nodeName}</h3>
       <p className="mt-1 text-xs text-slate-600">
         Unit {card.unitNumber}. {card.unitName}
       </p>
       <p className="mt-3 text-sm text-slate-800">{card.proofLine}</p>
       <p className="mt-2 text-xs font-medium text-slate-700">{card.verdict}</p>
-      <p className="mt-1 text-xs text-[#6366F1]">{card.nextAction}</p>
+      <p className="mt-1 text-xs text-[var(--mx-indigo)]">{card.nextAction}</p>
     </article>
   );
 }
@@ -51,7 +51,7 @@ export function VerifiedAttemptProofRail({
 }) {
   if (cards.length === 0) {
     return (
-      <section className="rounded-2xl border border-dashed border-[#C4B5FD] bg-[#F8FAFC] p-4">
+      <section className="rounded-2xl border border-dashed border-violet-300 bg-[#F8FAFC] p-4">
         <p className="text-sm text-slate-600">
           Verified attempt cards appear here after first encounters. They are resume-grade proof,
           not decorative badges.
@@ -63,7 +63,7 @@ export function VerifiedAttemptProofRail({
   return (
     <section className="space-y-3">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6366F1]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--mx-indigo)]">
           Verified proof
         </p>
         <p className="mt-1 text-sm text-slate-700">{mixLabel}</p>

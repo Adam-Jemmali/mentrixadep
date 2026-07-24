@@ -63,7 +63,7 @@ export function WrappedShareCarousel({
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6">
       <div className="mb-6 flex items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-        <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#D4A017]">
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--mx-gold)]">
           <MentrixaVocabIcon name="passport" size={22} surface="dark" title="Mentrixa" />
           Mentrixa
         </span>
@@ -73,7 +73,7 @@ export function WrappedShareCarousel({
       </div>
 
       <div className="space-y-4 md:space-y-6">
-        <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0F172A] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[var(--mx-navy-2)] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -87,7 +87,7 @@ export function WrappedShareCarousel({
           ) : null}
         </div>
 
-        <div className="flex items-start gap-3 rounded-2xl border border-violet-400/25 bg-[#0B1220] px-4 py-4">
+        <div className="flex items-start gap-3 rounded-2xl border border-violet-400/25 bg-[var(--mx-navy)] px-4 py-4">
           <MentrixaVocabIcon
             name={asVocab(current.eyebrowIcon)}
             size={28}
@@ -95,7 +95,7 @@ export function WrappedShareCarousel({
             title={current.eyebrow}
           />
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#D4A017]">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mx-gold)]">
               {current.eyebrow}
             </p>
             <p className="mt-1 text-lg font-bold text-white">{current.title}</p>
@@ -122,7 +122,7 @@ export function WrappedShareCarousel({
                 aria-label={`Slide ${slide.slide}`}
                 onClick={() => setIndex(i)}
                 className={`h-2.5 w-2.5 rounded-full ${
-                  i === index ? "bg-[#7C3AED]" : "bg-white/25"
+                  i === index ? "bg-[var(--mx-violet)]" : "bg-white/25"
                 }`}
               />
             ))}
@@ -140,7 +140,7 @@ export function WrappedShareCarousel({
           <Button
             type="button"
             onClick={() => void copySlideLink()}
-            className="rounded-xl bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
+            className="rounded-xl bg-[var(--mx-violet)] text-white hover:bg-[var(--mx-primary-hover)]"
           >
             {copied ? "Copied" : "Share this slide"}
           </Button>
@@ -181,14 +181,14 @@ export function WrappedShareCarousel({
         })}
       </div>
 
-      <div className="mt-12 rounded-2xl border border-[#D4A017]/35 bg-[#0B1220] px-5 py-6 text-center">
+      <div className="mt-12 rounded-2xl border border-[var(--mx-gold)]/35 bg-[var(--mx-navy)] px-5 py-6 text-center">
         <p className="inline-flex items-center justify-center gap-2 text-base font-semibold text-white">
           <MentrixaVocabIcon name="quest" size={24} surface="dark" title="Wrapped" />
           What would your Wrapped say?
         </p>
         <Link
           href="/auth/signin"
-          className="mt-4 inline-flex rounded-xl bg-[#7C3AED] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#6D28D9]"
+          className="mt-4 inline-flex rounded-xl bg-[var(--mx-violet)] px-5 py-2.5 text-sm font-bold text-white hover:bg-[var(--mx-primary-hover)]"
         >
           Start on Mentrixa
         </Link>

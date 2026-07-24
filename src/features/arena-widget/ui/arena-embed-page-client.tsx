@@ -36,7 +36,7 @@ export function ArenaEmbedPageClient({ siteUrl }: { siteUrl: string }) {
           size="sm"
           className={cn(
             "h-8 text-xs font-bold",
-            theme === "dark" ? "bg-[#7C3AED] text-white" : "bg-white/10 text-slate-200",
+            theme === "dark" ? "bg-[var(--mx-violet)] text-white" : "bg-white/10 text-slate-200",
           )}
           onClick={() => setTheme("dark")}
         >
@@ -47,7 +47,7 @@ export function ArenaEmbedPageClient({ siteUrl }: { siteUrl: string }) {
           size="sm"
           className={cn(
             "h-8 text-xs font-bold",
-            theme === "light" ? "bg-[#7C3AED] text-white" : "bg-white/10 text-slate-200",
+            theme === "light" ? "bg-[var(--mx-violet)] text-white" : "bg-white/10 text-slate-200",
           )}
           onClick={() => setTheme("light")}
         >
@@ -55,7 +55,7 @@ export function ArenaEmbedPageClient({ siteUrl }: { siteUrl: string }) {
         </Button>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-indigo-400/30 bg-[#0B1220]">
+      <div className="mt-6 overflow-hidden rounded-xl border border-indigo-400/30 bg-[var(--mx-navy)]">
         <iframe
           key={previewSrc}
           src={previewSrc}
@@ -75,7 +75,7 @@ export function ArenaEmbedPageClient({ siteUrl }: { siteUrl: string }) {
           <Button
             type="button"
             size="sm"
-            className="h-8 bg-[#7C3AED] text-xs font-bold text-white hover:bg-[#6D28D9]"
+            className="h-8 bg-[var(--mx-violet)] text-xs font-bold text-white hover:bg-[var(--mx-primary-hover)]"
             onClick={async () => {
               await navigator.clipboard.writeText(iframeHtml);
               setCopied(true);

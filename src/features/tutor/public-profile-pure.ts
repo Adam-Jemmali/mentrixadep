@@ -22,8 +22,8 @@ export function guideImpactChipVisual(
 }
 
 export const GUIDE_IMPACT_CHIP_CLASS: Record<GuideImpactChipVisual, string> = {
-  high: "border-emerald-500/70 bg-emerald-400/20 text-[#0B1220]",
-  moderate: "border-amber-400/70 bg-amber-300/25 text-[#0B1220]",
+  high: "border-emerald-500/70 bg-emerald-400/20 text-[var(--mx-navy)]",
+  moderate: "border-amber-400/70 bg-amber-300/25 text-[var(--mx-navy)]",
   limited: "border-slate-400/50 bg-slate-200/40 text-[#475569]",
 };
 

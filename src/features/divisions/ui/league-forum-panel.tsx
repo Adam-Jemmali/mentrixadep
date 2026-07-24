@@ -74,7 +74,7 @@ function ForumBody({ body }: { body: string }) {
 
 function ForumScreenshot({ url, alt }: { url: string; alt: string }) {
   return (
-    <div className="relative mt-3 overflow-hidden rounded-xl border border-[#C4B5FD] bg-[#F8FAFC]">
+    <div className="relative mt-3 overflow-hidden rounded-xl border border-violet-300 bg-[#F8FAFC]">
       <Image
         src={url}
         alt={alt}
@@ -168,15 +168,15 @@ function ThreadCard({
     <button
       type="button"
       onClick={() => onOpen(thread.id)}
-      className="w-full rounded-2xl border border-[#C4B5FD] bg-white/85 p-4 text-left transition hover:border-[#6366F1] hover:bg-[#EDE9FE]/55"
+      className="w-full rounded-2xl border border-violet-300 bg-white/85 p-4 text-left transition hover:border-[var(--mx-indigo)] hover:bg-violet-100/55"
     >
       <div className="flex gap-3">
         <ForumAvatar displayName={thread.displayName} avatarUrl={thread.avatarUrl} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-[#0B1220]">{thread.title}</p>
+            <p className="text-sm font-bold text-[var(--mx-navy)]">{thread.title}</p>
             {thread.imageUrl ? (
-              <span className="rounded-full bg-[#EDE9FE] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#4F46E5]">
+              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#4F46E5]">
                 Image
               </span>
             ) : null}
@@ -386,12 +386,12 @@ export function LeagueForumPanel({
 
       {activeThread ? (
         <div className={cn(mentrixStudent.card, "overflow-hidden")}>
-          <div className="border-b border-[#C4B5FD] px-4 py-3">
+          <div className="border-b border-violet-300 px-4 py-3">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className={cn("gap-1.5 text-[#4F46E5] hover:bg-[#EDE9FE]", mentrixStudent.hubGhostLink)}
+              className={cn("gap-1.5 text-[#4F46E5] hover:bg-violet-100", mentrixStudent.hubGhostLink)}
               onClick={() => {
                 setActiveThread(null);
                 setReplyBody("");
@@ -411,11 +411,11 @@ export function LeagueForumPanel({
             </div>
           ) : (
             <>
-              <article className="border-b border-[#C4B5FD] p-5 sm:p-6">
+              <article className="border-b border-violet-300 p-5 sm:p-6">
                 <div className="flex gap-3">
                   <ForumAvatar displayName={activeThread.displayName} avatarUrl={activeThread.avatarUrl} />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-lg font-black tracking-tight text-[#0B1220]">{activeThread.title}</h3>
+                    <h3 className="text-lg font-black tracking-tight text-[var(--mx-navy)]">{activeThread.title}</h3>
                     <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[#64748B]">
                       {activeThread.displayName}. {formatWhen(activeThread.createdAt)}
                     </p>
@@ -455,7 +455,7 @@ export function LeagueForumPanel({
               </div>
 
               {isMember ? (
-                <form onSubmit={submitReply} className="space-y-3 border-t border-[#C4B5FD] bg-[#EDE9FE]/35 p-4 sm:p-5">
+                <form onSubmit={submitReply} className="space-y-3 border-t border-violet-300 bg-violet-100/35 p-4 sm:p-5">
                   <label className={mentrixHubSurfaces.inkLabel}>Reply</label>
                   <textarea
                     value={replyBody}
@@ -481,7 +481,7 @@ export function LeagueForumPanel({
                   </Button>
                 </form>
               ) : (
-                <p className="border-t border-[#C4B5FD] p-4 text-center text-xs font-bold uppercase tracking-widest text-[#64748B]">
+                <p className="border-t border-violet-300 p-4 text-center text-xs font-bold uppercase tracking-widest text-[#64748B]">
                   Join the league to reply
                 </p>
               )}

@@ -47,7 +47,7 @@ export function ItemReviewStudentPreview({ item }: Props) {
         </p>
       </div>
 
-      <div className="rounded-xl border border-[#1e293b] bg-[#0B1220] p-4 text-slate-100">
+      <div className="rounded-xl border border-[var(--mx-surface-3)] bg-[var(--mx-navy)] p-4 text-slate-100">
         <p className="text-[11px] font-medium text-slate-400">
           Unit {item.unitNumber}. {item.nodeName}
         </p>
@@ -80,7 +80,7 @@ export function ItemReviewStudentPreview({ item }: Props) {
                   className={cn(
                     "w-full rounded-lg border px-3 py-2.5 text-left text-[13px] transition-colors",
                     selected
-                      ? "border-[#7C3AED] bg-[#7C3AED]/15 text-white"
+                      ? "border-[var(--mx-violet)] bg-[var(--mx-violet)]/15 text-white"
                       : "border-white/10 bg-white/5 text-slate-200 hover:border-white/25",
                   )}
                 >

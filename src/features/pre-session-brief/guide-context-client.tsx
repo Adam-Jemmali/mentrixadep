@@ -89,7 +89,7 @@ export function GuideContextClient({
       >
         <header className="inline-flex items-center gap-2">
           <MentrixaVocabIcon name="verified" size={18} surface="light" title="Student truth" />
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#6366F1]">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--mx-indigo)]">
             Student truth
           </h3>
         </header>
@@ -120,13 +120,13 @@ export function GuideContextClient({
       {intelligence ? (
         <section
           className={cn(
-            "rounded-xl border border-[#E2E8F0] bg-white/80 p-3",
+            "rounded-xl border border-[var(--mx-rule)] bg-white/80 p-3",
             revealStep >= 2 ? "opacity-100" : "opacity-0",
           )}
         >
           <header className="mb-3 inline-flex items-center gap-2">
             <MentrixaVocabIcon name="guide-session" size={18} surface="light" title="Session intelligence" />
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#6366F1]">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--mx-indigo)]">
               Session intelligence
             </h3>
           </header>
@@ -153,13 +153,13 @@ export function GuideContextClient({
 
       <section
         className={cn(
-          "rounded-xl border border-[#E2E8F0] bg-white/80 p-3",
+          "rounded-xl border border-[var(--mx-rule)] bg-white/80 p-3",
           revealStep >= 3 ? "opacity-100" : "opacity-0",
         )}
       >
         <header className="mb-2 inline-flex items-center gap-2">
           <MentrixaVocabIcon name="practice-pack" size={18} surface="light" title="Warmup item" />
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#6366F1]">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--mx-indigo)]">
             Suggested opening question for this session
           </h3>
         </header>
@@ -171,10 +171,10 @@ export function GuideContextClient({
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-3"
           >
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#7C3AED]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--mx-violet)]">
               {warmup.nodeName}
             </p>
-            <div className="text-sm leading-relaxed text-[#0B1220]">
+            <div className="text-sm leading-relaxed text-[var(--mx-navy)]">
               <PromptWithMath text={warmup.prompt} />
             </div>
             {warmup.options?.length ? (
@@ -182,9 +182,9 @@ export function GuideContextClient({
                 {warmup.options.map((option, index) => (
                   <li
                     key={`${index}-${option.slice(0, 20)}`}
-                    className="rounded-lg border border-[#E2E8F0] bg-[#FAFAF8] px-2.5 py-2 text-xs text-[#334155]"
+                    className="rounded-lg border border-[var(--mx-rule)] bg-[#FAFAF8] px-2.5 py-2 text-xs text-[#334155]"
                   >
-                    <span className="mr-1.5 font-mono text-[10px] font-bold text-[#6366F1]">
+                    <span className="mr-1.5 font-mono text-[10px] font-bold text-[var(--mx-indigo)]">
                       {String.fromCharCode(65 + index)}
                     </span>
                     <PromptWithMath text={option} />
@@ -228,7 +228,7 @@ function IntelligenceRow({
       className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between"
     >
       <dt className="text-[11px] font-semibold text-[#64748B]">{label}</dt>
-      <dd className="text-xs font-semibold text-[#0B1220]">{value}</dd>
+      <dd className="text-xs font-semibold text-[var(--mx-navy)]">{value}</dd>
     </motion.div>
   );
 }

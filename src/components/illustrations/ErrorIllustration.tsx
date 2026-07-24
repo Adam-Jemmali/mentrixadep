@@ -25,7 +25,7 @@ export function ErrorIllustration() {
           ref={triRef}
           d="M40 20 L56 50 L24 50 Z"
           fill="#FEF3C7"
-          stroke="#F59E0B"
+          stroke="var(--mx-violet)"
           strokeWidth="2"
           strokeLinejoin="round"
         />

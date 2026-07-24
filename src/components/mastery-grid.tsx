@@ -173,11 +173,11 @@ export function MasteryGrid({
       : 0;
   const verdictTextClass =
     surface === "light"
-      ? "font-[family-name:var(--font-playfair),serif] text-base italic leading-snug text-[#0B1220] opacity-0"
+      ? "font-[family-name:var(--font-playfair),serif] text-base italic leading-snug text-[var(--mx-navy)] opacity-0"
       : "font-[family-name:var(--font-playfair),serif] text-base italic leading-snug text-white opacity-0";
   const errorShellClass =
     surface === "light"
-      ? "rounded-[var(--radius-card)] border border-[#C4B5FD] bg-white/90 p-4"
+      ? "rounded-[var(--radius-card)] border border-violet-300 bg-white/90 p-4"
       : "rounded-[var(--radius-card)] border border-white/10 bg-[var(--mx-surface-2)] p-4";
 
   useEffect(() => {

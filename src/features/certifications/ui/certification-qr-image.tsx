@@ -10,7 +10,7 @@ export async function CertificationQrImage({
   const src = await QRCode.toDataURL(url, {
     width: size,
     margin: 0,
-    color: { dark: "#0B1220", light: "#FFFFFF" },
+    color: { dark: "var(--mx-navy)", light: "#FFFFFF" },
   });
 
   return (

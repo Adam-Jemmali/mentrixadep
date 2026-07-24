@@ -78,7 +78,7 @@ export function LandingFooterBlock() {
         </motion.div>
       </section>
 
-      <section ref={contactRef} id="contact" className={`${landingHub.sectionTight} border-t border-[#C4B5FD]/60 px-4 sm:px-5`}>
+      <section ref={contactRef} id="contact" className={`${landingHub.sectionTight} border-t border-violet-300/60 px-4 sm:px-5`}>
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -108,7 +108,7 @@ export function LandingFooterBlock() {
         </motion.div>
       </section>
 
-      <footer className={`${landingHub.sectionTight} border-t border-[#C4B5FD]/60 px-4 sm:px-5`}>
+      <footer className={`${landingHub.sectionTight} border-t border-violet-300/60 px-4 sm:px-5`}>
         <LandingStickyCard rotate={false} variant="clip" className="mx-auto max-w-6xl rotate-[0.2deg] py-8">
           <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
             <div>
@@ -123,15 +123,15 @@ export function LandingFooterBlock() {
 
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center md:gap-10">
               <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px]">
-                <Link href="/privacy" className={`${landingHub.body} transition-colors hover:text-[#0B1220]`}>
+                <Link href="/privacy" className={`${landingHub.body} transition-colors hover:text-[var(--mx-navy)]`}>
                   Privacy
                 </Link>
-                <Link href="/terms" className={`${landingHub.body} transition-colors hover:text-[#0B1220]`}>
+                <Link href="/terms" className={`${landingHub.body} transition-colors hover:text-[var(--mx-navy)]`}>
                   Terms
                 </Link>
                 <Link
                   href="/contact"
-                  className="border-b border-[#6366F1] pb-0.5 font-semibold text-[#4F46E5] transition-colors hover:text-[#0B1220]"
+                  className="border-b border-[var(--mx-indigo)] pb-0.5 font-semibold text-[#4F46E5] transition-colors hover:text-[var(--mx-navy)]"
                 >
                   Contact
                 </Link>
@@ -140,7 +140,7 @@ export function LandingFooterBlock() {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 border-t border-[#C4B5FD]/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-8 flex flex-col gap-3 border-t border-violet-300/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className={`order-2 text-[11px] sm:order-1 ${landingHub.inkMuted}`}>
               &copy; {new Date().getFullYear()} Mentrixa Inc.
             </p>
@@ -150,7 +150,7 @@ export function LandingFooterBlock() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Compose in Gmail (web)"
-                className="underline underline-offset-2 hover:text-[#0B1220]"
+                className="underline underline-offset-2 hover:text-[var(--mx-navy)]"
               >
                 {FEEDBACK_EMAIL}
               </a>

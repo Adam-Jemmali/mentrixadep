@@ -30,7 +30,7 @@ export function QuestStimulusBlock({
                 <p
                   className={cn(
                     "text-[11px] font-semibold uppercase tracking-[0.14em]",
-                    isDark ? "text-[#A5B4FC]" : "text-[#6366F1]",
+                    isDark ? "text-[#A5B4FC]" : "text-[var(--mx-indigo)]",
                   )}
                 >
                   {block.title}

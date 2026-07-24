@@ -18,7 +18,9 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 import { VerdictPanel } from "@/features/guidance/verdict-panel";
 
-const VERIFIED_GOLD = "#D4A017";
+import { VERIFIED_GOLD_CSS } from "@/components/ui/mentrixa-ui-tokens";
+
+const VERIFIED_GOLD = VERIFIED_GOLD_CSS;
 
 function PassportVerdictHeadline({ verdict }: { verdict: PassportVerdict }) {
   if (verdict.kind === "ranked") {
@@ -48,7 +50,7 @@ export function RankPassportTopBar() {
         "mb-6 flex rotate-0 items-center justify-between px-4 py-3 sm:px-5",
       )}
     >
-      <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6366F1]">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--mx-indigo)]">
         Verified passport
       </span>
       <Link href="/" className={mentrixHubSurfaces.ghostLink}>
@@ -68,7 +70,7 @@ function BreakthroughChip({
   afterState: string;
 }) {
   return (
-    <div className="rounded-md border border-[#C4B5FD] bg-white/80 px-3 py-2 text-center shadow-sm">
+    <div className="rounded-md border border-violet-300 bg-white/80 px-3 py-2 text-center shadow-sm">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#475569]">
         {nodeName}
       </p>
@@ -111,13 +113,13 @@ export function RankPassportArticle({
       className={cn(mentrixStudent.hubSticky, "rotate-0 overflow-hidden p-0", className)}
       aria-label={previewMode ? "Rank passport preview" : "Verified rank passport"}
     >
-      <header className="border-b border-[#C4B5FD] bg-[#EEF2FF]/90 px-5 py-4 sm:px-6">
+      <header className="border-b border-violet-300 bg-[#EEF2FF]/90 px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <Image src={MENTRIXA_LOGO_PNG} alt="" width={28} height={28} className="opacity-90" />
             <div>
-              <p className="text-lg font-bold tracking-[0.18em] text-[#0B1220]">MENTRIXA</p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#6366F1]">
+              <p className="text-lg font-bold tracking-[0.18em] text-[var(--mx-navy)]">MENTRIXA</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--mx-indigo)]">
                 Verified skill passport
               </p>
             </div>
@@ -134,8 +136,8 @@ export function RankPassportArticle({
       </header>
 
       <div className="grid sm:grid-cols-[minmax(0,11.5rem)_1fr]">
-        <aside className="border-b border-[#E0E7FF] p-4 sm:border-b-0 sm:border-r sm:p-5">
-          <div className="mx-auto flex max-w-[148px] flex-col items-center rounded-lg border border-[#C4B5FD] bg-white/70 p-4 text-center">
+        <aside className="border-b border-violet-200 p-4 sm:border-b-0 sm:border-r sm:p-5">
+          <div className="mx-auto flex max-w-[148px] flex-col items-center rounded-lg border border-violet-300 bg-white/70 p-4 text-center">
             <RankBadge
               rank={{ level: data.rankLevel, title: data.rankTitle }}
               size={RANK_HERO_SIZE}
@@ -158,8 +160,8 @@ export function RankPassportArticle({
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#475569]">
               Holder
             </p>
-            <p className="mt-1 text-sm font-bold text-[#0B1220]">{data.displayName}</p>
-            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6366F1]">
+            <p className="mt-1 text-sm font-bold text-[var(--mx-navy)]">{data.displayName}</p>
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--mx-indigo)]">
               @{data.username}
             </p>
           </div>
@@ -173,12 +175,12 @@ export function RankPassportArticle({
             <div className="mt-1 flex flex-wrap items-baseline gap-2">
               <p
                 className="font-serif text-4xl font-bold tabular-nums"
-                style={{ color: verifiedCount > 0 ? VERIFIED_GOLD : "#0B1220" }}
+                style={{ color: verifiedCount > 0 ? VERIFIED_GOLD : "var(--mx-navy)" }}
               >
                 {accuracyPercent}%
               </p>
               {verifiedCount > 0 ? (
-                <span className="text-sm font-semibold text-[#7C3AED]">verified</span>
+                <span className="text-sm font-semibold text-[var(--mx-violet)]">verified</span>
               ) : null}
             </div>
             {verifiedCount > 0 ? (
@@ -203,7 +205,7 @@ export function RankPassportArticle({
             </p>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E0E7FF]">
               <div
-                className="relative h-full rounded-full bg-[#7C3AED]/80"
+                className="relative h-full rounded-full bg-[var(--mx-violet)]/80"
                 style={{ width: `${nodesBarWidth}%` }}
               >
                 {verifiedCount > 0 && nodesBarWidth > 4 ? (
@@ -301,13 +303,13 @@ export function RankPassportArticle({
         </div>
       </div>
 
-      <footer className="border-t border-[#E0E7FF] px-5 py-4 sm:px-6">
+      <footer className="border-t border-violet-200 px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#475569]">
               Public record
             </p>
-            <p className="mt-1 font-mono text-xs text-[#6366F1]">
+            <p className="mt-1 font-mono text-xs text-[var(--mx-indigo)]">
               {siteHost}/rank/{data.username}
             </p>
           </div>

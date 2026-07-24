@@ -32,7 +32,7 @@ export function GuidePublicProfileHeader({
     <header className="space-y-3">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-start gap-4">
-          <div className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#7C3AED]/60 bg-[#1E293B]">
+          <div className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--mx-violet)]/60 bg-[var(--mx-surface-3)]">
             {avatarUrl ? (
               <Image src={avatarUrl} alt="" width={60} height={60} className="h-full w-full object-cover" unoptimized />
             ) : (
@@ -49,7 +49,7 @@ export function GuidePublicProfileHeader({
                 <Badge
                   key={course}
                   variant="soft"
-                  className="border border-[#7C3AED]/70 bg-transparent text-[11px] font-semibold text-[#C4B5FD]"
+                  className="border border-[var(--mx-violet)]/70 bg-transparent text-[11px] font-semibold text-[#C4B5FD]"
                 >
                   <span className="inline-flex items-center gap-1">
                     <MentrixaVocabIcon name={CANONICAL_SKILLS_ICON} size={12} surface="dark" title={course} />

@@ -43,7 +43,7 @@ function StepChoiceCard({
         "min-h-[56px] rounded-xl border-2 p-4",
         tone === "wrong"
           ? "border-white/15 bg-white/[0.03]"
-          : "border-[#7C3AED]/50 bg-violet-500/10 ring-1 ring-[#7C3AED]/30",
+          : "border-[var(--mx-violet)]/50 bg-violet-500/10 ring-1 ring-[var(--mx-violet)]/30",
       )}
     >
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
@@ -72,7 +72,7 @@ export function StepTraceDiagnosticResults({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden bg-[#0B1220] text-white",
+        "relative w-full overflow-hidden bg-[var(--mx-navy)] text-white",
         embedded ? "min-h-[70vh]" : "min-h-dvh",
       )}
     >
@@ -166,7 +166,7 @@ export function StepTraceDiagnosticResults({
         <motion.div variants={rise} className="mt-8 flex flex-col gap-3">
           <Button
             asChild
-            className="h-14 w-full rounded-xl bg-[#7C3AED] text-base font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.35)] hover:bg-[#6D28D9]"
+            className="h-14 w-full rounded-xl bg-[var(--mx-violet)] text-base font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.35)] hover:bg-[var(--mx-primary-hover)]"
           >
             <Link href="/auth/signup">{verdict.ctaLabel}</Link>
           </Button>

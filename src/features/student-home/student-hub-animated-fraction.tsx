@@ -9,7 +9,7 @@ const FRAC_NUM =
   "font-[family-name:var(--font-playfair),serif] font-bold tabular-nums leading-none";
 
 const FRAC_PCT =
-  "font-[family-name:var(--font-playfair),serif] font-bold tabular-nums leading-none text-[#0B1220]";
+  "font-[family-name:var(--font-playfair),serif] font-bold tabular-nums leading-none text-[var(--mx-navy)]";
 
 /** Stacked Playfair fraction — always visible, numbers count up on mount. */
 export function StudentHubAnimatedFraction({
@@ -80,17 +80,17 @@ export function StudentHubAnimatedFraction({
       aria-label={`${numerator} out of ${denominator} correct, ${percent} percent`}
     >
       <div className={cn(HUB_FRAC.stack, "flex shrink-0 flex-col items-center")}>
-        <span className={cn(HUB_FRAC.digit, FRAC_NUM, numSize, "text-[#7C3AED]")}>{shown.num}</span>
+        <span className={cn(HUB_FRAC.digit, FRAC_NUM, numSize, "text-[var(--mx-violet)]")}>{shown.num}</span>
         <span
           className={cn(
             HUB_FRAC.bar,
-            "my-1.5 h-[3px] w-full min-w-[3.25rem] rounded-full bg-[#7C3AED]",
+            "my-1.5 h-[3px] w-full min-w-[3.25rem] rounded-full bg-[var(--mx-violet)]",
             compact && "min-w-[2.5rem]",
           )}
           aria-hidden
         />
-        <span className={cn(HUB_FRAC.digit, FRAC_NUM, numSize, "text-[#6366F1]")}>{shown.den}</span>
-        <span className="mt-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#6366F1]">
+        <span className={cn(HUB_FRAC.digit, FRAC_NUM, numSize, "text-[var(--mx-indigo)]")}>{shown.den}</span>
+        <span className="mt-1 text-[9px] font-black uppercase tracking-[0.16em] text-[var(--mx-indigo)]">
           {unitLabel}
         </span>
       </div>

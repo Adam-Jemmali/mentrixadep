@@ -96,7 +96,7 @@ function PolaroidPhoto({ feature }: { feature: Feature }) {
         <p className="absolute inset-x-0 bottom-2 px-2 text-center text-[11px] font-semibold tracking-tight text-[#334155] lp-body sm:text-xs">
           {feature.title}
         </p>
-        <div className="pointer-events-none absolute -right-2 -top-1.5 h-6 w-10 rotate-12 bg-[#EDE9FE]/90 shadow-sm" />
+        <div className="pointer-events-none absolute -right-2 -top-1.5 h-6 w-10 rotate-12 bg-violet-100/90 shadow-sm" />
       </div>
     </div>
   );
@@ -157,7 +157,7 @@ function RoleFeatureGrid({ rows, indexOffset = 0 }: { rows: Feature[][]; indexOf
           )}
         >
           {row.length === 2 ? (
-            <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#6366F1] bg-[#EDE9FE] sm:block" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--mx-indigo)] bg-violet-100 sm:block" />
           ) : null}
           {row.map((feature, i) => {
             const currentBadgeIndex = badgeIndex;
@@ -199,7 +199,7 @@ export function FeaturesBentoSection() {
           </div>
         </div>
 
-        <div className="border-t border-[#C4B5FD]/60 pt-10">
+        <div className="border-t border-violet-300/60 pt-10">
           <LandingSectionHeader
             eyebrow={LANDING_FEATURES.guide.eyebrow}
             title={LANDING_FEATURES.guide.title}

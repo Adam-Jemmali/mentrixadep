@@ -81,7 +81,7 @@ export function StepTraceInput({
 
   const shellClass =
     variant === "dark"
-      ? "border-white/10 bg-[#0F172A]/90 text-white"
+      ? "border-white/10 bg-[var(--mx-navy-2)]/90 text-white"
       : "border-slate-200 bg-white text-slate-900";
 
   const optionBase =
@@ -116,7 +116,7 @@ export function StepTraceInput({
           )}
         >
           <motion.div
-            className="h-full bg-gradient-to-r from-[#7C3AED] to-[#6366F1]"
+            className="h-full bg-gradient-to-r from-[var(--mx-violet)] to-[var(--mx-indigo)]"
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.35, ease: "easeOut" }}
           />
@@ -183,7 +183,7 @@ export function StepTraceInput({
             if (isRevealedCorrect) {
               cardClass =
                 variant === "dark"
-                  ? "border-[#7C3AED] bg-violet-500/15 ring-1 ring-[#7C3AED]/40"
+                  ? "border-[var(--mx-violet)] bg-violet-500/15 ring-1 ring-[var(--mx-violet)]/40"
                   : "border-violet-500 bg-violet-50 ring-1 ring-violet-300";
             } else if (disabled && !isRevealedCorrect) {
               cardClass =
@@ -211,7 +211,7 @@ export function StepTraceInput({
                     className={cn(
                       "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold",
                       variant === "dark" ? "border-white/20 text-slate-300" : "border-slate-300 text-slate-500",
-                      isRevealedCorrect && "border-[#7C3AED] bg-[#7C3AED] text-white",
+                      isRevealedCorrect && "border-[var(--mx-violet)] bg-[var(--mx-violet)] text-white",
                     )}
                   >
                     {String.fromCharCode(65 + i)}
@@ -259,7 +259,7 @@ export function StepTraceInput({
               </p>
               <Button
                 type="button"
-                className="h-11 w-full bg-[#7C3AED] font-semibold text-white hover:bg-[#6D28D9] sm:w-auto"
+                className="h-11 w-full bg-[var(--mx-violet)] font-semibold text-white hover:bg-[var(--mx-primary-hover)] sm:w-auto"
                 onClick={onContinue}
               >
                 {stepIndex + 1 >= totalSteps ? "See verdict" : "Continue trace"}

@@ -58,7 +58,7 @@ export function DuelWagerStepContent({
   if (max <= 0) {
     return (
       <StudentStickyNote variant="clip" className={cn("rotate-0 space-y-3 px-4 py-4", className)}>
-        <p className="inline-flex items-center gap-2 text-sm font-bold text-[#0B1220]">
+        <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--mx-navy)]">
           <MentrixaVocabIcon name="xp" size={20} surface="light" title="XP" />
           {DUEL_WAGER_STEP_COPY.title}
         </p>
@@ -93,7 +93,7 @@ export function DuelWagerStepContent({
           onClick={() => onConfirm({ amount })}
           className={cn(
             mentrixStudent.pillPrimary,
-            onDark && "bg-[#7C3AED] hover:bg-[#6D28D9]",
+            onDark && "bg-[var(--mx-violet)] hover:bg-[var(--mx-primary-hover)]",
             "inline-flex w-full items-center justify-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] sm:w-auto",
           )}
         >

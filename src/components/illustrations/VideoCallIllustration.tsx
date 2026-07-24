@@ -39,7 +39,7 @@ export function VideoCallIllustration() {
     >
       <svg viewBox="0 0 120 80" className="w-32 h-24 opacity-50" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g ref={tilesRef}>
-          <rect x="10" y="10" width="45" height="30" rx="4" fill="#1E293B" stroke="#475569" strokeWidth="1" />
+          <rect x="10" y="10" width="45" height="30" rx="4" fill="var(--mx-surface-3)" stroke="#475569" strokeWidth="1" />
           <rect x="65" y="40" width="45" height="30" rx="4" fill="#334155" stroke="#64748B" strokeWidth="1" />
         </g>
         <g ref={waveRef} transform="translate(60, 40)">

@@ -15,7 +15,7 @@ import { cn } from "@/shared/core/utils";
 
 const math = create(all as FactoryFunctionMap, {});
 
-const CURVE_COLORS = [QUEST_GRAPH_CURVE_BLUE, "#6366F1", "#7C3AED"];
+const CURVE_COLORS = [QUEST_GRAPH_CURVE_BLUE, "var(--mx-indigo)", "var(--mx-violet)"];
 
 function evaluateExpression(expression: string, x: number): number | null {
   try {
@@ -157,7 +157,7 @@ export function QuestFunctionGraph({
     <div
       className={cn(
         "overflow-hidden rounded-xl border",
-        isDark ? "border-[#1e293b] bg-[#0B1220]" : "border-slate-200 bg-white",
+        isDark ? "border-[var(--mx-surface-3)] bg-[var(--mx-navy)]" : "border-slate-200 bg-white",
         className,
       )}
     >
@@ -165,7 +165,7 @@ export function QuestFunctionGraph({
         <p
           className={cn(
             "border-b px-4 py-2.5 text-[12px] font-medium",
-            isDark ? "border-[#1e293b] text-slate-300" : "border-slate-100 text-slate-700",
+            isDark ? "border-[var(--mx-surface-3)] text-slate-300" : "border-slate-100 text-slate-700",
           )}
         >
           {graph.title}
@@ -284,7 +284,7 @@ export function QuestFunctionGraph({
                 width={Math.max(2, Math.abs(x2 - x1))}
                 height={height - pad.top - pad.bottom}
                 fill="rgba(99,102,241,0.16)"
-                stroke="#6366F1"
+                stroke="var(--mx-indigo)"
                 strokeWidth={1}
               />
             );
@@ -321,7 +321,7 @@ export function QuestFunctionGraph({
                     y1={py}
                     x2={width - pad.right}
                     y2={py}
-                    stroke={guide.color || "#D4A017"}
+                    stroke={guide.color || "var(--mx-violet)"}
                     strokeWidth={2}
                     strokeDasharray="6 4"
                   />
@@ -330,7 +330,7 @@ export function QuestFunctionGraph({
                       x={width - pad.right - 4}
                       y={py - 6}
                       textAnchor="end"
-                      fill={guide.color || "#D4A017"}
+                      fill={guide.color || "var(--mx-violet)"}
                       className="text-[10px] font-semibold"
                     >
                       {guide.label}
@@ -347,7 +347,7 @@ export function QuestFunctionGraph({
                   y1={pad.top}
                   x2={px}
                   y2={height - pad.bottom}
-                  stroke={guide.color || "#D4A017"}
+                  stroke={guide.color || "var(--mx-violet)"}
                   strokeWidth={2}
                   strokeDasharray="6 4"
                 />
@@ -355,7 +355,7 @@ export function QuestFunctionGraph({
                   <text
                     x={px + 4}
                     y={pad.top + 12}
-                    fill={guide.color || "#D4A017"}
+                    fill={guide.color || "var(--mx-violet)"}
                     className="text-[10px] font-semibold"
                   >
                     {guide.label}
@@ -406,8 +406,8 @@ export function QuestFunctionGraph({
                 cx={plot.xScale(point.x)}
                 cy={plot.yScale(point.y)}
                 r={4}
-                fill="#6366F1"
-                stroke={isDark ? "#0B1220" : "#FFFFFF"}
+                fill="var(--mx-indigo)"
+                stroke={isDark ? "var(--mx-navy)" : "#FFFFFF"}
                 strokeWidth={1.5}
               />
               {point.label ? (
@@ -431,7 +431,7 @@ export function QuestFunctionGraph({
               y1={pad.top}
               x2={plot.xScale(x)}
               y2={height - pad.bottom}
-              stroke="#7C3AED"
+              stroke="var(--mx-violet)"
               strokeWidth={2}
               strokeDasharray="4 3"
             />
@@ -441,7 +441,7 @@ export function QuestFunctionGraph({
             <path
               d={sketchPath}
               fill="none"
-              stroke="#7C3AED"
+              stroke="var(--mx-violet)"
               strokeWidth={3}
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -453,7 +453,7 @@ export function QuestFunctionGraph({
                 cx={plot.xScale(p.x)}
                 cy={plot.yScale(p.y)}
                 r={5.5}
-                fill="#7C3AED"
+                fill="var(--mx-violet)"
                 stroke="#FFFFFF"
                 strokeWidth={2}
               />
@@ -461,7 +461,7 @@ export function QuestFunctionGraph({
                 x={plot.xScale(p.x)}
                 y={plot.yScale(p.y) - 12}
                 textAnchor="middle"
-                fill="#7C3AED"
+                fill="var(--mx-violet)"
                 className="text-[10px] font-semibold"
               >
                 {index + 1}

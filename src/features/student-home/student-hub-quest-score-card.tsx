@@ -46,7 +46,7 @@ export function StudentHubQuestScoreCard({
         unitLabel="in pack"
         compact
       />
-      <p className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#6366F1]">
+      <p className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mx-indigo)]">
         {perfect ? "Perfect pack" : "Quest score"}
       </p>
       <p className="mt-1 text-[11px] leading-snug text-[#475569]">

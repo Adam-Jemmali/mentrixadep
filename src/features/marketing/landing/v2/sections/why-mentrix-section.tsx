@@ -47,7 +47,7 @@ export function WhyMentrixSection() {
                   transition={{ delay: 0.2 + i * 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                   className={`flex gap-2.5 ${landingHub.body}`}
                 >
-                  <span className="mt-2 h-px w-6 shrink-0 bg-[#6366F1]/50" aria-hidden />
+                  <span className="mt-2 h-px w-6 shrink-0 bg-[var(--mx-indigo)]/50" aria-hidden />
                   {line}
                 </motion.li>
               ))}
@@ -68,7 +68,7 @@ export function WhyMentrixSection() {
                   transition={{ delay: 0.2 + i * 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                   className={`flex gap-2.5 ${landingHub.body}`}
                 >
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#6366F1]" />
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--mx-indigo)]" />
                   {line}
                 </motion.li>
               ))}

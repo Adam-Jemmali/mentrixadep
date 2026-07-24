@@ -63,7 +63,7 @@ export function GuidePublicPortfolioSection({
             surface="light"
             title="Portfolio"
           />
-          <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#7C3AED]">
+          <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--mx-violet)]">
             {GUIDE_PUBLIC_COPY.portfolioHeading}
           </h2>
         </div>
@@ -84,7 +84,7 @@ export function GuidePublicPortfolioSection({
           <div className="mt-3 text-center">
             <Link
               href={`/tutor/${guideId}/portfolio`}
-              className="text-xs font-semibold text-[#7C3AED] hover:text-[#A78BFA]"
+              className="text-xs font-semibold text-[var(--mx-violet)] hover:text-[var(--color-violet-400)]"
             >
               {GUIDE_PORTFOLIO_SHOW_MORE}
             </Link>

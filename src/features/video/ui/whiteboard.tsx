@@ -74,7 +74,7 @@ const COLORS = [
   "#eab308", // yellow
   "#22c55e", // green
   "#3b82f6", // blue
-  "#8b5cf6", // violet
+  "var(--color-violet-500)", // violet
 ];
 
 const LINE_WIDTHS = [2, 4, 8];

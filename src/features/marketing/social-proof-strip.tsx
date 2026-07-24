@@ -15,7 +15,7 @@ const WireframeDottedGlobe = dynamic(
     loading: () => (
       <Skeleton
         tone="light"
-        className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-lg border border-[#C4B5FD]"
+        className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-lg border border-violet-300"
         aria-hidden
       />
     ),
@@ -72,7 +72,7 @@ export function SocialProofStrip() {
           />
         ) : (
           <div
-            className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-lg border border-dashed border-[#C4B5FD] bg-[#EDE9FE]/40"
+            className="mx-auto aspect-[17/10] w-full max-w-[680px] rounded-lg border border-dashed border-violet-300 bg-violet-100/40"
             aria-hidden
           />
         )}

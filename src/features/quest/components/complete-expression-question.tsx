@@ -53,7 +53,7 @@ export function CompleteExpressionQuestion({
             className={cn(
               "rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
               activeKey === key
-                ? "border-[#6366F1] bg-[#EDE9FE] text-[#4338CA]"
+                ? "border-[var(--mx-indigo)] bg-violet-100 text-[#4338CA]"
                 : "border-slate-200 bg-white text-slate-600",
             )}
           >

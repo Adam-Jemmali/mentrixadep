@@ -91,6 +91,19 @@ export function formatLiveBoardTimeAgo(
   return days === 1 ? "1d ago" : `${days}d ago`;
 }
 
+/** Screen reader announcement for new live feed rows (aria-live). */
+export function formatLiveBoardEventAnnouncement(
+  event: Pick<
+    LiveBoardEventRow,
+    "event_type" | "node_name" | "accuracy_pct" | "new_rank_tier" | "display_name" | "unit_name"
+  >,
+): string {
+  if (isDivisionWarLiveBoardEvent(event.event_type)) {
+    return formatArenaBoardWarHeadline(event);
+  }
+  return formatLiveBoardEventDescription(event);
+}
+
 export function formatLiveBoardEventDescription(event: Pick<
   LiveBoardEventRow,
   "event_type" | "node_name" | "accuracy_pct" | "new_rank_tier" | "display_name"

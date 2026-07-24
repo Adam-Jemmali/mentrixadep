@@ -4212,7 +4212,7 @@ html.lp-landing-logo-cursor-active * {
   }
 
   .mentrixa-chip--light.mentrixa-chip--success[data-slot="chip"] {
-    @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+    @apply border-green-200 bg-green-50 text-green-800;
   }
 
   .mentrixa-chip--light.mentrixa-chip--warning[data-slot="chip"] {

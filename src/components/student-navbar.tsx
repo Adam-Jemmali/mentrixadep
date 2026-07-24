@@ -369,7 +369,7 @@ export function StudentNavbar({ user }: StudentNavbarProps) {
                   className={cn(
                     "flex flex-row items-center gap-3 rounded-lg px-4 py-3 transition-colors",
                     isActive(item.link)
-                      ? "border border-violet-400/50 bg-gradient-to-r from-[#7C3AED]/35 to-[#6366F1]/35 text-white"
+                      ? "border border-violet-400/50 bg-gradient-to-r from-[var(--mx-violet)]/35 to-[var(--mx-indigo)]/35 text-white"
                       : "text-white/95 hover:bg-violet-500/10 hover:text-white"
                   )}
                 >

@@ -70,7 +70,7 @@ export function FlowStepsSection() {
 
         <div className="relative mt-8 hidden lg:block">
           <div className="absolute left-[12.5%] right-[12.5%] top-8 h-0.5 origin-left bg-[#C4B5FD]/50">
-            <motion.div className="h-full origin-left bg-[#6366F1]" style={{ scaleX: lineScale }} />
+            <motion.div className="h-full origin-left bg-[var(--mx-indigo)]" style={{ scaleX: lineScale }} />
           </div>
           {FLOW_STEPS.map((step, i) => {
             const left = 12.5 + i * 25;
@@ -80,9 +80,9 @@ export function FlowStepsSection() {
                 className="absolute top-[1.65rem] flex -translate-x-1/2 flex-col items-center gap-1"
                 style={{ left: `${left}%` }}
               >
-                <span className="text-[10px] font-bold tabular-nums text-[#6366F1]">{step.number}</span>
+                <span className="text-[10px] font-bold tabular-nums text-[var(--mx-indigo)]">{step.number}</span>
                 <motion.div
-                  className="h-3 w-3 rounded-full border-2 border-[#6366F1] bg-[#EDE9FE]"
+                  className="h-3 w-3 rounded-full border-2 border-[var(--mx-indigo)] bg-violet-100"
                   animate={
                     cinematic
                       ? {

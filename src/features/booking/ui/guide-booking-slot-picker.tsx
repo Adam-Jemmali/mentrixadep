@@ -95,7 +95,7 @@ export function GuideBookingSlotPicker({
               className={cn(
                 "avail-row flex flex-col gap-3 rounded-2xl border p-4 transition-all sm:flex-row sm:items-center sm:justify-between",
                 selectedSlotId === slot.id
-                  ? "border-[#7C3AED] bg-[#EDE9FE]/40 shadow-md"
+                  ? "border-[var(--mx-violet)] bg-violet-100/40 shadow-md"
                   : "border-indigo-50 bg-slate-50/30 hover:border-indigo-100 hover:bg-white hover:shadow-md",
               )}
             >

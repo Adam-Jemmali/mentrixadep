@@ -1,10 +1,14 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { animate } from "@/shared/animation/anime";
 import { motion, useReducedMotion } from "@/shared/animation/motion";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import {
+  clampMcqOptionIndex,
+  mcqFocusIndexAfterArrow,
+} from "@/features/quest/quest-mcq-focus-pure";
 import { cn } from "@/shared/core/utils";
 
 const optionVariants = {
@@ -34,6 +38,18 @@ export function QuestMcqOptions({
 }) {
   const reduceMotion = useReducedMotion();
   const wrongRef = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const focusedIndexRef = useRef(0);
+
+  useEffect(() => {
+    optionRefs.current = optionRefs.current.slice(0, options.length);
+  }, [options.length]);
+
+  useEffect(() => {
+    if (result != null || busy) return;
+    focusedIndexRef.current = 0;
+    optionRefs.current[0]?.focus();
+  }, [options, result, busy]);
 
   useEffect(() => {
     if (!result || result.correct || picked == null || reduceMotion) return;
@@ -46,8 +62,40 @@ export function QuestMcqOptions({
     });
   }, [result, picked, reduceMotion]);
 
+  const focusOption = useCallback((index: number) => {
+    const clamped = clampMcqOptionIndex(index, options.length);
+    focusedIndexRef.current = clamped;
+    optionRefs.current[clamped]?.focus();
+  }, [options.length]);
+
+  const handleOptionKeyDown = useCallback(
+    (index: number, event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (result || busy) return;
+
+      if (
+        event.key === "ArrowDown" ||
+        event.key === "ArrowRight" ||
+        event.key === "ArrowUp" ||
+        event.key === "ArrowLeft"
+      ) {
+        event.preventDefault();
+        const next = mcqFocusIndexAfterArrow(
+          index,
+          event.key as "ArrowDown" | "ArrowRight" | "ArrowUp" | "ArrowLeft",
+          options.length,
+        );
+        focusOption(next);
+      }
+    },
+    [busy, focusOption, options.length, result],
+  );
+
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div
+      role="radiogroup"
+      aria-label="Answer choices"
+      className="grid gap-2 sm:grid-cols-2"
+    >
       {options.map((opt, i) => {
         const isCorrect = result != null && i === result.correctIndex;
         const isWrongPick = result != null && i === picked && !result.correct;
@@ -57,16 +105,22 @@ export function QuestMcqOptions({
           <motion.button
             key={`${i}-${opt.slice(0, 24)}`}
             type="button"
+            role="radio"
+            aria-checked={isPicked || isCorrect}
             custom={i}
             variants={optionVariants}
             initial="hidden"
             animate="visible"
             disabled={!!result || busy}
-            ref={isWrongPick ? wrongRef : undefined}
+            ref={(el) => {
+              optionRefs.current[i] = el;
+              if (isWrongPick) wrongRef.current = el;
+            }}
             onClick={() => {
               if (result) return;
               onSelect(i);
             }}
+            onKeyDown={(event) => handleOptionKeyDown(i, event)}
             whileHover={
               reduceMotion || result
                 ? undefined
@@ -75,12 +129,12 @@ export function QuestMcqOptions({
             whileTap={reduceMotion || result ? undefined : { scale: 0.98 }}
             className={cn(
               "relative overflow-hidden rounded-xl border p-4 text-left text-sm transition-colors [&_.katex]:text-inherit",
-              !result && !isPicked && "border-[#A5B4FC] bg-white text-[#0B1220] hover:border-[#6366F1]",
-              isPicked && "border-[#6366F1] bg-[#EDE9FE] ring-2 ring-[#6366F1]/40",
+              !result && !isPicked && "border-violet-300 bg-white text-[var(--mx-navy)] hover:border-[var(--mx-indigo)]",
+              isPicked && "border-[var(--mx-indigo)] bg-violet-100 ring-2 ring-[var(--mx-indigo)]/40",
               isCorrect &&
                 "border-l-[3px] border-l-emerald-500 border-emerald-400/80 bg-emerald-500/20 text-emerald-950",
               isWrongPick && "border-red-400/80 bg-red-500/10 text-red-950",
-              result && !isCorrect && !isWrongPick && "border-[#C4B5FD] bg-[#F8FAFC] text-[#64748B] opacity-80",
+              result && !isCorrect && !isWrongPick && "border-violet-300 bg-[#F8FAFC] text-[#64748B] opacity-80",
             )}
           >
             {isCorrect ? (

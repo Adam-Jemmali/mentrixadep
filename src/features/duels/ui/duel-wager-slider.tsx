@@ -35,12 +35,12 @@ export function DuelWagerSlider({
       aria-label="Stake amount in XP"
       className={cn(
         "h-2 w-full cursor-pointer appearance-none rounded-full",
-        "[&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#7C3AED] [&::-moz-range-thumb]:bg-white",
-        "[&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#7C3AED] [&::-webkit-slider-thumb]:bg-white",
+        "[&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--mx-violet)] [&::-moz-range-thumb]:bg-white",
+        "[&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--mx-violet)] [&::-webkit-slider-thumb]:bg-white",
         className,
       )}
       style={{
-        background: `linear-gradient(to right, #7C3AED 0%, #7C3AED ${pct}%, #334155 ${pct}%, #334155 100%)`,
+        background: `linear-gradient(to right, var(--mx-violet) 0%, var(--mx-violet) ${pct}%, #334155 ${pct}%, #334155 100%)`,
       }}
     />
   );

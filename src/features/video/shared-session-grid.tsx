@@ -27,7 +27,7 @@ import {
 import { useSharedSessionGridRealtime } from "@/features/video/use-shared-session-grid-realtime";
 
 const SESSION_PINNED_RING =
-  "ring-2 ring-[#7C3AED]/90 ring-offset-1 ring-offset-[#FAFAF8]";
+  "ring-2 ring-[var(--mx-violet)]/90 ring-offset-1 ring-offset-[#FAFAF8]";
 
 export function SharedSessionGridPanel({
   open,
@@ -143,7 +143,7 @@ export function SharedSessionGridPanel({
             opacity: open ? 1 : 0,
           }}
           transition={{ type: "spring", stiffness: 320, damping: 32 }}
-          className="relative flex-none overflow-hidden border-l border-white/8 bg-[#0B1220]/95"
+          className="relative flex-none overflow-hidden border-l border-white/8 bg-[var(--mx-navy)]/95"
           aria-hidden={!open}
         >
           <div className="flex h-full w-[360px] flex-col">
@@ -204,11 +204,11 @@ function SharedSessionGridBody({
     <div className="relative space-y-3">
       <GuideAnimatedSticky variant="taped" compact staggerIndex={0}>
         <div className="space-y-1.5">
-          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6366F1]">
+          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--mx-indigo)]">
             <MentrixaVocabIcon name="guide-session" size={16} surface="light" title="Session" />
             Live session grid
           </p>
-          <p className="text-xs font-semibold leading-snug text-[#0B1220]">{copy.verdict}</p>
+          <p className="text-xs font-semibold leading-snug text-[var(--mx-navy)]">{copy.verdict}</p>
           <p className="text-[11px] leading-snug text-[#64748B]">{copy.nextAction}</p>
         </div>
       </GuideAnimatedSticky>
@@ -283,7 +283,7 @@ function SessionGridToasts({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 26 }}
-            className="pointer-events-auto rounded-xl border border-[#7C3AED]/35 bg-[#0F172A]/95 px-3 py-2.5 shadow-[0_16px_40px_-12px_rgba(124,58,237,0.55)] backdrop-blur-md"
+            className="pointer-events-auto rounded-xl border border-[var(--mx-violet)]/35 bg-[var(--mx-navy-2)]/95 px-3 py-2.5 shadow-[0_16px_40px_-12px_rgba(124,58,237,0.55)] backdrop-blur-md"
           >
             <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#C4B5FD]">
               <MentrixaVocabIcon name="guide-session" size={14} surface="dark" title="Guide note" />
@@ -300,7 +300,7 @@ function SessionGridToasts({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 380, damping: 26 }}
-            className="pointer-events-auto rounded-xl border border-[#6366F1]/35 bg-[#0F172A]/95 px-3 py-2.5 shadow-lg backdrop-blur-md"
+            className="pointer-events-auto rounded-xl border border-[var(--mx-indigo)]/35 bg-[var(--mx-navy-2)]/95 px-3 py-2.5 shadow-lg backdrop-blur-md"
           >
             <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#A5B4FC]">
               <MentrixaVocabIcon name="practice-pack" size={14} surface="dark" title="Practice" />
@@ -342,7 +342,7 @@ export function SharedSessionGridToggle({
       className={cn(
         "relative h-9 w-9 flex items-center justify-center rounded-md border bg-transparent active:scale-95 transition-all duration-150",
         active
-          ? "border-[#7C3AED]/50 text-[#C4B5FD]"
+          ? "border-[var(--mx-violet)]/50 text-[#C4B5FD]"
           : "border-white/15 text-white/50 hover:border-white/30 hover:text-white",
         disabled && "cursor-not-allowed opacity-40",
       )}

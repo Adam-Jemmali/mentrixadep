@@ -105,7 +105,7 @@ export function GuideSection() {
             <p className={`mt-3 ${landingHub.body}`}>
               <LandingRoleText text={LANDING_GUIDE.definition.sentence} iconSize="sm" />
             </p>
-            <p className={`mt-4 text-sm font-semibold text-[#6366F1] ${landingHub.bodySm}`}>
+            <p className={`mt-4 text-sm font-semibold text-[var(--mx-indigo)] ${landingHub.bodySm}`}>
               <LandingRoleText text={LANDING_GUIDE.notRank} iconSize="sm" />
             </p>
           </LandingStickyCard>

@@ -1,7 +1,9 @@
 import { vfaProofStreakLabel, vfaStreakBrokenCopy } from "@/features/vfa-streak/vfa-streak-pure";
 import type { VfaStreakHomeDisplay } from "@/features/vfa-streak/vfa-streak-pure";
 
-const GOLD = "#D4A017";
+import { VERIFIED_GOLD_CSS } from "@/components/ui/mentrixa-ui-tokens";
+
+const GOLD = VERIFIED_GOLD_CSS;
 
 export function VfaProofStreakDisplay({ display }: { display: VfaStreakHomeDisplay }) {
   if (display.kind === "none") return null;

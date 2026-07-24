@@ -17,7 +17,7 @@ export function LandingFinalCtaSection() {
       if (!root) return;
 
       const targets = root.querySelectorAll(".lp-final-cta-reveal");
-      gsap.set(targets, { y: 16, opacity: 0 });
+      gsap.set(targets, { y: 40, opacity: 0 });
 
       const trigger = ScrollTrigger.create({
         trigger: root,
@@ -29,7 +29,7 @@ export function LandingFinalCtaSection() {
             opacity: 1,
             stagger: 0.1,
             duration: 0.55,
-            ease: "power2.out",
+            ease: "power3.out",
           });
         },
       });
@@ -44,7 +44,7 @@ export function LandingFinalCtaSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-[var(--mx-navy-2,#0F172A)] py-14 md:py-16"
+      className="relative overflow-hidden bg-[var(--mx-navy-2)] py-14 md:py-16"
     >
       <div className="relative z-10 mx-auto max-w-2xl px-4 text-center sm:px-6">
         <h2 className="lp-final-cta-reveal font-[family-name:var(--font-playfair),serif] text-[clamp(1.75rem,4vw,2.5rem)] font-bold leading-tight text-white opacity-0">
@@ -58,8 +58,8 @@ export function LandingFinalCtaSection() {
             prefetch={false}
             className={cn(
               "inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-full",
-              "bg-[var(--mx-violet,#7C3AED)] px-6 py-3 text-[15px] font-bold text-white",
-              "transition-colors hover:bg-[#6D28D9]",
+              "bg-[var(--mx-violet)] px-6 py-3 text-[15px] font-bold text-white",
+              "transition-colors hover:bg-[var(--mx-primary-hover)]",
             )}
           >
             <LandingRoleIcon role="mentrixer" size="md" surface="dark" />
@@ -70,7 +70,7 @@ export function LandingFinalCtaSection() {
             prefetch={false}
             className={cn(
               "inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-full border",
-              "border-white/20 px-6 py-3 text-[15px] font-semibold text-[var(--mx-muted,#9CA3AF)]",
+              "border-white/20 px-6 py-3 text-[15px] font-semibold text-[var(--mx-muted)]",
               "transition-colors hover:border-white/40 hover:text-white",
             )}
           >

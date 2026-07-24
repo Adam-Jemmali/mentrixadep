@@ -36,9 +36,9 @@ function HeroMetric({
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1">
           <MentrixaVocabIcon name={icon} size={14} gold={icon === "verified"} surface="light" title={label} />
-          <span className="text-[9px] font-black uppercase tracking-[0.12em] text-[#6366F1]">{label}</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.12em] text-[var(--mx-indigo)]">{label}</span>
         </span>
-        <span className="font-mono text-xs font-black tabular-nums text-[#0B1220]">
+        <span className="font-mono text-xs font-black tabular-nums text-[var(--mx-navy)]">
           {value}
           {suffix}
         </span>
@@ -96,7 +96,7 @@ export function VerifiedRankHeroStrip({
           value={stats.accuracyPercent}
           suffix="%"
           barValue={stats.accuracyPercent}
-          barColor="#7C3AED"
+          barColor="var(--mx-violet)"
         />
         {peerStandingUnlocked && topPercent != null && beatCount != null ? (
           <HeroMetric
@@ -105,7 +105,7 @@ export function VerifiedRankHeroStrip({
             value={topPercent}
             suffix="%"
             barValue={beatCount}
-            barColor="#6366F1"
+            barColor="var(--mx-indigo)"
           />
         ) : (
           <HeroMetric

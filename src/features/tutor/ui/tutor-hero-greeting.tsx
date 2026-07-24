@@ -27,7 +27,7 @@ export function TutorHeroGreeting({
     <div
       className={cn(
         "flex h-[60px] w-full items-center justify-start text-2xl font-black md:h-[80px] md:text-3xl",
-        onLight ? "text-[#0B1220]" : "text-white",
+        onLight ? "text-[var(--mx-navy)]" : "text-white",
       )}
     >
       <Typewriter
@@ -35,8 +35,8 @@ export function TutorHeroGreeting({
         speed={60}
         deleteSpeed={30}
         waitTime={3000}
-        className={cn(onLight ? "text-[#0B1220]" : "text-white drop-shadow-sm")}
-        cursorClassName={onLight ? "text-[#6366F1]" : "text-white/70"}
+        className={cn(onLight ? "text-[var(--mx-navy)]" : "text-white drop-shadow-sm")}
+        cursorClassName={onLight ? "text-[var(--mx-indigo)]" : "text-white/70"}
       />
     </div>
   );

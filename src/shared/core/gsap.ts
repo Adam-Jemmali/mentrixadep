@@ -9,7 +9,7 @@ export { gsap, ScrollTrigger };
 export const revealUp = (targets: gsap.DOMTarget, stagger?: number) =>
   gsap.fromTo(
     targets,
-    { y: 24, opacity: 0 },
+    { y: 40, opacity: 0 },
     { y: 0, opacity: 1, stagger: stagger ?? 0.06, duration: 0.6, ease: "power3.out" },
   );
 

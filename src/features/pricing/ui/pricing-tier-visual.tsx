@@ -54,7 +54,7 @@ export function PricingTierVisualCard({
         "flex flex-col items-center text-center",
         isHighlight &&
           (onLight
-            ? "rounded-2xl bg-[#EDE9FE]/70 px-4 py-5 ring-2 ring-[#6366F1]"
+            ? "rounded-2xl bg-violet-100/70 px-4 py-5 ring-2 ring-[var(--mx-indigo)]"
             : "rounded-2xl bg-violet-500/10 px-4 py-5 ring-2 ring-violet-400/50"),
         !isHighlight && compact && "px-2 py-3",
       )}
@@ -63,7 +63,7 @@ export function PricingTierVisualCard({
       <h3
         className={cn(
           "mt-4 font-black",
-          onLight ? "text-[#0B1220]" : "text-white",
+          onLight ? "text-[var(--mx-navy)]" : "text-white",
           compact ? "text-sm leading-tight" : "text-lg",
         )}
       >
@@ -75,7 +75,7 @@ export function PricingTierVisualCard({
       <p
         className={cn(
           "mt-2 font-bold tabular-nums",
-          onLight ? (isHighlight ? "text-[#4F46E5]" : "text-[#0B1220]") : "text-white",
+          onLight ? (isHighlight ? "text-[#4F46E5]" : "text-[var(--mx-navy)]") : "text-white",
           compact ? "text-base" : "text-2xl",
         )}
       >
@@ -93,7 +93,7 @@ export function PricingTierVisualCard({
             tier.popular && "bg-indigo-600 hover:bg-indigo-500",
             !tier.popular &&
               (onLight
-                ? "border-[#6366F1] bg-transparent text-[#4F46E5] hover:bg-[#EDE9FE]"
+                ? "border-[var(--mx-indigo)] bg-transparent text-[#4F46E5] hover:bg-violet-100"
                 : "border-violet-400/40 bg-transparent text-violet-100 hover:bg-violet-500/15"),
           )}
         >

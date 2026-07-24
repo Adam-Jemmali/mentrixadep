@@ -3,11 +3,11 @@ import type { WrappedSlideCopy } from "@/features/wrapped/wrapped-pure";
 
 export const WRAPPED_OG_COLORS = {
   navyDeep: "#070d1a",
-  navy: "#0B1220",
-  navySoft: "#0F172A",
-  violet: "#7C3AED",
-  indigo: "#6366F1",
-  gold: "#D4A017",
+  navy: "var(--mx-navy)",
+  navySoft: "var(--mx-navy-2)",
+  violet: "var(--mx-violet)",
+  indigo: "var(--mx-indigo)",
+  gold: "var(--mx-violet)",
   white: "#F8FAFC",
   muted: "#94A3B8",
   faint: "#64748B",

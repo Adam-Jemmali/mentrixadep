@@ -19,7 +19,7 @@ export function GuideRankLadderPreview({ className }: { className?: string }) {
           <li key={rank.key} className="flex items-center gap-2 sm:gap-3">
             <div className="flex flex-col items-center gap-2">
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#A5B4FC] bg-white shadow-[2px_3px_0_rgba(11,18,32,0.12)] sm:h-14 sm:w-14"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-300 bg-white shadow-[2px_3px_0_rgba(11,18,32,0.12)] sm:h-14 sm:w-14"
                 title={rank.label}
               >
                 <GuideRankBadgeIcon rankKey={rank.key} color={rank.color} className="h-8 w-8 sm:h-9 sm:w-9" />
@@ -29,7 +29,7 @@ export function GuideRankLadderPreview({ className }: { className?: string }) {
               </span>
             </div>
             {index < GUIDE_RANKS.length - 1 ? (
-              <span className="mb-6 text-sm text-[#6366F1]/60" aria-hidden>
+              <span className="mb-6 text-sm text-[var(--mx-indigo)]/60" aria-hidden>
                 →
               </span>
             ) : null}

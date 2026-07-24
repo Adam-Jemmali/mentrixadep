@@ -10,7 +10,9 @@ import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 
-const GOLD = "#D4A017";
+import { VERIFIED_GOLD_CSS } from "@/components/ui/mentrixa-ui-tokens";
+
+const GOLD = VERIFIED_GOLD_CSS;
 const MIN_VISIBLE_MS = 2000;
 const AUTO_DISMISS_MS = 4000;
 

@@ -74,7 +74,7 @@ export function MasterRankIcon({ color, className }: IconProps) {
 
 /** Impact halo — gold pulse rings with upward arrow (mirrors Mentrixer gold craft). */
 export function EliteRankIcon({ color, className }: IconProps) {
-  const highlight = color === "#D4A017" ? "#F5D76E" : color;
+  const highlight = "var(--color-violet-400)";
   return (
     <svg {...svgProps(className)}>
       <circle cx="24" cy="24" r="18" stroke={color} strokeWidth="2.75" opacity="0.95" />

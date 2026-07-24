@@ -215,7 +215,7 @@ export function SkillDuelResults({
         <div className="relative space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <div className="mx-hub-type-ui inline-flex items-center gap-2 rounded-full border border-[#A5B4FC] bg-[#EDE9FE] px-3 py-1 text-[10px]">
+              <div className="mx-hub-type-ui inline-flex items-center gap-2 rounded-full border border-violet-300 bg-violet-100 px-3 py-1 text-[10px]">
                 <span aria-hidden>{theme.emoji}</span>
                 {divisionKey.replace(/-/g, " ")}
               </div>
@@ -294,8 +294,8 @@ export function SkillDuelResults({
                   className={cn(
                     "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors",
                     filter === key
-                      ? "border-[#6366F1] bg-[#EDE9FE] text-[#4338CA]"
-                      : "border-[#A5B4FC] bg-white text-[#64748B] hover:border-[#6366F1] hover:text-[#4338CA]",
+                      ? "border-[var(--mx-indigo)] bg-violet-100 text-[#4338CA]"
+                      : "border-violet-300 bg-white text-[#64748B] hover:border-[var(--mx-indigo)] hover:text-[#4338CA]",
                   )}
                 >
                   {FILTER_LABELS[key]} ({count})
@@ -346,14 +346,14 @@ export function SkillDuelResults({
                 <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                   <span>
                     {youLabel}:{" "}
-                    <span className="mx-hub-math-prose inline text-[#0B1220]">
+                    <span className="mx-hub-math-prose inline text-[var(--mx-navy)]">
                       <PromptWithMathInline text={formatPick(round.myPick, round.question.choices)} />
                     </span>
                   </span>
                   <span className="text-[#C4B5FD]">| </span>
                   <span>
                     {themLabel}:{" "}
-                    <span className="mx-hub-math-prose inline text-[#0B1220]">
+                    <span className="mx-hub-math-prose inline text-[var(--mx-navy)]">
                       <PromptWithMathInline text={formatPick(round.theirPick, round.question.choices)} />
                     </span>
                   </span>
@@ -531,7 +531,7 @@ function ScoreTile({
       className={cn(
         mentrixStudent.hubSticky,
         "px-4 py-3",
-        highlight && "ring-2 ring-[#6366F1]/40",
+        highlight && "ring-2 ring-[var(--mx-indigo)]/40",
         align === "end" ? "text-right" : "text-left",
       )}
     >
@@ -544,7 +544,7 @@ function ScoreTile({
         <motion.div
           className={cn(
             "h-full rounded-full",
-            highlight ? "bg-[#6366F1]" : "bg-[#A5B4FC]",
+            highlight ? "bg-[var(--mx-indigo)]" : "bg-[#A5B4FC]",
           )}
           initial={motionEnabled ? { width: 0 } : false}
           animate={motionEnabled ? { width: `${pct}%` } : false}

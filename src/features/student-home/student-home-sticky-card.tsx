@@ -103,7 +103,7 @@ export function StudentHomeEmptyInvite({
 }) {
   if (compact) {
     return (
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-[#A5B4FC] bg-[#EDE9FE]/40 px-3 py-2.5 text-sm text-[#475569]">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-violet-300 bg-violet-100/40 px-3 py-2.5 text-sm text-[#475569]">
         <MentrixaVocabIcon name={icon} size={22} surface="light" title={message} className="shrink-0" />
         <span className="min-w-0 flex-1 leading-snug">{message}</span>
         {hideAction ? null : (

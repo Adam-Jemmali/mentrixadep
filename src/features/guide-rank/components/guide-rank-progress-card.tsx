@@ -14,7 +14,7 @@ export function GuideRankProgressCard({ progress }: { progress: GuideRankProgres
           <div
             className={cn(
               "relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#0A0A0A]/90",
-              isElite && "ring-1 ring-[#D4A017]/40",
+              isElite && "ring-1 ring-[var(--mx-gold)]/40",
             )}
             style={{
               boxShadow: isElite

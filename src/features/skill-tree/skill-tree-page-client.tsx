@@ -78,9 +78,9 @@ function UnitBranch({
         role="dialog"
         aria-modal="true"
         aria-labelledby="unit-branch-title"
-        className="max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl border border-[#475569] bg-[#0B1220] p-4 text-white shadow-2xl sm:max-w-3xl sm:rounded-3xl sm:p-6"
+        className="max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl border border-[#475569] bg-[var(--mx-navy)] p-4 text-white shadow-2xl sm:max-w-3xl sm:rounded-3xl sm:p-6"
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-[#0B1220] pb-4">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-[var(--mx-navy)] pb-4">
           <div className="min-w-0">
             <VocabSectionHeading
               name="unit"
@@ -102,7 +102,7 @@ function UnitBranch({
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#6366F1] bg-[#312E81] px-3 text-sm font-bold text-white transition-colors hover:bg-[#3730A3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD]"
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--mx-indigo)] bg-[#312E81] px-3 text-sm font-bold text-white transition-colors hover:bg-[#3730A3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4B5FD]"
           >
             <MentrixaVocabIcon
               name="skill-tree"
@@ -116,7 +116,7 @@ function UnitBranch({
 
         <div className="relative grid gap-3 sm:grid-cols-2">
           <span
-            className="pointer-events-none absolute bottom-4 left-8 top-4 w-px bg-[#6366F1]/35 sm:left-1/2"
+            className="pointer-events-none absolute bottom-4 left-8 top-4 w-px bg-[var(--mx-indigo)]/35 sm:left-1/2"
             aria-hidden
           />
           {nodes.map((node) => {
@@ -226,7 +226,7 @@ export function SkillTreePageClient({
       <header className={`${mentrixStudent.pageHeader} space-y-4`}>
         <Link
           href="/student"
-          className="inline-flex cursor-pointer items-center text-[#6366F1] transition-colors hover:text-[#4F46E5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1]"
+          className="inline-flex cursor-pointer items-center text-[var(--mx-indigo)] transition-colors hover:text-[#4F46E5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mx-indigo)]"
           aria-label="Back home"
         >
           <MentrixaVocabIcon name="home" size={30} surface="light" title="Home" />
@@ -249,7 +249,7 @@ export function SkillTreePageClient({
                 surface="light"
                 title={skillTreeLabel("review").text}
               />
-              <span className="font-semibold text-[#0B1220]">
+              <span className="font-semibold text-[var(--mx-navy)]">
                 {focus?.nodeName ?? "Review"}
               </span>
             </p>
@@ -263,7 +263,7 @@ export function SkillTreePageClient({
                 surface="light"
                 title={skillTreeLabel("cause").text}
               />
-              <span className="font-semibold text-[#0B1220]">
+              <span className="font-semibold text-[var(--mx-navy)]">
                 {focus?.nodeName ?? "Open"}
               </span>
             </p>
@@ -287,7 +287,7 @@ export function SkillTreePageClient({
             type="button"
             onClick={onClearMisses}
             disabled={treasuryPending}
-            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#6366F1] bg-white px-4 py-3 font-black text-[#0B1220] shadow-[0_10px_30px_rgba(99,102,241,0.12)] transition-colors hover:border-[#818CF8] hover:bg-[#F5F3FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[var(--mx-indigo)] bg-white px-4 py-3 font-black text-[var(--mx-navy)] shadow-[0_10px_30px_rgba(99,102,241,0.12)] transition-colors hover:border-[#818CF8] hover:bg-[#F5F3FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mx-indigo)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <MentrixaVocabIcon
               name={clearMissesLabel.icon}
@@ -296,7 +296,7 @@ export function SkillTreePageClient({
               title={clearMissesLabel.text}
             />
             <span>{clearMissesLabel.text}</span>
-            <span className="text-xs font-semibold text-[#6366F1]">
+            <span className="text-xs font-semibold text-[var(--mx-indigo)]">
               {data.mistakeItemCount}
             </span>
           </button>
@@ -315,14 +315,14 @@ export function SkillTreePageClient({
       />
 
       <details className={`${mentrixStudent.card} overflow-hidden`}>
-        <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 font-black text-[#0B1220] marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#6366F1] sm:px-5">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 font-black text-[var(--mx-navy)] marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--mx-indigo)] sm:px-5">
           <MentrixaVocabIcon name="skills" size={32} surface="light" title="All skills" />
           <span>All skills</span>
-          <span className="ml-auto text-xs font-semibold text-[#6366F1]">
+          <span className="ml-auto text-xs font-semibold text-[var(--mx-indigo)]">
             {data.nodes.length} skills
           </span>
         </summary>
-        <div className="border-t border-[#C4B5FD] p-3 sm:p-5">
+        <div className="border-t border-violet-300 p-3 sm:p-5">
           <MasteryGridExplorer
             data={data.grid}
             unlockedNodeIds={unlockedNodeIds}

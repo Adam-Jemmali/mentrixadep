@@ -109,7 +109,7 @@ export function AccountRankLadder({
                     className={cn(
                       "mt-0.5 font-mono text-[9px] tabular-nums",
                       isArena ? "text-[#64748B]" : "text-violet-300/70",
-                      isCurrent && (isArena ? "text-[#0B1220]" : "text-violet-100"),
+                      isCurrent && (isArena ? "text-[var(--mx-navy)]" : "text-violet-100"),
                     )}
                   >
                     {rank.level}
@@ -122,7 +122,7 @@ export function AccountRankLadder({
 
         {isArena && current.level < 7 ? (
           <p className={`mt-4 text-center text-[11px] leading-relaxed ${mentrixStudent.textMutedOnDark}`}>
-            <span className="font-semibold text-[#6366F1]">
+            <span className="font-semibold text-[var(--mx-indigo)]">
               Become a Mentrixer
             </span>{" "}
             
@@ -133,7 +133,7 @@ export function AccountRankLadder({
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href="/student/quest"
-              className="rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#6366F1] px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110"
+              className="rounded-lg bg-gradient-to-r from-[var(--mx-violet)] to-[var(--mx-indigo)] px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110"
             >
               Earn XP in Quest
             </Link>

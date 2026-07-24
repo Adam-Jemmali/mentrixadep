@@ -33,7 +33,7 @@ export function StudentHomeRankStreakStrip({
     >
       <Link
         href="/student/progress"
-        className="inline-flex items-center gap-2.5 rounded-xl border border-[#E0E7FF] bg-white/90 px-3 py-2 shadow-[2px_4px_0_rgba(11,18,32,0.1)] transition hover:opacity-90"
+        className="inline-flex items-center gap-2.5 rounded-xl border border-violet-200 bg-white/90 px-3 py-2 shadow-[2px_4px_0_rgba(11,18,32,0.1)] transition hover:opacity-90"
         title={normalizeRankTitle(accountRank.title)}
       >
         <RankBadge

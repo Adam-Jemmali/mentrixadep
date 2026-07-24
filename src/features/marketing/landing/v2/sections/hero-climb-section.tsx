@@ -33,7 +33,7 @@ export function HeroClimbSection() {
               {LANDING_HERO.arenaLine}{" "}
               <Link
                 href={LANDING_HERO.arenaHref}
-                className="font-semibold text-[#7C3AED] underline-offset-2 hover:text-[#6D28D9] hover:underline"
+                className="font-semibold text-[var(--mx-violet)] underline-offset-2 hover:text-[var(--mx-primary-hover)] hover:underline"
               >
                 {LANDING_HERO.arenaLink}
               </Link>

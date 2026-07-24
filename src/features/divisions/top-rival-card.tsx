@@ -32,7 +32,7 @@ function LeaguePlayerAvatar({
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <div
-        className="overflow-hidden rounded-full border-2 border-[#6366F1] bg-[#EEF2FF] shadow-sm"
+        className="overflow-hidden rounded-full border-2 border-[var(--mx-indigo)] bg-[#EEF2FF] shadow-sm"
         style={{ width: size, height: size }}
       >
         {avatarUrl ? (
@@ -45,13 +45,13 @@ function LeaguePlayerAvatar({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-[#EEF2FF] text-lg font-black text-[#6366F1]">
+          <div className="flex h-full w-full items-center justify-center bg-[#EEF2FF] text-lg font-black text-[var(--mx-indigo)]">
             {initial}
           </div>
         )}
       </div>
       <span
-        className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full border border-[#7C3AED] bg-[#F8F7FF] p-0.5 shadow-sm"
+        className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full border border-[var(--mx-violet)] bg-[#F8F7FF] p-0.5 shadow-sm"
         style={{ width: badgeSize + 4, height: badgeSize + 4 }}
         title="Mentrixer"
       >
@@ -81,7 +81,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
         <div className="flex flex-col sm:flex-row sm:items-stretch">
           <div
             className={cn(
-              "mx-hub-book-spine flex flex-col items-center gap-3 border-b border-[#C4B5FD] p-5 sm:w-64 sm:shrink-0 sm:border-b-0 sm:border-r",
+              "mx-hub-book-spine flex flex-col items-center gap-3 border-b border-violet-300 p-5 sm:w-64 sm:shrink-0 sm:border-b-0 sm:border-r",
             )}
           >
             <AbCalculusSubjectTitle hubPaper className="text-base sm:text-lg" />
@@ -101,11 +101,11 @@ export function TopRivalCard({ rivalData, className }: Props) {
           <div className={cn("relative flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6", mentrixStudent.hubBookPage)}>
             <div className="flex items-center gap-2">
               <MentrixaVocabIcon name={beatLine.categoryIcon} size={22} surface="light" title="Beat Line" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6366F1]">{BEAT_LINE_CATEGORY}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--mx-indigo)]">{BEAT_LINE_CATEGORY}</p>
             </div>
             <div className="space-y-2">
               {beatLine.lines.map((line) => (
-                <p key={line.text} className="flex items-start gap-2 text-sm font-bold text-[#0B1220]">
+                <p key={line.text} className="flex items-start gap-2 text-sm font-bold text-[var(--mx-navy)]">
                   <MentrixaVocabIcon name={line.icon} size={20} surface="light" title={line.text} />
                   <span>{line.text}</span>
                 </p>
@@ -115,7 +115,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
             <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
               <div className="flex flex-col items-center gap-1.5">
                 <LeaguePlayerAvatar displayName={myName} avatarUrl={rivalData.myAvatarUrl} size={56} />
-                <span className="max-w-[6.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#6366F1]">
+                <span className="max-w-[6.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--mx-indigo)]">
                   {myName.split(" ")[0]}
                 </span>
               </div>
@@ -125,7 +125,7 @@ export function TopRivalCard({ rivalData, className }: Props) {
                   <VersusMark size="sm" />
                   <div className="flex flex-col items-center gap-1.5">
                     <LeaguePlayerAvatar displayName={rivalName} avatarUrl={rivalData.rivalAvatarUrl} size={52} />
-                    <span className="max-w-[6.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#7C3AED]">
+                    <span className="max-w-[6.5rem] truncate text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--mx-violet)]">
                       {rivalName.split(" ")[0]}
                     </span>
                   </div>

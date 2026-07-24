@@ -69,14 +69,14 @@ function GenericQuestResultsReveal({
               </ProgressCircle.Track>
             </ProgressCircle>
             <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-mono text-2xl font-black tabular-nums text-[#0B1220]">{accuracy}%</span>
+              <span className="font-mono text-2xl font-black tabular-nums text-[var(--mx-navy)]">{accuracy}%</span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#475569]">
                 {correct}/{total}
               </span>
             </span>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-[#0B1220] sm:text-3xl">Quest complete</h2>
+            <h2 className="text-2xl font-bold text-[var(--mx-navy)] sm:text-3xl">Quest complete</h2>
             <p className="mt-2 text-sm text-[#475569]">
               Best streak {streakRecord}. Would earn {wouldXp} XP with an account
             </p>
@@ -96,7 +96,7 @@ function GenericQuestResultsReveal({
             <Link href="/auth/signup">{signupHint}</Link>
           </Button>
           {showRunAnother && onRunAnother ? (
-            <Button type="button" variant="outline" className="h-12 flex-1 border-[#A5B4FC] text-[#4F46E5]" onClick={onRunAnother}>
+            <Button type="button" variant="outline" className="h-12 flex-1 border-violet-300 text-[#4F46E5]" onClick={onRunAnother}>
               {runAnotherLabel}
             </Button>
           ) : null}

@@ -45,7 +45,7 @@ export function StudentHomeSessionsHub({
           showHeroStats={false}
           embedded
         />
-        <section id="browse-guides" className="scroll-mt-20 space-y-2 border-t border-[#C4B5FD]/60 pt-3">
+        <section id="browse-guides" className="scroll-mt-20 space-y-2 border-t border-violet-300/60 pt-3">
           <div className="flex items-center gap-2">
             <MentrixaVocabIcon
               name={CANONICAL_BOOKING_ICON}
@@ -54,7 +54,7 @@ export function StudentHomeSessionsHub({
               title="Browse and book"
             />
             <div>
-              <h3 className="text-sm font-bold text-[#0B1220]">Browse and book</h3>
+              <h3 className="text-sm font-bold text-[var(--mx-navy)]">Browse and book</h3>
               <p className="text-[10px] leading-snug text-[#475569]">
                 Weak-node impact filters below. History tab holds past packages.
               </p>

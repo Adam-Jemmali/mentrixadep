@@ -4,8 +4,9 @@ import type { ReactNode } from "react";
 import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { Skeleton, type SkeletonTone } from "@/shared/ui/skeleton";
-import { MentrixaBrandMark, MentrixaSkeletonWatermark } from "@/shared/ui/mentrixa-ui-brand";
+import { MentrixaSkeletonWatermark } from "@/shared/ui/mentrixa-ui-brand";
 import { UiSkeletonShimmer, UiSkeletonShimmerGrid } from "@/components/ui";
+import { BklitShimmer, BklitShimmerGrid } from "@/shared/ui/bklit-shimmer";
 
 export type { SkeletonTone };
 
@@ -93,19 +94,14 @@ export function SkeletonStatGrid({
   className?: string;
   tone?: SkeletonTone;
 }) {
-  if (tone === "dark") {
-    return (
-      <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
-        {Array.from({ length: count }).map((_, index) => (
-          <UiSkeletonShimmer key={index} className="h-[5.5rem] rounded-2xl" aria-label={index === 0 ? "Loading metrics" : undefined} />
-        ))}
-      </div>
-    );
-  }
   return (
     <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
       {Array.from({ length: count }).map((_, index) => (
-        <Skeleton key={index} tone={tone} className="h-[5.5rem] rounded-2xl" />
+        <BklitShimmer
+          key={index}
+          className="h-[5.5rem] rounded-2xl"
+          aria-label={index === 0 ? "Loading metrics" : undefined}
+        />
       ))}
     </div>
   );
@@ -132,24 +128,11 @@ export function StudentDashboardSkeleton() {
       className={cn(mentrixStudent.pageBgHub, "space-y-8 p-4 sm:p-6")}
       aria-label="Loading student dashboard"
     >
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8">
-        <Skeleton tone="dark" className="h-4 w-32 rounded" />
-        <Skeleton tone="dark" className="mt-3 h-8 w-64 max-w-full rounded-lg" />
-        <Skeleton tone="dark" className="mt-2 h-4 w-full max-w-md rounded" />
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          <Skeleton tone="dark" className="h-16 w-16 rounded-2xl" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton tone="dark" className="h-5 w-40 rounded" />
-            <Skeleton tone="dark" className="h-4 w-56 max-w-full rounded" />
-          </div>
-        </div>
-      </div>
-
-      <MasteryGridSkeleton />
-
+      <BklitShimmer className="h-48 w-full rounded-2xl" aria-label="Loading verdict" />
+      <BklitShimmer className="h-56 w-full rounded-2xl" aria-label="Loading mastery grid" />
       <div className="space-y-6">
-        <ProgressSnapshotSkeleton />
-        <RankLadderSkeleton />
+        <BklitShimmer className="h-32 w-full rounded-2xl" aria-label="Loading progress" />
+        <BklitShimmer className="h-40 w-full rounded-2xl" aria-label="Loading rank ladder" />
         <SkeletonStatGrid tone="dark" />
       </div>
     </SkeletonFrame>
@@ -164,15 +147,9 @@ export function QuestWorkspaceSkeleton() {
       aria-label="Loading quest workspace"
     >
       <MentrixaSkeletonWatermark kind="mentrixa" />
-      <div className="flex items-center gap-2">
-        <MentrixaBrandMark kind="mentrixa" size="sm" className="opacity-80" />
-        <Skeleton className="h-8 flex-1 max-w-[12rem] rounded-lg" />
-      </div>
-      <Skeleton className="h-36 rounded-2xl" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-      </div>
+      <BklitShimmer className="h-10 w-full max-w-[12rem] rounded-lg" aria-label="Loading quest header" />
+      <BklitShimmer className="h-36 rounded-2xl" aria-label="Loading question" />
+      <BklitShimmerGrid count={4} className="grid gap-3 sm:grid-cols-2" itemClassName="h-24 rounded-xl" />
     </SkeletonFrame>
   );
 }
@@ -184,19 +161,8 @@ export function DuelHubSkeleton() {
       className="mx-auto max-w-5xl space-y-8 px-4 py-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
       aria-label="Loading duel hub"
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-28 rounded" />
-          <Skeleton className="h-9 w-56 max-w-full rounded-lg" />
-          <Skeleton className="h-4 w-full max-w-md rounded" />
-        </div>
-        <Skeleton className="h-9 w-36 rounded-xl" />
-      </div>
-      <div className="skeleton--shimmer relative grid gap-6 overflow-hidden sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} animationType="none" className="h-40 rounded-3xl" />
-        ))}
-      </div>
+      <BklitShimmer className="h-24 w-full rounded-2xl" aria-label="Loading duel header" />
+      <BklitShimmerGrid count={6} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" itemClassName="h-40 rounded-3xl" />
     </SkeletonFrame>
   );
 }
@@ -208,21 +174,14 @@ export function TutorDashboardSkeleton() {
       aria-label="Loading tutor dashboard"
     >
       <MentrixaSkeletonWatermark kind="guide" />
-      <div className="flex items-center gap-2">
-        <MentrixaBrandMark kind="guide" size="sm" />
-        <Skeleton className="h-40 flex-1 rounded-2xl" />
-      </div>
-
+      <BklitShimmer className="h-40 w-full rounded-2xl" aria-label="Loading guide hero" />
       <UiSkeletonShimmerGrid count={5} className="grid grid-cols-2 gap-3 sm:grid-cols-5" itemClassName="h-[5.5rem] rounded-2xl" />
-
       <div className="grid gap-8 lg:grid-cols-12">
-        <section className="lg:col-span-8">
-          <Skeleton className="min-h-[26rem] rounded-xl" />
-        </section>
+        <BklitShimmer className="min-h-[26rem] rounded-xl lg:col-span-8" aria-label="Loading schedule" />
         <aside className="space-y-6 lg:col-span-4">
-          <Skeleton className="min-h-[11rem] rounded-xl" />
-          <Skeleton className="min-h-[18rem] rounded-xl" />
-          <Skeleton className="min-h-[12rem] rounded-xl" />
+          <BklitShimmer className="min-h-[11rem] rounded-xl" aria-label="Loading impact" />
+          <BklitShimmer className="min-h-[18rem] rounded-xl" aria-label="Loading sessions" />
+          <BklitShimmer className="min-h-[12rem] rounded-xl" aria-label="Loading payouts" />
         </aside>
       </div>
     </SkeletonFrame>
@@ -236,35 +195,35 @@ export function MarketingPageSkeleton() {
       className="space-y-10 bg-[#070d18] px-4 py-8 sm:px-6"
       aria-label="Loading page"
     >
-      <Skeleton className="mx-auto min-h-[70vh] max-w-6xl rounded-3xl" />
-      <Skeleton className="mx-auto min-h-[55vh] max-w-6xl rounded-3xl" />
-      <Skeleton className="mx-auto min-h-[45vh] max-w-6xl rounded-3xl" />
+      <BklitShimmer className="mx-auto min-h-[70vh] max-w-6xl rounded-3xl" aria-label="Loading hero" />
+      <BklitShimmer className="mx-auto min-h-[55vh] max-w-6xl rounded-3xl" aria-label="Loading section" />
+      <BklitShimmer className="mx-auto min-h-[45vh] max-w-6xl rounded-3xl" aria-label="Loading section" />
     </SkeletonFrame>
   );
 }
 
 export function RankLadderSkeleton() {
-  return <Skeleton tone="dark" className="min-h-[11rem] rounded-2xl" />;
+  return <BklitShimmer className="min-h-[11rem] rounded-2xl" aria-label="Loading rank ladder" />;
 }
 
 export function CommandCenterSkeleton({ className }: { className?: string }) {
-  return <Skeleton tone="dark" className={cn("min-h-[18rem] rounded-2xl", className)} />;
+  return <BklitShimmer className={cn("min-h-[18rem] rounded-2xl", className)} aria-label="Loading command center" />;
 }
 
 export function SessionsListSkeleton() {
-  return <Skeleton tone="dark" className="min-h-[12rem] rounded-2xl" />;
+  return <BklitShimmer className="min-h-[12rem] rounded-2xl" aria-label="Loading sessions" />;
 }
 
 export function ProgressSnapshotSkeleton() {
-  return <Skeleton tone="dark" className="min-h-[8rem] rounded-2xl" />;
+  return <BklitShimmer className="min-h-[8rem] rounded-2xl" aria-label="Loading progress" />;
 }
 
 export function BriefCardSkeleton() {
-  return <Skeleton tone="dark" className="min-h-[5rem] rounded-2xl" />;
+  return <BklitShimmer className="min-h-[5rem] rounded-2xl" aria-label="Loading brief" />;
 }
 
 export function ChartSkeleton({ className }: { className?: string }) {
-  return <Skeleton className={cn("h-[220px] w-full min-w-0 rounded", className)} />;
+  return <BklitShimmer className={cn("h-[220px] w-full min-w-0 rounded", className)} aria-label="Loading chart" />;
 }
 
 export function MasteryGridSkeleton({
@@ -279,34 +238,27 @@ export function MasteryGridSkeleton({
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-white/10 bg-[#0F172A]/60 p-5 sm:p-6",
+        "relative overflow-hidden rounded-2xl border border-white/10 bg-[var(--mx-navy-2)]/60 p-5 sm:p-6",
         className,
       )}
-      aria-hidden
+      aria-label="Loading mastery grid"
+      aria-busy="true"
     >
-      <div className="flex items-center gap-2">
-        <MentrixaBrandMark kind="mentrixer" size="xs" className="text-violet-400" />
-        <Skeleton tone="dark" className="h-3 w-28 rounded" />
-      </div>
-      <Skeleton tone="dark" className="mt-2 h-4 w-44 rounded" />
+      <BklitShimmer className="h-3 w-28 rounded" aria-label="Loading grid title" />
+      <BklitShimmer className="mt-2 h-4 w-44 rounded" />
       {showLegend ? (
-        <div className="mt-4 flex flex-wrap gap-3">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} tone="dark" className="h-6 w-24 rounded-full" />
-          ))}
-        </div>
+        <BklitShimmerGrid
+          count={4}
+          className="mt-4 flex flex-wrap gap-3"
+          itemClassName="h-6 w-24 rounded-full"
+        />
       ) : null}
-      <div className="skeleton--shimmer relative mt-5 grid grid-cols-8 gap-1.5 sm:grid-cols-10 md:grid-cols-12">
-        {Array.from({ length: squareCount }).map((_, index) => (
-          <Skeleton
-            key={index}
-            tone="dark"
-            animationType="none"
-            className="aspect-square rounded-sm"
-          />
-        ))}
-      </div>
-      <Skeleton tone="dark" className="mt-5 h-4 w-full max-w-lg rounded" />
+      <BklitShimmerGrid
+        count={squareCount}
+        className="mt-5 grid grid-cols-8 gap-1.5 sm:grid-cols-10 md:grid-cols-12"
+        itemClassName="aspect-square w-full rounded-sm"
+      />
+      <BklitShimmer className="mt-5 h-4 w-full max-w-lg rounded" />
     </section>
   );
 }
@@ -319,33 +271,25 @@ export function RankCardSkeleton() {
       aria-label="Loading rank passport"
     >
       <div className="mx-auto max-w-4xl px-4 pb-16 pt-8 sm:px-6 lg:pb-24 lg:pt-12">
-        <Skeleton tone="dark" className="mb-8 h-12 rounded-2xl" />
-
+        <BklitShimmer className="mb-8 h-12 rounded-2xl" aria-label="Loading navigation" />
         <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-5">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <MentrixaBrandMark kind="mentrixer" size="md" className="opacity-80" />
-              <Skeleton tone="dark" className="absolute inset-0 rounded-2xl opacity-60" />
-            </div>
-            <div className="flex-1 space-y-2">
-              <Skeleton tone="dark" className="h-3 w-24 rounded" />
-              <Skeleton tone="dark" className="h-9 w-48 max-w-full rounded-lg" />
-              <Skeleton tone="dark" className="h-4 w-32 rounded" />
+          <div className="flex flex-1 items-center gap-5">
+            <BklitShimmer className="h-20 w-20 shrink-0 rounded-2xl sm:h-20 sm:w-20" aria-label="Loading avatar" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <BklitShimmer className="h-3 w-24 rounded" />
+              <BklitShimmer className="h-9 w-48 max-w-full rounded-lg" />
+              <BklitShimmer className="h-4 w-32 rounded" />
             </div>
           </div>
-          <Skeleton tone="dark" className="h-4 w-40 rounded" />
+          <BklitShimmer className="h-4 w-40 rounded" />
         </header>
-
         <MasteryGridSkeleton className="mb-8" />
-
-        <Skeleton tone="dark" className="mb-8 min-h-[10rem] rounded-2xl" />
-
+        <BklitShimmer className="mb-8 min-h-[10rem] rounded-2xl" aria-label="Loading verdict" />
         <div className="space-y-3">
-          <Skeleton tone="dark" className="h-14 rounded-2xl" />
-          <Skeleton tone="dark" className="h-14 rounded-2xl" />
+          <BklitShimmer className="h-14 rounded-2xl" />
+          <BklitShimmer className="h-14 rounded-2xl" />
         </div>
-
-        <Skeleton tone="dark" className="mt-8 h-16 rounded-2xl" />
+        <BklitShimmer className="mt-8 h-16 rounded-2xl" aria-label="Loading footer" />
       </div>
     </SkeletonFrame>
   );
@@ -358,29 +302,20 @@ export function StudentProfileSkeleton() {
       aria-label="Loading profile"
     >
       <main className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
-        <Skeleton className="mb-12 h-10 w-44 rounded-2xl" />
-
+        <BklitShimmer className="mb-12 h-10 w-44 rounded-2xl" aria-label="Loading back link" />
         <div className="rounded-[3rem] border border-indigo-100 bg-white p-8 sm:p-10">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
-            <div className="relative mx-auto flex h-40 w-40 shrink-0 items-center justify-center rounded-[2.5rem] border border-indigo-100 bg-indigo-50/50 sm:mx-0 sm:h-48 sm:w-48">
-              <MentrixaBrandMark kind="mentrixer" size="md" className="opacity-70" />
-              <Skeleton className="absolute inset-0 rounded-[2.5rem] opacity-50" />
-            </div>
+            <BklitShimmer className="mx-auto h-40 w-40 shrink-0 rounded-[2.5rem] sm:mx-0 sm:h-48 sm:w-48" aria-label="Loading avatar" />
             <div className="min-w-0 flex-1 space-y-5">
-              <Skeleton className="h-9 w-56 max-w-full rounded-lg" />
-              <Skeleton className="h-4 w-full max-w-md rounded" />
-              <Skeleton className="h-1.5 w-full rounded-full" />
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Skeleton className="h-16 rounded-2xl" />
-                <Skeleton className="h-16 rounded-2xl" />
-                <Skeleton className="h-16 rounded-2xl" />
-              </div>
+              <BklitShimmer className="h-9 w-56 max-w-full rounded-lg" />
+              <BklitShimmer className="h-4 w-full max-w-md rounded" />
+              <BklitShimmer className="h-1.5 w-full rounded-full" />
+              <BklitShimmerGrid count={3} className="grid gap-3 sm:grid-cols-3" itemClassName="h-16 rounded-2xl" />
             </div>
           </div>
         </div>
-
-        <Skeleton className="mt-8 min-h-[22rem] rounded-[2.5rem]" />
-        <Skeleton className="mt-8 min-h-[14rem] rounded-[2.5rem]" />
+        <BklitShimmer className="mt-8 min-h-[22rem] rounded-[2.5rem]" aria-label="Loading activity" />
+        <BklitShimmer className="mt-8 min-h-[14rem] rounded-[2.5rem]" aria-label="Loading sessions" />
       </main>
     </SkeletonFrame>
   );
@@ -391,22 +326,20 @@ export function SubscribeCheckoutSkeleton() {
     <main className={mentrixStudent.main}>
       <section className={`${mentrixStudent.card} relative mx-auto max-w-xl overflow-hidden p-6 sm:p-8`}>
         <MentrixaSkeletonWatermark kind="mentrixa" className="opacity-80" />
-        <div className="relative flex items-center gap-2">
-          <MentrixaBrandMark kind="mentrixa" size="sm" />
-          <Skeleton className="h-3 w-40 rounded" />
-        </div>
-        <Skeleton className="mt-2 h-8 w-44 rounded-lg" />
-        <SkeletonTextLines lines={2} className="mt-3" />
-        <Skeleton className="mt-6 h-10 w-full rounded-xl" />
-        <Skeleton className="mt-4 h-9 w-36 rounded-lg" />
+        <BklitShimmer className="h-3 w-40 rounded" aria-label="Loading checkout" />
+        <BklitShimmer className="mt-2 h-8 w-44 rounded-lg" />
+        <BklitShimmer className="mt-3 h-4 w-full rounded" />
+        <BklitShimmer className="mt-1 h-4 w-5/6 rounded" />
+        <BklitShimmer className="mt-6 h-10 w-full rounded-xl" />
+        <BklitShimmer className="mt-4 h-9 w-36 rounded-lg" />
         <div className="mt-5 space-y-2">
           {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-4 w-full rounded" />
+            <BklitShimmer key={index} className="h-4 w-full rounded" />
           ))}
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Skeleton className="h-10 w-44 rounded-lg" />
-          <Skeleton className="h-10 w-32 rounded-lg" />
+          <BklitShimmer className="h-10 w-44 rounded-lg" />
+          <BklitShimmer className="h-10 w-32 rounded-lg" />
         </div>
       </section>
     </main>

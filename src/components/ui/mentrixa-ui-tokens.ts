@@ -1,5 +1,8 @@
 /** Visual tokens for @/components/ui registry wrappers. Logic lives in upstream primitives. */
 
+/** Verified-truth gold for inline styles (rank percentile, proof streak, passport foil). */
+export const VERIFIED_GOLD_CSS = "var(--mx-gold)" as const;
+
 export const mxUi = {
   shell: "bg-[var(--mx-surface)] text-slate-100",
   shellLight: "bg-white/90 text-[var(--mx-navy)]",

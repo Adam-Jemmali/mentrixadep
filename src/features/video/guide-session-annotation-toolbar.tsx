@@ -115,19 +115,19 @@ export function GuideSessionAnnotationToolbar({
         transition={{ type: "spring", stiffness: 420, damping: 28 }}
         onMouseLeave={onClose}
       >
-        <KokonutGlass className="border-[#7C3AED]/25 bg-[#0F172A]/95 shadow-[0_12px_40px_-8px_rgba(124,58,237,0.45)]">
+        <KokonutGlass className="border-[var(--mx-violet)]/25 bg-[var(--mx-navy-2)]/95 shadow-[0_12px_40px_-8px_rgba(124,58,237,0.45)]">
           <div className="flex h-12 items-center gap-1 px-2">
             <ToolbarAction
               label="Flag this node"
               active={isFlagged}
               onClick={() => onFlag(node.id, !isFlagged)}
-              icon={<Flag className="h-4 w-4 text-[#7C3AED]" strokeWidth={2.25} />}
+              icon={<Flag className="h-4 w-4 text-[var(--mx-violet)]" strokeWidth={2.25} />}
             />
             <ToolbarAction
               label="Add note"
               active={noteOpen}
               onClick={() => setNoteOpen((v) => !v)}
-              icon={<MessageSquarePlus className="h-4 w-4 text-[#7C3AED]" strokeWidth={2.25} />}
+              icon={<MessageSquarePlus className="h-4 w-4 text-[var(--mx-violet)]" strokeWidth={2.25} />}
             />
             <ToolbarAction
               label="Assign next question"
@@ -138,7 +138,7 @@ export function GuideSessionAnnotationToolbar({
                   name="practice-pack"
                   size={16}
                   surface="dark"
-                  className="text-[#7C3AED]"
+                  className="text-[var(--mx-violet)]"
                   title="Assign next question"
                 />
               }
@@ -146,7 +146,7 @@ export function GuideSessionAnnotationToolbar({
             {impactScore != null && impactScore > 0 ? (
               <span
                 ref={impactRef}
-                className="ml-auto inline-flex items-center gap-1 rounded-md border border-[#7C3AED]/30 bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#C4B5FD]"
+                className="ml-auto inline-flex items-center gap-1 rounded-md border border-[var(--mx-violet)]/30 bg-[var(--mx-violet)]/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#C4B5FD]"
                 title="Guide Impact on this node"
               >
                 <MentrixaVocabIcon name="guide-impact-receipt" size={12} surface="dark" title="Impact" />
@@ -169,14 +169,14 @@ export function GuideSessionAnnotationToolbar({
                   onChange={(e) => setNote(e.target.value)}
                   rows={2}
                   placeholder={`Note for ${node.nodeName}`}
-                  className="w-full resize-none rounded-md border border-white/10 bg-[#0B1220]/80 px-2 py-1.5 text-[11px] text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-[#7C3AED]/50"
+                  className="w-full resize-none rounded-md border border-white/10 bg-[var(--mx-navy)]/80 px-2 py-1.5 text-[11px] text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-[var(--mx-violet)]/50"
                 />
                 <div className="mt-1 flex justify-end">
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="h-7 gap-1 text-[10px] text-[#C4B5FD] hover:bg-[#7C3AED]/15 hover:text-white"
+                    className="h-7 gap-1 text-[10px] text-[#C4B5FD] hover:bg-[var(--mx-violet)]/15 hover:text-white"
                     onClick={sendNote}
                     disabled={!note.trim()}
                   >
@@ -220,8 +220,8 @@ function ToolbarAction({
       className={cn(
         "inline-flex h-9 flex-1 items-center justify-center gap-1 rounded-md border text-[10px] font-semibold transition-colors",
         active
-          ? "border-[#7C3AED]/50 bg-[#7C3AED]/20 text-white"
-          : "border-white/8 bg-white/5 text-white/80 hover:border-[#7C3AED]/40 hover:bg-[#7C3AED]/10",
+          ? "border-[var(--mx-violet)]/50 bg-[var(--mx-violet)]/20 text-white"
+          : "border-white/8 bg-white/5 text-white/80 hover:border-[var(--mx-violet)]/40 hover:bg-[var(--mx-violet)]/10",
         disabled && "cursor-wait opacity-60",
       )}
     >

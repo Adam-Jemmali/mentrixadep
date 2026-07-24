@@ -13,10 +13,10 @@ type Props = {
 
 const variants = {
   primary:
-    "border border-[#6366F1] bg-[#7C3AED] text-white shadow-[2px_4px_0_#0B1220] hover:bg-[#6D28D9]",
+    "border border-[var(--mx-indigo)] bg-[var(--mx-violet)] text-white shadow-[2px_4px_0_var(--mx-navy)] hover:bg-[var(--mx-primary-hover)]",
   secondary: landingHub.btnSecondary,
   ghost:
-    "border border-[#A5B4FC] bg-white text-[#4F46E5] shadow-[2px_3px_0_rgba(11,18,32,0.08)] hover:border-[#6366F1] hover:bg-[#EDE9FE]",
+    "border border-violet-300 bg-white text-[#4F46E5] shadow-[2px_3px_0_rgba(11,18,32,0.08)] hover:border-[var(--mx-indigo)] hover:bg-violet-100",
 };
 
 /** CSS-only CTA — keeps framer-motion off the hero critical path. No shimmer sheen (GPU paint cost). */

@@ -204,7 +204,7 @@ export function GuideHomeClient({
           {data.metrics.pendingRequestCount > 0 ? (
             <GuideHomeScrollSection id="guide-requests" index={5}>
               <GuideAnimatedSticky variant="strip" staggerIndex={8}>
-                <h2 className="mb-2 text-sm font-bold text-[#0B1220]">{GUIDE_HOME.bookedRequestsTitle}</h2>
+                <h2 className="mb-2 text-sm font-bold text-[var(--mx-navy)]">{GUIDE_HOME.bookedRequestsTitle}</h2>
                 <SessionRequestsList
                   sessionRequests={data.sessionRequests}
                   displayTimezone={data.tutorTimezone}

@@ -182,7 +182,7 @@ export function StudentHubNumericStat({
             ? "0K"
             : `0${numericSuffix}`}
       </p>
-      <p className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#6366F1]">{label}</p>
+      <p className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mx-indigo)]">{label}</p>
       {detail ? <p className="mt-1 text-[11px] leading-snug text-[#475569]">{detail}</p> : null}
     </LandingStickyNote>
   );

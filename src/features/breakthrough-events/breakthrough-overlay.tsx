@@ -8,8 +8,6 @@ import { buildBreakthroughShareTweet } from "@/features/breakthrough-events/dete
 import { markBreakthroughShared } from "@/features/breakthrough-events/reads";
 import { Button } from "@/shared/ui/button";
 
-const MENTRIXER_GOLD = "#D4A017";
-
 type Props = {
   celebration: BreakthroughCelebration;
   onDismiss: () => void;
@@ -61,19 +59,13 @@ export function BreakthroughCelebrationOverlay({
           animate={{ scale: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
         >
-          <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border"
-            style={{ borderColor: `${MENTRIXER_GOLD}66`, backgroundColor: `${MENTRIXER_GOLD}18` }}
-          >
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--mx-violet)]/40 bg-[var(--mx-violet)]/10">
             <MentrixaVocabIcon name="breakthrough" size={28} surface="light" title="Breakthrough" />
           </div>
 
           {phase === "celebrate" ? (
             <div className="space-y-3">
-              <p
-                className="text-[11px] font-black uppercase tracking-[0.35em]"
-                style={{ color: MENTRIXER_GOLD }}
-              >
+              <p className="text-[11px] font-black uppercase tracking-[0.35em] text-[var(--mx-violet)]">
                 Breakthrough
               </p>
               <h2 className="text-2xl font-black italic text-white sm:text-3xl">
@@ -140,8 +132,7 @@ export function BreakthroughCelebrationOverlay({
                   <Button
                     type="button"
                     onClick={onStartNextQuest}
-                    className="rounded-xl font-bold"
-                    style={{ backgroundColor: MENTRIXER_GOLD, color: "#0f172a" }}
+                    className="rounded-xl bg-[var(--mx-violet)] font-bold text-white hover:bg-[var(--mx-primary-hover)]"
                   >
                     Start next Quest
                   </Button>

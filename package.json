@@ -44,7 +44,9 @@
     "validate:tokens": "node scripts/validate-tokens.mjs",
     "validate:tokens:strict": "node scripts/validate-tokens.mjs --strict",
     "validate:ui-imports": "node scripts/validate-ui-imports.mjs",
-    "validate:ui-imports:strict": "node scripts/validate-ui-imports.mjs --strict"
+    "validate:ui-imports:strict": "node scripts/validate-ui-imports.mjs --strict",
+    "lighthouse:landing": "lhci autorun --collect.url=https://mentrixa.one --config=./lighthouserc.js",
+    "lighthouse:student": "lhci autorun --collect.url=https://mentrixa.one/student --config=./lighthouserc.js"
   },
   "dependencies": {
     "@google/genai": "^1.45.0",
@@ -106,6 +108,7 @@
     "uuid": "^14.0.0"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.14.0",
     "@next/bundle-analyzer": "16.3.0-canary.8",
     "@playwright/test": "^1.58.2",
     "@types/canvas-confetti": "^1.9.0",

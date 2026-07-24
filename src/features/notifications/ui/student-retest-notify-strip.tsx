@@ -43,7 +43,7 @@ export function StudentRetestNotifyStrip({
               surface="light"
               title="Retest proof"
             />
-            <p className="text-sm font-bold text-[#0B1220]">Retest proof</p>
+            <p className="text-sm font-bold text-[var(--mx-navy)]">Retest proof</p>
           </div>
 
           <BeforeAfterCard
@@ -67,8 +67,8 @@ export function StudentRetestNotifyStrip({
                 }}
                 className={cn(
                   "inline-flex cursor-pointer items-center justify-center gap-2 rounded-full",
-                  "bg-[var(--mx-violet,#7C3AED)] px-6 py-2.5 text-sm font-bold text-white",
-                  "shadow-[0_12px_28px_-12px_rgba(124,58,237,0.65)] transition-colors hover:bg-[#6D28D9]",
+                  "bg-[var(--mx-violet)] px-6 py-2.5 text-sm font-bold text-white",
+                  "shadow-[0_12px_28px_-12px_rgba(124,58,237,0.65)] transition-colors hover:bg-[var(--mx-primary-hover)]",
                   pending && "opacity-70",
                 )}
               >

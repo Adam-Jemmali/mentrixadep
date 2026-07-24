@@ -10,8 +10,6 @@ import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 import { getSiteUrl } from "@/shared/core/site";
 import { Button } from "@/shared/ui/button";
 
-const MENTRIXER_GOLD = "#D4A017";
-
 export type BreakthroughShareData = {
   eventId: string;
   subject: string;
@@ -59,17 +57,11 @@ export function BreakthroughSharePage({ data }: { data: BreakthroughShareData })
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,#0f172a_0%,#1e1b4b_45%,#111827_100%)] p-8 text-center shadow-2xl sm:p-10">
-        <div
-          className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border"
-          style={{ borderColor: `${MENTRIXER_GOLD}66`, backgroundColor: `${MENTRIXER_GOLD}18` }}
-        >
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--mx-violet)]/40 bg-[var(--mx-violet)]/10">
           <MentrixaVocabIcon name="breakthrough" size={28} surface="light" title="Breakthrough" />
         </div>
 
-        <p
-          className="text-[11px] font-black uppercase tracking-[0.35em]"
-          style={{ color: MENTRIXER_GOLD }}
-        >
+        <p className="text-[11px] font-black uppercase tracking-[0.35em] text-[var(--mx-violet)]">
           Breakthrough
         </p>
         <h1 className="mt-3 text-3xl font-black italic text-white sm:text-4xl">{data.concept}</h1>

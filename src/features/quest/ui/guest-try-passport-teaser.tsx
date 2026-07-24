@@ -6,8 +6,6 @@ import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { getAccountRankFromTotalXp, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { cn } from "@/shared/core/utils";
 
-const VERIFIED_GOLD = "#D4A017";
-
 export function GuestTryPassportTeaser({
   correct,
   total,
@@ -28,7 +26,7 @@ export function GuestTryPassportTeaser({
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 26, delay: 0.12 }}
       className={cn(
-        "overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0F172A] via-[#131c33] to-[#1e1b4b]/50",
+        "overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[var(--mx-navy-2)] via-[#131c33] to-[#1e1b4b]/50",
         className,
       )}
     >
@@ -82,8 +80,7 @@ export function GuestTryPassportTeaser({
         </p>
         <Link
           href="/auth/signup"
-          className="text-xs font-semibold"
-          style={{ color: VERIFIED_GOLD }}
+          className="text-xs font-semibold text-[var(--mx-violet)]"
         >
           Lock your first answers →
         </Link>

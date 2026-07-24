@@ -88,7 +88,7 @@ export function RankBadge({
             ? "bg-gradient-to-b from-slate-800/98 to-slate-950/98 ring-1 ring-white/10"
             : "bg-white ring-1 ring-slate-900/10",
           isMentrixer && onDark && "ring-amber-300/35",
-          isMentrixer && !onDark && "ring-[#D4A017]/55",
+          isMentrixer && !onDark && "ring-[var(--mx-gold)]/55",
           locked && (onDark ? "opacity-70 saturate-[0.65]" : "opacity-55 grayscale"),
           !locked && onDark && !active && "opacity-95",
           !locked && !onDark && "opacity-100",

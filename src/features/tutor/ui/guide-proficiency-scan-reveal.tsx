@@ -35,7 +35,7 @@ export function GuideProficiencyScanReveal({ scan, onComplete }: GuideProficienc
   const verified = scan.verdict === "verified";
 
   return (
-    <div className="mt-5 space-y-4 rounded-xl border border-[#C4B5FD] bg-[#F5F3FF]/80 p-4">
+    <div className="mt-5 space-y-4 rounded-xl border border-violet-300 bg-[#F5F3FF]/80 p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-bold uppercase tracking-wide text-[#5B21B6]">
           {GUIDE_PROFICIENCY_SCAN.scanning}
@@ -45,9 +45,9 @@ export function GuideProficiencyScanReveal({ scan, onComplete }: GuideProficienc
         </span>
       </div>
 
-      <div className="h-1.5 overflow-hidden rounded-full bg-[#E2E8F0]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--mx-rule)]">
         <div
-          className="h-full rounded-full bg-[#7C3AED] transition-all duration-300"
+          className="h-full rounded-full bg-[var(--mx-violet)] transition-all duration-300"
           style={{ width: `${(revealed / scan.checks.length) * 100}%` }}
         />
       </div>
@@ -70,7 +70,7 @@ export function GuideProficiencyScanReveal({ scan, onComplete }: GuideProficienc
                 {!visible ? (
                   <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#CBD5E1] bg-white" />
                 ) : pending ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-[#7C3AED]" />
+                  <Loader2 className="h-5 w-5 animate-spin text-[var(--mx-violet)]" />
                 ) : check.pass ? (
                   <Check className="h-5 w-5 text-emerald-700" strokeWidth={3} />
                 ) : (
@@ -78,7 +78,7 @@ export function GuideProficiencyScanReveal({ scan, onComplete }: GuideProficienc
                 )}
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#0B1220]">{check.label}</p>
+                <p className="text-sm font-semibold text-[var(--mx-navy)]">{check.label}</p>
                 {visible && !pending ? (
                   <p className="mt-0.5 text-xs leading-relaxed text-[#475569]">{check.detail}</p>
                 ) : null}
@@ -92,13 +92,13 @@ export function GuideProficiencyScanReveal({ scan, onComplete }: GuideProficienc
         <div
           className={cn(
             "rounded-lg border px-4 py-3",
-            verified ? "border-[#D4A017]/40 bg-[#FFFBEB]" : "border-amber-300 bg-amber-50",
+            verified ? "border-[var(--mx-gold)]/40 bg-[#FFFBEB]" : "border-amber-300 bg-amber-50",
           )}
         >
           <p
             className={cn(
               "text-sm font-bold",
-              verified ? "text-[#92400E]" : "text-amber-950",
+              verified ? "text-[var(--mx-node-attempted)]" : "text-amber-950",
             )}
           >
             {scan.verdictSentence}

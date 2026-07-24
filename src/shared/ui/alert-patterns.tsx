@@ -211,6 +211,7 @@ export function PracticeWrongAnswerAlert({
         onContinue ? (
           <Button
             type="button"
+            autoFocus
             className={`mt-3 ${mentrixBrandUi.heroBtn}`}
             onClick={onContinue}
             disabled={busy}

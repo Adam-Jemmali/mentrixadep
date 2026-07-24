@@ -7,9 +7,7 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { cn } from "@/shared/core/utils";
 
-const GOLD = "#D4A017";
-
-/** Gold stake badge on duel invite — pulses once on first appearance. */
+/** Violet stake badge on duel invite — pulses once on first appearance. */
 export function DuelInviteStakeBadge({
   challengerName,
   amount,
@@ -38,16 +36,11 @@ export function DuelInviteStakeBadge({
     <div
       ref={ref}
       className={cn(
-        "inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 shadow-[0_0_20px_rgba(212,160,23,0.15)]",
+        "inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--mx-violet)]/30 bg-[var(--mx-violet)]/10 px-3 py-1.5 text-[var(--mx-violet)] shadow-[0_0_20px_rgba(124,58,237,0.15)]",
         className,
       )}
-      style={{
-        borderColor: `${GOLD}55`,
-        backgroundColor: `${GOLD}12`,
-        color: GOLD,
-      }}
     >
-      <MentrixaVocabIcon name="duels" size={16} gold surface="dark" title="Stake" />
+      <MentrixaVocabIcon name="duels" size={16} surface="dark" title="Stake" />
       <span className="text-sm font-bold leading-snug">{duelInviteStakeCopy(challengerName, amount)}</span>
     </div>
   );

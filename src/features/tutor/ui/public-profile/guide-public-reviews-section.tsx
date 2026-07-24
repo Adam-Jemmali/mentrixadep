@@ -70,7 +70,7 @@ export function GuidePublicReviewsSection({
   return (
     <section id="guide-reviews" className="scroll-mt-20">
       <GuideAnimatedSticky variant="strip" staggerIndex={5}>
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-[#0B1220]">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--mx-navy)]">
           <MentrixaVocabIcon name="session" size={16} surface="light" title="Reviews" />
           <Typewriter text={GUIDE_PUBLIC_COPY.reviewsHeading} speed={70} waitTime={8000} />
         </h2>
@@ -80,19 +80,19 @@ export function GuidePublicReviewsSection({
         ) : (
           <>
             <div className="mb-6 flex items-end gap-4">
-              <span className="font-mono text-4xl font-bold tabular-nums text-[#0B1220]">
+              <span className="font-mono text-4xl font-bold tabular-nums text-[var(--mx-navy)]">
                 {avgRating?.toFixed(1) ?? "—"}
               </span>
               <div className="flex-1">
                 {ratingDistribution.map((dist, i) => (
                   <div key={dist.star} className="mb-1 flex items-center gap-3">
                     <span className="w-14 shrink-0 font-mono text-xs text-[#64748B]">{dist.star} star</span>
-                    <div className="h-1 flex-1 overflow-hidden rounded bg-[#E2E8F0]">
+                    <div className="h-1 flex-1 overflow-hidden rounded bg-[var(--mx-rule)]">
                       <div
                         ref={(el) => {
                           if (el) ratingBarRefs.current[i] = el;
                         }}
-                        className="h-full origin-left rounded bg-[#6366F1]"
+                        className="h-full origin-left rounded bg-[var(--mx-indigo)]"
                         style={{ transform: "scaleX(0)" }}
                       />
                     </div>
@@ -109,7 +109,7 @@ export function GuidePublicReviewsSection({
                   ref={(el) => {
                     if (el) reviewRefs.current[i] = el;
                   }}
-                  className="border-b border-[#E2E8F0] py-4 last:border-b-0"
+                  className="border-b border-[var(--mx-rule)] py-4 last:border-b-0"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-sm text-[#64748B]">{review.rating} / 5</span>

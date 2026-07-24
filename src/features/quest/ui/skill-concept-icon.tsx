@@ -227,7 +227,7 @@ export function SkillConceptIcon({
 }) {
   const visual = apCalcSkillVisual({ nodeName, nodeSlug, unitNumber, unitName });
   const kind = resolveSkillConceptKind(nodeName, nodeSlug);
-  const stroke = surface === "onDark" ? "#FFFFFF" : "#0F172A";
+  const stroke = surface === "onDark" ? "#FFFFFF" : "var(--mx-navy-2)";
 
   const svg =
     kind === "generic" ? (
@@ -266,7 +266,7 @@ export function UnitConceptIcon({
   className?: string;
 }) {
   const visual = apCalcSkillVisual({ nodeName: "", unitNumber });
-  const stroke = surface === "onDark" ? "#FFFFFF" : "#0F172A";
+  const stroke = surface === "onDark" ? "#FFFFFF" : "var(--mx-navy-2)";
   const inset = 6;
 
   return (

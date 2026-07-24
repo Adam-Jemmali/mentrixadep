@@ -33,7 +33,7 @@ export function MasteryExplorerFallbackClient({
       <header className={`${mentrixStudent.pageHeader} space-y-4`}>
         <Link
           href="/student"
-          className="inline-flex cursor-pointer items-center text-[#6366F1] transition-colors hover:text-[#4F46E5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1]"
+          className="inline-flex cursor-pointer items-center text-[var(--mx-indigo)] transition-colors hover:text-[#4F46E5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mx-indigo)]"
           aria-label="Back home"
         >
           <MentrixaVocabIcon name="home" size={30} surface="light" title="Home" />

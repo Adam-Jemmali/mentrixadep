@@ -19,7 +19,7 @@ import { AnimatePresence, motion, useReducedMotion } from "@/shared/animation/mo
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { cn } from "@/shared/core/utils";
 
-const GOLD = "#D4A017";
+const ACCENT = "var(--mx-violet)";
 
 type Props = {
   reportYear: number;
@@ -108,7 +108,7 @@ function SlideOpener({
       <p
         ref={wordmarkRef}
         className="mt-8 font-[family-name:var(--font-playfair),serif] text-[48px] font-bold leading-none"
-        style={{ color: GOLD }}
+        style={{ color: ACCENT }}
       >
         MENTRIXA
       </p>
@@ -163,7 +163,7 @@ function SlideHardest({
         </>
       ) : (
         <LandingStickyNote variant="clip" className="mt-8 rotate-0 px-4 py-4 text-left">
-          <p className="text-sm font-bold text-[#0B1220]">You kept showing up.</p>
+          <p className="text-sm font-bold text-[var(--mx-navy)]">You kept showing up.</p>
           <p className="mt-2 text-sm text-[#475569]">Every node you cracked counted.</p>
         </LandingStickyNote>
       )}
@@ -205,7 +205,7 @@ function SlideBreakthrough({
         </div>
       ) : (
         <LandingStickyNote variant="pinned" className="mt-8 w-full rotate-0 px-4 py-4 text-center">
-          <p className="text-sm font-bold text-[#0B1220]">A real jump this year.</p>
+          <p className="text-sm font-bold text-[var(--mx-navy)]">A real jump this year.</p>
           <p className="mt-2 text-sm text-[#475569]">Verified first attempts only.</p>
         </LandingStickyNote>
       )}
@@ -255,7 +255,7 @@ function SlideRankJourney({
 
         <div className="relative flex h-10 w-16 items-center justify-center sm:w-20">
           <motion.span
-            className="absolute inset-y-1/2 h-0.5 w-full origin-left rounded-full bg-[#7C3AED]"
+            className="absolute inset-y-1/2 h-0.5 w-full origin-left rounded-full bg-[var(--mx-violet)]"
             initial={false}
             animate={active ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0.4 }}
             transition={{ duration: 0.45, ease: "easeOut", delay: reducedMotion ? 0 : 0.25 }}
@@ -263,7 +263,7 @@ function SlideRankJourney({
           <MentrixaVocabIcon
             name="rank-proof"
             size={22}
-            className="relative text-[#7C3AED]"
+            className="relative text-[var(--mx-violet)]"
             title="Rank journey"
           />
         </div>
@@ -299,7 +299,7 @@ function SlideRankJourney({
           </span>
         </motion.div>
       </div>
-      <p className="mt-8 inline-flex items-center gap-2 text-sm font-bold" style={{ color: GOLD }}>
+      <p className="mt-8 inline-flex items-center gap-2 text-sm font-bold" style={{ color: ACCENT }}>
         <MentrixaVocabIcon name="verified" size={18} gold surface="dark" title="Verified" />
         {data.total_nodes_verified} skills proven. No retakes.
       </p>
@@ -327,7 +327,7 @@ function SlideClose({
       <div className="mt-10 flex w-full flex-col gap-3">
         <Link
           href="/student"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#7C3AED] px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#6D28D9]"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--mx-violet)] px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-[var(--mx-primary-hover)]"
         >
           <MentrixaVocabIcon name="quest" size={18} surface="dark" title="Home" />
           Start where you left off →
@@ -339,7 +339,7 @@ function SlideClose({
             event.stopPropagation();
             onShare();
           }}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#334155] bg-white/5 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-[#CBD5E1] transition-colors hover:border-[#7C3AED]/50 hover:text-white disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#334155] bg-white/5 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-[#CBD5E1] transition-colors hover:border-[var(--mx-violet)]/50 hover:text-white disabled:opacity-60"
         >
           <MentrixaVocabIcon name="rank-proof" size={18} surface="dark" title="Share" />
           {sharing ? "Opening share…" : `Share your ${reportYear} →`}
@@ -385,7 +385,7 @@ function SlideGuideFallback({
     <div className="flex w-full max-w-md flex-col items-center text-center">
       <WrappedEyebrow icon={line.icon}>Guide Wrapped {reportYear}</WrappedEyebrow>
       <LandingStickyNote variant="dog-ear" className="mt-8 w-full rotate-0 px-5 py-5 text-left">
-        <p className="text-lg font-bold text-[#0B1220]">{line.title}</p>
+        <p className="text-lg font-bold text-[var(--mx-navy)]">{line.title}</p>
         <p className="mt-2 text-sm text-[#475569]">{line.body}</p>
       </LandingStickyNote>
     </div>
@@ -521,7 +521,7 @@ export function WrappedSlidesExperience({
 
   return (
     <div
-      className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#0B1220] text-white"
+      className="relative flex h-dvh w-full flex-col overflow-hidden bg-[var(--mx-navy)] text-white"
       data-lenis-prevent
       onClick={() => {
         if (index < WRAPPED_SLIDE_COUNT - 1) advance();

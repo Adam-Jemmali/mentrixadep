@@ -17,19 +17,19 @@ export function GuideDemandSignalCard({
   return (
     <section className="mb-8">
       <GuideStickyNote variant={GUIDE_SECTION_STICKY_VARIANT.home}>
-        <h2 className="text-sm font-bold text-[#0B1220]">{GUIDE_DEMAND.title}</h2>
+        <h2 className="text-sm font-bold text-[var(--mx-navy)]">{GUIDE_DEMAND.title}</h2>
 
         {signals.length > 0 ? (
           <ul className="mt-4 space-y-2.5">
             {signals.map((signal) => (
               <li
                 key={signal.skillNodeId}
-                className="rounded-xl border border-[#C4B5FD] bg-white px-3 py-2.5"
+                className="rounded-xl border border-violet-300 bg-white px-3 py-2.5"
               >
-                <p className="text-sm font-semibold leading-snug text-[#0B1220]">
-                  <span className="font-bold text-[#7C3AED]">{signal.nodeName}</span>
+                <p className="text-sm font-semibold leading-snug text-[var(--mx-navy)]">
+                  <span className="font-bold text-[var(--mx-violet)]">{signal.nodeName}</span>
                   {" weak for "}
-                  <span className="font-bold tabular-nums text-[#0B1220]">
+                  <span className="font-bold tabular-nums text-[var(--mx-navy)]">
                     {signal.weakStudentCount}
                   </span>
                   {signal.weakStudentCount === 1 ? " student" : " students"}
@@ -39,7 +39,7 @@ export function GuideDemandSignalCard({
                     type="button"
                     size="sm"
                     className={cn(
-                      "mt-2 h-7 rounded-md bg-[#7C3AED] px-3 text-[11px] font-bold text-white hover:bg-[#6D28D9]",
+                      "mt-2 h-7 rounded-md bg-[var(--mx-violet)] px-3 text-[11px] font-bold text-white hover:bg-[var(--mx-primary-hover)]",
                     )}
                     onClick={() => onOpenAvailability(signal.subject)}
                   >

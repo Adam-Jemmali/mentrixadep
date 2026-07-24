@@ -24,7 +24,7 @@ export function CertificationVerifyActions({ cert }: { cert: MentrixaCertificati
       <Button
         type="button"
         variant="ghost"
-        className="h-auto px-3 py-2 text-[13px] font-medium text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#0B1220]"
+        className="h-auto px-3 py-2 text-[13px] font-medium text-[var(--mx-steel)] hover:bg-[#F3F4F6] hover:text-[var(--mx-navy)]"
         asChild
       >
         <Link href={`${cert.verifyUrl}?print=1`} target="_blank" rel="noopener noreferrer">
@@ -36,7 +36,7 @@ export function CertificationVerifyActions({ cert }: { cert: MentrixaCertificati
         type="button"
         variant="ghost"
         onClick={() => void copyLink()}
-        className="h-auto px-3 py-2 text-[13px] font-medium text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#0B1220]"
+        className="h-auto px-3 py-2 text-[13px] font-medium text-[var(--mx-steel)] hover:bg-[#F3F4F6] hover:text-[var(--mx-navy)]"
       >
         <MentrixaVocabIcon name="passport" size={16} surface="light" title="Copy link" />
         {copied ? "Link copied" : "Copy verification link"}

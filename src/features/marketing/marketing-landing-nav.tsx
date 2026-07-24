@@ -19,7 +19,7 @@ export function MarketingLandingNav() {
       prefetch={false}
       onClick={() => setOpen(false)}
       className={cn(
-        "cursor-pointer text-[11px] font-semibold text-[var(--mx-muted,#9CA3AF)] transition-colors hover:text-white sm:text-xs",
+        "cursor-pointer text-[11px] font-semibold text-[var(--mx-muted)] transition-colors hover:text-white sm:text-xs",
         className,
       )}
     >
@@ -32,7 +32,7 @@ export function MarketingLandingNav() {
       <nav
         className={cn(
           "fixed inset-x-0 top-0 z-50 flex h-14 items-center border-b border-white/10",
-          "bg-[var(--mx-navy,#0B1220)]/90 px-4 backdrop-blur-md sm:px-6",
+          "bg-[var(--mx-navy)]/90 px-4 backdrop-blur-md sm:px-6",
         )}
         aria-label="Primary"
       >
@@ -53,7 +53,7 @@ export function MarketingLandingNav() {
             <Link
               href={nav.signInHref}
               prefetch={false}
-              className="hidden cursor-pointer text-[11px] font-semibold text-[var(--mx-muted,#9CA3AF)] transition-colors hover:text-white sm:inline sm:text-xs"
+              className="hidden cursor-pointer text-[11px] font-semibold text-[var(--mx-muted)] transition-colors hover:text-white sm:inline sm:text-xs"
             >
               {nav.signIn}
             </Link>
@@ -62,8 +62,8 @@ export function MarketingLandingNav() {
               prefetch={false}
               className={cn(
                 "inline-flex cursor-pointer items-center justify-center rounded-full",
-                "bg-[var(--mx-violet,#7C3AED)] px-3 py-1.5 text-[11px] font-bold text-white sm:px-4 sm:py-2 sm:text-[13px]",
-                "transition-colors hover:bg-[#6D28D9]",
+                "bg-[var(--mx-violet)] px-3 py-1.5 text-[11px] font-bold text-white sm:px-4 sm:py-2 sm:text-[13px]",
+                "transition-colors hover:bg-[var(--mx-primary-hover)]",
               )}
             >
               {nav.rankCta}
@@ -84,7 +84,7 @@ export function MarketingLandingNav() {
       {open ? (
         <div
           id="landing-mobile-nav"
-          className="fixed inset-x-0 top-14 z-40 border-b border-white/10 bg-[var(--mx-navy,#0B1220)]/95 px-4 py-4 backdrop-blur-md xl:hidden"
+          className="fixed inset-x-0 top-14 z-40 border-b border-white/10 bg-[var(--mx-navy)]/95 px-4 py-4 backdrop-blur-md xl:hidden"
         >
           <div className="mx-auto flex max-w-6xl flex-col gap-3">
             {nav.items.map((item) => (

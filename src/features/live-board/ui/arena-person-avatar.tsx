@@ -47,7 +47,7 @@ export function ArenaPersonAvatar({
         height={px}
         unoptimized
         className={cn(
-          "shrink-0 rounded-full border border-[#C4B5FD] bg-white object-cover",
+          "shrink-0 rounded-full border border-violet-300 bg-white object-cover",
           className,
         )}
         style={{ width: px, height: px }}
@@ -59,7 +59,7 @@ export function ArenaPersonAvatar({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full border border-[#C4B5FD] font-bold text-white",
+        "inline-flex shrink-0 items-center justify-center rounded-full border border-violet-300 font-bold text-white",
         className,
       )}
       style={{

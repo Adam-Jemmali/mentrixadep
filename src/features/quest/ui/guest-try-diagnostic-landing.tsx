@@ -15,8 +15,6 @@ import {
 import type { VocabIconName } from "@/shared/icons/mentrixa-vocab-map";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 
-const VERIFIED_GOLD = "#D4A017";
-
 const HIGHLIGHTS: Array<{
   icon: VocabIconName;
   gold?: boolean;
@@ -63,20 +61,20 @@ export function GuestTryDiagnosticLanding({
       )}
     >
       <div className={`${mentrixStudent.card} space-y-6 p-6 sm:p-8`}>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6366F1]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--mx-indigo)]">
           Free diagnostic
           <span className="mx-2 text-[#C4B5FD]">| </span>
           {AP_CALC_AB_SUBJECT}
         </p>
 
         <div className="text-center sm:text-left">
-          <h1 className="min-h-[2.75rem] text-3xl font-bold leading-tight tracking-tight text-[#0B1220] sm:min-h-[3.25rem] sm:text-4xl">
+          <h1 className="min-h-[2.75rem] text-3xl font-bold leading-tight tracking-tight text-[var(--mx-navy)] sm:min-h-[3.25rem] sm:text-4xl">
             <Typewriter
               text="Find the gap before the exam does"
               speed={55}
               waitTime={12000}
               loop={false}
-              className="text-[#0B1220]"
+              className="text-[var(--mx-navy)]"
             />
           </h1>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-[#475569] sm:text-base">
@@ -88,12 +86,12 @@ export function GuestTryDiagnosticLanding({
           {HIGHLIGHTS.map(({ icon, gold, label, detail }) => (
             <div
               key={label}
-              className="rounded-xl border border-[#C4B5FD] bg-white/80 p-4"
+              className="rounded-xl border border-violet-300 bg-white/80 p-4"
             >
-              <span className="inline-flex size-10 items-center justify-center rounded-xl bg-[#EDE9FE] p-1.5">
+              <span className="inline-flex size-10 items-center justify-center rounded-xl bg-violet-100 p-1.5">
                 <MentrixaVocabIcon name={icon} size={28} gold={gold} surface="light" title={label} />
               </span>
-              <p className="mt-3 text-sm font-semibold text-[#0B1220]">{label}</p>
+              <p className="mt-3 text-sm font-semibold text-[var(--mx-navy)]">{label}</p>
               <p className="mt-1 text-xs leading-relaxed text-[#475569]">{detail}</p>
             </div>
           ))}
@@ -108,12 +106,12 @@ export function GuestTryDiagnosticLanding({
         ) : null}
 
         {busy ? (
-          <div className="rounded-xl border border-[#C4B5FD] bg-white/80 px-4 py-8 sm:px-6">
+          <div className="rounded-xl border border-violet-300 bg-white/80 px-4 py-8 sm:px-6">
             <QuestPackLoadPendingPanel className="max-w-xs" />
           </div>
         ) : (
           <Button
-            className="h-14 w-full rounded-xl bg-[#7C3AED] text-base font-semibold text-white shadow-[2px_3px_0_#0B1220] hover:bg-[#6D28D9]"
+            className="h-14 w-full rounded-xl bg-[var(--mx-violet)] text-base font-semibold text-white shadow-[2px_3px_0_var(--mx-navy)] hover:bg-[var(--mx-primary-hover)]"
             onClick={onStart}
             disabled={busy}
           >
@@ -123,7 +121,7 @@ export function GuestTryDiagnosticLanding({
 
         <p className="text-center text-xs text-[#475569]">
           No account required to try.{" "}
-          <span style={{ color: VERIFIED_GOLD }}>First attempts after signup lock rank.</span>
+          <span className="text-[var(--mx-violet)]">First attempts after signup lock rank.</span>
         </p>
       </div>
     </motion.div>

@@ -28,13 +28,13 @@ export function GuideEarningsForecastPanel({
   return (
     <Card
       className={cn(
-        "overflow-hidden border-[#1E293B] bg-[#0F172A] shadow-[0_12px_40px_-12px_rgba(11,18,32,0.55)]",
+        "overflow-hidden border-[var(--mx-surface-3)] bg-[var(--mx-navy-2)] shadow-[0_12px_40px_-12px_rgba(11,18,32,0.55)]",
         className,
       )}
-      style={{ borderLeft: "3px solid #D4A017" }}
+      style={{ borderLeft: "3px solid var(--mx-gold)" }}
     >
       <CardContent className="space-y-4 p-4">
-        <h3 className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.14em] text-[#D4A017]">
+        <h3 className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.14em] text-[var(--mx-gold)]">
           <MentrixaVocabIcon
             name={CANONICAL_RECEIPT_ICON}
             size={16}
@@ -64,7 +64,7 @@ export function GuideEarningsForecastPanel({
             <Button
               type="button"
               variant="ghost"
-              className="h-9 px-0 text-sm font-semibold text-[#7C3AED] hover:bg-[#7C3AED]/10 hover:text-[#C4B5FD]"
+              className="h-9 px-0 text-sm font-semibold text-[var(--mx-violet)] hover:bg-[var(--mx-violet)]/10 hover:text-[#C4B5FD]"
               onClick={() => {
                 document.getElementById("tutor-availability-slots")?.scrollIntoView({
                   behavior: "smooth",
@@ -134,7 +134,7 @@ function ProjectedMonthlyAmount({
   if (!paceLabel) return null;
 
   return (
-    <p className="font-[family-name:var(--font-playfair),serif] text-2xl font-bold leading-snug text-[#D4A017]">
+    <p className="font-[family-name:var(--font-playfair),serif] text-2xl font-bold leading-snug text-[var(--mx-gold)]">
       At your current pace: ~
       <span ref={dollarRef} style={{ opacity: reduceMotion ? 1 : 0 }}>
         $

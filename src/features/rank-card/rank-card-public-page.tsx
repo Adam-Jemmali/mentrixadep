@@ -16,24 +16,24 @@ export function RankCardPublicPage({
 
 export function RankCardPrivateNotice({ username }: { username: string }) {
   return (
-    <div className="min-h-dvh bg-[#0B1220] text-slate-100">
+    <div className="min-h-dvh bg-[var(--mx-navy)] text-slate-100">
       <div className="mx-auto max-w-lg px-4 pb-24 pt-8">
         <RankPassportTopBar />
         <div
           className={cn(
-            "flex min-h-[50vh] flex-col items-center justify-center rounded-lg border border-white/10 bg-[#0F172A]/80 py-16 text-center",
+            "flex min-h-[50vh] flex-col items-center justify-center rounded-lg border border-white/10 bg-[var(--mx-navy-2)]/80 py-16 text-center",
           )}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6366F1]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--mx-indigo)]">
             @{username}
           </p>
           <h1 className="mt-4 text-3xl font-bold text-white">This passport is private</h1>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#9CA3AF]">
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--mx-muted)]">
             The owner chose to keep this verified record private.
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex rounded-md border border-[#6366F1]/50 px-4 py-2 text-sm font-medium text-violet-300 hover:bg-white/5"
+            className="mt-8 inline-flex rounded-md border border-[var(--mx-indigo)]/50 px-4 py-2 text-sm font-medium text-violet-300 hover:bg-white/5"
           >
             Back to Mentrixa
           </Link>

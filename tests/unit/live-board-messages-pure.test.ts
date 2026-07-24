@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ARENA_PAGE_COPY,
   formatArenaBoardEventText,
+  formatLiveBoardEventAnnouncement,
   formatLiveBoardEventDescription,
   formatLiveBoardTimeAgo,
 } from "@/features/live-board/live-board-messages-pure";
@@ -48,6 +49,19 @@ describe("live board messages", () => {
         accuracy_pct: 100,
         new_rank_tier: null,
         display_name: "Trapdime",
+      }),
+    ).toBe("Trapdime locked Chain Rule");
+  });
+
+  it("formats aria-live announcements from feed events", () => {
+    expect(
+      formatLiveBoardEventAnnouncement({
+        event_type: "verified_attempt",
+        node_name: "Chain Rule",
+        accuracy_pct: 100,
+        new_rank_tier: null,
+        display_name: "Trapdime",
+        unit_name: "Derivatives",
       }),
     ).toBe("Trapdime locked Chain Rule");
   });

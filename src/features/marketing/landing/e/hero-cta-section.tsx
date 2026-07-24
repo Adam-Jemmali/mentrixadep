@@ -24,11 +24,11 @@ export function LandingHeroCtaSection() {
     void import("@/shared/core/gsap").then(({ gsap }) => {
       if (cancelled) return;
       gsap.from(".cta-section", {
-        y: 20,
+        y: 40,
         opacity: 0,
         duration: 0.5,
         delay: 1.2,
-        ease: "power2.out",
+        ease: "power3.out",
       });
     });
 
@@ -44,8 +44,8 @@ export function LandingHeroCtaSection() {
         prefetch={false}
         className={cn(
           "flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-full",
-          "bg-[var(--mx-violet,#7C3AED)] px-5 py-3 text-[15px] font-bold text-white",
-          "transition-colors hover:bg-[#6D28D9]",
+          "bg-[var(--mx-violet)] px-5 py-3 text-[15px] font-bold text-white",
+          "transition-colors hover:bg-[var(--mx-primary-hover)]",
         )}
       >
         <LandingRoleIcon role="mentrixer" size="md" surface="dark" />
@@ -56,7 +56,7 @@ export function LandingHeroCtaSection() {
         prefetch={false}
         className={cn(
           "flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-full px-5 py-3",
-          "text-[15px] font-semibold text-[var(--mx-muted,#9CA3AF)] transition-colors hover:text-white",
+          "text-[15px] font-semibold text-[var(--mx-muted)] transition-colors hover:text-white",
         )}
       >
         <LandingRoleIcon role="guide" size="md" surface="dark" />

@@ -90,7 +90,7 @@ function wrapWithTooltip(
         {node}
         <span
           role="tooltip"
-          className="pointer-events-none absolute bottom-[calc(100%+5px)] left-1/2 z-[60] -translate-x-1/2 whitespace-nowrap rounded border border-white/10 bg-[#0F172A] px-2 py-1 text-[10px] leading-snug text-slate-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+          className="pointer-events-none absolute bottom-[calc(100%+5px)] left-1/2 z-[60] -translate-x-1/2 whitespace-nowrap rounded border border-white/10 bg-[var(--mx-navy-2)] px-2 py-1 text-[10px] leading-snug text-slate-100 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
         >
           {text}
         </span>

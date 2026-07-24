@@ -58,20 +58,20 @@ export function ArenaWidgetClient({
     <div
       className={cn(
         "flex h-full min-h-0 flex-col overflow-hidden",
-        dark ? "bg-[#0B1220] text-white" : "bg-white text-[#0B1220]",
+        dark ? "bg-[var(--mx-navy)] text-white" : "bg-white text-[var(--mx-navy)]",
       )}
       style={{ height }}
     >
       <header
         className={cn(
           "flex items-center justify-between border-b px-3 py-2",
-          dark ? "border-white/10" : "border-[#E0E7FF]",
+          dark ? "border-white/10" : "border-violet-200",
         )}
       >
         <p
           className={cn(
             "text-[11px] font-bold uppercase tracking-[0.16em]",
-            dark ? "text-[#A5B4FC]" : "text-[#6366F1]",
+            dark ? "text-[#A5B4FC]" : "text-[var(--mx-indigo)]",
           )}
         >
           Live Arena
@@ -82,7 +82,7 @@ export function ArenaWidgetClient({
           rel="noreferrer"
           className={cn(
             "text-[11px] font-semibold",
-            dark ? "text-[#D4A017]" : "text-[#7C3AED]",
+            dark ? "text-[var(--mx-gold)]" : "text-[var(--mx-violet)]",
           )}
         >
           Mentrixa
@@ -111,7 +111,7 @@ export function ArenaWidgetClient({
               <p
                 className={cn(
                   "min-w-0 flex-1 text-sm font-semibold leading-snug",
-                  dark ? "text-white" : "text-[#0B1220]",
+                  dark ? "text-white" : "text-[var(--mx-navy)]",
                 )}
               >
                 {formatPublicFeedLine(item)}
@@ -133,7 +133,7 @@ export function ArenaWidgetClient({
       <footer
         className={cn(
           "border-t px-3 py-1.5 text-center text-[10px] font-medium",
-          dark ? "border-white/10 text-slate-500" : "border-[#E0E7FF] text-[#64748B]",
+          dark ? "border-white/10 text-slate-500" : "border-violet-200 text-[#64748B]",
         )}
       >
         Powered by Mentrixa. first attempts only

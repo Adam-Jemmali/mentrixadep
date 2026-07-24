@@ -5,7 +5,7 @@ export function HeroScrollCue() {
   return (
     <a
       href="#outcomes"
-      className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#475569] transition-colors hover:text-[#0B1220]"
+      className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#475569] transition-colors hover:text-[var(--mx-navy)]"
       aria-label="Scroll to see what you get"
     >
       <span>Explore</span>

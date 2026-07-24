@@ -71,7 +71,7 @@ export function MovementReceiptHubCard({ data, momentumActive, compact = false }
           label="This week"
           surface="light"
           iconSize={compact ? 36 : undefined}
-          labelClassName="text-[#6366F1]"
+          labelClassName="text-[var(--mx-indigo)]"
         />
       </div>
       <div className="mt-3">

@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 
 const steps = [
   { label: "Production env", command: "npm", args: ["run", "env:verify"] },
+  { label: "Design tokens (strict)", command: "npm", args: ["run", "validate:tokens:strict"] },
   { label: "Lint", command: "npm", args: ["run", "lint"] },
   { label: "Unit tests", command: "npm", args: ["run", "test:ci"] },
   { label: "Stripe setup", command: "npm", args: ["run", "stripe:verify"] },

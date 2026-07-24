@@ -98,7 +98,7 @@ export function DataTable<T>({
             "h-9 pl-9 text-sm",
             isDark
               ? "border-white/10 bg-[var(--mx-surface-3)] text-slate-100 placeholder:text-slate-500"
-              : "border-[#E0E7FF] bg-white/90 text-[var(--mx-navy)]",
+              : "border-violet-200 bg-white/90 text-[var(--mx-navy)]",
           )}
           aria-label={filterPlaceholder}
         />
@@ -112,7 +112,7 @@ export function DataTable<T>({
       >
         <table className="w-full min-w-[20rem] border-collapse text-left text-sm">
           <thead>
-            <tr className={isDark ? "border-b border-white/10 bg-white/5" : "border-b border-[#E0E7FF] bg-[#EDE9FE]/40"}>
+            <tr className={isDark ? "border-b border-white/10 bg-white/5" : "border-b border-violet-200 bg-violet-100/40"}>
               {columns.map((col) => {
                 const canSort = Boolean(col.sortValue);
                 const active = sortCol === col.id;
@@ -171,7 +171,7 @@ export function DataTable<T>({
                       "border-b last:border-b-0 transition-colors duration-200",
                       isDark
                         ? "border-white/5 hover:bg-white/[0.04]"
-                        : "border-[#E0E7FF]/80 hover:bg-[#EDE9FE]/30",
+                        : "border-violet-200/80 hover:bg-violet-100/30",
                     )}
                   >
                     {columns.map((col) => (

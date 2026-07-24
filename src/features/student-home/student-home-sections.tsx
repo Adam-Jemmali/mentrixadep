@@ -109,9 +109,9 @@ export function StudentHomeUpcomingSessions({
             {sessions.slice(0, 4).map((session) => (
               <li
                 key={session.id}
-                className="flex items-center gap-3 rounded-lg border border-[#E0E7FF] bg-white/80 px-3 py-2.5 shadow-[1px_2px_0_rgba(11,18,32,0.06)]"
+                className="flex items-center gap-3 rounded-lg border border-violet-200 bg-white/80 px-3 py-2.5 shadow-[1px_2px_0_rgba(11,18,32,0.06)]"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#C4B5FD] bg-[#EDE9FE]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-300 bg-violet-100">
                   {session.tutor_avatar_url ? (
                     <Image
                       src={session.tutor_avatar_url}
@@ -126,7 +126,7 @@ export function StudentHomeUpcomingSessions({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-[#0B1220]">{session.tutor_name}</p>
+                  <p className="truncate text-sm font-semibold text-[var(--mx-navy)]">{session.tutor_name}</p>
                   <p className="flex items-center gap-1.5 text-xs text-[#475569]">
                     <MentrixaVocabIcon name="session" size={14} surface="light" title="Session time" />
                     {formatDateInZone(session.start_time, timeZone)}
@@ -218,8 +218,8 @@ export function StudentHomeArenaPreview({
         ) : (
           <ul className="space-y-1.5">
             {events.map((event) => (
-              <li key={event.id} className="rounded-lg border border-[#E0E7FF] bg-white/75 px-3 py-2">
-                <p className="flex items-start gap-2 text-sm text-[#0B1220]">
+              <li key={event.id} className="rounded-lg border border-violet-200 bg-white/75 px-3 py-2">
+                <p className="flex items-start gap-2 text-sm text-[var(--mx-navy)]">
                   <MentrixaVocabIcon name={CANONICAL_ARENA_TIER_ICON} size={18} surface="light" title="Arena event" />
                   <span>{formatLiveBoardEventDescription(event)}</span>
                 </p>
@@ -254,7 +254,7 @@ export function StudentHomeGuideRecommendation({
           />
         ) : (
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#7C3AED] bg-[#EDE9FE]">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--mx-violet)] bg-violet-100">
               {guide.avatarUrl ? (
                 <Image
                   src={guide.avatarUrl}
@@ -269,7 +269,7 @@ export function StudentHomeGuideRecommendation({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-[#0B1220]">{guide.displayName}</p>
+              <p className="truncate text-sm font-semibold text-[var(--mx-navy)]">{guide.displayName}</p>
               <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[#475569]">
                 <span className="inline-flex items-center gap-1">
                   <MentrixaVocabIcon name="impact-score" size={14} surface="light" title="Impact score" />

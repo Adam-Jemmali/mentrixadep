@@ -303,7 +303,7 @@ export function FallingRoleSliceArena({
     <div
       ref={arenaRef}
       className={cn(
-        "lp-paper-game-board relative w-full overflow-hidden rounded-xl border border-[#C4B5FD] bg-[#F8FAFC] touch-manipulation",
+        "lp-paper-game-board relative w-full overflow-hidden rounded-xl border border-violet-300 bg-[#F8FAFC] touch-manipulation",
         phase === "playing" && "cursor-crosshair",
         className,
       )}
@@ -348,7 +348,7 @@ export function FallingRoleSliceArena({
                   <span
                     className={cn(
                       "flex size-full items-center justify-center rounded-lg border-2 border-[#4338CA] bg-white p-1 shadow-[1px_2px_0_rgba(11,18,32,0.16)]",
-                      icon.role === "Guide" && "border-[#6D28D9]",
+                      icon.role === "Guide" && "border-[var(--mx-primary-hover)]",
                     )}
                   >
                     <RoleImg role={icon.role} size={iconSize} />
@@ -363,14 +363,14 @@ export function FallingRoleSliceArena({
         <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex flex-col items-center bg-gradient-to-b from-[#F8FAFC] via-[#F8FAFC]/90 to-transparent px-3 pb-5 pt-2.5 text-center">
           {phase === "playing" ? (
             <>
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#6366F1]">Tap the notes</p>
-              <p className="text-xl font-black tabular-nums text-[#0B1220]">{secondsLeft}s</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--mx-indigo)]">Tap the notes</p>
+              <p className="text-xl font-black tabular-nums text-[var(--mx-navy)]">{secondsLeft}s</p>
               <div className="mt-1 flex gap-4 text-[11px] font-bold text-[#475569]">
                 <span>
                   {learnLabel} <span className="text-[#4F46E5]">{scores.Mentrixer}</span>
                 </span>
                 <span>
-                  {teachLabel} <span className="text-[#7C3AED]">{scores.Guide}</span>
+                  {teachLabel} <span className="text-[var(--mx-violet)]">{scores.Guide}</span>
                 </span>
               </div>
             </>
@@ -378,7 +378,7 @@ export function FallingRoleSliceArena({
             <button
               type="button"
               onClick={startGame}
-              className="pointer-events-auto cursor-pointer rounded-lg border border-[#6366F1] bg-[#EDE9FE] px-4 py-2 text-xs font-bold text-[#4F46E5] shadow-[2px_3px_0_rgba(11,18,32,0.1)]"
+              className="pointer-events-auto cursor-pointer rounded-lg border border-[var(--mx-indigo)] bg-violet-100 px-4 py-2 text-xs font-bold text-[#4F46E5] shadow-[2px_3px_0_rgba(11,18,32,0.1)]"
             >
               Start →
             </button>

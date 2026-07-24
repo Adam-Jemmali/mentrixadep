@@ -38,7 +38,7 @@ export function GuidePublicBookingSection({
       <GuideAnimatedSticky variant="taped" staggerIndex={3}>
         <div className="mb-2 flex items-center gap-2">
           <MentrixaVocabIcon name={CANONICAL_BOOKING_ICON} size={18} surface="light" title="Booking" />
-          <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#7C3AED]">
+          <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--mx-violet)]">
             {GUIDE_PUBLIC_COPY.bookingHeading}
           </h2>
         </div>
@@ -61,8 +61,8 @@ export function GuidePublicBookingSection({
               if (selectedSlot) onBookSlot(selectedSlot);
             }}
             className={cn(
-              "mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#6366F1]",
-              "bg-[#7C3AED] px-4 py-3 text-sm font-bold text-white shadow-[2px_3px_0_#0B1220]",
+              "mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--mx-indigo)]",
+              "bg-[var(--mx-violet)] px-4 py-3 text-sm font-bold text-white shadow-[2px_3px_0_var(--mx-navy)]",
               "disabled:cursor-not-allowed disabled:opacity-50",
             )}
             whileHover={reduceMotion || !selectedSlot ? undefined : { scale: 1.02, y: -1 }}

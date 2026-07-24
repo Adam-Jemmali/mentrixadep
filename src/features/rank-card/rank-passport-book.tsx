@@ -60,7 +60,7 @@ export function RankPassportStoryShell({
             key={index}
             className={cn(
               "h-1.5 rounded-full transition-all duration-300",
-              index === activePage ? "w-5 bg-[#7C3AED]" : "w-1.5 bg-[#C4B5FD]",
+              index === activePage ? "w-5 bg-[var(--mx-violet)]" : "w-1.5 bg-[#C4B5FD]",
             )}
           />
         ))}
@@ -87,7 +87,7 @@ export function RankPassportStoryPage({
     <motion.section
       data-passport-page={pageIndex}
       className={cn(
-        "rank-passport-page min-h-[min(68dvh,560px)] snap-start snap-always border-t border-[#C4B5FD]/80 first:border-t-0",
+        "rank-passport-page min-h-[min(68dvh,560px)] snap-start snap-always border-t border-violet-300/80 first:border-t-0",
         className,
       )}
       initial={reduceMotion ? false : { opacity: 0, y: 28 }}
@@ -98,7 +98,7 @@ export function RankPassportStoryPage({
       {children}
       {hint ? (
         <motion.p
-          className="mt-4 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6366F1]"
+          className="mt-4 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mx-indigo)]"
           initial={false}
           animate={mounted && !prefersReducedMotion ? { opacity: [0.45, 1, 0.45] } : { opacity: 0.7 }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
@@ -144,7 +144,7 @@ export function RankPassportCover({
     <div
       ref={coverRef}
       className={cn(
-        "rank-passport-cover relative overflow-hidden rounded-lg border border-[#312E81] bg-[#0B1220] px-5 py-6 text-[#E2E8F0] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),4px_12px_28px_-12px_rgba(2,6,23,0.65)] sm:px-7 sm:py-8",
+        "rank-passport-cover relative overflow-hidden rounded-lg border border-[#312E81] bg-[var(--mx-navy)] px-5 py-6 text-[var(--mx-rule)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),4px_12px_28px_-12px_rgba(2,6,23,0.65)] sm:px-7 sm:py-8",
         className,
       )}
     >

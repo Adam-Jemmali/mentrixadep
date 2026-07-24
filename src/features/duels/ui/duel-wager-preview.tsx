@@ -7,8 +7,6 @@ import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
 import { usePrefersReducedMotion } from "@/shared/hooks/use-prefers-reduced-motion";
 import { cn } from "@/shared/core/utils";
 
-const GOLD = "#D4A017";
-
 /** Live win/lose XP preview with anime counter on slider moves. */
 export function DuelWagerPreview({
   yourWager,
@@ -77,9 +75,9 @@ export function DuelWagerPreview({
   }, [yourWager, maxWager, reducedMotion]);
 
   return (
-    <div className={cn("space-y-2 rounded-xl border border-[#334155]/60 bg-[#0F172A]/40 px-3 py-3", className)}>
+    <div className={cn("space-y-2 rounded-xl border border-[#334155]/60 bg-[var(--mx-navy-2)]/40 px-3 py-3", className)}>
       <p className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
-        <MentrixaVocabIcon name="xp" size={18} gold surface="dark" title="Win XP" />
+        <MentrixaVocabIcon name="xp" size={18} surface="dark" title="Win XP" />
         <span>{DUEL_WAGER_STEP_COPY.winPrefix}</span>
         <span ref={winRef} className="font-mono tabular-nums">
           +0 {DUEL_WAGER_STEP_COPY.currentXpLabel}
@@ -108,8 +106,8 @@ export function DuelWagerXpDisplay({
   return (
     <div className={cn("space-y-1", className)}>
       <p className="inline-flex items-center gap-2">
-        <MentrixaVocabIcon name="xp" size={22} gold surface="dark" title="Your XP" />
-        <span className="font-mono text-2xl font-bold tabular-nums" style={{ color: GOLD }}>
+        <MentrixaVocabIcon name="xp" size={22} surface="dark" title="Your XP" />
+        <span className="font-mono text-2xl font-bold tabular-nums text-[var(--mx-violet)]">
           {totalXp.toLocaleString()} {DUEL_WAGER_STEP_COPY.currentXpLabel}
         </span>
       </p>
