@@ -6,7 +6,7 @@ import { createAdminClient } from "@/shared/integrations/supabase/admin";
 import { getUtcWeekMondayString } from "@/features/divisions/division-week";
 import { getDivisionTierFromXp } from "@/features/xp/levels";
 import { getDivisionForumThreads } from "@/features/divisions/division-forum";
-import { getDivisionKeyForCourse, getDivisionLeaderboard, type LeaderboardEntry } from "@/features/divisions/leaderboard";
+import { getDivisionKeyForCourse, getDivisionLeaderboard, getDivisionsCatalog, type LeaderboardEntry } from "@/features/divisions/leaderboard";
 import { getDivisionWarPanel } from "@/features/division-wars/reads";
 import { cacheKeys, cacheTtl, withCache } from "@/shared/core/redis";
 import { createClient } from "@/shared/integrations/supabase/server";
@@ -459,3 +459,5 @@ export async function loadDivisionDetailPage(divisionKey: string, userId: string
 }
 
 export type DivisionDetailPayload = NonNullable<Awaited<ReturnType<typeof loadDivisionDetailPage>>>;
+
+export { getDivisionsCatalog };

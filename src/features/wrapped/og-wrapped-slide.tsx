@@ -73,10 +73,13 @@ export function renderWrappedOgSlide(params: {
             fontSize: 20,
             fontWeight: 800,
             letterSpacing: "0.12em",
-            color: WRAPPED_OG_COLORS.gold,
+            background: "linear-gradient(90deg, #4F46E5 0%, #6366F1 45%, #A855F7 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
           }}
         >
-          MENTRIXA
+          MENTRIXA_
         </div>
         <div style={{ fontSize: 18, color: WRAPPED_OG_COLORS.faint, fontFamily: "monospace" }}>
           {copy.footer ?? `Slide ${copy.slide} of 5`}

@@ -17,6 +17,7 @@ import {
 import { animate } from "@/shared/animation/anime";
 import { AnimatePresence, motion, useReducedMotion } from "@/shared/animation/motion";
 import { MentrixaVocabIcon } from "@/shared/icons/mentrixa-vocab-icons";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { cn } from "@/shared/core/utils";
 
 const ACCENT = "var(--mx-violet)";
@@ -89,7 +90,7 @@ function SlideOpener({
   displayName: string;
   active: boolean;
 }) {
-  const wordmarkRef = useRef<HTMLParagraphElement>(null);
+  const wordmarkRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -105,13 +106,9 @@ function SlideOpener({
   return (
     <div className="flex flex-col items-center text-center">
       <WrappedEyebrow icon="passport">This year on Mentrixa. {reportYear}</WrappedEyebrow>
-      <p
-        ref={wordmarkRef}
-        className="mt-8 font-[family-name:var(--font-playfair),serif] text-[48px] font-bold leading-none"
-        style={{ color: ACCENT }}
-      >
-        MENTRIXA
-      </p>
+      <div ref={wordmarkRef} className="mt-8">
+        <MentrixaWordmark trixaClassName="text-white" className="text-4xl sm:text-5xl justify-center" />
+      </div>
       <p className="mt-6 text-xl font-semibold text-white">{displayName}</p>
     </div>
   );

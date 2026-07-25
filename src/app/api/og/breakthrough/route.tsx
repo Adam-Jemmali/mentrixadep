@@ -49,8 +49,17 @@ export async function GET(request: Request) {
           >
             Breakthrough
           </div>
-          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "0.08em", color: "#818cf8" }}>
-            MENTRIXA
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              background: "linear-gradient(90deg, #4F46E5 0%, #6366F1 45%, #A855F7 100%)",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            MENTRIXA_
           </div>
           <div style={{ fontSize: 52, fontWeight: 900, fontStyle: "italic", lineHeight: 1.1 }}>
             {event.concept}

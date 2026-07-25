@@ -55,8 +55,8 @@ import type { SharedSessionGridPayload } from "@/features/video/load-shared-sess
 import { ToolbarQualityBadge } from "@/features/video/ui/connection-quality";
 import Image from "next/image";
 import { BubbleText } from "@/shared/ui/bubble-text";
-import { ParticleTextEffect } from "@/shared/ui/particle-text";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { PostCallSummary } from "@/features/video/ui/post-call-summary";
 
 /** Trigger a browser download so the user keeps a local copy of the recording. */
@@ -188,13 +188,7 @@ function peerTransportLooksHealthy(pc: RTCPeerConnection | null): boolean {
   if (!pc) return false;
   const cs = pc.connectionState;
   const ice = pc.iceConnectionState;
-  if (cs === "failed" || cs === "closed") return false;
-  if (ice === "failed" || ice === "closed") return false;
-  return (
-    cs === "connected" ||
-    ice === "connected" ||
-    ice === "completed"
-  );
+  return cs !== "failed" && cs !== "closed" && ice !== "failed" && ice !== "closed";
 }
 
 /** Generic WebM type — avoids codec strings in the Blob that confuse some desktop players (e.g. Windows Media Player). */
@@ -301,6 +295,7 @@ export function VideoCall({
   const [whiteboardSnapshot, setWhiteboardSnapshot] = useState<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const hiddenRecordingVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -870,7 +865,8 @@ export function VideoCall({
         const stream = remoteStreamRef.current;
         // Ensure the track is actually live and enabled
         const videoTrack = stream.getVideoTracks()[0];
-        if (videoTrack && videoTrack.readyState === "live" && remoteVideoRef.current.srcObject !== stream) {
+        if (videoTrack && videoTrack.readyState === "live") {
+          remoteVideoRef.current.srcObject = null;
           remoteVideoRef.current.srcObject = stream;
           try {
             await remoteVideoRef.current.play();
@@ -2109,6 +2105,16 @@ export function VideoCall({
         throw new Error("No display track was returned. Choose a screen/window to record.");
       }
 
+      // Bind display track to hidden video to keep background capture active in Chrome
+      let activeStream = recordingDisplayStream;
+      if (!activeStream && recordingDisplayTrack) {
+        activeStream = new MediaStream([recordingDisplayTrack]);
+      }
+      if (hiddenRecordingVideoRef.current && activeStream) {
+        hiddenRecordingVideoRef.current.srcObject = activeStream;
+        void hiddenRecordingVideoRef.current.play().catch(() => {});
+      }
+
       closeRecordingAudioContext();
 
        
@@ -2533,6 +2539,9 @@ export function VideoCall({
 
   const stopRecording = (): Promise<void> => {
     return new Promise((resolve) => {
+      if (hiddenRecordingVideoRef.current) {
+        hiddenRecordingVideoRef.current.srcObject = null;
+      }
       if (isStoppingRef.current) {
         resolve();
         return;
@@ -2703,6 +2712,15 @@ export function VideoCall({
         displayTrack.stop();
       } catch {
         /* ignore */
+      }
+    } else if (!options.stopDisplayTrack && displayTrack && displayTrack.readyState !== "ended") {
+      if (hiddenRecordingVideoRef.current) {
+        let stream = recordingDisplayStreamRef.current;
+        if (!stream) {
+          stream = new MediaStream([displayTrack]);
+        }
+        hiddenRecordingVideoRef.current.srcObject = stream;
+        void hiddenRecordingVideoRef.current.play().catch(() => {});
       }
     }
     if (options.stopDisplayTrack) {
@@ -3168,13 +3186,7 @@ export function VideoCall({
           {/* Connecting overlay */}
           {connectionStatus !== "connected" && (
             <div className="absolute inset-0 bg-[#080C14] z-[15] flex flex-col items-center justify-center">
-              {/* Particle background for cinematic feel */}
-              <div className="absolute inset-0 opacity-20 pointer-events-none">
-                <ParticleTextEffect words={["MENTRIXA", "WELCOME"]} />
-              </div>
-
               <div className="relative z-10 flex flex-col items-center gap-10">
-                {/* Mentrixa Logo with premium glow */}
                 <div className="relative">
                   <div className="absolute -inset-4 rounded-full bg-blue-500/10 blur-2xl animate-pulse" />
                   <Image
@@ -3187,9 +3199,8 @@ export function VideoCall({
                 </div>
 
                 <div className="text-center space-y-4">
-                  <h2 className="text-white text-3xl font-bold tracking-tight">
-                    Welcome to Mentrixa
-                  </h2>
+                  <p className="text-white/70 text-sm font-medium uppercase tracking-[0.2em]">Welcome to</p>
+                  <MentrixaWordmark trixaClassName="text-white" className="text-3xl sm:text-4xl justify-center" />
                   <div className="flex flex-col items-center gap-1.5">
                     <p className="text-white/40 text-xs font-medium uppercase tracking-[0.3em] animate-pulse">
                       {waitingForOtherParticipant ? "Waiting for other participant" : "Establishing secure connection"}
@@ -3536,6 +3547,14 @@ export function VideoCall({
         ) : null}
       </div>
 
+      {/* Hidden video element to keep recording display stream alive in background */}
+      <video
+        ref={hiddenRecordingVideoRef}
+        autoPlay
+        playsInline
+        muted
+        className="hidden pointer-events-none absolute w-1 h-1 opacity-0"
+      />
     </div>
   );
 }

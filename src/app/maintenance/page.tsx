@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,12 @@ export default function MaintenancePage() {
       />
       <section className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center px-6 py-16 text-center">
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] px-8 py-10 shadow-2xl backdrop-blur-sm sm:px-12 sm:py-12">
-          <div className="mx-auto mb-5 flex justify-center">
+          <div className="mx-auto mb-5 flex flex-col items-center justify-center gap-2">
             <MentrixaLogoMark size="hero" priority />
+            <MentrixaWordmark trixaClassName="text-white" className="text-lg" />
           </div>
 
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-indigo-200/80">Mentrixa platform</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-indigo-200/80">Platform maintenance</p>
           <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight sm:text-5xl">
             We are polishing Mentrixa right now
           </h1>

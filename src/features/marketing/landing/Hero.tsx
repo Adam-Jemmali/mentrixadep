@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 
 const container = {
   hidden: { opacity: 0 },
@@ -78,9 +79,9 @@ export default function Hero() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Link
                   href="/auth/signup"
-                  className="btn-primary text-base px-8 py-4 rounded-2xl shadow-glow hover:shadow-glow-lg inline-flex"
+                  className="btn-primary text-base px-8 py-4 rounded-2xl shadow-glow hover:shadow-glow-lg inline-flex items-center gap-2"
                 >
-                  Join MENTRIXA
+                  Join <MentrixaWordmark className="text-base text-white [&_span]:text-white" />
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

@@ -5,7 +5,7 @@ import { cn } from "@/shared/core/utils";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { Skeleton, type SkeletonTone } from "@/shared/ui/skeleton";
 import { MentrixaSkeletonWatermark } from "@/shared/ui/mentrixa-ui-brand";
-import { UiSkeletonShimmer, UiSkeletonShimmerGrid } from "@/components/ui";
+import { UiSkeletonShimmerGrid } from "@/components/ui";
 import { BklitShimmer, BklitShimmerGrid } from "@/shared/ui/bklit-shimmer";
 
 export type { SkeletonTone };
@@ -88,7 +88,7 @@ export function SkeletonListItems({
 export function SkeletonStatGrid({
   count = 4,
   className,
-  tone = "light",
+  tone: _tone = "light",
 }: {
   count?: number;
   className?: string;

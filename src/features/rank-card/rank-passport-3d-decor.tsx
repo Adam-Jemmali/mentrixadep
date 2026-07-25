@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { PassportPageSecurityLayer } from "@/features/rank-card/rank-passport-security-layer";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { cn } from "@/shared/core/utils";
 
 /** HTML canvas + mesh scale for sharper in-page typography. */
@@ -305,9 +306,7 @@ export function PassportCoverFace({ subjectLabel }: { subjectLabel: string }) {
         />
       </div>
       <div className="space-y-4">
-        <p className="rank-passport-3d-foil--brand text-[2.65rem] font-black leading-none tracking-[0.22em]">
-          MENTRIXA
-        </p>
+        <MentrixaWordmark className="rank-passport-3d-foil--brand text-[2rem] sm:text-[2.65rem] justify-center" />
         <p className="text-lg font-bold uppercase tracking-[0.2em] text-[#94A3B8]">Verified passport</p>
         <p className="text-base font-semibold uppercase tracking-[0.12em] text-[#64748B]">{subjectLabel}</p>
       </div>

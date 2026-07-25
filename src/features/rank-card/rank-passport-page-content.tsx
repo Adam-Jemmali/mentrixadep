@@ -31,7 +31,7 @@ import { cn } from "@/shared/core/utils";
 
 export function RankPassportVerifiedSpread({
   data,
-  accuracyPercent,
+  accuracyPercent: _accuracyPercent,
   topPercent,
   bandCaption,
   className,
@@ -75,7 +75,7 @@ export function RankPassportVerifiedSpread({
 
 export function RankPassportSkillProofPage({
   data,
-  accuracyPercent,
+  accuracyPercent: _accuracyPercent,
   topPercent,
   bandCaption,
   className,

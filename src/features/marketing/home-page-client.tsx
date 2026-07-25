@@ -11,6 +11,7 @@ import { cn } from "@/shared/core/utils";
 import { useTrack } from "@/shared/integrations/use-track";
 import PricingSection from "@/shared/ui/pricing";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { ContactSocialLinks } from "@/features/marketing/contact-ui/contact-social-links";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
 import { markLandingSection, useLandingPerfMetrics, useLowEndMode } from "@/features/marketing/landing-perf";
@@ -209,7 +210,7 @@ export function HomePageClient() {
             <div>
               <Link href="/" className="inline-flex items-center gap-2.5">
                 <MentrixaLogoMark size="sm" className="opacity-90" />
-                <span className="text-[15px] font-bold text-white tracking-tight">Mentrixa</span>
+                <MentrixaWordmark trixaClassName="text-white" className="text-[15px]" />
               </Link>
           
             </div>

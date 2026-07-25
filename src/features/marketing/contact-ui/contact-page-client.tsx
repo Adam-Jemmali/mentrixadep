@@ -2,8 +2,10 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { Mail } from "lucide-react";
 import { submitContactFeedback } from "@/features/marketing/contact";
+import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { Button } from "@/shared/ui/button";
 import { MentrixaContactCategoryRadioGroup } from "@/shared/ui/radio-group-patterns";
 import {
@@ -18,15 +20,15 @@ import {
   validateRequiredText,
 } from "@/shared/ui/form-messages-pure";
 import { ContactSocialLinks } from "@/features/marketing/contact-ui/contact-social-links";
-import { gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
-import { Mail } from "lucide-react";
+import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
+import { LandingStickyCard } from "@/features/marketing/landing/ui/landing-section-shell";
+import { landingHub } from "@/features/marketing/landing/landing-hub-ui";
 
 type Props = {
-  /** Shown in mailto — should match where `CONTACT_INBOX_EMAIL` delivers. */
-  feedbackEmail: string;
+  feedbackEmail?: string;
 };
 
-export function ContactPageClient({ feedbackEmail }: Props) {
+export function ContactPageClient({ feedbackEmail = DEFAULT_PUBLIC_FEEDBACK_EMAIL }: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -53,142 +55,140 @@ export function ContactPageClient({ feedbackEmail }: Props) {
     }
   }, []);
 
-  if (done) {
-    return (
-      <div className="lp-root">
-        <div className="mx-auto mb-6 flex w-full max-w-2xl items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 backdrop-blur-sm">
-          <span className="text-sm font-semibold tracking-wide text-slate-100">Mentrixa Contact</span>
-          <Link href="/" className="text-sm font-medium text-indigo-200 hover:text-indigo-100">
-            Back to homepage
-          </Link>
-        </div>
-        <section className="lp-band-contact py-12 md:py-16">
-          <div className="max-w-lg mx-auto text-center py-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600">
-              <Mail className="h-7 w-7" aria-hidden />
-            </div>
-            <h2 className="text-xl font-bold tracking-[-0.03em] text-slate-900">Thanks — we read every message</h2>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              If you asked for a reply, we&apos;ll get back as soon as we can. Your feedback helps Mentrixa serve Mentrixers
-              and Guides better.
-            </p>
-            <Button type="button" variant="outline" className="mt-2" onClick={() => setDone(false)}>
-              Send another message
-            </Button>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
   return (
-    <div className="lp-root">
-      <div className="mx-auto mb-6 flex w-full max-w-2xl items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 backdrop-blur-sm">
-        <span className="text-sm font-semibold tracking-wide text-slate-100">Mentrixa Contact</span>
-        <Link href="/" className="text-sm font-medium text-indigo-200 hover:text-indigo-100">
-          Back to homepage
-        </Link>
-      </div>
-      <section className="lp-band-contact py-12 md:py-16">
-        <div className="max-w-2xl mx-auto space-y-10 pb-12 px-4 sm:px-6">
-      <div className="space-y-3 text-white">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">Contact</p>
-        <h1 className="text-3xl font-bold tracking-[-0.04em] text-white md:text-4xl">Talk to us</h1>
-        <p className="text-base text-slate-200 leading-relaxed max-w-xl">
-          You&apos;re the reason we ship. Mentrixers and Guides who speak up shape what we are building.
-        </p>
-        <p className="text-sm font-medium text-slate-100">
-          Prefer email?{" "}
-          <a
-            href={gmailWebComposeUrl(feedbackEmail)}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Compose in Gmail (web)"
-            className="text-indigo-300 underline underline-offset-2 hover:text-indigo-200 break-all"
-          >
-            {feedbackEmail}
-          </a>
-        </p>
-      </div>
-
-      
-
-      <MentrixaForm
-        onSubmit={onSubmit}
-        tone="light"
-        className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm md:p-8"
+    <div className="relative z-10 mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
+      <LandingStickyCard
+        variant="clip"
+        rotate={false}
+        className="mb-8 flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5"
       >
-        <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
+        <Link href="/" prefetch={false} className="flex items-center gap-2">
+          <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" />
+          <MentrixaWordmark className="text-base sm:text-lg" />
+        </Link>
+        <Link href="/" prefetch={false} className={landingHub.linkBack}>
+          Back home
+        </Link>
+      </LandingStickyCard>
 
-        <MentrixaFieldset
-          legend="Send feedback"
-          description="Pick a category and tell us what to fix or build next."
-          tone="light"
-          message={contactFormFieldsetMessage()}
-          actions={
-            <div className="flex flex-wrap items-center gap-4">
-              <Button type="submit" className="min-w-[160px]" disabled={pending}>
-                {pending ? "Sending…" : "Send feedback"}
-              </Button>
-              <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-black hover:text-black/80">
-                <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-black/5">
-                  <Image src="/mentrixalogo/logo.webp" alt="Mentrixa" width={45} height={45} />
-                </span>
-                Return to homepage
-              </Link>
-            </div>
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <MentrixaFormField
-              label="Name"
-              name="name"
-              isRequired
-              placeholder="Your name"
-              autoComplete="name"
-              validate={(value) => validateRequiredText(value, "Name")}
-              message={contactFormFieldMessage("name")}
-            />
-            <MentrixaFormField
-              label="Email"
-              name="email"
-              type="email"
-              isRequired
-              placeholder="you@example.com"
-              autoComplete="email"
-              validate={validateEmailAddress}
-              message={contactFormFieldMessage("email")}
-            />
+      {done ? (
+        <LandingStickyCard variant="pinned" className="text-center rotate-[0.2deg] px-5 py-8 sm:px-7">
+          <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700">
+            <Mail className="h-7 w-7" aria-hidden />
           </div>
-
-          <MentrixaContactCategoryRadioGroup />
-
-          <MentrixaFormField
-            label="Your message"
-            name="message"
-            multiline
-            rows={6}
-            isRequired
-            placeholder="Share feedback, ideas, or what we should fix. The more specific, the faster we can help."
-            validate={(value) => validateRequiredText(value, "Message")}
-            message={contactFormFieldMessage("message")}
-          />
-
-          {error ? (
-            <p className="text-sm text-red-600" role="alert">
-              {error}
+          <h1 className={landingHub.title}>Thanks. We read every message.</h1>
+          <p className={`mx-auto mt-3 max-w-md ${landingHub.body}`}>
+            If you asked for a reply, we&apos;ll get back as soon as we can. Your feedback shapes what we ship next.
+          </p>
+          <Button type="button" variant="outline" className="mt-6" onClick={() => setDone(false)}>
+            Send another message
+          </Button>
+        </LandingStickyCard>
+      ) : (
+        <>
+          <LandingStickyCard variant="taped" className="mb-6 text-center rotate-[-0.3deg] px-5 py-7 sm:px-7">
+            <p className={landingHub.eyebrow}>Contact</p>
+            <h1 className={`mt-2 ${landingHub.title}`}>Talk to us</h1>
+            <p className={`mx-auto mt-3 max-w-lg ${landingHub.body}`}>
+              Mentrixers and Guides who speak up shape what we build. Pick a category and tell us what to fix or ship
+              next.
             </p>
-          ) : null}
-        </MentrixaFieldset>
-      </MentrixaForm>
+            <p className={`mt-4 ${landingHub.bodySm}`}>
+              Prefer email?{" "}
+              <a
+                href={gmailWebComposeUrl(feedbackEmail)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Compose in Gmail (web)"
+                className="font-semibold text-[#4F46E5] underline underline-offset-2 hover:text-[#0B1220]"
+              >
+                {feedbackEmail}
+              </a>
+            </p>
+          </LandingStickyCard>
 
+          <LandingStickyCard variant="curl" className="mb-6 rotate-[0.35deg]">
+            <MentrixaForm onSubmit={onSubmit} tone="light" className="space-y-0 bg-transparent p-0 shadow-none">
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
 
-      <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-6 shadow-sm md:p-8">
-        <h2 className="text-sm font-semibold text-slate-900 mb-4">Hang out with Mentrixa</h2>
-        <ContactSocialLinks />
-      </div>
-        </div>
-      </section>
+              <MentrixaFieldset
+                legend="Send feedback"
+                description="Name, email, category, and your message."
+                tone="light"
+                message={contactFormFieldsetMessage()}
+                actions={
+                  <Button type="submit" className="min-w-[160px]" disabled={pending}>
+                    {pending ? "Sending…" : "Send feedback"}
+                  </Button>
+                }
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <MentrixaFormField
+                    label="Name"
+                    name="name"
+                    isRequired
+                    placeholder="Your name"
+                    autoComplete="name"
+                    validate={(value) => validateRequiredText(value, "Name")}
+                    message={contactFormFieldMessage("name")}
+                  />
+                  <MentrixaFormField
+                    label="Email"
+                    name="email"
+                    type="email"
+                    isRequired
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    validate={validateEmailAddress}
+                    message={contactFormFieldMessage("email")}
+                  />
+                </div>
+
+                <MentrixaContactCategoryRadioGroup />
+
+                <MentrixaFormField
+                  label="Your message"
+                  name="message"
+                  multiline
+                  rows={6}
+                  isRequired
+                  placeholder="Share feedback, ideas, or what we should fix. The more specific, the faster we can help."
+                  validate={(value) => validateRequiredText(value, "Message")}
+                  message={contactFormFieldMessage("message")}
+                />
+
+                {error ? (
+                  <p className="text-sm text-red-600" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+              </MentrixaFieldset>
+            </MentrixaForm>
+          </LandingStickyCard>
+
+          <LandingStickyCard variant="clip" className="rotate-[-0.2deg] px-5 py-6 sm:px-7">
+            <h2 className="text-lg font-bold text-[#0B1220]">Hang out with us</h2>
+            <p className={`mt-2 ${landingHub.bodySm}`}>Follow along while we ship.</p>
+            <div className="mt-4">
+              <ContactSocialLinks />
+            </div>
+          </LandingStickyCard>
+        </>
+      )}
+
+      <LandingStickyCard variant="pinned" className="mt-6 text-center rotate-[0.15deg] px-5 py-5">
+        <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold text-[#475569]">
+          <Link href="/privacy" className="hover:text-[#0B1220]">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-[#0B1220]">
+            Terms
+          </Link>
+          <Link href="/contact" className="text-[#4F46E5] hover:text-[#0B1220]">
+            Contact
+          </Link>
+        </nav>
+      </LandingStickyCard>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/shared/core/utils";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { useGsapEffect } from "@/shared/core/gsap-lazy";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
 
@@ -57,7 +58,7 @@ export default function AuthLayoutShell({ children }: { children: ReactNode }) {
           <div className="relative z-10 flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3 group">
               <MentrixaLogoMark size="md" className="opacity-95 group-hover:opacity-100 transition-opacity" />
-              <span className="text-[15px] font-bold tracking-[-0.04em] text-white">Mentrixa</span>
+              <MentrixaWordmark trixaClassName="text-white" className="text-[15px]" />
             </Link>
           </div>
 

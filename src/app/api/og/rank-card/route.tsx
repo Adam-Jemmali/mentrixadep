@@ -44,8 +44,17 @@ export async function GET(request: Request) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 720 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: "#7C3AED" }}>
-              MENTRIXA
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 800,
+                letterSpacing: "0.12em",
+                background: "linear-gradient(90deg, #4F46E5 0%, #6366F1 45%, #A855F7 100%)",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              MENTRIXA_
             </div>
             <div style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05 }}>{card.displayName}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

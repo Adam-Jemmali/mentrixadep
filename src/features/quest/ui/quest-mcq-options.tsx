@@ -41,7 +41,7 @@ export function QuestMcqOptions({
 }) {
   const reduceMotion = useReducedMotion();
   const isDark = surface === "dark";
-  const wrongRef = useRef<HTMLButtonElement>(null);
+  const wrongRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const focusedIndexRef = useRef(0);
 

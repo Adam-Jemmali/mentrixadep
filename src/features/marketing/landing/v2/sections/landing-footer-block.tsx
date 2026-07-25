@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { ContactSocialLinks } from "@/features/marketing/contact-ui/contact-social-links";
 import { DEFAULT_PUBLIC_FEEDBACK_EMAIL, gmailWebComposeUrl } from "@/features/marketing/mentrixa-brand";
 import { LandingShimmerButton } from "@/features/marketing/landing/v2/motion/landing-shimmer-button";
@@ -114,7 +115,7 @@ export function LandingFooterBlock() {
             <div>
               <Link href="/" className="inline-flex items-center gap-2.5">
                 <MentrixaLogoMark size="sm" />
-                <span className={`text-[15px] font-bold tracking-tight ${landingHub.title}`}>Mentrixa</span>
+                <MentrixaWordmark className="text-[15px] sm:text-base" />
               </Link>
               <p className={`mt-2 max-w-xs text-[12px] leading-snug ${landingHub.bodySm}`}>
                 {LANDING_FOOTER.tagline}

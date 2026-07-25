@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { BeforeAfterCard } from "@/features/share/before-after-card";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import type { BeforeAfterShareArtifact } from "@/features/share-artifacts/load-share-artifact";
 
 export function BeforeAfterSharePage({ data }: { data: BeforeAfterShareArtifact }) {
   return (
     <div className="mx-auto max-w-md px-4 pb-16 pt-[calc(3.5rem+1rem)] sm:px-6">
       <div className="mb-6 flex items-center justify-between">
-        <span className="text-sm font-bold tracking-[0.08em] text-[var(--mx-violet)]">
-          MENTRIXA
-        </span>
+        <MentrixaWordmark className="text-sm" />
         <Link
           href="/"
           className="cursor-pointer text-sm font-semibold text-[var(--mx-muted)] hover:text-white"
