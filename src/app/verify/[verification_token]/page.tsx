@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { loadCertificationByToken } from "@/features/certifications/load-certification";
 import { CertificationVerifyCard } from "@/features/certifications/ui/certification-verify-card";
 import { CertificationVerifyActions } from "@/features/certifications/ui/certification-verify-actions";
@@ -36,7 +37,7 @@ export default async function VerifyCertificationPage({ params, searchParams }: 
       {query.print === "1" ? <CertificationPrintTrigger /> : null}
       <div className="mx-auto max-w-[480px] px-4 pb-16 pt-10 sm:px-6 print:px-0 print:pb-0 print:pt-0">
         <header className="mb-8 text-center print:mb-6">
-          <p className="text-[14px] font-bold tracking-[0.08em] text-[#7C3AED]">MENTRIXA</p>
+          <MentrixaWordmark className="justify-center text-lg" />
           <p className="mt-1 text-[12px] text-[#9CA3AF]">Certification Verification</p>
         </header>
 

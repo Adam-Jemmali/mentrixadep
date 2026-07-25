@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "@/shared/core/utils";
 import { Typewriter } from "@/shared/ui/typewriter";
 

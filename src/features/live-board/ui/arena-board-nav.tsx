@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ARENA_PAGE_COPY } from "@/features/live-board/live-board-messages-pure";
+import { MentrixaLogoMark } from "@/components/mentrixa-logo";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { cn } from "@/shared/core/utils";
 
 /** Arena page minimal nav — no marketing shell links. */
@@ -12,12 +14,9 @@ export function ArenaBoardNav() {
       )}
     >
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4">
-        <Link
-          href="/"
-          prefetch={false}
-          className="text-[15px] font-bold tracking-[0.06em] text-[var(--mx-violet)]"
-        >
-          MENTRIXA
+        <Link href="/" prefetch={false} className="flex shrink-0 items-center gap-2">
+          <MentrixaLogoMark size="sm" className="shrink-0 opacity-95" priority />
+          <MentrixaWordmark trixaClassName="text-white" />
         </Link>
         <Link
           href="/"

@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
 import { QuestStimulusBlock } from "@/features/quest/components/quest-stimulus-block";
 import { formatMultiPartXpLine } from "@/features/quest/multi-part-pure";
+import { QUEST_RUN_SURFACE, type QuestSurface } from "@/features/quest/ui/quest-surface";
 import type { QuestStimulus } from "@/features/quest/quest-stimulus-pure";
 import { cn } from "@/shared/core/utils";
 
@@ -30,6 +31,7 @@ type Props = {
   xpEarned: number;
   finished: boolean;
   busy?: boolean;
+  surface?: QuestSurface;
   onSubmitPart: (input: {
     partIndex: number;
     selectedIndex?: number;
@@ -47,9 +49,11 @@ export function MultiPartQuestion({
   xpEarned,
   finished,
   busy = false,
+  surface = QUEST_RUN_SURFACE,
   onSubmitPart,
   onContinue,
 }: Props) {
+  const isDark = surface === "dark";
   const activeIndex = parts.findIndex((part) => part.state === "active");
   const active = activeIndex >= 0 ? parts[activeIndex] : null;
   const [picked, setPicked] = useState<number | null>(null);
@@ -68,10 +72,12 @@ export function MultiPartQuestion({
 
   return (
     <div className="space-y-4">
-      <QuestStimulusBlock stimulus={stimulus} variant="light" />
-      <PromptWithMath text={stem} variant="light" highlightKeyTerms />
+      <QuestStimulusBlock stimulus={stimulus} variant={surface} />
+      <div className={cn("text-[17px] leading-[1.6]", isDark ? "text-white" : "text-[var(--mx-navy)]")}>
+        <PromptWithMath text={stem} variant={surface} highlightKeyTerms />
+      </div>
 
-      <p className="font-mono text-xs tabular-nums text-[#475569]">
+      <p className={cn("font-mono text-xs tabular-nums", isDark ? "text-white/60" : "text-[#475569]")}>
         {formatMultiPartXpLine(partsCorrect, partsTotal, xpEarned)}
       </p>
 
@@ -84,9 +90,17 @@ export function MultiPartQuestion({
               key={part.partKey}
               className={cn(
                 "rounded-xl border p-4",
-                locked && "border-[var(--mx-rule)] bg-[#F8FAFC] opacity-60",
-                activePart && "border-[var(--mx-violet)]/45 bg-white",
-                part.state === "done" && "border-[#CBD5E1] bg-white",
+                isDark
+                  ? [
+                      locked && "border-white/10 bg-[var(--mx-navy-2)]/40 opacity-60",
+                      activePart && "border-[var(--mx-violet)]/45 bg-[var(--mx-navy-2)]",
+                      part.state === "done" && "border-white/15 bg-[var(--mx-navy-2)]/80",
+                    ]
+                  : [
+                      locked && "border-[var(--mx-rule)] bg-[#F8FAFC] opacity-60",
+                      activePart && "border-[var(--mx-violet)]/45 bg-white",
+                      part.state === "done" && "border-[#CBD5E1] bg-white",
+                    ],
               )}
             >
               <div className="flex items-center justify-between gap-2">
@@ -94,7 +108,7 @@ export function MultiPartQuestion({
                   Part {part.partKey}
                 </p>
                 {locked ? (
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#94A3B8]">
+                  <span className={cn("text-[10px] font-semibold uppercase tracking-wider", isDark ? "text-white/45" : "text-[#94A3B8]")}>
                     Locked
                   </span>
                 ) : null}
@@ -102,7 +116,7 @@ export function MultiPartQuestion({
                   <span
                     className={cn(
                       "text-[10px] font-semibold uppercase tracking-wider",
-                      part.correct ? "text-emerald-700" : "text-[var(--mx-violet)]",
+                      part.correct ? (isDark ? "text-emerald-300" : "text-emerald-700") : "text-[var(--mx-violet)]",
                     )}
                   >
                     {part.correct ? "Correct" : "Carried"}
@@ -110,15 +124,15 @@ export function MultiPartQuestion({
                 ) : null}
               </div>
 
-              <div className="mt-2 text-sm">
-                <PromptWithMath text={part.prompt} variant="light" />
+              <div className={cn("mt-2 text-sm", isDark ? "text-white" : undefined)}>
+                <PromptWithMath text={part.prompt} variant={surface} />
               </div>
 
               {part.state === "done" ? (
-                <div className="mt-3 space-y-1 text-sm text-[#334155]">
+                <div className={cn("mt-3 space-y-1 text-sm", isDark ? "text-white/80" : "text-[#334155]")}>
                   {part.studentAnswer ? (
                     <p>
-                      Your answer: <PromptWithMath text={part.studentAnswer} variant="light" />
+                      Your answer: <PromptWithMath text={part.studentAnswer} variant={surface} />
                     </p>
                   ) : null}
                   {part.carryForwardNote ? (
@@ -126,7 +140,7 @@ export function MultiPartQuestion({
                   ) : null}
                   {part.revealedAnswer ? (
                     <p>
-                      Correct: <PromptWithMath text={part.revealedAnswer} variant="light" />
+                      Correct: <PromptWithMath text={part.revealedAnswer} variant={surface} />
                     </p>
                   ) : null}
                 </div>
@@ -141,13 +155,17 @@ export function MultiPartQuestion({
                       disabled={busy}
                       onClick={() => setPicked(i)}
                       className={cn(
-                        "rounded-xl border p-3 text-left text-sm",
-                        picked === i
-                          ? "border-[var(--mx-indigo)] bg-violet-100 ring-2 ring-[var(--mx-indigo)]/40"
-                          : "border-violet-300 bg-white hover:border-[var(--mx-indigo)]",
+                        "rounded-xl border p-3 text-left text-sm [&_.katex]:text-inherit",
+                        isDark
+                          ? picked === i
+                            ? "border-[var(--mx-indigo)] bg-[var(--mx-indigo)]/20 ring-2 ring-[var(--mx-indigo)]/40 text-white"
+                            : "border-white/20 bg-[var(--mx-navy-2)] text-white hover:border-[var(--mx-indigo)]"
+                          : picked === i
+                            ? "border-[var(--mx-indigo)] bg-violet-100 ring-2 ring-[var(--mx-indigo)]/40"
+                            : "border-violet-300 bg-white hover:border-[var(--mx-indigo)]",
                       )}
                     >
-                      <PromptWithMath text={option} variant="light" />
+                      <PromptWithMath text={option} variant={surface} />
                     </button>
                   ))}
                 </div>
@@ -155,7 +173,12 @@ export function MultiPartQuestion({
 
               {activePart && part.itemFormat === "free_response" ? (
                 <textarea
-                  className="mt-3 min-h-[96px] w-full rounded-xl border border-violet-300 bg-white px-3 py-2 text-sm text-[var(--mx-navy)]"
+                  className={cn(
+                    "mt-3 min-h-[96px] w-full rounded-xl border px-3 py-2 text-sm",
+                    isDark
+                      ? "border-white/15 bg-[var(--mx-navy-2)] text-white placeholder:text-white/40"
+                      : "border-violet-300 bg-white text-[var(--mx-navy)]",
+                  )}
                   placeholder="Your answer…"
                   value={written}
                   disabled={busy}

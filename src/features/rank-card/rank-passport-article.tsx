@@ -4,6 +4,7 @@ import { RankBadge } from "@/features/student-profile/ui/rank-badge";
 import { RANK_HERO_SIZE } from "@/features/xp/rank-display-tokens";
 import { getAccountRankByLevel, normalizeRankTitle } from "@/features/xp/rank-icons";
 import { MENTRIXA_LOGO_PNG } from "@/features/marketing/mentrixa-brand";
+import { MentrixaWordmark } from "@/components/mentrixa-wordmark";
 import { getSiteUrl } from "@/shared/core/site";
 import { mentrixStudent } from "@/features/student-profile/mentrix-student-ui";
 import { mentrixHubSurfaces } from "@/features/student-profile/student-hub-surfaces";
@@ -118,7 +119,7 @@ export function RankPassportArticle({
           <div className="flex items-center gap-3">
             <Image src={MENTRIXA_LOGO_PNG} alt="" width={28} height={28} className="opacity-90" />
             <div>
-              <p className="text-lg font-bold tracking-[0.18em] text-[var(--mx-navy)]">MENTRIXA</p>
+              <MentrixaWordmark className="text-lg" />
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--mx-indigo)]">
                 Verified skill passport
               </p>

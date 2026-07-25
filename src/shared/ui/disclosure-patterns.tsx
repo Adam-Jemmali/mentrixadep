@@ -109,9 +109,22 @@ export function MentrixaDisclosure({
         <Disclosure.Body className={cn("mentrixa-disclosure__body", bodyClassName)}>
           <div className="text-sm leading-relaxed">{children}</div>
           {verdict || nextAction ? (
-            <p className="mentrixa-disclosure__footer mt-3 text-xs leading-relaxed">
-              {verdict ? <span>{verdict} </span> : null}
-              {nextAction ? <span className="opacity-90">{nextAction}</span> : null}
+            <p
+              className={cn(
+                "mentrixa-disclosure__footer mt-3 text-xs leading-relaxed",
+                (tone === "dark" || tone === "marketing") && "text-slate-200",
+              )}
+            >
+              {verdict ? (
+                <span className={tone === "dark" || tone === "marketing" ? "font-medium text-white" : undefined}>
+                  {verdict}{" "}
+                </span>
+              ) : null}
+              {nextAction ? (
+                <span className={tone === "dark" || tone === "marketing" ? "text-slate-200" : "opacity-90"}>
+                  {nextAction}
+                </span>
+              ) : null}
             </p>
           ) : null}
         </Disclosure.Body>

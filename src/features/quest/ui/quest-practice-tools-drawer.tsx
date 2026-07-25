@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { MentrixaDrawer } from "@/shared/ui/drawer-patterns";
 import { VerifiedFirstAttemptAlert } from "@/shared/ui/alert-patterns";
-import { ExamStakesLabel } from "@/shared/ui/tooltip-patterns";
 import { ApCalcSkillGlyph } from "@/features/quest/ui/ap-calc-skill-glyph";
 import { QuestSessionProgressBar } from "@/shared/ui/progress-bar-patterns";
 import { QuestTimerProgressCircle } from "@/shared/ui/progress-circle-patterns";
@@ -18,14 +17,12 @@ export function QuestPracticeToolsDrawer({
   timeLeftSec,
   timeLimitSec,
   subtopicTag,
-  examStakes,
 }: {
   questionIndex: number;
   questionTotal: number;
   timeLeftSec: number;
   timeLimitSec: number;
   subtopicTag?: string;
-  examStakes?: string;
 }) {
   const [open, setOpen] = useState(false);
   const progress = questionTotal > 0 ? ((questionIndex + 1) / questionTotal) * 100 : 0;
@@ -62,15 +59,10 @@ export function QuestPracticeToolsDrawer({
         </div>
         <QuestSessionProgressBar value={progress} />
         <VerifiedFirstAttemptAlert kind="practice_pack" subjectLabel={AP_CALC_AB_SUBJECT} />
-        {subtopicTag || examStakes ? (
-          <div className="flex flex-wrap items-center gap-3">
-            {subtopicTag ? (
-              <div className="flex items-center gap-2.5">
-                <ApCalcSkillGlyph nodeName={subtopicTag} size="sm" />
-                <span className="text-xs font-semibold text-slate-700">{subtopicTag}</span>
-              </div>
-            ) : null}
-            {examStakes ? <ExamStakesLabel examStakes={examStakes} tone="light" /> : null}
+        {subtopicTag ? (
+          <div className="flex items-center gap-2.5">
+            <ApCalcSkillGlyph nodeName={subtopicTag} size="sm" />
+            <span className="text-xs font-semibold text-slate-700">{subtopicTag}</span>
           </div>
         ) : null}
         <p className={`text-sm leading-relaxed ${mentrixStudent.textMutedOnLight}`}>

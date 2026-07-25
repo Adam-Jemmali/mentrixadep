@@ -53,7 +53,9 @@ describe("buildQuestDonePrimaryAction", () => {
       shareHref: "/student/progress",
     });
     expect(action.kind).toBe("guide");
-    expect(action.href).toContain("browse-guides");
+    expect(action.href).toContain("#browse-guides");
+    expect(action.href).toContain("focusNode=node-1");
+    expect(action.href.indexOf("#browse-guides")).toBeGreaterThan(action.href.indexOf("focusNode="));
   });
 
   it("offers practice again when nothing changed", () => {

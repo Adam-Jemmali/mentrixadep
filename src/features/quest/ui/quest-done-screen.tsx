@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { MasteryNode, type MasteryNodeVisualState } from "@/components/mastery-node";
 import { MasteryGrid } from "@/features/mastery-grid/mastery-grid";
+import { MasteryGridLegend } from "@/features/mastery-grid/ui/mastery-grid-legend";
 import type {
   MasteryGridData,
   QuestMasteryHighlight,
@@ -476,6 +477,7 @@ export function QuestDoneScreen({
               Mini mastery grid
             </p>
           </div>
+          <MasteryGridLegend className="mb-3" />
           <MasteryGrid
             data={grid}
             compact

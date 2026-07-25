@@ -35,11 +35,7 @@ export default function Header() {
         )}
       >
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <span className="font-display font-bold text-xl tracking-tight">
-            <span className="bg-gradient-brand bg-clip-text text-transparent">MEN</span>
-            <span className="text-text-primary">TRIXA</span>
-          </span>
-      
+          <MentrixaWordmark className="text-xl" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-0.5">

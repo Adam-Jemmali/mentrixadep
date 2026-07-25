@@ -136,13 +136,13 @@ export function StudentWeekCalendar({
     if (slot.kind === "booked") {
       if (isPast || slot.status === "completed") {
         return {
-          className: "border-slate-800 bg-slate-900/50 text-slate-500",
+          className: "border-slate-200 bg-slate-50 text-slate-500",
           label: "Past",
           icon: <CheckCircle2 className="w-3 h-3" />,
         };
       }
       return {
-        className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+        className: "border-emerald-200 bg-emerald-50 text-emerald-800",
         label: "Confirmed",
         icon: <CheckCircle2 className="w-3 h-3" />,
       };
@@ -150,7 +150,7 @@ export function StudentWeekCalendar({
 
     if (slot.status === "pending") {
       return {
-        className: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+        className: "border-amber-200 bg-amber-50 text-amber-800",
         label: "Waiting for Guide",
         icon: <Clock className="w-3 h-3 animate-pulse" />,
       };
@@ -158,21 +158,21 @@ export function StudentWeekCalendar({
 
     if (slot.status === "rejected") {
       return {
-        className: "border-red-500/30 bg-red-500/10 text-red-400",
+        className: "border-red-200 bg-red-50 text-red-700",
         label: "Declined",
         icon: <XCircle className="w-3 h-3" />,
       };
     }
 
     return {
-      className: "border-slate-700 bg-slate-800 text-slate-400",
+      className: "border-slate-200 bg-slate-50 text-slate-600",
       label: slot.status,
       icon: <AlertCircle className="w-3 h-3" />,
     };
   }
 
   return (
-    <div className="overflow-x-auto border-t border-slate-800 pt-6 mt-4">
+    <div className="overflow-x-auto border-t border-slate-200 pt-6 mt-4">
       <div
         className="grid gap-3"
         style={{
@@ -184,7 +184,7 @@ export function StudentWeekCalendar({
           <div key={key} className="min-w-0">
             <div className="mb-4 text-center">
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">{(labels[idx] || '').split(' ')[0]}</div>
-              <div className="text-sm font-bold text-white">{(labels[idx] || '').split(' ').slice(1).join(' ')}</div>
+              <div className="text-sm font-bold text-slate-900">{(labels[idx] || '').split(' ').slice(1).join(' ')}</div>
             </div>
             <div className="flex min-h-[160px] flex-col gap-3">
               {(slotsByDay.get(key) ?? []).map((slot) => {
@@ -203,13 +203,13 @@ export function StudentWeekCalendar({
                     )}
                   >
                     <div className="flex items-center justify-between mb-2">
-                       <div className="text-[10px] font-bold tracking-tight bg-white/10 px-1.5 py-0.5 rounded uppercase">
+                       <div className="text-[10px] font-bold tracking-tight bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded uppercase">
                         {formatTimeRangeInZone(slot.start, slot.end, displayTimezone)}
                       </div>
                       {icon}
                     </div>
                     
-                    <div className="font-bold text-white text-xs truncate mb-1">
+                    <div className="font-bold text-slate-900 text-xs truncate mb-1">
                       {slot.course.toUpperCase()}
                     </div>
                     <div className="flex items-center gap-1.5 mb-2">
@@ -242,8 +242,8 @@ export function StudentWeekCalendar({
                 );
               })}
               {slotsByDay.get(key)?.length === 0 && (
-                <div className="flex-1 rounded-xl border border-dashed border-slate-800 flex items-center justify-center">
-                  <span className="text-[10px] text-slate-600 font-medium">Free</span>
+                <div className="flex-1 rounded-xl border border-dashed border-slate-200 flex items-center justify-center">
+                  <span className="text-[10px] text-slate-400 font-medium">Free</span>
                 </div>
               )}
             </div>

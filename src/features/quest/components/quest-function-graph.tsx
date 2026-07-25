@@ -112,9 +112,9 @@ export function QuestFunctionGraph({
     return { domain, range, curveSamples, riemannBars, regionPolys, xScale, yScale };
   }, [graph, overlay?.sketchControls]);
 
-  const axisColor = isDark ? "#94A3B8" : "#64748B";
-  const gridColor = isDark ? "rgba(148,163,184,0.18)" : "rgba(100,116,139,0.18)";
-  const zeroColor = isDark ? "rgba(148,163,184,0.45)" : "rgba(100,116,139,0.45)";
+  const axisColor = isDark ? "#E2E8F0" : "#475569";
+  const gridColor = isDark ? "rgba(226,232,240,0.14)" : "rgba(100,116,139,0.18)";
+  const zeroColor = isDark ? "rgba(226,232,240,0.42)" : "rgba(100,116,139,0.45)";
 
   const xTicks = 5;
   const yTicks = 4;
@@ -165,7 +165,7 @@ export function QuestFunctionGraph({
         <p
           className={cn(
             "border-b px-4 py-2.5 text-[12px] font-medium",
-            isDark ? "border-[var(--mx-surface-3)] text-slate-300" : "border-slate-100 text-slate-700",
+            isDark ? "border-[var(--mx-surface-3)] text-white/80" : "border-slate-100 text-slate-700",
           )}
         >
           {graph.title}

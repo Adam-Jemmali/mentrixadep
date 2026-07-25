@@ -58,7 +58,6 @@ import {
   OnboardingQuestProgressBar,
 } from "@/shared/ui/progress-bar-patterns";
 import { QuestPackLoadPendingPanel } from "@/shared/ui/spinner-patterns";
-import { ExamStakesLabel } from "@/shared/ui/tooltip-patterns";
 import { ApCalcSkillGlyph } from "@/features/quest/ui/ap-calc-skill-glyph";
 import {
   PracticeWrongAnswerAlert,
@@ -818,19 +817,14 @@ export function QuestPracticeWorkspace({
               <QuestQuestionStage questionKey={question.id || String(qIndex)}>
                 {(question.examStakes || question.subtopicTag) && (
                   <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-3">
-                      {question.subtopicTag ? (
-                        <div className="flex items-center gap-2.5">
-                          <ApCalcSkillGlyph nodeName={question.subtopicTag} size="sm" />
-                          <span className="text-xs font-semibold text-white/80">{question.subtopicTag}</span>
-                        </div>
-                      ) : null}
-                      {question.examStakes ? (
-                        <ExamStakesLabel examStakes={question.examStakes} tone="dark" />
-                      ) : null}
-                    </div>
+                    {question.subtopicTag ? (
+                      <div className="flex items-center gap-2.5">
+                        <ApCalcSkillGlyph nodeName={question.subtopicTag} size="sm" />
+                        <span className="text-xs font-semibold text-white/80">{question.subtopicTag}</span>
+                      </div>
+                    ) : null}
                     {question.examStakes ? (
-                      <ExamStakesDisclosure examStakes={question.examStakes} />
+                      <ExamStakesDisclosure examStakes={question.examStakes} tone="dark" />
                     ) : null}
                   </div>
                 )}
@@ -1020,7 +1014,6 @@ export function QuestPracticeWorkspace({
           timeLeftSec={timeLeft}
           timeLimitSec={timeLimitSec}
           subtopicTag={question?.subtopicTag}
-          examStakes={question?.examStakes}
         />
       </>
     );

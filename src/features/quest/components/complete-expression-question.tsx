@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { MathInput } from "@/features/quest/components/math-input";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import { QUEST_RUN_SURFACE, type QuestSurface } from "@/features/quest/ui/quest-surface";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/core/utils";
 
@@ -13,6 +14,7 @@ export function CompleteExpressionQuestion({
   busy,
   disabled,
   onSubmit,
+  surface = QUEST_RUN_SURFACE,
 }: {
   itemId: string;
   prompt: string;
@@ -20,7 +22,9 @@ export function CompleteExpressionQuestion({
   busy?: boolean;
   disabled?: boolean;
   onSubmit: (answers: Record<string, string>) => void | Promise<void>;
+  surface?: QuestSurface;
 }) {
+  const isDark = surface === "dark";
   const [answers, setAnswers] = useState<Record<string, string>>(() =>
     Object.fromEntries(blankKeys.map((k) => [k, ""])),
   );
@@ -42,7 +46,9 @@ export function CompleteExpressionQuestion({
 
   return (
     <div className="space-y-4">
-      <PromptWithMath text={displayPrompt} variant="light" highlightKeyTerms />
+      <div className={cn("text-[17px] leading-[1.6]", isDark ? "text-white" : "text-[var(--mx-navy)]")}>
+        <PromptWithMath text={displayPrompt} variant={surface} highlightKeyTerms />
+      </div>
       <div className="flex flex-wrap gap-2">
         {blankKeys.map((key) => (
           <button
@@ -53,8 +59,12 @@ export function CompleteExpressionQuestion({
             className={cn(
               "rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
               activeKey === key
-                ? "border-[var(--mx-indigo)] bg-violet-100 text-[#4338CA]"
-                : "border-slate-200 bg-white text-slate-600",
+                ? isDark
+                  ? "border-[var(--mx-indigo)] bg-[var(--mx-indigo)]/20 text-white"
+                  : "border-[var(--mx-indigo)] bg-violet-100 text-[#4338CA]"
+                : isDark
+                  ? "border-white/15 bg-[var(--mx-navy-2)] text-white/70"
+                  : "border-slate-200 bg-white text-slate-600",
             )}
           >
             Blank {key}
@@ -67,7 +77,7 @@ export function CompleteExpressionQuestion({
           key={activeKey}
           itemId={`${itemId}:${activeKey}`}
           mode="compose"
-          surface="light"
+          surface={surface}
           disabled={disabled || busy}
           placeholder={`Expression for blank ${activeKey}`}
           submitLabel={`Save blank ${activeKey}`}

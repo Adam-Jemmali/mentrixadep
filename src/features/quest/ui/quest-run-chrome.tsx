@@ -2,6 +2,7 @@
 
 import { MasteryNode } from "@/components/mastery-node";
 import type { MasteryNodeVisualState } from "@/components/mastery-node";
+import { MasteryGridLegend } from "@/features/mastery-grid/ui/mastery-grid-legend";
 import { QuestAnimatedProgressBar } from "@/features/quest/ui/quest-animated-progress-bar";
 import { QuestTimerProgressCircle } from "@/shared/ui/progress-circle-patterns";
 import { MentrixaVocabIcon, VOCAB_HEADING_ICON_SIZE } from "@/shared/icons/mentrixa-vocab-icons";
@@ -31,16 +32,16 @@ export function QuestRunChrome({
           <MentrixaVocabIcon
             name={CANONICAL_QUEST_ICON}
             size={VOCAB_HEADING_ICON_SIZE * 0.55}
-            surface="light"
+            surface="dark"
             title="Quest question"
           />
-          <p className="font-mono text-xs font-bold tabular-nums text-[#475569]">
+          <p className="font-mono text-xs font-bold tabular-nums text-white/70">
             Q{questionIndex + 1}/{questionTotal || "…"}
           </p>
         </div>
         <div className="flex items-center gap-3">
           {skillNodeName && nodeVisualState ? (
-            <div className="flex items-center gap-2 rounded-lg border border-violet-300 bg-white/90 px-2 py-1 shadow-sm">
+            <div className="flex items-center gap-2 rounded-lg border border-white/15 bg-[var(--mx-navy-2)] px-2 py-1">
               <MasteryNode
                 nodeId={`quest-${skillNodeName}`}
                 state={nodeVisualState}
@@ -48,7 +49,7 @@ export function QuestRunChrome({
                 size="xs"
                 showGlow={nodeVisualState === "verified"}
               />
-              <span className="max-w-[8rem] truncate text-[10px] font-semibold uppercase tracking-wide text-[#475569]">
+              <span className="max-w-[8rem] truncate text-[10px] font-semibold uppercase tracking-wide text-white/75">
                 {skillNodeName}
               </span>
             </div>
@@ -57,6 +58,7 @@ export function QuestRunChrome({
         </div>
       </div>
       <QuestAnimatedProgressBar value={progressPercent} />
+      <MasteryGridLegend surface="dark" compact className="border-t border-white/10 pt-3" />
     </div>
   );
 }
@@ -68,8 +70,8 @@ export function QuestRunLoadingState({ message, error }: { message: string; erro
         className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--mx-primary)] border-t-transparent motion-reduce:animate-none"
         aria-hidden
       />
-      <p className="text-sm text-[#475569]">{message}</p>
-      {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+      <p className="text-sm text-white/70">{message}</p>
+      {error ? <p className="text-sm font-medium text-red-300">{error}</p> : null}
     </div>
   );
 }

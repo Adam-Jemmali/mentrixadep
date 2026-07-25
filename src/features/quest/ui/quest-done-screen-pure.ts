@@ -4,8 +4,7 @@ import {
   type ApReadinessBandView,
 } from "@/features/student-home/ap-readiness-band-pure";
 import type { MasteryGridData, QuestMasteryHighlight } from "@/features/mastery-grid/types";
-import { browseGuidesHref, practiceNodeHref } from "@/features/guidance/verdict-engine-pure";
-import { AP_CALC_AB_SUBJECT } from "@/features/quest/ap-calc-ab-subject";
+import { browseGuidesWithFocusHref, practiceNodeHref } from "@/features/guidance/verdict-engine-pure";
 
 export type QuestDonePrimaryAction = {
   label: string;
@@ -112,7 +111,10 @@ export function buildQuestDonePrimaryAction(input: {
   if (!highlight.unchanged && highlight.toState !== "verified") {
     return {
       label: "Book a Guide who specializes in this node →",
-      href: `${browseGuidesHref(AP_CALC_AB_SUBJECT)}&focusNode=${encodeURIComponent(highlight.nodeId)}`,
+      href: browseGuidesWithFocusHref({
+        skillNodeId: highlight.nodeId,
+        nodeName: highlight.nodeName,
+      }),
       kind: "guide",
     };
   }

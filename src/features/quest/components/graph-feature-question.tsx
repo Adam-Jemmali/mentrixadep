@@ -3,6 +3,12 @@
 import { useMemo, useState } from "react";
 import { QuestFunctionGraph } from "@/features/quest/components/quest-function-graph";
 import { PromptWithMath } from "@/features/quest/ui/prompt-with-math";
+import {
+  QUEST_RUN_SURFACE,
+  questMutedTextClass,
+  questSubtleTextClass,
+  type QuestSurface,
+} from "@/features/quest/ui/quest-surface";
 import type { QuestStimulus } from "@/features/quest/quest-stimulus-pure";
 import type {
   GraphFeatureSelection,
@@ -27,6 +33,7 @@ export function GraphFeatureQuestion({
   busy,
   disabled,
   onSubmit,
+  surface = QUEST_RUN_SURFACE,
 }: {
   prompt: string;
   stimulus?: QuestStimulus[];
@@ -40,7 +47,9 @@ export function GraphFeatureQuestion({
     selections?: GraphFeatureSelection[];
     sketchControls?: GraphSketchSample[];
   }) => void | Promise<void>;
+  surface?: QuestSurface;
 }) {
+  const isDark = surface === "dark";
   const graph = useMemo(
     () => stimulus?.find((s) => s.kind === "function_graph"),
     [stimulus],
@@ -111,12 +120,33 @@ export function GraphFeatureQuestion({
 
   const activeGraph = graph?.kind === "function_graph" ? graph : emptyAxesGraph;
 
+  const modeButtonClass = (active: boolean) =>
+    cn(
+      "rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
+      active
+        ? isDark
+          ? "border-[var(--mx-indigo)] bg-[var(--mx-indigo)]/20 text-white"
+          : "border-[#2D70B3] bg-[#EFF6FF] text-[#1E3A8A]"
+        : isDark
+          ? "border-white/15 bg-[var(--mx-navy-2)] text-white/70 hover:text-white"
+          : "border-slate-200 bg-white text-slate-600",
+    );
+
+  const inputClass = cn(
+    "mt-1 block w-28 rounded-lg border px-3 py-2 font-mono text-sm",
+    isDark
+      ? "border-white/15 bg-[var(--mx-navy-2)] text-white placeholder:text-white/40"
+      : "border-slate-200 bg-white text-[var(--mx-navy)]",
+  );
+
   return (
     <div className="space-y-4">
-      <PromptWithMath text={prompt} variant="light" highlightKeyTerms />
+      <div className={cn("text-[17px] leading-[1.6]", isDark ? "text-white" : "text-[var(--mx-navy)]")}>
+        <PromptWithMath text={prompt} variant={surface} highlightKeyTerms />
+      </div>
       <QuestFunctionGraph
         graph={activeGraph}
-        variant="light"
+        variant={surface}
         overlay={{
           sketchControls: mode === "sketch" ? controls : undefined,
           featureXs: mode === "point" ? points : undefined,
@@ -134,7 +164,7 @@ export function GraphFeatureQuestion({
           },
         }}
       />
-      <p className="text-xs text-slate-600">
+      <p className={cn("text-xs", questMutedTextClass(surface))}>
         {sketchMode || mode === "sketch"
           ? "Click the graph to place control points. Your curve preview updates live before you lock."
           : "Mark the verified features. Answers are graded automatically against authored targets."}
@@ -143,12 +173,7 @@ export function GraphFeatureQuestion({
         {sketchMode ? (
           <button
             type="button"
-            className={cn(
-              "rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
-              mode === "sketch"
-                ? "border-[#2D70B3] bg-[#EFF6FF] text-[#1E3A8A]"
-                : "border-slate-200 bg-white text-slate-600",
-            )}
+            className={modeButtonClass(mode === "sketch")}
             onClick={() => setMode("sketch")}
             disabled={disabled || busy}
           >
@@ -158,12 +183,7 @@ export function GraphFeatureQuestion({
         {!sketchMode && targetKinds.includes("point") ? (
           <button
             type="button"
-            className={cn(
-              "rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
-              mode === "point"
-                ? "border-[#2D70B3] bg-[#EFF6FF] text-[#1E3A8A]"
-                : "border-slate-200 bg-white text-slate-600",
-            )}
+            className={modeButtonClass(mode === "point")}
             onClick={() => setMode("point")}
             disabled={disabled || busy}
           >
@@ -173,12 +193,7 @@ export function GraphFeatureQuestion({
         {!sketchMode && wantsInterval ? (
           <button
             type="button"
-            className={cn(
-              "rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
-              mode === "interval"
-                ? "border-[#2D70B3] bg-[#EFF6FF] text-[#1E3A8A]"
-                : "border-slate-200 bg-white text-slate-600",
-            )}
+            className={modeButtonClass(mode === "interval")}
             onClick={() => setMode("interval")}
             disabled={disabled || busy}
           >
@@ -187,7 +202,7 @@ export function GraphFeatureQuestion({
         ) : null}
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <label className="text-sm text-slate-700">
+        <label className={cn("text-sm", isDark ? "text-white/85" : "text-slate-700")}>
           x
           <input
             type="number"
@@ -195,11 +210,11 @@ export function GraphFeatureQuestion({
             value={xDraft}
             onChange={(e) => setXDraft(e.target.value)}
             disabled={disabled || busy}
-            className="mt-1 block w-28 rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm"
+            className={inputClass}
           />
         </label>
         {mode === "sketch" ? (
-          <label className="text-sm text-slate-700">
+          <label className={cn("text-sm", isDark ? "text-white/85" : "text-slate-700")}>
             y
             <input
               type="number"
@@ -207,7 +222,7 @@ export function GraphFeatureQuestion({
               value={yDraft}
               onChange={(e) => setYDraft(e.target.value)}
               disabled={disabled || busy}
-              className="mt-1 block w-28 rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm"
+              className={inputClass}
             />
           </label>
         ) : null}
@@ -233,7 +248,7 @@ export function GraphFeatureQuestion({
           Clear
         </Button>
       </div>
-      <ul className="space-y-1 text-sm text-slate-700">
+      <ul className={cn("space-y-1 text-sm", isDark ? "text-white/85" : "text-slate-700")}>
         {mode === "sketch"
           ? controls.map((p, i) => (
               <li key={`c-${i}`}>
@@ -252,10 +267,10 @@ export function GraphFeatureQuestion({
             ))
           : null}
         {mode === "interval" && intervalDraft.length === 1 ? (
-          <li className="text-slate-500">Interval start x = {intervalDraft[0]} (add end)</li>
+          <li className={questSubtleTextClass(surface)}>Interval start x = {intervalDraft[0]} (add end)</li>
         ) : null}
       </ul>
-      <p className="text-[11px] text-slate-500">
+      <p className={cn("text-[11px]", questSubtleTextClass(surface))}>
         Domain hint for sketches: [{sketchDomain[0]}, {sketchDomain[1]}].
       </p>
       <Button

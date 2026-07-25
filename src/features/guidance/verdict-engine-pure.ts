@@ -113,6 +113,20 @@ export function browseGuidesHref(subject = AP_CALC_AB_SUBJECT): string {
   return `/student?subject=${encodeURIComponent(subject)}#browse-guides`;
 }
 
+/** Browse + book section on student home, with optional node focus in query (hash last). */
+export function browseGuidesWithFocusHref(input: {
+  subject?: string;
+  skillNodeId?: string;
+  nodeName?: string;
+} = {}): string {
+  const subject = input.subject ?? AP_CALC_AB_SUBJECT;
+  const params = new URLSearchParams();
+  params.set("subject", subject);
+  if (input.skillNodeId?.trim()) params.set("focusNode", input.skillNodeId.trim());
+  if (input.nodeName?.trim()) params.set("focus", input.nodeName.trim());
+  return `/student?${params.toString()}#browse-guides`;
+}
+
 function signedDelta(delta: number): string {
   if (delta > 0) return `+${delta}`;
   if (delta < 0) return `${delta}`;

@@ -4105,7 +4105,7 @@ html.lp-landing-logo-cursor-active * {
 
   .mentrixa-alert--dark.mentrixa-alert--warning [data-slot="alert-description"],
   .mentrixa-alert--dark.mentrixa-alert--warning .mentrixa-alert__next-action {
-    @apply text-violet-100/90;
+    @apply text-amber-50;
   }
 
   .mentrixa-alert--dark.mentrixa-alert--warning [data-slot="alert-description"] .katex {
@@ -4602,7 +4602,7 @@ html.lp-landing-logo-cursor-active * {
 
   .mentrixa-disclosure--dark .mentrixa-disclosure__body,
   .mentrixa-disclosure--marketing .mentrixa-disclosure__body {
-    @apply border-white/10 text-slate-300;
+    @apply border-white/10 text-slate-200;
   }
 
   .mentrixa-disclosure__footer {
@@ -4611,7 +4611,7 @@ html.lp-landing-logo-cursor-active * {
 
   .mentrixa-disclosure--dark .mentrixa-disclosure__footer,
   .mentrixa-disclosure--marketing .mentrixa-disclosure__footer {
-    @apply text-slate-400;
+    @apply text-slate-200;
   }
 
   .mentrixa-popover__content {

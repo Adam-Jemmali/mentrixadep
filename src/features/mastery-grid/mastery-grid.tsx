@@ -22,20 +22,14 @@ import { MentrixaVocabIcon, VocabSectionHeading } from "@/shared/icons/mentrixa-
 import { unitDisplayName } from "@/features/quest/ap-calc-unit-labels-pure";
 import { AbCalculusSubjectTitle } from "@/features/quest/ui/ab-calc-subject-title";
 import { UnitConceptIcon } from "@/features/quest/ui/skill-concept-icon";
+import { MasteryGridLegend } from "@/features/mastery-grid/ui/mastery-grid-legend";
 
 const STATE_SQUARE_CLASS: Record<MasteryNodeState, string> = {
   none: "bg-slate-200/90 border-slate-300/80",
   weak: "bg-amber-300/90 border-amber-400/70",
-  proficient: "bg-emerald-400/90 border-emerald-500/70",
+  proficient: "bg-green-600/90 border-green-700/70",
   verified: "border-[var(--mx-gold)]/90",
 };
-
-const LEGEND_ITEMS: { word: string; state: MasteryNodeState; icon: "focus-ring" | "practice-pack" | "verified" }[] = [
-  { word: "Open", state: "none", icon: "focus-ring" },
-  { word: "Weak", state: "weak", icon: "practice-pack" },
-  { word: "Solid", state: "proficient", icon: "practice-pack" },
-  { word: "Verified", state: "verified", icon: "verified" },
-];
 
 function SkillTreeUnitMeta({ nodes }: { nodes: MasteryGridNode[] }) {
   const verified = nodes.filter((node) => node.state === "verified").length;
@@ -46,29 +40,6 @@ function SkillTreeUnitMeta({ nodes }: { nodes: MasteryGridNode[] }) {
         {verified}/{nodes.length}
       </span>
     </span>
-  );
-}
-
-function MasteryLegendGlyph({ state }: { state: MasteryNodeState }) {
-  if (state === "verified") {
-    return (
-      <span
-        className={cn(
-          "inline-flex h-3 w-3 items-center justify-center rounded-[2px] border",
-          STATE_SQUARE_CLASS.verified,
-        )}
-        style={squareStyle("verified")}
-        aria-hidden
-      >
-        <MentrixaVocabIcon name="verified" size={9} gold className="text-[var(--mx-navy)]" />
-      </span>
-    );
-  }
-  return (
-    <span
-      className={cn("h-2.5 w-2.5 rounded-[2px] border", STATE_SQUARE_CLASS[state])}
-      aria-hidden
-    />
   );
 }
 
@@ -184,20 +155,6 @@ function MasterySquare({
       ) : null}
       </div>
     </MasteryNodeDetailPopover>
-  );
-}
-
-function MasteryGridLegend() {
-  return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      {LEGEND_ITEMS.map((item) => (
-        <span key={item.word} className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#64748B]">
-          <MasteryLegendGlyph state={item.state} />
-          <MentrixaVocabIcon name={item.icon} size={16} gold={item.state === "verified"} surface="light" title={item.word} />
-          <span>{item.word}</span>
-        </span>
-      ))}
-    </div>
   );
 }
 

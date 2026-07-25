@@ -215,9 +215,8 @@ function SolutionPathStepRow({
           <p
             className={cn(
               muted ? "text-xs" : "text-[15px]",
-              "leading-snug text-[var(--mx-steel)]",
-              isLight && !muted && "text-[var(--mx-steel)]",
-              !isLight && muted && "text-white/45",
+              "leading-snug",
+              isLight ? "text-[var(--mx-steel)]" : muted ? "text-white/45" : "text-white/85",
             )}
           >
             {step.description}
@@ -237,7 +236,7 @@ function SolutionPathStepRow({
             </div>
           ) : null}
           {diverge && step.misconception_if_skipped ? (
-            <p className="text-[14px] italic leading-relaxed text-[var(--mx-steel)]">
+            <p className={cn("text-[14px] italic leading-relaxed", isLight ? "text-[var(--mx-steel)]" : "text-white/75")}>
               {step.misconception_if_skipped}
             </p>
           ) : null}
@@ -478,6 +477,7 @@ export function StepFeedback({
   surface = "light",
   embedded = false,
 }: Props) {
+  const isLight = surface === "light";
   const steps = solutionSteps;
   const hasTrace = hasStepFeedbackTrace(steps);
   const reduceMotion = useReducedMotion();
@@ -504,7 +504,9 @@ export function StepFeedback({
         <div className="flex items-start gap-2">
           <MentrixaVocabIcon name="loop-report" size={18} surface={surface} title="Explanation" />
           <div className="min-w-0 flex-1 space-y-3">
-            <p className="text-sm font-semibold text-[var(--mx-steel)]">{stepFeedbackVerdict(outcome)}</p>
+            <p className={cn("text-sm font-semibold", isLight ? "text-[var(--mx-steel)]" : "text-white/90")}>
+              {stepFeedbackVerdict(outcome)}
+            </p>
             <div className="text-sm leading-relaxed">
               <PromptWithMath text={fallbackExplanation} variant={surface} />
             </div>
@@ -532,7 +534,7 @@ export function StepFeedback({
         >
           <div className="flex items-center gap-2">
             <MentrixaVocabIcon name="verified" size={18} gold surface={surface} title="Verified path" />
-            <p className="text-sm font-medium text-[var(--mx-steel)]">
+            <p className={cn("text-sm font-medium", isLight ? "text-[var(--mx-steel)]" : "text-white/90")}>
               {stepFeedbackVerdict("correct")}
             </p>
           </div>

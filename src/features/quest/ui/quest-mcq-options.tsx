@@ -9,6 +9,7 @@ import {
   clampMcqOptionIndex,
   mcqFocusIndexAfterArrow,
 } from "@/features/quest/quest-mcq-focus-pure";
+import { QUEST_RUN_SURFACE, type QuestSurface } from "@/features/quest/ui/quest-surface";
 import { cn } from "@/shared/core/utils";
 
 const optionVariants = {
@@ -26,6 +27,7 @@ export function QuestMcqOptions({
   result,
   busy,
   onSelect,
+  surface = QUEST_RUN_SURFACE,
 }: {
   options: string[];
   picked: number | null;
@@ -35,8 +37,10 @@ export function QuestMcqOptions({
   } | null;
   busy: boolean;
   onSelect: (index: number) => void;
+  surface?: QuestSurface;
 }) {
   const reduceMotion = useReducedMotion();
+  const isDark = surface === "dark";
   const wrongRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const focusedIndexRef = useRef(0);
@@ -129,17 +133,41 @@ export function QuestMcqOptions({
             whileTap={reduceMotion || result ? undefined : { scale: 0.98 }}
             className={cn(
               "relative overflow-hidden rounded-xl border p-4 text-left text-sm transition-colors [&_.katex]:text-inherit",
-              !result && !isPicked && "border-violet-300 bg-white text-[var(--mx-navy)] hover:border-[var(--mx-indigo)]",
-              isPicked && "border-[var(--mx-indigo)] bg-violet-100 ring-2 ring-[var(--mx-indigo)]/40",
-              isCorrect &&
-                "border-l-[3px] border-l-emerald-500 border-emerald-400/80 bg-emerald-500/20 text-emerald-950",
-              isWrongPick && "border-red-400/80 bg-red-500/10 text-red-950",
-              result && !isCorrect && !isWrongPick && "border-violet-300 bg-[#F8FAFC] text-[#64748B] opacity-80",
+              isDark
+                ? [
+                    !result && !isPicked &&
+                      "border-white/20 bg-[var(--mx-navy-2)] text-white hover:border-[var(--mx-indigo)] hover:bg-white/5",
+                    isPicked &&
+                      "border-[var(--mx-indigo)] bg-[var(--mx-indigo)]/20 ring-2 ring-[var(--mx-indigo)]/40 text-white",
+                    isCorrect &&
+                      "border-l-[3px] border-l-emerald-400 border-emerald-400/70 bg-emerald-500/20 text-emerald-50",
+                    isWrongPick && "border-red-400/80 bg-red-500/20 text-red-50",
+                    result &&
+                      !isCorrect &&
+                      !isWrongPick &&
+                      "border-white/10 bg-[var(--mx-navy-2)]/50 text-white/45",
+                  ]
+                : [
+                    !result && !isPicked &&
+                      "border-violet-300 bg-white text-[var(--mx-navy)] hover:border-[var(--mx-indigo)]",
+                    isPicked &&
+                      "border-[var(--mx-indigo)] bg-violet-100 ring-2 ring-[var(--mx-indigo)]/40",
+                    isCorrect &&
+                      "border-l-[3px] border-l-emerald-500 border-emerald-400/80 bg-emerald-500/20 text-emerald-950",
+                    isWrongPick && "border-red-400/80 bg-red-500/10 text-red-950",
+                    result &&
+                      !isCorrect &&
+                      !isWrongPick &&
+                      "border-violet-300 bg-[#F8FAFC] text-[#64748B] opacity-80",
+                  ],
             )}
           >
             {isCorrect ? (
               <motion.span
-                className="absolute left-3 top-3 text-emerald-600"
+                className={cn(
+                  "absolute left-3 top-3",
+                  isDark ? "text-emerald-300" : "text-emerald-600",
+                )}
                 initial={reduceMotion ? false : { x: -12, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 24 }}
@@ -149,7 +177,7 @@ export function QuestMcqOptions({
               </motion.span>
             ) : null}
             <span className={cn(isCorrect && "pl-6")}>
-              <PromptWithMath text={opt} variant="light" highlightKeyTerms />
+              <PromptWithMath text={opt} variant={surface} highlightKeyTerms />
             </span>
           </motion.button>
         );

@@ -27,7 +27,7 @@ export function QuestQuestionStage({
         exit={reduceMotion ? undefined : { x: -30, opacity: 0 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Card className="border-white/10 bg-[var(--mx-navy)] text-white shadow-[0_8px_32px_-8px_rgba(11,18,32,0.55)]">
+        <Card className="quest-question-card border-white/10 bg-[var(--mx-navy)] text-white shadow-[0_8px_32px_-8px_rgba(11,18,32,0.55)] [&_.katex]:text-inherit">
           <CardContent className="space-y-6 p-5 sm:p-6">{children}</CardContent>
         </Card>
       </motion.div>
