@@ -1,24 +1,14 @@
-# Background job worker runs every 15 minutes (Vercel Hobby cannot schedule sub-daily crons).
-# Also available manually: Actions → Cron Background Jobs → Run workflow.
-#
-# Required repository secret: CRON_SECRET (must match Vercel/production CRON_SECRET exactly)
-# Optional variable: PLAYWRIGHT_BASE_URL (defaults to https://mentrixa.one)
-
 name: Cron Background Jobs
 
+# Workflow disabled - triggers commented out
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
   process-background-jobs:
     runs-on: ubuntu-latest
+    if: false # Prevents any execution
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Trigger /api/cron/process-background-jobs
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
-        run: bash scripts/github-cron-ping.sh /api/cron/process-background-jobs
+      - run: echo "Workflow is currently disabled."
